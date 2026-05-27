@@ -59,9 +59,21 @@ const HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
   'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
 ]);
+const HIDDEN_QUEUE_HEADROOM_VISIBILITY_BLOCKER_REFS = Object.freeze([
+  'queue-budget-visible-without-queue-headroom-visible',
+  'memory-ceiling-match-visible-without-queue-headroom-visibility',
+  'memory-ceiling-visible-without-queue-headroom-visible',
+  'queue-headroom-not-visible',
+  'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+  'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+]);
 const POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
   ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
   ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
+  ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+]);
+const POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
+  ...HIDDEN_QUEUE_HEADROOM_VISIBILITY_BLOCKER_REFS,
   ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
 ]);
 const POST_PAUSE_HIDDEN_QUEUE_BUDGET_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
@@ -1290,6 +1302,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1304,6 +1317,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1355,6 +1369,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1366,6 +1381,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({

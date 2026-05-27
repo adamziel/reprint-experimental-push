@@ -10996,6 +10996,102 @@ test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw re
   ]);
 });
 
+test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw queue-headroom visibility disappears', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+    'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+  ].includes(entry.id));
+
+  assert.deepEqual(
+    releaseBundlePauseRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+        ],
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+});
+
 test('guarded benchmark carries hidden raw memory-ceiling visibility blockers into rejected release-bundle summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
