@@ -328,6 +328,52 @@ test('packaged preflight terminal context carries index-terminal readiness evide
   );
 });
 
+test('packaged startup runtimes preserve signed-preflight terminal context across index-terminal branches', () => {
+  for (const scriptName of [
+    'production-plugin-package-smoke.mjs',
+    'production-shaped-release-verify.mjs',
+  ]) {
+    const source = readFileSync(
+      path.join(repoRoot, 'scripts/playground', scriptName),
+      'utf8',
+    );
+
+    const assertNearby = (messageNeedle, requiredNeedles, failureMessage) => {
+      const start = source.indexOf(messageNeedle);
+      assert.notEqual(start, -1, `${scriptName} should include ${failureMessage}`);
+      const nearby = source.slice(start, start + 1000);
+      for (const needle of requiredNeedles) {
+        assert.match(
+          nearby,
+          needle,
+          `${scriptName} should preserve ${failureMessage}`,
+        );
+      }
+    };
+
+    assertNearby(
+      'Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response',
+      [/packagedProductionPluginPreflightTerminalContext\(/, /indexTerminal:\s*true/],
+      'index-terminal context when signed preflight stays startup-shaped after snapshot startup probes',
+    );
+    assertNearby(
+      'Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}',
+      [/packagedProductionPluginPreflightTerminalContext\(/, /indexTerminal:\s*true/, /timeoutFallback:\s*true/],
+      'index-terminal timeout-fallback context when signed preflight stays startup-shaped after the snapshot probe timed out',
+    );
+    assertNearby(
+      'Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}',
+      [/packagedProductionPluginPreflightTerminalContext\(/, /indexTerminal:\s*true/, /timeoutFallback:\s*true/],
+      'index-terminal timeout-fallback context when signed preflight times out after the snapshot probe timed out',
+    );
+    assertNearby(
+      'Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}',
+      [/packagedProductionPluginPreflightTerminalContext\(/, /snapshotStartupFallback:\s*true/],
+      'snapshot-startup fallback context on terminal signed-preflight failures',
+    );
+  }
+});
+
 test('packaged preflight retryability follows the freshest startup probe context', () => {
   const labAuthRequiredPreflight = {
     status: 401,
