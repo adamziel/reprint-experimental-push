@@ -285,6 +285,7 @@ test('db journal proof requires the checked durable-journal contract when explic
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,

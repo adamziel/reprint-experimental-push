@@ -2667,9 +2667,18 @@ function summarizeDbJournalLeaseFence(dbJournal) {
   }
 
   const summarizedWriterLease = summarizeDbJournalWriterLease(leaseFence.writerLease);
+  const boundary = typeof leaseFence.boundary === 'string' && leaseFence.boundary.trim().length > 0
+    ? leaseFence.boundary.trim()
+    : null;
+  const explicitStorageGuard = typeof leaseFence.storageGuard === 'string' && leaseFence.storageGuard.trim().length > 0
+    ? leaseFence.storageGuard.trim()
+    : null;
+  const storageGuard = explicitStorageGuard
+    || (boundary && summarizedWriterLease?.storageGuard === boundary ? summarizedWriterLease.storageGuard : null);
 
   return {
-    boundary: leaseFence.boundary || null,
+    boundary,
+    storageGuard,
     claimKeyUnique: leaseFence.claimKeyUnique === true,
     fsyncEvidence: leaseFence.fsyncEvidence === true || summarizedWriterLease?.fsyncEvidence === true,
     monotonicSequence: leaseFence.monotonicSequence === true,
