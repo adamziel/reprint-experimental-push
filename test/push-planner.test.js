@@ -14972,10 +14972,7 @@ test('blocks steady unsupported attachment rows before they can be treated as al
   assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'steady-unsupported');
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:11"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -14985,6 +14982,58 @@ test('blocks steady unsupported attachment rows before they can be treated as al
   assert.equal(planJson.includes('Base steady attachment body'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('blocks steady unsupported attachment rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:8"]';
+  const swapFileKey = 'file:wp-content/uploads/steady-unsupported-attachment';
+  const base = baseSite();
+  base.files[swapFileKey.slice('file:'.length)] = 'base steady attachment bytes';
+  base.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Base steady attachment title',
+    post_content: 'Base steady attachment body',
+    post_type: 'attachment',
+    post_status: 'inherit',
+  };
+
+  const local = baseSite();
+  local.files[swapFileKey.slice('file:'.length)] = { type: 'directory' };
+  local.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+
+  const remote = baseSite();
+  remote.files[swapFileKey.slice('file:'.length)] = { type: 'directory' };
+  remote.db.wp_posts['ID:8'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:8']));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-attachment-resource');
+  assert.equal(blocker.resourceKind, 'attachment');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Base steady attachment title'), false);
+  assert.equal(planJson.includes('Base steady attachment body'), false);
+  assert.equal(planJson.includes('base steady attachment bytes'), false);
+  assert.equal(remote.files[swapFileKey.slice('file:'.length)].type, 'directory');
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
 test('blocks local featured-image references when the remote deleted the referenced post', () => {
