@@ -3211,7 +3211,7 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   const smokeBranch = smokeSource.slice(smokeStart, smokeEnd);
   assert.match(
     smokeBranch,
-    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginNotReadyProbeLimitReached\(\s*snapshotNotReadyProbeCount,\s*maxPackagedStartupNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?retryable-route-wordpress-starting[\s\S]*?retryable-route-packaged-route-starting[\s\S]*?retryable-route-index-terminal[\s\S]*?Packaged production plugin snapshot hit the bounded readiness failure/s,
+    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginRouteStartupClassificationReady\(\s*snapshotNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?retryable-route-wordpress-starting[\s\S]*?packagedProductionPluginGlobalStartupStillWithinBudget\(snapshotNotReadyProbeCount\)[\s\S]*?retryable-route-packaged-route-starting[\s\S]*?retryable-route-index-terminal[\s\S]*?Packaged production plugin snapshot hit the bounded readiness failure/s,
   );
 
   const verifierSource = readFileSync(
@@ -3225,7 +3225,7 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   const verifierBranch = verifierSource.slice(verifierStart, verifierEnd);
   assert.match(
     verifierBranch,
-    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginNotReadyProbeLimitReached\(\s*snapshotNotReadyProbeCount,\s*maxPackagedStartupNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
+    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginRouteStartupClassificationReady\(\s*snapshotNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?packagedProductionPluginGlobalStartupStillWithinBudget\(snapshotNotReadyProbeCount\)[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
   );
   assert.match(
     smokeSource,
@@ -3235,6 +3235,40 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
     verifierSource,
     /preflightProbe\.retryable = packagedProductionPluginPreflightRetryable\(\s*\{\s*status:\s*preflightProbe\.status,\s*body:\s*preflightProbe\.parsedBody \?\? preflightProbe\.body,\s*\},\s*\{\s*\.\.\.readinessContext,\s*indexProbe\s*\},\s*\);/s,
   );
+});
+
+test('packaged readiness helpers keep a shorter route-startup budget after global WordPress readiness', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /const maxPackagedRouteStartupAfterGlobalReadyProbes = packagedProductionPluginMaxConsecutiveNotReadyProbes;/,
+    );
+    assert.match(
+      source,
+      /function packagedProductionPluginGlobalStartupStillWithinBudget\(notReadyProbeCount\)/,
+    );
+    assert.match(
+      source,
+      /function packagedProductionPluginRouteStartupClassificationReady\(notReadyProbeCount\)/,
+    );
+    assert.match(
+      source,
+      /Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP[\s\S]*?limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}/s,
+    );
+    assert.match(
+      source,
+      /Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP[\s\S]*?limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}/s,
+    );
+  }
 });
 
 test('lab Playground readiness helper rejects malformed ready responses and retries only startup-shaped failures', () => {

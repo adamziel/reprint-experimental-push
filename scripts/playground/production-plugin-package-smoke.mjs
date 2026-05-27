@@ -51,6 +51,7 @@ const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs),
 );
+const maxPackagedRouteStartupAfterGlobalReadyProbes = packagedProductionPluginMaxConsecutiveNotReadyProbes;
 let signedRequestNonceSequence = 0;
 
 const credentials = {
@@ -593,9 +594,8 @@ async function waitForServer(child, baseUrl, logs) {
             );
           }
           if (
-            packagedProductionPluginNotReadyProbeLimitReached(
+            packagedProductionPluginRouteStartupClassificationReady(
               snapshotNotReadyProbeCount,
-              maxPackagedStartupNotReadyProbeCount,
             )
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
@@ -610,6 +610,10 @@ async function waitForServer(child, baseUrl, logs) {
               indexProbe,
             );
             if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -629,12 +633,12 @@ async function waitForServer(child, baseUrl, logs) {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   snapshotNotReadyProbeCount,
-                  maxPackagedStartupNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
                 )
               ) {
                 throw new Error(
                   formatPackagedReadinessFailure(
-                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                     lastError,
                     lastProbes,
                     logs,
@@ -663,6 +667,10 @@ async function waitForServer(child, baseUrl, logs) {
                   lastTimeoutFallbackProbes,
                 ),
               );
+            }
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
             }
             throw new Error(
               formatPackagedReadinessFailure(
@@ -705,9 +713,8 @@ async function waitForServer(child, baseUrl, logs) {
         if (packagedProductionPluginSnapshotRetryable({ status: snapshotResponse.status, body: snapshotBody })) {
           if (
             preflightProbe.retryable
-            && packagedProductionPluginNotReadyProbeLimitReached(
+            && packagedProductionPluginRouteStartupClassificationReady(
               snapshotNotReadyProbeCount,
-              maxPackagedStartupNotReadyProbeCount,
             )
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
@@ -722,6 +729,10 @@ async function waitForServer(child, baseUrl, logs) {
               indexProbe,
             );
             if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -741,12 +752,12 @@ async function waitForServer(child, baseUrl, logs) {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   snapshotNotReadyProbeCount,
-                  maxPackagedStartupNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
                 )
               ) {
                 throw new Error(
                   formatPackagedReadinessFailure(
-                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                     lastError,
                     lastProbes,
                     logs,
@@ -775,6 +786,10 @@ async function waitForServer(child, baseUrl, logs) {
                   lastTimeoutFallbackProbes,
                 ),
               );
+            }
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
             }
             throw new Error(
               formatPackagedReadinessFailure(
@@ -811,9 +826,8 @@ async function waitForServer(child, baseUrl, logs) {
             );
           }
           if (
-            packagedProductionPluginNotReadyProbeLimitReached(
+            packagedProductionPluginRouteStartupClassificationReady(
               snapshotNotReadyProbeCount,
-              maxPackagedStartupNotReadyProbeCount,
             )
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
@@ -828,6 +842,10 @@ async function waitForServer(child, baseUrl, logs) {
               indexProbe,
             );
             if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -847,12 +865,12 @@ async function waitForServer(child, baseUrl, logs) {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   snapshotNotReadyProbeCount,
-                  maxPackagedStartupNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
                 )
               ) {
                 throw new Error(
                   formatPackagedReadinessFailure(
-                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                    `Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                     lastError,
                     lastProbes,
                     logs,
@@ -881,6 +899,10 @@ async function waitForServer(child, baseUrl, logs) {
                   lastTimeoutFallbackProbes,
                 ),
               );
+            }
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(snapshotNotReadyProbeCount)) {
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
             }
             throw new Error(
               formatPackagedReadinessFailure(
@@ -943,9 +965,8 @@ async function waitForServer(child, baseUrl, logs) {
         if (packagedProductionPluginReadinessBodyRetryable(preflightResponse.status, preflightText)) {
           lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
           if (
-            packagedProductionPluginNotReadyProbeLimitReached(
+            packagedProductionPluginRouteStartupClassificationReady(
               preflightNotReadyProbeCount,
-              maxPackagedStartupNotReadyProbeCount,
             )
           ) {
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
@@ -960,6 +981,10 @@ async function waitForServer(child, baseUrl, logs) {
               indexProbe,
             );
             if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
               throw new Error(
                 formatPackagedReadinessFailure(
                   `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -979,12 +1004,12 @@ async function waitForServer(child, baseUrl, logs) {
               if (
                 packagedProductionPluginPackagedRouteStartupLimitReached(
                   preflightNotReadyProbeCount,
-                  maxPackagedStartupNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
                 )
               ) {
                 throw new Error(
                   formatPackagedReadinessFailure(
-                    `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                    `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                     lastError,
                     lastProbes,
                     logs,
@@ -1013,6 +1038,10 @@ async function waitForServer(child, baseUrl, logs) {
                   lastTimeoutFallbackProbes,
                 ),
               );
+            }
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
             }
             throw new Error(
               formatPackagedReadinessFailure(
@@ -1051,9 +1080,8 @@ async function waitForServer(child, baseUrl, logs) {
         { packagedStartup: true },
       )) {
         if (
-          packagedProductionPluginNotReadyProbeLimitReached(
+          packagedProductionPluginRouteStartupClassificationReady(
             preflightNotReadyProbeCount,
-            maxPackagedStartupNotReadyProbeCount,
           )
         ) {
           const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
@@ -1068,6 +1096,10 @@ async function waitForServer(child, baseUrl, logs) {
             indexProbe,
           );
           if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
+            }
             throw new Error(
               formatPackagedReadinessFailure(
                 `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
@@ -1087,12 +1119,12 @@ async function waitForServer(child, baseUrl, logs) {
             if (
               packagedProductionPluginPackagedRouteStartupLimitReached(
                 preflightNotReadyProbeCount,
-                maxPackagedStartupNotReadyProbeCount,
+                maxPackagedRouteStartupAfterGlobalReadyProbes,
               )
             ) {
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                   lastError,
                   lastProbes,
                   logs,
@@ -1121,6 +1153,10 @@ async function waitForServer(child, baseUrl, logs) {
                 lastTimeoutFallbackProbes,
               ),
             );
+          }
+          if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
+            await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+            continue;
           }
           throw new Error(
             formatPackagedReadinessFailure(
@@ -1363,6 +1399,20 @@ async function waitForServer(child, baseUrl, logs) {
       logs,
       lastTimeoutFallbackProbes,
     ),
+  );
+}
+
+function packagedProductionPluginGlobalStartupStillWithinBudget(notReadyProbeCount) {
+  return !packagedProductionPluginNotReadyProbeLimitReached(
+    notReadyProbeCount,
+    maxPackagedStartupNotReadyProbeCount,
+  );
+}
+
+function packagedProductionPluginRouteStartupClassificationReady(notReadyProbeCount) {
+  return packagedProductionPluginNotReadyProbeLimitReached(
+    notReadyProbeCount,
+    maxPackagedRouteStartupAfterGlobalReadyProbes,
   );
 }
 
