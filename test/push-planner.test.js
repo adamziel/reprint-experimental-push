@@ -6192,7 +6192,7 @@ test('blocks local plugin file changes when remote plugin metadata changed', () 
   const blocker = plan.blockers.find((entry) => entry.resourceKey === 'file:wp-content/plugins/forms/forms.php');
   const blockerJson = JSON.stringify(blocker);
 
-  assert.equal(plan.status, 'conflict');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(mutationFor(plan, 'file:wp-content/plugins/forms/forms.php'), undefined);
