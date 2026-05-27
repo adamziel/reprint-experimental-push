@@ -149,6 +149,103 @@ function stopAllPlaygroundChildrenSync() {
   }
 }
 
+function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  const unexpectedAsyncDependency = async () => {
+    throw new Error('unexpected packaged readiness helper dependency call during early-exit runtime proof');
+  };
+  const unexpectedSyncDependency = () => {
+    throw new Error('unexpected packaged readiness helper dependency call during early-exit runtime proof');
+  };
+  const compileHelper = new Function(
+    'packagedServerStartupTimeoutMs',
+    'packagedServerFetchTimeoutMs',
+    'packagedProductionPluginNextRouteNotReadyProbeCounts',
+    'packagedProductionPluginResetRouteNotReadyProbeCounts',
+    'packagedProductionPluginReadinessBodyRetryable',
+    'packagedProductionPluginPreflightTerminalContext',
+    'packagedProductionPluginRouteStartupClassificationReady',
+    'fetchPackagedWordPressIndexProbe',
+    'buildPackagedTimeoutFallbackProbe',
+    'packagedProductionPluginClassifyBoundedStartup',
+    'packagedProductionPluginGlobalStartupStillWithinBudget',
+    'sleepUnlessChildExit',
+    'throwPlaygroundReadinessFailure',
+    'packagedProductionPluginPackagedRouteStartupLimitReached',
+    'packagedProductionPluginPackagedRouteStartupStillWithinBudget',
+    'packagedProductionPluginMalformedTerminalIndexProbe',
+    'packagedProductionPluginServerReady',
+    'packagedProductionPluginSnapshotRetryable',
+    'fetchPackagedPreflightProbe',
+    'packagedProductionPluginReadinessErrorRetryable',
+    'packagedProductionPluginReadinessProbeTimedOut',
+    'fetchPackagedTimeoutFallbackProbes',
+    'packagedProductionPluginClassifyTimeoutFallbackStartup',
+    'packagedProductionPluginNotReadyProbeLimitReached',
+    'packagedProductionPluginNextTimeoutProbeCount',
+    'packagedProductionPluginMaxConsecutiveNotReadyProbes',
+    'readinessProbeIntervalMs',
+    'maxPackagedRouteStartupAfterGlobalReadyProbes',
+    'maxPackagedStartupNotReadyProbeCount',
+    'activePlaygroundChildren',
+    'formatPlaygroundStartupFailure',
+    'writePlaygroundFailure',
+    'stopSpawnedServer',
+    'fetchTextWithTimeout',
+    'authHeaders',
+    'readinessFailureBodyLimit',
+    `${helperSource}\nreturn waitForPackagedProductionPluginServer;`,
+  );
+
+  return compileHelper(
+    1_000,
+    100,
+    packagedProductionPluginNextRouteNotReadyProbeCounts,
+    packagedProductionPluginResetRouteNotReadyProbeCounts,
+    packagedProductionPluginReadinessBodyRetryable,
+    packagedProductionPluginPreflightTerminalContext,
+    unexpectedSyncDependency,
+    unexpectedAsyncDependency,
+    unexpectedSyncDependency,
+    packagedProductionPluginClassifyBoundedStartup,
+    unexpectedSyncDependency,
+    unexpectedAsyncDependency,
+    unexpectedAsyncDependency,
+    packagedProductionPluginPackagedRouteStartupLimitReached,
+    packagedProductionPluginPackagedRouteStartupStillWithinBudget,
+    packagedProductionPluginMalformedTerminalIndexProbe,
+    packagedProductionPluginServerReady,
+    packagedProductionPluginSnapshotRetryable,
+    unexpectedAsyncDependency,
+    packagedProductionPluginReadinessErrorRetryable,
+    packagedProductionPluginReadinessProbeTimedOut,
+    unexpectedAsyncDependency,
+    packagedProductionPluginClassifyTimeoutFallbackStartup,
+    packagedProductionPluginNotReadyProbeLimitReached,
+    packagedProductionPluginNextTimeoutProbeCount,
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    1,
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    new Set(),
+    overrides.formatPlaygroundStartupFailure ?? formatPlaygroundStartupFailure,
+    overrides.writePlaygroundFailure ?? writePlaygroundFailure,
+    overrides.stopSpawnedServer ?? unexpectedAsyncDependency,
+    overrides.fetchTextWithTimeout ?? unexpectedAsyncDependency,
+    overrides.authHeaders ?? (() => ({})),
+    500,
+  );
+}
+
 function spawnReleaseVerify(env = {}, options = {}) {
   const timeout = boundedReleaseVerifyTimeout(options.timeout ?? proofSubprocessTimeoutMs);
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
@@ -2646,6 +2743,56 @@ test('packaged release verifier readiness helper reports early child exit codes'
   assert.match(helperSource, /child\.exitCode !== null \?\s*`exited early with \$\{child\.exitCode\}`\s*:\s*`terminated by \$\{child\.signalCode\}`/);
   assert.match(helperSource, /Packaged production plugin server \$\{exitLabel\}/);
   assert.match(helperSource, /writePlaygroundFailure\(message, lastProbes, getOutput\(\), lastError, lastTimeoutFallbackProbes\);/);
+});
+
+test('packaged release verifier readiness helper fails closed when the Playground child exits before packaged probing completes', async () => {
+  let stoppedChild = null;
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    stopSpawnedServer: async (child) => {
+      stoppedChild = child;
+    },
+  });
+  const child = {
+    exitCode: 23,
+    signalCode: null,
+    pid: 7123,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(error.message, /Packaged production plugin server exited early with 23/);
+      assert.match(error.message, /packaged server boot log/);
+      return true;
+    },
+  );
+
+  assert.equal(stoppedChild, child);
+});
+
+test('packaged release verifier readiness helper fails closed when the Playground child is signaled before packaged probing completes', async () => {
+  let stoppedChild = null;
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    stopSpawnedServer: async (child) => {
+      stoppedChild = child;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: 'SIGTERM',
+    pid: 9451,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(error.message, /Packaged production plugin server terminated by SIGTERM/);
+      assert.match(error.message, /packaged server boot log/);
+      return true;
+    },
+  );
+
+  assert.equal(stoppedChild, child);
 });
 
 test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
