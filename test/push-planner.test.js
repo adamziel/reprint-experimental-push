@@ -23760,6 +23760,66 @@ test('blocks local same-plan created user meta identity while preserving a match
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local same-plan created user meta identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:89"]';
+  const targetFileKey = 'file:wp-content/uploads/usermeta-cover-removals';
+  const base = baseSite();
+  base.files['wp-content/uploads/usermeta-cover-removals'] = 'base usermeta cover removals bytes';
+  base.db.wp_usermeta = {
+    'umeta_id:89': {
+      umeta_id: 89,
+      user_id: 23,
+      meta_key: 'nickname',
+      meta_value: 'Base user meta removals value',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/usermeta-cover-removals'] = { type: 'directory' };
+  local.db.wp_usermeta = {
+    'umeta_id:89': {
+      umeta_id: 89,
+      user_id: 23,
+      meta_key: 'nickname',
+      meta_value: 'Local user meta removals value',
+    },
+  };
+  local.db.wp_users = {
+    'ID:23': {
+      ID: 23,
+      user_login: 'local-same-plan-user-meta-removals',
+      user_email: 'local-usermeta-removals@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/usermeta-cover-removals'] = { type: 'directory' };
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, targetFileKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_usermeta","umeta_id:89"] is created in the same plan as a user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(planJson.includes('Local user meta removals value'), false);
+  assert.equal(planJson.includes('Base user meta removals value'), false);
+  assert.equal(planJson.includes('local-same-plan-user-meta-removals'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created user meta identity while preserving a matching independent delete and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:81"]';
   const targetFileKey = 'file:index.php';
