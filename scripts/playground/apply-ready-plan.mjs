@@ -21,7 +21,7 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
-const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const readyLocalSnapshot = snapshots.local;
 
 const plan = createPushPlan({
   base: snapshots.base,
@@ -212,6 +212,7 @@ function assertReadyPlanResources(plan) {
     'row:["wp_options","option_name:reprint_push_forms_fixture"]',
     'row:["wp_options","option_name:reprint_push_plugin_payload"]',
     'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
     'row:["wp_posts","ID:1001"]',
     'row:["wp_posts","ID:2001"]',
   ];
@@ -337,15 +338,6 @@ function assertPhpStableHashMatchesJsForUnicode() {
   }
 
   assert.equal(result.stdout, digest(value));
-}
-
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
-  }
-  return next;
 }
 
 function parseMarkedJson(stdout, begin, end, missingMessage) {
