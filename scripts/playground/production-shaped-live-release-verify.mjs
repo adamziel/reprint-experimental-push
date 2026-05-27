@@ -11,11 +11,9 @@ import {
   resolveCheckedReleaseRequirementEnv,
   resolveCheckedLiveBoundaryEnv,
   resolveLiveApplyRevalidationEnv,
+  shouldRequestCheckedLivePackagedBoundary,
 } from './production-shaped-live-release-verify-lib.js';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
-import {
-  shouldRequestPackagedProductionPluginAuthSession,
-} from './packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -41,8 +39,7 @@ const explicitCheckedBoundaryRequested = hasExplicitCheckedBoundaryRequest({
   applicationPassword: explicitLiveApplicationPassword,
   authSessionSourceCommand: explicitAuthSessionSourceCommand,
 });
-const packagedBoundaryRequested = shouldRequestPackagedProductionPluginAuthSession({
-  requireProductionAuthSession: process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1',
+const packagedBoundaryRequested = shouldRequestCheckedLivePackagedBoundary({
   authSessionSourceCommand: explicitAuthSessionSourceCommand,
   liveSourceUrl: explicitLiveSourceUrl,
   username: explicitLiveUsername,

@@ -1,4 +1,5 @@
 import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
+import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-production-plugin-source-command.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
 export function resolveCheckedReleaseRequirementEnv() {
@@ -6,6 +7,25 @@ export function resolveCheckedReleaseRequirementEnv() {
     REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
     REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
   };
+}
+
+export function shouldRequestCheckedLivePackagedBoundary({
+  liveSourceUrl = '',
+  username = '',
+  applicationPassword = '',
+  authSessionSourceCommand = '',
+  fixtureUsername = '',
+  fixtureApplicationPassword = '',
+} = {}) {
+  return shouldRequestPackagedProductionPluginAuthSession({
+    requireProductionAuthSession: true,
+    authSessionSourceCommand,
+    liveSourceUrl,
+    username,
+    applicationPassword,
+    fixtureUsername,
+    fixtureApplicationPassword,
+  });
 }
 
 export function applyRevalidationRetryable(proof) {

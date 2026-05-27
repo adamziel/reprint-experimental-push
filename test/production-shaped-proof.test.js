@@ -50,6 +50,7 @@ import {
   resolveCheckedReleaseTopology,
   resolveCheckedLiveBoundaryEnv,
   resolveLiveApplyRevalidationEnv,
+  shouldRequestCheckedLivePackagedBoundary,
   shouldUseProductionSnapshotExport,
 } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 import {
@@ -3852,6 +3853,38 @@ test('production-shaped live release verify forces checked release requirements 
   assert.match(
     source,
     /runCheckedReleaseVerify\(\s*resolveCheckedLiveBoundaryEnv\(\{\s*sourceUrl: remoteServer\.baseUrl,/,
+  );
+});
+
+test('production-shaped live release verify defaults the checked live branch to the packaged auth/session boundary', () => {
+  assert.equal(
+    shouldRequestCheckedLivePackagedBoundary({
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    true,
+  );
+
+  assert.equal(
+    shouldRequestCheckedLivePackagedBoundary({
+      liveSourceUrl: 'http://127.0.0.1:49152',
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    false,
+  );
+
+  assert.equal(
+    shouldRequestCheckedLivePackagedBoundary({
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+      }),
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    false,
   );
 });
 
