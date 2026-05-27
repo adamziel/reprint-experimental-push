@@ -3223,6 +3223,20 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
+    proposal: 'treat a compressed remote index plus cached row receipts as enough proof to skip plugin-install writeback',
+    rejectedBecause: 'planning evidence and cached row receipts can reduce replay work, but they cannot prove the metadata writes, live row compares, or atomic-group writeback survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
+    proposal: 'treat a compressed remote index plus cached row receipts as enough proof to skip plugin-install activation',
+    rejectedBecause: 'planning evidence and cached row receipts can reduce replay work, but they cannot prove the activation change, dependency checks, or atomic-group commit survived failure',
+    rejectedGate: 'group',
+    violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
+  },
+  {
     id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
     proposal: 'treat a compressed remote index plus cached row receipts as enough proof to skip plugin-update finalization',
     rejectedBecause: 'planning evidence and cached row receipts can reduce replay work, but they cannot prove the live row compares, dependency checks, or atomic-group finalize survived failure',

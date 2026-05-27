@@ -1578,7 +1578,7 @@ test('guarded benchmark surfaces package-cache plugin-install blockers at runtim
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-install')).length,
-    36,
+    40,
   );
 });
 
@@ -1826,6 +1826,138 @@ test('guarded benchmark surfaces chunk-receipts plugin-install blockers at runti
       },
       {
         id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+});
+
+test('guarded benchmark surfaces row-receipts plugin-install blockers at runtime', () => {
+  const report = smallBenchmark();
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
+        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+});
+
+test('guarded benchmark surfaces row-batch-receipts plugin-install blockers at runtime', () => {
+  const report = smallBenchmark();
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
         rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
