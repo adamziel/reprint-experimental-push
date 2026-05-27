@@ -159,25 +159,56 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
     return true;
   }
 
+  const staleClaimEvidenceFloor = checkedBoundaryStaleClaimEvidenceFloor(dbJournal?.claim);
+
   for (const summary of Array.isArray(dbJournal?.eventSummaries) ? dbJournal.eventSummaries : []) {
     if (
       checkedBoundaryStaleClaimEventMatches(summary?.event)
       && isPositiveInteger(summary?.latestId)
+      && summary.latestId >= staleClaimEvidenceFloor
     ) {
       return true;
     }
   }
 
   for (const row of Array.isArray(dbJournal?.latestRows) ? dbJournal.latestRows : []) {
+    const rowSequence = isPositiveInteger(row?.id) ? row.id : row?.sequence;
     if (
       checkedBoundaryStaleClaimEventMatches(row?.event)
-      && isPositiveInteger(row?.id)
+      && isPositiveInteger(rowSequence)
+      && rowSequence >= staleClaimEvidenceFloor
     ) {
       return true;
     }
   }
 
   return false;
+}
+
+function checkedBoundaryStaleClaimEvidenceFloor(claim) {
+  if (!claim || typeof claim !== 'object') {
+    return 1;
+  }
+
+  let floor = 1;
+  if (
+    claim.activeClaimEvent === 'stale-claim-rejected'
+    && isPositiveInteger(claim.activeClaimSequence)
+  ) {
+    floor = Math.max(floor, claim.activeClaimSequence);
+  }
+
+  for (const sequence of [
+    claim.abandonedSequence,
+    claim.previousStartedSequence,
+    claim.previousClaimSequence,
+  ]) {
+    if (isPositiveInteger(sequence)) {
+      floor = Math.max(floor, sequence);
+    }
+  }
+
+  return floor;
 }
 
 function checkedBoundaryStaleClaimEventMatches(event) {

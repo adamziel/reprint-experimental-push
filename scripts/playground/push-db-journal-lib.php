@@ -1073,10 +1073,60 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_match
         return true;
     }
 
-    return reprint_push_lab_db_journal_has_stale_claim_rejection_evidence(
-        is_array($journal['latestRows'] ?? null) ? $journal['latestRows'] : [],
-        is_array($journal['eventSummaries'] ?? null) ? $journal['eventSummaries'] : []
+    $stale_claim_evidence_floor = reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_floor(
+        is_array($journal['claim'] ?? null) ? $journal['claim'] : []
     );
+
+    foreach ((is_array($journal['eventSummaries'] ?? null) ? $journal['eventSummaries'] : []) as $summary) {
+        if (!is_array($summary)) {
+            continue;
+        }
+        $event = (string) ($summary['event'] ?? '');
+        if (
+            ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
+            && reprint_push_lab_db_journal_is_positive_int($summary['latestId'] ?? null)
+            && (int) ($summary['latestId'] ?? 0) >= $stale_claim_evidence_floor
+        ) {
+            return true;
+        }
+    }
+
+    foreach ((is_array($journal['latestRows'] ?? null) ? $journal['latestRows'] : []) as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $event = (string) ($row['event'] ?? '');
+        $sequence = $row['id'] ?? $row['sequence'] ?? null;
+        if (
+            ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
+            && reprint_push_lab_db_journal_is_positive_int($sequence)
+            && (int) $sequence >= $stale_claim_evidence_floor
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_floor(array $claim): int
+{
+    $floor = 1;
+
+    if (
+        ($claim['activeClaimEvent'] ?? null) === 'stale-claim-rejected'
+        && reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
+    ) {
+        $floor = max($floor, (int) ($claim['activeClaimSequence'] ?? 0));
+    }
+
+    foreach (['abandonedSequence', 'previousStartedSequence', 'previousClaimSequence'] as $sequence_key) {
+        if (reprint_push_lab_db_journal_is_positive_int($claim[$sequence_key] ?? null)) {
+            $floor = max($floor, (int) ($claim[$sequence_key] ?? 0));
+        }
+    }
+
+    return $floor;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent($journal): bool
