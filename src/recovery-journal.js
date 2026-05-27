@@ -206,7 +206,28 @@ function writerLeaseContractsAgree(writerLease, nestedWriterLease) {
     }
   }
 
+  for (const key of ['claimId', 'claimHash', 'claimKeyHash']) {
+    if (!optionalWriterLeaseIdentityMatches(writerLease, nestedWriterLease, key)) {
+      return false;
+    }
+  }
+
   return true;
+}
+
+function optionalWriterLeaseIdentityMatches(left, right, key) {
+  const leftHasKey = Object.hasOwn(left, key);
+  const rightHasKey = Object.hasOwn(right, key);
+
+  if (leftHasKey !== rightHasKey) {
+    return false;
+  }
+
+  if (!leftHasKey) {
+    return true;
+  }
+
+  return left[key] === right[key];
 }
 
 function checkedBoundaryClaimIdentityMatches(...claimIds) {
