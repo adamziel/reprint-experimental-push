@@ -1571,6 +1571,492 @@ test('production-shaped authenticated push fails closed when checked auth reads 
   }
 });
 
+test('production-shaped authenticated push fails closed when replay drops required cleanup evidence continuity', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        ...(applyCount === 1
+          ? {
+            sessionStore: {
+              cleanup: {
+                schemaVersion: 1,
+                store: 'wp-options',
+                deletedExpiredTotal: 2,
+                sessionOptions: {
+                  deletedExpired: 1,
+                  retainedUnexpired: 1,
+                  limitReached: false,
+                },
+                nonceOptions: {
+                  deletedExpired: 1,
+                  retainedUnexpired: 1,
+                  limitReached: false,
+                },
+              },
+            },
+          }
+          : {}),
+        receipt: { receiptHash: 'receipt-01' },
+        signedRequest: {
+          signed: true,
+        },
+        idempotency: {
+          replayed: applyCount === 2,
+          freshMutationWork: applyCount === 1,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-replay-cleanup-continuity',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'cleanup evidence continuity',
+        observed: 'missing-session-store-cleanup',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({ step, cleanedUp }) => ({ step, cleanedUp })),
+      [
+        { step: 'preflight', cleanedUp: false },
+        { step: 'dry-run', cleanedUp: false },
+        { step: 'apply', cleanedUp: false },
+        { step: 'recovery-inspect', cleanedUp: false },
+        { step: 'replay', cleanedUp: false },
+      ],
+    );
+    assert.equal(applyCount, 2);
+    assert.ok(seen.some(({ url }) => url.includes('/recovery/inspect')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed when db journal readback drops required cleanup evidence continuity', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        sessionStore: {
+          cleanup: {
+            schemaVersion: 1,
+            store: 'wp-options',
+            deletedExpiredTotal: 2,
+            sessionOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+            nonceOptions: {
+              deletedExpired: 1,
+              retainedUnexpired: 1,
+              limitReached: false,
+            },
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        signedRequest: {
+          signed: true,
+        },
+        idempotency: {
+          replayed: applyCount === 2,
+          freshMutationWork: applyCount === 1,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        dbJournal: {
+          latestRows: [],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimId: 'claim-01',
+            activeClaimHash: '1111111111111111111111111111111111111111111111111111111111111111',
+            activeClaimEvent: 'stale-claim-rejected',
+            previousClaimId: 'claim-00',
+            previousClaimHash: '0000000000000000000000000000000000000000000000000000000000000000',
+            staleClaimRejected: true,
+          },
+          writerLease: {
+            boundary: 'wpdb-single-statement-cas',
+            storageGuard: 'wpdb-single-statement-cas',
+            activeClaimId: 'claim-01',
+            activeClaimHash: '1111111111111111111111111111111111111111111111111111111111111111',
+            staleClaimRejected: true,
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            storageGuard: 'wpdb-single-statement-cas',
+            writerLease: {
+              boundary: 'wpdb-single-statement-cas',
+              storageGuard: 'wpdb-single-statement-cas',
+              activeClaimId: 'claim-01',
+              activeClaimHash: '1111111111111111111111111111111111111111111111111111111111111111',
+              staleClaimRejected: true,
+            },
+            fsyncEvidence: true,
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-db-journal-cleanup-continuity',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      required: 'cleanup evidence continuity',
+      observed: 'missing-session-store-cleanup',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: 'cleanup evidence continuity',
+        observed: 'missing-session-store-cleanup',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.equal(applyCount, 2);
+    assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed on malformed checked-path auth user logins', async () => {
   const originalFetch = global.fetch;
   const seen = [];
