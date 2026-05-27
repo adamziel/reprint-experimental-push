@@ -994,13 +994,28 @@ function reprint_push_lab_db_journal_checked_boundary_latest_rows_evidence_match
         if (
             is_array($row)
             && reprint_push_lab_db_journal_non_empty_string($row['event'] ?? null)
-            && reprint_push_lab_db_journal_is_positive_int($row['id'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int(
+                reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row)
+            )
         ) {
             return true;
         }
     }
 
     return false;
+}
+
+function reprint_push_lab_db_journal_checked_boundary_latest_row_sequence(array $row)
+{
+    if (reprint_push_lab_db_journal_is_positive_int($row['id'] ?? null)) {
+        return (int) ($row['id'] ?? 0);
+    }
+
+    if (reprint_push_lab_db_journal_is_positive_int($row['sequence'] ?? null)) {
+        return (int) ($row['sequence'] ?? 0);
+    }
+
+    return null;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_matches($event_summaries): bool

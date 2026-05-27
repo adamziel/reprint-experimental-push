@@ -126,8 +126,25 @@ function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
 
 function checkedBoundaryLatestRowsEvidenceMatches(latestRows) {
   return latestRows.some(
-    (row) => hasNonEmptyString(row?.event) && isPositiveInteger(row?.id),
+    (row) => hasNonEmptyString(row?.event)
+      && isPositiveInteger(checkedBoundaryLatestRowSequence(row)),
   );
+}
+
+function checkedBoundaryLatestRowSequence(row) {
+  if (!row || typeof row !== 'object') {
+    return null;
+  }
+
+  if (isPositiveInteger(row.id)) {
+    return row.id;
+  }
+
+  if (isPositiveInteger(row.sequence)) {
+    return row.sequence;
+  }
+
+  return null;
 }
 
 function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {
