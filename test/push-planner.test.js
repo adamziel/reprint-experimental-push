@@ -46079,6 +46079,52 @@ test('blocks steady unsupported special file entries before they can be treated 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('blocks steady unsupported special file entries before they can be treated as already in sync while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'file:wp-content/uploads/steady-symlink';
+  const matchingEditResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/steady-symlink'] = { type: 'symlink', target: '../shared/steady-target' };
+  base.db.wp_posts['ID:1'].post_title = 'Base steady unsupported special file shared title';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/steady-symlink'] = { type: 'symlink', target: '../shared/steady-target' };
+  local.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported special file title';
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/steady-symlink'] = { type: 'symlink', target: '../shared/steady-target' };
+  remote.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported special file title';
+  remote.plugins.forms.description = 'remote-only plugin steady special file changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin steady special file changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.ok(plan.summary.decisions >= 2);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('../shared/steady-target'), false);
+  assert.equal(planJson.includes('Shared steady unsupported special file title'), false);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Shared steady unsupported special file title');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin steady special file changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin steady special file changes */');
+});
+
 test('blocks converged unsupported special file entries while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'file:wp-content/uploads/converged-symlink';
   const base = baseSite();
