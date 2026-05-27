@@ -24,13 +24,22 @@ const PAYMENTS_PLUGIN = 'payments';
 const COMMERCE_MAIN_FILE = `wp-content/plugins/${COMMERCE_PLUGIN}/${COMMERCE_PLUGIN}.php`;
 const PAYMENTS_MAIN_FILE = `wp-content/plugins/${PAYMENTS_PLUGIN}/${PAYMENTS_PLUGIN}.php`;
 const ATOMIC_GROUP_ID = 'install-commerce-stack';
+const BENCHMARK_GRAPH_ROW_IDS = Object.freeze({
+  postsParents: 'ID:20001',
+  featuredAttachment: 'ID:20002',
+  featuredImageMeta: 'meta_id:20001',
+  term: 'term_id:20001',
+  termTaxonomy: 'term_taxonomy_id:20001',
+  termRelationship: 'object_id:10000|term_taxonomy_id:20001',
+  termmeta: 'meta_id:20002',
+});
 const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'postsParents',
     label: 'posts/parents',
     plannerOwner: 'planner:test/push-planner.test.js',
     smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
-    notes: 'Requires post_parent identity remap coverage and same-plan parent create/update proof.',
+    notes: 'Benchmark covers a ready-plan wp_posts.post_parent row against a stable remote parent identity.',
   }),
   Object.freeze({
     id: 'postmetaPostRefs',
@@ -44,28 +53,28 @@ const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
     label: 'featured images/attachments',
     plannerOwner: 'planner:test/push-planner.test.js',
     smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
-    notes: 'Needs attachment identity, _thumbnail_id, and GUID rewrite proof.',
+    notes: 'Benchmark covers a ready-plan attachment row plus _thumbnail_id rewrite against that same-plan attachment.',
   }),
   Object.freeze({
     id: 'termsTaxonomies',
     label: 'terms/taxonomies',
     plannerOwner: 'planner:test/push-planner.test.js',
     smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
-    notes: 'Needs wp_terms/wp_term_taxonomy relationship mapping and remote-stable proofs.',
+    notes: 'Benchmark covers a ready-plan wp_terms/wp_term_taxonomy closure on a supported taxonomy surface.',
   }),
   Object.freeze({
     id: 'termRelationships',
     label: 'term relationships',
     plannerOwner: 'planner:test/push-planner.test.js',
     smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
-    notes: 'Needs wp_term_relationships mapping across posts and taxonomy ids.',
+    notes: 'Benchmark covers a ready-plan wp_term_relationships row against a stable post and same-plan taxonomy.',
   }),
   Object.freeze({
     id: 'termmeta',
     label: 'termmeta',
     plannerOwner: 'planner:test/push-planner.test.js',
     smokeOwner: 'smoke:scripts/playground/forms-lab-table-driver-smoke.mjs',
-    notes: 'Planner has termmeta surface classification, but no graph rewrite benchmark/smoke proof.',
+    notes: 'Benchmark covers a ready-plan wp_termmeta row against a same-plan term target.',
   }),
   Object.freeze({
     id: 'unsupportedPluginOwnedSurfaces',
@@ -154,7 +163,7 @@ export function runGuardedExecutorBenchmark(options = {}) {
       remote: sites.remote,
       now: config.now,
     });
-    assertBenchmarkPlan(plan, config);
+    assertBenchmarkPlan(plan, config, sites);
     timings.planMs = elapsedMs(planStarted);
 
     const applyStarted = performance.now();
@@ -389,12 +398,17 @@ function buildBenchmarkSites(config, stagedFile) {
     db: {
       wp_posts: benchmarkStablePosts(config.rowCount),
       wp_postmeta: {},
+      wp_terms: {},
+      wp_term_taxonomy: {},
+      wp_term_relationships: {},
+      wp_termmeta: {},
     },
   };
   const local = clone(base);
   const rowResourceKeys = [];
   const allowedResources = [];
   const graphIdentityTargets = [];
+  const familyFixtures = initializeFamilyFixtures();
 
   local.files[LARGE_UPLOAD_PATH] = stagedFile.descriptor;
   local.files[COMMERCE_MAIN_FILE] = fileDescriptor({
@@ -415,6 +429,7 @@ function buildBenchmarkSites(config, stagedFile) {
     const targetResourceKey = `row:${JSON.stringify(['wp_posts', `ID:${postId}`])}`;
     rowResourceKeys.push(resourceKey);
     graphIdentityTargets.push(targetResourceKey);
+    familyFixtures.postmetaPostRefs.resourceKeys.push(resourceKey);
     allowedResources.push({
       resourceKey,
       pluginOwner: COMMERCE_PLUGIN,
@@ -428,6 +443,112 @@ function buildBenchmarkSites(config, stagedFile) {
       __pluginOwner: COMMERCE_PLUGIN,
     };
   }
+
+  const postsParentResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'postsParents',
+    table: 'wp_posts',
+    id: BENCHMARK_GRAPH_ROW_IDS.postsParents,
+    value: {
+      ID: 20001,
+      post_title: 'Benchmark child post',
+      post_status: 'draft',
+      post_type: 'product',
+      post_parent: benchmarkPostIdForRow(1),
+    },
+  });
+
+  const featuredAttachmentResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'featuredImagesAttachments',
+    table: 'wp_posts',
+    id: BENCHMARK_GRAPH_ROW_IDS.featuredAttachment,
+    value: {
+      ID: 20002,
+      post_title: 'Benchmark featured attachment',
+      post_status: 'inherit',
+      post_type: 'attachment',
+      guid: 'https://example.test/wp-content/uploads/2026/05/benchmark-featured-attachment.jpg',
+    },
+  });
+
+  const featuredImageMetaResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'featuredImagesAttachments',
+    table: 'wp_postmeta',
+    id: BENCHMARK_GRAPH_ROW_IDS.featuredImageMeta,
+    value: {
+      meta_id: 20001,
+      post_id: benchmarkPostIdForRow(2),
+      meta_key: '_thumbnail_id',
+      meta_value: '20002',
+    },
+  });
+
+  const termResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'termsTaxonomies',
+    table: 'wp_terms',
+    id: BENCHMARK_GRAPH_ROW_IDS.term,
+    value: {
+      term_id: 20001,
+      name: 'benchmark-topic',
+      slug: 'benchmark-topic',
+    },
+  });
+
+  const termTaxonomyResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'termsTaxonomies',
+    table: 'wp_term_taxonomy',
+    id: BENCHMARK_GRAPH_ROW_IDS.termTaxonomy,
+    value: {
+      term_taxonomy_id: 20001,
+      term_id: 20001,
+      taxonomy: 'category',
+      parent: 0,
+      count: 1,
+    },
+  });
+
+  const termRelationshipResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'termRelationships',
+    table: 'wp_term_relationships',
+    id: BENCHMARK_GRAPH_ROW_IDS.termRelationship,
+    value: {
+      object_id: benchmarkPostIdForRow(1),
+      term_taxonomy_id: 20001,
+      term_order: 0,
+    },
+  });
+
+  const termmetaResourceKey = addBenchmarkRow({
+    site: local,
+    rowResourceKeys,
+    familyFixtures,
+    familyId: 'termmeta',
+    table: 'wp_termmeta',
+    id: BENCHMARK_GRAPH_ROW_IDS.termmeta,
+    value: {
+      meta_id: 20002,
+      term_id: 20001,
+      meta_key: '_benchmark_term_flag',
+      meta_value: deterministicRowPayload(config.rowCount + 1, config.rowPayloadBytes),
+    },
+  });
 
   local.pushIntents = [
     {
@@ -464,8 +585,56 @@ function buildBenchmarkSites(config, stagedFile) {
     remote: clone(base),
     rowResourceKeys,
     graphIdentityTargets: [...new Set(graphIdentityTargets)],
+    graphFamilyFixtures: {
+      ...familyFixtures,
+      postsParents: {
+        ...familyFixtures.postsParents,
+        representativeResourceKey: postsParentResourceKey,
+      },
+      featuredImagesAttachments: {
+        ...familyFixtures.featuredImagesAttachments,
+        representativeResourceKeys: [
+          featuredAttachmentResourceKey,
+          featuredImageMetaResourceKey,
+        ],
+      },
+      termsTaxonomies: {
+        ...familyFixtures.termsTaxonomies,
+        representativeResourceKeys: [
+          termResourceKey,
+          termTaxonomyResourceKey,
+        ],
+      },
+      termRelationships: {
+        ...familyFixtures.termRelationships,
+        representativeResourceKey: termRelationshipResourceKey,
+      },
+      termmeta: {
+        ...familyFixtures.termmeta,
+        representativeResourceKey: termmetaResourceKey,
+      },
+    },
     atomicGroupId: ATOMIC_GROUP_ID,
   };
+}
+
+function initializeFamilyFixtures() {
+  return {
+    postmetaPostRefs: { resourceKeys: [] },
+    postsParents: { resourceKeys: [] },
+    featuredImagesAttachments: { resourceKeys: [] },
+    termsTaxonomies: { resourceKeys: [] },
+    termRelationships: { resourceKeys: [] },
+    termmeta: { resourceKeys: [] },
+  };
+}
+
+function addBenchmarkRow({ site, rowResourceKeys, familyFixtures, familyId, table, id, value }) {
+  const resourceKey = `row:${JSON.stringify([table, id])}`;
+  rowResourceKeys.push(resourceKey);
+  familyFixtures[familyId].resourceKeys.push(resourceKey);
+  site.db[table][id] = value;
+  return resourceKey;
 }
 
 function benchmarkStablePosts(rowCount) {
@@ -502,6 +671,8 @@ function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtM
   });
   const current = clone(remote);
   const before = JSON.stringify(current);
+  const atomicGroup = plan.atomicGroups.find((group) => group.id === ATOMIC_GROUP_ID);
+  const atomicGroupResourceKeys = new Set(atomicGroup?.resources || []);
   let error = null;
   const started = performance.now();
 
@@ -541,11 +712,9 @@ function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtM
     inspectionStatus: inspection.status,
     inspectionCounts: inspection.counts,
     remoteUnchanged: JSON.stringify(current) === before,
-    groupNewTargets: inspection.targets.filter((target) =>
-      target.resourceKey === `file:${COMMERCE_MAIN_FILE}`
-      || target.resourceKey === `plugin:${COMMERCE_PLUGIN}`
-      || target.resourceKey.startsWith('row:["wp_postmeta",')
-    ).filter((target) => target.state === 'new').length,
+    groupNewTargets: inspection.targets
+      .filter((target) => atomicGroupResourceKeys.has(target.resourceKey))
+      .filter((target) => target.state === 'new').length,
     elapsedMs: elapsedMs(started),
   };
 }
@@ -709,6 +878,12 @@ function buildGraphIdentityReport({ config, sites, plan }) {
   const allPostmetaReferencesUseStableRemoteIdentity = benchmarkGraphIdentityStable(sites);
   const graphIdentityBlockers = plan.blockers.filter((blocker) =>
     blocker.class === 'stale-wordpress-graph-identity').length;
+  const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const blockerKeys = new Set(
+    plan.blockers
+      .filter((blocker) => blocker.class === 'stale-wordpress-graph-identity')
+      .map((blocker) => blocker.resourceKey),
+  );
   const families = {};
 
   for (const definition of GRAPH_FAMILY_DEFINITIONS) {
@@ -719,11 +894,12 @@ function buildGraphIdentityReport({ config, sites, plan }) {
       notes: definition.notes,
     };
     if (definition.id === 'postmetaPostRefs') {
+      const benchmarkedResources = sites.graphFamilyFixtures.postmetaPostRefs.resourceKeys.length;
       family.status = allPostmetaReferencesUseStableRemoteIdentity && graphIdentityBlockers === 0
         ? 'mapped'
         : 'blocked';
-      family.mapped = allPostmetaReferencesUseStableRemoteIdentity ? config.rowCount : 0;
-      family.unmapped = allPostmetaReferencesUseStableRemoteIdentity ? 0 : config.rowCount;
+      family.mapped = allPostmetaReferencesUseStableRemoteIdentity ? benchmarkedResources : 0;
+      family.unmapped = allPostmetaReferencesUseStableRemoteIdentity ? 0 : benchmarkedResources;
       family.targets = sites.graphIdentityTargets.length;
       family.blockers = graphIdentityBlockers === 0
         ? []
@@ -736,12 +912,22 @@ function buildGraphIdentityReport({ config, sites, plan }) {
         'surface remains intentionally fail-closed outside explicit driver allowlists',
       ];
     } else {
-      family.status = 'unmapped';
-      family.mapped = 0;
-      family.unmapped = 0;
-      family.blockers = [
-        `no benchmark coverage for ${definition.label}`,
-      ];
+      const fixture = sites.graphFamilyFixtures[definition.id];
+      const benchmarkedResources = fixture?.resourceKeys || [];
+      const mappedResources = benchmarkedResources.filter((resourceKey) => mutationKeys.has(resourceKey));
+      const blockedResources = benchmarkedResources.filter((resourceKey) => blockerKeys.has(resourceKey));
+      family.status = blockedResources.length > 0
+        ? 'blocked'
+        : benchmarkedResources.length > 0 && mappedResources.length === benchmarkedResources.length
+          ? 'mapped'
+          : 'unmapped';
+      family.mapped = mappedResources.length;
+      family.unmapped = benchmarkedResources.length - mappedResources.length;
+      family.blockers = blockedResources.length > 0
+        ? blockedResources.map((resourceKey) => `planner blocked benchmark fixture resource ${resourceKey}`)
+        : benchmarkedResources.length > 0
+          ? []
+          : [`no benchmark coverage for ${definition.label}`];
     }
     families[definition.id] = family;
   }
@@ -779,11 +965,11 @@ function buildGraphIdentityReport({ config, sites, plan }) {
   };
 }
 
-function assertBenchmarkPlan(plan, config) {
+function assertBenchmarkPlan(plan, config, sites) {
   if (plan.status !== 'ready') {
     throw new Error(`Benchmark plan must be ready; got ${plan.status}.`);
   }
-  const expectedMutations = config.rowCount + 3;
+  const expectedMutations = sites.rowResourceKeys.length + 3;
   if (plan.mutations.length !== expectedMutations) {
     throw new Error(`Expected ${expectedMutations} benchmark mutations; got ${plan.mutations.length}.`);
   }

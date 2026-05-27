@@ -52,11 +52,11 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
   assert.deepEqual(report.evidence.wordpressGraphIdentity.familyCounters, {
     totalFamilies: 7,
-    mappedFamilies: 1,
-    unmappedFamilies: 5,
+    mappedFamilies: 6,
+    unmappedFamilies: 0,
     blockedFamilies: 0,
     guardedFamilies: 1,
-    mappedReferences: report.shape.rowCount,
+    mappedReferences: report.shape.rowCount + 7,
     unmappedReferences: 0,
   });
   assert.equal(
@@ -69,7 +69,23 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   );
   assert.equal(
     report.evidence.wordpressGraphIdentity.familyReport.postsParents.status,
-    'unmapped',
+    'mapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.featuredImagesAttachments.status,
+    'mapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.termsTaxonomies.status,
+    'mapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.termRelationships.status,
+    'mapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.termmeta.status,
+    'mapped',
   );
   assert.equal(
     report.evidence.wordpressGraphIdentity.familyReport.unsupportedPluginOwnedSurfaces.status,
@@ -78,9 +94,9 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.ok(
     report.evidence.wordpressGraphIdentity.actionableBlockers.some(
       (blocker) =>
-        blocker.family === 'posts/parents'
+        blocker.family === 'unsupported/plugin-owned surfaces'
         && blocker.plannerOwner === 'planner:test/push-planner.test.js'
-        && blocker.smokeOwner === 'smoke:scripts/playground/push-protocol-smoke.mjs',
+        && blocker.smokeOwner === 'smoke:scripts/playground/forms-lab-table-driver-smoke.mjs',
     ),
   );
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
