@@ -5057,6 +5057,36 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     }),
     false,
   );
+  const inheritedClaimContract = {
+    ...baseContract,
+    claim: Object.create({ activeClaimId: baseContract.claim.activeClaimId }),
+  };
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedClaimContract),
+    false,
+  );
+  const inheritedNestedLeaseContract = {
+    ...baseContract,
+    leaseFence: {
+      ...baseContract.leaseFence,
+      writerLease: Object.assign(
+        Object.create({ claimId: baseContract.leaseFence.writerLease.claimId }),
+        {
+          strategy: baseContract.leaseFence.writerLease.strategy,
+          claimKeyUnique: baseContract.leaseFence.writerLease.claimKeyUnique,
+          fsyncEvidence: baseContract.leaseFence.writerLease.fsyncEvidence,
+          storageGuard: baseContract.leaseFence.writerLease.storageGuard,
+          monotonicSequence: baseContract.leaseFence.writerLease.monotonicSequence,
+          restartReadable: baseContract.leaseFence.writerLease.restartReadable,
+          staleClaimRejected: baseContract.leaseFence.writerLease.staleClaimRejected,
+        },
+      ),
+    },
+  };
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedNestedLeaseContract),
+    false,
+  );
 });
 
 test('checked durable journal boundary accepts the packaged production journal scope', () => {

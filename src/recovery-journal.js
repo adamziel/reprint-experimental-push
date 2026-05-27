@@ -98,6 +98,9 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
+  const activeClaimId = surfacedCheckedBoundaryClaimId(dbJournal?.claim, 'activeClaimId');
+  const writerLeaseClaimId = surfacedCheckedBoundaryClaimId(writerLease, 'claimId');
+  const nestedWriterLeaseClaimId = surfacedCheckedBoundaryClaimId(nestedWriterLease, 'claimId');
   return CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(dbJournal?.scope || '')
     && dbJournal?.acceptedOnCheckedBoundary === true
     && dbJournal?.ownership?.ownsJournal === true
@@ -115,10 +118,13 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
     && dbJournal?.leaseFence?.staleClaimRejected === true
+    && activeClaimId.valid
+    && writerLeaseClaimId.valid
+    && nestedWriterLeaseClaimId.valid
     && checkedBoundaryClaimIdentityMatches(
-      dbJournal?.claim?.activeClaimId,
-      writerLease?.claimId,
-      nestedWriterLease?.claimId,
+      activeClaimId.claimId,
+      writerLeaseClaimId.claimId,
+      nestedWriterLeaseClaimId.claimId,
     );
 }
 
@@ -162,6 +168,26 @@ function checkedBoundaryClaimIdentityMatches(...claimIds) {
   }
 
   return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0]);
+}
+
+function surfacedCheckedBoundaryClaimId(container, key) {
+  if (!container || typeof container !== 'object') {
+    return { valid: true, claimId: null };
+  }
+
+  if (!Object.hasOwn(container, key)) {
+    return {
+      valid: !(key in container),
+      claimId: null,
+    };
+  }
+
+  const claimId = container[key];
+  if (typeof claimId !== 'string' || claimId.trim().length === 0 || claimId.trim() !== claimId) {
+    return { valid: false, claimId: null };
+  }
+
+  return { valid: true, claimId };
 }
 
 export function createUnsupportedProductionRecoveryJournal(reason = 'Production recovery journal support is not available in this worktree.') {
