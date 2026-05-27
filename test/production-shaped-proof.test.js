@@ -3723,6 +3723,42 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
+    /Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight became terminal while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight returned an invalid readiness body while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Packaged production plugin preflight became terminal while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
     /snapshot stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive response[\s\S]*?await throwPlaygroundReadinessFailure\(\s*child,/s,
   );
   assert.match(
