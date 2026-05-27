@@ -9140,6 +9140,7 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
   assert.deepEqual(
     details.rejectedFastPaths
       .filter((entry) => [
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
         'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause',
         'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
         'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
@@ -9150,6 +9151,17 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
         blockerRefs: entry.blockerRefs,
       })),
     [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
       {
         id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-atomic-group-commit-after-pause',
         rejectedGate: 'recovery',

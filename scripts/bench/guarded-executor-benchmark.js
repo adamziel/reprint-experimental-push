@@ -90,6 +90,11 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-storage-receipts-not-measured',
       'production-row-batch-executor-not-measured',
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
     ]),
   }),
   Object.freeze({
