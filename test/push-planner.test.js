@@ -22809,6 +22809,93 @@ test('production recovery support report keeps checked boundary closed when rest
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report does not surface claim ids from inherited inspected lease identities', () => {
+  const claimId = 'inherited-inspected-lease-identity-report';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: false,
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: null,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    writerLease: { id: claimId, epoch: 1 },
+    leaseFence: { id: claimId, epoch: 1 },
+    claimHash,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      const inspectedPrototype = {
+        writerLease: { id: claimId, epoch: 1 },
+        leaseFence: { id: claimId, epoch: 1 },
+      };
+      const inspected = Object.create(inspectedPrototype);
+      Object.assign(inspected, {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: false,
+        acceptedOnCheckedBoundary: true,
+        scope: 'packaged production journal scope',
+        claimHash,
+        journalPath: '/var/lib/reprint/recovery.jsonl',
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: null,
+        },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: writerLeaseContract,
+        },
+        records: [],
+      });
+      return inspected;
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimHash, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimHash, null);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report keeps checked boundary closed when the inspected lease-fence boundary drifts from the writer contract', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
