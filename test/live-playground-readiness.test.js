@@ -299,6 +299,33 @@ test('packaged preflight terminal context carries index-terminal readiness evide
       snapshotStartupFallback: true,
     },
   );
+
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      {
+        childPid: 432,
+        globalWordPressStartup: true,
+        packagedRouteStartup: true,
+        indexProbeTimedOut: true,
+        preflightNotReadyProbeCount: 3,
+        snapshotNotReadyProbeCount: 2,
+      },
+      {
+        timeoutFallback: true,
+      },
+    ),
+    {
+      childPid: 432,
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      globalWordPressStartup: true,
+      packagedRouteStartup: true,
+      indexProbeTimedOut: true,
+      preflightNotReadyProbeCount: 3,
+      snapshotNotReadyProbeCount: 2,
+      timeoutFallback: true,
+    },
+  );
 });
 
 test('packaged preflight retryability follows the freshest startup probe context', () => {
