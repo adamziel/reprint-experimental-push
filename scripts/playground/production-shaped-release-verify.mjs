@@ -77,6 +77,7 @@ const packagedServerFetchTimeoutMs = 3_000;
 const packagedSnapshotExportTimeoutMs = 45_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
+const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;
 const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   Math.ceil(packagedServerStartupTimeoutMs / readinessProbeIntervalMs),
@@ -2802,6 +2803,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let lastError = null;
   const lastProbes = [];
   let notReadyProbeCount = 0;
+  let snapshotNotReadyProbeCount = 0;
   let timeoutProbeCount = 0;
   let snapshotTimeoutProbeCount = 0;
   let lastSnapshotTimeoutContext = null;
@@ -2865,12 +2867,28 @@ async function waitForServer(child, baseUrl, getLogs) {
           snapshotJson = JSON.parse(snapshotBody);
         } catch (error) {
           if (labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+            snapshotNotReadyProbeCount += 1;
             lastError = new Error(
               `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
             );
+            if (labNotReadyProbeLimitReached(snapshotNotReadyProbeCount, maxSnapshotStartupAfterGlobalReadyProbes)) {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot stayed startup-shaped after global WordPress readiness HTTP ${response.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxSnapshotStartupAfterGlobalReadyProbes})`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                {
+                  childPid: child.pid ?? null,
+                  snapshotNotReadyProbeCount,
+                  globalWordPressReady: true,
+                },
+              );
+            }
             await sleepUnlessChildExit(readinessProbeIntervalMs, child);
             continue;
           }
+          snapshotNotReadyProbeCount = 0;
           lastError = error;
           await throwPlaygroundReadinessFailure(
             child,
@@ -2885,6 +2903,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           status: snapshot.status,
           body: snapshotJson,
         })) {
+          snapshotNotReadyProbeCount = 0;
           return;
         }
         lastError = new Error(
@@ -2894,9 +2913,25 @@ async function waitForServer(child, baseUrl, getLogs) {
           status: snapshot.status,
           body: snapshotJson,
         })) {
+          snapshotNotReadyProbeCount += 1;
+          if (labNotReadyProbeLimitReached(snapshotNotReadyProbeCount, maxSnapshotStartupAfterGlobalReadyProbes)) {
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Playground lab snapshot stayed startup-shaped after global WordPress readiness HTTP ${response.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxSnapshotStartupAfterGlobalReadyProbes})`,
+              lastError,
+              lastProbes,
+              getLogs(),
+              {
+                childPid: child.pid ?? null,
+                snapshotNotReadyProbeCount,
+                globalWordPressReady: true,
+              },
+            );
+          }
           await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
+        snapshotNotReadyProbeCount = 0;
         await throwPlaygroundReadinessFailure(
           child,
           `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
@@ -3029,6 +3064,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           continue;
         }
         notReadyProbeCount = 0;
+        snapshotNotReadyProbeCount = 0;
         if (!readinessRetryable) {
           const failureContext = lastSnapshotTimeoutContext !== null
             ? {
@@ -3074,6 +3110,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
+      snapshotNotReadyProbeCount = 0;
       if (lastSnapshotTimeoutContext !== null && labReadinessProbeTimedOut(error)) {
         await throwPlaygroundReadinessFailure(
           child,

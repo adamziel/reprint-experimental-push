@@ -98,6 +98,7 @@ const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
+const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -4165,12 +4166,17 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
     /const \{ response: snapshot, bodyText: snapshotBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/,
   );
   assert.match(sharedWaitSource, /let timeoutProbeCount = 0;/);
+  assert.match(sharedWaitSource, /let snapshotNotReadyProbeCount = 0;/);
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const responsePreview = responseBody\.slice/);
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const snapshotPreview = snapshotBody\.slice/);
   assert.match(sharedWaitSource, /timeoutProbeCount = labNextTimeoutProbeCount\(timeoutProbeCount, error\);/);
   assert.match(
     verifierSource,
     /const maxNotReadyReadinessProbes = Math\.max\(labMaxConsecutiveNotReadyProbes, maxReadinessProbes\);/,
+  );
+  assert.match(
+    verifierSource,
+    /const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;/,
   );
   assert.match(sharedWaitSource, /if \(labReadinessProbeTimedOut\(error\) && labNotReadyProbeLimitReached\(timeoutProbeCount\)\)/);
   assert.match(sharedWaitSource, /if \(labNotReadyProbeLimitReached\(notReadyProbeCount, maxNotReadyReadinessProbes\)\)/);
@@ -4185,9 +4191,14 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   );
   assert.match(
     sharedWaitSource,
+    /Playground lab snapshot stayed startup-shaped after global WordPress readiness HTTP \$\{response\.status\} for \$\{snapshotNotReadyProbeCount\} consecutive response\$\{snapshotNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxSnapshotStartupAfterGlobalReadyProbes\}\)/,
+  );
+  assert.match(
+    sharedWaitSource,
     /Playground index readiness HTTP \$\{response\.status\}: \$\{readinessHint\}; \$\{routeSummary\}/,
   );
   assert.match(sharedWaitSource, /notReadyProbeCount,\s*readinessProbeCount,/);
+  assert.match(sharedWaitSource, /snapshotNotReadyProbeCount,\s*globalWordPressReady:\s*true,/);
   assert.match(sharedWaitSource, /childPid:\s*child\.pid\s*\?\?\s*null,\s*readinessProbeCount,/);
   assert.match(sharedWaitSource, /await sleepUnlessChildExit\(readinessProbeIntervalMs, child\)/);
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
@@ -5180,6 +5191,84 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
   assert.equal(snapshotCalls, 4);
 });
 
+test('shared lab waitForServer fails closed when snapshot stays startup-shaped after global WordPress readiness', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 502;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground lab snapshot stayed startup-shaped after global WordPress readiness HTTP 200/);
+        assert.equal(error.context?.snapshotNotReadyProbeCount, maxSnapshotStartupAfterGlobalReadyProbes);
+        assert.equal(error.context?.globalWordPressReady, true);
+        return true;
+      },
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, maxSnapshotStartupAfterGlobalReadyProbes);
+  assert.equal(snapshotCalls, maxSnapshotStartupAfterGlobalReadyProbes);
+});
+
 test('shared lab waitForServer preserves snapshot-timeout context across the next /wp-json/ failure branch', () => {
   const verifierSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
@@ -5592,6 +5681,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let lastError = null;
   const lastProbes = [];
   let notReadyProbeCount = 0;
+  let snapshotNotReadyProbeCount = 0;
   let timeoutProbeCount = 0;
   let snapshotTimeoutProbeCount = 0;
   let lastSnapshotTimeoutContext = null;
@@ -5636,6 +5726,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
         snapshotTimeoutProbeCount = 0;
+        lastSnapshotTimeoutContext = null;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -5659,12 +5750,28 @@ async function waitForServer(child, baseUrl, getLogs) {
           snapshotJson = JSON.parse(snapshotBody);
         } catch (error) {
           if (labReadinessBodyRetryable(snapshot.status, snapshotBody)) {
+            snapshotNotReadyProbeCount += 1;
             lastError = new Error(
               `Playground lab snapshot readiness HTTP ${snapshot.status}; ${describeLastProbe(lastProbes.at(-1))}`,
             );
+            if (labNotReadyProbeLimitReached(snapshotNotReadyProbeCount, maxSnapshotStartupAfterGlobalReadyProbes)) {
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Playground lab snapshot stayed startup-shaped after global WordPress readiness HTTP ${response.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxSnapshotStartupAfterGlobalReadyProbes})`,
+                lastError,
+                lastProbes,
+                getLogs(),
+                {
+                  childPid: child.pid ?? null,
+                  snapshotNotReadyProbeCount,
+                  globalWordPressReady: true,
+                },
+              );
+            }
             await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
             continue;
           }
+          snapshotNotReadyProbeCount = 0;
           lastError = error;
           await throwPlaygroundReadinessFailure(
             child,
@@ -5679,6 +5786,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           status: snapshot.status,
           body: snapshotJson,
         })) {
+          snapshotNotReadyProbeCount = 0;
           await snapshot.arrayBuffer();
           return;
         }
@@ -5689,9 +5797,25 @@ async function waitForServer(child, baseUrl, getLogs) {
           status: snapshot.status,
           body: snapshotJson,
         })) {
+          snapshotNotReadyProbeCount += 1;
+          if (labNotReadyProbeLimitReached(snapshotNotReadyProbeCount, maxSnapshotStartupAfterGlobalReadyProbes)) {
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Playground lab snapshot stayed startup-shaped after global WordPress readiness HTTP ${response.status} for ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxSnapshotStartupAfterGlobalReadyProbes})`,
+              lastError,
+              lastProbes,
+              getLogs(),
+              {
+                childPid: child.pid ?? null,
+                snapshotNotReadyProbeCount,
+                globalWordPressReady: true,
+              },
+            );
+          }
           await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
           continue;
         }
+        snapshotNotReadyProbeCount = 0;
         await throwPlaygroundReadinessFailure(
           child,
           `Playground lab snapshot returned a terminal readiness failure at ${baseUrl}`,
@@ -5824,6 +5948,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           continue;
         }
         notReadyProbeCount = 0;
+        snapshotNotReadyProbeCount = 0;
         if (!readinessRetryable) {
           const failureContext = lastSnapshotTimeoutContext !== null
             ? {
@@ -5869,6 +5994,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
+      snapshotNotReadyProbeCount = 0;
       if (lastSnapshotTimeoutContext !== null && labReadinessProbeTimedOut(error)) {
         await throwPlaygroundReadinessFailure(
           child,
