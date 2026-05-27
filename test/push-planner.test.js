@@ -22712,6 +22712,122 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.deepEqual(error.details.activeClaimLease, persistedWriterLease);
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden lease epoch', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Epoch Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-epoch-remote.jsonl`;
+  const claimId = 'claim-consumed-hidden-epoch';
+  const persistedWriterLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: persistedWriterLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease: persistedWriterLease,
+  });
+
+  const hiddenWriterLease = { id: claimId };
+  Object.defineProperty(hiddenWriterLease, 'epoch', {
+    value: 3,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease: hiddenWriterLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.match(error.message, /explicit fenced writer lease/);
+});
+
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a prototype lease epoch', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Epoch Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-epoch-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-epoch';
+  const persistedWriterLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: persistedWriterLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease: persistedWriterLease,
+  });
+
+  const prototypeWriterLease = { epoch: 3 };
+  const driftedWriterLease = { id: claimId };
+  Object.setPrototypeOf(driftedWriterLease, prototypeWriterLease);
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease: driftedWriterLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.match(error.message, /explicit fenced writer lease/);
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a drifted lease id', () => {
   const base = baseSite();
   const local = structuredClone(base);
