@@ -128,7 +128,7 @@ const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
 }, authSessionSource, {
   preferSource: requireProductionAuthSession,
 });
-liveSourceUrl = resolvedAuthSessionRequest.liveSourceUrl;
+liveSourceUrl = explicitReleaseVerifySourceUrl || resolvedAuthSessionRequest.liveSourceUrl;
 username = resolvedAuthSessionRequest.username;
 applicationPassword = resolvedAuthSessionRequest.applicationPassword;
 
@@ -180,6 +180,159 @@ function summarizeAuthSessionSource(command, source) {
     applicationPasswordPresent: Boolean(source?.applicationPassword),
     error: source?.error || '',
   };
+}
+
+export function resolveAuthSessionBoundaryProof({
+  liveSourceUrlEnv = '',
+  effectiveSourceUrl = '',
+  authSessionSourceCommand = '',
+  authSessionSource = null,
+  authSessionLifecycleSummary = null,
+  packagedSourceFixture = false,
+} = {}) {
+  const issued = normalizeAuthSessionBoundaryObservation(authSessionLifecycleSummary?.issued);
+  const read = normalizeAuthSessionBoundaryObservation(authSessionLifecycleSummary?.read);
+  const liveSourceMatchesCommand = authSessionSourceMatchesLiveSource(
+    authSessionSource?.sourceUrl,
+    liveSourceUrlEnv || effectiveSourceUrl,
+  );
+  const sourceCommandPresent = Boolean(String(authSessionSourceCommand || '').trim());
+  const userContinuity = issued.userLogin
+    && read.userLogin
+    && issued.userLogin === read.userLogin;
+  const userIdContinuity = issued.userId === null
+    ? read.userId === null
+    : issued.userId === read.userId;
+  const manageOptionsContinuity = issued.capabilities.manage_options === true
+    && read.capabilities.manage_options === true;
+  const sameSession = issued.sessionId
+    && read.sessionId
+    && issued.sessionId === read.sessionId;
+  const sameSourceAtReadback = normalizeReleaseBoundarySourceUrl(effectiveSourceUrl)
+    === normalizeReleaseBoundarySourceUrl(liveSourceUrlEnv || effectiveSourceUrl);
+  const liveSuccessCandidate = !packagedSourceFixture && Boolean(liveSourceUrlEnv || effectiveSourceUrl);
+  const acceptedForReleaseSuccess = liveSuccessCandidate
+    && sourceCommandPresent
+    && authSessionSource?.ok === true
+    && liveSourceMatchesCommand
+    && sameSourceAtReadback
+    && sameSession
+    && userContinuity
+    && userIdContinuity
+    && manageOptionsContinuity;
+
+  return {
+    required: 'same live auth/session source at issuance and readback',
+    exactLiveSourceUrlEnv: liveSourceUrlEnv || '',
+    effectiveSourceUrl,
+    sourceCommand: {
+      issuance: authSessionSourceCommand || '',
+      readback: authSessionSourceCommand || '',
+      sameCommand: sourceCommandPresent,
+    },
+    source: {
+      commandOk: authSessionSource?.ok === true,
+      commandSourceUrl: authSessionSource?.sourceUrl || '',
+      matchesLiveSourceUrl: liveSourceMatchesCommand,
+      sameSourceAtReadback,
+    },
+    issuance: {
+      step: issued.step,
+      sourceUrl: effectiveSourceUrl,
+      sessionId: issued.sessionId,
+      userLogin: issued.userLogin,
+      userId: issued.userId,
+      capabilities: issued.capabilities,
+    },
+    readback: {
+      step: read.step,
+      sourceUrl: effectiveSourceUrl,
+      sessionId: read.sessionId,
+      userLogin: read.userLogin,
+      userId: read.userId,
+      capabilities: read.capabilities,
+    },
+    identityContinuity: {
+      sameSession,
+      sameUserLogin: Boolean(userContinuity),
+      sameUserId: userIdContinuity,
+      manageOptions: manageOptionsContinuity,
+    },
+    forgedSessionSourceAccepted: false,
+    packagedFixtureCredentialFallback: {
+      observed: packagedSourceFixture ? 'packaged-production-plugin-fallback' : 'disabled',
+      acceptedForReleaseSuccess: false,
+    },
+    verdict: acceptedForReleaseSuccess
+      ? 'AUTH_SESSION_BOUNDARY_OK'
+      : packagedSourceFixture
+        ? 'PACKAGED_RELEASE_BOUNDARY_SUPPORT_ONLY'
+        : 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+  };
+}
+
+function normalizeAuthSessionBoundaryObservation(observation) {
+  if (!observation || typeof observation !== 'object') {
+    return {
+      step: null,
+      sessionId: null,
+      userLogin: '',
+      userId: null,
+      capabilities: {},
+    };
+  }
+
+  return {
+    step: observation.step || null,
+    sessionId: typeof observation.id === 'string' && observation.id.trim()
+      ? observation.id
+      : null,
+    userLogin: typeof observation.authUser === 'string' && observation.authUser.trim()
+      ? observation.authUser.trim()
+      : '',
+    userId: Number.isInteger(observation.authUserId) && observation.authUserId > 0
+      ? observation.authUserId
+      : null,
+    capabilities: normalizeAuthSessionBoundaryCapabilities(observation.authCapabilities),
+  };
+}
+
+function normalizeAuthSessionBoundaryCapabilities(capabilities) {
+  if (!capabilities || typeof capabilities !== 'object' || Array.isArray(capabilities)) {
+    return {};
+  }
+
+  return {
+    ...(Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')
+      ? { manage_options: capabilities.manage_options === true }
+      : {}),
+  };
+}
+
+function authSessionSourceMatchesLiveSource(sourceUrl, liveSourceUrl) {
+  const normalizedSourceUrl = normalizeReleaseBoundarySourceUrl(sourceUrl);
+  const normalizedLiveSourceUrl = normalizeReleaseBoundarySourceUrl(liveSourceUrl);
+  return Boolean(normalizedSourceUrl && normalizedLiveSourceUrl && normalizedSourceUrl === normalizedLiveSourceUrl);
+}
+
+function normalizeReleaseBoundarySourceUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(value.trim());
+    parsed.username = '';
+    parsed.password = '';
+    parsed.hash = '';
+    parsed.search = '';
+    if (!parsed.pathname.endsWith('/')) {
+      parsed.pathname += '/';
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
 }
 
 export function resolveSuccessfulReleaseBoundary({
@@ -472,6 +625,134 @@ if (authSessionSourceMetadataDrift) {
           code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
         },
         authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
+if (requireProductionAuthSession && explicitReleaseVerifySourceUrl && !authSessionSourceCommand) {
+  const authSessionBoundary = resolveAuthSessionBoundaryProof({
+    liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
+    effectiveSourceUrl: liveSourceUrl,
+    authSessionSourceCommand,
+    authSessionSource,
+    packagedSourceFixture: false,
+  });
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session source command on the checked live release path',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+          authSession: {
+            required: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+            observed: 'missing-production-auth-session-source-command',
+            verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            requiredSourceUrl: explicitReleaseVerifySourceUrl,
+            observed: 'missing-production-auth-session-source-command',
+            verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 0,
+          authSessionType: 'missing-production-auth-session-source-command',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'missing-production-auth-session-source-command',
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 409,
+          code: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+        },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+        authSessionBoundary,
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
+if (
+  requireProductionAuthSession
+  && explicitReleaseVerifySourceUrl
+  && authSessionSource?.ok
+  && !authSessionSourceMatchesLiveSource(authSessionSource.sourceUrl, explicitReleaseVerifySourceUrl)
+) {
+  const authSessionBoundary = resolveAuthSessionBoundaryProof({
+    liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
+    effectiveSourceUrl: liveSourceUrl,
+    authSessionSourceCommand,
+    authSessionSource,
+    packagedSourceFixture: false,
+  });
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session source command on the checked live release path',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+          authSession: {
+            required: 'same live REPRINT_PUSH_SOURCE_URL at issuance and readback',
+            observed: authSessionSource.sourceUrl || 'missing-production-auth-session-source',
+            verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            requiredSourceUrl: explicitReleaseVerifySourceUrl,
+            observedSourceUrl: authSessionSource.sourceUrl || '',
+            observed: 'forged-or-mismatched-production-auth-session-source',
+            verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 0,
+          authSessionType: 'forged-or-mismatched-production-auth-session-source',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'forged-or-mismatched-production-auth-session-source',
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 409,
+          code: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+        },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+        authSessionBoundary,
       },
       null,
       2,
@@ -1340,6 +1621,14 @@ try {
         proof.authSessionLifecycleSummary
         || summarizeProductionAuthSessionLifecycleTrace(proof.authSessionLifecycleTrace);
       const checkedAuthSessionLifecycle = evaluateCheckedReleaseAuthSessionLifecycleSummary(authSessionLifecycleSummary);
+      const authSessionBoundary = resolveAuthSessionBoundaryProof({
+        liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
+        effectiveSourceUrl: liveSourceUrl,
+        authSessionSourceCommand,
+        authSessionSource,
+        authSessionLifecycleSummary,
+        packagedSourceFixture: packagedSourceFixture !== null,
+      });
       if (!checkedAuthSessionLifecycle.ok) {
         process.stdout.write(
           JSON.stringify(
@@ -1396,6 +1685,102 @@ try {
                 retryAttempts: proof.retryAttempts,
               },
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionBoundary,
+              authSessionLifecycle: proof.authSessionLifecycle,
+              authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
+              authSessionLifecycleSummary,
+              replayEquivalence: proof.replayEquivalence,
+              durableJournal: {
+                proof: {
+                  status: 0,
+                  journal: durableJournalSummary.journal,
+                  leaseFence: {
+                    ...durableJournalSummary.leaseFence,
+                    staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
+                  },
+                },
+                rows: proof.dbJournal.rows,
+                applyCommitted: proof.dbJournal.applyCommitted,
+                mutationApplied: proof.dbJournal.mutationApplied,
+                idempotencyOpened: proof.dbJournal.idempotencyOpened,
+                scope: proof.dbJournal.scope || null,
+                ownership: proof.dbJournal.ownership || null,
+                liveLeaseFence: proof.dbJournal.leaseFence || null,
+                checkedAccepted: checkedDurableJournalAccepted,
+              },
+              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        throw new ProofFailure();
+      }
+
+      if (
+        requireProductionAuthSession
+        && explicitReleaseVerifySourceUrl
+        && packagedSourceFixture === null
+        && authSessionBoundary.verdict !== 'AUTH_SESSION_BOUNDARY_OK'
+      ) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
+                remoteBase: checkedTopology.remoteBase,
+                remoteChanged: checkedTopology.remoteChanged,
+                localEdited: checkedTopology.localEdited,
+              },
+              remoteSnapshotHashes: {
+                sameRemoteIdentity: true,
+                baseHash: liveDrift.baseHash,
+                changedHash: liveDrift.changedHash,
+              },
+              drift: labDriftAfterSnapshot ? {
+                mode: labDriftAfterSnapshot,
+                sameRemoteIdentity: true,
+                changedHash: liveDrift.changedHash,
+              } : {
+                sameRemoteIdentity: true,
+              },
+              liveDrift,
+              boundary: {
+                firstRemainingProductionBoundary: 'auth/session source and identity continuity on the checked live release path',
+                status: 'unimplemented',
+                verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+                authSession: {
+                  required: authSessionBoundary.required,
+                  observed: authSessionBoundary.verdict,
+                  verdict: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+                },
+                durableJournal: {
+                  storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+                  verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+                },
+              },
+              protocolExtension,
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: 409,
+                code: 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
+                mode: proof.mode,
+                retryAttempts: proof.retryAttempts,
+              },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionBoundary,
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               authSessionLifecycleSummary,
@@ -1486,6 +1871,7 @@ try {
                 retryAttempts: proof.retryAttempts,
               },
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionBoundary,
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               authSessionLifecycleSummary,
@@ -1596,6 +1982,7 @@ try {
                 retryAttempts: proof.retryAttempts,
               },
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              authSessionBoundary,
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
               authSessionLifecycleSummary,
@@ -1643,6 +2030,7 @@ try {
           ok: true,
           topology: {
             sourceUrl: liveSourceUrl,
+            liveSourceUrlEnv: explicitReleaseVerifySourceUrl,
             remoteBase: checkedTopology.remoteBase,
             remoteChanged: checkedTopology.remoteChanged,
             localEdited: checkedTopology.localEdited,
@@ -1673,6 +2061,7 @@ try {
             },
             releaseProof: proof,
             authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+            authSessionBoundary,
             authSessionLifecycle: proof.authSessionLifecycle,
             authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
             authSessionLifecycleSummary,
