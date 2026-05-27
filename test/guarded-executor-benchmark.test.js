@@ -1489,6 +1489,8 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
     details.rejectedFastPaths
       .filter((entry) => [
         'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+        'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+        'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
@@ -1527,6 +1529,24 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
           'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
         ],
       },
       {
@@ -1723,7 +1743,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
-    24,
+    26,
   );
 });
 

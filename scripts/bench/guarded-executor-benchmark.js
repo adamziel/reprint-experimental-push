@@ -149,6 +149,22 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
