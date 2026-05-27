@@ -24765,6 +24765,9 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
       },
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-id');
     assert.ok(!seen.some(({ url }) => url.includes('/recovery/inspect')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 1);
@@ -24998,6 +25001,9 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
       },
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-login');
     assert.ok(!seen.some(({ url }) => url.includes('/recovery/inspect')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 1);
