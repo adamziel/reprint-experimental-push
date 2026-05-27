@@ -11023,6 +11023,7 @@ test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw qu
   const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
     'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
     'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
     'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
   ].includes(entry.id));
@@ -11059,6 +11060,19 @@ test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw qu
       {
         id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
         blockerRefs: [
           'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
           'queue-budget-visible-without-queue-headroom-visible',
