@@ -111,6 +111,26 @@ function claimScopedArtifactRefs(records, claim) {
   return scopedRecord ? { ...scopedRecord.artifactRefs } : null;
 }
 
+function claimScopedPlanId(records, claim) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
+    return null;
+  }
+
+  const scopedRecord = (Array.isArray(records) ? [...records] : [])
+    .reverse()
+    .find(
+      (record) => record.claimHash === claim.activeClaimHash
+        && record.claimId === claim.activeClaimId
+        && hasNonEmptyString(record.planId),
+    );
+
+  return scopedRecord?.planId || null;
+}
+
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   const providedOptions = options && typeof options === 'object' ? options : {};
   const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
@@ -1031,10 +1051,19 @@ export function openProductionRecoveryJournal(options) {
   const persistedArtifactRefs = reusingActiveClaim
     ? claimScopedArtifactRefs(existingJournal.records, existingClaim)
     : null;
+  const persistedPlanId = reusingActiveClaim
+    ? claimScopedPlanId(existingJournal.records, existingClaim)
+    : null;
 
   if (reusingActiveClaim && !artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
     throw new Error(
       'openProductionRecoveryJournal() requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
+    );
+  }
+
+  if (reusingActiveClaim && persistedPlanId !== plan.id) {
+    throw new Error(
+      'openProductionRecoveryJournal() requires plan.id to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
     );
   }
 
