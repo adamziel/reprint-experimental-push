@@ -3825,6 +3825,96 @@ test('plugin-driver proof summary attach helper repairs stale release alias requ
   assert.equal(repairedProof.modeProof?.requestedSatisfied, false);
 });
 
+test('plugin-driver proof summary attach helper repairs stale route alias concrete scenario statuses when the nested mode proof is current', () => {
+  const rawSummary = {
+    mode: 'driverRouteProofOnly',
+    canonicalMode: 'core-package-routes',
+    requestedScenarios: ['driverRouteProofOnly'],
+    selectedScenarios: ['driverRouteProofOnly'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverRouteProofOnly'],
+    selectedScenarios: new Set(['driverRouteProofOnly']),
+    resolvedMode: 'driverRouteProofOnly',
+    canonicalMode: 'core-package-routes',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedScenarioStatuses: {
+      driverRouteProofOnly: 'missing',
+    },
+    requestedConcreteScenarios: ['driverRouteProofOnly'],
+    requestedConcreteScenarioStatuses: {
+      driverRouteProofOnly: 'missing',
+    },
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedConcreteScenariosSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverRouteProofOnly'],
+    selectedScenarios: new Set(['driverRouteProofOnly']),
+    resolvedMode: 'driverRouteProofOnly',
+    canonicalMode: 'core-package-routes',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    repairedProof.requestedScenarioStatuses,
+    repairedProof.modeProof?.requestedScenarioStatuses,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarios,
+    repairedProof.modeProof?.requestedConcreteScenarios,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarioStatuses,
+    repairedProof.modeProof?.requestedConcreteScenarioStatuses,
+  );
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.equal(
+    repairedProof.requestedConcreteScenariosSatisfied,
+    repairedProof.modeProof?.requestedConcreteScenariosSatisfied,
+  );
+  assert.deepEqual(repairedProof.modeProof?.requestedScenarioStatuses, {
+    'core-package-routes': 'passed',
+  });
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarios, [
+    'core-package-routes',
+  ]);
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarioStatuses, {
+    'core-package-routes': 'passed',
+  });
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedConcreteScenariosSatisfied, true);
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',

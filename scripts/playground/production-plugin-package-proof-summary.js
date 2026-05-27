@@ -762,14 +762,11 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   if (nestedModeProof === undefined || nestedModeProof === null) {
     return false;
   }
-
-  if (
+  const nestedModeProofHasRequestedBundles = !(
     nestedModeProof?.requestedBundles === undefined
     || nestedModeProof?.requestedBundles === null
     || (Array.isArray(nestedModeProof.requestedBundles) && nestedModeProof.requestedBundles.length === 0)
-  ) {
-    return true;
-  }
+  );
 
   if (
     !requestedScenariosStayWithinCanonicalMode(
@@ -801,14 +798,16 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   }
 
   if (
-    pluginDriverProof?.requestedBundleStatus !== undefined
+    nestedModeProofHasRequestedBundles
+    && pluginDriverProof?.requestedBundleStatus !== undefined
     && pluginDriverProof?.requestedBundleStatus !== nestedModeProof?.requestedBundleStatus
   ) {
     return false;
   }
 
   if (
-    pluginDriverProof?.requestedBundleStatuses !== undefined
+    nestedModeProofHasRequestedBundles
+    && pluginDriverProof?.requestedBundleStatuses !== undefined
     && !requestedBundleStatusMapsMatch(
       pluginDriverProof?.requestedBundleStatuses,
       nestedModeProof?.requestedBundleStatuses,
@@ -818,14 +817,16 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   }
 
   if (
-    pluginDriverProof?.legacyRequestedBundleStatus !== undefined
+    nestedModeProofHasRequestedBundles
+    && pluginDriverProof?.legacyRequestedBundleStatus !== undefined
     && pluginDriverProof?.legacyRequestedBundleStatus !== nestedModeProof?.legacyRequestedBundleStatus
   ) {
     return false;
   }
 
   if (
-    pluginDriverProof?.legacyRequestedBundleStatuses !== undefined
+    nestedModeProofHasRequestedBundles
+    && pluginDriverProof?.legacyRequestedBundleStatuses !== undefined
     && !requestedBundleStatusMapsMatch(
       pluginDriverProof?.legacyRequestedBundleStatuses,
       nestedModeProof?.legacyRequestedBundleStatuses,
