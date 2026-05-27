@@ -106,6 +106,95 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Auth Durable Base Refresh Heads
+
+Commit:
+
+- Reviewed pushed consolidated head
+  `origin/supervisor/release-boundary-consolidated-20260527` at
+  `2c5681b0fbf4c48292211f7496eeb2d0bf84d51c`
+  (`Refresh auditor support branch heads`).
+- Reviewed current pushed v2 heads:
+  - `e2e2e391af22c271942ee14c96889cae623171c2`
+    `origin/lane/auth-session-boundary-v2-20260527`
+  - `702adf8ae6521d64d421f382c440c87b5991f035`
+    `origin/lane/durable-journal-boundary-v2-20260527`
+  - `c84629f825b89f52001b4ab8aa06b3e4b5e6aa6b`
+    `origin/lane/apply-revalidation-boundary-v2-20260527`
+  - `9e943390e48d8ed19c90af81a4f3d577884d95b3`
+    `origin/lane/plugin-driver-boundary-v2-20260527`
+  - `eac2540717de814a49d0f3d5067729dcef8a943f`
+    `origin/lane/topology-verifier-v2-20260527`
+  - `daf361def533a5724998ed22a213989ed4993bf7`
+    `origin/lane/auditor-reorg-20260527`
+
+Claim:
+
+- New fact: auth v2 advanced from `fb2b01dab` to `e2e2e391a` by merging the
+  current consolidated support-head refresh.
+- New fact: durable v2 advanced from `655247813` to `702adf8ae` by merging the
+  current consolidated support-head refresh.
+- Net diffs from the previously reviewed auth and durable heads are only
+  `audits/auditor-reorg-v2-20260527.md`; no new live release command evidence
+  was added.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git fetch origin --prune` returned the heads above.
+- `git show --stat --oneline origin/lane/auth-session-boundary-v2-20260527 -1`
+  shows only `audits/auditor-reorg-v2-20260527.md`.
+- `git show --stat --oneline origin/lane/durable-journal-boundary-v2-20260527 -1`
+  shows only `audits/auditor-reorg-v2-20260527.md`.
+- `git diff --stat fb2b01dab0ac3771315a1dc61bf509baef79d789..origin/lane/auth-session-boundary-v2-20260527`
+  shows only the auditor artifact.
+- `git diff --stat 6552478130afd5a0e30b46ac95bed41df37af3a7..origin/lane/durable-journal-boundary-v2-20260527`
+  shows only the auditor artifact.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --check` completed
+  cleanly, with no unresolved files reported.
+- I ran this on the current consolidated worktree:
+
+```bash
+env -u REPRINT_PUSH_SOURCE_URL -u REPRINT_PUSH_REMOTE_URL timeout 300s npm run verify:release
+```
+
+  It exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, `releaseMovement.gates: 0/4`, no source,
+  no remote-changed service, no local-edited service, no apply-revalidation
+  service, and `packagedFallbackAllowed: false`.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. Auth v2 only merged the support-head refresh; no live
+  same-source auth/session issuance and readback evidence exists.
+- GATE-2: no movement. Durable v2 only merged the support-head refresh; no
+  live durable journal ownership, restart-readable evidence, or lease-fenced
+  readback exists.
+- GATE-3: no movement. The checked command still has no live
+  `REPRINT_PUSH_SOURCE_URL` and no accepted source/local/changed topology.
+- GATE-4: no movement. No live plugin-driver mutation proof was added.
+
+First missing production primitive:
+
+- A retained checked release run using a real live
+  `REPRINT_PUSH_SOURCE_URL` that proves same-boundary auth/session readback,
+  durable journal ownership, preserved rejected-remote evidence, apply-time
+  revalidation before first mutation, and plugin-driver ownership.
+
+Next exact command:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> \
+REPRINT_PUSH_REMOTE_CHANGED_URL=<real-live-changed-url> \
+REPRINT_PUSH_LOCAL_URL=<real-live-local-edited-url> \
+REPRINT_PUSH_USERNAME=<production-user> \
+REPRINT_PUSH_APPLICATION_PASSWORD=<production-application-password> \
+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND=<same-live-source-readback-command> \
+timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Durable Support Head Refresh
 
 Commit:
