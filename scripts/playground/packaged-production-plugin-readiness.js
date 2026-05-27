@@ -385,8 +385,13 @@ export function packagedProductionPluginRouteRetryableWhileWordPressStarting(
   indexStatus,
   indexBodyText = '',
 ) {
+  const indexProbe = {
+    status: indexStatus,
+    body: indexBodyText,
+  };
   return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
-    && packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+    && packagedProductionPluginRestIndexRetryable(indexProbe)
+    && !packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
 }
 
 export function packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
@@ -395,9 +400,13 @@ export function packagedProductionPluginRouteRetryableWhilePackagedRouteStarting
   indexStatus,
   indexBodyText = '',
 ) {
+  const indexProbe = {
+    status: indexStatus,
+    body: indexBodyText,
+  };
   return packagedProductionPluginReadinessBodyRetryable(routeStatus, routeBodyText)
     && packagedProductionPluginRestIndexReady(indexStatus, indexBodyText)
-    && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+    && !packagedProductionPluginRestIndexRetryable(indexProbe);
 }
 
 export function packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting(
@@ -405,8 +414,13 @@ export function packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting
   indexStatus,
   indexBodyText = '',
 ) {
+  const indexProbe = {
+    status: indexStatus,
+    body: indexBodyText,
+  };
   return routeProbe?.timedOut === true
-    && packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+    && packagedProductionPluginRestIndexRetryable(indexProbe)
+    && !packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
 }
 
 export function packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting(
@@ -414,9 +428,13 @@ export function packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStar
   indexStatus,
   indexBodyText = '',
 ) {
+  const indexProbe = {
+    status: indexStatus,
+    body: indexBodyText,
+  };
   return routeProbe?.timedOut === true
     && packagedProductionPluginRestIndexReady(indexStatus, indexBodyText)
-    && !packagedProductionPluginReadinessBodyRetryable(indexStatus, indexBodyText);
+    && !packagedProductionPluginRestIndexRetryable(indexProbe);
 }
 
 export function packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut(
@@ -487,9 +505,9 @@ export function packagedProductionPluginClassifyBoundedStartup(
     routeProbe?.retryable === true
     && indexProbe
     && indexProbe.timedOut !== true
-    && !packagedProductionPluginReadinessBodyRetryable(
-      indexProbe.status,
-      indexProbe.body || '',
+    && (
+      packagedProductionPluginMalformedTerminalIndexProbe(indexProbe)
+      || !packagedProductionPluginRestIndexRetryable(indexProbe)
     )
   ) {
     return {
@@ -559,9 +577,9 @@ export function packagedProductionPluginClassifyTimeoutFallbackStartup(
     routeProbe?.timedOut === true
     && indexProbe
     && indexProbe.timedOut !== true
-    && !packagedProductionPluginReadinessBodyRetryable(
-      indexProbe.status,
-      indexProbe.body || '',
+    && (
+      packagedProductionPluginMalformedTerminalIndexProbe(indexProbe)
+      || !packagedProductionPluginRestIndexRetryable(indexProbe)
     )
   ) {
     return {

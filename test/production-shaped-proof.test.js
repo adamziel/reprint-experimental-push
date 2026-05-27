@@ -8082,6 +8082,30 @@ test('packaged bounded startup classifier distinguishes global WordPress versus 
   );
 });
 
+test('packaged readiness startup classifiers consume the exported rest-index helper surface', () => {
+  const helperSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/packaged-production-plugin-readiness.js'),
+    'utf8',
+  );
+
+  assert.match(
+    helperSource,
+    /packagedProductionPluginRouteRetryableWhileWordPressStarting[\s\S]*?packagedProductionPluginRestIndexRetryable\(/s,
+  );
+  assert.match(
+    helperSource,
+    /packagedProductionPluginRouteRetryableWhilePackagedRouteStarting[\s\S]*?packagedProductionPluginRestIndexReady\([\s\S]*?!packagedProductionPluginRestIndexRetryable\(/s,
+  );
+  assert.match(
+    helperSource,
+    /packagedProductionPluginTimedOutRouteProbeWhileWordPressStarting[\s\S]*?packagedProductionPluginRestIndexRetryable\(/s,
+  );
+  assert.match(
+    helperSource,
+    /packagedProductionPluginTimedOutRouteProbeWhilePackagedRouteStarting[\s\S]*?packagedProductionPluginRestIndexReady\([\s\S]*?!packagedProductionPluginRestIndexRetryable\(/s,
+  );
+});
+
 test('packaged readiness helpers treat signed preflight as the bootstrap authority before terminal snapshot auth failures', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
