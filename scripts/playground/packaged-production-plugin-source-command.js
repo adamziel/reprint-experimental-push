@@ -1,4 +1,7 @@
-import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
+import {
+  buildAuthSessionSourceCommand,
+  resolveAuthSessionSourceCommand,
+} from './auth-session-source-command.js';
 import {
   loadAuthSessionSourceFromRuntimeEnvironment,
   normalizeExplicitAllowedAuthSessionSourceUrl,
@@ -182,10 +185,17 @@ function buildRuntimePackagedProductionPluginSourceCommand({
 
   try {
     return {
-      command: resolvePackagedProductionPluginSourceCommand({
+      command: buildAuthSessionSourceCommand({
         sourceUrl: runtimeSourceUrl,
         username,
         applicationPassword,
+        ...(Object.prototype.hasOwnProperty.call(authSessionSource, 'warning')
+          ? { warning: authSessionSource.warning }
+          : {}),
+        ...(Object.prototype.hasOwnProperty.call(authSessionSource, 'playgroundFallback')
+          ? { playgroundFallback: authSessionSource.playgroundFallback }
+          : {}),
+        allowedSourceUrl: runtimeSourceUrl,
       }),
       rebound: true,
     };

@@ -3742,6 +3742,41 @@ test('packaged production plugin runtime source binding rebinds the prior packag
   );
 });
 
+test('packaged production plugin runtime source binding preserves source metadata when it rebuilds the packaged command for the runtime URL', () => {
+  const bound = bindPackagedProductionPluginRuntimeSource({
+    sourceUrl: 'http://127.0.0.1:8080',
+    authSessionSource: {
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      warning: 'lab-only-warning',
+      playgroundFallback: true,
+    },
+    authSessionSourceCommand: '',
+    runtimeSourceUrl: 'http://127.0.0.1:49152',
+  });
+
+  assert.equal(bound.sourceUrl, 'http://127.0.0.1:49152');
+  assert.equal(bound.authSessionSource?.sourceUrl, 'http://127.0.0.1:49152');
+
+  const rebuiltSource = loadAuthSessionSource(bound.authSessionSourceCommand, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot, {
+    allowedSourceUrl: 'http://127.0.0.1:49152',
+  });
+
+  assert.deepEqual(rebuiltSource, {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:49152',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    warning: 'lab-only-warning',
+    playgroundFallback: true,
+  });
+});
+
 test('packaged production plugin runtime source binding preserves malformed auth/session metadata while rebinding a safe packaged command', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
