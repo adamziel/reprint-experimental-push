@@ -1787,6 +1787,15 @@ test('packaged server readiness fails closed for broken top-level signed preflig
       },
     },
     {
+      label: 'cleaned-up top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'cleaned-up top-level session',
       session: {
         id: 'session_123',
@@ -1988,6 +1997,15 @@ test('packaged preflight startup context still fails closed for broken top-level
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
     },
     {
