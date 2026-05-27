@@ -797,6 +797,70 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        activeClaimSequence: 47,
+        activeClaimEvent: 'stale-claim-rejected',
+        activeClaimKeyHash: 'retry-claim-hash-03',
+        previousClaimKeyHash: 'retry-claim-hash-02',
+        previousClaimSequence: 20,
+        previousClaimEvent: 'stale-claim-retry-started',
+      },
+      claimEvidence: {
+        ...baseContract.claimEvidence,
+        activeRow: {
+          ...baseContract.claimEvidence.activeRow,
+          sequence: 47,
+          event: 'stale-claim-rejected',
+          claimKeyHash: 'retry-claim-hash-03',
+        },
+        previousRow: {
+          ...baseContract.claimEvidence.activeRow,
+        },
+      },
+      latestRows: [
+        {
+          event: 'apply-committed',
+          sequence: 48,
+        },
+        {
+          event: 'stale-claim-rejected',
+          sequence: 47,
+          claimKeyHash: 'retry-claim-hash-02',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
+        },
+      ],
+      eventSummaries: [
+        {
+          event: 'stale-claim-rejected',
+          count: 1,
+          latestId: 47,
+        },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
       latestRows: [
         {
           event: 'apply-committed',

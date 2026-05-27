@@ -210,6 +210,26 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
     return false;
   }
 
+  if (
+    row.event === 'stale-claim-rejected'
+    && claim?.activeClaimEvent === 'stale-claim-rejected'
+  ) {
+    if (
+      isPositiveInteger(claim?.activeClaimSequence)
+      && checkedBoundaryLatestRowSequence(row) !== claim.activeClaimSequence
+    ) {
+      return false;
+    }
+
+    if (
+      hasNonEmptyString(claim?.activeClaimKeyHash)
+      && hasNonEmptyString(row.claimKeyHash)
+      && row.claimKeyHash !== claim.activeClaimKeyHash
+    ) {
+      return false;
+    }
+  }
+
   if (row.event === 'stale-claim-abandoned') {
     if (
       isPositiveInteger(claim?.abandonedSequence)
