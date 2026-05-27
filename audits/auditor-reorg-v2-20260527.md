@@ -1,6 +1,6 @@
 # Reorg Auditor V2 - 2026-05-27
 
-Audit time: 2026-05-27 18:34 CEST
+Audit time: 2026-05-27 18:35 CEST
 
 Verdict: `0/4`
 
@@ -11,22 +11,23 @@ No release gate moves without a checked command that uses a real live
 
 | Ref | Head | Current proof |
 | --- | --- | --- |
-| `origin/supervisor/release-boundary-consolidated-20260527` | `4fe66dc8c` | Consolidated support branch exists, includes the previous auditor auth/durable refresh, and fails closed when the live source is absent. |
-| `origin/lane/auth-session-boundary-v2-20260527` | `19b4a5ad9` | Auth/session source-boundary and readback-drift test hardening; support evidence only. |
-| `origin/lane/durable-journal-boundary-v2-20260527` | `532a659f0` | Durable preserved-retry probe scoping; no live durable proof. |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `8c6b9afb8` | Consolidated support branch exists, includes the previous auditor apply/topology refresh, and fails closed when the live source is absent. |
+| `origin/lane/auth-session-boundary-v2-20260527` | `4e5c34074` | Auth/session support branch merged the consolidated release-boundary base; support evidence only. |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `876214854` | Durable support branch merged the consolidated release-boundary base; no live durable proof. |
 | `origin/lane/apply-revalidation-boundary-v2-20260527` | `ff23bd33e` | Focused apply-revalidation boundary test hardening plus consolidated branch merge; support evidence only. |
 | `origin/lane/plugin-driver-boundary-v2-20260527` | `08e6b1c3d` | Plugin-driver test hardening; support evidence only. |
-| `origin/lane/topology-verifier-v2-20260527` | `e824aaf48` | Topology fail-closed behavior proof plus consolidated topology base merge; support evidence only. |
+| `origin/lane/topology-verifier-v2-20260527` | `0de2e08a6` | Topology fail-closed behavior proof plus consolidated base merge; support evidence only. |
 | `origin/lane/critic-reorg-v2-20260527` | `90a5c9f66` | Critic review rejects gate movement without live source evidence. |
 
 Local-only refs observed:
 
-- `lane/plugin-driver-boundary-v2-consolidated-20260527` at `08e6b1c3d`
+- `lane/apply-revalidation-boundary-v2-20260527` at `5d987234a`
+- `lane/plugin-driver-boundary-v2-consolidated-20260527` at `7e8f8b947`
 
 ## Command Evidence
 
 Run from `/tmp/reprint-reorg-integrator-20260527` on
-`supervisor/release-boundary-consolidated-20260527` at `4fe66dc8c`:
+`supervisor/release-boundary-consolidated-20260527` at `8c6b9afb8`:
 
 ```bash
 timeout 300s npm run verify:release
@@ -47,8 +48,8 @@ Result:
 
 | Requirement | Current proof | Missing proof | Command evidence | Verdict impact |
 | --- | --- | --- | --- | --- |
-| GATE-1 production executor/auth boundary | Auth v2 hardens source-command handling, rejects alias/fallback behavior, and covers auth readback source drift. | Real endpoint proof of auth/session issuance and readback from the same live source and same source command. | `verify:release` exits `1` before live source access with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`. | No movement. |
-| GATE-2 durable recovery journal boundary | Durable v2 preserves support metadata, consolidates verifier wiring, and scopes the preserved retry probe. | Live durable `ownsJournal: true`, `restartReadable: true`, and lease-fenced journal evidence on the same mutation boundary. | No live source command evidence. | No movement. |
+| GATE-1 production executor/auth boundary | Auth v2 hardens source-command handling, rejects alias/fallback behavior, covers auth readback source drift, and has merged the consolidated base. | Real endpoint proof of auth/session issuance and readback from the same live source and same source command. | `verify:release` exits `1` before live source access with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`. | No movement. |
+| GATE-2 durable recovery journal boundary | Durable v2 preserves support metadata, consolidates verifier wiring, scopes the preserved retry probe, and has merged the consolidated base. | Live durable `ownsJournal: true`, `restartReadable: true`, and lease-fenced journal evidence on the same mutation boundary. | No live source command evidence. | No movement. |
 | GATE-3 live production topology | Consolidated verifier emits explicit topology JSON and rejects missing source, packaged fallback, and mismatched source aliases; topology v2 now exists on origin. | Real source/local/changed topology using a live `REPRINT_PUSH_SOURCE_URL`. | Missing-source command reports no accepted source/local/changed services. | No movement. |
 | GATE-4 plugin-driver ownership boundary | Plugin v2 hardens plugin-driver guard tests; apply v2 adds focused stale-remote/replay preservation support tests. | Live plugin-owned mutation proof with rejected-remote preservation and apply-time revalidation on the release boundary. | No live source command evidence. | No movement. |
 
