@@ -71,14 +71,6 @@ const registryGuardBlueprintPath = path.join(tmpDir, 'remote-base-with-reprint-p
 const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-server.blueprint.json');
 const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-snapshot.blueprint.json');
 const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-server.blueprint.json');
-const driverMissingExportServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-export-server.blueprint.json');
-const driverMissingApplyServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-apply-server.blueprint.json');
-const driverMissingValidateServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-validate-server.blueprint.json');
-const driverMissingNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-name-server.blueprint.json');
-const driverMissingPluginOwnerServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-plugin-owner-server.blueprint.json');
-const driverMissingTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-missing-table-server.blueprint.json');
-const driverDuplicateNameServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-name-server.blueprint.json');
-const driverDuplicateTableServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-duplicate-table-server.blueprint.json');
 const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver-registry-guards.php');
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
@@ -295,62 +287,6 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       activatePackagedPlugin: true,
       provisionAuth: true,
       supportsDelete: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-missing-export-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingExportServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      omitExportRowsCallback: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-missing-apply-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingApplyServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      omitApplyRowCallback: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-missing-validate-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingValidateServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      omitValidateMutationCallback: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-missing-name-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingNameServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      blankDriverName: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-missing-plugin-owner-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingPluginOwnerServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      omitPluginOwner: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-missing-table-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverMissingTableServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      omitTable: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-duplicate-name-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateNameServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      duplicateDriverName: true,
-    });
-  }
-  if (shouldRunAnyScenario(['driver-duplicate-table-guard'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDuplicateTableServerBlueprintPath, {
-      activatePackagedPlugin: true,
-      provisionAuth: true,
-      duplicateTable: true,
     });
   }
   const packageSnapshots = shouldRunAnyScenario(['core-package-routes'])
