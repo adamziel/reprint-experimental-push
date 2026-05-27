@@ -175,6 +175,10 @@ function packagedProductionPluginRestIndexReady(status, bodyText = '') {
   }
 }
 
+function packagedProductionPluginInvalidRestIndexBody(status, bodyText = '') {
+  return status === 200 && !packagedProductionPluginRestIndexReady(status, bodyText);
+}
+
 function packagedProductionPluginRouteNotReady(response) {
   return packagedProductionPluginRouteNotReadyBody(response);
 }
@@ -338,6 +342,10 @@ export function packagedProductionPluginResetRouteNotReadyProbeCounts(currentCou
 }
 
 export function packagedProductionPluginReadinessBodyRetryable(status, bodyText = '') {
+  if (packagedProductionPluginInvalidRestIndexBody(status, bodyText)) {
+    return false;
+  }
+
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
     || packagedProductionPluginWordPressNotReadyCodePattern.test(bodyText)
@@ -395,6 +403,15 @@ export function packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedO
 }
 
 export function packagedProductionPluginMalformedTerminalIndexProbe(indexProbe) {
+  if (
+    packagedProductionPluginInvalidRestIndexBody(
+      indexProbe?.status,
+      indexProbe?.body || '',
+    )
+  ) {
+    return true;
+  }
+
   return indexProbe?.timedOut !== true
     && indexProbe?.parsedBody === null
     && !packagedProductionPluginReadinessBodyRetryable(

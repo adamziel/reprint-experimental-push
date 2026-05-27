@@ -34,6 +34,7 @@ import {
 import {
   packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
+  packagedProductionPluginMalformedTerminalIndexProbe,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
@@ -2100,6 +2101,72 @@ test('packaged production plugin timeout fallback classification separates start
   );
 });
 
+test('packaged readiness helper fails closed on malformed 200 index startup bodies', () => {
+  const retryableRouteProbe = {
+    retryable: true,
+    status: 404,
+    body: 'No route was found matching the URL and request method.',
+  };
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      retryableRouteProbe,
+      {
+        status: 200,
+        body: '"WordPress is not ready yet"',
+        parsedBody: 'WordPress is not ready yet',
+      },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+  assert.equal(
+    packagedProductionPluginMalformedTerminalIndexProbe({
+      status: 200,
+      body: '"WordPress is not ready yet"',
+      parsedBody: 'WordPress is not ready yet',
+    }),
+    true,
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      retryableRouteProbe,
+      {
+        status: 200,
+        body: '{"message":"WordPress is not ready yet"}',
+        parsedBody: {
+          message: 'WordPress is not ready yet',
+        },
+      },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+  assert.equal(
+    packagedProductionPluginMalformedTerminalIndexProbe({
+      status: 200,
+      body: '{"message":"WordPress is not ready yet"}',
+      parsedBody: {
+        message: 'WordPress is not ready yet',
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(
+      200,
+      '{"message":"WordPress is not ready yet"}',
+    ),
+    false,
+  );
+});
+
 test('packaged production plugin readiness helper does not retry terminal readiness failures', () => {
   assert.equal(
     packagedProductionPluginReadinessBodyRetryable(
@@ -2113,7 +2180,7 @@ test('packaged production plugin readiness helper does not retry terminal readin
       200,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
     ),
-    true,
+    false,
   );
   assert.equal(
     packagedProductionPluginReadinessBodyRetryable(
@@ -2177,7 +2244,7 @@ test('packaged production plugin readiness helper does not retry terminal readin
       200,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
     ),
-    1,
+    0,
   );
   assert.equal(
     packagedProductionPluginNextNotReadyProbeCount(
@@ -2361,7 +2428,7 @@ test('packaged production plugin readiness helper does not retry terminal readin
       200,
       '<!doctype html><html><body>WordPress is not ready yet</body></html>',
     ),
-    true,
+    false,
   );
   assert.equal(
     packagedProductionPluginRouteRetryableWhileWordPressStarting(
