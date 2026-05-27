@@ -5162,6 +5162,107 @@ test('shared lab waitForServer tolerates more than four startup-shaped no-route 
   assert.equal(snapshotCalls, readyAfterIndexCalls);
 });
 
+test('shared lab waitForServer fails closed when the startup deadline expires after retryable probes', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const sockets = new Set();
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 502;
+      response.setHeader('content-type', 'text/html; charset=utf-8');
+      response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 502;
+      response.setHeader('content-type', 'text/html; charset=utf-8');
+      response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => {
+      sockets.delete(socket);
+    });
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: null,
+    kill() {
+      this.exitCode = 1;
+      return true;
+    },
+  };
+
+  const originalDateNow = Date.now;
+  let dateNowCalls = 0;
+  Date.now = () => {
+    dateNowCalls += 1;
+    if (dateNowCalls <= 2) {
+      return 0;
+    }
+    return serverStartupTimeoutMs + 1;
+  };
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        child,
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Timed out waiting for Playground server at http:\/\/127\.0\.0\.1:/);
+        assert.match(error.message, /Playground index readiness HTTP 502: WordPress is not ready yet/);
+        assert.equal(error.context?.notReadyProbeCount, 1);
+        assert.equal(error.context?.childPid ?? null, null);
+        assert.equal(error.lastProbe?.route, '/wp-json/reprint-push-lab/v1/snapshot');
+        assert.equal(error.lastProbe?.status, 502);
+        return true;
+      },
+    );
+  } finally {
+    Date.now = originalDateNow;
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
+  assert.equal(snapshotCalls, 1);
+});
+
 test('shared lab waitForServer fails with bounded timeout diagnostics after consecutive readiness probe timeouts', async () => {
   const sockets = new Set();
   const server = createServer(() => {
