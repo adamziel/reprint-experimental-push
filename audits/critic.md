@@ -1,17 +1,17 @@
 # Critic Verdict
 
-Current reliable head: `0512cd2792b1bda976ea0aeb0ff0ad55d9fcac19`
-(`Preserve packaged checked claim identities`).
+Current reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
+(`Fail closed on malformed auth identity drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head preserves checked claim identities across the packaged verifier and
-  recovery-journal summary surface. The diff extends the auth/session summary
-  and DB-journal proof helpers so checked claim ids, preferred read
-  observations, and checked-bounded durable-journal metadata stay visible in
-  the release proof.
+- This head tightens checked auth identity handling on the production-session
+  path. The diff adds malformed `auth.identity.userLogin` rejection and
+  expands checked drift reporting so malformed observed auth-envelope identity
+  fields are surfaced as `invalid-*` across preflight, dry-run, apply,
+  recovery inspect, replay, and db-journal checks.
 - That is still support-side checked-path hardening, not proof of the
   production-owned real Reprint endpoint boundary. The evidence still comes
   from the packaged checked verifier and recovery-journal flows rather than
@@ -22,9 +22,9 @@ Reason:
 
 Next owner / command:
 
-- `main:reliable-exec` should move off packaged claim identity preservation and
-  prove the next remaining production boundary on the checked release path,
-  using `scripts/playground/production-shaped-release-verify.mjs`,
+- `main:reliable-exec` should move off malformed auth identity drift
+  hardening and prove the next remaining production boundary on the checked
+  release path, using `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
   and `src/authenticated-http-push-client.js` with `timeout 300s npm run
   verify:release`, or return an exact `GATE CODE BLOCKED:` handoff naming the
