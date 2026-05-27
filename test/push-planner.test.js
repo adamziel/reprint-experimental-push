@@ -35642,6 +35642,118 @@ test('blocks an existing term relationship object reference when the same-plan p
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term relationship object reference when the same-plan post target is itself blocked by a wp_navigation parent even when unrelated remote wp_navigation noise exists', () => {
+  const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedParentResourceKey = 'row:["wp_posts","ID:5"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing tagged post',
+    post_content: 'base-private-existing-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated wp_navigation',
+    post_content: 'remote-private-unrelated-wp-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:4|term_taxonomy_id:9': {
+      object_id: 4,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      ...base.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local retagged post',
+    post_content: 'local-private-retagged-post-body',
+    post_status: 'publish',
+    post_parent: 5,
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const samePlanPostMutation = mutationFor(plan, samePlanPostResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === samePlanPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, existingPostResourceKey), undefined);
+  assert.equal(mutationFor(plan, blockedParentResourceKey), undefined);
+  assert.equal(samePlanPostMutation.changeKind, 'create');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.dependsOnMutationIds, undefined);
+  assert.equal(relationshipBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-object');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, samePlanPostResourceKey);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-retagged-post-body'), false);
+  assert.equal(JSON.stringify(relationshipBlocker).includes('local-private-navigation-parent-body'), false);
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-private-unrelated-wp-navigation-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing term relationship object reference when the same-plan post target is itself blocked by a nav_menu_item parent', () => {
   const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
   const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
