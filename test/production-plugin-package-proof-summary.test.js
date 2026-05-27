@@ -3148,6 +3148,133 @@ test('plugin-driver proof summary attach helper repairs stale verifier alias req
   assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, false);
 });
 
+test('plugin-driver proof summary attach helper repairs stale driver-proof alias requestedSatisfied when the nested mode proof is current', () => {
+  const fullDriverProofSelection = new Set([
+    'driver-proof',
+    ...scenarioGroups['driver-proof'],
+  ]);
+  const rawSummary = {
+    mode: 'driverProofOnly',
+    canonicalMode: 'driver-proof',
+    requestedScenarios: ['driverProofOnly'],
+    selectedScenarios: Array.from(fullDriverProofSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_DRIVER_ROW',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_PLAN_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_IDENTITY_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+      resourceKey: 'row:["wp_reprint_push_driver_fixture_delete","entry_id:1"]',
+      remoteSupportsDelete: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverProofOnly'],
+    selectedScenarios: fullDriverProofSelection,
+    resolvedMode: 'driverProofOnly',
+    canonicalMode: 'driver-proof',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedBundlesSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverProofOnly'],
+    selectedScenarios: fullDriverProofSelection,
+    resolvedMode: 'driverProofOnly',
+    canonicalMode: 'driver-proof',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.equal(repairedProof.requestedStatus, 'missing');
+  assert.equal(repairedProof.requestedSatisfied, false);
+  assert.equal(repairedProof.requestedScenariosSatisfied, false);
+  assert.equal(repairedProof.requestedBundlesSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'missing');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, false);
+});
+
 test('plugin-driver proof summary attach helper repairs stale receipt-registration alias scenario statuses when the nested mode proof is current', () => {
   const fullReceiptRegistrationSelection = new Set([
     'driver-receipt-registration-guards',
