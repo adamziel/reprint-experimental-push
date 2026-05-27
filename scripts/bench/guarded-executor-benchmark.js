@@ -134,6 +134,10 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     blockerRefs: Object.freeze([
       'memory-ceiling-match-visible-without-queue-slack-visibility',
       'queue-headroom-visible-without-queue-slack-visibility',
+      'queue-pause-without-measured-receipt-cursor-queue-slack',
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+      'receipt-cursor-queue-slack-not-measured',
+      'receipt-cursor-queue-slack-visible-without-measurement',
       'receipt-cursor-queue-slack-visible-without-queue-headroom-measurement',
       'queue-pause-without-visible-receipt-cursor-queue-slack',
       'receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement',
@@ -145,6 +149,10 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     blockerRefs: Object.freeze([
       'memory-ceiling-match-visible-without-memory-headroom-visibility',
       'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+      'queue-pause-without-measured-receipt-cursor-memory-headroom',
+      'receipt-cursor-memory-headroom-visible-without-measurement',
+      'receipt-cursor-headroom-not-covered-by-queue-budget',
+      'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
       'receipt-cursor-queue-slack-visible-without-queue-headroom-measurement',
       'queue-pause-without-visible-receipt-cursor-memory-headroom',
       'receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement',

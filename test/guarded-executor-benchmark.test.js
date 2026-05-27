@@ -656,6 +656,79 @@ test('guarded benchmark carries direct receipt-cursor queue-slack measurement bl
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-measurement'));
 });
 
+test('guarded benchmark carries direct receipt-cursor queue-slack measurement blockers into rejected fast-path summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorQueueSlackBytes = null;
+
+  const details = productionThroughputDetails(mutated);
+  const queueSlackCommit = details.rejectedFastPaths.find(
+    (entry) => entry.id === 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
+  );
+
+  assert.deepEqual(queueSlackCommit?.blockerRefs, [
+    'queue-pause-without-measured-receipt-cursor-queue-slack',
+    'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+    'receipt-cursor-queue-slack-not-measured',
+    'receipt-cursor-queue-slack-visible-without-measurement',
+  ]);
+});
+
+test('guarded benchmark carries direct receipt-cursor memory-headroom measurement blockers into rejected fast-path summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomBytes = null;
+
+  const details = productionThroughputDetails(mutated);
+  const memoryHeadroomCommit = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
+  );
+
+  assert.deepEqual(memoryHeadroomCommit?.blockerRefs, [
+    'queue-pause-without-measured-receipt-cursor-memory-headroom',
+    'receipt-cursor-memory-headroom-visible-without-measurement',
+    'receipt-cursor-headroom-not-covered-by-queue-budget',
+    'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+  ]);
+});
+
 test('guarded benchmark keeps rollout summaries pinned to hidden storage-receipts visibility blockers', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
