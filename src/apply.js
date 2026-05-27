@@ -1241,7 +1241,7 @@ export function productionRecoverySupportReport(writer) {
     !Object.hasOwn(writer ?? {}, 'leaseFence')
     || !hasValidProductionLeaseFenceIdentity(writer.leaseFence)
     || hasHiddenOwnStringKeys(writer.leaseFence)
-    || !productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease)
+    || !productionLeaseFenceMatchesLeaseIdentity(writer.leaseFence, writer.writerLease)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
@@ -1575,6 +1575,10 @@ function checkedDurableJournalBoundaryProof(
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
   const checkedBoundaryLeaseFenceSurfaceAligned = inspectedLeaseFenceSurfaceMatchesWriterContract(inspected);
+  const checkedBoundaryWriterLeaseFenceSurfaceAligned = surfacedWriterLeaseFenceMatchesWriterContract(
+    writer,
+    inspected,
+  );
   const checkedBoundaryBlockedByMissingDependency = missingDependency.length > 0;
   const inspectedProductionAdapter = surfacedProductionRecoveryAdapterMarker(inspected);
   const inspectedSupportedSurface = surfacedProductionRecoverySupportedSurface(inspected);
@@ -1721,6 +1725,7 @@ function checkedDurableJournalBoundaryProof(
     && inspectedRestartReadable
     && checkedBoundaryContractAligned
     && checkedBoundaryLeaseFenceSurfaceAligned
+    && checkedBoundaryWriterLeaseFenceSurfaceAligned
     && checkedBoundaryStaleClaimRejected;
   const checkedBoundaryFencingBlocked = missingDependency.includes(
     'fencing or lease ownership for the journal writer',
@@ -1794,6 +1799,18 @@ function inspectedLeaseFenceSurfaceMatchesWriterContract(inspected) {
     && hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
     && inspected.leaseFence.storageGuard === inspected.leaseFenceContract.boundary
     && inspected.leaseFence.storageGuard === inspected.writerLeaseContract.storageGuard;
+}
+
+function surfacedWriterLeaseFenceMatchesWriterContract(writer, inspected) {
+  return hasValidProductionLeaseFenceIdentity(writer?.leaseFence)
+    && Object.hasOwn(writer.leaseFence, 'storageGuard')
+    && !hasHiddenOwnStringProperty(writer.leaseFence, 'storageGuard')
+    && typeof writer.leaseFence.storageGuard === 'string'
+    && writer.leaseFence.storageGuard.length > 0
+    && hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+    && hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+    && writer.leaseFence.storageGuard === inspected.leaseFenceContract.boundary
+    && writer.leaseFence.storageGuard === inspected.writerLeaseContract.storageGuard;
 }
 
 function productionRecoveryArtifactRefs(writer, inspected) {
@@ -2475,6 +2492,23 @@ function productionLeaseFenceIdentitiesMatch(left, right) {
   return true;
 }
 
+function productionLeaseFenceMatchesLeaseIdentity(left, right) {
+  if (!hasValidProductionLeaseFenceIdentity(left) || !hasValidProductionLeaseIdentity(right)) {
+    return false;
+  }
+  if (left.id !== right.id) {
+    return false;
+  }
+
+  const leftHasEpoch = Object.hasOwn(left, 'epoch');
+  const rightHasEpoch = Object.hasOwn(right, 'epoch');
+  if (!leftHasEpoch && !rightHasEpoch) {
+    return true;
+  }
+
+  return leftHasEpoch && rightHasEpoch && left.epoch === right.epoch;
+}
+
 function durableJournalInspectPath(inspected) {
   return isStrictPlainObject(inspected)
     && Object.hasOwn(inspected, 'filePath')
@@ -2833,9 +2867,9 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
   const writerHasValidLeaseIdentity = writerHasOwnLeaseIdentity
     && hasValidProductionLeaseIdentity(writer?.writerLease);
   const writerHasValidLeaseFence = writerHasOwnLeaseFence
-    && hasValidProductionLeaseIdentity(writer?.leaseFence)
+    && hasValidProductionLeaseFenceIdentity(writer?.leaseFence)
     && writerHasValidLeaseIdentity
-    && productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease);
+    && productionLeaseFenceMatchesLeaseIdentity(writer.leaseFence, writer.writerLease);
   const writerHasValidClaimId = writerHasOwnClaimId
     && typeof writer?.claimId === 'string'
     && writer.claimId.trim().length > 0
