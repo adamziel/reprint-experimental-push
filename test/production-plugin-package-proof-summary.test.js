@@ -1113,6 +1113,64 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
   });
 });
 
+test('plugin-driver proof summary treats bundled receipt alias as selected for release-proof coverage', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-release-proof',
+        'core-package-routes',
+        'driver-receipt-guards',
+        'driver-delete-apply',
+      ]),
+    },
+  );
+
+  assert.equal(summary.releaseProof.selected, true);
+  assert.equal(summary.releaseProof.status, 'missing');
+  assert.equal(summary.releaseProof.receiptStatus, 'missing');
+  assert.equal(summary.releaseProof.requestedStatus, 'missing');
+  assert.deepEqual(summary.releaseProof.requestedBundleStatuses, {
+    driverReleaseProof: 'missing',
+  });
+});
+
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
