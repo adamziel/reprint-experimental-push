@@ -1950,16 +1950,19 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           continue;
         }
         lastError = error;
+        notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          notReadyProbeCounts,
+          'preflight',
+        );
         await throwPlaygroundReadinessFailure(
           child,
           `Packaged production plugin signed preflight returned an invalid readiness body at ${baseUrl}`,
           lastError,
           lastProbes,
           getOutput(),
-          {
+          packagedProductionPluginPreflightTerminalContext({
             childPid: child.pid ?? null,
-            packagedProductionPlugin: true,
-          },
+          }),
         );
       }
       if (packagedProductionPluginPreflightReady({

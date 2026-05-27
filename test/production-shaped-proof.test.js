@@ -3739,6 +3739,14 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
+    /notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}`/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\s*childPid:\s*child\.pid\s*\?\?\s*null,\s*\}\)/s,
+  );
+  assert.match(
+    helperSource,
     /Packaged production plugin server reported the bounded readiness failure \$\{snapshot\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive startup-shaped snapshot response/s,
   );
   assert.match(
