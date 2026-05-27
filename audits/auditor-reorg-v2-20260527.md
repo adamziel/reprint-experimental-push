@@ -658,6 +658,41 @@ source/local/drift/apply-revalidation ports as `null`, and release movement
 
 This is support/audit-refresh evidence only. It does not move release gates.
 
+## Follow-Up Artifact-Only Head Refresh 18:41
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=refname --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/topology-verifier-v2-20260527
+git diff --stat origin/supervisor/release-boundary-consolidated-20260527..origin/lane/plugin-driver-boundary-v2-20260527
+git log --oneline --decorate --max-count=8 \
+  origin/supervisor/release-boundary-consolidated-20260527..origin/lane/plugin-driver-boundary-v2-20260527
+```
+
+New artifact fact since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `8d9a53f88` | Unchanged since the 18:38 verifier run |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `5b152e409` | Advanced remote v2 support branch |
+
+The plugin-driver support branch diff against the consolidated release branch
+is 1 file, 197 insertions, and 39 deletions in
+`test/production-shaped-proof.test.js`. The branch tip subject is
+`Harden plugin driver boundary tests`.
+
+The release-state evidence remains the clean detached verifier run from
+consolidated head `8d9a53f88`; it exited `1` with
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and release movement `0/4`. This support
+branch refresh does not provide a real live `REPRINT_PUSH_SOURCE_URL` command.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
