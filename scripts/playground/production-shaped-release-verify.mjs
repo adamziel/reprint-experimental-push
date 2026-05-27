@@ -1402,6 +1402,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 preflightProbe.status,
                 preflightProbe.body || '',
               );
+            notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+              notReadyProbeCounts,
+              'preflight',
+            );
             await throwPlaygroundReadinessFailure(
               child,
               malformedSnapshotFallbackPreflightBody
@@ -1684,6 +1688,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 preflightProbe.status,
                 preflightProbe.body || '',
               );
+            notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+              notReadyProbeCounts,
+              'preflight',
+            );
             await throwPlaygroundReadinessFailure(
               child,
               malformedSnapshotFallbackPreflightBody

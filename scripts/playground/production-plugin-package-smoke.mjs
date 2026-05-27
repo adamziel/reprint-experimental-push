@@ -600,6 +600,10 @@ async function waitForServer(child, baseUrl, logs) {
                 preflightProbe.status,
                 preflightProbe.body || '',
               );
+            notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+              notReadyProbeCounts,
+              'preflight',
+            );
             throw new Error(
               formatPackagedReadinessFailure(
                 malformedSnapshotFallbackPreflightBody
@@ -887,6 +891,10 @@ async function waitForServer(child, baseUrl, logs) {
                 preflightProbe.status,
                 preflightProbe.body || '',
               );
+            notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+              notReadyProbeCounts,
+              'preflight',
+            );
             throw new Error(
               formatPackagedReadinessFailure(
                 malformedSnapshotFallbackPreflightBody

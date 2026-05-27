@@ -3090,7 +3090,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
+    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     verifierSource,
@@ -3110,7 +3110,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
+    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,
