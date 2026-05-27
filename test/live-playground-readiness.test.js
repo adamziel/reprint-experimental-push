@@ -2505,6 +2505,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'missing expiry',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
       },
@@ -2512,6 +2513,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'past expiry',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2000-01-01T00:00:00Z',
@@ -2520,6 +2522,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'invalid expiry',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: 'not-a-timestamp',
@@ -2528,6 +2531,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'expired status',
       session: {
+        id: 'session_123',
         status: 'expired',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2536,6 +2540,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'explicitly expired',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2545,6 +2550,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'revoked status',
       session: {
+        id: 'session_123',
         status: 'revoked',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2553,6 +2559,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'explicitly revoked',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2562,6 +2569,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'cleaned-up status',
       session: {
+        id: 'session_123',
         status: 'cleaned-up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2570,6 +2578,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'cleanup alias status',
       session: {
+        id: 'session_123',
         status: 'cleaned_up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2578,6 +2587,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'cleaned up',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2587,6 +2597,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'cleanup alias',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2596,6 +2607,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'cleanup underscore flag',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2605,6 +2617,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'rotated status',
       session: {
+        id: 'session_123',
         status: 'rotated',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2613,6 +2626,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'explicitly rotated',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2622,6 +2636,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'wrong auth session type',
       session: {
+        id: 'session_123',
         status: 'active',
         type: 'lab-signed-push-session',
         expiresAt: '2099-01-01T00:00:00Z',
@@ -2630,6 +2645,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
     {
       label: 'missing auth session status',
       session: {
+        id: 'session_123',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
