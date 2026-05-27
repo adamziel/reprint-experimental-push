@@ -4879,6 +4879,14 @@ test('production-shaped release verify command reports the checked retained-sour
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
   assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
   assert.match(proof.stdout, /"rows": 17,\s*"applyCommitted": true,\s*"mutationApplied": 7,\s*"idempotencyOpened": 1/);
+  assert.match(
+    proof.stdout,
+    /"claim": \{\s*"status": "stale-claim-rejected",\s*"activeClaimId": "[a-f0-9]{64}",\s*"activeClaimKeyHash": "[a-f0-9]{64}"/,
+  );
+  assert.match(
+    proof.stdout,
+    /"writerLease": \{\s*"strategy": "claim-fenced-single-writer",\s*"claimId": "[a-f0-9]{64}",\s*"claimKeyHash": "[a-f0-9]{64}",\s*"claimKeyUnique": true,\s*"fsyncEvidence": true,\s*"storageGuard": "filesystem-compare-rename"/,
+  );
   assert.match(proof.stdout, /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true\s*\}/);
 });
 

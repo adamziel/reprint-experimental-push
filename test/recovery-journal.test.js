@@ -385,6 +385,42 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.deepEqual(inspection.journal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'openProductionRecoveryJournal',
+    supportedSurface: 'production-recovery-journal-adapter',
+  });
+  assert.deepEqual(inspection.journal.storageGuard, {
+    boundary: 'filesystem-compare-rename',
+    operation: 'update',
+    outcome: 'applied',
+  });
+  assert.equal(inspection.journal.claim?.status, 'stale-claim-rejected');
+  assert.equal(inspection.journal.claim?.activeClaimId, activeClaimId);
+  assert.equal(inspection.journal.claim?.activeClaimKeyHash, recoveryClaimHash(activeClaimId));
+  assert.equal(inspection.journal.claim?.activeClaimEvent, 'recovery-claim-opened');
+  assert.equal(inspection.journal.claim?.staleClaimRejected, true);
+  assert.equal(inspection.journal.writerLease?.strategy, 'claim-fenced-single-writer');
+  assert.equal(inspection.journal.writerLease?.claimId, activeClaimId);
+  assert.equal(inspection.journal.writerLease?.claimKeyHash, recoveryClaimHash(activeClaimId));
+  assert.equal(inspection.journal.writerLease?.claimKeyUnique, true);
+  assert.equal(inspection.journal.writerLease?.fsyncEvidence, true);
+  assert.equal(inspection.journal.writerLease?.storageGuard, 'filesystem-compare-rename');
+  assert.equal(inspection.journal.writerLease?.monotonicSequence, true);
+  assert.equal(inspection.journal.writerLease?.restartReadable, true);
+  assert.equal(inspection.journal.writerLease?.staleClaimRejected, true);
+  assert.equal(inspection.journal.leaseFence?.boundary, 'filesystem-compare-rename');
+  assert.equal(inspection.journal.leaseFence?.claimKeyUnique, true);
+  assert.equal(inspection.journal.leaseFence?.fsyncEvidence, true);
+  assert.equal(inspection.journal.leaseFence?.monotonicSequence, true);
+  assert.equal(inspection.journal.leaseFence?.restartReadable, true);
+  assert.equal(inspection.journal.leaseFence?.staleClaimRejected, true);
+  assert.equal(inspection.journal.leaseFence?.writerLease?.claimId, activeClaimId);
+  assert.equal(
+    inspection.journal.leaseFence?.writerLease?.claimKeyHash,
+    recoveryClaimHash(activeClaimId),
+  );
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
 });

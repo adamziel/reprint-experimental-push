@@ -220,12 +220,21 @@ export function openProductionRecoveryJournal(options) {
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
+    const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
+    const claim = summarizeProductionRecoveryJournalClaim(persisted);
+    const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
     return {
       journal: {
         path: filePath,
         checked: [filePath],
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
+        ownership: {
+          ownsJournal: true,
+          restartReadable: persisted.integrity.status === 'ok',
+          productionAdapter: 'openProductionRecoveryJournal',
+          supportedSurface: 'production-recovery-journal-adapter',
+        },
         claimId,
         ownsJournal: true,
         claimHash: claimId ? recoveryClaimHash(claimId) : null,
@@ -234,13 +243,29 @@ export function openProductionRecoveryJournal(options) {
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
         records: persisted.records.length,
-        staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+        staleClaimRejected,
+        claim,
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        writerLease,
+        leaseFence: {
+          boundary: 'filesystem-compare-rename',
+          claimKeyUnique: true,
+          fsyncEvidence: true,
+          monotonicSequence: persisted.integrity.status === 'ok',
+          restartReadable: persisted.integrity.status === 'ok',
+          staleClaimRejected,
+          writerLease,
+        },
       },
       leaseFence: {
         storageGuard: 'filesystem-compare-rename',
         fsyncEvidence: true,
-        monotonicSequence: true,
-        staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+        monotonicSequence: persisted.integrity.status === 'ok',
+        staleClaimRejected,
       },
     };
   };
@@ -339,7 +364,9 @@ export function appendRecoveryClaimOpened(journal, {
     journal.appendEvent('stale-claim-rejected', {
       planId: plan.id,
       state: 'rejected',
+      claimId,
       claimHash: nextClaimHash,
+      previousClaimId: claim.activeClaimId || null,
       previousClaimHash: claim.activeClaimHash,
       observedHash: digest(current),
       staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
@@ -362,6 +389,7 @@ export function appendRecoveryClaimOpened(journal, {
   return journal.appendEvent('recovery-claim-opened', {
     planId: plan.id,
     state: 'active',
+    claimId,
     claimHash: nextClaimHash,
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
@@ -383,7 +411,9 @@ export function appendStaleClaimAdvanced(journal, {
   return journal.appendEvent('stale-claim-advanced', {
     planId: plan.id,
     state: 'advanced',
+    previousClaimId,
     previousClaimHash: recoveryClaimHash(previousClaimId),
+    claimId,
     claimHash: recoveryClaimHash(claimId),
     observedHash: digest(current),
     staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
@@ -519,7 +549,9 @@ export function classifyRecoveryJournalClaims(records) {
   if (claimRecords.length === 0) {
     return {
       status: 'none',
+      activeClaimId: null,
       activeClaimHash: null,
+      previousClaimId: null,
       previousClaimHash: null,
       sequence: null,
       type: null,
@@ -541,7 +573,9 @@ export function classifyRecoveryJournalClaims(records) {
   const latest = claimRecords.at(-1);
   return {
     status: latest.type === 'stale-claim-advanced' ? 'advanced' : 'active',
+    activeClaimId: latest.claimId || null,
     activeClaimHash: latest.claimHash,
+    previousClaimId: latest.previousClaimId || null,
     previousClaimHash: latest.previousClaimHash || null,
     sequence: latest.sequence,
     type: latest.type,
@@ -639,11 +673,47 @@ class RecoveryJournalWriter {
 function blockedClaimState(record, reason) {
   return {
     status: 'blocked',
+    activeClaimId: record.claimId || null,
     activeClaimHash: record.claimHash || null,
+    previousClaimId: record.previousClaimId || null,
     previousClaimHash: record.previousClaimHash || null,
     sequence: record.sequence || null,
     type: record.type || null,
     reason,
+  };
+}
+
+function summarizeProductionRecoveryJournalClaim(persisted) {
+  const claimState = classifyRecoveryJournalClaims(persisted.records);
+  if (claimState.status === 'none' || claimState.status === 'blocked') {
+    return undefined;
+  }
+
+  return {
+    status: hasStaleClaimRejectionEvidence(persisted.records)
+      ? 'stale-claim-rejected'
+      : 'active',
+    activeClaimId: claimState.activeClaimId || null,
+    activeClaimKeyHash: claimState.activeClaimHash || null,
+    activeClaimSequence: claimState.sequence ?? null,
+    activeClaimEvent: claimState.type || null,
+    previousClaimId: claimState.previousClaimId || null,
+    previousClaimKeyHash: claimState.previousClaimHash || null,
+    staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+  };
+}
+
+function productionRecoveryJournalWriterLease(persisted, claimSummary) {
+  return {
+    strategy: 'claim-fenced-single-writer',
+    claimId: claimSummary?.activeClaimId || null,
+    claimKeyHash: claimSummary?.activeClaimKeyHash || null,
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: persisted.integrity.status === 'ok',
+    restartReadable: persisted.integrity.status === 'ok',
+    staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
   };
 }
 
