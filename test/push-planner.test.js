@@ -14559,7 +14559,7 @@ test('blocks local postmeta references to stale remote-created post identity whi
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
@@ -15920,11 +15920,8 @@ test('blocks local attachment graph resources while preserving a matching indepe
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKind, 'attachment');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -16192,14 +16189,15 @@ test('blocks local featured-image references when the remote deleted the referen
   delete remote.db.wp_posts['ID:2'];
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
   assert.equal(reference.relationshipType, 'postmeta-post');
@@ -16272,6 +16270,7 @@ test('flags local featured-image attachment references as a conflict when the li
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -16281,11 +16280,11 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'delete');
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:9"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'delete');
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -16356,6 +16355,7 @@ test('flags local featured-image attachment references as a conflict when the li
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
@@ -16365,10 +16365,11 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:10"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'delete');
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -16451,6 +16452,7 @@ test('flags local featured-image attachment references as a conflict when the li
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const independentDecision = decisionFor(plan, 'row:["wp_posts","ID:21"]');
@@ -16461,10 +16463,11 @@ test('flags local featured-image attachment references as a conflict when the li
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remoteChange, 'delete');
   assert.equal(plan.conflicts.length, 1);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -16500,7 +16503,7 @@ test('blocks local post-parent references to a missing live remote post identity
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:10"] references a post parent identity without proven identity mapping or reference rewriting.');
@@ -17834,21 +17837,28 @@ test('blocks local post-parent references to a live attachment identity while pr
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
   assert.ok(blocker);
+  const reference = blocker.references[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 1);
-  assert.equal(mutationFor(plan, resourceKey).action, 'put');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
-  assert.equal(blocker.resourceKey, 'row:["wp_posts","ID:8"]');
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.localChange, 'update');
+  assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(attachmentBlocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local attachment target'), false);
+  assert.equal(planJson.includes('Local attachment body'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
@@ -17897,17 +17907,21 @@ test('blocks local post-parent references to a live attachment identity while pr
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   assert.ok(blocker);
   const reference = blocker.references[0];
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
-  assert.equal(plan.summary.mutations, 1);
-  assert.equal(mutationFor(plan, resourceKey).action, 'put');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(blocker.class, 'unsupported-attachment-resource');
-  assert.equal(blocker.resourceKey, 'row:["wp_posts","ID:8"]');
-  assert.equal(
-    blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
-  );
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.localChange, 'update');
+  assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(attachmentBlocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(planJson.includes('Local attachment target'), false);
   assert.equal(planJson.includes('Local attachment body'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
