@@ -42,6 +42,36 @@ git ls-remote --heads origin \
 
 Result: no refs returned.
 
+Local consolidated branch check after the 18:20 CEST idle restart:
+
+```bash
+git for-each-ref --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/heads/supervisor/release-boundary-consolidated-20260527 \
+  refs/heads/lane/auth-session-boundary-v2-20260527 \
+  refs/heads/lane/durable-journal-boundary-v2-20260527 \
+  refs/heads/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/heads/lane/plugin-driver-boundary-v2-20260527 \
+  refs/heads/lane/topology-verifier-v2-20260527 \
+  refs/remotes/origin/lane/critic-reorg-v2-20260527
+git -C /tmp/reprint-reorg-integrator-20260527 status --short --branch
+```
+
+Observed local heads:
+
+| Local/ref artifact | Head | Subject |
+| --- | --- | --- |
+| `supervisor/release-boundary-consolidated-20260527` | `24ec8558b` | Fail closed release topology verifier |
+| `lane/auth-session-boundary-v2-20260527` | `ce6ded3de` | Prove apply revalidation boundary |
+| `lane/durable-journal-boundary-v2-20260527` | `ce6ded3de` | Prove apply revalidation boundary |
+| `lane/apply-revalidation-boundary-v2-20260527` | `4e30d9883` | Prove release plugin driver boundary |
+| `lane/plugin-driver-boundary-v2-20260527` | `275dfac34` | Prove release plugin driver boundary |
+| `lane/topology-verifier-v2-20260527` | `4e30d9883` | Prove release plugin driver boundary |
+| `origin/lane/critic-reorg-v2-20260527` | `334b923b1` | Record reorg v2 critic review |
+
+The local consolidated worktree had no conflicted files. It was five commits
+ahead of `origin/lane/reliable-executor` and had only untracked `.agents/*`
+runtime ledger files.
+
 Available integration branch verifier:
 
 ```bash
@@ -96,23 +126,75 @@ Key structured output:
 }
 ```
 
+Local consolidated branch verifier:
+
+```bash
+cd /tmp/reprint-reorg-integrator-20260527
+timeout 300s npm run verify:release
+```
+
+Observed status: `1`
+
+Key structured output from `24ec8558b`:
+
+```json
+{
+  "ok": false,
+  "boundary": {
+    "firstRemainingProductionBoundary": "explicit live production-owned release boundary",
+    "status": "blocked",
+    "verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
+    "liveSource": {
+      "required": "REPRINT_PUSH_SOURCE_URL",
+      "observed": "missing-live-source",
+      "verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"
+    }
+  },
+  "releaseProof": {
+    "ok": false,
+    "status": 1,
+    "code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"
+  },
+  "topologyEvidence": {
+    "runner": {
+      "script": "scripts/playground/production-shaped-live-release-verify.mjs",
+      "routeProfile": "production-shaped",
+      "packagedFallbackAllowed": false
+    },
+    "ports": {
+      "sandboxIngress": 8080,
+      "source": null,
+      "remoteChanged": null,
+      "localEdited": null,
+      "applyRevalidationSource": null
+    },
+    "releaseMovement": {
+      "allowed": false,
+      "gates": "0/4",
+      "reason": "REPRINT_PUSH_SOURCE_URL is required before the release verifier can run preflight, dry-run, apply, or recovery."
+    }
+  }
+}
+```
+
 ## Gate Classification
 
 | Requirement | Current proof | Missing proof | Command evidence | Verdict impact |
 | --- | --- | --- | --- | --- |
-| GATE-1 Production executor/auth boundary | Available integration verifier fails closed and requires a real `REPRINT_PUSH_SOURCE_URL`; prior public audit still says `0/4`. | Live Reprint endpoint proof of auth/session issuance and readback on the same live source boundary. | `timeout 300s npm run verify:release` on `889b8d44` exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED`. | No gate movement. |
-| GATE-2 Durable recovery journal boundary | The verifier states durable journal proof is required and not met. | `ownsJournal: true`, `restartReadable: true`, and lease-fenced durable journal ownership on the release boundary. | Structured output reports `ownsJournal: false`, `restartReadable: false`, `leaseFenced: false`. | No gate movement. |
-| GATE-3 Live Docker/Playground production topology | The verifier blocks fallback sources and records local-only ingress policy. | A checked live source/local/changed topology against a real production-owned boundary. | Structured output reports `releaseMovementAllowed: false` because `sourceUrl` is empty and fallback sources are disallowed. | No gate movement. |
-| GATE-4 Plugin-driver ownership boundary | No live plugin-driver mutation proof is present in this verifier run. | Plugin-owned mutation on the release boundary with allowlisted semantics, precondition evidence, rejected remote preservation, apply-time revalidation, and audit evidence. | Structured output reports preserved rejected remote evidence and apply-time revalidation are not proven. | No gate movement. |
+| GATE-1 Production executor/auth boundary | Available integration and local consolidated verifiers fail closed and require a real `REPRINT_PUSH_SOURCE_URL`; prior public audit still says `0/4`. | Live Reprint endpoint proof of auth/session issuance and readback on the same live source boundary. | `timeout 300s npm run verify:release` on `889b8d44` and local `24ec8558b` exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`. | No gate movement. |
+| GATE-2 Durable recovery journal boundary | The verifier states durable journal proof is required and not met. | `ownsJournal: true`, `restartReadable: true`, and lease-fenced durable journal ownership on the release boundary. | `889b8d44` structured output reports `ownsJournal: false`, `restartReadable: false`, `leaseFenced: false`; `24ec8558b` stops before live journal proof because the source URL is missing. | No gate movement. |
+| GATE-3 Live Docker/Playground production topology | The verifier blocks fallback sources and records local-only ingress policy. | A checked live source/local/changed topology against a real production-owned boundary. | `24ec8558b` reports `packagedFallbackAllowed: false`, source/local/drift ports as `null`, and release movement `allowed: false`. | No gate movement. |
+| GATE-4 Plugin-driver ownership boundary | No live plugin-driver mutation proof is present in these verifier runs. | Plugin-owned mutation on the release boundary with allowlisted semantics, precondition evidence, rejected remote preservation, apply-time revalidation, and audit evidence. | The local consolidated command exits at the missing live-source boundary before plugin-driver release proof can move a gate. | No gate movement. |
 
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` does not exist remotely.
-The available integration branch now has a coherent fail-closed
-`verify:release` command, but it correctly does not move any release gate
-without a real live `REPRINT_PUSH_SOURCE_URL`.
+The local shared consolidated branch does exist and now has a coherent
+fail-closed `verify:release` command, but it correctly does not move any
+release gate without a real live `REPRINT_PUSH_SOURCE_URL`.
 
-Next exact command after the consolidated branch is published:
+Next exact command after the consolidated branch is published for artifact
+review:
 
 ```bash
 git fetch --all --prune
@@ -121,3 +203,16 @@ git worktree add --detach /tmp/reprint-audit-consolidated-verify-20260527 \
 cd /tmp/reprint-audit-consolidated-verify-20260527
 timeout 300s npm run verify:release
 ```
+
+Next exact command that can move a release gate requires real live boundary
+values:
+
+```bash
+cd /tmp/reprint-reorg-integrator-20260527
+REPRINT_PUSH_SOURCE_URL='<real-live-source-url>' \
+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND='<command-that-issues-and-reads-back-the-same-live-source-session>' \
+timeout 300s npm run verify:release
+```
+
+Gate movement remains forbidden unless that command proves the same live source
+boundary in its proof JSON.
