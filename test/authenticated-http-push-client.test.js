@@ -24384,6 +24384,10 @@ test('production-shaped authenticated push reports malformed replay auth user lo
       observed: 'invalid-user-login',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-login');
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
   } finally {
@@ -24544,6 +24548,10 @@ test('production-shaped authenticated push reports malformed replay auth user id
       observed: 'invalid-user-id',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-id');
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.ok(seen.some(({ url }) => url.includes('/apply')));
     assert.equal(applyCount, 2);
