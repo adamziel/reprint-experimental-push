@@ -966,8 +966,33 @@ function wordpressGraphIdentitySupport({
   local,
   remote,
 }) {
+  return wordpressGraphResourceSupport({
+    resource,
+    localValue,
+    resources,
+    base,
+    local,
+    remote,
+    seen: new Set([resource.key]),
+  });
+}
+
+function wordpressGraphResourceSupport({
+  resource,
+  localValue,
+  resources,
+  base,
+  local,
+  remote,
+  seen,
+}) {
   if (resource.type !== 'row' || localValue === ABSENT) {
     return { supported: true };
+  }
+
+  const surfaceSupport = wordpressGraphSurfaceSupport(resource, localValue);
+  if (!surfaceSupport.supported) {
+    return surfaceSupport;
   }
 
   const references = wordpressGraphReferences(resource, localValue);
@@ -976,7 +1001,7 @@ function wordpressGraphIdentitySupport({
   }
 
   const unsafeReferences = references
-    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote))
+    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote, seen))
     .filter(Boolean)
     .filter((reference) => isUnsafeWordPressGraphReference(reference));
 
@@ -992,7 +1017,28 @@ function wordpressGraphIdentitySupport({
   };
 }
 
+function wordpressGraphSurfaceSupport(resource, value) {
+  if (resource.type !== 'row' || !value || typeof value !== 'object') {
+    return { supported: true };
+  }
+
+  if (wordpressGraphTableSuffix(resource.table) === 'term_taxonomy' && value.taxonomy === 'nav_menu') {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${resource.key} references unsupported taxonomy graph surface nav_menu.`,
+      references: [],
+    };
+  }
+
+  return { supported: true };
+}
+
 function isUnsafeWordPressGraphReference(reference) {
+  if (reference.targetSupport && !reference.targetSupport.supported) {
+    return true;
+  }
+
   if (isSafeSamePlanWordPressGraphReference(reference)) {
     return false;
   }
@@ -1033,6 +1079,11 @@ const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
   'post-parent',
   'postmeta-post',
   'featured-image-attachment',
+  'term-relationship-object',
+  'term-relationship-taxonomy',
+  'term-taxonomy-term',
+  'term-taxonomy-parent',
+  'termmeta-term',
 ]);
 
 function wordpressGraphReferences(resource, value) {
@@ -1133,7 +1184,7 @@ function wordpressGraphReferences(resource, value) {
   return references;
 }
 
-function wordpressGraphReferenceEvidence(reference, resources, base, local, remote) {
+function wordpressGraphReferenceEvidence(reference, resources, base, local, remote, seen = new Set()) {
   const target = resources.find((candidate) => candidate.key === reference.targetResourceKey)
     || reference.targetResource;
   const baseValue = getResource(base, target);
@@ -1142,6 +1193,17 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
   const targetBaseHash = resourceHash(base, target);
   const targetLocalHash = resourceHash(local, target);
   const targetRemoteHash = resourceHash(remote, target);
+  const targetSupport = seen.has(target.key)
+    ? { supported: true }
+    : wordpressGraphResourceSupport({
+      resource: target,
+      localValue,
+      resources,
+      base,
+      local,
+      remote,
+      seen: new Set([...seen, target.key]),
+    });
 
   return {
     relationshipKey: reference.relationshipKey,
@@ -1156,6 +1218,13 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
     targetBaseHash,
     targetLocalHash,
     targetRemoteHash,
+    ...(targetSupport.supported ? {} : {
+      targetSupport: {
+        supported: false,
+        className: targetSupport.className || null,
+        reason: targetSupport.reason || null,
+      },
+    }),
     targetChange: changeEvidence(
       target,
       baseValue,
