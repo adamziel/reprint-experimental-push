@@ -2347,7 +2347,8 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     && productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease);
   const writerHasValidClaimHash = writerHasOwnClaimHash
     && typeof writer?.claimHash === 'string'
-    && /^[a-f0-9]{64}$/.test(writer.claimHash);
+    && /^[a-f0-9]{64}$/.test(writer.claimHash)
+    && !hasHiddenOwnStringProperty(writer, 'claimHash');
   const writerClaimHashMatchesLease = writerHasValidLeaseIdentity
     && writerHasValidClaimHash
     && writer.claimHash === digest({ recoveryJournalClaim: writer.writerLease.id });
