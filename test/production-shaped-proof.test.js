@@ -4944,7 +4944,7 @@ test('shared lab waitForServer runtime helper keeps the readiness-exhaustion gua
     'utf8',
   );
 
-  const sharedWaitStart = proofSource.indexOf('async function waitForServer(child, baseUrl, getLogs) {');
+  const sharedWaitStart = proofSource.lastIndexOf('async function waitForServer(child, baseUrl, getLogs) {');
   assert.notEqual(sharedWaitStart, -1, 'expected shared waitForServer helper in proof test source');
   const sharedWaitEnd = proofSource.indexOf('\nfunction describeLastProbe(', sharedWaitStart);
   assert.notEqual(sharedWaitEnd, -1, 'expected shared waitForServer helper boundary in proof test source');
@@ -4953,6 +4953,10 @@ test('shared lab waitForServer runtime helper keeps the readiness-exhaustion gua
   assert.match(
     sharedWaitSource,
     /if \(response\.status !== 200 && readinessProbeCount >= maxReadinessProbes\) \{/,
+  );
+  assert.match(
+    sharedWaitSource,
+    /const failureText = formatPlaygroundStartupFailure\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?\);/s,
   );
 });
 
@@ -6915,6 +6919,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         lastError,
         lastProbes,
         getLogs(),
+        { childPid: child.pid ?? null },
       );
       writePlaygroundFailure(failureText, lastProbes, getLogs(), lastError);
       try {
