@@ -1055,6 +1055,12 @@ export function openProductionRecoveryJournal(options) {
     ? claimScopedPlanId(existingJournal.records, existingClaim)
     : null;
 
+  if (reusingActiveClaim && existingClaim.activeClaimId !== claimId) {
+    throw new Error(
+      'openProductionRecoveryJournal() requires claimId to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
+    );
+  }
+
   if (reusingActiveClaim && !artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
     throw new Error(
       'openProductionRecoveryJournal() requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
@@ -1093,7 +1099,7 @@ export function openProductionRecoveryJournal(options) {
     const persisted = readRecoveryJournal(filePath);
     const claim = summarizeProductionRecoveryJournalClaim(persisted);
     const effectiveArtifactRefs = claimScopedArtifactRefs(persisted.records, claim) || {};
-    const persistedClaimId = claim?.activeClaimId || claimId;
+    const persistedClaimId = claim?.activeClaimId || null;
     const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
     const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);

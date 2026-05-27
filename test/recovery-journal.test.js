@@ -9,6 +9,7 @@ import {
   appendStaleClaimAdvanced,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  classifyRecoveryJournalClaims,
   checkedDurableJournalBoundaryContractIsPresent,
   checkedDurableJournalBoundarySatisfied,
   recoveryClaimHash,
@@ -1010,6 +1011,109 @@ test('production recovery journal wrapper rejects restart when the persisted act
       claimId,
     }),
     /openProductionRecoveryJournal\(\) requires plan\.id to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+  );
+});
+
+test('production recovery journal wrapper rejects restart when the persisted active-claim id is missing', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-id-missing-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-claim-id-missing',
+    },
+    now: fixedNow,
+    claimId,
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const claimRecord = persisted.records.find(
+    (record) => record.type === 'recovery-claim-opened' && record.claimId === claimId,
+  );
+  assert.ok(claimRecord);
+  delete claimRecord.claimId;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-claim-id-missing',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    /openProductionRecoveryJournal\(\) requires claimId to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+  );
+});
+
+test('production recovery journal reopening fails closed when claim classification retains only the persisted active-claim hash', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-id-missing-02';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-claim-id-inspect-missing',
+    },
+    now: fixedNow,
+    claimId,
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const claimRecord = persisted.records.find(
+    (record) => record.type === 'recovery-claim-opened' && record.claimId === claimId,
+  );
+  assert.ok(claimRecord);
+  delete claimRecord.claimId;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.deepEqual(classifyRecoveryJournalClaims(readRecoveryJournal(filePath).records), {
+    status: 'active',
+    activeClaimId: null,
+    activeClaimHash: recoveryClaimHash(claimId),
+    previousClaimId: null,
+    previousClaimHash: null,
+    sequence: plan.mutations.length + 2,
+    type: 'recovery-claim-opened',
+    staleThresholdMs: null,
+    previousClaimAgeMs: null,
+    reason: 'Production recovery journal claim opened.',
+  });
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-claim-id-inspect-missing',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    /openProductionRecoveryJournal\(\) requires claimId to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
   );
 });
 
