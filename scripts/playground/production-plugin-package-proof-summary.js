@@ -392,6 +392,22 @@ export function buildProductionPluginPackageProofSummary(
     }
   }
 
+  const directReceiptBundleSelected = requestedBundleSet?.has('driverReceiptGuards') === true
+    && isScenarioSelected(selectedScenarios, 'driver-receipt-guards');
+  if (directReceiptBundleSelected) {
+    const passed = scenarioPasses.get('driver-receipt-guards') === true;
+    bundleResults.driverReceiptGuards = summarizeScenario(true, passed);
+    checkedBundleCount += 1;
+    checkedBundles.push('driverReceiptGuards');
+    if (passed) {
+      passedBundleCount += 1;
+      passedBundles.push('driverReceiptGuards');
+    } else {
+      failedBundleCount += 1;
+      failedBundles.push('driverReceiptGuards');
+    }
+  }
+
   if (requestedBundleSet?.has('driverReceiptGuards')) {
     requestedBundleCount += 1;
     const selected = isScenarioSelected(selectedScenarios, 'driver-receipt-guards');

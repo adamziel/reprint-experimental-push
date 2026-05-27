@@ -842,7 +842,13 @@ test('plugin-driver proof summary reports requested receipt guard verdicts direc
   assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.equal(summary.checkedBundleCount, 1);
+  assert.equal(summary.passedBundleCount, 1);
+  assert.equal(summary.failedBundleCount, 0);
   assert.deepEqual(summary.requestedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.checkedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.passedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.failedBundles, []);
   assert.deepEqual(summary.requestedConcreteScenarios, []);
   assert.deepEqual(summary.requestedScenarioStatuses, {
     'driver-receipt-guards': 'passed',
@@ -852,6 +858,7 @@ test('plugin-driver proof summary reports requested receipt guard verdicts direc
   });
   assert.deepEqual(summary.passedRequestedBundles, ['driverReceiptGuards']);
   assert.deepEqual(summary.failedRequestedBundles, []);
+  assert.equal(summary.bundles.driverReceiptGuards, 'passed');
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
     selected: true,
