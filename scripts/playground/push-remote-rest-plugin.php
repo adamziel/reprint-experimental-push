@@ -898,6 +898,21 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         }
     }
 
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_claim_evidence_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal) && array_key_exists('claimEvidence', $premerge_db_journal)) {
+            $db_journal['claimEvidence'] = $premerge_db_journal['claimEvidence'];
+        } else {
+            unset($db_journal['claimEvidence']);
+        }
+    }
+
     if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($db_journal)) {
         $db_journal['acceptedOnCheckedBoundary'] = false;
         return $db_journal;
@@ -934,21 +949,6 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
                     unset($db_journal[$key]);
                 }
             }
-        }
-    }
-
-    if (
-        is_array($checked_summary)
-        && reprint_push_lab_rest_checked_claim_evidence_conflicts(
-            $premerge_db_journal,
-            $checked_summary
-        )
-    ) {
-        $db_journal['acceptedOnCheckedBoundary'] = false;
-        if (is_array($premerge_db_journal) && array_key_exists('claimEvidence', $premerge_db_journal)) {
-            $db_journal['claimEvidence'] = $premerge_db_journal['claimEvidence'];
-        } else {
-            unset($db_journal['claimEvidence']);
         }
     }
 

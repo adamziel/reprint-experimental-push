@@ -7397,6 +7397,42 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   });
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline started cursor evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimEvidence.abandonedRow.startedCursor = 'db-journal:99';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.claimEvidence.abandonedRow.startedCursor, 'db-journal:99');
+  assert.equal(parsed.recovery.journal.claimEvidence.abandonedRow.claimCursor, 'db-journal:18');
+});
+
+test('checked recovery inspect evidence fails closed on conflicting accepted inline claim cursor evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimEvidence.abandonedRow.claimCursor = 'db-journal:77';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.claimEvidence.abandonedRow.startedCursor, 'db-journal:19');
+  assert.equal(parsed.recovery.journal.claimEvidence.abandonedRow.claimCursor, 'db-journal:77');
+});
+
 test('checked recovery inspect evidence fails closed on conflicting accepted inline event summaries instead of silently normalizing them', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   inlineJournal.eventSummaries[0].count = 2;
@@ -8413,6 +8449,46 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
     idempotencyKeyHash: 'idem-hash-01',
     requestHash: 'request-hash-01',
   });
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline started cursor evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimEvidence.abandonedRow.startedCursor = 'db-journal:99';
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    buildCheckedRecoveryJournalSummary(),
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.startedCursor, 'db-journal:99');
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimCursor, 'db-journal:18');
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline claim cursor evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimEvidence.abandonedRow.claimCursor = 'db-journal:77';
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    buildCheckedRecoveryJournalSummary(),
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.startedCursor, 'db-journal:19');
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimCursor, 'db-journal:77');
 });
 
 test('checked db journal attachment fails closed on conflicting accepted inline event summaries instead of silently normalizing them', { skip: !hasPhp }, () => {
