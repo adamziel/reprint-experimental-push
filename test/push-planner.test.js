@@ -19949,6 +19949,67 @@ test('blocks an existing attachment parent reference to a same-plan nav_menu_ite
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing attachment parent reference to a same-plan nav_menu_item post even when unrelated remote attachment noise exists', () => {
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing attachment child',
+    post_content: 'base-private-existing-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 0,
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+    post_parent: 2,
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu item parent',
+    post_content: 'local-private-menu-item-parent-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(targetMutation, undefined);
+  assert.equal(attachmentMutation.changeKind, 'update');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(attachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-attachment-child-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-menu-item-parent-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-noise-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing revision parent reference to a same-plan nav_menu_item post', () => {
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const revisionResourceKey = 'row:["wp_posts","ID:3"]';
