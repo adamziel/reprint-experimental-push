@@ -4787,6 +4787,31 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   });
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted top-level storage-guard boundary', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.storageGuard.boundary;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
+  });
+});
+
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted top-level storage-guard outcome', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.storageGuard.outcome;
@@ -14479,6 +14504,26 @@ test('checked db journal attachment fails closed when authoritative checked summ
   const inlineJournal = buildAcceptedInlineDbJournal();
   const checkedSummary = buildCheckedDbJournalSummary();
   delete checkedSummary.storageGuard.operation;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted top-level storage-guard boundary', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.storageGuard.boundary;
 
   const result = runAttachCheckedDbJournalContract(
     { ok: true, dbJournal: inlineJournal },
