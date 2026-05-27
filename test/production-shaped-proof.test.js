@@ -3258,6 +3258,52 @@ test('packaged production plugin auth/session source helper accepts an explicit 
   }
 });
 
+test('packaged production plugin auth/session source helper preserves auth source metadata for an explicit remote runtime candidate', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const packaged = resolvePackagedProductionPluginAuthSessionSource({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/remote/?session=1#preserved',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        warning: 'lab-only-warning',
+        playgroundFallback: true,
+        allowedSourceUrl: 'https://example.test/remote',
+      }),
+    });
+
+    assert.equal(packaged.source?.ok, true);
+    assert.deepEqual(packaged.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/remote',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      warning: 'lab-only-warning',
+      playgroundFallback: true,
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
+});
+
 test('packaged production plugin auth/session request helper marks an explicit live source URL as requested', () => {
   const explicitLiveSourceUrl = 'https://example.com/push';
   const request = resolvePackagedProductionPluginAuthSessionRequest({
@@ -3347,6 +3393,53 @@ test('packaged production plugin auth/session request helper accepts an explicit
       sourceUrl: 'https://example.test/local',
       username: liveCredentials.username,
       applicationPassword: liveCredentials.password,
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
+});
+
+test('packaged production plugin auth/session request helper preserves auth source metadata for an explicit remote runtime candidate', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const request = resolvePackagedProductionPluginAuthSessionRequest({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/remote/?session=1#preserved',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+        warning: 'lab-only-warning',
+        playgroundFallback: true,
+        allowedSourceUrl: 'https://example.test/remote',
+      }),
+    });
+
+    assert.equal(request.requested, true);
+    assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+    assert.deepEqual(request.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/remote',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      warning: 'lab-only-warning',
+      playgroundFallback: true,
     });
   } finally {
     if (previousRemoteUrl === undefined) {
