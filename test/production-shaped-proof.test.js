@@ -4452,6 +4452,54 @@ test('production auth/session lifecycle summary fails closed when a direct prese
   );
 });
 
+test('production auth/session lifecycle summary fails closed when a direct preserved read carries production source warning metadata', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+        warning: 'lab-only-warning',
+      },
+      observations: [
+        {
+          step: 'preflight',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: false,
+        },
+        {
+          step: 'apply',
+          id: 'session-01',
+          type: 'production-auth-session',
+          status: 'active',
+          expiresAt: '2099-01-01T00:00:00Z',
+          preserved: true,
+          warning: 'lab-only-warning',
+        },
+      ],
+    }),
+    {
+      ok: false,
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'lab-only-warning',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct issued lifecycle flags are malformed', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
