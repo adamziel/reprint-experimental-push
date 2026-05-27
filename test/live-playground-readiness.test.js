@@ -5,8 +5,13 @@ import test from 'node:test';
 import {
   packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
+  packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginPackagedRouteStartupLimitReached,
+  packagedProductionPluginPackagedRouteStartupStillWithinBudget,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginPreflightTerminalContext,
+  packagedProductionPluginPreflightTerminal,
+  packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRestIndexReady,
   packagedProductionPluginRestIndexRetryable,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
@@ -286,6 +291,99 @@ test('packaged timeout fallback helper separates WordPress, packaged-route, time
     {
       kind: 'timed-out-route-index-terminal',
       indexTerminal: true,
+    },
+  );
+});
+
+test('packaged route startup counters increment per route and reset independently', () => {
+  const snapshotOnly = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    { snapshot: 1, preflight: 2 },
+    'snapshot',
+    404,
+    'No route was found matching the URL and request method.',
+  );
+  assert.deepEqual(snapshotOnly, { snapshot: 2, preflight: 2 });
+
+  const preflightOnly = packagedProductionPluginNextRouteNotReadyProbeCounts(
+    snapshotOnly,
+    'preflight',
+    503,
+    'WordPress is not ready yet',
+  );
+  assert.deepEqual(preflightOnly, { snapshot: 2, preflight: 3 });
+
+  const resetSnapshot = packagedProductionPluginResetRouteNotReadyProbeCounts(
+    preflightOnly,
+    'snapshot',
+  );
+  assert.deepEqual(resetSnapshot, { snapshot: 0, preflight: 3 });
+
+  const resetBoth = packagedProductionPluginResetRouteNotReadyProbeCounts(
+    resetSnapshot,
+    'snapshot',
+    'preflight',
+  );
+  assert.deepEqual(resetBoth, { snapshot: 0, preflight: 0 });
+});
+
+test('packaged route startup helpers keep the tighter post-global-ready budget fail-closed', () => {
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupStillWithinBudget(3, 4),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupLimitReached(3, 4),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupStillWithinBudget(4, 4),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPackagedRouteStartupLimitReached(4, 4),
+    true,
+  );
+});
+
+test('packaged preflight retryability keeps packaged-route startup retryable after global WordPress readiness', () => {
+  const preflight = {
+    status: 404,
+    body: {
+      code: 'rest_no_route',
+      message: 'No route was found matching the URL and request method.',
+    },
+  };
+  const readyIndexProbe = {
+    status: 200,
+    body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      indexProbe: readyIndexProbe,
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, {
+      packagedStartup: true,
+      indexProbe: readyIndexProbe,
+    }),
+    false,
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      {
+        retryable: true,
+        status: preflight.status,
+        body: JSON.stringify(preflight.body),
+      },
+      readyIndexProbe,
+    ),
+    {
+      kind: 'retryable-route-packaged-route-starting',
+      packagedRouteStartup: true,
     },
   );
 });
