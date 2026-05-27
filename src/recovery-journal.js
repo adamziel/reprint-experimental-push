@@ -190,7 +190,7 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
   }
 
   for (const row of Array.isArray(dbJournal?.latestRows) ? dbJournal.latestRows : []) {
-    const rowSequence = isPositiveInteger(row?.id) ? row.id : row?.sequence;
+    const rowSequence = checkedBoundaryLatestRowSequence(row);
     if (
       checkedBoundaryStaleClaimEventMatches(row?.event)
       && isPositiveInteger(rowSequence)

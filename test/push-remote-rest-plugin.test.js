@@ -7471,6 +7471,116 @@ test('checked db journal boundary contract fails closed when authoritative lates
   assert.equal(JSON.parse(result.stdout), false);
 });
 
+test('checked db journal boundary contract fails closed when only contradictory latest rows can satisfy stale-claim evidence', { skip: !hasPhp }, () => {
+  const result = runCheckedBoundaryContractMatches({
+    schemaVersion: 1,
+    acceptedOnCheckedBoundary: true,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 2,
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    },
+    claimEvidence: {
+      activeRow: {
+        sequence: 20,
+        event: 'stale-claim-rejected',
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:12',
+        claimCursor: 'db-journal:11',
+      },
+      previousRow: {
+        sequence: 11,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    },
+    idempotencyEvidence: [
+      {
+        idempotencyKeyHash: 'idempotency-hash-01',
+        events: 3,
+        requestHashes: 1,
+        latestId: 20,
+      },
+    ],
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    latestRows: [
+      {
+        event: 'apply-committed',
+        sequence: 21,
+      },
+      {
+        event: 'stale-claim-rejected',
+        id: 20,
+        sequence: 19,
+      },
+    ],
+    eventSummaries: [
+      { event: 'stale-claim-rejected', count: 1, latestId: 10 },
+    ],
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+});
+
 test('checked db journal boundary contract fails closed when persisted journal arrays omit meaningful event evidence', { skip: !hasPhp }, () => {
   const baseJournal = {
     schemaVersion: 1,

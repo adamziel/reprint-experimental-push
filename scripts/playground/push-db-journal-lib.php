@@ -1116,7 +1116,7 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_match
             continue;
         }
         $event = (string) ($row['event'] ?? '');
-        $sequence = $row['id'] ?? $row['sequence'] ?? null;
+        $sequence = reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row);
         if (
             ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
             && reprint_push_lab_db_journal_is_positive_int($sequence)
