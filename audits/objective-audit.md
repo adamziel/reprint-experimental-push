@@ -10,10 +10,10 @@
 - Audit time: 2026-05-27 11:33:17 CEST (+0200)
 - Release-classification heads verified before write-up:
   - `origin/lane/reliable-executor` -> `bf495d928e18a1021ff2401b44b503ffbc97cd01` (`Prove retry boundary after journal fallback`)
-  - `origin/lane/critic` -> `444ef9545123acc1f5194d35b79fab6aae8cd8ad`
-  - `origin/lane/independent-auditor` -> `50d8247cf910f77743674f7d9f4cc95ebb5f20ee`
-  - `origin/lane/progress-publisher` -> `879dc0da475b090217e645e7ab0031ffbc7081e6`
-  - `origin/main` -> `6565c54d17999564c08684c70c43d9032df0203c`
+  - `origin/lane/critic` -> `7616f95aa8061964eba898ddd216777c21089253`
+  - `origin/lane/independent-auditor` -> `bfb6020c5b57c8553a6abcd2868f059367eab256`
+  - `origin/lane/progress-publisher` -> `6ec015170c8396d954dd8a10fc300de8dab23c51`
+  - `origin/main` -> `f8cc8282a48674298e4573623ddb15dd749db55e`
 
 ## Evidence Table
 
