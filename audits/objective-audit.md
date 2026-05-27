@@ -2,16 +2,16 @@
 
 ## Verdict
 
-- Audited commit: `cdbc14971410865388d0327c32075ce73c666803` (`Default checked live branch to packaged boundary`)
-- Previous audited reliable head: `867a0ca0b0043918fbf9e148bd6931b3d665dcc8`
+- Audited commit: `c0005b7a322d3041317436d054113ea3cb035b8e` (`Stabilize live release wrapper proof`)
+- Previous audited reliable head: `1403c6d19a6592278c55a39eb11bde68d048d3bd`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 04:59:16 CEST (+0200)
+- Audit time: 2026-05-27 05:15:13 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `cdbc14971410865388d0327c32075ce73c666803` (`Default checked live branch to packaged boundary`)
-  - `origin/lane/critic` -> `15c25db0d7a462f6cbc5fc883cb755eb76848375`
-  - `origin/lane/independent-auditor` -> `5b9a664fc823b8d88eab63c2301b9c86a68f0c0f`
+  - `origin/lane/reliable-executor` -> `c0005b7a322d3041317436d054113ea3cb035b8e` (`Stabilize live release wrapper proof`)
+  - `origin/lane/critic` -> `d6c6496fb2ff7d1e2cd0c83ad8d2420f4aa6d95d`
+  - `origin/lane/independent-auditor` -> `e16a34b2cb58f83e20beba2b993ddfc25d3bfcb6`
   - `origin/lane/progress-publisher` -> `7cbe475b68a4e0a0b8a1d4d817f08ddf256e6077`
   - `origin/main` -> `ef97fd8824a2bc56748fa632301acbeb4781512d`
 
@@ -19,10 +19,10 @@
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Checked live boundary selection | `cdbc1497` defaults the checked live branch to the packaged boundary, so the release verifier prefers the packaged path unless explicit live-source inputs are provided. That is a wrapper-selection change inside `scripts/playground/production-shaped-live-release-verify.mjs`, not production mutation proof. | A production-owned release boundary on the real endpoint that proves the same executable path mints and later reads back a live auth session, rather than merely selecting the packaged boundary by default. | Blocked |
-| Production auth/session lifecycle | The checked wrapper still selects packaged verification unless overridden, but this commit does not prove live issuance/readback/expiry/rotation/revocation/cleanup on the actual source URL. | A checked real-endpoint command proving the same executable path mints and later reads back a live auth session on the exact production source boundary. | Blocked |
-| Durable restart-readable journal ownership | The release verifier still only expresses the boundary selection change; it does not yet consume production-owned restart-readable journal storage on the live boundary. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
-| Apply-time revalidation before first mutation | The live wrapper still only asserts the gated proof path and packaged default branch, not a real-endpoint mutation preceded by apply-time revalidation on the production-owned boundary. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
+| Checked live wrapper proof | `c0005b7a` adds a focused end-to-end wrapper assertion and a randomized idempotency key, so the checked live release wrapper is more stable and more explicit about the packaged boundary. That remains wrapper/proof harness behavior, not production mutation proof. | A production-owned release boundary on the real endpoint that proves the same executable path mints and later reads back a live auth session, rather than merely stabilizing the verifier wrapper. | Blocked |
+| Production auth/session lifecycle | The checked wrapper proof still stays on the verifier surface. It does not prove live issuance/readback/expiry/rotation/revocation/cleanup on the actual source URL. | A checked real-endpoint command proving the same executable path mints and later reads back a live auth session on the exact production source boundary. | Blocked |
+| Durable restart-readable journal ownership | The release verifier proof still does not consume production-owned restart-readable journal storage on the live boundary. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
+| Apply-time revalidation before first mutation | The wrapper assertion still only proves the checked path inside the harness. It does not show a real-endpoint mutation preceded by apply-time revalidation on a production-owned boundary. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
 
 ## Release Blockers
 
