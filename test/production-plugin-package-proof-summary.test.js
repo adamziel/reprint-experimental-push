@@ -4363,6 +4363,65 @@ test('plugin-driver proof summary attach helper repairs stale callback alias req
   assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, true);
 });
 
+test('plugin-driver proof summary attach helper repairs stale callback alias requestedSatisfied when the nested mode proof is current', () => {
+  const callbackSelection = new Set([
+    'driver-callback-guards',
+    ...scenarioGroups['driver-callback-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverCallbackGuards',
+    canonicalMode: 'driver-callback-guards',
+    requestedScenarios: ['driver-callback-guards'],
+    selectedScenarios: Array.from(callbackSelection).sort(),
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverCallbackGuardsOnly'],
+    selectedScenarios: ['driverCallbackGuardsOnly'],
+    resolvedMode: 'driverCallbackGuardsOnly',
+    canonicalMode: 'driver-callback-guards',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedBundlesSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverCallbackGuardsOnly'],
+    selectedScenarios: ['driverCallbackGuardsOnly'],
+    resolvedMode: 'driverCallbackGuardsOnly',
+    canonicalMode: 'driver-callback-guards',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.equal(repairedProof.requestedBundlesSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, true);
+});
+
 test('plugin-driver proof summary attach helper repairs stale registration-shape alias scenario statuses when the nested mode proof is current', () => {
   const registrationShapeSelection = new Set([
     'driver-registration-shape-guards',
@@ -4524,6 +4583,71 @@ test('plugin-driver proof summary attach helper repairs stale registration-shape
   assert.deepEqual(repairedProof.modeProof?.requestedBundleStatuses, {
     driverRegistrationShapeGuards: 'passed',
   });
+  assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, true);
+});
+
+test('plugin-driver proof summary attach helper repairs stale registration-shape alias requestedSatisfied when the nested mode proof is current', () => {
+  const registrationShapeSelection = new Set([
+    'driver-registration-shape-guards',
+    ...scenarioGroups['driver-registration-shape-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverRegistrationShapeGuards',
+    canonicalMode: 'driver-registration-shape-guards',
+    requestedScenarios: ['driver-registration-shape-guards'],
+    selectedScenarios: Array.from(registrationShapeSelection).sort(),
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    selectedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    resolvedMode: 'driverRegistrationShapeGuardsOnly',
+    canonicalMode: 'driver-registration-shape-guards',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedBundlesSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    selectedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    resolvedMode: 'driverRegistrationShapeGuardsOnly',
+    canonicalMode: 'driver-registration-shape-guards',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.equal(repairedProof.requestedBundlesSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
   assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, true);
 });
 
