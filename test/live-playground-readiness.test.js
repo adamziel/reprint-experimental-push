@@ -1516,6 +1516,24 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
     },
     {
+      label: 'cleanup alias',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'explicitly rotated',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+      },
+    },
+    {
       label: 'wrong auth session type',
       session: {
         status: 'active',
@@ -1570,7 +1588,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
 });
 
 
-test('packaged server readiness fails closed for mismatched signed preflight session identities', () => {
+test('packaged server readiness fails closed for mismatched or incomplete signed preflight session identities', () => {
   const readySnapshot = {
     status: 200,
     body: {
@@ -1580,39 +1598,73 @@ test('packaged server readiness fails closed for mismatched signed preflight ses
       },
     },
   };
-  const mismatchedPreflight = {
-    status: 200,
-    body: {
-      ok: true,
-      routeProfile: {
-        profile: 'production-shaped',
-        restNamespace: 'reprint/v1',
-        routePrefix: '/push',
-        labBacked: false,
-      },
-      auth: {
-        session: {
-          id: 'session_456',
-          status: 'active',
-          type: 'production-auth-session',
-          expiresAt: '2099-01-01T00:00:00Z',
+  const identityCases = [
+    {
+      label: 'mismatched ids',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          auth: {
+            session: {
+              id: 'session_456',
+              status: 'active',
+              type: 'production-auth-session',
+              expiresAt: '2099-01-01T00:00:00Z',
+            },
+          },
+          session: {
+            id: 'session_123',
+            type: 'production-auth-session',
+          },
         },
       },
-      session: {
-        id: 'session_123',
-        type: 'production-auth-session',
+    },
+    {
+      label: 'missing auth session id',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          auth: {
+            session: {
+              status: 'active',
+              type: 'production-auth-session',
+              expiresAt: '2099-01-01T00:00:00Z',
+            },
+          },
+          session: {
+            id: 'session_123',
+            type: 'production-auth-session',
+          },
+        },
       },
     },
-  };
+  ];
 
-  assert.equal(packagedProductionPluginPreflightReady(mismatchedPreflight), false);
-  assert.equal(packagedProductionPluginPreflightRetryable(mismatchedPreflight), false);
-  assert.equal(packagedProductionPluginPreflightTerminal(mismatchedPreflight), true);
-  assert.equal(
-    packagedProductionPluginServerReady({
-      snapshot: readySnapshot,
-      preflight: mismatchedPreflight,
-    }),
-    false,
-  );
+  for (const { label, preflight } of identityCases) {
+    assert.equal(packagedProductionPluginPreflightReady(preflight), false, `${label} should not be ready`);
+    assert.equal(packagedProductionPluginPreflightRetryable(preflight), false, `${label} should fail closed`);
+    assert.equal(packagedProductionPluginPreflightTerminal(preflight), true, `${label} should be terminal`);
+    assert.equal(
+      packagedProductionPluginServerReady({
+        snapshot: readySnapshot,
+        preflight,
+      }),
+      false,
+      `${label} should keep the packaged server unready`,
+    );
+  }
 });
