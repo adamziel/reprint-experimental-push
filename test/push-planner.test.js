@@ -46382,6 +46382,57 @@ test('blocks steady unsupported users graph rows before they can be treated as a
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported users graph rows before they can be treated as already in sync while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_users","ID:21"]';
+  const matchingRestoreKey = 'file:wp-content/uploads/steady-unsupported-user-restore-drift.txt';
+  const base = baseSite();
+  delete base.files[matchingRestoreKey.slice('file:'.length)];
+  base.db.wp_users = {
+    'ID:21': {
+      ID: 21,
+      user_login: 'steady-restore-user',
+      user_email: 'steady-restore@example.test',
+      display_name: 'Steady Unsupported Restore User',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingRestoreKey.slice('file:'.length)] = 'shared steady unsupported user restore drift bytes';
+  local.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+
+  const remote = baseSite();
+  remote.files[matchingRestoreKey.slice('file:'.length)] = 'shared steady unsupported user restore drift bytes';
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady Unsupported Restore User'), false);
+  assert.equal(planJson.includes('shared steady unsupported user restore drift bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks steady unsupported users graph rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_users","ID:22"]';
   const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-user-delete.txt';
@@ -46431,6 +46482,57 @@ test('blocks steady unsupported users graph rows before they can be treated as a
   assert.equal(planJson.includes('base steady unsupported user delete bytes'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks steady unsupported users graph rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_users","ID:22"]';
+  const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-user-delete-drift.txt';
+  const base = baseSite();
+  base.files[matchingDeleteKey.slice('file:'.length)] = 'base steady unsupported user delete drift bytes';
+  base.db.wp_users = {
+    'ID:22': {
+      ID: 22,
+      user_login: 'steady-delete-user',
+      user_email: 'steady-delete@example.test',
+      display_name: 'Steady Unsupported Delete User',
+    },
+  };
+
+  const local = baseSite();
+  delete local.files[matchingDeleteKey.slice('file:'.length)];
+  local.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+
+  const remote = baseSite();
+  delete remote.files[matchingDeleteKey.slice('file:'.length)];
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, matchingDeleteKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady Unsupported Delete User'), false);
+  assert.equal(planJson.includes('base steady unsupported user delete drift bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
 test('blocks remote-only comments graph drift while preserving a matching independent edit and remote-only plugin changes', () => {
@@ -46753,6 +46855,58 @@ test('blocks steady unsupported comments graph rows before they can be treated a
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:20"]';
+  const matchingRestoreKey = 'file:wp-content/uploads/steady-unsupported-comment-restore-drift.txt';
+  const base = baseSite();
+  delete base.files[matchingRestoreKey.slice('file:'.length)];
+  base.db.wp_comments = {
+    'comment_ID:20': {
+      comment_ID: 20,
+      comment_post_ID: 1,
+      comment_author: 'Steady restore commenter',
+      comment_content: 'Steady unsupported restore comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingRestoreKey.slice('file:'.length)] = 'shared steady unsupported comment restore drift bytes';
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+
+  const remote = baseSite();
+  remote.files[matchingRestoreKey.slice('file:'.length)] = 'shared steady unsupported comment restore drift bytes';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported restore comment content'), false);
+  assert.equal(planJson.includes('shared steady unsupported comment restore drift bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:21"]';
   const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-comment-delete.txt';
@@ -46803,6 +46957,58 @@ test('blocks steady unsupported comments graph rows before they can be treated a
   assert.equal(planJson.includes('base steady unsupported comment delete bytes'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
+test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:21"]';
+  const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-comment-delete-drift.txt';
+  const base = baseSite();
+  base.files[matchingDeleteKey.slice('file:'.length)] = 'base steady unsupported comment delete drift bytes';
+  base.db.wp_comments = {
+    'comment_ID:21': {
+      comment_ID: 21,
+      comment_post_ID: 1,
+      comment_author: 'Steady delete commenter',
+      comment_content: 'Steady unsupported delete comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  delete local.files[matchingDeleteKey.slice('file:'.length)];
+  local.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+
+  const remote = baseSite();
+  delete remote.files[matchingDeleteKey.slice('file:'.length)];
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, matchingDeleteKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported delete comment content'), false);
+  assert.equal(planJson.includes('base steady unsupported comment delete drift bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
 test('blocks local serialized block references while preserving remote-only plugin drift', () => {
