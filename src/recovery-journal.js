@@ -4,6 +4,8 @@ import { digest } from './stable-json.js';
 import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
+const PRODUCTION_RECOVERY_JOURNAL_KIND = 'production-recovery-journal';
+const PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
@@ -611,9 +613,12 @@ export function openProductionRecoveryJournal(options) {
   journal.claimHash = nextClaimHash;
   journal.claimFenced = true;
 
+  journal.kind = PRODUCTION_RECOVERY_JOURNAL_KIND;
   journal.productionAdapter = 'openProductionRecoveryJournal';
+  journal.supportedSurface = PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE;
   journal.ownsJournal = true;
   journal.restartReadable = true;
+  journal.journalPath = filePath;
   journal.claimId = claimId;
   journal.artifactRefs = { ...artifactRefs };
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
@@ -637,10 +642,13 @@ export function openProductionRecoveryJournal(options) {
     };
     return {
       journal: {
+        kind: PRODUCTION_RECOVERY_JOURNAL_KIND,
         path: filePath,
+        journalPath: filePath,
         checked: [filePath],
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
+        supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
         claim,
         claimId: persistedClaimId,
         ownsJournal: true,

@@ -296,14 +296,20 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   });
 
   const inspection = journal.inspect();
+  assert.equal(journal.kind, 'production-recovery-journal');
   assert.equal(journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(journal.supportedSurface, 'claim-fenced-restart-readable');
   assert.equal(journal.ownsJournal, true);
   assert.equal(journal.restartReadable, true);
+  assert.equal(journal.journalPath, filePath);
   assert.equal(journal.claimId, 'production-claim-01');
   assert.deepEqual(journal.artifactRefs, {
     releaseProof: 'artifact://release-proof-1',
   });
+  assert.equal(inspection.journal.kind, 'production-recovery-journal');
+  assert.equal(inspection.journal.journalPath, filePath);
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
   assert.deepEqual(inspection.journal.claim, {
     status: 'active',
     activeClaimId: 'production-claim-01',
@@ -423,6 +429,9 @@ test('checked release path consumes the production recovery journal inspection s
   });
 
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(inspection.journal.kind, 'production-recovery-journal');
+  assert.equal(inspection.journal.journalPath, filePath);
+  assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
   assert.equal(inspection.journal.ownsJournal, true);
   assert.equal(inspection.journal.claimId, activeClaimId);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
