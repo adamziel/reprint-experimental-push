@@ -3390,6 +3390,147 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when accepted checked summaries preserve mismatched idempotency lineage', { skip: !hasPhp }, () => {
+  const checkedSummary = {
+    acceptedOnCheckedBoundary: true,
+    schemaVersion: 1,
+    table: 'wp_reprint_push_lab_push_journal',
+    rowCount: 1,
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    },
+    claimEvidence: {
+      activeRow: {
+        sequence: 20,
+        event: 'stale-claim-rejected',
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+      abandonedRow: {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+        startedCursor: 'db-journal:12',
+        claimCursor: 'db-journal:11',
+      },
+      previousRow: {
+        sequence: 11,
+        event: 'idempotency-opened',
+        claimKeyHash: 'retry-claim-hash-01',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
+      },
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'wpdb-single-statement-cas',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    latestRows: [
+      {
+        event: 'stale-claim-rejected',
+        id: 20,
+      },
+    ],
+    eventSummaries: [
+      {
+        event: 'stale-claim-rejected',
+        count: 1,
+        latestId: 20,
+      },
+    ],
+    idempotencyEvidence: [
+      {
+        idempotencyKeyHash: 'idempotency-hash-other',
+        events: 2,
+        requestHashes: 1,
+        latestId: 20,
+      },
+    ],
+  };
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'ok',
+            scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+          },
+          acceptedOnCheckedBoundary: true,
+          scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+          table: 'wp_reprint_push_lab_push_journal',
+          rowCount: 1,
+          claim: checkedSummary.claim,
+          claimEvidence: checkedSummary.claimEvidence,
+          ownership: checkedSummary.ownership,
+          writerLease: checkedSummary.writerLease,
+          leaseFence: checkedSummary.leaseFence,
+          storageGuard: {
+            boundary: 'wpdb-single-statement-cas',
+            operation: 'update',
+            outcome: 'applied',
+          },
+          latestRows: checkedSummary.latestRows,
+          eventSummaries: checkedSummary.eventSummaries,
+          idempotencyEvidence: checkedSummary.idempotencyEvidence,
+          storage: 'wp-options+journal-evidence',
+          planHash: 'plan-hash-123',
+          receiptHash: 'receipt-hash-456',
+        },
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('db journal stale-claim evidence stays visible when only event summaries retain the retry rows', { skip: !hasPhp }, () => {
   const result = runHasStaleClaimRejectionEvidence(
     [

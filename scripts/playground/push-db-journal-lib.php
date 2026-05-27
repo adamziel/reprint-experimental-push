@@ -980,7 +980,7 @@ function reprint_push_lab_db_journal_checked_boundary_persisted_evidence_matches
         && is_array($journal['eventSummaries'] ?? null)
         && count($journal['eventSummaries']) > 0
         && reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_matches($journal['eventSummaries'])
-        && reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_matches($journal['idempotencyEvidence'] ?? null)
+        && reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_matches($journal)
         && reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches($journal);
 }
 
@@ -1022,11 +1022,23 @@ function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_m
     return false;
 }
 
-function reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_matches($idempotency_evidence): bool
+function reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_matches($journal): bool
 {
+    if (!is_array($journal)) {
+        return false;
+    }
+
+    $idempotency_evidence = $journal['idempotencyEvidence'] ?? null;
     if (!is_array($idempotency_evidence) || count($idempotency_evidence) <= 0) {
         return false;
     }
+
+    $claim_idempotency_key_hash = is_array($journal['claim'] ?? null)
+        ? ($journal['claim']['idempotencyKeyHash'] ?? null)
+        : null;
+    $active_claim_sequence = is_array($journal['claim'] ?? null)
+        ? ($journal['claim']['activeClaimSequence'] ?? null)
+        : null;
 
     foreach ($idempotency_evidence as $summary) {
         if (
@@ -1035,6 +1047,14 @@ function reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_match
             && reprint_push_lab_db_journal_is_positive_int($summary['events'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($summary['requestHashes'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($summary['latestId'] ?? null)
+            && (
+                !reprint_push_lab_db_journal_non_empty_string($claim_idempotency_key_hash)
+                || $summary['idempotencyKeyHash'] === $claim_idempotency_key_hash
+            )
+            && (
+                !reprint_push_lab_db_journal_is_positive_int($active_claim_sequence)
+                || (int) $summary['latestId'] >= (int) $active_claim_sequence
+            )
         ) {
             return true;
         }

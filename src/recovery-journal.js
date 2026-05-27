@@ -120,7 +120,7 @@ function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
     && Array.isArray(dbJournal?.eventSummaries)
     && dbJournal.eventSummaries.length > 0
     && checkedBoundaryEventSummariesEvidenceMatches(dbJournal.eventSummaries)
-    && checkedBoundaryIdempotencyEvidenceMatches(dbJournal?.idempotencyEvidence)
+    && checkedBoundaryIdempotencyEvidenceMatches(dbJournal)
     && checkedBoundaryStaleClaimEvidenceMatches(dbJournal);
 }
 
@@ -136,14 +136,21 @@ function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {
   );
 }
 
-function checkedBoundaryIdempotencyEvidenceMatches(idempotencyEvidence) {
+function checkedBoundaryIdempotencyEvidenceMatches(dbJournal) {
+  const idempotencyEvidence = dbJournal?.idempotencyEvidence;
+  const claimIdempotencyKeyHash = dbJournal?.claim?.idempotencyKeyHash;
+  const activeClaimSequence = dbJournal?.claim?.activeClaimSequence;
   return Array.isArray(idempotencyEvidence)
     && idempotencyEvidence.length > 0
     && idempotencyEvidence.some(
       (summary) => hasNonEmptyString(summary?.idempotencyKeyHash)
         && isPositiveInteger(summary?.events)
         && isPositiveInteger(summary?.requestHashes)
-        && isPositiveInteger(summary?.latestId),
+        && isPositiveInteger(summary?.latestId)
+        && (!hasNonEmptyString(claimIdempotencyKeyHash)
+          || summary.idempotencyKeyHash === claimIdempotencyKeyHash)
+        && (!isPositiveInteger(activeClaimSequence)
+          || summary.latestId >= activeClaimSequence),
     );
 }
 
