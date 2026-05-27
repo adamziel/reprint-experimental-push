@@ -2801,6 +2801,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let notReadyProbeCount = 0;
   let timeoutProbeCount = 0;
   let snapshotTimeoutProbeCount = 0;
+  let lastSnapshotTimeoutContext = null;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -2838,6 +2839,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
         snapshotTimeoutProbeCount = 0;
+        lastSnapshotTimeoutContext = null;
         const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
             Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
@@ -2928,6 +2930,10 @@ async function waitForServer(child, baseUrl, getLogs) {
             if (labReadinessProbeTimedOut(error)) {
               lastError = error;
               snapshotTimeoutProbeCount = labNextTimeoutProbeCount(snapshotTimeoutProbeCount, error);
+              lastSnapshotTimeoutContext = {
+                timeoutProbeCount: snapshotTimeoutProbeCount,
+                startupIndexStatus: response.status,
+              };
               if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount)) {
                 await throwPlaygroundReadinessFailure(
                   child,
@@ -2950,6 +2956,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           }
           timeoutProbeCount = 0;
           snapshotTimeoutProbeCount = 0;
+          lastSnapshotTimeoutContext = null;
           const snapshotPreview = snapshotBody.slice(0, 500);
           lastProbes.push({
             route: '/wp-json/reprint-push-lab/v1/snapshot',
@@ -3019,7 +3026,23 @@ async function waitForServer(child, baseUrl, getLogs) {
           continue;
         }
         notReadyProbeCount = 0;
+        if (lastSnapshotTimeoutContext !== null) {
+          await throwPlaygroundReadinessFailure(
+            child,
+            `Playground /wp-json/ returned a terminal readiness failure HTTP ${response.status} after the snapshot probe timed out at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            getLogs(),
+            {
+              childPid: child.pid ?? null,
+              snapshotProbeTimedOut: true,
+              ...lastSnapshotTimeoutContext,
+              indexTerminal: true,
+            },
+          );
+        }
         snapshotTimeoutProbeCount = 0;
+        lastSnapshotTimeoutContext = null;
         if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
           await throwPlaygroundReadinessFailure(
             child,
@@ -3039,7 +3062,23 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
+      if (lastSnapshotTimeoutContext !== null && labReadinessProbeTimedOut(error)) {
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground /wp-json/ probe timed out after the snapshot probe timed out at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getLogs(),
+          {
+            childPid: child.pid ?? null,
+            snapshotProbeTimedOut: true,
+            ...lastSnapshotTimeoutContext,
+            indexProbeTimedOut: true,
+          },
+        );
+      }
       snapshotTimeoutProbeCount = 0;
+      lastSnapshotTimeoutContext = null;
       timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
       if (labReadinessProbeTimedOut(error) && labNotReadyProbeLimitReached(timeoutProbeCount)) {
         await throwPlaygroundReadinessFailure(

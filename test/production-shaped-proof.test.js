@@ -4937,6 +4937,34 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
   assert.equal(snapshotCalls, 4);
 });
 
+test('shared lab waitForServer preserves snapshot-timeout context across the next /wp-json/ failure branch', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    verifierSource,
+    /lastSnapshotTimeoutContext = \{\s*timeoutProbeCount:\s*snapshotTimeoutProbeCount,\s*startupIndexStatus:\s*response\.status,\s*\}/s,
+  );
+  assert.match(
+    verifierSource,
+    /Playground \/wp-json\/ returned a terminal readiness failure HTTP \$\{response\.status\} after the snapshot probe timed out at \$\{baseUrl\}/,
+  );
+  assert.match(
+    verifierSource,
+    /snapshotProbeTimedOut:\s*true,\s*\.\.\.lastSnapshotTimeoutContext,\s*indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /Playground \/wp-json\/ probe timed out after the snapshot probe timed out at \$\{baseUrl\}/,
+  );
+  assert.match(
+    verifierSource,
+    /snapshotProbeTimedOut:\s*true,\s*\.\.\.lastSnapshotTimeoutContext,\s*indexProbeTimedOut:\s*true/s,
+  );
+});
+
 test('live Playground proof helpers keep lab readiness probes child-aware', () => {
   const liveSources = [
     readFileSync(
