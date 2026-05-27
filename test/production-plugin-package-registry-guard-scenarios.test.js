@@ -69,3 +69,19 @@ test('packaged plugin-driver scenario resolver exposes a dedicated receipt auth 
     ]),
   );
 });
+
+test('packaged plugin-driver scenario resolver exposes a dedicated receipt credential guard bundle mode', () => {
+  const resolved = resolveProductionPluginPackageScenarios([], undefined, 'driverReceiptCredentialGuards');
+
+  assert.equal(resolved.resolvedMode, 'driverReceiptCredentialGuards');
+  assert.equal(resolved.canonicalMode, 'driver-receipt-credential-guards');
+  assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-credential-guards']);
+  assert.deepEqual(
+    resolved.selectedScenarios,
+    new Set([
+      'driver-receipt-credential-guards',
+      'driver-receipt-rotated-credential-guard',
+      'driver-receipt-revoked-credential-guard',
+    ]),
+  );
+});

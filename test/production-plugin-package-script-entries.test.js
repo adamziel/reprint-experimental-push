@@ -74,6 +74,13 @@ test('package scripts pin the bounded plugin-driver receipt auth guard bundle en
   );
 });
 
+test('package scripts pin the bounded plugin-driver receipt credential guard bundle entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-credential-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptCredentialGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver registration guard bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-registration-guards'],
@@ -382,6 +389,13 @@ test('package scripts pin the bounded plugin-driver receipt auth-only mode entry
   );
 });
 
+test('package scripts pin the bounded plugin-driver receipt credential-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-credential-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptCredentialOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver receipt-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-only'],
@@ -393,6 +407,13 @@ test('package scripts pin the exact plugin-driver receipt-auth-guards-only mode 
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-auth-guards-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptAuthGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the exact plugin-driver receipt-credential-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-credential-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptCredentialGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
 
@@ -592,6 +613,7 @@ test('package scripts keep every guard-proof canonical mode reachable through ru
     'driver-callback-guards',
     'driver-proof',
     'driver-receipt-auth-guards',
+    'driver-receipt-credential-guards',
     'driver-receipt-guards',
     'driver-receipt-registration-guards',
     'driver-registration-guards',

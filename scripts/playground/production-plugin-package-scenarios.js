@@ -17,6 +17,11 @@ const receiptAuthGuardScenarioNames = [
   'driver-receipt-revoked-credential-guard',
 ];
 
+const receiptCredentialGuardScenarioNames = [
+  'driver-receipt-rotated-credential-guard',
+  'driver-receipt-revoked-credential-guard',
+];
+
 const registrationGuardScenarioNames = [
   'driver-missing-export-guard',
   'driver-missing-apply-guard',
@@ -46,6 +51,7 @@ const scenarioGroups = {
   ],
   'driver-receipt-guards': receiptGuardScenarioNames,
   'driver-receipt-auth-guards': receiptAuthGuardScenarioNames,
+  'driver-receipt-credential-guards': receiptCredentialGuardScenarioNames,
   'driver-verifier-guards': [
     ...receiptGuardScenarioNames,
     ...registrationGuardScenarioNames,
@@ -80,6 +86,7 @@ const scenarioNames = [
   'core-package-routes',
   'driver-receipt-guards',
   'driver-receipt-auth-guards',
+  'driver-receipt-credential-guards',
   ...receiptGuardScenarioNames,
   'driver-delete-apply',
   'driver-missing-export-guard',
@@ -105,6 +112,7 @@ const scenarioNameAliases = new Map([
   ['driver-route-proof', 'core-package-routes'],
   ['driverReceiptGuards', 'driver-receipt-guards'],
   ['driverReceiptAuthGuards', 'driver-receipt-auth-guards'],
+  ['driverReceiptCredentialGuards', 'driver-receipt-credential-guards'],
   ['driverDeleteApplyProof', 'driver-delete-apply'],
   ['driver-delete-apply-proof', 'driver-delete-apply'],
   ['driverPositiveProof', 'driver-positive-proof'],
@@ -135,6 +143,12 @@ const modeNameMappings = new Map([
   ['driverReceiptAuthGuards', 'driver-receipt-auth-guards'],
   ['driver-receipt-auth-guards-only', 'driver-receipt-auth-guards'],
   ['driverReceiptAuthGuardsOnly', 'driver-receipt-auth-guards'],
+  ['driver-receipt-credential-only', 'driver-receipt-credential-guards'],
+  ['driverReceiptCredentialOnly', 'driver-receipt-credential-guards'],
+  ['driver-receipt-credential-guards', 'driver-receipt-credential-guards'],
+  ['driverReceiptCredentialGuards', 'driver-receipt-credential-guards'],
+  ['driver-receipt-credential-guards-only', 'driver-receipt-credential-guards'],
+  ['driverReceiptCredentialGuardsOnly', 'driver-receipt-credential-guards'],
   ['driver-verifier-only', 'driver-verifier-guards'],
   ['driverVerifierOnly', 'driver-verifier-guards'],
   ['driver-verifier-guards', 'driver-verifier-guards'],

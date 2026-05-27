@@ -143,6 +143,10 @@ test('plugin-driver proof summary bundle groups stay aligned with shared scenari
     scenarioGroups['driver-receipt-auth-guards'],
   );
   assert.deepEqual(
+    bundleSummaryGroups['driver-receipt-credential-guards'],
+    scenarioGroups['driver-receipt-credential-guards'],
+  );
+  assert.deepEqual(
     bundleSummaryGroups['driver-callback-guards'],
     scenarioGroups['driver-callback-guards'],
   );
@@ -185,6 +189,7 @@ test('plugin-driver proof summary exports guard-proof mode aliases for every can
     'driver-callback-guards',
     'driver-proof',
     'driver-receipt-auth-guards',
+    'driver-receipt-credential-guards',
     'driver-receipt-guards',
     'driver-receipt-registration-guards',
     'driver-registration-guards',
@@ -215,6 +220,7 @@ test('plugin-driver proof summary exports canonical proof keys for downstream mo
     'driver-positive-proof': 'driverPositiveProof',
     'driver-proof': 'driverProof',
     'driver-receipt-auth-guards': 'driverReceiptAuthGuards',
+    'driver-receipt-credential-guards': 'driverReceiptCredentialGuards',
     'driver-receipt-guards': 'driverReceiptGuards',
     'driver-receipt-registration-guards': 'driverReceiptRegistrationGuards',
     'driver-registration-guards': 'driverRegistrationGuards',
@@ -268,6 +274,9 @@ test('plugin-driver proof summary resolves every exported runtime mode alias to 
     ['driverReceiptAuthOnly', { canonicalMode: 'driver-receipt-auth-guards', proofKey: 'driverReceiptAuthGuards' }],
     ['driverReceiptAuthGuards', { canonicalMode: 'driver-receipt-auth-guards', proofKey: 'driverReceiptAuthGuards' }],
     ['driverReceiptAuthGuardsOnly', { canonicalMode: 'driver-receipt-auth-guards', proofKey: 'driverReceiptAuthGuards' }],
+    ['driverReceiptCredentialOnly', { canonicalMode: 'driver-receipt-credential-guards', proofKey: 'driverReceiptCredentialGuards' }],
+    ['driverReceiptCredentialGuards', { canonicalMode: 'driver-receipt-credential-guards', proofKey: 'driverReceiptCredentialGuards' }],
+    ['driverReceiptCredentialGuardsOnly', { canonicalMode: 'driver-receipt-credential-guards', proofKey: 'driverReceiptCredentialGuards' }],
     ['driverRegistrationOnly', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
     ['driverRegistrationGuards', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
     ['driverRegistrationGuardsOnly', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
@@ -6722,12 +6731,12 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
 
   assert.equal(summary.kind, 'production-plugin-package-driver-proof');
   assert.equal(summary.ok, true);
-  assert.equal(summary.checkedScenarioCount, 15);
-  assert.equal(summary.passedScenarioCount, 15);
+  assert.equal(summary.checkedScenarioCount, 16);
+  assert.equal(summary.passedScenarioCount, 16);
   assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 0);
-  assert.equal(summary.checkedBundleCount, 10);
-  assert.equal(summary.passedBundleCount, 10);
+  assert.equal(summary.checkedBundleCount, 11);
+  assert.equal(summary.passedBundleCount, 11);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarioCount, 'all');
@@ -6764,6 +6773,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driver-missing-table-guard',
     'driver-missing-validate-guard',
     'driver-receipt-auth-guards',
+    'driver-receipt-credential-guards',
     'driver-receipt-guards',
     'driver-whitespace-name-guard',
     'driver-whitespace-plugin-owner-guard',
@@ -6776,6 +6786,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driverPositiveProof',
     'driverProof',
     'driverReceiptAuthGuards',
+    'driverReceiptCredentialGuards',
     'driverReceiptRegistrationGuards',
     'driverRegistrationGuards',
     'driverRegistrationShapeGuards',
@@ -6840,6 +6851,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     driverProof: 'passed',
     driverReleaseProof: 'passed',
     driverReceiptAuthGuards: 'passed',
+    driverReceiptCredentialGuards: 'passed',
     driverVerifierGuards: 'passed',
     driverReceiptRegistrationGuards: 'passed',
     driverRegistrationGuards: 'passed',
@@ -6851,6 +6863,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     corePackageRoutes: 'passed',
     driverReceiptGuards: 'passed',
     driverReceiptAuthGuards: 'passed',
+    driverReceiptCredentialGuards: 'passed',
     driverDeleteApply: 'passed',
     driverMissingExportGuard: 'passed',
     driverMissingApplyGuard: 'passed',
@@ -6963,11 +6976,11 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 9);
   assert.equal(summary.failedScenarioCount, 0);
-  assert.equal(summary.skippedScenarioCount, 6);
+  assert.equal(summary.skippedScenarioCount, 7);
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
   assert.equal(summary.failedBundleCount, 0);
-  assert.equal(summary.skippedBundleCount, 9);
+  assert.equal(summary.skippedBundleCount, 10);
   assert.equal(summary.requestedScenarioCount, 1);
   assert.equal(summary.passedRequestedScenarioCount, 1);
   assert.equal(summary.failedRequestedScenarioCount, 0);
@@ -7036,6 +7049,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
     driverProof: 'skipped',
     driverReleaseProof: 'skipped',
     driverReceiptAuthGuards: 'skipped',
+    driverReceiptCredentialGuards: 'skipped',
     driverReceiptRegistrationGuards: 'skipped',
     driverVerifierGuards: 'passed',
     driverRegistrationGuards: 'skipped',
@@ -7282,7 +7296,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
-  assert.equal(summary.skippedBundleCount, 9);
+  assert.equal(summary.skippedBundleCount, 10);
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 8);
   assert.equal(summary.failedScenarioCount, 1);
@@ -8448,6 +8462,7 @@ test('plugin-driver proof summary tracks combined receipt and registration guard
     driverPositiveProof: 'skipped',
     driverReleaseProof: 'skipped',
     driverReceiptAuthGuards: 'skipped',
+    driverReceiptCredentialGuards: 'skipped',
     driverVerifierGuards: 'skipped',
     driverReceiptRegistrationGuards: 'passed',
     driverRegistrationGuards: 'skipped',
@@ -9464,6 +9479,65 @@ test('plugin-driver proof summary carries bounded receipt auth guard proof on mo
     payloadModeAfterReject: 'local-update',
     updatedMarkerAfterReject: 'local-update',
   });
+  assert.deepEqual(summary.modeProof?.guardProof?.rotatedCredential, {
+    status: 'passed',
+    rejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.revokedCredential, {
+    status: 'passed',
+    rejectedCode: 'reprint_push_lab_auth_required',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+});
+
+test('plugin-driver proof summary carries receipt credential guards on dedicated modeProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+    },
+    {
+      requestedScenarios: ['driver-receipt-credential-guards'],
+      selectedScenarios: new Set([
+        'driver-receipt-credential-guards',
+        ...scenarioGroups['driver-receipt-credential-guards'],
+      ]),
+      resolvedMode: 'driverReceiptCredentialGuardsOnly',
+      canonicalMode: 'driver-receipt-credential-guards',
+    },
+  );
+
+  assert.equal(summary.modeProof?.proof, summary.driverReceiptCredentialGuards);
+  assert.equal(summary.modeProof?.proofKey, 'driverReceiptCredentialGuards');
+  assert.equal(summary.modeProof?.requestedStatus, 'passed');
+  assert.equal(summary.modeProof?.requestedSatisfied, true);
+  assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
+  assert.equal(summary.modeProof?.guardProof?.ok, true);
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 2);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 2);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.passedGuards, [
+    'rotatedCredential',
+    'revokedCredential',
+  ]);
   assert.deepEqual(summary.modeProof?.guardProof?.rotatedCredential, {
     status: 'passed',
     rejectedCode: 'AUTH_RECEIPT_MISMATCH',
