@@ -900,6 +900,11 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         return $journal;
     }
 
+    if (!reprint_push_lab_rest_checked_recovery_journal_integrity_contract_matches($journal)) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        return $journal;
+    }
+
     if (!reprint_push_lab_rest_checked_recovery_journal_restart_artifact_contract_matches($journal)) {
         $journal['acceptedOnCheckedBoundary'] = false;
         return $journal;
@@ -916,6 +921,20 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
     }
 
     return $journal;
+}
+
+function reprint_push_lab_rest_checked_recovery_journal_integrity_contract_matches(array $journal): bool
+{
+    $integrity = isset($journal['integrity']) && is_array($journal['integrity'])
+        ? $journal['integrity']
+        : null;
+    if (!is_array($integrity)) {
+        return false;
+    }
+
+    return ($integrity['schemaVersion'] ?? null) === 1
+        && ($integrity['status'] ?? null) === 'ok'
+        && reprint_push_lab_db_journal_checked_boundary_scope_matches($integrity['scope'] ?? null);
 }
 
 function reprint_push_lab_rest_checked_recovery_journal_restart_artifact_contract_matches(array $journal): bool

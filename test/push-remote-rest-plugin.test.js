@@ -1977,6 +1977,122 @@ test('checked recovery inspect evidence fails closed when accepted checked journ
   assert.equal(parsed.recovery.journal.receiptHash, undefined);
 });
 
+test('checked recovery inspect evidence fails closed when accepted checked journals preserve non-ok integrity status', { skip: !hasPhp }, () => {
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: {
+          integrity: {
+            schemaVersion: 1,
+            status: 'corrupt',
+            scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
+          },
+          acceptedOnCheckedBoundary: true,
+          scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+          storage: 'wp-options+journal-evidence',
+          planHash: 'plan-hash-123',
+          receiptHash: 'receipt-hash-456',
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimKeyHash: 'retry-claim-hash-02',
+            activeClaimSequence: 33,
+            activeClaimEvent: 'stale-claim-rejected',
+            idempotencyKeyHash: 'idem-hash-01',
+            requestHash: 'request-hash-01',
+            staleClaimRejected: true,
+            abandonedSequence: 24,
+            abandonedEvent: 'stale-claim-abandoned',
+            previousStartedSequence: 19,
+            previousClaimKeyHash: 'retry-claim-hash-01',
+            previousClaimSequence: 18,
+            previousClaimEvent: 'idempotency-opened',
+          },
+          claimEvidence: {
+            activeRow: {
+              sequence: 33,
+              event: 'stale-claim-rejected',
+              claimKeyHash: 'retry-claim-hash-02',
+              idempotencyKeyHash: 'idem-hash-01',
+              requestHash: 'request-hash-01',
+            },
+            abandonedRow: {
+              sequence: 24,
+              event: 'stale-claim-abandoned',
+              idempotencyKeyHash: 'idem-hash-01',
+              requestHash: 'request-hash-01',
+              startedCursor: 'db-journal:19',
+              claimCursor: 'db-journal:18',
+            },
+            previousRow: {
+              sequence: 18,
+              event: 'idempotency-opened',
+              claimKeyHash: 'retry-claim-hash-01',
+              idempotencyKeyHash: 'idem-hash-01',
+              requestHash: 'request-hash-01',
+            },
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'wpdb-single-statement-cas',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: true,
+            },
+          },
+          storageGuard: {
+            boundary: 'wpdb-single-statement-cas',
+            operation: 'update',
+            outcome: 'applied',
+          },
+          table: 'wp_reprint_push_lab_push_journal',
+          rowCount: 2,
+          latestRows: [
+            { event: 'apply-committed', id: 24 },
+            { event: 'stale-claim-rejected', id: 33 },
+          ],
+          eventSummaries: [
+            { event: 'apply-committed', count: 1, latestId: 24 },
+            { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+          ],
+        },
+      },
+    },
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.integrity.status, 'corrupt');
+  assert.equal(parsed.recovery.journal.storage, 'wp-options+journal-evidence');
+  assert.equal(parsed.recovery.journal.planHash, 'plan-hash-123');
+  assert.equal(parsed.recovery.journal.receiptHash, 'receipt-hash-456');
+});
+
 test('checked recovery inspect evidence fails closed when accepted checked summaries omit the checked-boundary marker', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
