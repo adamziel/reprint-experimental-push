@@ -3,12 +3,12 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 12:10:05
+## 2026-05-27 - Public Status Audit 12:11:15
 
-<a id="2026-05-27-public-status-audit-121005"></a>
+<a id="2026-05-27-public-status-audit-121115"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `3161b049e885694f8fbd5127050a8c45330ad50d` visible on the public
+  head `c208a12d28b3abcef15920c27eef424d68cad996` visible on the public
   status surface for the active supervision cycle.
 - Release gates remain `0/4`. The latest reliable head is still checked-path
   support evidence, not the missing production-owned source mutation boundary
