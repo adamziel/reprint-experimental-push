@@ -3495,6 +3495,92 @@ test('production auth/session lifecycle trace summary preserves malformed warnin
   );
 });
 
+test('production auth/session lifecycle trace summary preserves production source warning metadata', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+      warning: 'lab-only-warning',
+    },
+  ]);
+
+  assert.equal(summary.read?.warning, 'lab-only-warning');
+  assert.equal(summary.preserved?.warning, 'lab-only-warning');
+  assert.equal(summary.observations[1]?.warning, 'lab-only-warning');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'lab-only-warning',
+    },
+  );
+});
+
+test('production auth/session lifecycle trace summary preserves Playground fallback metadata', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+      playgroundFallback: true,
+    },
+  ]);
+
+  assert.equal(summary.read?.playgroundFallback, true);
+  assert.equal(summary.preserved?.playgroundFallback, true);
+  assert.equal(summary.observations[1]?.playgroundFallback, true);
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.playgroundFallback',
+      required: 'production-backed auth',
+      observed: 'playground-fallback',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary preserves cleanup alias metadata', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
