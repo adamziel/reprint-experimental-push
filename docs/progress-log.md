@@ -3,12 +3,12 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 04:31:01
+# 2026-05-27 - Public Status Audit 04:40:36
 
-<a id="2026-05-27-public-status-audit-043101"></a>
+<a id="2026-05-27-public-status-audit-044036"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `051fe7f44a2dd400d4f1e08c7cff4f745e944a02` visible on the public
+  head `578c708487d4fff6ba97be498f844714ccde2b76` visible on the public
   status surface for the active supervision cycle.
 - Release gates remain `0/4`. The latest reliable head is still checked-path
   verifier support evidence rather than the missing production-owned,
@@ -17,11 +17,10 @@ release gates and named evidence gaps rather than stale percentage estimates.
   journal storage with lease fencing, and apply-time revalidation before
   first mutation.
 - The public page keeps packaged plugin-driver guards pinned into
-  `verify:release` as support evidence, while the signed release-post retry
-  hardening now proves preserved-remote retry inside the checked
-  verifier/apply-revalidation smoke but still leaves the production-owned
-  source mutation boundary unresolved. The
-  stale percentage bars stay removed.
+  `verify:release` as support evidence, while the live checked verifier now
+  proves preserved-remote retry inside the checked verifier/apply-revalidation
+  smoke but still leaves the production-owned source mutation boundary
+  unresolved. The stale percentage bars stay removed.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
