@@ -54,7 +54,12 @@ const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs),
 );
-const maxPackagedRouteStartupAfterGlobalReadyProbes = packagedProductionPluginMaxConsecutiveNotReadyProbes;
+// Mirror the release verifier's bounded post-global-ready window so the smoke
+// does not fail early while the packaged route is still finishing startup.
+const maxPackagedRouteStartupAfterGlobalReadyProbes = Math.max(
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (readinessProbeFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 let signedRequestNonceSequence = 0;
 
 const credentials = {

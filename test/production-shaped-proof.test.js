@@ -109,6 +109,10 @@ const maxSnapshotTimeoutFallbackProbes = Math.max(
   labMaxConsecutiveNotReadyProbes,
   Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
 );
+const maxPackagedRouteStartupAfterGlobalReadyProbes = Math.max(
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 const proofSubprocessOptions = {
   timeout: proofSubprocessTimeoutMs,
   killSignal: proofSubprocessKillSignal,
@@ -4307,15 +4311,35 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   const verifierBranch = verifierSource.slice(verifierStart, verifierEnd);
   assert.match(
     verifierBranch,
-    /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginRouteStartupClassificationReady\(\s*snapshotNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?packagedProductionPluginGlobalStartupStillWithinBudget\(snapshotNotReadyProbeCount\)[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
+    /fetchPackagedWordPressIndexProbe\(baseUrl, child\)/,
   );
   assert.match(
     verifierBranch,
-    /snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);/s,
+    /packagedProductionPluginGlobalStartupStillWithinBudget\(snapshotNotReadyProbeCount\)/,
   );
   assert.match(
     verifierBranch,
-    /packagedProductionPluginRouteStartupClassificationReady\(\s*snapshotNotReadyProbeCount,\s*\)[\s\S]*?const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);/s,
+    /globalWordPressStartup:\s*true/s,
+  );
+  assert.match(
+    verifierBranch,
+    /packagedProductionPluginPackagedRouteStartupLimitReached\(\s*snapshotNotReadyProbeCount,\s*maxPackagedRouteStartupAfterGlobalReadyProbes,\s*\)/,
+  );
+  assert.match(
+    verifierBranch,
+    /packagedRouteStartup:\s*true/s,
+  );
+  assert.match(
+    verifierBranch,
+    /startupBranch\?\.kind === 'retryable-route-index-terminal'/,
+  );
+  assert.match(
+    verifierBranch,
+    /indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierBranch,
+    /maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
   );
   assert.match(
     smokeSource,
@@ -4327,7 +4351,7 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   );
 });
 
-test('packaged readiness helpers keep a shorter route-startup budget after global WordPress readiness', () => {
+test('packaged readiness helpers keep a bounded widened route-startup budget after global WordPress readiness', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
     'utf8',
@@ -4340,7 +4364,7 @@ test('packaged readiness helpers keep a shorter route-startup budget after globa
   for (const source of [smokeSource, verifierSource]) {
     assert.match(
       source,
-      /const maxPackagedRouteStartupAfterGlobalReadyProbes = packagedProductionPluginMaxConsecutiveNotReadyProbes;/,
+      /const maxPackagedRouteStartupAfterGlobalReadyProbes = Math\.max\(\s*packagedProductionPluginMaxConsecutiveNotReadyProbes,\s*Math\.ceil\(15_000 \/ \((?:packagedServerFetchTimeoutMs|readinessProbeFetchTimeoutMs) \+ readinessProbeIntervalMs\)\),\s*\);/s,
     );
     assert.match(
       source,

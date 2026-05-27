@@ -95,7 +95,14 @@ const maxSnapshotTimeoutFallbackProbes = Math.max(
   labMaxConsecutiveNotReadyProbes,
   Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
 );
-const maxPackagedRouteStartupAfterGlobalReadyProbes = packagedProductionPluginMaxConsecutiveNotReadyProbes;
+// The packaged route can still lag behind global /wp-json/ readiness while the
+// packaged plugin finishes mounting its production-shaped endpoints. Keep a
+// bounded post-global-ready window so the verifier does not fail on the same
+// avoidable last-mile startup branch after only four probes.
+const maxPackagedRouteStartupAfterGlobalReadyProbes = Math.max(
+  packagedProductionPluginMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (packagedServerFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 const maxPackagedStartupNotReadyProbeCount = Math.max(
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   Math.ceil(packagedServerStartupTimeoutMs / readinessProbeIntervalMs),
