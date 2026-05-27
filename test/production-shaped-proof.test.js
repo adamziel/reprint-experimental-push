@@ -2801,6 +2801,38 @@ test('packaged production plugin runtime source binding preserves the prior comm
   );
 });
 
+test('packaged production plugin runtime source binding preserves the prior command when auth/session credentials are malformed strings', () => {
+  const staleCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.deepEqual(
+    bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: ' reprint_push_admin ',
+        applicationPassword: '\treprint-push-admin-app-password',
+      },
+      authSessionSourceCommand: staleCommand,
+      runtimeSourceUrl: 'http://127.0.0.1:49152',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: ' reprint_push_admin ',
+        applicationPassword: '\treprint-push-admin-app-password',
+      },
+      authSessionSourceCommand: staleCommand,
+    },
+  );
+});
+
 test('production auth/session lifecycle helper requires an active unexpired packaged session', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycle({

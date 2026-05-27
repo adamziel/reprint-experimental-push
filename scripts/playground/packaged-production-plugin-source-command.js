@@ -121,9 +121,13 @@ function buildRuntimePackagedProductionPluginSourceCommand({
     return authSessionSourceCommand || '';
   }
 
-  return resolvePackagedProductionPluginSourceCommand({
-    sourceUrl: runtimeSourceUrl,
-    username,
-    applicationPassword,
-  });
+  try {
+    return resolvePackagedProductionPluginSourceCommand({
+      sourceUrl: runtimeSourceUrl,
+      username,
+      applicationPassword,
+    });
+  } catch {
+    return authSessionSourceCommand || '';
+  }
 }
