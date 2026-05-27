@@ -6975,6 +6975,11 @@ test('guarded benchmark carries receipt-ledger blockers into receipt-driven reje
     tamperedLedgerReceiptFamilies.every((entry) =>
       entry.blockerRefs.includes('receipt-ledger-kind-summary-not-proven')),
   );
+  assert.deepEqual(summarizeRejectedGates(tamperedLedgerReceiptFamilies), [
+    { rejectedGate: 'group', count: 28 },
+    { rejectedGate: 'recovery', count: 8 },
+    { rejectedGate: 'skip', count: 1 },
+  ]);
 
   const mismatchedLedger = clone(report);
   mismatchedLedger.evidence.journal.successReceiptKindLedger.pop();
@@ -6991,6 +6996,11 @@ test('guarded benchmark carries receipt-ledger blockers into receipt-driven reje
     mismatchedLedgerReceiptFamilies.every((entry) =>
       entry.blockerRefs.includes('receipt-ledger-kind-summary-mismatch')),
   );
+  assert.deepEqual(summarizeRejectedGates(mismatchedLedgerReceiptFamilies), [
+    { rejectedGate: 'group', count: 28 },
+    { rejectedGate: 'recovery', count: 8 },
+    { rejectedGate: 'skip', count: 1 },
+  ]);
 });
 
 test('guarded benchmark carries non-kind-scoped receipt flush blockers into receipt-flush rollout summaries', () => {
