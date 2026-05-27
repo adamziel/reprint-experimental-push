@@ -1151,7 +1151,7 @@ test('production recovery journal wrapper rejects restart when the persisted act
       truncate: false,
       claimId,
     }),
-    /openProductionRecoveryJournal\(\) requires claimId to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+    /openProductionRecoveryJournal\(\) refuses to reopen a claim-fenced production recovery journal with blocked persisted claim evidence: Recovery claim record is missing a valid claim id\./,
   );
 });
 
@@ -1185,16 +1185,14 @@ test('production recovery journal reopening fails closed when claim classificati
   );
 
   assert.deepEqual(classifyRecoveryJournalClaims(readRecoveryJournal(filePath).records), {
-    status: 'active',
+    status: 'blocked',
     activeClaimId: null,
     activeClaimHash: recoveryClaimHash(claimId),
     previousClaimId: null,
     previousClaimHash: null,
     sequence: plan.mutations.length + 2,
     type: 'recovery-claim-opened',
-    staleThresholdMs: null,
-    previousClaimAgeMs: null,
-    reason: 'Production recovery journal claim opened.',
+    reason: 'Recovery claim record is missing a valid claim id.',
   });
 
   assert.throws(
@@ -1209,7 +1207,7 @@ test('production recovery journal reopening fails closed when claim classificati
       truncate: false,
       claimId,
     }),
-    /openProductionRecoveryJournal\(\) requires claimId to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+    /openProductionRecoveryJournal\(\) refuses to reopen a claim-fenced production recovery journal with blocked persisted claim evidence: Recovery claim record is missing a valid claim id\./,
   );
 });
 
@@ -1314,6 +1312,65 @@ test('production recovery journal wrapper rejects restart when an advanced persi
       claimId: activeClaimId,
     }),
     /openProductionRecoveryJournal\(\) refuses to reopen a claim-fenced production recovery journal with blocked persisted claim evidence: Advanced stale-claim record is missing a valid previous claim hash\./,
+  );
+
+  assert.equal(readRecoveryJournal(filePath).records.length, persisted.records.length);
+});
+
+test('production recovery journal wrapper rejects restart when an advanced persisted claim drifts its previous claim hash', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const previousClaimId = 'production-claim-previous-hash-drifted-01';
+  const activeClaimId = 'production-claim-active-hash-drifted-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-previous-claim-hash-drifted',
+    },
+    now: fixedNow,
+    claimId: previousClaimId,
+  });
+  appendStaleClaimAdvanced(journal, {
+    plan,
+    current: remote,
+    previousClaimId,
+    claimId: activeClaimId,
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 45_000,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-previous-claim-hash-drifted',
+    },
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const advancedRecord = persisted.records.find(
+    (record) => record.type === 'stale-claim-advanced' && record.claimId === activeClaimId,
+  );
+  assert.ok(advancedRecord);
+  advancedRecord.previousClaimHash = recoveryClaimHash('drifted-previous-claim-id');
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-previous-claim-hash-drifted',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId: activeClaimId,
+    }),
+    /openProductionRecoveryJournal\(\) refuses to reopen a claim-fenced production recovery journal with blocked persisted claim evidence: Advanced stale-claim record has a previous claim hash that does not match its previous claim id\./,
   );
 
   assert.equal(readRecoveryJournal(filePath).records.length, persisted.records.length);

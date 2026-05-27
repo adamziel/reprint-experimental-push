@@ -1456,8 +1456,14 @@ export function classifyRecoveryJournalClaims(records) {
   }
 
   for (const record of claimRecords) {
+    if (!hasNonEmptyString(record.claimId)) {
+      return blockedClaimState(record, 'Recovery claim record is missing a valid claim id.');
+    }
     if (!CLAIM_HASH_PATTERN.test(record.claimHash || '')) {
       return blockedClaimState(record, 'Recovery claim record is missing a valid claim hash.');
+    }
+    if (record.claimHash !== recoveryClaimHash(record.claimId)) {
+      return blockedClaimState(record, 'Recovery claim record has a claim hash that does not match its claim id.');
     }
     if (
       record.type === 'stale-claim-advanced'
@@ -1470,6 +1476,12 @@ export function classifyRecoveryJournalClaims(records) {
       && !CLAIM_HASH_PATTERN.test(record.previousClaimHash || '')
     ) {
       return blockedClaimState(record, 'Advanced stale-claim record is missing a valid previous claim hash.');
+    }
+    if (
+      record.type === 'stale-claim-advanced'
+      && record.previousClaimHash !== recoveryClaimHash(record.previousClaimId)
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record has a previous claim hash that does not match its previous claim id.');
     }
   }
 
