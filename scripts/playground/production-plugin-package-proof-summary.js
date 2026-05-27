@@ -1152,6 +1152,15 @@ export function buildProductionPluginPackageProofSummary(
   const canonicalProof = canonicalProofKey === null
     ? null
     : proofSummary[canonicalProofKey] ?? null;
+  const canonicalModeScenarios = canonicalMode === null
+    ? []
+    : scenarioGroups[canonicalMode] ?? [canonicalMode];
+  const canonicalModePassedScenarios = canonicalModeScenarios.filter(
+    (scenarioName) => scenarioPasses.get(scenarioName) === true,
+  );
+  const canonicalModeFailedScenarios = canonicalModeScenarios.filter(
+    (scenarioName) => scenarioPasses.get(scenarioName) !== true,
+  );
   proofSummary.modeProof = canonicalProof === null
     ? null
     : {
@@ -1160,6 +1169,12 @@ export function buildProductionPluginPackageProofSummary(
       selected: canonicalProof.selected,
       ok: canonicalProof.ok,
       status: canonicalProof.status,
+      requiredScenarioCount: canonicalProof.requiredScenarioCount ?? canonicalModeScenarios.length,
+      passedScenarioCount: canonicalProof.passedScenarioCount ?? canonicalModePassedScenarios.length,
+      failedScenarioCount: canonicalProof.failedScenarioCount ?? canonicalModeFailedScenarios.length,
+      requiredScenarios: canonicalProof.requiredScenarios ?? canonicalModeScenarios,
+      passedScenarios: canonicalProof.passedScenarios ?? canonicalModePassedScenarios,
+      failedScenarios: canonicalProof.failedScenarios ?? canonicalModeFailedScenarios,
       requestedStatus: canonicalProof.requestedStatus ?? null,
       requestedBundleStatus: canonicalProof.requestedBundleStatus ?? null,
       requestedBundleStatuses: canonicalProof.requestedBundleStatuses ?? null,
