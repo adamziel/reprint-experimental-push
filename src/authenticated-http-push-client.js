@@ -1035,6 +1035,7 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
     && dbJournal?.ownership?.supportedSurface === checkedDbJournalSupportedSurface
     && dbJournalClaimContractIsPresent(dbJournal?.claim)
     && dbJournalWriterLeaseContractsArePresent(dbJournal)
+    && dbJournalClaimIdentityCoherenceIsPresent(dbJournal)
     && typeof dbJournal?.leaseFence?.boundary === 'string'
     && dbJournal.leaseFence.boundary.length > 0
     && dbJournal?.leaseFence?.claimKeyUnique === true
@@ -1114,6 +1115,20 @@ function dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease) {
   }
 
   return true;
+}
+
+function dbJournalClaimIdentityCoherenceIsPresent(dbJournal) {
+  const surfacedClaimIds = [
+    dbJournal?.claim?.activeClaimId,
+    dbJournal?.writerLease?.claimId,
+    dbJournal?.leaseFence?.writerLease?.claimId,
+  ].filter(hasNonEmptyString);
+
+  if (surfacedClaimIds.length === 0) {
+    return false;
+  }
+
+  return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0]);
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
