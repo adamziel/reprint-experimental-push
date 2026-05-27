@@ -10,7 +10,7 @@
 - Audit time: 2026-05-27 09:24:39 CEST (+0200)
 - Release-classification heads verified before write-up:
   - `origin/lane/reliable-executor` -> `3b0df9c2efd16a4f68c907f6843b804dcbd2bbc8` (`Harden live release verify startup retries`)
-  - `origin/lane/critic` -> `7aa81aa550247ed098ad00503b8a033acf8c5300`
+  - `origin/lane/critic` -> `b292163ff09930f0cd94bf1e4197eb5f309c0e5a`
   - `origin/lane/independent-auditor` -> `c645e433bf4e2ecb8044a63dfbd8deb7d25985e8`
   - `origin/lane/progress-publisher` -> `19889d0dcd0890f4dd0eaa272d97a592806c1e51`
   - `origin/main` -> `5b9b847e6f038585f5425ff30c3cc2652b871888`
