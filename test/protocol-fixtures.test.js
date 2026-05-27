@@ -4639,7 +4639,7 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
 test('verify:release keeps preserved-remote retry pinned at the checked entrypoint', () => {
   assert.equal(
     packageJson.scripts['verify:release'],
-    'npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-live-release-verify && npm run test:playground:production-plugin-driver-verifier-guards && npm run test:recovery:file-journal',
+    'npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-live-release-verify && npm run test:playground:production-shaped-apply-revalidation && npm run test:playground:production-plugin-driver-verifier-guards && npm run test:recovery:file-journal',
   );
 });
 
