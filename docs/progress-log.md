@@ -3,6 +3,30 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 09:15:31
+
+<a id="2026-05-27-public-status-audit-091531"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `044b7e0e88ce9caf8efa95f59bee8bf6649204f6` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head proves an explicit live
+  journal claim-contract path inside the checked release verifier: explicit
+  live remote/local URLs now reach the checked boundary, the live wrapper
+  fails closed when child proof JSON is not `ok`, and checked DB-journal plus
+  recovery claim-contract evidence is centralized in the PHP journal surface.
+- Critic `7aa81aa55` and independent auditor `c645e433` both keep
+  `044b7e0e` at `0/4` because this is verifier-boundary support evidence, not
+  a production-owned real Reprint endpoint proof. The missing primitive is
+  still one checked live command that proves auth/session issuance and
+  readback, durable restart-readable journal ownership with lease fencing,
+  plugin-driver ownership, preserved rejected remote evidence, and apply-time
+  revalidation before first mutation on the same boundary.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [critic audit](../audits/critic.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 08:46:07
 
 <a id="2026-05-27-public-status-audit-084607"></a>
