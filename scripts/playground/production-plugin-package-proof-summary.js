@@ -1022,7 +1022,7 @@ function isBundleSelected(selectedScenarios, bundleName) {
 
 function filterRequestedListForMode(requestedValues, allowedValues) {
   if (requestedValues === 'all') {
-    return 'all';
+    return Array.from(allowedValues).sort();
   }
   return requestedValues.filter((value) => allowedValues.has(value));
 }

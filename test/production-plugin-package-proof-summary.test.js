@@ -821,6 +821,41 @@ test('plugin-driver proof summary reuses an attached pluginDriverProof and repai
   assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
 });
 
+test('plugin-driver mode proof resolver reuses an attached top-level modeProof when the raw summary widened to all bundles', () => {
+  const attachedModeProof = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    proofKey: 'driverReleaseProof',
+    legacyProofKey: 'driverReleaseProof',
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    requestedBundleStatus: 'passed',
+    marker: 'attached',
+  };
+
+  const rawSummary = {
+    requestedScenarios: 'all',
+    requestedBundles: 'all',
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    modeProof: attachedModeProof,
+    driverReleaseProof: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverReleaseProof', {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-release-proof']),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(modeProof?.marker, 'attached');
+  assert.deepEqual(modeProof?.requestedScenarios, ['driverReleaseProof']);
+  assert.deepEqual(modeProof?.requestedBundles, ['driverReleaseProof']);
+});
+
 test('plugin-driver proof summary attach helper preserves an unrelated top-level modeProof cache', () => {
   const unrelatedModeProof = {
     mode: 'releaseProof',
