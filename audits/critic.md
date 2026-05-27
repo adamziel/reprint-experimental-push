@@ -1,22 +1,23 @@
 # Critic Verdict
 
-Current reliable head: `2c2adeaf861442837a7584f8848d31ebf72cd228`
-(`Make auth session source command executable`).
+Current reliable head: `45ea450613d972f4901371cbd38b11c53ba5c0b0`
+(`Use auth session source CLI in generated commands`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head makes the auth-session source command executable in
-  `scripts/playground/auth-session-source-command.js` and adds release-proof
-  coverage in `test/production-shaped-proof.test.js`, but it still only
-  establishes helper availability for the checked verifier path.
+- This head threads the auth-session source CLI into generated release-path
+  commands via `scripts/playground/auth-session-source-command.js` and updates
+  the proof fixtures in `test/production-shaped-proof.test.js` and
+  `test/protocol-fixtures.test.js`, but it still only improves helper
+  selection for the checked verifier path.
 - The diff does not yet prove live auth/session issuance and readback on the
   real endpoint, restart-readable durable journal storage with lease-fenced
   ownership, preserved rejected remote evidence on the live boundary, or
   apply-time revalidation before the first mutation on the same production
   boundary.
-- So the verdict remains `0/4`: `2c2adeaf` is useful release-path plumbing,
+- So the verdict remains `0/4`: `45ea4506` is useful release-path plumbing,
   not a gate-closing production-boundary proof.
 
 Next owner / command:
