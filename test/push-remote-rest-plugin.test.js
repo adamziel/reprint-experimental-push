@@ -7356,6 +7356,47 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   ]);
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline claim evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimEvidence.activeRow.claimKeyHash = 'inline-claim-hash-02';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.claimEvidence, {
+    activeRow: {
+      sequence: 33,
+      event: 'stale-claim-rejected',
+      claimKeyHash: 'inline-claim-hash-02',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+    },
+    abandonedRow: {
+      sequence: 24,
+      event: 'stale-claim-abandoned',
+      claimKeyHash: 'retry-claim-hash-01',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+    previousRow: {
+      sequence: 18,
+      event: 'idempotency-opened',
+      claimKeyHash: 'retry-claim-hash-01',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+    },
+  });
+});
+
 test('checked recovery inspect evidence fails closed on conflicting accepted inline event summaries instead of silently normalizing them', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   inlineJournal.eventSummaries[0].count = 2;
