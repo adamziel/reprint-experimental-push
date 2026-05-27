@@ -1777,6 +1777,10 @@ test('packaged server readiness fails closed for terminal production auth sessio
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
         },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
+        },
       },
       session: {
         id: 'session_123',
@@ -1784,6 +1788,8 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
     },
   };
+
+  assert.equal(packagedProductionPluginPreflightReady(basePreflight), true, 'base preflight should be ready');
 
   const terminalSessions = [
     {
@@ -1959,30 +1965,50 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
       },
     },
   };
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+
+  assert.equal(packagedProductionPluginPreflightReady(basePreflight), true, 'base preflight should be ready');
+
   const identityCases = [
     {
       label: 'mismatched ids',
       preflight: {
-        status: 200,
+        ...basePreflight,
         body: {
-          ok: true,
-          routeProfile: {
-            profile: 'production-shaped',
-            restNamespace: 'reprint/v1',
-            routePrefix: '/push',
-            labBacked: false,
-          },
+          ...basePreflight.body,
           auth: {
+            ...basePreflight.body.auth,
             session: {
+              ...basePreflight.body.auth.session,
               id: 'session_456',
-              status: 'active',
-              type: 'production-auth-session',
-              expiresAt: '2099-01-01T00:00:00Z',
             },
-          },
-          session: {
-            id: 'session_123',
-            type: 'production-auth-session',
           },
         },
       },
@@ -1990,25 +2016,16 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
     {
       label: 'missing auth session id',
       preflight: {
-        status: 200,
+        ...basePreflight,
         body: {
-          ok: true,
-          routeProfile: {
-            profile: 'production-shaped',
-            restNamespace: 'reprint/v1',
-            routePrefix: '/push',
-            labBacked: false,
-          },
+          ...basePreflight.body,
           auth: {
+            ...basePreflight.body.auth,
             session: {
               status: 'active',
               type: 'production-auth-session',
               expiresAt: '2099-01-01T00:00:00Z',
             },
-          },
-          session: {
-            id: 'session_123',
-            type: 'production-auth-session',
           },
         },
       },
@@ -2016,26 +2033,15 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
     {
       label: 'non-string auth session id',
       preflight: {
-        status: 200,
+        ...basePreflight,
         body: {
-          ok: true,
-          routeProfile: {
-            profile: 'production-shaped',
-            restNamespace: 'reprint/v1',
-            routePrefix: '/push',
-            labBacked: false,
-          },
+          ...basePreflight.body,
           auth: {
+            ...basePreflight.body.auth,
             session: {
+              ...basePreflight.body.auth.session,
               id: 123,
-              status: 'active',
-              type: 'production-auth-session',
-              expiresAt: '2099-01-01T00:00:00Z',
             },
-          },
-          session: {
-            id: 'session_123',
-            type: 'production-auth-session',
           },
         },
       },
@@ -2043,23 +2049,9 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
     {
       label: 'non-string top-level session id',
       preflight: {
-        status: 200,
+        ...basePreflight,
         body: {
-          ok: true,
-          routeProfile: {
-            profile: 'production-shaped',
-            restNamespace: 'reprint/v1',
-            routePrefix: '/push',
-            labBacked: false,
-          },
-          auth: {
-            session: {
-              id: 'session_123',
-              status: 'active',
-              type: 'production-auth-session',
-              expiresAt: '2099-01-01T00:00:00Z',
-            },
-          },
+          ...basePreflight.body,
           session: {
             id: 123,
             type: 'production-auth-session',
