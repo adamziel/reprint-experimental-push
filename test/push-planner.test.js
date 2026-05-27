@@ -41871,6 +41871,75 @@ test('closes an owned production recovery journal writer after replaying a compl
   );
 });
 
+test('closes an owned production recovery journal writer after replaying a completed plan into blocked recovery', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  const completedJournalPath = tempRecoveryJournalPath();
+  const completedWriter = openRecoveryJournal(completedJournalPath, { truncate: true, now: fixedNow });
+  const completed = applyPlan(baseSite(), plan, { durableJournal: completedWriter });
+  completedWriter.close();
+
+  const driftedRemote = JSON.parse(JSON.stringify(completed.site));
+  driftedRemote.db.wp_posts['ID:2'].post_title = 'Remote drift after completion';
+
+  const productionJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(productionJournalPath)}/remote.jsonl`;
+  const claimId = 'claim-close-after-replay-blocked';
+  const writer = openProductionRecoveryJournal(productionJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  appendRecoveryClaimOpened(writer, {
+    plan,
+    current: driftedRemote,
+    claimId,
+    artifactRefs: {
+      journal: productionJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() => applyPlan(driftedRemote, plan, {
+    journal: completed.journal,
+    durableJournal: writer,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'RECOVERY_BLOCKED');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(isDurableJournalClosed(writer), true);
+  assert.throws(() => writer.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'reopened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: productionJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
+
+  const persisted = readRecoveryJournal(productionJournalPath);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'journal-replayed'),
+    false,
+  );
+  assertJournalTailTypes(
+    persisted.records,
+    ['recovery-state'],
+    'blocked replay must persist the blocked recovery boundary before close',
+  );
+  assert.equal(persisted.records.at(-1).state, 'blocked-recovery');
+});
+
 test('idempotently skips closing an already closed owned production recovery journal writer', () => {
   const closeCalls = [];
   const writer = {
