@@ -1057,8 +1057,12 @@ function reprint_push_lab_rest_checked_latest_row_conflicts(
             $event
         );
 
-        if (!is_array($premerge_row) || !is_array($checked_row)) {
+        if (!is_array($premerge_row) && !is_array($checked_row)) {
             continue;
+        }
+
+        if (!is_array($premerge_row) || !is_array($checked_row)) {
+            return true;
         }
 
         if (reprint_push_lab_rest_checked_latest_row_field_conflicts($premerge_row, $checked_row, $keys)) {
@@ -1163,10 +1167,16 @@ function reprint_push_lab_rest_checked_claim_evidence_conflicts(
             ? $checked_claim_evidence[$evidence_key]
             : null;
 
-        if (is_array($premerge_row) && is_array($checked_row)) {
-            if (reprint_push_lab_rest_checked_claim_evidence_row_conflicts($premerge_row, $checked_row, $keys)) {
-                return true;
-            }
+        if (!is_array($premerge_row) && !is_array($checked_row)) {
+            continue;
+        }
+
+        if (!is_array($premerge_row) || !is_array($checked_row)) {
+            return true;
+        }
+
+        if (reprint_push_lab_rest_checked_claim_evidence_row_conflicts($premerge_row, $checked_row, $keys)) {
+            return true;
         }
     }
 
