@@ -15,10 +15,10 @@ Why it does not move the gate:
 Evidence reviewed:
 - `f28ff529e542875510e9343f0314366f5526cd8d:src/authenticated-http-push-client.js`
 - `f28ff529e542875510e9343f0314366f5526cd8d:test/authenticated-http-push-client.test.js`
-- `02890172771c3effe2c44494eeef00c12f719b8e` (`Classify reliable head 401ee0b3`)
+- `e816b6ec75bece7ef0edef4a6e123dba462b67e3` (`Classify reliable head f28ff529`)
 
-Critic status:
-- `origin/lane/critic` is still at `02890172771c3effe2c44494eeef00c12f719b8e`, which classifies the previous reliable head `401ee0b3` at `0/4`. No current critic verdict was available for `f28ff529` during this audit.
+Critic alignment:
+- `origin/lane/critic` at `e816b6ec75bece7ef0edef4a6e123dba462b67e3` also keeps `f28ff529` at `0/4`, and this audit agrees.
 
 Next blocker:
 - One checked live release run on the real Reprint endpoint must still prove live auth/session issuance and readback, durable restart-readable journal ownership with lease fencing, plugin-driver ownership on the release boundary, preserved rejected-remote evidence, and apply-time revalidation before the first mutation.

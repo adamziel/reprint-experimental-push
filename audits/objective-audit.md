@@ -6,16 +6,16 @@
 - Previous audited reliable head: `401ee0b3ac3d17ef3599627e99ca4db906df8a83`
 - Latest reliable diff reviewed: `401ee0b3ac3d17ef3599627e99ca4db906df8a83..f28ff529e542875510e9343f0314366f5526cd8d`
 - Reliable advanced since the supervisor baseline: `no`
-- Current critic head: `02890172771c3effe2c44494eeef00c12f719b8e`
-- Critic verdict availability: `stale 0/4 for 401ee0b3, no critic verdict yet for f28ff529`
+- Current critic head: `e816b6ec75bece7ef0edef4a6e123dba462b67e3`
+- Critic verdict: `0/4`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
 - Audit time: 2026-05-27 07:45:09 CEST (+0200)
-- Fresh remote heads re-polled at audit time:
+- Fresh remote heads re-polled after critic alignment:
   - `origin/lane/reliable-executor` -> `f28ff529e542875510e9343f0314366f5526cd8d` (`Fail closed on malformed recovery auth identities`)
-  - `origin/lane/critic` -> `02890172771c3effe2c44494eeef00c12f719b8e` (`Classify reliable head 401ee0b3`)
-  - `origin/lane/independent-auditor` -> `35ccddb7b33d649d83086fd6d0956dcecdf1c55b`
+  - `origin/lane/critic` -> `e816b6ec75bece7ef0edef4a6e123dba462b67e3` (`Classify reliable head f28ff529`)
+  - `origin/lane/independent-auditor` -> `2c77f2b52ffd4f74ca052e7ee700e3f578635652`
   - `origin/main` -> `1c7ccf9e8d5f6b6974f6ee4ceb92840d34391565`
 
 ## Evidence Table
@@ -33,12 +33,12 @@
 
 1. `f28ff529` is useful auth/session drift hardening in the authenticated HTTP push client, especially for malformed recovery-inspect `userId` and `userLogin` payloads.
 2. The diff is still limited to client-side validation and regression tests. It does not create a production-owned auth/session lifecycle, a real endpoint-owned durable journal, or plugin-driver ownership evidence on the release boundary.
-3. The current critic lane is stale for this head. Its `0/4` result for `401ee0b3` is directionally consistent with this audit, but it is not independent classification of `f28ff529`.
+3. The current critic lane is aligned for this head and independently keeps `f28ff529` at `0/4`.
 4. The required checked live release primitive is unchanged: one run on the real Reprint endpoint must prove auth/session issuance and readback, durable restart-readable journal ownership with lease fencing, plugin-driver ownership, preserved rejected-remote evidence, and apply-time revalidation before the first mutation on that same boundary.
 
-## Critic Status
+## Critic Alignment
 
-`origin/lane/critic` currently points at `02890172771c3effe2c44494eeef00c12f719b8e`, which classifies `401ee0b3` at `0/4`. That verdict is stale for `f28ff529`, but the narrow scope of this diff does not present evidence that would justify any release-gate increase.
+The current critic verdict at `e816b6ec75bece7ef0edef4a6e123dba462b67e3` remains aligned with this audit. Both lanes treat `f28ff529` as useful malformed recovery auth identity hardening while keeping the overall release-gate verdict at `0/4`.
 
 ## Next Primitive
 
