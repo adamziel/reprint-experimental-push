@@ -47,6 +47,7 @@ import {
   packagedProductionPluginReadinessBodyRetryable,
   packagedProductionPluginReadinessErrorRetryable,
   packagedProductionPluginReadinessProbeTimedOut,
+  packagedProductionPluginReadinessWordPressNotReady,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
@@ -2472,6 +2473,34 @@ test('packaged production plugin readiness helper does not retry terminal readin
     packagedProductionPluginReadinessBodyRetryable(
       200,
       '<!doctype html><html><body>fatal startup mismatch</body></html>',
+    ),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessWordPressNotReady(
+      200,
+      '<!doctype html><html><body>WordPress is not ready yet</body></html>',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessWordPressNotReady(
+      502,
+      '{"message":"WordPress is not ready yet"}',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessWordPressNotReady(
+      503,
+      'wordpress is NOT ready yet',
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessWordPressNotReady(
+      404,
+      '<!doctype html><html><body>No route was found matching the URL and request method.</body></html>',
     ),
     false,
   );
