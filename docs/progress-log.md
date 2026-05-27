@@ -3,6 +3,30 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 06:36:25
+
+<a id="2026-05-27-public-status-audit-063625"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `c2288a428207d9b5daa0aa771976fb16784346a9` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head requires writer leases
+  and nested lease-fence writer leases to carry the same claim key hash as the
+  active journal claim. That is material checked durable-journal contract
+  hardening, not a production boundary gate move, and it still stops short of
+  the missing production-owned, non-lab-backed source mutation boundary on the
+  real Reprint endpoint: one primitive that owns auth/session
+  issuance/readback, durable restart-readable journal storage with lease
+  fencing, preserved rejected remote evidence, and apply-time revalidation
+  before first mutation.
+- The public page keeps the critic and independent-auditor verdicts aligned
+  with `c2288a42` while leaving the release posture conservative. The stale
+  percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [critic audit](../audits/critic.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 06:32:58
 
 <a id="2026-05-27-public-status-audit-063258"></a>
