@@ -1182,7 +1182,13 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($r
 
         if (
             reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
-            && reprint_push_lab_db_journal_non_empty_string($row['claimKeyHash'] ?? null)
+            && !reprint_push_lab_db_journal_non_empty_string($row['claimKeyHash'] ?? null)
+        ) {
+            return false;
+        }
+
+        if (
+            reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
             && (string) ($row['claimKeyHash'] ?? '') !== (string) ($claim['activeClaimKeyHash'] ?? '')
         ) {
             return false;

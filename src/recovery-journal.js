@@ -223,7 +223,13 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
 
     if (
       hasNonEmptyString(claim?.activeClaimKeyHash)
-      && hasNonEmptyString(row.claimKeyHash)
+      && !hasNonEmptyString(row.claimKeyHash)
+    ) {
+      return false;
+    }
+
+    if (
+      hasNonEmptyString(claim?.activeClaimKeyHash)
       && row.claimKeyHash !== claim.activeClaimKeyHash
     ) {
       return false;
