@@ -54,6 +54,18 @@ export function loadAuthSessionSource(
       error: 'Auth session source command must return sourceUrl',
     };
   }
+  if (
+    options.requireExactSourceUrl === true
+    && !authSessionSourceUrlMatchesCheckedSource(
+      sourceUrl,
+      options.checkedSourceUrl ?? options.sourceUrl ?? options.allowedSourceUrl,
+    )
+  ) {
+    return {
+      ok: false,
+      error: 'Auth session source command must return the exact checked sourceUrl',
+    };
+  }
   if (!isPermittedAuthSessionSourceUrl(
     sourceUrl,
     options.allowedSourceUrls ?? options.allowedSourceUrl,
@@ -366,6 +378,7 @@ export function loadAuthSessionSourceFromRuntimeEnvironment(
   return loadAuthSessionSource(command, baseEnv, cwd, {
     ...options,
     allowedSourceUrls,
+    checkedSourceUrl: options.checkedSourceUrl ?? options.sourceUrl ?? baseEnv.REPRINT_PUSH_SOURCE_URL ?? '',
   });
 }
 
@@ -469,4 +482,14 @@ function hasExplicitAuthSessionCredentialField(value) {
   return value !== undefined
     && value !== null
     && !(typeof value === 'string' && value === '');
+}
+
+function authSessionSourceUrlMatchesCheckedSource(sourceUrl, checkedSourceUrl) {
+  const normalizedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(sourceUrl);
+  const normalizedCheckedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(checkedSourceUrl);
+  return Boolean(
+    normalizedSourceUrl
+    && normalizedCheckedSourceUrl
+    && normalizedSourceUrl === normalizedCheckedSourceUrl,
+  );
 }

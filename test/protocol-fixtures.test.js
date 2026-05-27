@@ -4609,35 +4609,23 @@ test('push fixture index keeps the production proof bundle grouped around the ne
   assert.ok(readme.includes('pull-to-push bridge proofs'));
 });
 
-test('verify:release stays pinned to the checked release entrypoint and proves the packaged release boundary', () => {
+test('verify:release stays pinned to the checked release entrypoint and fails closed without a live source URL', () => {
   const proof = runVerifyReleaseWithRetry({
     NODE_NO_WARNINGS: '1',
   }, { retries: 1 });
 
-  assert.equal(proof.status, 0, proof.stderr);
-  assert.match(proof.stdout, /"ok": true/);
-  assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "production-auth-session"/);
-  assert.match(proof.stdout, /"routeProfile": \{\s*"profile": "production-shaped"[\s\S]*"labBacked": false/);
-  assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
-  assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": "explicit live production-owned release boundary",\s*"status": "support-only",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/,
+    /"releaseMovement": \{\s*"allowed": false,\s*"gates": "0\/4"/,
   );
-  assert.match(proof.stdout, /"checkedAccepted": true/);
   assert.match(
     proof.stdout,
-    /"liveSource": \{\s*"required": "REPRINT_PUSH_SOURCE_URL",\s*"observed": "packaged-production-plugin-fallback",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/,
+    /"topologyEvidence": \{[\s\S]*"packagedFallbackAllowed": false/,
   );
-  assert.match(proof.stdout, /"authSessionSource": \{[\s\S]*"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-  assert.match(
-    proof.stdout,
-    /"command": "REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 [\s\S]*?--source-url=http:\/\/127\.0\.0\.1:\d+[\s\S]*?"/,
-  );
-  assert.doesNotMatch(
-    proof.stdout,
-    /"command": "REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 [\s\S]*?--source-url=http:\/\/127\.0\.0\.1:8080[\s\S]*?"/,
-  );
+  assert.doesNotMatch(`${proof.stdout}\n${proof.stderr}`, /Starting Playground server/);
 });
 
 test('verify:release keeps preserved-remote retry pinned at the checked entrypoint', () => {
@@ -4658,6 +4646,8 @@ test('verify:release fails closed at the explicit missing-secret gate when a sou
   const proof = runVerifyRelease({
     REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
     REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+    REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:65534',
+    REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:65533',
     REPRINT_PUSH_USERNAME: '',
     REPRINT_PUSH_APPLICATION_PASSWORD: '',
     REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
@@ -4676,6 +4666,8 @@ test('verify:release fails closed when the explicit retained live source is unre
   const proof = runVerifyRelease({
     REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
     REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+    REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:65534',
+    REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:65533',
     REPRINT_PUSH_USERNAME: 'reprint_push_admin',
     REPRINT_PUSH_APPLICATION_PASSWORD: 'reprint-push-admin-app-password',
     REPRINT_PUSH_LAB_AUTH_ADMIN_USER: 'reprint_push_admin',
