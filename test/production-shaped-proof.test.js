@@ -127,6 +127,7 @@ const releaseVerifyProofSubprocessOptions = {
   maxBuffer: 1024 * 1024 * 20,
   shell: false,
 };
+const packagedReadinessHelperBoundary = 'async function fetchPackagedWordPressIndexProbe(';
 
 function wrapNestedStartupValue(pathSegments, leafValue) {
   return pathSegments.reduceRight((nestedValue, key) => ({ [key]: nestedValue }), leafValue);
@@ -164,7 +165,7 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -269,7 +270,7 @@ function buildPackagedSmokeWaitHelper(overrides = {}) {
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
@@ -2880,7 +2881,7 @@ test('packaged release verifier readiness helper uses the provided output collec
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(');
   assert.notEqual(start, -1, 'expected packaged readiness helper in release verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged readiness helper boundary in release verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -2895,7 +2896,7 @@ test('packaged release verifier readiness helper fails fast on signaled child te
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -2911,7 +2912,7 @@ test('packaged release verifier readiness helper reports early child exit codes'
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -6752,7 +6753,7 @@ test('packaged production plugin smoke readiness helper fails fast on signaled c
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
@@ -6767,7 +6768,7 @@ test('packaged production plugin smoke readiness helper reports early child exit
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
@@ -6818,7 +6819,7 @@ test('packaged production plugin smoke readiness helper preserves timeout fallba
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
@@ -6839,7 +6840,7 @@ test('packaged release verifier readiness helper preserves timeout fallback prob
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -6856,7 +6857,7 @@ test('packaged release verifier readiness helper preserves bounded readiness pro
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -6876,7 +6877,7 @@ test('packaged production plugin smoke readiness helper preserves bounded readin
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
@@ -6970,12 +6971,12 @@ test('packaged release verifier tags packaged-route startup failures after globa
   );
   const smokeStart = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(smokeStart, -1, 'expected packaged smoke readiness helper in smoke source');
-  const smokeEnd = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', smokeStart);
+  const smokeEnd = smokeSource.indexOf(packagedReadinessHelperBoundary, smokeStart);
   assert.notEqual(smokeEnd, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const smokeHelperSource = smokeSource.slice(smokeStart, smokeEnd);
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -7990,7 +7991,7 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
@@ -8073,7 +8074,7 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = verifierSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -8188,7 +8189,7 @@ test('packaged smoke readiness helper formats malformed snapshot and preflight b
   );
   const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
   assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
-  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  const end = smokeSource.indexOf(packagedReadinessHelperBoundary, start);
   assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
   const helperSource = smokeSource.slice(start, end);
 
