@@ -1,17 +1,16 @@
 # Critic Verdict
 
-Current reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
-(`Fail closed on malformed auth identity drift`).
+Current reliable head: `6734e8368c0299e665957757207e883c35186227`
+(`Require checked journal proof on release path`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head hardens malformed auth/session identity handling in
-  `src/authenticated-http-push-client.js`. It now fails closed when
-  `auth.identity.userLogin` is malformed on the checked production-session
-  path and adds drift reporting for malformed observed auth envelope
-  `userLogin`/session id fields.
+- This head wires `checkedDurableJournalBoundarySatisfied()` into the checked
+  release-path journal proof when `requireProductionAuthSession` is enabled.
+  That tightens the verifier so the release path now requires the checked
+  journal boundary instead of only the broader trusted-scope predicates.
 - That is useful checked-path hardening, but it still runs inside the
   production-shaped Playground/package harness. It does not yet prove the
   missing production-owned source mutation boundary on the real Reprint
@@ -22,13 +21,11 @@ Reason:
 
 Next owner / command:
 
-- `main:reliable-exec` should land the next exact primitive beyond malformed
-  auth identity drift hardening: a production-owned, non-lab-backed source
-  mutation/auth-session boundary on the real Reprint endpoint that issues a
-  live session on the endpoint, reads it back after restart from durable
-  journal storage, enforces lease-fenced ownership of those journal rows, and
-  revalidates the session at apply time before mutation without falling back to
-  Playground package-mode scaffolding. The proof should come through
+- `main:reliable-exec` should move from checked journal-proof gating to the
+  real production boundary on the checked release path: live auth/session
+  issuance and readback, restart-readable durable journal storage with lease
+  fencing, preserved rejected-remote evidence, and apply-time revalidation
+  before mutation. The proof should come through
   `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`,
   `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
