@@ -1,9 +1,37 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-26 14:55 CEST
+Last updated: 2026-05-27 19:26 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-27 19:26 CEST - Local Production Proof Landed
+
+- Going well: `540723dc8` adds a tmux-visible local production release proof
+  that boots four Brewcommerce-derived loopback WordPress sites and runs the
+  checked `verify:release` path against source, remote-changed, local-edited,
+  and apply-revalidation-source URLs.
+- Also going well: the apply-revalidation blocker moved from "no live source"
+  to concrete storage evidence. The release-state plugin-owned row now has a
+  guarded single-statement CAS path; injected drift rejects before mutation and
+  preserves the changed remote.
+- Not going well: Docker is unavailable in this sandbox, and the verifier still
+  reports durable production journal storage as the remaining production
+  boundary. Release movement stays `0/4`.
+- Progress change: local production topology, auth-session source readback, and
+  plugin-driver apply revalidation all moved up; durable journal ownership,
+  graph identity mapping, and general plugin-driver audit remain blocked.
+- Next nudge: use the local production topology to replace the lab journal with
+  restart-readable production storage, lease fencing, and stale-worker
+  rejection evidence.
+
+| Lane | Nudge |
+| --- | --- |
+| Recovery | Move the DB journal from local Playground proof to production storage with restart-readable lease evidence. |
+| Reliable executor | Keep auth/session source readback, but prove durable journal ownership and leases on the same release path. |
+| Invariants | Use the local production topology for real graph identity mapping instead of release-state-only rows. |
+| Fast paths | Run a guarded large-site benchmark only after the durable journal boundary is real. |
+| Audit and critic | Re-audit `540723dc8` narrowly: local production proof improved, release gate still closed. |
 
 ## 2026-05-26 14:55 CEST - Reliable Head Advanced Again
 

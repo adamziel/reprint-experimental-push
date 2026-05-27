@@ -4,6 +4,36 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-27 - Local Production Topology Proof
+
+- Last update: 2026-05-27 19:26 CEST.
+- Current local-production proof head: `540723dc8` (`Add local production
+  release topology proof`) on `origin/lane/local-production-topology-20260527`.
+- New proof: `npm run verify:release:local-production` passed in the
+  `main:local-prod-proof` tmux window after rebasing onto
+  `origin/supervisor/release-boundary-consolidated-20260527`; the shell
+  reported `POST_REBASE_LAST_STATUS:0`.
+- Topology: the harness boots four live loopback WordPress sites derived from
+  the Brewcommerce blueprint assets: source, remote-changed, local-edited, and
+  apply-revalidation-source. Docker is unavailable in this sandbox, so this is
+  local Playground production-shaped evidence, not Docker evidence.
+- Boundary improvement: the checked release path now has auth-session source
+  readback for the local production source URL, durable-journal evidence
+  preservation, and apply-time revalidation that rejects a production-owned
+  `wp_reprint_push_release_state` row drift before mutation with
+  `PRECONDITION_FAILED`.
+- Code evidence:
+  [scripts/playground/local-production-release-verify.mjs](../scripts/playground/local-production-release-verify.mjs),
+  [scripts/playground/snapshot-lib.php](../scripts/playground/snapshot-lib.php),
+  [scripts/playground/production-shaped-apply-revalidation-smoke.mjs](../scripts/playground/production-shaped-apply-revalidation-smoke.mjs),
+  and [src/authenticated-http-push-client.js](../src/authenticated-http-push-client.js).
+- Gate posture: release movement remains closed at `0/4`. The run still reports
+  durable production journal storage as the remaining boundary, and graph
+  identity/general plugin-driver proof still need independent audit.
+- Cleanup: stale `/tmp/reprint-local-production-release-*` topology directories
+  from failed runs were removed after confirming no Playground processes were
+  active.
+
 ## 2026-05-26 - Release Journal Smoke Update
 
 - Last update: 2026-05-26 11:58 CEST.

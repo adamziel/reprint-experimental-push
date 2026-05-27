@@ -7,6 +7,17 @@ Verdict: `0/4`
 No release gate moves without a checked command that uses a real live
 `REPRINT_PUSH_SOURCE_URL`.
 
+Follow-up at 2026-05-27 19:26 CEST: `origin/lane/local-production-topology-20260527`
+at `540723dc8` adds a checked local production topology. The command
+`npm run verify:release:local-production` passed in `main:local-prod-proof`
+with `POST_REBASE_LAST_STATUS:0` after booting four Brewcommerce-derived
+loopback WordPress sites and feeding `verify:release` real local source,
+remote-changed, local-edited, and apply-revalidation-source URLs. This removes
+the missing-live-source blocker for local Playground production-shaped evidence
+only. It does not move the release verdict because the services are local
+Playground, Docker is unavailable in this sandbox, and durable production
+journal ownership remains unproven.
+
 ## Branch Heads
 
 | Ref | Head | Current proof |
