@@ -1860,6 +1860,68 @@ test('production-shaped authenticated push fails closed on malformed preflight a
   }
 });
 
+test('production-shaped authenticated push fails closed on malformed preflight auth user ids even without the stricter production-session gate', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userId: ['7'], userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-invalid-preflight-user-id-unrequired',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.identity.userId',
+      required: 'integer auth identity fields',
+      observed: 'invalid-user-id',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.identity.userId',
+        required: 'integer auth identity fields',
+        observed: 'invalid-user-id',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      },
+    });
+    assert.equal(seen.length, 1);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push preserves malformed preflight auth-session warning metadata in its lifecycle trace', async () => {
   const originalFetch = global.fetch;
   global.fetch = async (url) => {
