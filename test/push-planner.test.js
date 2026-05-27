@@ -11562,6 +11562,54 @@ test('blocks steady unsupported plugin-owned custom table rows before they can b
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported plugin-owned custom table rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-plugin-owned-custom-table-delete-drift.txt';
+  const base = baseSite();
+  base.files[matchingDeleteKey.slice('file:'.length)] = 'base steady plugin-owned custom table delete drift bytes';
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'steady-private-entry', __pluginOwner: 'forms' },
+  };
+
+  const local = baseSite();
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'steady-private-entry', __pluginOwner: 'forms' },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'steady-private-entry', __pluginOwner: 'forms' },
+  };
+  delete remote.files[matchingDeleteKey.slice('file:'.length)];
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDeleteDecision = decisionFor(plan, matchingDeleteKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(matchingDeleteDecision.decision, 'already-in-sync');
+  assert.equal(matchingDeleteDecision.change.localChange, 'delete');
+  assert.equal(matchingDeleteDecision.change.remoteChange, 'delete');
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resourceKind, 'custom-table');
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('steady-private-entry'), false);
+  assert.equal(planJson.includes('base steady plugin-owned custom table delete drift bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks steady unsupported plugin-owned custom table rows before they can be treated as already in sync while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const matchingEditKey = 'file:index.php';
