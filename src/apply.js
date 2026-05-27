@@ -2616,7 +2616,15 @@ function recordDurableTargets(writer, remote, plan, journal = null) {
 }
 
 function durableJournalHasPriorRecords(writer) {
-  return Number.isInteger(writer.nextSequence) && writer.nextSequence > 1;
+  if (!Number.isInteger(writer?.nextSequence) || writer.nextSequence <= 1) {
+    return false;
+  }
+  if (writer?.kind !== 'production-recovery-journal' || typeof writer.inspect !== 'function') {
+    return true;
+  }
+  const inspected = inspectProductionRecoveryJournal(writer);
+  const records = Array.isArray(inspected?.records) ? inspected.records : [];
+  return records.some((record) => !CLAIM_FENCE_RECORD_TYPES.has(record?.type));
 }
 
 function recordDurableReplay(writer, remote, plan, recoveryState, journal = null, supportReport = null) {

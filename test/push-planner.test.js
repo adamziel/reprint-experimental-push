@@ -5199,8 +5199,12 @@ test('completed replay on a production durable journal preserves owned restart-r
     1,
   );
   assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-opened').length,
+    1,
+  );
+  assert.equal(
     persisted.records.filter((record) => record.type === 'target-planned').length,
-    0,
+    plan.mutations.length,
   );
   for (const record of persisted.records) {
     assert.deepEqual(record.artifactRefs, {
@@ -5208,6 +5212,25 @@ test('completed replay on a production durable journal preserves owned restart-r
       remote: remoteArtifactPath,
     });
   }
+
+  const reopenedJournal = openProductionRecoveryJournal(journalPath, {
+    truncate: false,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  const reopenedInspection = reopenedJournal.inspect();
+  reopenedJournal.close();
+
+  assert.equal(reopenedInspection.claimId, claimId);
+  assert.equal(reopenedInspection.claimHash, recoveryClaimHash(claimId));
+  assert.equal(reopenedInspection.writerLeaseContract.claimHash, recoveryClaimHash(claimId));
+  assert.equal(
+    reopenedInspection.leaseFenceContract.writerLease.claimHash,
+    recoveryClaimHash(claimId),
+  );
 });
 
 test('completed replay on a durable journal stays inert after local drift and keeps inserts stable', () => {
