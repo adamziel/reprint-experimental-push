@@ -1,28 +1,31 @@
-2026-05-27 09:37:58 CEST (+0200)
+2026-05-27 11:26:05 CEST (+0200)
 
 Changed files:
-- `test/authenticated-http-push-client.test.js`
+- `test/production-shaped-proof.test.js`
 
 What changed:
-- Added the missing stricter production-session later-phase lifecycle regressions for type/status drops on the checked path:
-  `apply` status, `recovery-inspect` type, `db-journal` type, and `replay` status.
-- This closes an auth-owned asymmetry in the later reads: the file already pinned one half of those type/status failures, but not the complementary strict cases, which left reliable without complete production-session lifecycle coverage across the checked phases most relevant to the live release boundary.
-- Kept the change lane-owned and release-relevant by extending the checked production-session lifecycle surface instead of adding another malformed-field or same-shape identity-only variant.
+- Added the missing complementary checked-release terminal-read auth regressions for the stricter release-boundary lifecycle summary:
+  `journal` read revoked and `replay` read expired.
+- This extends the existing checked-release auth coverage beyond the earlier `cleaned-up` / `rotated` terminal cases, so reliable now has explicit fail-closed release-boundary tests for all four terminal state families most likely to surface after preserved reads.
+- Kept the change lane-owned and release-relevant by extending the checked release proof surface rather than adding another request-state or source-metadata symmetry case.
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
-- `node --check test/authenticated-http-push-client.test.js`
-- `timeout 120s node --test --test-name-pattern='production-shaped authenticated push fails closed when journal readback loses the production auth session type under the stricter production-session gate|production-shaped authenticated push fails closed when apply drops the production auth session status under the stricter production-session gate|production-shaped authenticated push fails closed when recovery inspect drops the production auth session type under the stricter production-session gate|production-shaped authenticated push fails closed when replay drops the production auth session status under the stricter production-session gate' test/authenticated-http-push-client.test.js`
-- `git diff --check -- test/authenticated-http-push-client.test.js`
+- `node --check test/production-shaped-proof.test.js`
+- `timeout 120s node --test --test-name-pattern='checked release auth/session lifecycle summary fails closed when a journal read is revoked|checked release auth/session lifecycle summary fails closed when a replay read is expired' test/production-shaped-proof.test.js`
+- `git diff --check -- test/production-shaped-proof.test.js`
+- `git add test/production-shaped-proof.test.js`
+- `git commit -m "Cover checked auth release revoked expiry reads"`
+- `git push origin HEAD:lane/auth-session-code-20260526-1836`
+- `git status --short --branch`
+- `git rev-parse --short HEAD`
 
 Push result:
-- Pending commit/push
+- Pushed `f4679dc83` (`Cover checked auth release revoked expiry reads`) to `origin/lane/auth-session-code-20260526-1836`.
 
 Worktree status:
 - `## lane/auth-session-code-20260526-1836...origin/lane/auth-session-code-20260526-1836`
-- `M .lane-output/final.md`
-- `M test/authenticated-http-push-client.test.js`
 
 Next supervisor nudge:
-- Reliable can now consume complete strict later-phase production-session lifecycle coverage for type/status drift across `apply`, `recovery-inspect`, `db-journal`, and `replay`, not just the earlier identity-only parity set.
-- The next auth-owned gap is still checked real-endpoint production lifecycle proof and release-path source/session issuance/readback, not another same-shape later-phase lifecycle variant.
+- Reliable can now consume complete checked-release terminal-read auth coverage for revoked, cleaned-up, expired, and rotated states, not only source-warning / fallback drift or partial terminal-state coverage.
+- The next auth-owned gap is still real production-backed issuance/readback/lifecycle proof on the checked release path, not more terminal-state symmetry variants.
