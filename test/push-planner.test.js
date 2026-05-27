@@ -67865,6 +67865,57 @@ test('blocks a local menu item parent reference owned by a revision even when it
   );
 });
 
+test('blocks a local menu item parent reference owned by a nav_menu_item post even when it targets a same-plan post', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:3"]';
+  const parentResourceKey = 'row:["wp_posts","ID:4"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:24"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local nav menu item',
+    post_content: 'local-private-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    post_parent: 4,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local parent post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:24': {
+      meta_id: 24,
+      post_id: 3,
+      meta_key: 'menu_item_parent',
+      meta_value: '4',
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const menuItemMutation = mutationFor(plan, menuItemResourceKey);
+  const parentMutation = mutationFor(plan, parentResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuItemMutation, undefined);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(postmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-nav-menu-item-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-parent-body'),
+    false,
+  );
+});
+
 test('blocks a local menu item parent reference owned by a revision when the same-plan post target is itself blocked by a nav_menu_item parent even when unrelated remote attachment noise exists', () => {
   const revisionResourceKey = 'row:["wp_posts","ID:3"]';
   const menuItemResourceKey = 'row:["wp_posts","ID:4"]';
