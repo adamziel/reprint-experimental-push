@@ -913,26 +913,6 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         }
     }
 
-    if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($db_journal)) {
-        $db_journal['acceptedOnCheckedBoundary'] = false;
-        return $db_journal;
-    }
-
-    if (!reprint_push_lab_db_journal_claim_contract_matches($db_journal['claim'] ?? null)) {
-        $db_journal['acceptedOnCheckedBoundary'] = false;
-        return $db_journal;
-    }
-
-    if (
-        is_array($checked_summary)
-        && reprint_push_lab_rest_checked_claim_contract_conflicts(
-            $premerge_claim,
-            $checked_summary['claim'] ?? null
-        )
-    ) {
-        $db_journal['acceptedOnCheckedBoundary'] = false;
-    }
-
     if (
         is_array($checked_summary)
         && reprint_push_lab_rest_checked_latest_row_conflicts(
@@ -980,6 +960,26 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         } else {
             unset($db_journal['idempotencyEvidence']);
         }
+    }
+
+    if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($db_journal)) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        return $db_journal;
+    }
+
+    if (!reprint_push_lab_db_journal_claim_contract_matches($db_journal['claim'] ?? null)) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        return $db_journal;
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_claim_contract_conflicts(
+            $premerge_claim,
+            $checked_summary['claim'] ?? null
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
     }
 
     if (
@@ -1249,13 +1249,24 @@ function reprint_push_lab_rest_checked_idempotency_evidence_conflicts(
         $checked_summary['idempotencyEvidence'] ?? null,
         $idempotency_key_hash
     );
-    if (!is_array($premerge_evidence) || !is_array($checked_evidence)) {
+    if (!is_array($checked_evidence)) {
         return false;
+    }
+
+    if (!is_array($premerge_evidence)) {
+        return true;
     }
 
     foreach (['events', 'requestHashes', 'latestId'] as $key) {
         $premerge_value = $premerge_evidence[$key] ?? null;
         $checked_value = $checked_evidence[$key] ?? null;
+        if (
+            !array_key_exists($key, $premerge_evidence)
+            && reprint_push_lab_db_journal_is_positive_int($checked_value)
+        ) {
+            return true;
+        }
+
         if (
             reprint_push_lab_db_journal_is_positive_int($premerge_value)
             && reprint_push_lab_db_journal_is_positive_int($checked_value)

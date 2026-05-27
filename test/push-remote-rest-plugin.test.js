@@ -7498,6 +7498,29 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   ]);
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline idempotency evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.idempotencyEvidence[0].requestHashes;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.idempotencyEvidence, [
+    {
+      idempotencyKeyHash: 'idem-hash-01',
+      events: 1,
+      latestId: 33,
+    },
+  ]);
+});
+
 test('checked db journal attachment fails closed on conflicting accepted inline storage-guard evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
@@ -9373,6 +9396,30 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
       idempotencyKeyHash: 'idem-hash-01',
       events: 2,
       requestHashes: 1,
+      latestId: 33,
+    },
+  ]);
+});
+
+test('checked db journal attachment fails closed on missing accepted inline idempotency evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.idempotencyEvidence[0].requestHashes;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.idempotencyEvidence, [
+    {
+      idempotencyKeyHash: 'idem-hash-01',
+      events: 1,
       latestId: 33,
     },
   ]);
