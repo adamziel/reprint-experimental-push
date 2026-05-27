@@ -151,6 +151,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
@@ -159,6 +160,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
@@ -201,6 +203,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-atomic-group-commit-not-measured',
       'production-storage-receipts-not-measured',
       'production-row-batch-executor-not-measured',
@@ -228,6 +231,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-capability-measurement-not-aligned',
     ]),
   }),
@@ -255,6 +259,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-atomic-group-commit-not-measured',
       'production-storage-receipts-not-measured',
       'production-row-batch-executor-not-measured',
@@ -489,6 +494,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-atomic-group-commit-not-measured',
       'production-parallelism-limits-not-measured',
       'production-parallelism-limits-not-integral',
@@ -506,6 +512,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
     blockerRefs: Object.freeze([
+      'receipt-flushes-not-kind-scoped',
       'production-atomic-group-commit-not-measured',
       'production-parallelism-limits-not-measured',
       'production-parallelism-limits-not-integral',

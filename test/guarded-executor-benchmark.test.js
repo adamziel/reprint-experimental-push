@@ -6954,6 +6954,61 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
 });
 
+test('guarded benchmark carries non-kind-scoped receipt flush blockers into receipt-flush rollout summaries', () => {
+  const report = smallBenchmark();
+  const interleavedJournalKinds = clone(report);
+
+  interleavedJournalKinds.evidence.journal.successRecordTypes = [
+    'apply-staged',
+    'chunk-receipt',
+    'journal-opened',
+    'target-planned',
+    'dependencies-validated',
+    'recovery-state',
+  ];
+
+  const details = productionThroughputDetails(interleavedJournalKinds);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => entry.id.includes('receipt-flush'))
+      .map(({ id, blockerRefs }) => ({
+        id,
+        blockerRefs: blockerRefs.filter((blocker) => blocker === 'receipt-flushes-not-kind-scoped'),
+      })),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+    ],
+  );
+});
+
 test('production claim gate fails closed if benchmark evidence is tampered', () => {
   const report = smallBenchmark();
 
