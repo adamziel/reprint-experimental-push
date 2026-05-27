@@ -10628,6 +10628,15 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'rotated status auth session',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'explicitly rotated auth session',
       session: {
         id: 'session_123',
