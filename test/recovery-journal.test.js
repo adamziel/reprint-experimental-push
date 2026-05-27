@@ -1465,6 +1465,7 @@ test('production recovery journal compatibility overload supports reliable relea
   assert.deepEqual(inspection.journal.leaseFence, { id: claimId });
   assert.deepEqual(inspection.journal.consumedClaim, {
     sequence: 2,
+    claimId,
     claimHash: recoveryClaimHash(claimId),
     claimLease: { id: claimId },
   });
@@ -1476,7 +1477,6 @@ test('production recovery journal compatibility overload supports reliable relea
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: false,
-    claimHash: recoveryClaimHash(claimId),
   });
   assert.deepEqual(inspection.journal.leaseFenceContract, {
     boundary: 'filesystem-compare-rename',
@@ -1791,6 +1791,7 @@ test('production recovery journal consumption derives claim identity from the fe
   assert.deepEqual(inspection.journal.leaseFence, writerLease);
   assert.deepEqual(inspection.journal.consumedClaim, {
     sequence: 2,
+    claimId,
     claimHash: recoveryClaimHash(claimId),
     claimLease: writerLease,
   });
@@ -1856,6 +1857,7 @@ test('production recovery journal reopen fails closed when the persisted consume
       error?.message,
       'Production recovery journal support requires reopening with the persisted consumed claim identity.',
     );
+    assert.equal(error?.details?.consumedClaim, null);
     return true;
   });
 });

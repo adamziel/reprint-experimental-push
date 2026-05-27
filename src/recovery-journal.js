@@ -2631,9 +2631,13 @@ function summarizeConsumedClaimRecord(records) {
   if (!isValidProductionWriterLease(consumedRecord.claimLease)) {
     return null;
   }
+  if (consumedRecord.claimHash !== recoveryClaimHash(consumedRecord.claimLease.id)) {
+    return null;
+  }
 
   return Object.freeze({
     sequence: consumedRecord.sequence,
+    claimId: consumedRecord.claimLease.id,
     claimHash: consumedRecord.claimHash,
     claimLease: freezeProductionWriterLease(consumedRecord.claimLease),
   });
