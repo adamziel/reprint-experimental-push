@@ -6499,6 +6499,70 @@ test('production auth/session lifecycle summary fails closed when direct expired
   );
 });
 
+test('production auth/session lifecycle summary fails closed when direct expired summary has no matching expired observation', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    expired: {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2098-01-01T00:00:00Z',
+      expired: true,
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unexpired',
+      observed: 'stale-expired-summary',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct cleaned-up summary carries stale lifecycle fields', () => {
   const summary = {
     issued: {
