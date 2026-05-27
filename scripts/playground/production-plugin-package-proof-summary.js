@@ -45,6 +45,10 @@ const bundleSummaryGroups = {
   ],
 };
 
+function isBundleAliasScenario(name) {
+  return Object.hasOwn(bundleSummaryGroups, name) || name === 'driver-receipt-guards';
+}
+
 const scenarioDefinitions = [
   {
     key: 'corePackageRoutes',
@@ -262,13 +266,13 @@ export function buildProductionPluginPackageProofSummary(
     : Array.from(new Set(requestedScenarios));
   const requestedBundleAliases = normalizedRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios.filter((scenario) => Object.hasOwn(bundleSummaryGroups, scenario));
+    : normalizedRequestedScenarios.filter((scenario) => isBundleAliasScenario(scenario));
   const requestedBundles = normalizedRequestedScenarios === null
     ? 'all'
     : requestedBundleAliases.map((bundleName) => toBundleKey(bundleName));
   const requestedConcreteScenarios = normalizedRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios.filter((scenario) => !Object.hasOwn(bundleSummaryGroups, scenario));
+    : normalizedRequestedScenarios.filter((scenario) => !isBundleAliasScenario(scenario));
   const requestedConcreteScenarioSet = requestedConcreteScenarios === 'all'
     ? null
     : new Set(requestedConcreteScenarios);
@@ -385,6 +389,23 @@ export function buildProductionPluginPackageProofSummary(
         requestedBundleStatuses[bundleKey] = 'missing';
         requestedScenarioStatuses[bundleName] = 'missing';
       }
+    }
+  }
+
+  if (requestedBundleSet?.has('driverReceiptGuards')) {
+    requestedBundleCount += 1;
+    const selected = isScenarioSelected(selectedScenarios, 'driver-receipt-guards');
+    const passed = selected && scenarioPasses.get('driver-receipt-guards') === true;
+    requestedBundleStatuses.driverReceiptGuards = passed ? 'passed' : 'missing';
+    requestedScenarioStatuses['driver-receipt-guards'] = passed ? 'passed' : 'missing';
+    if (passed) {
+      passedRequestedBundleCount += 1;
+      passedRequestedBundles.push('driverReceiptGuards');
+      passedRequestedScenarios.push('driver-receipt-guards');
+    } else {
+      failedRequestedBundleCount += 1;
+      failedRequestedBundles.push('driverReceiptGuards');
+      failedRequestedScenarios.push('driver-receipt-guards');
     }
   }
 

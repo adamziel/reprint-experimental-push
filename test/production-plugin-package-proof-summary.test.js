@@ -835,17 +835,23 @@ test('plugin-driver proof summary reports requested receipt guard verdicts direc
     },
     {
       requestedScenarios: ['driver-receipt-guards'],
-      selectedScenarios: new Set(['driver-receipt-guards']),
+      selectedScenarios: new Set(scenarioGroups['driver-receipt-guards']),
     },
   );
 
   assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.requestedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.requestedConcreteScenarios, []);
   assert.deepEqual(summary.requestedScenarioStatuses, {
     'driver-receipt-guards': 'passed',
   });
-  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReceiptGuards: 'passed',
+  });
+  assert.deepEqual(summary.passedRequestedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.failedRequestedBundles, []);
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
     selected: true,
@@ -2552,12 +2558,16 @@ test('plugin-driver proof summary marks incomplete requested receipt guard scena
   );
 
   assert.equal(summary.requestedScenariosSatisfied, false);
-  assert.equal(summary.requestedBundlesSatisfied, true);
-  assert.equal(summary.requestedConcreteScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, false);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.requestedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.requestedConcreteScenarios, []);
   assert.deepEqual(summary.requestedScenarioStatuses, {
     'driver-receipt-guards': 'missing',
   });
-  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReceiptGuards: 'missing',
+  });
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
     selected: false,
