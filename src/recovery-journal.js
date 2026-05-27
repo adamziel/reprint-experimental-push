@@ -120,6 +120,7 @@ function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
     && Array.isArray(dbJournal?.eventSummaries)
     && dbJournal.eventSummaries.length > 0
     && checkedBoundaryEventSummariesEvidenceMatches(dbJournal.eventSummaries)
+    && checkedBoundaryIdempotencyEvidenceMatches(dbJournal?.idempotencyEvidence)
     && checkedBoundaryStaleClaimEvidenceMatches(dbJournal);
 }
 
@@ -133,6 +134,17 @@ function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {
   return eventSummaries.some(
     (summary) => hasNonEmptyString(summary?.event) && isPositiveInteger(summary?.latestId),
   );
+}
+
+function checkedBoundaryIdempotencyEvidenceMatches(idempotencyEvidence) {
+  return Array.isArray(idempotencyEvidence)
+    && idempotencyEvidence.length > 0
+    && idempotencyEvidence.some(
+      (summary) => hasNonEmptyString(summary?.idempotencyKeyHash)
+        && isPositiveInteger(summary?.events)
+        && isPositiveInteger(summary?.requestHashes)
+        && isPositiveInteger(summary?.latestId),
+    );
 }
 
 function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {

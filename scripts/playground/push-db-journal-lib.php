@@ -980,6 +980,7 @@ function reprint_push_lab_db_journal_checked_boundary_persisted_evidence_matches
         && is_array($journal['eventSummaries'] ?? null)
         && count($journal['eventSummaries']) > 0
         && reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_matches($journal['eventSummaries'])
+        && reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_matches($journal['idempotencyEvidence'] ?? null)
         && reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches($journal);
 }
 
@@ -1013,6 +1014,27 @@ function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_m
             is_array($event_summary)
             && reprint_push_lab_db_journal_non_empty_string($event_summary['event'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($event_summary['latestId'] ?? null)
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_db_journal_checked_boundary_idempotency_evidence_matches($idempotency_evidence): bool
+{
+    if (!is_array($idempotency_evidence) || count($idempotency_evidence) <= 0) {
+        return false;
+    }
+
+    foreach ($idempotency_evidence as $summary) {
+        if (
+            is_array($summary)
+            && reprint_push_lab_db_journal_non_empty_string($summary['idempotencyKeyHash'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($summary['events'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($summary['requestHashes'] ?? null)
+            && reprint_push_lab_db_journal_is_positive_int($summary['latestId'] ?? null)
         ) {
             return true;
         }

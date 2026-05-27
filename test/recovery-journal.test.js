@@ -635,6 +635,14 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         latestId: 20,
       },
     ],
+    idempotencyEvidence: [
+      {
+        idempotencyKeyHash: 'idempotency-hash-01',
+        events: 3,
+        requestHashes: 1,
+        latestId: 20,
+      },
+    ],
     claim: {
       status: 'stale-claim-rejected',
       activeClaimKeyHash: 'retry-claim-hash-02',
@@ -949,6 +957,61 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     false,
   );
   assert.equal(checkedDurableJournalBoundarySatisfied(baseContract), false);
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      idempotencyEvidence: [],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      idempotencyEvidence: [
+        {
+          idempotencyKeyHash: 'idempotency-hash-01',
+          events: 0,
+          requestHashes: 1,
+          latestId: 20,
+        },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
