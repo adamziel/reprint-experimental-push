@@ -11280,7 +11280,7 @@ test('blocks plugin-owned resources when the declared driver does not match the 
   assert.equal(blockerJson.includes('local-private-meta'), false);
 });
 
-test('blocks unsupported plugin dependency version ranges while preserving remote-only plugin drift', () => {
+test('blocks unsupported plugin dependency version ranges while preserving unrelated remote-only file drift', () => {
   const resourceKey = 'file:index.php';
   const base = baseSite();
   const local = JSON.parse(JSON.stringify(base));
