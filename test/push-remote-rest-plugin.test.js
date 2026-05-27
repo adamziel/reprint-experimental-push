@@ -13703,11 +13703,60 @@ test('checked db journal boundary contract fails closed when the checked claim c
 
   result = runCheckedBoundaryContractMatches({
     ...baseJournal,
+    claim: {
+      ...baseJournal.claim,
+      previousClaimId: undefined,
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
     claimEvidence: {
       ...baseJournal.claimEvidence,
       activeRow: {
         ...baseJournal.claimEvidence.activeRow,
         sequence: 21,
+      },
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    claimEvidence: {
+      ...baseJournal.claimEvidence,
+      activeRow: {
+        ...baseJournal.claimEvidence.activeRow,
+        claimId: undefined,
+      },
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    claimEvidence: {
+      ...baseJournal.claimEvidence,
+      abandonedRow: {
+        ...baseJournal.claimEvidence.abandonedRow,
+        claimId: undefined,
+      },
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    claimEvidence: {
+      ...baseJournal.claimEvidence,
+      previousRow: {
+        ...baseJournal.claimEvidence.previousRow,
+        claimId: undefined,
       },
     },
   });

@@ -942,6 +942,7 @@ function reprint_push_lab_db_journal_claim_evidence_contract_matches($claim, $cl
     }
 
     if (!reprint_push_lab_db_journal_claim_evidence_row_matches($claim_evidence['activeRow'] ?? null, [
+        'claimId' => $claim['activeClaimId'] ?? null,
         'sequence' => $claim['activeClaimSequence'] ?? null,
         'event' => $claim['activeClaimEvent'] ?? null,
         'claimKeyHash' => $claim['activeClaimKeyHash'] ?? null,
@@ -956,6 +957,7 @@ function reprint_push_lab_db_journal_claim_evidence_contract_matches($claim, $cl
         || reprint_push_lab_db_journal_is_positive_int($claim['previousStartedSequence'] ?? null)
         || reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null);
     if ($needs_abandoned_row && !reprint_push_lab_db_journal_claim_evidence_row_matches($claim_evidence['abandonedRow'] ?? null, [
+        'claimId' => $claim['previousClaimId'] ?? null,
         'sequence' => $claim['abandonedSequence'] ?? null,
         'event' => $claim['abandonedEvent'] ?? null,
         'idempotencyKeyHash' => $claim['idempotencyKeyHash'] ?? null,
@@ -976,6 +978,7 @@ function reprint_push_lab_db_journal_claim_evidence_contract_matches($claim, $cl
         || reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
         || reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null);
     if ($needs_previous_row && !reprint_push_lab_db_journal_claim_evidence_row_matches($claim_evidence['previousRow'] ?? null, [
+        'claimId' => $claim['previousClaimId'] ?? null,
         'sequence' => $claim['previousClaimSequence'] ?? null,
         'event' => $claim['previousClaimEvent'] ?? null,
         'claimKeyHash' => $claim['previousClaimKeyHash'] ?? null,
