@@ -1,22 +1,22 @@
 # Critic Verdict
 
-Current reliable head: `bf495d928e18a1021ff2401b44b503ffbc97cd01`
-(`Prove retry boundary after journal fallback`).
+Current reliable head: `a86328d648354ec5e29f75145be59c20079c3ba9`
+(`Keep final retry evidence for preserved reads`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This commit adds a focused retry-boundary regression test around the
-  existing recovery-journal fallback path. It proves the verifier still reports
-  `PRESERVED_REMOTE_RETRY_REQUIRED` when the replay-and-retry requirement is
-  not met after validated recovery-journal proof.
-- The diff remains on the client/test surface inside the Playground-backed
-  verifier path. It does not show a production-owned, non-lab-backed checked
-  release command on the real Reprint endpoint that mints and rereads a live
-  auth session, persists durable restart-readable lease-fenced journal state,
-  preserves rejected remote evidence, and performs apply-time revalidation
-  before the first mutation on the same live boundary.
+- This commit adds more retry-evidence coverage around the existing
+  authenticated HTTP push client surface. It keeps preserved-read retry
+  evidence visible in the checked path, but it still does not prove a
+  production-owned, non-lab-backed checked release command on the real Reprint
+  endpoint.
+- The diff remains on the client/test surface. It does not show the live
+  release boundary that mints and rereads a live auth session, persists
+  durable restart-readable lease-fenced journal state, preserves rejected
+  remote evidence, and performs apply-time revalidation before the first
+  mutation on the same live boundary.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
