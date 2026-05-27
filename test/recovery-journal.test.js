@@ -823,6 +823,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimId: 'retry-claim-id-02',
+      claimKeyHash: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -840,6 +841,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimId: 'retry-claim-id-02',
+        claimKeyHash: 'retry-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -989,6 +991,54 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
           ...baseContract.leaseFence.writerLease,
           staleClaimRejected: true,
         },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        claimKeyHash: 'different-claim-key-hash',
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          claimKeyHash: undefined,
+          staleClaimRejected: true,
+        },
+      },
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
       },
     }),
     false,

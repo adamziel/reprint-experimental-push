@@ -1521,7 +1521,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
                 ? $checked_summary['writerLease']
                 : null,
-            ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+            ['strategy', 'claimId', 'claimKeyHash', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
             ['storageGuard']
         )
         || reprint_push_lab_rest_checked_contract_field_omissions(
@@ -1531,7 +1531,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
                 ? $checked_summary['writerLease']
                 : null,
-            ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+            ['strategy', 'claimId', 'claimKeyHash', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
         )
     ) {
         return true;
@@ -1614,7 +1614,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
         isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
             ? $checked_summary['leaseFence']['writerLease']
             : null,
-        ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+        ['strategy', 'claimId', 'claimKeyHash', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
         ['storageGuard']
     )
         || reprint_push_lab_rest_checked_contract_field_omissions(
@@ -1624,7 +1624,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
                 ? $checked_summary['leaseFence']['writerLease']
                 : null,
-            ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+            ['strategy', 'claimId', 'claimKeyHash', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
         );
 }
 

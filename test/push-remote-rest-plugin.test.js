@@ -452,6 +452,7 @@ function runWriterLeaseContract({
   claimKeyUnique = true,
   monotonicSequence = true,
   restartReadable = true,
+  claimKeyHash = null,
 }) {
   return spawnSync('php', [
     '-r',
@@ -473,13 +474,15 @@ function runWriterLeaseContract({
       '$claimKeyUnique = ($argv[3] ?? "1") === "1";',
       '$monotonicSequence = ($argv[4] ?? "1") === "1";',
       '$restartReadable = ($argv[5] ?? "1") === "1";',
-      'echo json_encode(reprint_push_lab_db_journal_writer_lease_contract($staleClaimRejected, $claimKeyUnique, $monotonicSequence, $restartReadable));',
+      '$claimKeyHash = ($argv[6] ?? "") !== "" ? $argv[6] : null;',
+      'echo json_encode(reprint_push_lab_db_journal_writer_lease_contract($staleClaimRejected, $claimKeyUnique, $monotonicSequence, $restartReadable, null, $claimKeyHash));',
     ].join(' '),
     pluginFile,
     staleClaimRejected ? '1' : '0',
     claimKeyUnique ? '1' : '0',
     monotonicSequence ? '1' : '0',
     restartReadable ? '1' : '0',
+    claimKeyHash ?? '',
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -493,6 +496,7 @@ function runCheckedBoundaryContract({
   monotonicSequence = true,
   restartReadable = true,
   claimId = null,
+  claimKeyHash = null,
 } = {}) {
   return spawnSync('php', [
     '-r',
@@ -516,13 +520,15 @@ function runCheckedBoundaryContract({
       '$monotonicSequence = ($argv[5] ?? "1") === "1";',
       '$restartReadable = ($argv[6] ?? "1") === "1";',
       '$claimId = ($argv[7] ?? "") !== "" ? $argv[7] : null;',
+      '$claimKeyHash = ($argv[8] ?? "") !== "" ? $argv[8] : null;',
       'echo json_encode(reprint_push_lab_db_journal_checked_boundary_contract(',
       '  $checkedSurface,',
       '  $staleClaimRejected,',
       '  $claimKeyUnique,',
       '  $monotonicSequence,',
       '  $restartReadable,',
-      '  $claimId',
+      '  $claimId,',
+      '  $claimKeyHash',
       '));',
     ].join(' '),
     pluginFile,
@@ -532,6 +538,7 @@ function runCheckedBoundaryContract({
     monotonicSequence ? '1' : '0',
     restartReadable ? '1' : '0',
     claimId ?? '',
+    claimKeyHash ?? '',
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -710,6 +717,7 @@ function buildAcceptedInlineRecoveryJournal() {
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimId: 'retry-claim-hash-02',
+      claimKeyHash: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -727,6 +735,7 @@ function buildAcceptedInlineRecoveryJournal() {
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimId: 'retry-claim-hash-02',
+        claimKeyHash: 'retry-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -952,6 +961,7 @@ function buildAcceptedInlineDbJournal() {
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimId: 'authoritative-claim-hash-02',
+      claimKeyHash: 'authoritative-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -969,6 +979,7 @@ function buildAcceptedInlineDbJournal() {
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimId: 'authoritative-claim-hash-02',
+        claimKeyHash: 'authoritative-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -6462,6 +6473,28 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease claim-key hash instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.leaseFence.writerLease.claimKeyHash;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: inlineJournal,
+      },
+    },
+    true,
+    false,
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.writerLease.storageGuard;
@@ -6488,6 +6521,28 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
     true,
     false,
     buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease claim-key hash instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.claimKeyHash;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: inlineJournal,
+      },
+    },
+    true,
+    false,
+    buildCheckedDbJournalSummary(),
   );
 
   assert.equal(result.status, 0, result.stderr);
@@ -11984,9 +12039,39 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
+test('checked db journal attachment fails closed on missing accepted inline writer-lease claim-key hash instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.claimKeyHash;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
+});
+
 test('checked db journal attachment fails closed on missing accepted inline nested writer-lease claim identity instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineDbJournal();
   delete inlineJournal.leaseFence.writerLease.claimId;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
+});
+
+test('checked db journal attachment fails closed on missing accepted inline nested writer-lease claim-key hash instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.leaseFence.writerLease.claimKeyHash;
 
   const result = runAttachCheckedDbJournalContract(
     { ok: true, dbJournal: inlineJournal },
@@ -13575,11 +13660,14 @@ test('checked db journal boundary contract carries the active claim id into both
     monotonicSequence: true,
     restartReadable: true,
     claimId: 'checked-claim-hash-01',
+    claimKeyHash: 'checked-claim-key-hash-01',
   });
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(JSON.parse(result.stdout).writerLease.claimId, 'checked-claim-hash-01');
   assert.equal(JSON.parse(result.stdout).leaseFence.writerLease.claimId, 'checked-claim-hash-01');
+  assert.equal(JSON.parse(result.stdout).writerLease.claimKeyHash, 'checked-claim-key-hash-01');
+  assert.equal(JSON.parse(result.stdout).leaseFence.writerLease.claimKeyHash, 'checked-claim-key-hash-01');
 });
 
 test('checked db journal boundary contract fails closed when the checked claim contract is missing or malformed', { skip: !hasPhp }, () => {
@@ -13631,6 +13719,16 @@ test('checked db journal boundary contract fails closed when the checked claim c
     writerLease: {
       ...baseJournal.writerLease,
       claimId: 'different-active-claim-id',
+    },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+
+  result = runCheckedBoundaryContractMatches({
+    ...baseJournal,
+    writerLease: {
+      ...baseJournal.writerLease,
+      claimKeyHash: 'different-active-claim-key-hash',
     },
   });
   assert.equal(result.status, 0, result.stderr);

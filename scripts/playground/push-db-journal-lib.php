@@ -178,7 +178,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
     bool $claim_key_unique = true,
     bool $monotonic_sequence = true,
     bool $restart_readable = true,
-    ?string $claim_id = null
+    ?string $claim_id = null,
+    ?string $claim_key_hash = null
 ): array {
     $scope_key = reprint_push_lab_db_journal_scope_key([], $checked_surface);
     $accepted_on_checked_boundary = $scope_key !== 'local-playground-fixture';
@@ -191,7 +192,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
         $claim_key_unique,
         $monotonic_sequence,
         $restart_readable,
-        $claim_id
+        $claim_id,
+        $claim_key_hash
     );
 
     return [
@@ -695,6 +697,9 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
                 true,
                 isset($summary['claim']['activeClaimId']) && is_string($summary['claim']['activeClaimId'])
                     ? $summary['claim']['activeClaimId']
+                    : null,
+                isset($summary['claim']['activeClaimKeyHash']) && is_string($summary['claim']['activeClaimKeyHash'])
+                    ? $summary['claim']['activeClaimKeyHash']
                     : null
             )
         );
@@ -1014,6 +1019,10 @@ function reprint_push_lab_db_journal_writer_lease_contract_matches($writer_lease
         && (
             !array_key_exists('claimId', $writer_lease)
             || reprint_push_lab_db_journal_non_empty_string($writer_lease['claimId'] ?? null)
+        )
+        && (
+            !array_key_exists('claimKeyHash', $writer_lease)
+            || reprint_push_lab_db_journal_non_empty_string($writer_lease['claimKeyHash'] ?? null)
         )
         && ($writer_lease['staleClaimRejected'] ?? false) === true;
 }
@@ -1415,6 +1424,12 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
             ($writer_lease['claimId'] ?? null) === ($claim['activeClaimId'] ?? null)
             && ($lease_fence_writer_lease['claimId'] ?? null) === ($claim['activeClaimId'] ?? null)
         );
+    $claim_key_hash_matches = !is_array($claim)
+        || !reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
+        || (
+            ($writer_lease['claimKeyHash'] ?? null) === ($claim['activeClaimKeyHash'] ?? null)
+            && ($lease_fence_writer_lease['claimKeyHash'] ?? null) === ($claim['activeClaimKeyHash'] ?? null)
+        );
 
     return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($ownership['productionAdapter'] ?? null) === ($lease_fence['boundary'] ?? null)
@@ -1432,7 +1447,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
         && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
         && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null)
         && $claim_stale_rejected_matches
-        && $claim_identity_matches;
+        && $claim_identity_matches
+        && $claim_key_hash_matches;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal): bool
@@ -1516,7 +1532,8 @@ function reprint_push_lab_db_journal_writer_lease_contract(
     bool $claim_key_unique = true,
     bool $monotonic_sequence = true,
     bool $restart_readable = true,
-    ?string $claim_id = null
+    ?string $claim_id = null,
+    ?string $claim_key_hash = null
 ): array
 {
     $contract = [
@@ -1531,6 +1548,9 @@ function reprint_push_lab_db_journal_writer_lease_contract(
 
     if (reprint_push_lab_db_journal_non_empty_string($claim_id)) {
         $contract['claimId'] = $claim_id;
+    }
+    if (reprint_push_lab_db_journal_non_empty_string($claim_key_hash)) {
+        $contract['claimKeyHash'] = $claim_key_hash;
     }
 
     return $contract;

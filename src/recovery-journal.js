@@ -699,6 +699,7 @@ function writerLeaseContractMatches(candidate, claim) {
   return typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimId === claim?.activeClaimId
+    && candidate?.claimKeyHash === claim?.activeClaimKeyHash
     && candidate?.claimKeyUnique === true
     && candidate?.fsyncEvidence === true
     && typeof candidate?.storageGuard === 'string'
@@ -723,7 +724,8 @@ function writerLeaseContractsAgree(writerLease, nestedWriterLease) {
     }
   }
 
-  return true;
+  return writerLease?.claimId === nestedWriterLease?.claimId
+    && writerLease?.claimKeyHash === nestedWriterLease?.claimKeyHash;
 }
 
 function assertProductionRecoveryClaimId(claimId, operationName) {
