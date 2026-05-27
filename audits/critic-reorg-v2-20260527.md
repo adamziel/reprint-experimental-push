@@ -106,6 +106,70 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Durable V2 Remote And Local Plugin V2
+
+Commit:
+
+- Reviewed `origin/lane/durable-journal-boundary-v2-20260527` at
+  `64ee80c549dcd4282e2dec1521f7ee56e8ba8e89`
+  (`Preserve DB journal lease fence storage guard`).
+- Reviewed local `lane/plugin-driver-boundary-v2-20260527` at
+  `979d680cd4b708e67ede940c1975f0d47da27bc9`
+  (`Harden plugin driver boundary tests`).
+
+Claim:
+
+- New fact: durable journal v2 now exists on origin.
+- New fact: plugin-driver v2 exists locally but was not present on origin at
+  fetch time.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git ls-remote origin refs/heads/lane/durable-journal-boundary-v2-20260527`
+  returned `64ee80c549dcd4282e2dec1521f7ee56e8ba8e89`.
+- `git show --stat origin/lane/durable-journal-boundary-v2-20260527`
+  shows a scoped support change in `src/authenticated-http-push-client.js` and
+  `test/authenticated-http-push-client.test.js`.
+- The durable v2 diff preserves `leaseFence.storageGuard` in DB journal
+  summaries when the boundary or nested writer lease proves the same guard.
+- `git show --stat lane/plugin-driver-boundary-v2-20260527` shows test-only
+  hardening in `test/production-shaped-proof.test.js` for plugin-driver
+  boundary blockers.
+- No reviewed branch includes a real live `REPRINT_PUSH_SOURCE_URL` command
+  run proving the production mutation boundary.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. These commits do not prove live auth/session issuance
+  and readback.
+- GATE-2: no movement. Durable v2 preserves support metadata in summaries, but
+  does not prove a live restart-readable lease-fenced journal on the real
+  mutation boundary.
+- GATE-3: no movement. No live source/local/changed topology proof exists.
+- GATE-4: no movement. Plugin v2 is test hardening and lacks production-owned
+  live plugin-driver mutation evidence.
+
+First missing production primitive:
+
+- A checked live release run using real `REPRINT_PUSH_SOURCE_URL` that proves
+  durable journal lease-fence evidence is read back from the same boundary as
+  the auth/session, apply, preserved-remote, and plugin-driver evidence.
+
+Next exact command:
+
+```bash
+git -C /tmp/reprint-reorg-plugin-20260527 push origin HEAD:lane/plugin-driver-boundary-v2-20260527
+```
+
+Then review the pushed branch. Release gate movement still requires:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Consolidated Branch Is Now Pushed
 
 Commit:
