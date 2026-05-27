@@ -17516,6 +17516,76 @@ test('blocks a local thumbnail reference owned by an existing nav_menu_item post
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local thumbnail reference owned by an existing nav_menu_item post even when it targets a same-plan post and unrelated remote wp_navigation noise exists', () => {
+  const sourceNavMenuItemResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:152"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source nav menu item',
+    post_content: 'base-private-source-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local target post',
+    post_content: 'local-private-target-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:152': {
+      meta_id: 152,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated wp_navigation',
+    post_content: 'remote-private-nav-menu-thumbnail-wp-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceNavMenuItemMutation = mutationFor(plan, sourceNavMenuItemResourceKey);
+  const targetPostMutation = mutationFor(plan, targetPostResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(sourceNavMenuItemMutation, undefined);
+  assert.equal(targetPostMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-source-nav-menu-item-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-target-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-nav-menu-thumbnail-wp-navigation-body'),
+    false,
+  );
+  assert.equal(remote.db.wp_posts['ID:21'].post_type, 'wp_navigation');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks menu item parent metadata from referencing a same-plan wp_navigation post', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:2"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:46"]';
