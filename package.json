@@ -64,6 +64,7 @@
     "test:playground:production-plugin-driver-receipt-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-receipt-guards-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-delete-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-delete-apply-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteApplyOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-delete-apply-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteApplyProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-route-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRouteOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-route-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRouteProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs",

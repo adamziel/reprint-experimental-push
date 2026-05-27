@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { resolveProductionPluginPackageScenarios } from '../scripts/playground/production-plugin-package-scenarios.js';
+import {
+  modeAliasesByCanonicalMode,
+  resolveProductionPluginPackageScenarios,
+} from '../scripts/playground/production-plugin-package-scenarios.js';
 import {
   guardProofModeAliases,
   guardProofModeNames,
@@ -337,6 +340,13 @@ test('package scripts pin the bounded plugin-driver delete-only mode entrypoint'
   );
 });
 
+test('package scripts pin the exact plugin-driver delete-apply-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-delete-apply-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteApplyOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the exact plugin-driver delete-apply-proof-only mode alias entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-delete-apply-proof-only'],
@@ -564,4 +574,22 @@ test('package scripts keep every exported guard-proof mode alias resolvable to a
       `${mode} should resolve to one canonical driver proof key`,
     );
   }
+});
+
+test('package scripts expose every exported camelCase plugin-driver Only mode alias', () => {
+  const driverModeScripts = Object.keys(packageJson.scripts)
+    .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'))
+    .map((scriptName) => packageSmokeMode(scriptName))
+    .filter((mode) => mode !== null)
+    .sort();
+  const exportedCamelCaseOnlyAliases = Object.values(modeAliasesByCanonicalMode)
+    .flatMap((aliases) => aliases)
+    .filter((alias) => /^[a-z][A-Za-z0-9]*Only$/.test(alias))
+    .sort();
+
+  assert.deepEqual(
+    driverModeScripts.filter((mode) => exportedCamelCaseOnlyAliases.includes(mode)),
+    exportedCamelCaseOnlyAliases,
+    'plugin-driver package scripts should expose every exported camelCase Only alias accepted by the scenario resolver',
+  );
 });
