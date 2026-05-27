@@ -31869,6 +31869,104 @@ test('blocks an existing term taxonomy row when its same-plan term target is cla
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term taxonomy row when its same-plan term target is claimed by a nav menu taxonomy and a sibling category taxonomy depends on the same blocked term even when unrelated remote attachment noise exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const existingTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const siblingCategoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:11"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 0,
+      taxonomy: 'category',
+      description: 'Base taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-existing-taxonomy-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared blocked taxonomy term',
+      slug: 'local-shared-blocked-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+      term_id: 7,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:11': {
+      term_taxonomy_id: 11,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const existingTaxonomyMutation = mutationFor(plan, existingTaxonomyResourceKey);
+  const siblingCategoryTaxonomyMutation = mutationFor(plan, siblingCategoryTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const existingTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === existingTaxonomyResourceKey);
+  const siblingCategoryTaxonomyBlocker = plan.blockers.find(
+    (entry) => entry.resourceKey === siblingCategoryTaxonomyResourceKey,
+  );
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(existingTaxonomyMutation.changeKind, 'update');
+  assert.equal(siblingCategoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, navMenuTaxonomyResourceKey), undefined);
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(existingTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(existingTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(existingTaxonomyBlocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(existingTaxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(siblingCategoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(siblingCategoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(siblingCategoryTaxonomyBlocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(siblingCategoryTaxonomyMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(existingTaxonomyBlocker).includes('Local shared blocked taxonomy term'), false);
+  assert.equal(JSON.stringify(siblingCategoryTaxonomyBlocker).includes('Local shared blocked taxonomy term'), false);
+  assert.equal(
+    JSON.stringify(existingTaxonomyBlocker).includes('remote-private-existing-taxonomy-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(siblingCategoryTaxonomyBlocker).includes('remote-private-existing-taxonomy-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing term taxonomy row when its same-plan parent term target is claimed by a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
