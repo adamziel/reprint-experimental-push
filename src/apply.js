@@ -1383,7 +1383,9 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
         ? inspected.acceptedOnCheckedBoundary === true
         : false
     )
-  ) && !checkedBoundaryBlockedByMissingDependency;
+  ) && !checkedBoundaryBlockedByMissingDependency
+    && inspectedOwnsJournal
+    && inspectedRestartReadable;
 
   return {
     scope,
