@@ -13909,6 +13909,30 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'non-string top-level session id',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 123,
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
       label: 'wrong top-level session type',
       body: {
         ok: true,
