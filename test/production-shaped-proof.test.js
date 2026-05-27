@@ -3808,6 +3808,60 @@ test('production-shaped live release verify preserves explicit checked-boundary 
     },
   );
 
+  assert.deepEqual(
+    resolveCheckedLiveBoundaryEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
+      username: 'explicit-user',
+      applicationPassword: 'explicit-app-password',
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+    }),
+    {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_USERNAME: 'explicit-user',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'explicit-app-password',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: 'explicit-user',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: 'explicit-app-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'explicit-user',
+        applicationPassword: 'explicit-app-password',
+      }),
+    },
+  );
+
+  assert.deepEqual(
+    resolveLiveApplyRevalidationEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
+      remoteChangedUrl: 'http://127.0.0.1:49154',
+      localUrl: 'http://127.0.0.1:49153',
+      username: 'explicit-user',
+      applicationPassword: 'explicit-app-password',
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+    }),
+    {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+      REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
+      REPRINT_PUSH_USERNAME: 'explicit-user',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'explicit-app-password',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: 'explicit-user',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: 'explicit-app-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'explicit-user',
+        applicationPassword: 'explicit-app-password',
+      }),
+    },
+  );
+
   assert.deepEqual(resolveCheckedReleaseRequirementEnv(), {
     REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
     REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
