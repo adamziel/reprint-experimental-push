@@ -2104,6 +2104,102 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
   assert.equal(summary.modeProof?.proof.missingPluginOwner, true);
 });
 
+test('plugin-driver proof summary narrows modeProof requests to the selected canonical mode', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-positive-proof', 'driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-positive-proof',
+        'driver-release-proof',
+        ...scenarioGroups['driver-positive-proof'],
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+      resolvedMode: 'driverReleaseProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.deepEqual(summary.requestedScenarios, [
+    'driver-positive-proof',
+    'driver-release-proof',
+  ]);
+  assert.deepEqual(summary.modeProof?.requestedScenarios, [
+    'driver-release-proof',
+  ]);
+  assert.deepEqual(summary.modeProof?.requestedBundles, [
+    'driverReleaseProof',
+  ]);
+  assert.deepEqual(summary.modeProof?.requestedConcreteScenarios, []);
+  assert.deepEqual(summary.modeProof?.requestedScenarioStatuses, {
+    'driver-release-proof': 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.requestedConcreteScenarioStatuses, {});
+});
+
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

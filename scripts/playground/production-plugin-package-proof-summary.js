@@ -379,6 +379,24 @@ function isBundleSelected(selectedScenarios, bundleName) {
     || bundleSummaryGroups[bundleName].every((scenario) => isScenarioSelected(selectedScenarios, scenario));
 }
 
+function filterRequestedListForMode(requestedValues, allowedValues) {
+  if (requestedValues === 'all') {
+    return 'all';
+  }
+  return requestedValues.filter((value) => allowedValues.has(value));
+}
+
+function filterRequestedStatusMapForMode(statusMap, allowedValues) {
+  if (statusMap === 'all') {
+    return 'all';
+  }
+  return Object.fromEntries(
+    Object.entries(statusMap)
+      .filter(([key]) => allowedValues.has(key))
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+}
+
 export function buildProductionPluginPackageProofSummary(
   summary,
   {
@@ -1169,6 +1187,43 @@ export function buildProductionPluginPackageProofSummary(
   const canonicalModeFailedScenarios = canonicalModeScenarios.filter(
     (scenarioName) => scenarioPasses.get(scenarioName) !== true,
   );
+  const canonicalModeRequestedScenarioNames = new Set([
+    canonicalMode,
+    ...canonicalModeScenarios,
+  ]);
+  const canonicalModeRequestedBundleNames = canonicalMode === null
+    ? new Set()
+    : new Set([toBundleKey(canonicalMode)]);
+  const modeRequestedScenarios = canonicalMode === null
+    ? []
+    : filterRequestedListForMode(
+      proofSummary.requestedScenarios,
+      canonicalModeRequestedScenarioNames,
+    );
+  const modeRequestedBundles = canonicalMode === null
+    ? []
+    : filterRequestedListForMode(
+      proofSummary.requestedBundles,
+      canonicalModeRequestedBundleNames,
+    );
+  const modeRequestedConcreteScenarios = canonicalMode === null
+    ? []
+    : filterRequestedListForMode(
+      proofSummary.requestedConcreteScenarios,
+      new Set(canonicalModeScenarios),
+    );
+  const modeRequestedScenarioStatuses = canonicalMode === null
+    ? {}
+    : filterRequestedStatusMapForMode(
+      proofSummary.requestedScenarioStatuses,
+      canonicalModeRequestedScenarioNames,
+    );
+  const modeRequestedConcreteScenarioStatuses = canonicalMode === null
+    ? {}
+    : filterRequestedStatusMapForMode(
+      proofSummary.requestedConcreteScenarioStatuses,
+      new Set(canonicalModeScenarios),
+    );
   proofSummary.modeProof = canonicalProof === null
     ? null
     : {
@@ -1176,9 +1231,9 @@ export function buildProductionPluginPackageProofSummary(
       canonicalMode,
       proofKey: canonicalProofKey,
       proof: canonicalProof,
-      requestedScenarios: proofSummary.requestedScenarios,
-      requestedBundles: proofSummary.requestedBundles,
-      requestedConcreteScenarios: proofSummary.requestedConcreteScenarios,
+      requestedScenarios: modeRequestedScenarios,
+      requestedBundles: modeRequestedBundles,
+      requestedConcreteScenarios: modeRequestedConcreteScenarios,
       requested: canonicalProof.requested,
       selected: canonicalProof.selected,
       ok: canonicalProof.ok,
@@ -1198,8 +1253,8 @@ export function buildProductionPluginPackageProofSummary(
       passedScenarios: canonicalProof.passedScenarios ?? canonicalModePassedScenarios,
       failedScenarios: canonicalProof.failedScenarios ?? canonicalModeFailedScenarios,
       requestedStatus: canonicalProof.requestedStatus ?? null,
-      requestedScenarioStatuses: proofSummary.requestedScenarioStatuses,
-      requestedConcreteScenarioStatuses: proofSummary.requestedConcreteScenarioStatuses,
+      requestedScenarioStatuses: modeRequestedScenarioStatuses,
+      requestedConcreteScenarioStatuses: modeRequestedConcreteScenarioStatuses,
       requestedSatisfied: (canonicalProof.requestedStatus ?? null) === 'passed',
       requestedScenariosSatisfied: proofSummary.requestedScenariosSatisfied,
       requestedBundlesSatisfied: proofSummary.requestedBundlesSatisfied,
