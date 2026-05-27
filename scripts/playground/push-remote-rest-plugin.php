@@ -1444,6 +1444,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             ['ownsJournal', 'restartReadable'],
             ['productionAdapter']
         )
+        || reprint_push_lab_rest_checked_contract_field_omissions(
+            isset($premerge_db_journal['ownership']) && is_array($premerge_db_journal['ownership'])
+                ? $premerge_db_journal['ownership']
+                : null,
+            isset($checked_summary['ownership']) && is_array($checked_summary['ownership'])
+                ? $checked_summary['ownership']
+                : null,
+            ['ownsJournal', 'restartReadable']
+        )
     ) {
         return true;
     }
@@ -1481,6 +1490,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
                 : null,
             ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
             ['storageGuard']
+        )
+        || reprint_push_lab_rest_checked_contract_field_omissions(
+            isset($premerge_db_journal['writerLease']) && is_array($premerge_db_journal['writerLease'])
+                ? $premerge_db_journal['writerLease']
+                : null,
+            isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
+                ? $checked_summary['writerLease']
+                : null,
+            ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
         )
     ) {
         return true;
@@ -1520,6 +1538,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             ['claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
             ['boundary']
         )
+        || reprint_push_lab_rest_checked_contract_field_omissions(
+            isset($premerge_db_journal['leaseFence']) && is_array($premerge_db_journal['leaseFence'])
+                ? $premerge_db_journal['leaseFence']
+                : null,
+            isset($checked_summary['leaseFence']) && is_array($checked_summary['leaseFence'])
+                ? $checked_summary['leaseFence']
+                : null,
+            ['claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+        )
     ) {
         return true;
     }
@@ -1556,7 +1583,16 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             : null,
         ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
         ['storageGuard']
-    );
+    )
+        || reprint_push_lab_rest_checked_contract_field_omissions(
+            isset($premerge_db_journal['leaseFence']['writerLease']) && is_array($premerge_db_journal['leaseFence']['writerLease'])
+                ? $premerge_db_journal['leaseFence']['writerLease']
+                : null,
+            isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
+                ? $checked_summary['leaseFence']['writerLease']
+                : null,
+            ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+        );
 }
 
 function reprint_push_lab_rest_checked_storage_guard_conflicts(

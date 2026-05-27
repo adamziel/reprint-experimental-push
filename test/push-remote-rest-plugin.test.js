@@ -6319,6 +6319,50 @@ test('checked recovery inspect evidence fails closed on unsupported accepted inl
   });
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline ownership restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.ownership.restartReadable;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.ownership, {
+    ownsJournal: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.leaseFence.writerLease.staleClaimRejected;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+  });
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -8185,6 +8229,54 @@ test('checked db journal attachment fails closed on unsupported accepted inline 
     outcome: 'applied',
   });
   assert.equal(parsed.storageGuard, undefined);
+});
+
+test('checked db journal attachment fails closed on missing accepted inline ownership restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.ownership.restartReadable;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    buildCheckedRecoveryJournalSummary(),
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.ownership, {
+    ownsJournal: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline nested writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.leaseFence.writerLease.staleClaimRejected;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    buildCheckedRecoveryJournalSummary(),
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+  });
 });
 
 test('checked db journal attachment fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
