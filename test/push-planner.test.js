@@ -25252,6 +25252,137 @@ test('production recovery support report fails closed when restart inspection om
   assert.ok(report.missingDependency.includes('explicit production recovery adapter marker'));
 });
 
+test('production recovery support report fails closed when restart inspection hides or prototype-inherits its surfaced adapter markers', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const staleClaimId = 'claim-inspected-surfaced-adapter-marker-drift-stale';
+
+  for (const [label, mutateInspection, expectedMissingDependency, expectedOwnership] of [
+    [
+      'hidden inspected supported surface',
+      (inspected) => {
+        Object.defineProperty(inspected, 'supportedSurface', {
+          value: 'production-recovery-journal-adapter',
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      },
+      'supported production recovery journal adapter surface',
+      {
+        supportedSurface: null,
+        productionAdapter: 'filesystem-compare-rename',
+      },
+    ],
+    [
+      'prototype-inherited inspected supported surface',
+      (inspected) => {
+        delete inspected.supportedSurface;
+        Object.setPrototypeOf(inspected, {
+          supportedSurface: 'production-recovery-journal-adapter',
+        });
+      },
+      'supported production recovery journal adapter surface',
+      {
+        supportedSurface: null,
+        productionAdapter: 'filesystem-compare-rename',
+      },
+    ],
+    [
+      'hidden inspected production adapter',
+      (inspected) => {
+        Object.defineProperty(inspected, 'productionAdapter', {
+          value: true,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      },
+      'explicit production recovery adapter marker',
+      {
+        supportedSurface: 'production-recovery-journal-adapter',
+        productionAdapter: null,
+      },
+    ],
+    [
+      'prototype-inherited inspected production adapter',
+      (inspected) => {
+        delete inspected.productionAdapter;
+        Object.setPrototypeOf(inspected, {
+          productionAdapter: true,
+        });
+      },
+      'explicit production recovery adapter marker',
+      {
+        supportedSurface: 'production-recovery-journal-adapter',
+        productionAdapter: null,
+      },
+    ],
+  ]) {
+    const claimId = `claim-inspected-surfaced-adapter-marker-${label.replaceAll(/[^a-z]+/gi, '-')}`.toLowerCase();
+    const claimHash = digest({ recoveryJournalClaim: claimId });
+    const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+    const journal = openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId, epoch: 3 },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+
+    appendRecoveryClaimOpened(journal, {
+      plan: { id: `plan-${claimId}` },
+      current: baseSite(),
+      claimId,
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+    });
+    journal.appendEvent('stale-claim-rejected', {
+      claimId: staleClaimId,
+      previousClaimId: claimId,
+      claimHash: staleClaimHash,
+      previousClaimHash: claimHash,
+      claimLease: { id: staleClaimId, epoch: 2 },
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+    });
+    journal.appendEvent('journal-opened', {
+      planId: `plan-${claimId}`,
+      state: 'opened',
+      observedHash: 'snapshot-hash-only',
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+    });
+
+    const report = productionRecoverySupportReport({
+      ...journal,
+      inspect() {
+        const inspected = {
+          ...journal.inspect(),
+        };
+        mutateInspection(inspected);
+        return inspected;
+      },
+    });
+
+    journal.close();
+
+    assert.equal(report.supported, false, label);
+    assert.equal(report.checkedBoundarySatisfied, false, label);
+    assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false, label);
+    assert.ok(report.missingDependency.includes(expectedMissingDependency), label);
+    assert.equal(report.checkedBoundaryProof.ownership.supportedSurface, expectedOwnership.supportedSurface, label);
+    assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, expectedOwnership.productionAdapter, label);
+  }
+});
+
 test('production recovery support report keeps checked boundary closed when restart inspection explicitly rejects boundary acceptance', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
