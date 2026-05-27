@@ -2867,7 +2867,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
 
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out/,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?for \$\{timeoutFallbackPreflightNotReadyProbeCount\} consecutive response\$\{timeoutFallbackPreflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedStartupNotReadyProbeCount\}\) after the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
@@ -2875,7 +2875,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out/,
+    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?for \$\{timeoutFallbackPreflightNotReadyProbeCount\} consecutive response\$\{timeoutFallbackPreflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}\) while the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
@@ -2883,7 +2883,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     smokeSource,
@@ -2891,7 +2891,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     smokeSource,
@@ -2919,7 +2919,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     verifierSource,
@@ -2927,7 +2927,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     verifierSource,
@@ -2949,6 +2949,24 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     verifierSource,
     /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /const timeoutFallbackPreflightNotReadyProbeCount =\s*\(notReadyProbeCounts\.preflight \?\? 0\) \+ 1;/,
+    );
+    assert.match(
+      source,
+      /notReadyProbeCounts = \{\s*\.\.\.notReadyProbeCounts,\s*preflight: timeoutFallbackPreflightNotReadyProbeCount,\s*\};/s,
+    );
+    assert.match(
+      source,
+      /packagedProductionPluginGlobalStartupStillWithinBudget\(\s*timeoutFallbackPreflightNotReadyProbeCount,\s*\)[\s\S]*?timeoutProbeCount = 0;\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;/s,
+    );
+    assert.match(
+      source,
+      /packagedProductionPluginPackagedRouteStartupStillWithinBudget\(\s*timeoutFallbackPreflightNotReadyProbeCount,\s*maxPackagedRouteStartupAfterGlobalReadyProbes,\s*\)[\s\S]*?timeoutProbeCount = 0;\s*await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);\s*continue;/s,
+    );
+  }
   assert.match(
     smokeSource,
     /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,

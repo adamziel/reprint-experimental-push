@@ -2121,15 +2121,31 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             return;
           }
           if (preflightProbe.retryable) {
+            const timeoutFallbackPreflightNotReadyProbeCount =
+              (notReadyProbeCounts.preflight ?? 0) + 1;
+            notReadyProbeCounts = {
+              ...notReadyProbeCounts,
+              preflight: timeoutFallbackPreflightNotReadyProbeCount,
+            };
             const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
               preflightProbe,
               indexProbe,
             );
             if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
+              if (
+                packagedProductionPluginGlobalStartupStillWithinBudget(
+                  timeoutFallbackPreflightNotReadyProbeCount,
+                )
+              ) {
+                lastError = error;
+                timeoutProbeCount = 0;
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
+                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} for ${timeoutFallbackPreflightNotReadyProbeCount} consecutive response${timeoutFallbackPreflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount}) after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2137,15 +2153,27 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   childPid: child.pid ?? null,
                   packagedProductionPlugin: true,
                   globalWordPressStartup: true,
+                  preflightNotReadyProbeCount: timeoutFallbackPreflightNotReadyProbeCount,
                 },
                 lastTimeoutFallbackProbes,
               );
             }
             if (startupBranch?.kind === 'retryable-route-packaged-route-starting') {
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  timeoutFallbackPreflightNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                lastError = error;
+                timeoutProbeCount = 0;
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} while the snapshot probe timed out at ${baseUrl}`,
+                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} for ${timeoutFallbackPreflightNotReadyProbeCount} consecutive response${timeoutFallbackPreflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes}) while the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2153,6 +2181,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   childPid: child.pid ?? null,
                   packagedProductionPlugin: true,
                   packagedRouteStartup: true,
+                  preflightNotReadyProbeCount: timeoutFallbackPreflightNotReadyProbeCount,
                 },
                 lastTimeoutFallbackProbes,
               );
