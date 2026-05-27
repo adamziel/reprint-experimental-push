@@ -11,6 +11,7 @@ import {
 } from '../scripts/bench/performance-model.js';
 import {
   runGuardedExecutorBenchmark,
+  productionThroughputClaim,
   productionThroughputBlockers,
   productionThroughputDetails,
 } from '../scripts/bench/guarded-executor-benchmark.js';
@@ -5861,6 +5862,80 @@ test('production throughput blocks malformed parallelism limits before faster ex
   assert.equal(details.parallelismLimitsCanonical, true);
   assert.ok(blockers.includes('production-parallelism-limits-not-visible'));
   assert.ok(report.claims.productionThroughput.blockers.includes('production-parallelism-limits-not-visible'));
+});
+
+test('production throughput claim maps rollout blockers to the matching rejected fast paths', () => {
+  const missingUploadReceipts = structuredClone(runGuardedExecutorBenchmark({ profile: 'ci' }));
+  missingUploadReceipts.evidence.parallelism.parallelismLimitsVisible = false;
+  missingUploadReceipts.executorCapabilities.fileReceipts = 'fixture-storage-receipts';
+  missingUploadReceipts.evidence.atomicGroup.productionStorageReceiptsMeasured = false;
+  missingUploadReceipts.evidence.atomicGroup.productionStorageReceiptsVisible = false;
+
+  const uploadClaim = productionThroughputClaim(missingUploadReceipts);
+  const uploadRejectedById = new Map(
+    uploadClaim.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]),
+  );
+
+  assert.ok(
+    uploadClaim.blockers.includes('production-parallelism-limits-not-visible'),
+    'parallelism visibility blocker should stay on the rollout claim',
+  );
+  assert.ok(
+    uploadClaim.blockers.includes('production-storage-receipts-not-measured'),
+    'storage receipt measurement blocker should stay on the rollout claim',
+  );
+  assert.deepEqual(
+    uploadRejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause')?.blockerRefs,
+    ['production-parallelism-limits-not-visible', 'production-storage-receipts-not-measured'],
+  );
+  assert.equal(
+    uploadRejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause')?.rejectedGate,
+    'recovery',
+  );
+  assert.ok(
+    uploadRejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause')?.violates.includes('backpressure'),
+  );
+
+  const missingRowBatchCommit = structuredClone(runGuardedExecutorBenchmark({ profile: 'ci' }));
+  missingRowBatchCommit.evidence.atomicGroup.productionAtomicCommitMeasured = false;
+  missingRowBatchCommit.evidence.atomicGroup.productionAtomicCommitVisible = false;
+  missingRowBatchCommit.evidence.atomicGroup.productionAtomicGroupMetadataVisible = false;
+  missingRowBatchCommit.executorCapabilities.rowApply = 'fixture-row-apply';
+  missingRowBatchCommit.evidence.atomicGroup.productionRowBatchExecutorMeasured = false;
+  missingRowBatchCommit.evidence.atomicGroup.productionRowBatchExecutorVisible = false;
+
+  const rowBatchClaim = productionThroughputClaim(missingRowBatchCommit);
+  const rowBatchRejectedById = new Map(
+    rowBatchClaim.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]),
+  );
+
+  assert.deepEqual(
+    rowBatchRejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit')?.blockerRefs,
+    [
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ],
+  );
+  assert.equal(
+    rowBatchRejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rowBatchRejectedById.get('compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit')?.violates.includes('atomic-groups'),
+  );
+
+  assert.deepEqual(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks')?.blockerRefs,
+    ['production-capability-measurement-not-aligned'],
+  );
+  assert.equal(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks')?.rejectedGate,
+    'live',
+  );
+  assert.ok(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks')?.violates.includes('plugin-preconditions'),
+  );
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {
