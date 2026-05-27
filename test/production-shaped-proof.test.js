@@ -4965,6 +4965,104 @@ test('shared lab waitForServer preserves snapshot-timeout context across the nex
   );
 });
 
+test('shared lab waitForServer clears snapshot-timeout context after the snapshot recovers into a retryable response', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const sockets = new Set();
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      if (indexCalls <= 2) {
+        response.statusCode = 502;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+        return;
+      }
+
+      response.statusCode = 500;
+      response.setHeader('content-type', 'text/plain; charset=utf-8');
+      response.end('terminal index failure after snapshot recovery');
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      if (snapshotCalls === 1) {
+        return;
+      }
+
+      response.statusCode = 502;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground \/wp-json\/ returned a terminal readiness failure HTTP 500/);
+        assert.doesNotMatch(error.message, /after the snapshot probe timed out/);
+        assert.equal(error.context?.snapshotProbeTimedOut, undefined);
+        assert.equal(error.context?.indexTerminal, true);
+        return true;
+      },
+    );
+  } finally {
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 3);
+  assert.equal(snapshotCalls, 2);
+});
+
 test('live Playground proof helpers keep lab readiness probes child-aware', () => {
   const liveSources = [
     readFileSync(
@@ -5078,6 +5176,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   let notReadyProbeCount = 0;
   let timeoutProbeCount = 0;
   let snapshotTimeoutProbeCount = 0;
+  let lastSnapshotTimeoutContext = null;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -5210,6 +5309,10 @@ async function waitForServer(child, baseUrl, getLogs) {
             if (labReadinessProbeTimedOut(error)) {
               lastError = error;
               snapshotTimeoutProbeCount = labNextTimeoutProbeCount(snapshotTimeoutProbeCount, error);
+              lastSnapshotTimeoutContext = {
+                timeoutProbeCount: snapshotTimeoutProbeCount,
+                startupIndexStatus: response.status,
+              };
               if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount)) {
                 await throwPlaygroundReadinessFailure(
                   child,
@@ -5232,6 +5335,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           }
           timeoutProbeCount = 0;
           snapshotTimeoutProbeCount = 0;
+          lastSnapshotTimeoutContext = null;
           const snapshotBody = await snapshot.clone().text().catch(() => '');
           lastProbes.push({
             route: '/wp-json/reprint-push-lab/v1/snapshot',
@@ -5302,7 +5406,32 @@ async function waitForServer(child, baseUrl, getLogs) {
           continue;
         }
         notReadyProbeCount = 0;
+        if (!readinessRetryable) {
+          const failureContext = lastSnapshotTimeoutContext !== null
+            ? {
+              childPid: child.pid ?? null,
+              snapshotProbeTimedOut: true,
+              ...lastSnapshotTimeoutContext,
+              indexTerminal: true,
+            }
+            : {
+              childPid: child.pid ?? null,
+              indexTerminal: true,
+            };
+          const failureMessage = lastSnapshotTimeoutContext !== null
+            ? `Playground /wp-json/ returned a terminal readiness failure HTTP ${response.status} after the snapshot probe timed out at ${baseUrl}`
+            : `Playground /wp-json/ returned a terminal readiness failure HTTP ${response.status} at ${baseUrl}`;
+          await throwPlaygroundReadinessFailure(
+            child,
+            failureMessage,
+            lastError,
+            lastProbes,
+            getLogs(),
+            failureContext,
+          );
+        }
         snapshotTimeoutProbeCount = 0;
+        lastSnapshotTimeoutContext = null;
         if (readinessProbeCount >= maxReadinessProbes) {
           await throwPlaygroundReadinessFailure(
             child,
@@ -5322,7 +5451,23 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
+      if (lastSnapshotTimeoutContext !== null && labReadinessProbeTimedOut(error)) {
+        await throwPlaygroundReadinessFailure(
+          child,
+          `Playground /wp-json/ probe timed out after the snapshot probe timed out at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          getLogs(),
+          {
+            childPid: child.pid ?? null,
+            snapshotProbeTimedOut: true,
+            ...lastSnapshotTimeoutContext,
+            indexProbeTimedOut: true,
+          },
+        );
+      }
       snapshotTimeoutProbeCount = 0;
+      lastSnapshotTimeoutContext = null;
       timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
       if (labReadinessProbeTimedOut(error) && labNotReadyProbeLimitReached(timeoutProbeCount)) {
         await throwPlaygroundReadinessFailure(

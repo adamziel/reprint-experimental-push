@@ -3026,19 +3026,28 @@ async function waitForServer(child, baseUrl, getLogs) {
           continue;
         }
         notReadyProbeCount = 0;
-        if (lastSnapshotTimeoutContext !== null) {
+        if (!readinessRetryable) {
+          const failureContext = lastSnapshotTimeoutContext !== null
+            ? {
+                childPid: child.pid ?? null,
+                snapshotProbeTimedOut: true,
+                ...lastSnapshotTimeoutContext,
+                indexTerminal: true,
+              }
+            : {
+                childPid: child.pid ?? null,
+                indexTerminal: true,
+              };
+          const failureMessage = lastSnapshotTimeoutContext !== null
+            ? `Playground /wp-json/ returned a terminal readiness failure HTTP ${response.status} after the snapshot probe timed out at ${baseUrl}`
+            : `Playground /wp-json/ returned a terminal readiness failure HTTP ${response.status} at ${baseUrl}`;
           await throwPlaygroundReadinessFailure(
             child,
-            `Playground /wp-json/ returned a terminal readiness failure HTTP ${response.status} after the snapshot probe timed out at ${baseUrl}`,
+            failureMessage,
             lastError,
             lastProbes,
             getLogs(),
-            {
-              childPid: child.pid ?? null,
-              snapshotProbeTimedOut: true,
-              ...lastSnapshotTimeoutContext,
-              indexTerminal: true,
-            },
+            failureContext,
           );
         }
         snapshotTimeoutProbeCount = 0;
