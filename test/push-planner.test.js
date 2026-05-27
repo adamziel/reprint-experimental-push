@@ -94,6 +94,43 @@ function baseSite() {
   };
 }
 
+function loadJsonFixture(relativePath) {
+  return JSON.parse(fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8'));
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function playgroundLocalEditedSnapshot() {
+  return withStablePlaygroundAuthorIdentities(
+    loadJsonFixture('fixtures/playground/local-edited.snapshot.json'),
+  );
+}
+
+function playgroundBaseWithoutLocalOnlyGraphRows(snapshot) {
+  const base = cloneJson(snapshot);
+  delete base.db.wp_posts['ID:2001'];
+  delete base.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'];
+  return base;
+}
+
+function withStablePlaygroundAuthorIdentities(snapshot) {
+  const next = cloneJson(snapshot);
+  next.db.wp_users = next.db.wp_users || {};
+  for (const post of Object.values(next.db.wp_posts || {})) {
+    const userId = Number.parseInt(String(post.post_author), 10);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      continue;
+    }
+    const rowId = `ID:${userId}`;
+    next.db.wp_users[rowId] = next.db.wp_users[rowId] || {
+      ID: userId,
+    };
+  }
+  return next;
+}
+
 function planFor(base, local, remote) {
   return createPushPlan({ base, local, remote, now: fixedNow });
 }
@@ -1196,6 +1233,29 @@ test('allows same-plan post and attachment graph closure when remote still match
   assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, '3');
 });
 
+test('maps real Playground postmeta when its WordPress post identity is created in the same plan', () => {
+  const local = playgroundLocalEditedSnapshot();
+  const base = playgroundBaseWithoutLocalOnlyGraphRows(local);
+  const remote = cloneJson(base);
+  const postResourceKey = 'row:["wp_posts","ID:2001"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]';
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(mutationFor(plan, postResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey).changeKind, 'create');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.deepEqual(result.site.db.wp_posts['ID:2001'], local.db.wp_posts['ID:2001']);
+  assert.deepEqual(
+    result.site.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'],
+    local.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'],
+  );
+});
+
 test('blocks featured image references when the attachment target diverged on remote', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
@@ -1237,6 +1297,46 @@ test('blocks featured image references when the attachment target diverged on re
   assert.equal(reference.targetChange.remoteChange, 'update');
   assert.equal(planJson.includes('remote-private-attachment-title'), false);
   assert.equal(planJson.includes('remote-private-attachment-body'), false);
+});
+
+test('keeps WordPress menu item graph surfaces fail-closed', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:44"]';
+  const menuMetaResourceKey = 'row:["wp_postmeta","meta_id:90"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:44'] = {
+    ID: 44,
+    post_title: 'Local private menu item',
+    post_content: 'local-private-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    post_parent: 0,
+  };
+  local.db.wp_postmeta['meta_id:90'] = {
+    meta_id: 90,
+    post_id: 44,
+    meta_key: '_menu_item_object_id',
+    meta_value: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemBlocker = plan.blockers.find((blocker) => blocker.resourceKey === menuItemResourceKey);
+  const menuMetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === menuMetaResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(mutationFor(plan, menuMetaResourceKey), undefined);
+  assert.equal(menuItemBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(menuItemBlocker.reason, /nav_menu_item/);
+  assert.equal(menuMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(menuMetaBlocker.reason, /_menu_item_object_id/);
+  assert.equal(planJson.includes('local-private-menu-item-body'), false);
+  assert.equal(planJson.includes('Local private menu item'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('allows same-plan comment and user graph closure when author and comment targets are created locally', () => {
