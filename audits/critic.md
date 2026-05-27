@@ -1,30 +1,31 @@
 # Critic Verdict
 
-Current reliable head: `22e1eb7bb37846fb379e6ea7e71a73304235e3da`
-(`Carry auth identity user id through lifecycle`).
+Current reliable head: `e4486374ac0c4de784e103bfbdff6d6054933873`
+(`Mirror validated recovery journal surface`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head requires authenticated identity `userId` continuity across the
-  checked auth/session lifecycle, including preserved reads and journaled
-  replay surfaces. That is useful fail-closed hardening of the verifier/client
-  boundary.
-- The new tests prove the lifecycle summary fails closed when a preserved
-  read changes `auth.identity.userId`, but they still run inside the checked
-  harness/client proof surface rather than a production-owned real Reprint
-  endpoint.
-- This head therefore does not close any supervised release gate. The missing
-  primitive remains a real endpoint proof that issues and reads back a live
-  auth session, persists it in restart-readable durable journal storage with
-  lease fencing, preserves rejected-remote evidence, and revalidates at apply
-  time before mutation.
+- This head expands the checked recovery-journal and auth-session surfaces in
+  `src/authenticated-http-push-client.js`, `src/recovery-journal.js`, and
+  `test/authenticated-http-push-client.test.js`.
+- The new code mirrors validated recovery journal data into the release-path
+  summary and adds broader checked-path coverage for recovery journal claims,
+  lease fences, and auth-session drift handling.
+- That is useful release-path hardening, but it still runs inside the checked
+  verifier / recovery surface. It does not prove one production-owned,
+  non-lab-backed real Reprint endpoint boundary that mints a live auth session,
+  reads it back after restart from durable lease-fenced journal storage,
+  preserves rejected-remote evidence, and revalidates at apply time before the
+  first mutation.
+- No supervised release gate closes here. The remaining primitive is still a
+  real endpoint proof rather than another checked recovery surface expansion.
 
 Next owner / command:
 
-- `main:reliable-exec` should land the next exact primitive beyond auth
-  identity user-id continuity hardening: a production-owned, non-lab-backed
+- `main:reliable-exec` should land the next exact primitive beyond mirrored
+  recovery-journal surface evidence: a production-owned, non-lab-backed
   source-mutation/auth-session boundary on the real Reprint endpoint that
   issues a live session, reads it back after restart from durable journal
   storage, enforces lease-fenced ownership of those journal rows, and
