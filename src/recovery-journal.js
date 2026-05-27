@@ -100,15 +100,11 @@ function claimScopedArtifactRefs(records, claim) {
     return null;
   }
 
-  const scopedRecord = (Array.isArray(records) ? [...records] : [])
-    .reverse()
-    .find(
-      (record) => record.claimHash === claim.activeClaimHash
-        && record.claimId === claim.activeClaimId
-        && artifactRefsContractMatches(record.artifactRefs),
-    );
+  const scopedRecord = claimScopedActiveClaimRecord(records, claim);
 
-  return scopedRecord ? { ...scopedRecord.artifactRefs } : null;
+  return artifactRefsContractMatches(scopedRecord?.artifactRefs)
+    ? { ...scopedRecord.artifactRefs }
+    : null;
 }
 
 function claimScopedPlanId(records, claim) {
@@ -120,15 +116,19 @@ function claimScopedPlanId(records, claim) {
     return null;
   }
 
-  const scopedRecord = (Array.isArray(records) ? [...records] : [])
-    .reverse()
-    .find(
-      (record) => record.claimHash === claim.activeClaimHash
-        && record.claimId === claim.activeClaimId
-        && hasNonEmptyString(record.planId),
-    );
+  const scopedRecord = claimScopedActiveClaimRecord(records, claim);
 
   return scopedRecord?.planId || null;
+}
+
+function claimScopedActiveClaimRecord(records, claim) {
+  return (Array.isArray(records) ? [...records] : [])
+    .reverse()
+    .find(
+      (record) => CLAIM_STATE_EVENT_TYPES.has(record.type)
+        && record.claimHash === claim.activeClaimHash
+        && record.claimId === claim.activeClaimId,
+    ) || null;
 }
 
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {

@@ -852,6 +852,102 @@ test('production recovery journal inspection ignores consumed records that omit 
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
 });
 
+test('production recovery journal wrapper rejects restart when only a consumed record retains the active claim artifact refs', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumed-artifact-refs-01';
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-artifact-refs',
+    },
+    claimId,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const claimRecord = persisted.records.find(
+    (record) => record.type === 'recovery-claim-opened' && record.claimId === claimId,
+  );
+  const consumedRecord = persisted.records.find(
+    (record) => record.type === 'recovery-journal-consumed' && record.claimId === claimId,
+  );
+  assert.ok(claimRecord);
+  assert.ok(consumedRecord);
+  delete claimRecord.artifactRefs;
+  assert.ok(consumedRecord.artifactRefs);
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-consumed-artifact-refs',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    /openProductionRecoveryJournal\(\) requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+  );
+});
+
+test('production recovery journal wrapper rejects restart when only a consumed record retains the active claim plan id', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumed-plan-id-01';
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-plan-id',
+    },
+    claimId,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const claimRecord = persisted.records.find(
+    (record) => record.type === 'recovery-claim-opened' && record.claimId === claimId,
+  );
+  const consumedRecord = persisted.records.find(
+    (record) => record.type === 'recovery-journal-consumed' && record.claimId === claimId,
+  );
+  assert.ok(claimRecord);
+  assert.ok(consumedRecord);
+  delete claimRecord.planId;
+  assert.equal(consumedRecord.planId, plan.id);
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-consumed-plan-id',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    /openProductionRecoveryJournal\(\) requires plan\.id to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+  );
+});
+
 test('production recovery journal wrapper rejects reopened artifact refs that drift from the active claim evidence', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
