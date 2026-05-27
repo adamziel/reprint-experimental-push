@@ -24838,6 +24838,73 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   });
 });
 
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with drifted artifactRefs.remote', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Compatibility Artifact Refs Remote Drift Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-compatibility-artifact-refs-remote.jsonl`;
+  const claimId = 'claim-consumed-compatibility-artifact-refs-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const driftedRemoteArtifactPath = `${path.dirname(filePath)}/consumed-compatibility-artifact-refs-remote-drifted.jsonl`;
+  const error = captureError(() => openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    artifactRefs: {
+      journal: filePath,
+      remote: driftedRemoteArtifactPath,
+    },
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires artifactRefs.remote to match the owned remote artifact path.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: driftedRemoteArtifactPath,
+  });
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden artifactRefs.remote', () => {
   const base = baseSite();
   const local = structuredClone(base);
@@ -25162,7 +25229,74 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
   assert.equal(
     error.message,
-    'Production recovery journal support requires artifactRefs.journal to match the owned journal path.',
+    'Production recovery journal compatibility overload requires artifactRefs.journal to match the owned journal path.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: driftedJournalPath,
+    remote: remoteArtifactPath,
+  });
+});
+
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with drifted artifactRefs.journal', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Compatibility Artifact Refs Journal Drift Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-compatibility-artifact-refs-journal.jsonl`;
+  const claimId = 'claim-consumed-compatibility-artifact-refs-journal';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const driftedJournalPath = `${path.dirname(filePath)}/consumed-compatibility-artifact-refs-journal-drifted.jsonl`;
+  const error = captureError(() => openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    artifactRefs: {
+      journal: driftedJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires artifactRefs.journal to match the owned journal path.',
   );
   assert.deepEqual(error.details.artifactRefs, {
     journal: driftedJournalPath,
