@@ -35451,6 +35451,58 @@ test('blocks steady unsupported wp navigation rows before they can be treated as
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported wp navigation rows before they can be treated as already in sync while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:50"]';
+  const matchingRestoreKey = 'file:wp-content/uploads/steady-unsupported-wp-navigation-restore.txt';
+  const base = baseSite();
+  base.db.wp_posts['ID:50'] = {
+    ID: 50,
+    post_title: 'Steady unsupported wp navigation restore',
+    post_content: 'Steady unsupported wp navigation restore content',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:50'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:50']));
+  local.files[matchingRestoreKey.slice('file:'.length)] = 'shared steady unsupported wp navigation restore bytes';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:50'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:50']));
+  remote.files[matchingRestoreKey.slice('file:'.length)] = 'shared steady unsupported wp navigation restore bytes';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported wp navigation restore content'), false);
+  assert.equal(planJson.includes('shared steady unsupported wp navigation restore bytes'), false);
+  assert.equal(
+    remote.files[matchingRestoreKey.slice('file:'.length)],
+    'shared steady unsupported wp navigation restore bytes',
+  );
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks wp navigation deletes while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:47"]';
   const base = baseSite();
