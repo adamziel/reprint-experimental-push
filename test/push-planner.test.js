@@ -22829,6 +22829,70 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.deepEqual(error.details.persistedArtifactRefs, artifactRefs);
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with drifted artifactRefs.remote', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Artifact Refs Remote Drift Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-artifact-refs-remote.jsonl`;
+  const claimId = 'claim-consumed-artifact-refs-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const driftedRemoteArtifactPath = `${path.dirname(filePath)}/consumed-artifact-refs-remote-drifted.jsonl`;
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    artifactRefs: {
+      journal: filePath,
+      remote: driftedRemoteArtifactPath,
+    },
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires artifactRefs.remote to match the owned remote artifact path.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: driftedRemoteArtifactPath,
+  });
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened without the persisted remote ownership state', () => {
   const base = baseSite();
   const local = structuredClone(base);

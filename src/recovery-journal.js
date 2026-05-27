@@ -971,6 +971,31 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
           ? legacyArtifactRefs.remote
           : null
       );
+    if (
+      explicitRemoteArtifactPath !== undefined
+      && legacyArtifactRefs
+      && Object.hasOwn(legacyArtifactRefs, 'remote')
+      && legacyArtifactRefs.remote !== explicitRemoteArtifactPath
+    ) {
+      throw new UnsupportedProductionRecoveryJournalError(
+        'Production recovery journal support requires artifactRefs.remote to match the owned remote artifact path.',
+        {
+          kind: 'production-recovery-journal',
+          productionAdapter: true,
+          supportedSurface: 'production-recovery-journal-adapter',
+          restartReadable: false,
+          ownsJournal: false,
+          ownsRemoteArtifact: explicitRemoteArtifactPath !== null
+            && explicitRemoteArtifactPath !== '',
+          journalPath: typeof legacyOptions.filePath === 'string' ? legacyOptions.filePath : null,
+          artifactRefs: Object.freeze({
+            journal: Object.hasOwn(legacyArtifactRefs, 'journal') ? legacyArtifactRefs.journal : null,
+            remote: legacyArtifactRefs.remote,
+          }),
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        },
+      );
+    }
     const hasExplicitWriterLease = Object.hasOwn(legacyOptions, 'writerLease');
     const hasExplicitClaimId = Object.hasOwn(legacyOptions, 'claimId')
       && typeof legacyOptions.claimId === 'string'
@@ -1148,6 +1173,31 @@ function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = 
         ? directArtifactRefs.remote
         : null
     );
+  if (
+    explicitRemoteArtifactPath !== undefined
+    && directArtifactRefs
+    && Object.hasOwn(directArtifactRefs, 'remote')
+    && directArtifactRefs.remote !== explicitRemoteArtifactPath
+  ) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires artifactRefs.remote to match the owned remote artifact path.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: false,
+        ownsJournal: false,
+        ownsRemoteArtifact: explicitRemoteArtifactPath !== null
+          && explicitRemoteArtifactPath !== '',
+        journalPath: typeof filePathOrOptions === 'string' ? filePathOrOptions : null,
+        artifactRefs: Object.freeze({
+          journal: Object.hasOwn(directArtifactRefs, 'journal') ? directArtifactRefs.journal : null,
+          remote: directArtifactRefs.remote,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
 
   return {
     ...options,
