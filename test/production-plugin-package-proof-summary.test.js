@@ -1662,6 +1662,62 @@ test('plugin-driver proof summary treats bundled receipt alias as selected for r
   assert.deepEqual(summary.releaseProof.requestedBundleStatuses, {
     driverReleaseProof: 'missing',
   });
+  assert.deepEqual(summary.driverReleaseProof, summary.releaseProof);
+});
+
+test('plugin-driver proof summary exposes release and positive proof aliases alongside the canonical objects', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteApply: {
+        resourceKey: 'row:[\"wp_reprint_push_driver_fixture\",\"entry_id:1\"]',
+        remoteSupportsDelete: true,
+        deletedAfterApply: true,
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+    },
+    {
+      requestedScenarios: ['driver-positive-proof', 'driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-positive-proof',
+        ...scenarioGroups['driver-positive-proof'],
+        'driver-release-proof',
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+    },
+  );
+
+  assert.deepEqual(summary.driverPositiveProof, summary.positiveProof);
+  assert.deepEqual(summary.driverReleaseProof, summary.releaseProof);
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
