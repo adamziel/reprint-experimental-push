@@ -3,29 +3,26 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 06:13:37
+# 2026-05-27 - Public Status Audit 06:20:54
 
-<a id="2026-05-27-public-status-audit-061337"></a>
+<a id="2026-05-27-public-status-audit-062054"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `3e9eef4166dc2c5a603b48e269af3f16320c85ee` visible on the public
+  head `ef5e52cec9072c278f751ff2fe0be78659912987` visible on the public
   status surface for the active supervision cycle.
-- Release gates remain `0/4`. The latest reliable head makes the checked
-  release verifier prefer accepted recovery-inspect journal evidence before the
-  `/db-journal` fallback, preserves recovery journal claim and storage-guard
-  fields in the authenticated client, and asserts the source-owned recovery
-  journal scope plus `wpdb-single-statement-cas` storage guard on packaged and
-  explicit checked-live proof paths. That is material durable-journal evidence
-  hardening, not a production boundary gate move, and it still stops short of
-  the missing production-owned, non-lab-backed source mutation boundary on the
-  real Reprint endpoint: one primitive that owns auth/session
-  issuance/readback, durable restart-readable journal storage with lease
-  fencing, preserved rejected remote evidence, and apply-time revalidation
-  before first mutation.
+- Release gates remain `0/4`. The latest reliable head makes checked
+  auth/session lifecycle summaries prefer release-boundary reads from `journal`
+  or `replay` over later recovery-inspect observations, with a focused proof
+  test for that preference. That is material auth/session evidence hardening,
+  not a production boundary gate move, and it still stops short of the missing
+  production-owned, non-lab-backed source mutation boundary on the real
+  Reprint endpoint: one primitive that owns auth/session issuance/readback,
+  durable restart-readable journal storage with lease fencing, preserved
+  rejected remote evidence, and apply-time revalidation before first mutation.
 - The public page keeps packaged plugin-driver guards pinned into
-  `verify:release` as support evidence, while the source-owned recovery journal
-  proof remains helper-backed and the production-owned source mutation boundary
-  still blocks gate movement. The stale percentage bars stay removed.
+  `verify:release` as support evidence, while the release-boundary read proof
+  remains helper-backed and the production-owned source mutation boundary still
+  blocks gate movement. The stale percentage bars stay removed.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
