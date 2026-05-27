@@ -1262,13 +1262,22 @@ async function waitForServer(child, baseUrl, logs) {
               notReadyProbeCounts,
               'preflight',
             );
+            const malformedIndexBody =
+              packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
             throw new Error(
               formatPackagedReadinessFailure(
-                `Packaged production plugin signed preflight returned a terminal readiness failure at ${baseUrl}`,
+                malformedIndexBody
+                  ? `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`
+                  : `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 logs,
-                packagedProductionPluginPreflightTerminalContext({}),
+                {
+                  packagedProductionPlugin: true,
+                  ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                  indexTerminal: true,
+                  preflightNotReadyProbeCount,
+                },
                 lastTimeoutFallbackProbes,
               ),
             );

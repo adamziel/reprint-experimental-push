@@ -7565,6 +7565,14 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
     helperSource,
     /Packaged production plugin preflight became terminal while the snapshot probe timed out at \$\{baseUrl\}/s,
   );
+  assert.match(
+    helperSource,
+    /if \(!preflightRetryableWithIndex\) \{[\s\S]*?const malformedIndexBody =[\s\S]*?Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned an invalid readiness body after \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?preflightNotReadyProbeCount,/s,
+  );
+  assert.match(
+    helperSource,
+    /if \(!preflightRetryableWithIndex\) \{[\s\S]*?Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} at \$\{baseUrl\}/s,
+  );
 });
 
 test('packaged release verifier readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
@@ -7627,6 +7635,14 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   assert.doesNotMatch(
     helperSource,
     /Packaged production plugin preflight became terminal while the snapshot probe timed out at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /if \(!preflightRetryableWithIndex\) \{[\s\S]*?const malformedIndexBody =[\s\S]*?Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned an invalid readiness body after \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?preflightNotReadyProbeCount,/s,
+  );
+  assert.match(
+    helperSource,
+    /if \(!preflightRetryableWithIndex\) \{[\s\S]*?Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} at \$\{baseUrl\}/s,
   );
   assert.match(
     helperSource,

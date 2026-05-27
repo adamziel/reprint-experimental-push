@@ -2065,15 +2065,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               notReadyProbeCounts,
               'preflight',
             );
+            const malformedIndexBody =
+              packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin signed preflight returned a terminal readiness failure at ${baseUrl}`,
+              malformedIndexBody
+                ? `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`
+                : `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
-              packagedProductionPluginPreflightTerminalContext({
+              {
                 childPid: child.pid ?? null,
-              }),
+                packagedProductionPlugin: true,
+                ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                indexTerminal: true,
+                preflightNotReadyProbeCount,
+              },
             );
           }
           const startupBranch = packagedProductionPluginClassifyBoundedStartup(
