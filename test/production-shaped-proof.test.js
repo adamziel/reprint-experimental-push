@@ -7799,6 +7799,27 @@ test('packaged signed preflight startup branches use the timeout-fallback classi
   }
 });
 
+test('packaged readiness helpers keep bounded and timeout-fallback startup classifiers split by readiness path', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    const boundedStartupClassifierCount =
+      (source.match(/packagedProductionPluginClassifyBoundedStartup\(/g) || []).length;
+    const timeoutFallbackStartupClassifierCount =
+      (source.match(/packagedProductionPluginClassifyTimeoutFallbackStartup\(/g) || []).length;
+
+    assert.equal(boundedStartupClassifierCount, 4);
+    assert.equal(timeoutFallbackStartupClassifierCount, 4);
+  }
+});
+
 test('packaged readiness helpers distinguish signed preflight timeouts after snapshot responses from snapshot timeouts', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
