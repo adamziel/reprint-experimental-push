@@ -34329,6 +34329,141 @@ test('blocks a local term taxonomy parent reference when the same-plan term belo
   assert.equal(JSON.stringify(blocker).includes('remote-attachment-body'), false);
 });
 
+test('blocks a local term taxonomy parent reference when the same-plan term belongs to a nav menu taxonomy even with unrelated remote wp_navigation noise', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation parent term',
+      slug: 'local-navigation-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote wp_navigation',
+    post_content: 'remote-private-wp-navigation-body',
+    post_type: 'wp_navigation',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-navigation-parent-term'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-private-wp-navigation-body'), false);
+});
+
+test('blocks a local term taxonomy parent reference when the same-plan term belongs to a nav menu taxonomy even with unrelated remote nav_menu_item noise', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation parent term',
+      slug: 'local-navigation-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote nav menu item',
+    post_content: 'remote-private-nav-menu-item-body',
+    post_type: 'nav_menu_item',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-navigation-parent-term'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-private-nav-menu-item-body'), false);
+});
+
+test('blocks a local term taxonomy parent reference when the same-plan term belongs to a nav menu taxonomy even with unrelated remote revision noise', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation parent term',
+      slug: 'local-navigation-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote revision',
+    post_content: 'remote-private-revision-body',
+    post_type: 'revision',
+    post_status: 'inherit',
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-navigation-parent-term'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-private-revision-body'), false);
+});
+
 test('allows an existing term taxonomy row to retarget its term reference to a same-plan term create', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
