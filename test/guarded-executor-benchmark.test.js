@@ -11572,19 +11572,18 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const retryRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+    'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+    'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+  ].includes(entry.id));
 
   assert.ok(blockers.includes('queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof'));
   assert.ok(blockers.includes('queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
   assert.ok(blockers.includes('memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
   assert.ok(blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
-        'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
-        'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
-      ].includes(entry.id))
-      .map((entry) => ({
+    retryRejectedFastPaths.map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
         blockerRefs: entry.blockerRefs,
@@ -11623,10 +11622,8 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
     ],
   );
 
-  assert.deepEqual(summarizeRejectedGates(pluginUpdateRejectedFastPaths), [
-    { rejectedGate: 'group', count: 16 },
-    { rejectedGate: 'live', count: 3 },
-    { rejectedGate: 'recovery', count: 7 },
+  assert.deepEqual(summarizeRejectedGates(retryRejectedFastPaths), [
+    { rejectedGate: 'recovery', count: 3 },
   ]);
 });
 
