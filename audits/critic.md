@@ -1,22 +1,21 @@
 # Critic Verdict
 
-Current reliable head: `7c4010cfa42fe5513c1d0942b78a295d7495a76f`
-(`Cover checked cleanup evidence continuity`).
+Current reliable head: `3161b049e885694f8fbd5127050a8c45330ad50d`
+(`Accept matching runtime auth session sources`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds more regression coverage for cleanup-evidence continuity in
-  `test/authenticated-http-push-client.test.js`. The new cases keep the checked
-  client fail-closed when replay, recovery-inspect, or db-journal paths drop
-  cleanup evidence, but they still exercise the same production-shaped
-  Playground/release-verifier scaffolding rather than a production-owned,
-  non-lab-backed mutation boundary on the real Reprint endpoint.
-- The diff does not introduce live auth/session issuance and readback on the
-  real endpoint, durable restart-readable journal storage with lease fencing,
-  or apply-time revalidation before mutation. It only extends the existing
-  cleanup-evidence continuity expectations inside the checked client tests.
+- This head widens accepted explicit runtime auth-session source URLs in
+  `scripts/playground/auth-session-source.js` and adds a focused regression in
+  `test/production-shaped-proof.test.js`.
+- The diff is still support-side release-verifier plumbing: it keeps the
+  checked path accepting matching runtime sources, but it does not prove a
+  production-owned, non-lab-backed mutation boundary on the real Reprint
+  endpoint, live auth/session issuance and readback, durable restart-readable
+  journal storage with lease fencing, or apply-time revalidation before the
+  first mutation.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
