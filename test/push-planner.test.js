@@ -22819,6 +22819,68 @@ test('consumeProductionRecoveryJournal fails closed when artifactRefs.remote is 
   });
 });
 
+test('consumeProductionRecoveryJournal fails closed when artifactRefs.journal is hidden for a persisted owned remote artifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Consume Artifact Journal Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-consume-artifact-refs-journal.jsonl`;
+  const claimId = 'claim-consumed-hidden-consume-artifact-refs-journal';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const hiddenArtifactRefs = {
+    remote: remoteArtifactPath,
+  };
+  Object.defineProperty(hiddenArtifactRefs, 'journal', {
+    value: filePath,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: hiddenArtifactRefs,
+    writerLease,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires enumerable artifactRefs keys.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  });
+});
+
 test('consumeProductionRecoveryJournal fails closed when remoteArtifactPath is hidden for a persisted owned remote artifact', () => {
   const base = baseSite();
   const local = structuredClone(base);
@@ -22992,6 +23054,65 @@ test('consumeProductionRecoveryJournal fails closed when remoteArtifactPath is s
   assert.equal(
     error.message,
     'Production recovery journal compatibility overload requires a strict plain options object.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('consumeProductionRecoveryJournal fails closed when artifactRefs.journal is sourced from the prototype for a persisted owned remote artifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Consume Artifact Journal Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-consume-artifact-refs-journal.jsonl`;
+  const claimId = 'claim-consumed-prototype-consume-artifact-refs-journal';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const artifactRefsWithPrototypeJournal = {
+    remote: remoteArtifactPath,
+  };
+  Object.setPrototypeOf(artifactRefsWithPrototypeJournal, {
+    journal: filePath,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: artifactRefsWithPrototypeJournal,
+    writerLease,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires strict plain artifact refs.',
   );
   assert.deepEqual(error.details.artifactRefs, {
     journal: null,
