@@ -59971,6 +59971,109 @@ test('allows an existing termmeta row to reference a term created by the same pl
   assert.equal(result.site.db.wp_termmeta['meta_id:12'].meta_value, 'local-private-existing-term-note');
 });
 
+test('allows an existing termmeta row to reference a term created by the same plan while preserving a matching independent restore and remote-only plugin removals', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const restoreResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  delete base.db.wp_posts['ID:2'];
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+  remote.db.wp_termmeta = {
+    'meta_id:12': {
+      ...base.db.wp_termmeta['meta_id:12'],
+    },
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Shared restored row',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-term-note',
+    },
+  };
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Shared restored row',
+    post_status: 'publish',
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const restoreDecision = decisionFor(plan, restoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(plan.summary.mutations, 2);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent existing termmeta update',
+  );
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: termmetaMutation.id,
+      sourceResourceKey: termmetaResourceKey,
+      relationshipKey: 'wp_termmeta.term_id',
+      relationshipType: 'termmeta-term',
+      targetMutationId: termMutation.id,
+      targetResourceKey: termResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: termMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-existing-term-note'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Shared restored row');
+  assert.equal(result.site.db.wp_terms['term_id:7'].name, 'Local tagged term');
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].term_id, 7);
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].meta_value, 'local-private-existing-term-note');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks an existing termmeta row when its same-plan term belongs to a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
