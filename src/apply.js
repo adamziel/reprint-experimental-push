@@ -1588,6 +1588,19 @@ function checkedDurableJournalBoundaryProof(
         ? inspected.scope
         : null
     );
+  const supportedSurface = (
+    Object.hasOwn(writer ?? {}, 'supportedSurface')
+    && !hasHiddenOwnStringProperty(writer, 'supportedSurface')
+    && writer.supportedSurface === 'production-recovery-journal-adapter'
+  )
+    ? writer.supportedSurface
+    : (
+      Object.hasOwn(inspected ?? {}, 'supportedSurface')
+      && !hasHiddenOwnStringProperty(inspected, 'supportedSurface')
+      && inspected.supportedSurface === 'production-recovery-journal-adapter'
+        ? inspected.supportedSurface
+        : null
+    );
   const writerAcceptedOnCheckedBoundary = Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
     && !hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')
       ? writer.acceptedOnCheckedBoundary === true
@@ -1641,6 +1654,7 @@ function checkedDurableJournalBoundaryProof(
       ownsJournal: inspectedOwnsJournal,
       restartReadable: inspectedRestartReadable,
       productionAdapter: inspectedBoundary,
+      supportedSurface,
     },
     writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
       ? {

@@ -5003,6 +5003,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'production-recovery-journal-adapter',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -5040,6 +5041,10 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      ownership: {
+        ...baseContract.ownership,
+        supportedSurface: null,
+      },
       writerLease: {
         ...baseContract.writerLease,
         staleClaimRejected: true,
@@ -5308,6 +5313,7 @@ test('checked durable journal boundary accepts the packaged production journal s
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'production-recovery-journal-adapter',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -5380,6 +5386,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'production-recovery-journal-adapter',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -5435,6 +5442,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'production-recovery-journal-adapter',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',

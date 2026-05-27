@@ -98,6 +98,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
+  const supportedSurface = dbJournal?.ownership?.supportedSurface;
   const journalPath = surfacedCheckedBoundaryJournalPath(dbJournal, 'journalPath');
   const artifactRefs = surfacedCheckedBoundaryArtifactRefs(dbJournal, journalPath.path);
   const activeClaim = surfacedCheckedBoundaryClaim(dbJournal?.claim);
@@ -110,6 +111,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
+    && supportedSurface === 'production-recovery-journal-adapter'
     && writerLeaseContractMatches(writerLease)
     && writerLeaseContractMatches(nestedWriterLease)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)

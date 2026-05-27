@@ -21083,6 +21083,7 @@ test('production recovery support report surfaces a satisfied checked durable-jo
   assert.equal(report.checkedBoundaryProof.claim.activeClaimId, claimId);
   assert.equal(report.checkedBoundaryProof.claim.activeClaimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.ownership.supportedSurface, 'production-recovery-journal-adapter');
   assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
   assert.equal(report.checkedBoundaryProof.writerLease.claimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);
@@ -21222,6 +21223,9 @@ test('production recovery support report keeps checked boundary closed when prod
     assert.equal(report.supported, false, label);
     assert.equal(report.checkedBoundarySatisfied, false, label);
     assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false, label);
+    assert.equal(report.checkedBoundaryProof.ownership.supportedSurface, label === 'missing supported adapter surface'
+      ? null
+      : 'production-recovery-journal-adapter', label);
     assert.ok(report.missingDependency.includes(expectedMissingDependency), label);
   }
 });
