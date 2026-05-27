@@ -2045,6 +2045,88 @@ test('plugin-driver mode proof resolver reuses the attached registration-shape m
   assert.equal(modeProof?.marker, 'registration-shape-attached');
 });
 
+test('plugin-driver mode proof resolver reuses the attached route modeProof object for canonical alias requests', () => {
+  const attachedModeProof = {
+    mode: 'driverRouteProof',
+    canonicalMode: 'core-package-routes',
+    proofKey: 'driverRouteProof',
+    legacyProofKey: 'driverRouteProof',
+    requestedScenarios: ['driverRouteProof'],
+    requestedBundles: ['driverRouteProof'],
+    selectedScenarios: ['core-package-routes'],
+    requestedBundleStatus: 'passed',
+    marker: 'route-attached',
+  };
+
+  const rawSummary = {
+    requestedScenarios: ['driverRouteProof'],
+    requestedBundles: ['driverRouteProof'],
+    selectedScenarios: ['core-package-routes'],
+    pluginDriverProof: {
+      mode: 'driverRouteProof',
+      canonicalMode: 'core-package-routes',
+      requestedScenarios: ['driverRouteProof'],
+      requestedBundles: ['driverRouteProof'],
+      selectedScenarios: ['core-package-routes'],
+      modeProof: attachedModeProof,
+    },
+    driverRouteProof: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverRouteProofOnly', {
+    requestedScenarios: ['driverRouteProof'],
+    selectedScenarios: new Set(['core-package-routes']),
+    resolvedMode: 'driverRouteProofOnly',
+    canonicalMode: 'core-package-routes',
+  });
+
+  assert.equal(modeProof, attachedModeProof);
+  assert.equal(modeProof?.marker, 'route-attached');
+});
+
+test('plugin-driver mode proof resolver reuses the attached delete-apply modeProof object for canonical alias requests', () => {
+  const attachedModeProof = {
+    mode: 'driverDeleteApplyProof',
+    canonicalMode: 'driver-delete-apply',
+    proofKey: 'driverDeleteApplyProof',
+    legacyProofKey: 'driverDeleteApplyProof',
+    requestedScenarios: ['driverDeleteApplyProof'],
+    requestedBundles: ['driverDeleteApplyProof'],
+    selectedScenarios: ['driver-delete-apply'],
+    requestedBundleStatus: 'passed',
+    marker: 'delete-apply-attached',
+  };
+
+  const rawSummary = {
+    requestedScenarios: ['driverDeleteApplyProof'],
+    requestedBundles: ['driverDeleteApplyProof'],
+    selectedScenarios: ['driver-delete-apply'],
+    pluginDriverProof: {
+      mode: 'driverDeleteApplyProof',
+      canonicalMode: 'driver-delete-apply',
+      requestedScenarios: ['driverDeleteApplyProof'],
+      requestedBundles: ['driverDeleteApplyProof'],
+      selectedScenarios: ['driver-delete-apply'],
+      modeProof: attachedModeProof,
+    },
+    driverDeleteApplyProof: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverDeleteApplyProofOnly', {
+    requestedScenarios: ['driverDeleteApplyProof'],
+    selectedScenarios: new Set(['driver-delete-apply']),
+    resolvedMode: 'driverDeleteApplyProofOnly',
+    canonicalMode: 'driver-delete-apply',
+  });
+
+  assert.equal(modeProof, attachedModeProof);
+  assert.equal(modeProof?.marker, 'delete-apply-attached');
+});
+
 test('plugin-driver mode proof resolver rebuilds a stale attached top-level modeProof when the selected scenario scope changes', () => {
   const rawSummary = {
     mode: 'driverVerifierGuards',

@@ -752,6 +752,35 @@ function requestedScenarioAppliesToCanonicalMode(requestedScenario, canonicalMod
   return false;
 }
 
+function allowedRequestedBundlesForModeComparison(resolvedOptions) {
+  if (resolvedOptions.canonicalMode === null) {
+    return new Set();
+  }
+
+  const allowedValues = new Set();
+  if (isBundleAliasScenario(resolvedOptions.canonicalMode)) {
+    allowedValues.add(
+      normalizeRequestedBundleName(toBundleKey(resolvedOptions.canonicalMode)),
+    );
+  }
+
+  const canonicalProofKey = proofKeyByCanonicalMode[resolvedOptions.canonicalMode] ?? null;
+  if (canonicalProofKey !== null) {
+    allowedValues.add(normalizeRequestedBundleName(canonicalProofKey));
+  }
+
+  const resolvedModeProof = resolvedOptions.resolvedMode === undefined
+    || resolvedOptions.resolvedMode === null
+    ? null
+    : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
+  if (resolvedModeProof?.canonicalMode === resolvedOptions.canonicalMode) {
+    allowedValues.add(normalizeRequestedBundleName(resolvedModeProof.proofKey));
+    allowedValues.add(normalizeRequestedBundleName(resolvedModeProof.legacyProofKey));
+  }
+
+  return allowedValues;
+}
+
 function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
   return requestedScenarioListsMatch(
     modeProof?.requestedScenarios,
@@ -767,13 +796,7 @@ function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
         modeProof?.requestedBundles,
         filterRequestedBundleListForModeComparison(
           summary?.requestedBundles ?? [],
-          new Set(
-            resolvedOptions.canonicalMode === null
-              ? []
-              : isBundleAliasScenario(resolvedOptions.canonicalMode)
-                ? [toBundleKey(resolvedOptions.canonicalMode)]
-                : [],
-          ),
+          allowedRequestedBundlesForModeComparison(resolvedOptions),
         ),
       )
     );
