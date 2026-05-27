@@ -50,6 +50,7 @@ function reprint_push_lab_db_journal_ensure_table(): void
         result_json longtext NULL,
         resource_hash_evidence_json longtext NULL,
         error_code varchar(80) NOT NULL DEFAULT '',
+        claim_id varchar(191) NULL DEFAULT NULL,
         claim_key_hash char(64) NULL DEFAULT NULL,
         lab_scope varchar(191) NOT NULL DEFAULT 'local-playground-fixture',
         created_at datetime NOT NULL,
@@ -100,6 +101,7 @@ function reprint_push_lab_db_journal_schema(bool $checked_surface = false): arra
             'result_json' => 'sanitized compact result JSON; no raw payload/content/snapshots/option journal',
             'resource_hash_evidence_json' => 'sanitized DB-native resource/hash evidence only',
             'error_code' => 'compact error code for rejected/conflict events',
+            'claim_id' => 'nullable claim identity surfaced on checked/package boundaries; may differ from claim_key_hash',
             'claim_key_hash' => 'nullable unique idempotency/retry claim hash; idempotency-opened and lab retry-claim rows set it',
             'lab_scope' => 'fixture scope marker',
             'created_at' => 'UTC event timestamp',
@@ -224,6 +226,16 @@ function reprint_push_lab_db_journal_claim_id_from_key_hash($claim_key_hash): ?s
     return reprint_push_lab_db_journal_non_empty_string($claim_key_hash)
         ? (string) $claim_key_hash
         : null;
+}
+
+function reprint_push_lab_db_journal_claim_id_from_row(array $row): ?string
+{
+    $claim_id = $row['claimId'] ?? $row['claim_id'] ?? null;
+    if (reprint_push_lab_db_journal_non_empty_string($claim_id)) {
+        return (string) $claim_id;
+    }
+
+    return reprint_push_lab_db_journal_claim_id_from_key_hash($row['claimKeyHash'] ?? $row['claim_key_hash'] ?? null);
 }
 
 function reprint_push_lab_db_journal_key_hash(string $key): string
@@ -410,6 +422,9 @@ function reprint_push_lab_db_journal_insert_event(
         'result_json' => $result_json,
         'resource_hash_evidence_json' => $resource_evidence_json,
         'error_code' => (string) ($context['errorCode'] ?? ''),
+        'claim_id' => reprint_push_lab_db_journal_non_empty_string($context['claimId'] ?? null)
+            ? (string) $context['claimId']
+            : null,
         'claim_key_hash' => $claim_key_hash,
         'lab_scope' => reprint_push_lab_db_journal_scope_key($context),
         'created_at' => $now,
@@ -441,6 +456,8 @@ function reprint_push_lab_db_journal_insert_event(
                 '%s',
                 '%s',
                 '%s',
+                '%s',
+                '%s',
             ]
         );
     } finally {
@@ -464,9 +481,14 @@ function reprint_push_lab_db_journal_ensure_claim_schema(): void
     global $wpdb;
 
     $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+    $claim_id_columns = $wpdb->get_results("SHOW COLUMNS FROM {$quoted_table} LIKE 'claim_id'", ARRAY_A) ?: [];
+    if (count($claim_id_columns) === 0) {
+        $wpdb->query("ALTER TABLE {$quoted_table} ADD COLUMN claim_id varchar(191) NULL DEFAULT NULL AFTER error_code");
+    }
+
     $columns = $wpdb->get_results("SHOW COLUMNS FROM {$quoted_table} LIKE 'claim_key_hash'", ARRAY_A) ?: [];
     if (count($columns) === 0) {
-        $wpdb->query("ALTER TABLE {$quoted_table} ADD COLUMN claim_key_hash char(64) NULL DEFAULT NULL AFTER error_code");
+        $wpdb->query("ALTER TABLE {$quoted_table} ADD COLUMN claim_key_hash char(64) NULL DEFAULT NULL AFTER claim_id");
     }
 
     $indexes = $wpdb->get_results("SHOW INDEX FROM {$quoted_table} WHERE Key_name = 'claim_key_hash'", ARRAY_A) ?: [];
@@ -753,7 +775,7 @@ function reprint_push_lab_db_journal_claim_summary(
 
     $summary = [
         'status' => $scoped_stale_claim_rejected ? 'stale-claim-rejected' : 'active',
-        'activeClaimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($active_claim_key_hash),
+        'activeClaimId' => reprint_push_lab_db_journal_claim_id_from_row($latest_claim_row),
         'activeClaimKeyHash' => $active_claim_key_hash,
         'activeClaimSequence' => (int) ($latest_claim_row['sequence'] ?? 0),
         'activeClaimEvent' => (string) ($latest_claim_row['event'] ?? ''),
@@ -780,7 +802,7 @@ function reprint_push_lab_db_journal_claim_summary(
     if (is_array($previous_claim_row) && !empty($previous_claim_row)) {
         $previous_claim_key_hash = (string) ($previous_claim_row['claimKeyHash'] ?? '');
         if ($previous_claim_key_hash !== '') {
-            $summary['previousClaimId'] = reprint_push_lab_db_journal_claim_id_from_key_hash($previous_claim_key_hash);
+            $summary['previousClaimId'] = reprint_push_lab_db_journal_claim_id_from_row($previous_claim_row);
             $summary['previousClaimKeyHash'] = $previous_claim_key_hash;
             $summary['previousClaimSequence'] = (int) ($previous_claim_row['sequence'] ?? 0);
             $summary['previousClaimEvent'] = (string) ($previous_claim_row['event'] ?? '');
@@ -819,7 +841,7 @@ function reprint_push_lab_db_journal_claim_evidence_row(array $row): array
         'requestHash' => (string) ($row['requestHash'] ?? ''),
     ];
     if (reprint_push_lab_db_journal_non_empty_string($row['claimKeyHash'] ?? null)) {
-        $evidence['claimId'] = reprint_push_lab_db_journal_claim_id_from_key_hash($row['claimKeyHash']);
+        $evidence['claimId'] = reprint_push_lab_db_journal_claim_id_from_row($row);
     }
 
     $started_cursor = $row['resourceHashEvidence']['startedCursor'] ?? null;
@@ -1659,7 +1681,7 @@ function reprint_push_lab_db_journal_public_row(array $row): array
     return [
         'sequence' => (int) ($row['id'] ?? 0),
         'event' => (string) ($row['event'] ?? ''),
-        'claimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($row['claim_key_hash'] ?? null),
+        'claimId' => reprint_push_lab_db_journal_claim_id_from_row($row),
         'idempotencyKeyHash' => (string) ($row['idempotency_key_hash'] ?? ''),
         'requestHash' => (string) ($row['request_hash'] ?? ''),
         'planHash' => (string) ($row['plan_hash'] ?? ''),

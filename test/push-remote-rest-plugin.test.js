@@ -192,6 +192,62 @@ function runDbJournalClaimSummary(latestClaimRow, latestAbandonedRow = null, pre
   });
 }
 
+function runDbJournalClaimEvidenceRow(row) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$row = json_decode($argv[2], true);',
+      'echo json_encode(reprint_push_lab_db_journal_claim_evidence_row($row));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(row),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
+function runDbJournalPublicRow(row) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$row = json_decode($argv[2], true);',
+      'echo json_encode(reprint_push_lab_db_journal_public_row($row));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(row),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runDbJournalScopeKey(context = {}, packageMode = false, checkedSurface = false) {
   return spawnSync('php', [
     '-r',
@@ -3912,6 +3968,7 @@ test('db journal evidence exposes checked and packaged scope labels instead of c
 test('db journal claim summary preserves active and previous claim identity for stale retries', { skip: !hasPhp }, () => {
   const result = runDbJournalClaimSummary(
     {
+      claimId: 'retry-claim-id-02',
       sequence: 20,
       event: 'stale-claim-retry-started',
       idempotencyKeyHash: 'idempotency-hash-01',
@@ -3927,6 +3984,7 @@ test('db journal claim summary preserves active and previous claim identity for 
       },
     },
     {
+      claimId: 'retry-claim-id-01',
       sequence: 11,
       event: 'idempotency-opened',
       claimKeyHash: 'retry-claim-hash-01',
@@ -3937,6 +3995,7 @@ test('db journal claim summary preserves active and previous claim identity for 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
     status: 'stale-claim-rejected',
+    activeClaimId: 'retry-claim-id-02',
     activeClaimKeyHash: 'retry-claim-hash-02',
     activeClaimSequence: 20,
     activeClaimEvent: 'stale-claim-retry-started',
@@ -3946,9 +4005,82 @@ test('db journal claim summary preserves active and previous claim identity for 
     abandonedSequence: 18,
     abandonedEvent: 'stale-claim-abandoned',
     previousStartedSequence: 12,
+    previousClaimId: 'retry-claim-id-01',
     previousClaimSequence: 11,
     previousClaimKeyHash: 'retry-claim-hash-01',
     previousClaimEvent: 'idempotency-opened',
+  });
+});
+
+test('db journal claim evidence preserves distinct claim ids from checked rows', { skip: !hasPhp }, () => {
+  const result = runDbJournalClaimEvidenceRow({
+    sequence: 24,
+    claimId: 'retry-claim-id-01',
+    event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    resourceHashEvidence: {
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    sequence: 24,
+    claimId: 'retry-claim-id-01',
+    event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    startedCursor: 'db-journal:19',
+    claimCursor: 'db-journal:18',
+  });
+});
+
+test('db journal public row preserves distinct persisted claim ids', { skip: !hasPhp }, () => {
+  const result = runDbJournalPublicRow({
+    id: 33,
+    event: 'stale-claim-rejected',
+    claim_id: 'authoritative-claim-id-02',
+    claim_key_hash: 'authoritative-claim-hash-02',
+    idempotency_key_hash: 'idem-hash-01',
+    request_hash: 'request-hash-01',
+    plan_hash: '',
+    receipt_hash: '',
+    plan_fingerprint: '',
+    mutation_count: 0,
+    applied_count: 0,
+    result_hash: '',
+    result_json: null,
+    resource_hash_evidence_json: null,
+    error_code: '',
+    lab_scope: 'packaged-production-plugin',
+    created_at: '2026-05-27 04:00:00',
+    updated_at: '2026-05-27 04:00:00',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    sequence: 33,
+    event: 'stale-claim-rejected',
+    claimId: 'authoritative-claim-id-02',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    planHash: '',
+    receiptHash: '',
+    planFingerprint: '',
+    mutationCount: 0,
+    appliedCount: 0,
+    resultHash: '',
+    result: null,
+    resourceHashEvidence: null,
+    errorCode: '',
+    claimKeyHash: 'authoritative-claim-hash-02',
+    labScope: 'packaged-production-plugin',
+    createdAt: '2026-05-27 04:00:00',
+    updatedAt: '2026-05-27 04:00:00',
   });
 });
 
