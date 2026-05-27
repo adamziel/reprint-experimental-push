@@ -604,6 +604,18 @@ export function resolveProductionPluginPackageModeProofKey(modeValue) {
   };
 }
 
+export function resolveProductionPluginPackageModeProof(summary, modeValue) {
+  const resolved = resolveProductionPluginPackageModeProofKey(modeValue);
+  if (resolved === null) {
+    return null;
+  }
+
+  return {
+    ...resolved,
+    proof: summary?.[resolved.proofKey] ?? null,
+  };
+}
+
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
   if (!includeCoverageDetails) {

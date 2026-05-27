@@ -4,6 +4,7 @@ import {
   buildProductionPluginPackageProofSummary,
   bundleSummaryGroups,
   proofKeyByCanonicalMode,
+  resolveProductionPluginPackageModeProof,
   resolveProductionPluginPackageModeProofKey,
   scenarioDefinitionNames,
 } from '../scripts/playground/production-plugin-package-proof-summary.js';
@@ -99,6 +100,76 @@ test('plugin-driver proof summary resolves runtime mode aliases to the canonical
     proofKey: 'driverVerifierGuards',
   });
   assert.equal(resolveProductionPluginPackageModeProofKey(null), null);
+});
+
+test('plugin-driver proof summary resolves runtime mode aliases directly to proof payloads', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-release-proof',
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+      resolvedMode: 'driverMutationProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.deepEqual(resolveProductionPluginPackageModeProof(summary, 'driverMutationProof'), {
+    mode: 'driverMutationProof',
+    canonicalMode: 'driver-release-proof',
+    proofKey: 'driverReleaseProof',
+    proof: summary.driverReleaseProof,
+  });
+  assert.deepEqual(resolveProductionPluginPackageModeProof(summary, 'driverVerifierGuardsOnly'), {
+    mode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+    proofKey: 'driverVerifierGuards',
+    proof: summary.driverVerifierGuards,
+  });
+  assert.equal(resolveProductionPluginPackageModeProof(summary, null), null);
 });
 
 test('plugin-driver proof summary reports driver-proof as a first-class requested bundle', () => {
