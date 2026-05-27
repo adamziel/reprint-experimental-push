@@ -9047,6 +9047,66 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
   assert.ok(blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
 });
 
+test('guarded benchmark carries direct aligned queue-slack proof blockers into rejected retry summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      })),
+    [
+      {
+        id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        ],
+      },
+    ],
+  );
+});
+
 test('guarded benchmark carries direct queue-slack visibility blockers into rollout summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
