@@ -9518,6 +9518,26 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
   assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimCursor, 'db-journal:77');
 });
 
+test('checked db journal attachment fails closed on missing accepted inline started cursor evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.claimEvidence.abandonedRow.startedCursor;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    buildCheckedRecoveryJournalSummary(),
+    true,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.startedCursor, undefined);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimCursor, 'db-journal:18');
+});
+
 test('checked db journal attachment fails closed on missing accepted inline claim cursor evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.claimEvidence.abandonedRow.claimCursor;
