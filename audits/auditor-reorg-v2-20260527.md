@@ -444,10 +444,59 @@ boundary.
 These are support, audit-refresh, or test-hardening facts only. They do not
 move release gates.
 
+## Follow-Up Artifact-Only Check 18:32
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/auditor-reorg-20260527
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `6f4c96294` | Advanced to refresh auditor topology v2 heads |
+| `origin/lane/auth-session-boundary-v2-20260527` | `19b4a5ad9` | Advanced remote v2 support branch |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `532a659f0` | Advanced remote v2 support branch |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `25829dd1e` | Advanced remote v2 support branch |
+
+The updated consolidated verifier in `/tmp/reprint-reorg-integrator-20260527`
+again exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+`packagedFallbackAllowed: false`, source/local/drift ports as `null`, and
+release movement `allowed: false`.
+
+Auth v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/auth-session-boundary-v2-20260527`
+shows release verifier, auth-session source, client, and proof-test changes,
+but this audit has no real live command proving same-boundary auth/session
+issuance and readback.
+
+Durable v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/durable-journal-boundary-v2-20260527`
+shows release verifier, client, and DB journal test changes, but this audit has
+no real live command proving restart-readable lease-fenced journal ownership.
+
+Apply v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/apply-revalidation-boundary-v2-20260527`
+shows the focused apply-revalidation test and package script changes, but this
+audit has no real live command proving preserved rejected-remote evidence or
+apply-time revalidation before first mutation on the same live boundary.
+
+These are support, audit-refresh, or test-hardening facts only. They do not
+move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
-`b53ada92ae9f3227d4de8ed8d0432db3706dcb9f` and has a coherent fail-closed
+`6f4c96294c75d5acfe2605f70b03349b5f3f08a7` and has a coherent fail-closed
 `verify:release` command, but it correctly does not move any release gate
 without a real live `REPRINT_PUSH_SOURCE_URL`.
 
