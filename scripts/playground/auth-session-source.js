@@ -193,7 +193,10 @@ export function resolveAuthSessionSourceCredentials({
     normalizedAllowedSourceUrl,
     normalizedAllowedSourceUrls,
   );
-  const hasExplicitSourceField = hasExplicitAuthSessionCredentialField(liveSourceUrl);
+  const preserveEmptyExplicitSourceBoundary = shouldPreserveEmptyExplicitSourceBoundary(
+    liveSourceUrl,
+    normalizedAllowedSourceUrls,
+  );
   if (!source?.ok) {
     return {
       liveSourceUrl: normalizedLiveSourceUrl,
@@ -220,7 +223,7 @@ export function resolveAuthSessionSourceCredentials({
   return {
     liveSourceUrl: preferSource
       ? normalizedSourceUrl
-      : hasExplicitSourceField
+      : preserveEmptyExplicitSourceBoundary
         ? normalizedLiveSourceUrl
         : normalizedLiveSourceUrl || normalizedSourceUrl,
     username: normalizedUsername,
@@ -250,7 +253,10 @@ export function resolveAuthSessionRequestCredentials({
     normalizedAllowedSourceUrl,
     normalizedAllowedSourceUrls,
   );
-  const hasExplicitSourceField = hasExplicitAuthSessionCredentialField(liveSourceUrl);
+  const preserveEmptyExplicitSourceBoundary = shouldPreserveEmptyExplicitSourceBoundary(
+    liveSourceUrl,
+    normalizedAllowedSourceUrls,
+  );
   const normalizedUsername = normalizeAuthSessionSourceField(username);
   const normalizedApplicationPassword = normalizeAuthSessionSourceField(applicationPassword);
   const normalizedFallbackUsername = normalizeAuthSessionSourceField(fallbackUsername);
@@ -270,7 +276,7 @@ export function resolveAuthSessionRequestCredentials({
     : normalizedFallbackApplicationPassword;
   if (hasExplicitCredentialField && !preferSource) {
     return {
-      liveSourceUrl: hasExplicitSourceField
+      liveSourceUrl: preserveEmptyExplicitSourceBoundary
         ? normalizedLiveSourceUrl
         : normalizedLiveSourceUrl || normalizedSourceUrl,
       username: resolvedUsername,
@@ -486,4 +492,10 @@ function hasExplicitAuthSessionCredentialField(value) {
   return value !== undefined
     && value !== null
     && !(typeof value === 'string' && value === '');
+}
+
+function shouldPreserveEmptyExplicitSourceBoundary(liveSourceUrl, normalizedAllowedSourceUrls) {
+  return hasExplicitAuthSessionCredentialField(liveSourceUrl)
+    && Array.isArray(normalizedAllowedSourceUrls)
+    && normalizedAllowedSourceUrls.length === 0;
 }
