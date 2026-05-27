@@ -3351,7 +3351,7 @@ test('packaged release verifier readiness helper preserves index-timeout fallbac
   });
 });
 
-test('packaged release verifier readiness helper preserves timeout fallback probes when both the snapshot probe and /wp-json/ time out', async () => {
+test('packaged release verifier readiness helper preserves timeout fallback probes when signed preflight and /wp-json/ both time out', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
   timeoutError.name = 'TimeoutError';
   const timeoutFallbackProbes = {
@@ -8727,6 +8727,55 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   assert.match(
     helperSource,
     /Packaged production plugin readiness hit \$\{timeoutProbeCount\} consecutive probe timeout\$\{timeoutProbeCount === 1 \? '' : 's'\}/s,
+  );
+});
+
+test('packaged readiness helper inventories keep verifier and smoke runtime branches aligned', () => {
+  const proofSource = readFileSync(
+    path.join(repoRoot, 'test/production-shaped-proof.test.js'),
+    'utf8',
+  );
+  const releasePrefix = 'packaged release verifier readiness helper ';
+  const smokePrefixes = [
+    'packaged production plugin smoke readiness helper ',
+    'packaged smoke readiness helper ',
+  ];
+  const verifierInfrastructureOnly = new Set([
+    'uses the provided output collector in wedged packaged-route failures',
+    'fails fast on signaled child termination',
+    'reports early child exit codes',
+  ]);
+  const runtimeBranchPattern = /(fails closed|keeps waiting|waits through|preserves timeout fallback probes)/;
+  const names = [...proofSource.matchAll(/test\('([^']+)'/g)].map((match) => match[1]);
+  const verifierBranches = new Set();
+  const smokeBranches = new Set();
+
+  for (const name of names) {
+    if (name.startsWith(releasePrefix)) {
+      const suffix = name.slice(releasePrefix.length);
+      if (
+        runtimeBranchPattern.test(suffix)
+        && !verifierInfrastructureOnly.has(suffix)
+      ) {
+        verifierBranches.add(suffix);
+      }
+      continue;
+    }
+
+    const smokePrefix = smokePrefixes.find((prefix) => name.startsWith(prefix));
+    if (!smokePrefix) {
+      continue;
+    }
+
+    const suffix = name.slice(smokePrefix.length);
+    if (runtimeBranchPattern.test(suffix)) {
+      smokeBranches.add(suffix);
+    }
+  }
+
+  assert.deepEqual(
+    [...verifierBranches].sort(),
+    [...smokeBranches].sort(),
   );
 });
 
