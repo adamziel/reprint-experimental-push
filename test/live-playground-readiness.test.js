@@ -1430,6 +1430,87 @@ test('packaged server readiness fails closed for broken top-level signed preflig
   }
 });
 
+test('packaged server readiness fails closed for broken top-level signed preflight auth envelopes', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+
+  const terminalEnvelopes = [
+    {
+      label: 'missing top-level auth',
+      auth: undefined,
+    },
+    {
+      label: 'missing top-level auth session',
+      auth: {},
+    },
+  ];
+
+  for (const { label, auth } of terminalEnvelopes) {
+    const terminalPreflight = {
+      ...basePreflight,
+      body: {
+        ...basePreflight.body,
+        ...(auth === undefined ? { auth: undefined } : { auth }),
+      },
+    };
+
+    assert.equal(
+      packagedProductionPluginPreflightReady(terminalPreflight),
+      false,
+      `${label} should not be considered ready`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(terminalPreflight),
+      false,
+      `${label} should fail closed instead of retrying`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(terminalPreflight),
+      true,
+      `${label} should be terminal`,
+    );
+    assert.equal(
+      packagedProductionPluginServerReady({
+        snapshot: readySnapshot,
+        preflight: terminalPreflight,
+      }),
+      false,
+      `${label} should keep the packaged server unready`,
+    );
+  }
+});
+
 test('packaged server readiness fails closed for terminal production auth session states', () => {
   const readySnapshot = {
     status: 200,
