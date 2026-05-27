@@ -8639,6 +8639,7 @@ test('guarded benchmark carries direct memory-headroom visibility blockers into 
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         'memory-ceiling-match-visible-without-memory-headroom-visibility',
         'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
         'queue-pause-without-visible-receipt-cursor-memory-headroom',
@@ -8657,6 +8658,7 @@ test('guarded benchmark carries direct memory-headroom visibility blockers into 
       blockerRefs: [
         'backpressure-evidence-incomplete',
         'queue-memory-ceiling-does-not-match-queue-budget',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         'memory-ceiling-match-visible-without-memory-headroom-visibility',
         'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
         'queue-pause-without-visible-receipt-cursor-memory-headroom',
@@ -8691,6 +8693,38 @@ test('guarded benchmark carries direct memory-headroom visibility blockers into 
   assert.ok(blockers.includes('queue-pause-without-visible-receipt-cursor-memory-headroom'));
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility'));
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-memory-headroom-visibility',
+          'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+          'queue-pause-without-visible-receipt-cursor-memory-headroom',
+          'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
 });
 
 test('guarded benchmark carries direct aligned backpressure proof blockers into rollout summaries under visible production capability evidence', () => {
