@@ -579,9 +579,17 @@ async function waitForServer(child, baseUrl, logs) {
             return;
           }
           if (preflightProbe.terminal) {
+            const malformedSnapshotFallbackPreflightBody =
+              preflightProbe.parsedBody === null
+              && !packagedProductionPluginReadinessBodyRetryable(
+                preflightProbe.status,
+                preflightProbe.body || '',
+              );
             throw new Error(
               formatPackagedReadinessFailure(
-                `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                malformedSnapshotFallbackPreflightBody
+                  ? `Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                  : `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 logs,
@@ -821,9 +829,17 @@ async function waitForServer(child, baseUrl, logs) {
             continue;
           }
           if (preflightProbe.terminal) {
+            const malformedSnapshotFallbackPreflightBody =
+              preflightProbe.parsedBody === null
+              && !packagedProductionPluginReadinessBodyRetryable(
+                preflightProbe.status,
+                preflightProbe.body || '',
+              );
             throw new Error(
               formatPackagedReadinessFailure(
-                `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                malformedSnapshotFallbackPreflightBody
+                  ? `Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                  : `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 logs,

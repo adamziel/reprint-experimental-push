@@ -1381,9 +1381,17 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             return;
           }
           if (preflightProbe.terminal) {
+            const malformedSnapshotFallbackPreflightBody =
+              preflightProbe.parsedBody === null
+              && !packagedProductionPluginReadinessBodyRetryable(
+                preflightProbe.status,
+                preflightProbe.body || '',
+              );
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+              malformedSnapshotFallbackPreflightBody
+                ? `Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                : `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
@@ -1618,9 +1626,17 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             continue;
           }
           if (preflightProbe.terminal) {
+            const malformedSnapshotFallbackPreflightBody =
+              preflightProbe.parsedBody === null
+              && !packagedProductionPluginReadinessBodyRetryable(
+                preflightProbe.status,
+                preflightProbe.body || '',
+              );
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+              malformedSnapshotFallbackPreflightBody
+                ? `Packaged production plugin preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                : `Packaged production plugin preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),

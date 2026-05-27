@@ -2949,6 +2949,14 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     /preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
+    smokeSource,
+    /const malformedSnapshotFallbackPreflightBody =[\s\S]*?preflightProbe\.parsedBody === null[\s\S]*?!packagedProductionPluginReadinessBodyRetryable\([\s\S]*?preflightProbe\.status,[\s\S]*?preflightProbe\.body \|\| ''[\s\S]*?\)/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
+  );
+  assert.match(
     verifierSource,
     /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
@@ -2959,6 +2967,14 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   assert.match(
     verifierSource,
     /preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+  );
+  assert.match(
+    verifierSource,
+    /const malformedSnapshotFallbackPreflightBody =[\s\S]*?preflightProbe\.parsedBody === null[\s\S]*?!packagedProductionPluginReadinessBodyRetryable\([\s\S]*?preflightProbe\.status,[\s\S]*?preflightProbe\.body \|\| ''[\s\S]*?\)/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?snapshotStartupFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,
