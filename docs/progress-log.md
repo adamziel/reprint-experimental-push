@@ -3,25 +3,48 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 03:16:52
+# 2026-05-27 - Public Status Audit 03:28:46
 
-<a id="2026-05-27-public-status-audit-031652"></a>
+<a id="2026-05-27-public-status-audit-032846"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `5fcb36c623ddb6eb0e49275cc1890157ed948d91` visible on the public
+  status surface for the active supervision cycle, with critic
+  `2b57683bfee3d735e18c5fceae0c971b78cad405` and auditor
+  `ad684f53c13172450b83682737fabd953ac164c1` both keeping the release
+  posture at `0/4`.
+- Release gates remain `0/4`. `5fcb36c6` bound driver verifier guards in
+  release checks, but the classifier verdict is still that this is checked-
+  path verifier hardening rather than the missing production-owned, non-lab-
+  backed source mutation boundary on the real Reprint endpoint: one primitive
+  that owns auth/session issuance/readback, durable restart-readable journal
+  storage with lease fencing, and apply-time revalidation before first
+  mutation.
+- The public page keeps packaged plugin-driver guards pinned into
+  `verify:release` as support evidence, while the driver-verifier release
+  check and the production-owned source mutation boundary still block gate
+  movement. The stale percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
+# 2026-05-27 - Public Status Audit 03:21:45
+
+<a id="2026-05-27-public-status-audit-032145"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
   head `8e7fa53d19ebde044d20c7fd9baa50cf78c9bb29` visible on the public
   status surface for the active supervision cycle.
-- Release gates remain `0/4`. The current reliable head fail-closes the
-  checked live-release apply-revalidation readiness path and emits one
-  combined JSON proof, but the remaining classifier-named blocker is still a
-  production-owned, non-lab-backed source mutation boundary on the real
-  Reprint endpoint: one primitive that owns auth/session issuance/readback,
-  durable restart-readable journal storage with lease fencing, and
-  apply-time revalidation outside Playground package-mode verifier
-  scaffolding.
+- Release gates remain `0/4`. `8e7fa53d` reuses the live `remote-base` /
+  `local-edited` topology for the inlined apply-revalidation proof inside
+  `scripts/playground/production-shaped-live-release-verify.mjs`, but the
+  classifier verdict is that this still stays within Playground/package-mode
+  verifier scaffolding rather than the missing production-owned, non-lab-
+  backed source mutation boundary on the real Reprint endpoint.
 - The public page keeps packaged plugin-driver guards pinned into
-  `verify:release` as support evidence, while the apply-revalidation release
-  leg and the production-owned source mutation boundary still block gate
-  movement. The stale percentage bars stay removed.
+  `verify:release` as support evidence, while the live-topology
+  apply-revalidation proof and the production-owned source mutation boundary
+  still block gate movement. The stale percentage bars stay removed.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
