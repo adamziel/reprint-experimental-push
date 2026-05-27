@@ -263,6 +263,7 @@ test('production recovery journal adapter is restart-readable and release-path c
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: false,
+    claimHash: recoveryClaimHash('claim-1'),
   });
   assert.deepEqual(inspected.leaseFenceContract, {
     boundary: 'filesystem-compare-rename',
@@ -1475,6 +1476,7 @@ test('production recovery journal compatibility overload supports reliable relea
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: false,
+    claimHash: recoveryClaimHash(claimId),
   });
   assert.deepEqual(inspection.journal.leaseFenceContract, {
     boundary: 'filesystem-compare-rename',
@@ -4189,6 +4191,7 @@ test('production recovery journal consumption surfaces stale claim advancement a
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: true,
+    claimHash: recoveryClaimHash('claim-2'),
   });
   assert.deepEqual(inspection.journal.leaseFenceContract, {
     boundary: 'filesystem-compare-rename',
@@ -5010,6 +5013,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       restartReadable: true,
       staleClaimRejected: false,
       claimId,
+      claimHash: recoveryClaimHash(claimId),
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5027,6 +5031,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         restartReadable: true,
         staleClaimRejected: false,
         claimId,
+        claimHash: recoveryClaimHash(claimId),
       },
     },
   };
@@ -5064,6 +5069,44 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         writerLease: {
           ...baseContract.leaseFence.writerLease,
           staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+        claimHash: recoveryClaimHash(`${claimId}-drifted`),
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+          claimHash: recoveryClaimHash(`${claimId}-drifted`),
         },
       },
     }),
@@ -5230,6 +5273,7 @@ test('checked durable journal boundary accepts the packaged production journal s
       restartReadable: true,
       staleClaimRejected: true,
       claimId,
+      claimHash: recoveryClaimHash(claimId),
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5247,6 +5291,7 @@ test('checked durable journal boundary accepts the packaged production journal s
         restartReadable: true,
         staleClaimRejected: true,
         claimId,
+        claimHash: recoveryClaimHash(claimId),
       },
     },
   };
@@ -5300,6 +5345,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
       restartReadable: true,
       staleClaimRejected: true,
       claimId,
+      claimHash: recoveryClaimHash(claimId),
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5317,6 +5363,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
         restartReadable: true,
         staleClaimRejected: true,
         claimId,
+        claimHash: recoveryClaimHash(claimId),
       },
     },
   };
@@ -5353,6 +5400,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
       restartReadable: true,
       staleClaimRejected: true,
       claimId,
+      claimHash: recoveryClaimHash(claimId),
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5370,6 +5418,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
         restartReadable: true,
         staleClaimRejected: true,
         claimId,
+        claimHash: recoveryClaimHash(claimId),
       },
     },
   };
@@ -5406,6 +5455,7 @@ test('checked durable journal boundary rejects nearby stale scope wording', () =
       restartReadable: true,
       staleClaimRejected: true,
       claimId,
+      claimHash: recoveryClaimHash(claimId),
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5423,6 +5473,7 @@ test('checked durable journal boundary rejects nearby stale scope wording', () =
         restartReadable: true,
         staleClaimRejected: true,
         claimId,
+        claimHash: recoveryClaimHash(claimId),
       },
     },
   };

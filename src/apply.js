@@ -1565,6 +1565,18 @@ function checkedDurableJournalBoundaryProof(
   const checkedBoundaryLeaseFenceClaimId = hasValidProductionLeaseIdentity(inspected?.leaseFence)
     ? inspected.leaseFence.id
     : null;
+  const checkedBoundaryWriterClaimHash = (
+    checkedBoundaryWriterClaimId !== null
+    && checkedBoundaryWriterClaimId === checkedBoundaryActiveClaimId
+  )
+    ? checkedBoundaryActiveClaimHash
+    : null;
+  const checkedBoundaryLeaseFenceClaimHash = (
+    checkedBoundaryLeaseFenceClaimId !== null
+    && checkedBoundaryLeaseFenceClaimId === checkedBoundaryActiveClaimId
+  )
+    ? checkedBoundaryActiveClaimHash
+    : null;
   const scope = Object.hasOwn(writer ?? {}, 'scope')
     && !hasHiddenOwnStringProperty(writer, 'scope')
     && typeof writer.scope === 'string'
@@ -1634,6 +1646,7 @@ function checkedDurableJournalBoundaryProof(
       ? {
         ...inspected.writerLeaseContract,
         claimId: checkedBoundaryWriterClaimId,
+        claimHash: checkedBoundaryWriterClaimHash,
         staleClaimRejected: inspected.writerLeaseContract.staleClaimRejected === true
           && staleClaimLineageProven,
       }
@@ -1644,6 +1657,7 @@ function checkedDurableJournalBoundaryProof(
         writerLease: {
           ...inspected.leaseFenceContract.writerLease,
           claimId: checkedBoundaryLeaseFenceClaimId,
+          claimHash: checkedBoundaryLeaseFenceClaimHash,
         },
         staleClaimRejected: inspected.leaseFenceContract.staleClaimRejected === true
           && staleClaimLineageProven,

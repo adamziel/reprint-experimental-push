@@ -130,7 +130,9 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
       writerLeaseClaimId.claimId,
       nestedWriterLeaseClaimId.claimId,
     )
-    && checkedBoundaryClaimHashMatches(activeClaim.claimId, activeClaim.claimHash);
+    && checkedBoundaryClaimHashMatches(activeClaim.claimId, activeClaim.claimHash)
+    && checkedBoundaryLeaseClaimHashMatches(writerLease, activeClaim.claimId)
+    && checkedBoundaryLeaseClaimHashMatches(nestedWriterLease, activeClaim.claimId);
 }
 
 function writerLeaseContractMatches(candidate) {
@@ -182,6 +184,28 @@ function checkedBoundaryClaimHashMatches(claimId, claimHash) {
     && typeof claimHash === 'string'
     && CLAIM_HASH_PATTERN.test(claimHash)
     && claimHash === digest({ recoveryJournalClaim: claimId });
+}
+
+function checkedBoundaryLeaseClaimHashMatches(contract, fallbackClaimId) {
+  if (!contract || typeof contract !== 'object') {
+    return false;
+  }
+
+  const claimId = surfacedCheckedBoundaryClaimId(contract, 'claimId');
+  if (!claimId.valid) {
+    return false;
+  }
+
+  const normalizedClaimId = claimId.claimId ?? fallbackClaimId;
+  if (typeof normalizedClaimId !== 'string' || normalizedClaimId.trim().length === 0) {
+    return false;
+  }
+
+  if (!Object.hasOwn(contract, 'claimHash')) {
+    return false;
+  }
+
+  return checkedBoundaryClaimHashMatches(normalizedClaimId, contract.claimHash);
 }
 
 function surfacedCheckedBoundaryClaim(container) {

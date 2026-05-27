@@ -21084,7 +21084,9 @@ test('production recovery support report surfaces a satisfied checked durable-jo
   assert.equal(report.checkedBoundaryProof.claim.activeClaimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
   assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimHash, claimHash);
 });
 
 test('production recovery support report keeps checked boundary closed when production adapter markers drift from the surfaced checked contract', () => {
@@ -21966,7 +21968,9 @@ test('production recovery support report keeps checked boundary closed without s
   assert.equal(report.checkedBoundaryProof.claim.activeClaimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
   assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimHash, claimHash);
   assert.equal(report.checkedBoundaryProof.writerLease.staleClaimRejected, false);
   assert.equal(report.checkedBoundaryProof.leaseFence.staleClaimRejected, false);
 });
