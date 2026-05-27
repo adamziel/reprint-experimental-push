@@ -21390,17 +21390,103 @@ test('blocks local same-plan created comment user identity while preserving a ma
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
-test('blocks local same-plan created comment user identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+test('blocks local same-plan created comment user identity while preserving a matching independent file type swap and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:24"]';
   const targetResourceKey = 'row:["wp_users","ID:14"]';
-  const swapFileKey = 'file:wp-content/uploads/comment-user-cover';
+  const swapFileKey = 'file:wp-content/uploads/comment-user-plugin-changes-cover';
   const base = baseSite();
-  base.db.wp_posts['ID:1'].post_title = 'Base comment-user removal title';
+  base.db.wp_posts['ID:1'].post_title = 'Base comment-user plugin changes title';
   base.db.wp_comments = {
     'comment_ID:24': {
       comment_ID: 24,
       comment_post_ID: 1,
       user_id: 14,
+      comment_content: 'Base plugin changes comment content',
+    },
+  };
+  base.files['wp-content/uploads/comment-user-plugin-changes-cover'] =
+    'base comment-user plugin changes cover bytes';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared comment-user plugin changes title';
+  local.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 1,
+      user_id: 14,
+      comment_content: 'Local plugin changes comment content',
+    },
+  };
+  local.db.wp_users = {
+    'ID:14': {
+      ID: 14,
+      user_login: 'local-comment-user-plugin-changes',
+      user_email: 'local-comment-user-plugin-changes@example.test',
+    },
+  };
+  local.files['wp-content/uploads/comment-user-plugin-changes-cover'] = {
+    type: 'directory',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared comment-user plugin changes title';
+  remote.files['wp-content/uploads/comment-user-plugin-changes-cover'] = {
+    type: 'directory',
+  };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:14"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local plugin changes comment content'), false);
+  assert.equal(planJson.includes('Base plugin changes comment content'), false);
+  assert.equal(planJson.includes('local-comment-user-plugin-changes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('blocks local same-plan created comment user identity while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:25"]';
+  const targetResourceKey = 'row:["wp_users","ID:15"]';
+  const swapFileKey = 'file:wp-content/uploads/comment-user-cover';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base comment-user removal title';
+  base.db.wp_comments = {
+    'comment_ID:25': {
+      comment_ID: 25,
+      comment_post_ID: 1,
+      user_id: 15,
       comment_content: 'Base removal comment content',
     },
   };
@@ -21409,16 +21495,16 @@ test('blocks local same-plan created comment user identity while preserving a ma
   const local = baseSite();
   local.db.wp_posts['ID:1'].post_title = 'Shared comment-user removal title';
   local.db.wp_comments = {
-    'comment_ID:24': {
-      comment_ID: 24,
+    'comment_ID:25': {
+      comment_ID: 25,
       comment_post_ID: 1,
-      user_id: 14,
+      user_id: 15,
       comment_content: 'Local removal comment content',
     },
   };
   local.db.wp_users = {
-    'ID:14': {
-      ID: 14,
+    'ID:15': {
+      ID: 15,
       user_login: 'local-comment-user-removal',
       user_email: 'local-comment-user-removal@example.test',
     },
@@ -21449,7 +21535,7 @@ test('blocks local same-plan created comment user identity while preserving a ma
   assert.equal(blocker.class, 'unsupported-comments-users-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.unsupportedState, 'same-plan-reference');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:14"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:15"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_comments.user_id');
   assert.equal(reference.relationshipType, 'comment-user');
   assert.equal(reference.sourceResourceKey, resourceKey);
