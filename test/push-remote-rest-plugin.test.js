@@ -492,6 +492,7 @@ function runCheckedBoundaryContract({
   claimKeyUnique = true,
   monotonicSequence = true,
   restartReadable = true,
+  claimId = null,
 } = {}) {
   return spawnSync('php', [
     '-r',
@@ -514,12 +515,14 @@ function runCheckedBoundaryContract({
       '$claimKeyUnique = ($argv[4] ?? "1") === "1";',
       '$monotonicSequence = ($argv[5] ?? "1") === "1";',
       '$restartReadable = ($argv[6] ?? "1") === "1";',
+      '$claimId = ($argv[7] ?? "") !== "" ? $argv[7] : null;',
       'echo json_encode(reprint_push_lab_db_journal_checked_boundary_contract(',
       '  $checkedSurface,',
       '  $staleClaimRejected,',
       '  $claimKeyUnique,',
       '  $monotonicSequence,',
-      '  $restartReadable',
+      '  $restartReadable,',
+      '  $claimId',
       '));',
     ].join(' '),
     pluginFile,
@@ -528,6 +531,7 @@ function runCheckedBoundaryContract({
     claimKeyUnique ? '1' : '0',
     monotonicSequence ? '1' : '0',
     restartReadable ? '1' : '0',
+    claimId ?? '',
   ], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -13433,6 +13437,21 @@ test('checked db journal boundary contract keeps ownership restart readability a
       },
     },
   });
+});
+
+test('checked db journal boundary contract carries the active claim id into both writer-lease surfaces', { skip: !hasPhp }, () => {
+  const result = runCheckedBoundaryContract({
+    checkedSurface: true,
+    staleClaimRejected: true,
+    claimKeyUnique: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    claimId: 'checked-claim-hash-01',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout).writerLease.claimId, 'checked-claim-hash-01');
+  assert.equal(JSON.parse(result.stdout).leaseFence.writerLease.claimId, 'checked-claim-hash-01');
 });
 
 test('checked db journal boundary contract fails closed when the checked claim contract is missing or malformed', { skip: !hasPhp }, () => {

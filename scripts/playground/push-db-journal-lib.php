@@ -177,7 +177,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
     bool $stale_claim_rejected = true,
     bool $claim_key_unique = true,
     bool $monotonic_sequence = true,
-    bool $restart_readable = true
+    bool $restart_readable = true,
+    ?string $claim_id = null
 ): array {
     $scope_key = reprint_push_lab_db_journal_scope_key([], $checked_surface);
     $accepted_on_checked_boundary = $scope_key !== 'local-playground-fixture';
@@ -189,7 +190,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
         $stale_claim_rejected,
         $claim_key_unique,
         $monotonic_sequence,
-        $restart_readable
+        $restart_readable,
+        $claim_id
     );
 
     return [
@@ -689,13 +691,13 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
                 $checked_surface,
                 $scoped_stale_claim_rejected,
                 $claim_key_unique,
-                $monotonic_sequence
+                $monotonic_sequence,
+                true,
+                isset($summary['claim']['activeClaimId']) && is_string($summary['claim']['activeClaimId'])
+                    ? $summary['claim']['activeClaimId']
+                    : null
             )
         );
-        if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimId'] ?? null)) {
-            $summary['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
-            $summary['leaseFence']['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
-        }
     }
 
     return $summary;
@@ -1506,10 +1508,11 @@ function reprint_push_lab_db_journal_writer_lease_contract(
     bool $stale_claim_rejected,
     bool $claim_key_unique = true,
     bool $monotonic_sequence = true,
-    bool $restart_readable = true
+    bool $restart_readable = true,
+    ?string $claim_id = null
 ): array
 {
-    return [
+    $contract = [
         'strategy' => 'claim-fenced-single-writer',
         'claimKeyUnique' => $claim_key_unique,
         'fsyncEvidence' => true,
@@ -1518,6 +1521,12 @@ function reprint_push_lab_db_journal_writer_lease_contract(
         'restartReadable' => $restart_readable,
         'staleClaimRejected' => $stale_claim_rejected,
     ];
+
+    if (reprint_push_lab_db_journal_non_empty_string($claim_id)) {
+        $contract['claimId'] = $claim_id;
+    }
+
+    return $contract;
 }
 
 function reprint_push_lab_db_journal_has_claim_key_unique_index(): bool
