@@ -8544,6 +8544,23 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   assert.equal(parsed.recovery.journal.claimId, 'drifted-active-claim-id');
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline top-level claim-key hash instead of silently retaining it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimKeyHash = 'drifted-top-level-claim-key-hash';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.claimKeyHash, 'drifted-top-level-claim-key-hash');
+});
+
 test('checked recovery inspect evidence fails closed on conflicting accepted inline ownership contract flags instead of silently normalizing them', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {

@@ -1896,21 +1896,38 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
 function reprint_push_lab_rest_checked_recovery_journal_claim_identity_conflicts(
     array $journal
 ): bool {
-    if (!array_key_exists('claimId', $journal)) {
-        return false;
-    }
-
-    $claim_id = $journal['claimId'] ?? null;
-    if (!reprint_push_lab_db_journal_non_empty_string($claim_id)) {
-        return true;
-    }
-
     $active_claim_id = isset($journal['claim']) && is_array($journal['claim'])
         ? ($journal['claim']['activeClaimId'] ?? null)
         : null;
+    if (array_key_exists('claimId', $journal)) {
+        $claim_id = $journal['claimId'] ?? null;
+        if (!reprint_push_lab_db_journal_non_empty_string($claim_id)) {
+            return true;
+        }
 
-    return !reprint_push_lab_db_journal_non_empty_string($active_claim_id)
-        || (string) $claim_id !== (string) $active_claim_id;
+        if (!reprint_push_lab_db_journal_non_empty_string($active_claim_id)) {
+            return true;
+        }
+
+        if ((string) $claim_id !== (string) $active_claim_id) {
+            return true;
+        }
+    }
+
+    if (!array_key_exists('claimKeyHash', $journal)) {
+        return false;
+    }
+
+    $claim_key_hash = $journal['claimKeyHash'] ?? null;
+    $active_claim_key_hash = isset($journal['claim']) && is_array($journal['claim'])
+        ? ($journal['claim']['activeClaimKeyHash'] ?? null)
+        : null;
+    if (!reprint_push_lab_db_journal_non_empty_string($claim_key_hash)) {
+        return true;
+    }
+
+    return !reprint_push_lab_db_journal_non_empty_string($active_claim_key_hash)
+        || (string) $claim_key_hash !== (string) $active_claim_key_hash;
 }
 
 function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
