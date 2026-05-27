@@ -14,6 +14,7 @@ import {
   productionThroughputClaim,
   productionThroughputBlockers,
   productionThroughputDetails,
+  validateRolloutRejectedFastPathSpecs,
 } from '../scripts/bench/guarded-executor-benchmark.js';
 
 test('benchmark model covers large uploads and plugin installs', () => {
@@ -5958,6 +5959,21 @@ test('production throughput claim maps rollout blockers to the matching rejected
   assert.ok(
     rowBatchRejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks')?.violates.includes('plugin-preconditions'),
   );
+});
+
+test('rollout rejected fast-path specs stay wired to modeled rejected shortcuts', () => {
+  assert.doesNotThrow(() => validateRolloutRejectedFastPathSpecs());
+
+  const report = runGuardedExecutorBenchmark({ profile: 'ci' });
+  const claim = productionThroughputClaim(report);
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(details.rejectedFastPaths, claim.rejectedFastPaths);
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'group', count: 1 },
+    { rejectedGate: 'live', count: 1 },
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {

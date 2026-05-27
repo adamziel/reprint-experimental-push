@@ -1431,7 +1431,19 @@ export function productionThroughputClaim(report) {
   };
 }
 
+export function validateRolloutRejectedFastPathSpecs() {
+  for (const spec of ROLLOUT_REJECTED_FAST_PATH_SPECS) {
+    const rejected = findRejectedFastPathById(spec.id);
+    if (!rejected) {
+      throw new Error(
+        `rollout rejected fast-path spec "${spec.id}" no longer resolves to a modeled rejected fast path`,
+      );
+    }
+  }
+}
+
 function rolloutRejectedFastPaths(blockers) {
+  validateRolloutRejectedFastPathSpecs();
   const blockerSet = new Set(blockers);
 
   return ROLLOUT_REJECTED_FAST_PATH_SPECS.flatMap((spec) => {
@@ -1441,9 +1453,6 @@ function rolloutRejectedFastPaths(blockers) {
     }
 
     const rejected = findRejectedFastPathById(spec.id);
-    if (!rejected) {
-      return [];
-    }
 
     return [{
       id: rejected.id,
