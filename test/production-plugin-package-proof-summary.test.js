@@ -3119,7 +3119,10 @@ test('plugin-driver proof summary attach helper repairs stale verifier alias req
   rawSummary.modeProof = currentProof.modeProof;
   rawSummary.pluginDriverProof = {
     ...currentProof,
-    requestedSatisfied: true,
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedBundlesSatisfied: false,
     modeProof: {
       ...currentProof.modeProof,
     },
@@ -3135,8 +3138,14 @@ test('plugin-driver proof summary attach helper repairs stale verifier alias req
   assert.notEqual(repairedProof, currentProof);
   assert.equal(repairedProof, rawSummary.pluginDriverProof);
   assert.equal(rawSummary.modeProof, repairedProof.modeProof);
-  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedStatus, 'missing');
+  assert.equal(repairedProof.requestedSatisfied, false);
+  assert.equal(repairedProof.requestedScenariosSatisfied, false);
+  assert.equal(repairedProof.requestedBundlesSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'missing');
   assert.equal(repairedProof.modeProof?.requestedSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, false);
 });
 
 test('plugin-driver proof summary attach helper repairs stale receipt-registration alias scenario statuses when the nested mode proof is current', () => {
@@ -3619,7 +3628,10 @@ test('plugin-driver proof summary attach helper repairs stale receipt-registrati
   rawSummary.modeProof = currentProof.modeProof;
   rawSummary.pluginDriverProof = {
     ...currentProof,
-    requestedSatisfied: true,
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedBundlesSatisfied: false,
     modeProof: {
       ...currentProof.modeProof,
     },
@@ -3635,8 +3647,14 @@ test('plugin-driver proof summary attach helper repairs stale receipt-registrati
   assert.notEqual(repairedProof, currentProof);
   assert.equal(repairedProof, rawSummary.pluginDriverProof);
   assert.equal(rawSummary.modeProof, repairedProof.modeProof);
-  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedStatus, 'missing');
+  assert.equal(repairedProof.requestedSatisfied, false);
+  assert.equal(repairedProof.requestedScenariosSatisfied, false);
+  assert.equal(repairedProof.requestedBundlesSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'missing');
   assert.equal(repairedProof.modeProof?.requestedSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, false);
+  assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, false);
 });
 
 test('plugin-driver proof summary attach helper repairs stale release alias scenario statuses when the nested mode proof is current', () => {
@@ -3909,6 +3927,184 @@ test('plugin-driver proof summary attach helper repairs stale route alias concre
   assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarioStatuses, {
     'core-package-routes': 'passed',
   });
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedConcreteScenariosSatisfied, true);
+});
+
+test('plugin-driver proof summary attach helper repairs stale callback alias scenario statuses when the nested mode proof is current', () => {
+  const callbackSelection = new Set([
+    'driver-callback-guards',
+    ...scenarioGroups['driver-callback-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverCallbackGuards',
+    canonicalMode: 'driver-callback-guards',
+    requestedScenarios: ['driver-callback-guards'],
+    selectedScenarios: Array.from(callbackSelection).sort(),
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverCallbackGuardsOnly'],
+    selectedScenarios: ['driverCallbackGuardsOnly'],
+    resolvedMode: 'driverCallbackGuardsOnly',
+    canonicalMode: 'driver-callback-guards',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedScenarioStatuses: {
+      driverCallbackGuardsOnly: 'missing',
+    },
+    requestedConcreteScenarios: ['driver-missing-export-guard'],
+    requestedConcreteScenarioStatuses: {
+      'driver-missing-export-guard': 'missing',
+    },
+    requestedConcreteScenariosSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverCallbackGuardsOnly'],
+    selectedScenarios: ['driverCallbackGuardsOnly'],
+    resolvedMode: 'driverCallbackGuardsOnly',
+    canonicalMode: 'driver-callback-guards',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    repairedProof.requestedScenarioStatuses,
+    repairedProof.modeProof?.requestedScenarioStatuses,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarios,
+    repairedProof.modeProof?.requestedConcreteScenarios,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarioStatuses,
+    repairedProof.modeProof?.requestedConcreteScenarioStatuses,
+  );
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.equal(
+    repairedProof.requestedConcreteScenariosSatisfied,
+    repairedProof.modeProof?.requestedConcreteScenariosSatisfied,
+  );
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
+  assert.deepEqual(repairedProof.modeProof?.requestedScenarioStatuses, {
+    'driver-callback-guards': 'passed',
+  });
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarios, []);
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarioStatuses, {});
+  assert.equal(repairedProof.modeProof?.requestedConcreteScenariosSatisfied, true);
+});
+
+test('plugin-driver proof summary attach helper repairs stale registration-shape alias scenario statuses when the nested mode proof is current', () => {
+  const registrationShapeSelection = new Set([
+    'driver-registration-shape-guards',
+    ...scenarioGroups['driver-registration-shape-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverRegistrationShapeGuards',
+    canonicalMode: 'driver-registration-shape-guards',
+    requestedScenarios: ['driver-registration-shape-guards'],
+    selectedScenarios: Array.from(registrationShapeSelection).sort(),
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    selectedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    resolvedMode: 'driverRegistrationShapeGuardsOnly',
+    canonicalMode: 'driver-registration-shape-guards',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedScenarioStatuses: {
+      driverRegistrationShapeGuardsOnly: 'missing',
+    },
+    requestedConcreteScenarios: ['driver-missing-name-guard'],
+    requestedConcreteScenarioStatuses: {
+      'driver-missing-name-guard': 'missing',
+    },
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedConcreteScenariosSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    selectedScenarios: ['driverRegistrationShapeGuardsOnly'],
+    resolvedMode: 'driverRegistrationShapeGuardsOnly',
+    canonicalMode: 'driver-registration-shape-guards',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    repairedProof.requestedScenarioStatuses,
+    repairedProof.modeProof?.requestedScenarioStatuses,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarios,
+    repairedProof.modeProof?.requestedConcreteScenarios,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarioStatuses,
+    repairedProof.modeProof?.requestedConcreteScenarioStatuses,
+  );
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.equal(
+    repairedProof.requestedConcreteScenariosSatisfied,
+    repairedProof.modeProof?.requestedConcreteScenariosSatisfied,
+  );
+  assert.deepEqual(repairedProof.modeProof?.requestedScenarioStatuses, {
+    'driver-registration-shape-guards': 'passed',
+  });
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarios, []);
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarioStatuses, {});
   assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
   assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
   assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
