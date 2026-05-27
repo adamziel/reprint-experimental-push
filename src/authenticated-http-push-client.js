@@ -406,6 +406,7 @@ export async function runAuthenticatedHttpPush({
     ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, apply)
     : null;
   const applyLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
+  const applyAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, 'apply');
@@ -446,6 +447,12 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  if (applyAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = applyAuthEnvelopeDrift;
+    setDurableJournalBoundary(summary, 'apply');
     return summary;
   }
   if (hasExpiredAuthSession(apply)) {
@@ -598,7 +605,6 @@ export async function runAuthenticatedHttpPush({
   summary.replayEquivalence = replayEquivalence;
   const replayEquivalent = replayEquivalence.equivalent;
   const replayLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
-  const applyAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, replay);
   const replayObservedLifecycleDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthSessionLifecycleDrift(replay)
@@ -661,10 +667,9 @@ export async function runAuthenticatedHttpPush({
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
-  if (applyAuthEnvelopeDrift || recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
+  if (recoveryInspectAuthEnvelopeDrift || replayAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
-    summary.authSession = applyAuthEnvelopeDrift
-      || recoveryInspectAuthEnvelopeDrift
+    summary.authSession = recoveryInspectAuthEnvelopeDrift
       || replayAuthEnvelopeDrift;
     setDurableJournalBoundary(summary, 'replay');
     return summary;
