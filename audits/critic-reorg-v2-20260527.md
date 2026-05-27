@@ -106,6 +106,77 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Auth V2 And Pushed Plugin V2
+
+Commit:
+
+- Reviewed `origin/lane/auth-session-boundary-v2-20260527` at
+  `07d9dae7cf62c25da18fdfdbed6aa6668ad91bd0`
+  (`Enforce live source auth boundary`).
+- Reviewed `origin/lane/durable-journal-boundary-v2-20260527` at
+  `f2446f241e893f50c0db2ec915d69b5982d12b84`
+  (`Merge remote-tracking branch 'origin/supervisor/release-boundary-consolidated-20260527'
+  into lane/durable-journal-boundary-v2-20260527`).
+- Reviewed `origin/lane/plugin-driver-boundary-v2-20260527` at
+  `afa1becac40a0e89b28b2fa636629e6e9ee6a27b`
+  (`Harden plugin driver boundary tests`).
+
+Claim:
+
+- New fact: auth-session v2 now exists on origin.
+- New fact: plugin-driver v2 now exists on origin.
+- New fact: durable-journal v2 advanced to include the consolidated branch.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git ls-remote origin refs/heads/lane/auth-session-boundary-v2-20260527
+  refs/heads/lane/durable-journal-boundary-v2-20260527
+  refs/heads/lane/plugin-driver-boundary-v2-20260527` returned the heads above.
+- `origin/lane/auth-session-boundary-v2-20260527` changes
+  `scripts/playground/production-shaped-live-release-verify.mjs` so
+  `explicitLiveSourceUrl` reads only `process.env.REPRINT_PUSH_SOURCE_URL || ''`
+  instead of accepting `REPRINT_PUSH_REMOTE_URL`, and adds focused tests that
+  `REPRINT_PUSH_REMOTE_URL` cannot substitute for `REPRINT_PUSH_SOURCE_URL`.
+- `origin/lane/durable-journal-boundary-v2-20260527` is a merge of the
+  consolidated verifier with the durable storage-guard support change.
+- `origin/lane/plugin-driver-boundary-v2-20260527` is test-only plugin-driver
+  hardening in `test/production-shaped-proof.test.js`.
+- None of these branches includes a real live `REPRINT_PUSH_SOURCE_URL`
+  command run proving the production mutation boundary.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. Auth v2 improves source gating, but does not prove
+  live auth/session issuance and readback on a real source boundary.
+- GATE-2: no movement. Durable v2 remains support plumbing and does not prove
+  live restart-readable lease-fenced journal ownership.
+- GATE-3: no movement. The consolidated verifier still only has missing-source
+  refusal evidence, not a live source/local/changed topology proof.
+- GATE-4: no movement. Plugin v2 is test hardening without a live
+  production-owned plugin-driver mutation.
+
+First missing production primitive:
+
+- The canonical verifier must run against a real live
+  `REPRINT_PUSH_SOURCE_URL` and prove same-boundary auth/session readback,
+  durable journal readback, plugin-driver ownership, preserved rejected-remote
+  evidence, and apply-time revalidation before the first mutation.
+
+Next exact command:
+
+```bash
+git fetch origin --prune && git show --stat --oneline origin/lane/auth-session-boundary-v2-20260527 origin/lane/durable-journal-boundary-v2-20260527 origin/lane/plugin-driver-boundary-v2-20260527
+```
+
+Release gate movement still requires:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Durable V2 Remote And Local Plugin V2
 
 Commit:
