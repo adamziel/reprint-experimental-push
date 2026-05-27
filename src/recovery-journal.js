@@ -83,13 +83,15 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
   const storageGuard = dbJournal?.storageGuard;
+  const claim = dbJournal?.claim;
 
   return trustedScope.test(dbJournal?.scope || '')
+    && durableJournalClaimContractMatches(claim)
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
-    && durableJournalWriterLeaseMatchesBoundary(writerLease, productionAdapter)
-    && durableJournalWriterLeaseMatchesBoundary(nestedWriterLease, productionAdapter)
+    && durableJournalWriterLeaseMatchesBoundary(writerLease, productionAdapter, claim)
+    && durableJournalWriterLeaseMatchesBoundary(nestedWriterLease, productionAdapter, claim)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
@@ -102,18 +104,47 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && durableJournalStorageGuardMatchesBoundary(storageGuard, productionAdapter);
 }
 
-function durableJournalWriterLeaseMatchesBoundary(writerLease, boundary) {
+function durableJournalWriterLeaseMatchesBoundary(writerLease, boundary, claim) {
   if (!writerLease || typeof writerLease !== 'object') {
     return false;
   }
 
   return writerLease.strategy === 'claim-fenced-single-writer'
+    && (!hasNonEmptyString(claim?.activeClaimId) || writerLease.claimId === claim.activeClaimId)
     && writerLease.claimKeyUnique === true
     && writerLease.fsyncEvidence === true
     && writerLease.storageGuard === boundary
     && writerLease.monotonicSequence === true
     && writerLease.restartReadable === true
     && writerLease.staleClaimRejected === true;
+}
+
+function durableJournalClaimContractMatches(claim) {
+  if (!claim || typeof claim !== 'object') {
+    return false;
+  }
+
+  const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimId)
+    || hasNonEmptyString(claim.previousClaimKeyHash)
+    || isPositiveInteger(claim.previousClaimSequence)
+    || hasNonEmptyString(claim.previousClaimEvent);
+
+  return hasNonEmptyString(claim.status)
+    && hasNonEmptyString(claim.activeClaimId)
+    && hasNonEmptyString(claim.activeClaimKeyHash)
+    && claim.activeClaimId === claim.activeClaimKeyHash
+    && isPositiveInteger(claim.activeClaimSequence)
+    && hasNonEmptyString(claim.activeClaimEvent)
+    && hasNonEmptyString(claim.idempotencyKeyHash)
+    && hasNonEmptyString(claim.requestHash)
+    && typeof claim.staleClaimRejected === 'boolean'
+    && (!hasPreviousClaimIdentity || (
+      hasNonEmptyString(claim.previousClaimId)
+      && hasNonEmptyString(claim.previousClaimKeyHash)
+      && claim.previousClaimId === claim.previousClaimKeyHash
+      && isPositiveInteger(claim.previousClaimSequence)
+      && hasNonEmptyString(claim.previousClaimEvent)
+    ));
 }
 
 function durableJournalStorageGuardMatchesBoundary(storageGuard, boundary) {
@@ -637,6 +668,14 @@ function normalizeOptionalNonNegativeInteger(value) {
     throw new Error('Recovery claim timing evidence must be a non-negative integer.');
   }
   return value;
+}
+
+function hasNonEmptyString(value) {
+  return typeof value === 'string' && value.length > 0;
+}
+
+function isPositiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
 }
 
 function visitRecord(value, pathParts) {

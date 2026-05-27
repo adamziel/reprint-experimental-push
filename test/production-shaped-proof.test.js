@@ -4221,6 +4221,24 @@ maybeTest('production-shaped live release verify command proves the explicit che
         assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.status, 'active');
         assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.expired, false);
         assert.equal(summary.durableJournal?.checkedAccepted, true);
+        assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
+        assert.equal(
+          summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+          summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
+        );
+        assert.match(summary.durableJournal?.proof?.journal?.claim?.previousClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
+        assert.equal(
+          summary.durableJournal?.proof?.journal?.claim?.previousClaimId,
+          summary.durableJournal?.proof?.journal?.claim?.previousClaimKeyHash,
+        );
+        assert.equal(
+          summary.durableJournal?.proof?.journal?.writerLease?.claimId,
+          summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+        );
+        assert.equal(
+          summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimId,
+          summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+        );
         assert.equal(summary.applyRevalidation?.ok, true);
         assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, null);
         assert.equal(summary.applyRevalidation?.boundary?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');

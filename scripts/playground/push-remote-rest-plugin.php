@@ -3416,6 +3416,10 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
             'staleClaimRejected' => $stale_claim_rejected,
             'writerLease' => $writer_lease,
         ];
+        if (reprint_push_lab_db_journal_non_empty_string($db_journal['claim']['activeClaimId'] ?? null)) {
+            $db_journal['writerLease']['claimId'] = (string) $db_journal['claim']['activeClaimId'];
+            $db_journal['leaseFence']['writerLease']['claimId'] = (string) $db_journal['claim']['activeClaimId'];
+        }
     }
     $result = [
         'ok' => true,

@@ -131,6 +131,13 @@ function reprint_push_lab_db_journal_package_mode_enabled(): bool
         && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
 }
 
+function reprint_push_lab_db_journal_claim_id_from_key_hash($claim_key_hash): ?string
+{
+    return reprint_push_lab_db_journal_non_empty_string($claim_key_hash)
+        ? (string) $claim_key_hash
+        : null;
+}
+
 function reprint_push_lab_db_journal_key_hash(string $key): string
 {
     return hash('sha256', $key);
@@ -528,6 +535,10 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
             'restartReadable' => true,
             'staleClaimRejected' => reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows']),
         ];
+        if (reprint_push_lab_db_journal_non_empty_string($summary['claim']['activeClaimId'] ?? null)) {
+            $summary['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
+            $summary['leaseFence']['writerLease']['claimId'] = (string) $summary['claim']['activeClaimId'];
+        }
     }
 
     return $summary;
@@ -563,6 +574,7 @@ function reprint_push_lab_db_journal_claim_summary(
 
     $summary = [
         'status' => $scoped_stale_claim_rejected ? 'stale-claim-rejected' : 'active',
+        'activeClaimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($active_claim_key_hash),
         'activeClaimKeyHash' => $active_claim_key_hash,
         'activeClaimSequence' => (int) ($latest_claim_row['sequence'] ?? 0),
         'activeClaimEvent' => (string) ($latest_claim_row['event'] ?? ''),
@@ -589,6 +601,7 @@ function reprint_push_lab_db_journal_claim_summary(
     if (is_array($previous_claim_row) && !empty($previous_claim_row)) {
         $previous_claim_key_hash = (string) ($previous_claim_row['claimKeyHash'] ?? '');
         if ($previous_claim_key_hash !== '') {
+            $summary['previousClaimId'] = reprint_push_lab_db_journal_claim_id_from_key_hash($previous_claim_key_hash);
             $summary['previousClaimKeyHash'] = $previous_claim_key_hash;
             $summary['previousClaimSequence'] = (int) ($previous_claim_row['sequence'] ?? 0);
             $summary['previousClaimEvent'] = (string) ($previous_claim_row['event'] ?? '');
@@ -624,15 +637,20 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
 
     return $status_matches_stale_claim
         && $event_matches_stale_claim
+        && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimId'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['activeClaimKeyHash'] ?? null)
         && reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['idempotencyKeyHash'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['requestHash'] ?? null)
         && is_bool($stale_claim_rejected)
+        && (string) ($claim['activeClaimId'] ?? '') === (string) ($claim['activeClaimKeyHash'] ?? '')
         && (!$has_previous_claim_identity || (
+            reprint_push_lab_db_journal_non_empty_string($claim['previousClaimId'] ?? null)
+            &&
             reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
             && reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null)
+            && (string) ($claim['previousClaimId'] ?? '') === (string) ($claim['previousClaimKeyHash'] ?? '')
         ))
         && (!$has_abandoned_claim_identity || (
             reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
@@ -660,6 +678,10 @@ function reprint_push_lab_db_journal_writer_lease_contract_matches($writer_lease
         && reprint_push_lab_db_journal_non_empty_string($writer_lease['storageGuard'] ?? null)
         && is_bool($writer_lease['monotonicSequence'] ?? null)
         && is_bool($writer_lease['restartReadable'] ?? null)
+        && (
+            !array_key_exists('claimId', $writer_lease)
+            || reprint_push_lab_db_journal_non_empty_string($writer_lease['claimId'] ?? null)
+        )
         && is_bool($writer_lease['staleClaimRejected'] ?? null);
 }
 
@@ -889,6 +911,7 @@ function reprint_push_lab_db_journal_public_row(array $row): array
     return [
         'sequence' => (int) ($row['id'] ?? 0),
         'event' => (string) ($row['event'] ?? ''),
+        'claimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($row['claim_key_hash'] ?? null),
         'idempotencyKeyHash' => (string) ($row['idempotency_key_hash'] ?? ''),
         'requestHash' => (string) ($row['request_hash'] ?? ''),
         'planHash' => (string) ($row['plan_hash'] ?? ''),

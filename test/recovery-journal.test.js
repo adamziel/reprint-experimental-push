@@ -448,6 +448,34 @@ test('production recovery journal consumer rejects hidden open options', () => {
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
   const baseContract = {
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    latestRows: [
+      {
+        sequence: 20,
+        event: 'stale-claim-rejected',
+        claimId: 'retry-claim-id-02',
+      },
+      {
+        sequence: 18,
+        event: 'stale-claim-abandoned',
+        claimId: 'retry-claim-id-01',
+      },
+    ],
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimId: 'retry-claim-id-02',
+      activeClaimKeyHash: 'retry-claim-id-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      previousClaimId: 'retry-claim-id-01',
+      previousClaimKeyHash: 'retry-claim-id-01',
+      previousClaimSequence: 11,
+      previousClaimEvent: 'idempotency-opened',
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+    },
     storageGuard: {
       boundary: 'wpdb-single-statement-cas',
       operation: 'update',
@@ -460,6 +488,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
+      claimId: 'retry-claim-id-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -476,6 +505,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       staleClaimRejected: false,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
+        claimId: 'retry-claim-id-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -496,6 +526,34 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       },
     }),
     true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        activeClaimId: '',
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        claimId: 'unexpected-claim-id',
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+      },
+    }),
+    false,
   );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
