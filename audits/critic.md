@@ -1,24 +1,22 @@
 # Critic Verdict
 
-Current reliable head: `3c946a8646c776535acb70e88d24df579568ff63`
-(`Unfilter mapped graph postmeta in push smokes`).
+Current reliable head: `bf495d928e18a1021ff2401b44b503ffbc97cd01`
+(`Prove retry boundary after journal fallback`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This commit only changes the push-smoke fixtures so the ready-plan path
-  keeps the mapped `wp_postmeta` row for `post_id:2001:meta_key:_reprint_push_forms_schema`
-  instead of filtering it out before plan construction. The affected files are
-  `scripts/playground/apply-ready-plan.mjs`,
-  `scripts/playground/http-push-smoke.mjs`, and
-  `scripts/playground/push-protocol-smoke.mjs`.
-- That is useful release-surface coverage for graph/postmeta handling, but it
-  remains a smoke-fixture change. It does not prove a production-owned,
-  non-lab-backed checked release command on the real Reprint endpoint.
-- The diff does not show live auth/session issuance and readback on the live
-  source URL, restart-readable durable journal ownership under lease fencing,
-  or apply-time revalidation before the first mutation on that same boundary.
+- This commit adds a focused retry-boundary regression test around the
+  existing recovery-journal fallback path. It proves the verifier still reports
+  `PRESERVED_REMOTE_RETRY_REQUIRED` when the replay-and-retry requirement is
+  not met after validated recovery-journal proof.
+- The diff remains on the client/test surface inside the Playground-backed
+  verifier path. It does not show a production-owned, non-lab-backed checked
+  release command on the real Reprint endpoint that mints and rereads a live
+  auth session, persists durable restart-readable lease-fenced journal state,
+  preserves rejected remote evidence, and performs apply-time revalidation
+  before the first mutation on the same live boundary.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
