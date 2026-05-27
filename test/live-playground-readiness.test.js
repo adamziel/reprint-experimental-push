@@ -5,6 +5,7 @@ import test from 'node:test';
 import {
   packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
+  packagedProductionPluginPreflightRetryable,
   packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginRestIndexReady,
   packagedProductionPluginRestIndexRetryable,
@@ -161,6 +162,130 @@ test('packaged preflight terminal context carries index-terminal readiness evide
       invalidReadinessBody: true,
       preflightNotReadyProbeCount: 4,
       timeoutFallback: true,
+    },
+  );
+});
+
+test('packaged preflight retryability follows the freshest startup probe context', () => {
+  const labAuthRequiredPreflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      packagedStartup: true,
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        status: 500,
+        body: 'Internal Server Error',
+      },
+    }),
+    false,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      snapshotProbe: {
+        status: 503,
+        body: 'WordPress is not ready yet',
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 404,
+        body: JSON.stringify({
+          details: {
+            error_code: 'rest_no_route',
+          },
+        }),
+      },
+    }),
+    true,
+  );
+});
+
+test('packaged timeout fallback helper separates WordPress, packaged-route, timeout, and terminal index branches', () => {
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      { status: 503, body: 'WordPress is not ready yet' },
+    ),
+    {
+      kind: 'timed-out-route-wordpress-starting',
+      globalWordPressStartup: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      {
+        status: 200,
+        body: JSON.stringify({
+          namespaces: ['reprint/v1'],
+          routes: {
+            '/reprint/v1/push/preflight': {},
+          },
+        }),
+      },
+    ),
+    {
+      kind: 'timed-out-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { retryable: true, status: 404, body: 'No route was found matching the URL and request method.' },
+      { timedOut: true },
+    ),
+    {
+      kind: 'retryable-route-index-timeout',
+      indexProbeTimedOut: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      { timedOut: true },
+    ),
+    {
+      kind: 'timed-out-route-index-timeout',
+      indexProbeTimedOut: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      { timedOut: true },
+      {
+        status: 200,
+        body: '<!doctype html><html><body>not a REST index</body></html>',
+        parsedBody: null,
+      },
+    ),
+    {
+      kind: 'timed-out-route-index-terminal',
+      indexTerminal: true,
     },
   );
 });
