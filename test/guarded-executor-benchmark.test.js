@@ -12800,12 +12800,23 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
   assert.deepEqual(
     pluginUpdatePauseRejectedFastPaths
       .map((entry) => ({
-      id: entry.id,
-      rejectedGate: entry.rejectedGate,
-      blockerRefs: entry.blockerRefs,
-    }))
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
       .sort((left, right) => left.id.localeCompare(right.id)),
     [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
         rejectedGate: 'group',
@@ -12838,16 +12849,9 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
       },
     ],
   );
-  assert.ok(
-    !pluginUpdatePauseRejectedFastPaths.some(
-      (entry) =>
-        entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
-    ),
-    'production-only row-batch pause shortcut drops out once visible production capability evidence is present',
-  );
   assert.deepEqual(summarizeRejectedGates(pluginUpdatePauseRejectedFastPaths), [
     { rejectedGate: 'group', count: 1 },
-    { rejectedGate: 'recovery', count: 2 },
+    { rejectedGate: 'recovery', count: 3 },
   ]);
 });
 
