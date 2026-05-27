@@ -2819,7 +2819,7 @@ test('packaged production plugin runtime source binding ignores non-local runtim
   );
 });
 
-test('packaged production plugin runtime source binding preserves the prior command when auth/session credentials are unavailable', () => {
+test('packaged production plugin runtime source binding rebinds the prior packaged command when auth/session credentials are unavailable', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
@@ -2842,12 +2842,16 @@ test('packaged production plugin runtime source binding preserves the prior comm
         ok: false,
         error: 'missing auth session source',
       },
-      authSessionSourceCommand: staleCommand,
+      authSessionSourceCommand: resolvePackagedProductionPluginSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      }),
     },
   );
 });
 
-test('packaged production plugin runtime source binding preserves the prior command when auth/session credentials are malformed strings', () => {
+test('packaged production plugin runtime source binding rebinds the prior packaged command when auth/session credentials are malformed strings', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
@@ -2870,16 +2874,20 @@ test('packaged production plugin runtime source binding preserves the prior comm
       sourceUrl: 'http://127.0.0.1:49152',
       authSessionSource: {
         ok: true,
-        sourceUrl: 'http://127.0.0.1:8080',
+        sourceUrl: 'http://127.0.0.1:49152',
         username: ' reprint_push_admin ',
         applicationPassword: '\treprint-push-admin-app-password',
       },
-      authSessionSourceCommand: staleCommand,
+      authSessionSourceCommand: resolvePackagedProductionPluginSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      }),
     },
   );
 });
 
-test('packaged production plugin runtime source binding preserves the prior command when auth/session source URLs are malformed strings', () => {
+test('packaged production plugin runtime source binding rebinds the prior packaged command when auth/session source URLs are malformed strings', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
@@ -2902,16 +2910,20 @@ test('packaged production plugin runtime source binding preserves the prior comm
       sourceUrl: 'http://127.0.0.1:49152',
       authSessionSource: {
         ok: true,
-        sourceUrl: ' http://127.0.0.1:8080 ',
+        sourceUrl: 'http://127.0.0.1:49152',
         username: 'reprint_push_admin',
         applicationPassword: 'reprint-push-admin-app-password',
       },
-      authSessionSourceCommand: staleCommand,
+      authSessionSourceCommand: resolvePackagedProductionPluginSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      }),
     },
   );
 });
 
-test('packaged production plugin runtime source binding preserves the prior command when auth/session credentials are non-strings', () => {
+test('packaged production plugin runtime source binding rebinds the prior packaged command when auth/session credentials are non-strings', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
@@ -2934,16 +2946,20 @@ test('packaged production plugin runtime source binding preserves the prior comm
       sourceUrl: 'http://127.0.0.1:49152',
       authSessionSource: {
         ok: true,
-        sourceUrl: 'http://127.0.0.1:8080',
+        sourceUrl: 'http://127.0.0.1:49152',
         username: ['reprint_push_admin'],
         applicationPassword: { secret: 'reprint-push-admin-app-password' },
       },
-      authSessionSourceCommand: staleCommand,
+      authSessionSourceCommand: resolvePackagedProductionPluginSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      }),
     },
   );
 });
 
-test('packaged production plugin runtime source binding preserves malformed auth/session metadata when it cannot mint a safe runtime command', () => {
+test('packaged production plugin runtime source binding preserves malformed auth/session metadata while rebinding a safe packaged command', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
@@ -2963,8 +2979,15 @@ test('packaged production plugin runtime source binding preserves malformed auth
     runtimeSourceUrl: 'http://127.0.0.1:49152',
   });
 
-  assert.equal(bound.authSessionSource, malformedSource);
-  assert.equal(bound.authSessionSourceCommand, staleCommand);
+  assert.deepEqual(bound.authSessionSource, {
+    ...malformedSource,
+    sourceUrl: 'http://127.0.0.1:49152',
+  });
+  assert.equal(bound.authSessionSourceCommand, resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'http://127.0.0.1:49152',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  }));
 });
 
 test('packaged production plugin runtime source binding drops malformed prior commands', () => {

@@ -1,31 +1,32 @@
-Timestamp: `2026-05-27 08:19:47 CEST (+0200)`.
+Timestamp: `2026-05-27 08:41:42 CEST (+0200)`.
 
 Changed files:
-- [test/authenticated-http-push-client.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/test/authenticated-http-push-client.test.js)
-- [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/.lane-output/final.md)
+- [scripts/playground/packaged-production-plugin-source-command.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/scripts/playground/packaged-production-plugin-source-command.js)
+- [test/production-shaped-proof.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/auth-session-code/test/production-shaped-proof.test.js)
 
 What changed:
-- Added the missing journal-only stricter production-session-gate coverage for malformed `auth.session.status`, `auth.session.id`, `auth.session.type`, and `auth.session.expiresAt` drift.
-- Kept the diff lane-local to the auth-session test matrix, matching the existing journal/apply/replay/recovery lifecycle style instead of reshaping shared helpers.
-- This closes the remaining strict journal identity-field parity gap after earlier journal cleanup and identity-summary coverage landed on this branch.
+- Added a command-only packaged runtime rebinding path so `bindPackagedProductionPluginRuntimeSource()` can rewrite the stale `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=...` segment inside an already-packaged auth-session source command, even when the accompanying auth-session metadata object is missing or malformed.
+- Kept the existing fail-closed behavior for malformed prior commands and non-local runtime URLs.
+- Tightened the packaged proof tests so malformed auth metadata is still preserved while the safe packaged command and runtime-bound `sourceUrl` are kept in sync.
 
 Commands run:
 ```bash
-grep -nE "journal-only malformed auth-session (id|status|type|expiry identity) drift under the stricter production-session gate" test/authenticated-http-push-client.test.js
-node --check test/authenticated-http-push-client.test.js
-timeout 120s node --test --test-name-pattern='production-shaped authenticated push fails closed on journal-only malformed auth-session status drift under the stricter production-session gate|production-shaped authenticated push fails closed on journal-only malformed auth-session id drift under the stricter production-session gate|production-shaped authenticated push fails closed on journal-only malformed auth-session type drift under the stricter production-session gate|production-shaped authenticated push fails closed on journal-only malformed auth-session expiry identity drift under the stricter production-session gate' test/authenticated-http-push-client.test.js
-git diff --check -- test/authenticated-http-push-client.test.js
-date '+%Y-%m-%d %H:%M:%S %Z (%z)'
+node --check scripts/playground/packaged-production-plugin-source-command.js
+node --check test/production-shaped-proof.test.js
+timeout 120s node --test --test-name-pattern='packaged production plugin runtime source binding' test/production-shaped-proof.test.js
+git diff --check -- scripts/playground/packaged-production-plugin-source-command.js test/production-shaped-proof.test.js
 ```
 
 Push result:
-- pending commit/push for the strict journal auth identity-field parity patch
+- pending
 
 Worktree status:
 ```bash
 ## lane/auth-session-code-20260526-1836...origin/lane/auth-session-code-20260526-1836
- M test/authenticated-http-push-client.test.js
+ M .lane-output/final.md
+ M scripts/playground/packaged-production-plugin-source-command.js
+ M test/production-shaped-proof.test.js
 ```
 
 Next supervisor nudge:
-- This lane’s remaining auth-session value is still reliable-owned checked release-path consumption on the real-endpoint boundary unless another concrete local malformed auth-session parity hole appears outside the now-saturated journal/apply/replay/recovery matrix.
+- Reliable can now rebind a safe packaged auth-session source command to the live runtime URL without depending on a well-formed `authSessionSource` object; the next meaningful auth-session consumer is reliable-owned checked release-path lifecycle work on the real-endpoint boundary.

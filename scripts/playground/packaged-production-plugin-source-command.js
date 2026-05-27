@@ -123,6 +123,17 @@ function buildRuntimePackagedProductionPluginSourceCommand({
   authSessionSource,
   authSessionSourceCommand,
 }) {
+  const reboundExplicitCommand = rebindPackagedProductionPluginSourceCommandSourceUrl(
+    authSessionSourceCommand,
+    runtimeSourceUrl,
+  );
+  if (reboundExplicitCommand) {
+    return {
+      command: reboundExplicitCommand,
+      rebound: true,
+    };
+  }
+
   const sourceUrl = normalizeSupportedAuthSessionSourceUrl(authSessionSource?.sourceUrl);
   const username = typeof authSessionSource?.username === 'string'
     ? authSessionSource.username
@@ -165,4 +176,17 @@ function normalizePackagedProductionPluginSourceCommand(value) {
   }
 
   return normalized;
+}
+
+function rebindPackagedProductionPluginSourceCommandSourceUrl(command, runtimeSourceUrl) {
+  const normalizedCommand = normalizePackagedProductionPluginSourceCommand(command);
+  if (!normalizedCommand || !runtimeSourceUrl || !isPackagedProductionPluginSourceCommand(normalizedCommand)) {
+    return '';
+  }
+
+  const reboundCommand = normalizedCommand.replace(
+    /\bREPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='[^']*'/,
+    `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='${runtimeSourceUrl}'`,
+  );
+  return reboundCommand === normalizedCommand ? '' : reboundCommand;
 }
