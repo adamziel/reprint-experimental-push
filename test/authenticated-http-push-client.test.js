@@ -46,15 +46,25 @@ test('authenticated push client requires an explicit session and idempotency key
   );
 });
 
-test('authenticated push client fails closed for unsupported production-shaped origins', () => {
+test('authenticated push client fails closed for insecure remote production-shaped origins', () => {
   assert.throws(
     () => authenticatedHttpClient({
-      sourceUrl: 'https://example.com',
+      sourceUrl: 'http://example.com',
       credential,
       routeProfile: 'production-shaped',
     }),
-    /Unsupported production-shaped sourceUrl origin: https:\/\/example\.com/,
+    /Unsupported production-shaped sourceUrl origin: http:\/\/example\.com/,
   );
+});
+
+test('authenticated push client accepts https production-shaped origins', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'https://example.com',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+  assert.equal(typeof client.get, 'function');
 });
 
 test('authenticated push client allows production-shaped loopback runtime ports', () => {
@@ -205,7 +215,7 @@ test('authenticated push source does not mix partial auth/session source fields 
   );
 });
 
-test('authenticated push source accepts https loopback auth/session source URLs', () => {
+test('authenticated push source accepts https auth/session source URLs', () => {
   assert.deepEqual(
     resolveAuthenticatedHttpPushSource({
       sourceUrl: '',
@@ -213,13 +223,13 @@ test('authenticated push source accepts https loopback auth/session source URLs'
       applicationPassword: '',
       authSessionSource: {
         ok: true,
-        sourceUrl: 'https://127.0.0.1:8443',
+        sourceUrl: 'https://example.com',
         username: 'reprint_push_admin',
         applicationPassword: 'reprint-push-admin-app-password',
       },
     }),
     {
-      sourceUrl: 'https://127.0.0.1:8443',
+      sourceUrl: 'https://example.com',
       username: 'reprint_push_admin',
       applicationPassword: 'reprint-push-admin-app-password',
     },

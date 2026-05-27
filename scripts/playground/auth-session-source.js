@@ -57,7 +57,7 @@ export function loadAuthSessionSource(
   if (!isSupportedAuthSessionSourceUrl(sourceUrl)) {
     return {
       ok: false,
-      error: 'Auth session source command must return a supported local sourceUrl',
+      error: 'Auth session source command must return a supported https or loopback sourceUrl',
     };
   }
 
@@ -235,14 +235,11 @@ function isSupportedAuthSessionSourceUrl(sourceUrl) {
     return false;
   }
 
-  if (
-    (parsed.protocol === 'http:' || parsed.protocol === 'https:')
-    && isLoopbackHost(parsed.hostname)
-  ) {
+  if (parsed.protocol === 'https:') {
     return true;
   }
 
-  return false;
+  return parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname);
 }
 
 function isLoopbackHost(hostname) {

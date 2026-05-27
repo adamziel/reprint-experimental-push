@@ -1480,14 +1480,11 @@ function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
     return false;
   }
 
-  if (
-    (parsed.protocol === 'http:' || parsed.protocol === 'https:')
-    && isLoopbackHost(parsed.hostname)
-  ) {
+  if (parsed.protocol === 'https:') {
     return true;
   }
 
-  return false;
+  return parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname);
 }
 
 export function authenticatedHttpClient({
@@ -3032,15 +3029,16 @@ function assertSupportedSourceUrlForRouteProfile(baseUrl, profile) {
     return;
   }
 
-  if (
-    (baseUrl.protocol === 'http:' || baseUrl.protocol === 'https:')
-    && isLoopbackHost(baseUrl.hostname)
-  ) {
+  if (baseUrl.protocol === 'https:') {
+    return;
+  }
+
+  if (baseUrl.protocol === 'http:' && isLoopbackHost(baseUrl.hostname)) {
     return;
   }
 
   throw new Error(
-    `Unsupported production-shaped sourceUrl origin: ${baseUrl.origin}. Use a local-only loopback origin or the sandbox-provided 8080 ingress.`,
+    `Unsupported production-shaped sourceUrl origin: ${baseUrl.origin}. Use https for remote production-shaped origins, or a local-only loopback origin / the sandbox-provided 8080 ingress for http.`,
   );
 }
 
