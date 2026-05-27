@@ -18821,6 +18821,7 @@ test('production-shaped authenticated push fails closed on journal-only malforme
       idempotencyKey: 'idem-01-journal-invalid-user-login-drift',
       routeProfile: 'production-shaped',
       requireProductionAuthSession: true,
+      labAuthSessionDrift: 'journal:user-login-invalid',
     });
 
     assert.equal(summary.ok, false);
@@ -18846,7 +18847,7 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
-      /\/db-journal\?limit=80$/,
+      /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Auser-login-invalid$/,
     );
   } finally {
     global.fetch = originalFetch;
@@ -18999,6 +19000,7 @@ test('production-shaped authenticated push fails closed on journal-only malforme
       idempotencyKey: 'idem-01-journal-invalid-user-id-drift',
       routeProfile: 'production-shaped',
       requireProductionAuthSession: true,
+      labAuthSessionDrift: 'journal:user-id-invalid',
     });
 
     assert.equal(summary.ok, false);
@@ -19024,7 +19026,7 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
-      /\/db-journal\?limit=80$/,
+      /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Auser-id-invalid$/,
     );
   } finally {
     global.fetch = originalFetch;
