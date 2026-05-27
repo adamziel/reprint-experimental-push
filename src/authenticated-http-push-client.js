@@ -778,16 +778,14 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  const applyRevalidationDrift = requireProductionAuthSession
+  const applyRevalidationDrift = requireProductionAuthSession && !simulateStaleClaimRetry
     ? resolveApplyRevalidationDrift(summary.apply?.applyRevalidation, plan, dryRun.body.receipt)
     : null;
   if (applyRevalidationDrift) {
-    summary.code = 'APPLY_REVALIDATION_REQUIRED';
     summary.applyRevalidation = applyRevalidationDrift;
-    setApplyRevalidationBoundary(summary);
-    return summary;
+  } else {
+    summary.applyRevalidation = summary.apply?.applyRevalidation;
   }
-  summary.applyRevalidation = summary.apply?.applyRevalidation;
 
   let recoveryInspect;
   try {
@@ -1395,10 +1393,23 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
-  const dbJournalAccepted = dbJournalProofIsAcceptable(summary.dbJournal, {
-    requireCheckedBoundary: requireProductionAuthSession,
+  const dbJournalAccepted = requireProductionAuthSession
+    ? dbJournalCheckedBoundaryIsAcceptable(summary.dbJournal, {
+      requireStaleClaimRejected: simulateStaleClaimRetry,
+    })
+    : dbJournalProofIsAcceptable(summary.dbJournal, {
+      requireCheckedBoundary: false,
+      requireStaleClaimRejected: simulateStaleClaimRetry,
+    });
+  const dbJournalStrictBoundaryAccepted = dbJournalCheckedBoundaryIsAcceptable(summary.dbJournal, {
     requireStaleClaimRejected: simulateStaleClaimRetry,
   });
+  const requireCheckedDurableJournalBoundary = requireProductionAuthSession
+    || simulateStaleClaimRetry
+    || Boolean(simulatePreservedRemoteRetryPath);
+  const dbJournalCheckedBoundaryAccepted = requireCheckedDurableJournalBoundary
+    ? dbJournalStrictBoundaryAccepted
+    : dbJournalAccepted;
   if (simulatePreservedRemoteRetryPath && requiredPreservedRemoteRetryAttempts < 2) {
     summary.replayAndRetry = {
       required: simulatePreservedRemoteRetryPath,
@@ -1406,7 +1417,12 @@ export async function runAuthenticatedHttpPush({
       retryAttempts: requiredPreservedRemoteRetryAttempts,
       verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
     };
-    if (!dbJournalAccepted) {
+    if ((summary.retryAttempts || 1) > requiredPreservedRemoteRetryAttempts) {
+      summary.code = 'PRESERVED_REMOTE_RETRY_REQUIRED';
+      setReplayAndRetryBoundary(summary, { durableJournalProven: dbJournalCheckedBoundaryAccepted });
+      return summary;
+    }
+    if (!dbJournalCheckedBoundaryAccepted) {
       summary.code = 'DURABLE_JOURNAL_NOT_PROVEN';
       setDurableJournalBoundary(summary, 'journal-inspect');
       return summary;
@@ -1446,6 +1462,15 @@ export async function runAuthenticatedHttpPush({
     const journalProofFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
       && !dbJournalAccepted;
+    const journalCheckedBoundaryFailed = dbJournal.status === 200
+      && dbJournal.body?.ok === true
+      && !dbJournalCheckedBoundaryAccepted;
+    const journalStrictBoundaryFailed = dbJournal.status === 200
+      && dbJournal.body?.ok === true
+      && !dbJournalStrictBoundaryAccepted;
+    const replayPreservedStateDrift = replayEquivalence.mismatches?.some(
+      (mismatch) => mismatch.field === 'authSessionPreserved',
+    ) === true;
     const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
@@ -1468,8 +1493,21 @@ export async function runAuthenticatedHttpPush({
           || dbJournal.body?.code
           || 'APPLY_FAILED';
     setDurableJournalBoundary(summary, dbJournal.status === 200
-      ? (journalProofFailed ? 'journal-inspect' : (replay.status === 200 ? 'replay' : 'apply'))
+      ? (
+        journalProofFailed
+        || (journalCheckedBoundaryFailed && !replayEquivalenceFailed)
+        || (journalStrictBoundaryFailed && replayPreservedStateDrift)
+          ? 'journal-inspect'
+          : (replay.status === 200 ? 'replay' : 'apply')
+      )
       : 'journal-inspect');
+    return summary;
+  }
+  if (applyRevalidationDrift) {
+    summary.ok = false;
+    summary.code = 'APPLY_REVALIDATION_REQUIRED';
+    summary.applyRevalidation = applyRevalidationDrift;
+    setApplyRevalidationBoundary(summary);
   }
   return summary;
 }
@@ -1902,8 +1940,7 @@ function summarizeAuthSessionLifecycle(auth) {
     ? {
         field: session.status === 'expired'
           ? 'auth.session.status'
-          : normalizeProductionAuthSessionLifecycleField(session?.expiredField)
-            || 'auth.session.expired',
+          : normalizeProductionAuthSessionLifecycleField(session?.expiredField),
       }
     : null;
 
@@ -2090,9 +2127,58 @@ export function dbJournalProofIsAcceptable(dbJournal, options = {}) {
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
     && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard)
-    && dbJournalOwnershipIsTrusted(dbJournal?.ownership)
+    && dbJournalOwnershipIsTrusted(dbJournal?.ownership, { requireCheckedBoundary })
     && (!requireCheckedBoundary || checkedDurableJournalBoundarySatisfied(dbJournal))
     && dbJournalLeaseFenceIsTrusted(dbJournal?.leaseFence, options);
+}
+
+function dbJournalCheckedBoundaryIsAcceptable(dbJournal, options = {}) {
+  return dbJournalProofIsAcceptable(normalizeCheckedBoundaryDbJournal(dbJournal), {
+    ...options,
+    requireCheckedBoundary: true,
+  });
+}
+
+function normalizeCheckedBoundaryDbJournal(dbJournal) {
+  if (!dbJournal || typeof dbJournal !== 'object') {
+    return dbJournal;
+  }
+
+  const activeClaimId = typeof dbJournal?.claim?.activeClaimId === 'string' && dbJournal.claim.activeClaimId.trim().length > 0
+    ? dbJournal.claim.activeClaimId.trim()
+    : null;
+  const activeClaimKeyHash = typeof dbJournal?.claim?.activeClaimKeyHash === 'string' && dbJournal.claim.activeClaimKeyHash.trim().length > 0
+    ? dbJournal.claim.activeClaimKeyHash.trim()
+    : null;
+  const normalizeWriterLease = (writerLease) => {
+    if (!writerLease || typeof writerLease !== 'object') {
+      return writerLease;
+    }
+    const claimId = typeof writerLease.claimId === 'string' && writerLease.claimId.trim().length > 0
+      ? writerLease.claimId.trim()
+      : null;
+    const claimKeyHash = typeof writerLease.claimKeyHash === 'string' && writerLease.claimKeyHash.trim().length > 0
+      ? writerLease.claimKeyHash.trim()
+      : null;
+    if (claimKeyHash || !claimId || !activeClaimId || claimId !== activeClaimId || !activeClaimKeyHash) {
+      return writerLease;
+    }
+    return {
+      ...writerLease,
+      claimKeyHash: activeClaimKeyHash,
+    };
+  };
+
+  return {
+    ...dbJournal,
+    writerLease: normalizeWriterLease(dbJournal.writerLease),
+    leaseFence: dbJournal.leaseFence && typeof dbJournal.leaseFence === 'object'
+      ? {
+        ...dbJournal.leaseFence,
+        writerLease: normalizeWriterLease(dbJournal.leaseFence.writerLease),
+      }
+      : dbJournal.leaseFence,
+  };
 }
 
 function dbJournalScopeIsTrusted(scope) {
@@ -2116,12 +2202,16 @@ function dbJournalStorageGuardIsTrusted(storageGuard) {
     && storageGuard?.outcome === 'applied';
 }
 
-function dbJournalOwnershipIsTrusted(ownership) {
+function dbJournalOwnershipIsTrusted(ownership, options = {}) {
+  const requireCheckedBoundary = options.requireCheckedBoundary === true;
   return ownership?.ownsJournal === true
     && ownership?.restartReadable === true
     && typeof ownership?.productionAdapter === 'string'
     && ownership.productionAdapter.trim().length > 0
-    && ownership?.supportedSurface === checkedDbJournalSupportedSurface;
+    && (
+      ownership?.supportedSurface === checkedDbJournalSupportedSurface
+      || (!requireCheckedBoundary && (ownership?.supportedSurface === null || ownership?.supportedSurface === undefined))
+    );
 }
 
 function dbJournalLeaseFenceIsTrusted(leaseFence, options = {}) {
@@ -2214,7 +2304,7 @@ function summarizeDbJournalOwnership(dbJournal) {
     ownsJournal: ownership.ownsJournal === true,
     restartReadable: ownership.restartReadable === true,
     productionAdapter: ownership.productionAdapter || null,
-    supportedSurface: ownership.supportedSurface || null,
+    ...(ownership.supportedSurface ? { supportedSurface: ownership.supportedSurface } : {}),
   };
 }
 
@@ -2252,7 +2342,7 @@ function summarizeDbJournalWriterLease(writerLease) {
   return {
     strategy: writerLease.strategy || null,
     claimId,
-    claimKeyHash,
+    ...(claimKeyHash ? { claimKeyHash } : {}),
     claimKeyUnique: writerLease.claimKeyUnique === true,
     fsyncEvidence: writerLease.fsyncEvidence === true,
     storageGuard: writerLease.storageGuard || null,
