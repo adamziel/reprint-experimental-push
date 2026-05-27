@@ -3362,6 +3362,53 @@ test('packaged production plugin auth/session request helper accepts an explicit
   }
 });
 
+test('packaged production plugin auth/session request helper preserves auth source metadata for an explicit local runtime candidate', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const request = resolvePackagedProductionPluginAuthSessionRequest({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/local/?session=1#preserved',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+        warning: 'lab-only-warning',
+        playgroundFallback: true,
+        allowedSourceUrl: 'https://example.test/local',
+      }),
+    });
+
+    assert.equal(request.requested, true);
+    assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+    assert.deepEqual(request.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/local',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      warning: 'lab-only-warning',
+      playgroundFallback: true,
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
+});
+
 test('packaged production plugin auth/session request helper synthesizes a packaged source command from an explicit remote runtime candidate', () => {
   const request = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: '',
