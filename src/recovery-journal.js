@@ -73,10 +73,18 @@ function claimScopedConsumedRecord(records, claim) {
     return null;
   }
 
+  const activeClaimRecord = claimScopedActiveClaimRecord(records, claim);
+  const activeClaimPlanId = activeClaimRecord?.planId || null;
+  const activeClaimArtifactRefs = artifactRefsContractMatches(activeClaimRecord?.artifactRefs)
+    ? activeClaimRecord.artifactRefs
+    : null;
+
   return (Array.isArray(records) ? records : []).find(
     (record) => record.type === 'recovery-journal-consumed'
       && record.claimHash === claim.activeClaimHash
-      && record.claimId === claim.activeClaimId,
+      && record.claimId === claim.activeClaimId
+      && record.planId === activeClaimPlanId
+      && artifactRefsEqual(record.artifactRefs, activeClaimArtifactRefs),
   ) || null;
 }
 

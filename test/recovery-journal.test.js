@@ -852,6 +852,96 @@ test('production recovery journal inspection ignores consumed records that omit 
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
 });
 
+test('production recovery journal inspection ignores consumed records that drift artifact refs from the active claim evidence', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumed-artifact-drift-01';
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-artifact-drift',
+    },
+    claimId,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  assert.equal(consumedRecord?.type, 'recovery-journal-consumed');
+  consumedRecord.artifactRefs = {
+    releaseProof: 'artifact://release-proof-consumed-artifact-drifted',
+  };
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  const reopened = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-artifact-drift',
+    },
+    truncate: false,
+    claimId,
+  });
+  const inspection = reopened.inspect();
+  reopened.close();
+
+  assert.equal(inspection.journal.consumed, false);
+  assert.equal(inspection.journal.consumedClaimId, null);
+  assert.equal(inspection.journal.consumedClaimHash, null);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+});
+
+test('production recovery journal inspection ignores consumed records that drift plan identity from the active claim evidence', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-consumed-plan-drift-01';
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-plan-drift',
+    },
+    claimId,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  const consumedRecord = persisted.records.at(-1);
+  assert.equal(consumedRecord?.type, 'recovery-journal-consumed');
+  consumedRecord.planId = `${plan.id}-drifted`;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  const reopened = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-plan-drift',
+    },
+    truncate: false,
+    claimId,
+  });
+  const inspection = reopened.inspect();
+  reopened.close();
+
+  assert.equal(inspection.journal.consumed, false);
+  assert.equal(inspection.journal.consumedClaimId, null);
+  assert.equal(inspection.journal.consumedClaimHash, null);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+});
+
 test('production recovery journal wrapper rejects restart when only a consumed record retains the active claim artifact refs', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
