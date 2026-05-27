@@ -5,6 +5,7 @@ import test from 'node:test';
 import {
   packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
+  packagedProductionPluginMalformedTerminalIndexProbe,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPackagedRouteStartupStillWithinBudget,
@@ -191,6 +192,23 @@ test('packaged preflight terminal context carries index-terminal readiness evide
       timeoutFallback: true,
     },
   );
+
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      {
+        childPid: 654,
+      },
+      {
+        snapshotStartupFallback: true,
+      },
+    ),
+    {
+      childPid: 654,
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      snapshotStartupFallback: true,
+    },
+  );
 });
 
 test('packaged preflight retryability follows the freshest startup probe context', () => {
@@ -327,6 +345,33 @@ test('packaged timeout fallback helper separates WordPress, packaged-route, time
     ),
     {
       kind: 'timed-out-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+});
+
+test('packaged malformed index helper and bounded startup classifier fail closed on invalid 200 index bodies', () => {
+  const invalidIndexProbe = {
+    status: 200,
+    body: '{"routes":[]}',
+  };
+
+  assert.equal(
+    packagedProductionPluginMalformedTerminalIndexProbe(invalidIndexProbe),
+    true,
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      {
+        retryable: true,
+        status: 404,
+        body: 'No route was found matching the URL and request method.',
+      },
+      invalidIndexProbe,
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
       indexTerminal: true,
     },
   );
