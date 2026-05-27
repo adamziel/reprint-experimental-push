@@ -4087,6 +4087,26 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease strategy', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.strategy;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked recovery inspect evidence fails closed when accepted checked summaries preserve mismatched idempotency lineage', { skip: !hasPhp }, () => {
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
@@ -10904,6 +10924,23 @@ test('checked db journal attachment fails closed when authoritative checked summ
 test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease storage guard', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.storageGuard;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease strategy', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.strategy;
 
   const result = runAttachCheckedDbJournalContract(
     {
