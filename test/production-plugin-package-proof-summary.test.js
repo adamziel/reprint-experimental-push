@@ -1766,10 +1766,12 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
         ...scenarioGroups['driver-positive-proof'],
       ]),
       resolvedMode: 'driverPositiveProof',
+      canonicalMode: 'driver-positive-proof',
     },
   );
 
   assert.equal(summary.mode, 'driverPositiveProof');
+  assert.equal(summary.canonicalMode, 'driver-positive-proof');
   assert.equal(summary.driverPositiveProof.status, 'passed');
   assert.deepEqual(summary.requestedBundles, ['driverPositiveProof']);
 });

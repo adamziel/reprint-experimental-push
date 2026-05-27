@@ -197,6 +197,7 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
       throw new Error('Production plugin package smoke scenarios cannot be blank');
     }
     return {
+      canonicalMode: null,
       resolvedMode: null,
       requestedScenarios: null,
       selectedScenarios: null,
@@ -221,6 +222,7 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
   const uniqueRequestedNames = Array.from(new Set(canonicalRequestedNames));
   const expandedNames = uniqueRequestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
   return {
+    canonicalMode: modeScenario,
     resolvedMode: resolvedFromMode ? modeValue : null,
     requestedScenarios: uniqueRequestedNames,
     selectedScenarios: new Set([

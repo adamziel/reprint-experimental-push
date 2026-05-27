@@ -23,7 +23,7 @@ const syncChildTimeoutMs = 120_000;
 const syncChildKillSignal = 'SIGKILL';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
-const { requestedScenarios, selectedScenarios, resolvedMode } = resolveProductionPluginPackageScenarios(
+const { requestedScenarios, selectedScenarios, resolvedMode, canonicalMode } = resolveProductionPluginPackageScenarios(
   process.argv.slice(2),
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO,
   process.env.REPRINT_PUSH_PACKAGE_SMOKE_MODE,
@@ -318,6 +318,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
 
   const summary = {
     mode: resolvedMode,
+    canonicalMode,
     requestedScenarios: requestedScenarios === null ? 'all' : requestedScenarios.slice(),
     selectedScenarios: selectedScenarios === null ? 'all' : Array.from(selectedScenarios).sort(),
     package: {
@@ -1217,6 +1218,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     requestedScenarios,
     selectedScenarios,
     resolvedMode,
+    canonicalMode,
   });
   console.log(JSON.stringify(summary, null, 2));
 } finally {

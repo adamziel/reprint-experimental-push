@@ -192,6 +192,7 @@ test('scenario resolver maps driver-guard-only mode to the bounded receipt guard
   );
 
   assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-guards']);
+  assert.equal(resolved.canonicalMode, 'driver-receipt-guards');
   assert.equal(resolved.resolvedMode, 'driver-guard-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
@@ -210,6 +211,7 @@ test('scenario resolver maps driver-receipt-only mode to the bounded receipt gua
   );
 
   assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-guards']);
+  assert.equal(resolved.canonicalMode, 'driver-receipt-guards');
   assert.equal(resolved.resolvedMode, 'driver-receipt-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
@@ -469,6 +471,7 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
   );
 
   assert.deepEqual(releaseProof.requestedScenarios, ['driver-release-proof']);
+  assert.equal(releaseProof.canonicalMode, 'driver-release-proof');
   assert.equal(releaseProof.resolvedMode, 'driverReleaseProof');
   assert.deepEqual(
     Array.from(releaseProof.selectedScenarios).sort(),
@@ -485,6 +488,7 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
   );
 
   assert.deepEqual(verifierGuards.requestedScenarios, ['driver-verifier-guards']);
+  assert.equal(verifierGuards.canonicalMode, 'driver-verifier-guards');
   assert.equal(verifierGuards.resolvedMode, 'driverVerifierGuards');
   assert.deepEqual(
     Array.from(verifierGuards.selectedScenarios).sort(),
@@ -501,6 +505,7 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
   );
 
   assert.deepEqual(deleteApply.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(deleteApply.canonicalMode, 'driver-delete-apply');
   assert.equal(deleteApply.resolvedMode, 'driverDeleteApplyProof');
   assert.deepEqual(
     Array.from(deleteApply.selectedScenarios).sort(),
@@ -514,6 +519,7 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
   );
 
   assert.deepEqual(routeProof.requestedScenarios, ['core-package-routes']);
+  assert.equal(routeProof.canonicalMode, 'core-package-routes');
   assert.equal(routeProof.resolvedMode, 'driverRouteProof');
   assert.deepEqual(
     Array.from(routeProof.selectedScenarios).sort(),
@@ -529,6 +535,7 @@ test('scenario resolver accepts direct kebab-case route and delete proof modes',
   );
 
   assert.deepEqual(deleteApply.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(deleteApply.canonicalMode, 'driver-delete-apply');
   assert.equal(deleteApply.resolvedMode, 'driver-delete-apply-proof');
   assert.deepEqual(
     Array.from(deleteApply.selectedScenarios).sort(),
@@ -542,6 +549,7 @@ test('scenario resolver accepts direct kebab-case route and delete proof modes',
   );
 
   assert.deepEqual(routeProof.requestedScenarios, ['core-package-routes']);
+  assert.equal(routeProof.canonicalMode, 'core-package-routes');
   assert.equal(routeProof.resolvedMode, 'driver-route-proof');
   assert.deepEqual(
     Array.from(routeProof.selectedScenarios).sort(),

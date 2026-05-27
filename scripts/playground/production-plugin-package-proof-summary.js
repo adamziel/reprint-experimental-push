@@ -348,7 +348,12 @@ function isBundleSelected(selectedScenarios, bundleName) {
 
 export function buildProductionPluginPackageProofSummary(
   summary,
-  { requestedScenarios = null, selectedScenarios = null, resolvedMode = null } = {},
+  {
+    requestedScenarios = null,
+    selectedScenarios = null,
+    resolvedMode = null,
+    canonicalMode = null,
+  } = {},
 ) {
   const normalizedRequestedScenarios = requestedScenarios === null
     ? null
@@ -701,6 +706,7 @@ export function buildProductionPluginPackageProofSummary(
   const proofSummary = {
     kind: 'production-plugin-package-driver-proof',
     mode: resolvedMode,
+    canonicalMode,
     ok: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
     checkedScenarioCount,
     passedScenarioCount,
