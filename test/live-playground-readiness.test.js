@@ -353,6 +353,58 @@ test('packaged preflight retryability follows the freshest startup probe context
   );
 });
 
+test('packaged preflight retryability preserves malformed parsed startup probes but fails closed on malformed ready-looking index bodies', () => {
+  const labAuthRequiredPreflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        status: 503,
+        body: {
+          details: {
+            error: {
+              code: 'wordpress_not_ready',
+              message: 'WordPress is not ready yet',
+            },
+          },
+        },
+        parsedBody: null,
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        status: 200,
+        body: '<!doctype html><html><body>not a REST index</body></html>',
+        parsedBody: null,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        status: 200,
+        body: '<!doctype html><html><body>not a REST index</body></html>',
+        parsedBody: null,
+      },
+    }),
+    true,
+  );
+});
+
 test('packaged timeout fallback helper separates WordPress, packaged-route, timeout, and terminal index branches', () => {
   assert.deepEqual(
     packagedProductionPluginClassifyTimeoutFallbackStartup(
