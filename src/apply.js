@@ -1480,6 +1480,19 @@ function surfaceProductionClaimIdentity(inspected, inspectedClaimState) {
     return { valid: false, claimId: null };
   }
 
+  if (
+    (Object.hasOwn(inspected ?? {}, 'claimHash')
+      && !hasHiddenOwnStringProperty(inspected, 'claimHash')
+      && typeof inspected.claimHash === 'string'
+      && /^[a-f0-9]{64}$/.test(inspected.claimHash))
+    || (Object.hasOwn(inspected ?? {}, 'writerLease')
+      && hasValidProductionLeaseIdentity(inspected.writerLease))
+    || (Object.hasOwn(inspected ?? {}, 'leaseFence')
+      && hasValidProductionLeaseIdentity(inspected.leaseFence))
+  ) {
+    return { valid: false, claimId: null };
+  }
+
   const surfacedClaimIds = [
     hasValidProductionLeaseIdentity(inspectedClaimState?.activeClaimLease)
       ? inspectedClaimState.activeClaimLease.id
