@@ -1970,8 +1970,13 @@ function summarizeDbJournalWriterLease(writerLease) {
     return undefined;
   }
 
+  const claimId = typeof writerLease.claimId === 'string' && writerLease.claimId.trim().length > 0
+    ? writerLease.claimId.trim()
+    : null;
+
   return {
     strategy: writerLease.strategy || null,
+    claimId,
     claimKeyUnique: writerLease.claimKeyUnique === true,
     fsyncEvidence: writerLease.fsyncEvidence === true,
     storageGuard: writerLease.storageGuard || null,

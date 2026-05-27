@@ -4855,6 +4855,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
           },
           writerLease: {
             strategy: 'claim-fenced-single-writer',
+            claimId: 'psh_01j00000000000000000000000',
             claimKeyUnique: true,
             fsyncEvidence: true,
             storageGuard: 'wpdb-single-statement-cas',
@@ -4870,6 +4871,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
             staleClaimRejected: false,
             writerLease: {
               strategy: 'claim-fenced-single-writer',
+              claimId: 'psh_01j00000000000000000000000',
               claimKeyUnique: true,
               fsyncEvidence: true,
               storageGuard: 'wpdb-single-statement-cas',
@@ -4929,6 +4931,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
     });
     assert.deepEqual(summary.dbJournal?.writerLease, {
       strategy: 'claim-fenced-single-writer',
+      claimId: 'psh_01j00000000000000000000000',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -4945,6 +4948,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       staleClaimRejected: false,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
+        claimId: 'psh_01j00000000000000000000000',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
