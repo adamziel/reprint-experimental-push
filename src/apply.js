@@ -41,6 +41,10 @@ const DURABLE_TERMINAL_RECORD_TYPES = new Set([
 const RECOVERY_JOURNAL_RECORD_TYPE_PATTERN = /^[a-z0-9-]+$/;
 const CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN =
   /^(?:packaged production journal scope|packaged production plugin recovery journal surface|checked live production-shaped journal surface; not local Playground fixture only|checked live production-shaped recovery journal surface)$/i;
+const PRODUCTION_RECOVERY_SUPPORTED_SURFACES = new Set([
+  'production-recovery-journal-adapter',
+  'claim-fenced-restart-readable',
+]);
 export const ACCEPTABLE_RECOVERY_STATES = Object.freeze([
   'old-remote',
   'fully-updated-remote',
@@ -779,35 +783,33 @@ export function productionRecoverySupportReport(writer) {
       missingDependency.push(item);
     }
   };
+  const writerSupportedSurface = surfacedProductionRecoverySupportedSurface(writer);
+  const writerHasExplicitProductionAdapter = hasExplicitProductionRecoveryAdapterMarker(writer);
+  const inspectedSupportedSurface = surfacedProductionRecoverySupportedSurface(inspected);
+  const inspectedHasExplicitProductionAdapter = hasExplicitProductionRecoveryAdapterMarker(inspected);
+  const writerHasOwnedFlush = Object.hasOwn(writer ?? {}, 'flush') && typeof writer.flush === 'function';
+  const inspectedHasLeaseFenceFsyncEvidence = inspectedWriterLeaseContractSupportsLeaseFence(inspected)
+    || inspectedLeaseFenceContractSupportsLeaseFence(inspected);
 
   if (!Object.hasOwn(writer ?? {}, 'kind') || writerKindHidden || writer.kind !== 'production-recovery-journal') {
     addMissingDependency('production recovery journal adapter marker');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'productionAdapter')
-    && !writerProductionAdapterHidden
-    && writer.productionAdapter === true
-    && (
-      !Object.hasOwn(writer, 'supportedSurface')
-      || writerSupportedSurfaceHidden
-      || writer.supportedSurface !== 'production-recovery-journal-adapter'
-    )
+    writerHasExplicitProductionAdapter
+    && writerSupportedSurface === null
   ) {
     addMissingDependency('supported production recovery journal adapter surface');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'productionAdapter')
-    && !writerProductionAdapterHidden
-    && writer.productionAdapter === true
-    && !Object.hasOwn(writer ?? {}, 'supportedSurface')
-    && writer?.supportedSurface === 'production-recovery-journal-adapter'
-  ) {
-    addMissingDependency('supported production recovery journal adapter surface');
-  }
-  if (
-    Object.hasOwn(writer ?? {}, 'supportedSurface')
+    writerHasExplicitProductionAdapter
+    && writerSupportedSurface === null
+    && Object.hasOwn(writer ?? {}, 'supportedSurface')
     && !writerSupportedSurfaceHidden
-    && writer.supportedSurface === 'production-recovery-journal-adapter'
+  ) {
+    addMissingDependency('supported production recovery journal adapter surface');
+  }
+  if (
+    writerSupportedSurface !== null
     && (
       !Object.hasOwn(writer, 'restartReadable')
       || writerRestartReadableHidden
@@ -817,17 +819,13 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery journal adapter');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'supportedSurface')
-    && !writerSupportedSurfaceHidden
-    && writer.supportedSurface === 'production-recovery-journal-adapter'
+    writerSupportedSurface !== null
     && !Object.hasOwn(writer ?? {}, 'restartReadable')
   ) {
     addMissingDependency('restart-readable recovery journal adapter');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'productionAdapter')
-    && !writerProductionAdapterHidden
-    && writer.productionAdapter === true
+    writerHasExplicitProductionAdapter
     && (
       !Object.hasOwn(writer, 'journalPath')
       || writerJournalPathHidden
@@ -837,23 +835,19 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery artifact location');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'productionAdapter')
-    && !writerProductionAdapterHidden
-    && writer.productionAdapter === true
+    writerHasExplicitProductionAdapter
     && !Object.hasOwn(writer ?? {}, 'artifactRefs')
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'productionAdapter')
-    && !writerProductionAdapterHidden
-    && writer.productionAdapter === true
+    writerHasExplicitProductionAdapter
     && !Object.hasOwn(writer ?? {}, 'artifactRefs')
     && isStrictPlainObject(writer?.artifactRefs)
   ) {
     addMissingDependency('restart-readable recovery artifact references');
   }
-  if (!Object.hasOwn(writer ?? {}, 'productionAdapter') || writerProductionAdapterHidden || writer.productionAdapter !== true) {
+  if (!writerHasExplicitProductionAdapter || writerProductionAdapterHidden) {
     addMissingDependency('explicit production recovery adapter marker');
   }
   if (!Object.hasOwn(writer ?? {}, 'schemaVersion') || writerSchemaVersionHidden) {
@@ -862,7 +856,7 @@ export function productionRecoverySupportReport(writer) {
   if (!Object.hasOwn(writer ?? {}, 'ownsJournal') || writerOwnsJournalHidden || writer.ownsJournal !== true) {
     addMissingDependency('explicit journal ownership fencing');
   }
-  if (!Object.hasOwn(writer ?? {}, 'flush') || typeof writer.flush !== 'function') {
+  if (!writerHasOwnedFlush && !inspectedHasLeaseFenceFsyncEvidence) {
     addMissingDependency('stable-storage flush or fsync semantics');
   }
   if (!Object.hasOwn(writer ?? {}, 'close') || typeof writer.close !== 'function') {
@@ -898,25 +892,18 @@ export function productionRecoverySupportReport(writer) {
       addMissingDependency('restart-readable recovery artifact location');
     }
     if (
-      Object.hasOwn(writer ?? {}, 'supportedSurface')
-      && !writerSupportedSurfaceHidden
-      && writer.supportedSurface === 'production-recovery-journal-adapter'
+      writerSupportedSurface !== null
       && (
-        !Object.hasOwn(inspected, 'supportedSurface')
-        || hasHiddenOwnStringProperty(inspected, 'supportedSurface')
-        || inspected.supportedSurface !== 'production-recovery-journal-adapter'
+        inspectedSupportedSurface === null
+        || inspectedSupportedSurface !== writerSupportedSurface
       )
     ) {
       addMissingDependency('supported production recovery journal adapter surface');
     }
     if (
-      Object.hasOwn(writer ?? {}, 'productionAdapter')
-      && !writerProductionAdapterHidden
-      && writer.productionAdapter === true
+      writerHasExplicitProductionAdapter
       && (
-        !Object.hasOwn(inspected, 'productionAdapter')
-        || hasHiddenOwnStringProperty(inspected, 'productionAdapter')
-        || inspected.productionAdapter !== true
+        !inspectedHasExplicitProductionAdapter
       )
     ) {
       addMissingDependency('explicit production recovery adapter marker');
@@ -1588,14 +1575,8 @@ function checkedDurableJournalBoundaryProof(
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
   const checkedBoundaryBlockedByMissingDependency = missingDependency.length > 0;
-  const inspectedProductionAdapter = Object.hasOwn(inspected ?? {}, 'productionAdapter')
-    && !hasHiddenOwnStringProperty(inspected, 'productionAdapter')
-    && inspected.productionAdapter === true;
-  const inspectedSupportedSurface = Object.hasOwn(inspected ?? {}, 'supportedSurface')
-    && !hasHiddenOwnStringProperty(inspected, 'supportedSurface')
-    && inspected.supportedSurface === 'production-recovery-journal-adapter'
-      ? inspected.supportedSurface
-      : null;
+  const inspectedProductionAdapter = surfacedProductionRecoveryAdapterMarker(inspected);
+  const inspectedSupportedSurface = surfacedProductionRecoverySupportedSurface(inspected);
   const inspectedOwnsJournal = Object.hasOwn(inspected ?? {}, 'ownsJournal')
     && !hasHiddenOwnStringProperty(inspected, 'ownsJournal')
     && inspected.ownsJournal === true;
@@ -1758,7 +1739,9 @@ function checkedDurableJournalBoundaryProof(
       ownsJournal: inspectedOwnsJournal,
       restartReadable: inspectedRestartReadable,
       productionAdapter: inspectedProductionAdapter
-        ? inspectedBoundary
+        ? (inspectedBoundary ?? (typeof inspectedProductionAdapter === 'string'
+          ? inspectedProductionAdapter
+          : null))
         : null,
       supportedSurface: inspectedSupportedSurface,
     },
@@ -1868,17 +1851,21 @@ function inspectedLeaseFenceContractSupportsLeaseFence(inspected) {
 }
 
 function hasValidLeaseFenceWriterContract(candidate) {
+  const allowedKeys = [
+    'strategy',
+    'claimId',
+    'claimHash',
+    'claimKeyHash',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'storageGuard',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+  ];
   return isStrictPlainObject(candidate)
     && !hasHiddenOwnStringKeys(candidate)
-    && Reflect.ownKeys(candidate).every((key) => [
-      'strategy',
-      'claimKeyUnique',
-      'fsyncEvidence',
-      'storageGuard',
-      'monotonicSequence',
-      'restartReadable',
-      'staleClaimRejected',
-    ].includes(key))
+    && Reflect.ownKeys(candidate).every((key) => allowedKeys.includes(key))
     && [
       'strategy',
       'claimKeyUnique',
@@ -1895,7 +1882,17 @@ function hasValidLeaseFenceWriterContract(candidate) {
     && typeof candidate.fsyncEvidence === 'boolean'
     && typeof candidate.monotonicSequence === 'boolean'
     && typeof candidate.restartReadable === 'boolean'
-    && typeof candidate.staleClaimRejected === 'boolean';
+    && typeof candidate.staleClaimRejected === 'boolean'
+    && (!Object.hasOwn(candidate, 'claimId')
+      || (typeof candidate.claimId === 'string'
+        && candidate.claimId.trim().length > 0
+        && candidate.claimId.trim() === candidate.claimId))
+    && (!Object.hasOwn(candidate, 'claimHash')
+      || (typeof candidate.claimHash === 'string'
+        && /^[a-f0-9]{64}$/.test(candidate.claimHash)))
+    && (!Object.hasOwn(candidate, 'claimKeyHash')
+      || (typeof candidate.claimKeyHash === 'string'
+        && /^[a-f0-9]{64}$/.test(candidate.claimKeyHash)));
 }
 
 function hasValidLeaseFenceEnvelopeContract(candidate) {
@@ -2004,23 +2001,58 @@ function closeUnsupportedProductionRecoveryWriter(writer) {
 }
 
 function shouldCloseOwnedDurableJournal(writer) {
+  const writerSupportedSurface = surfacedProductionRecoverySupportedSurface(writer);
+  const writerHasExplicitProductionAdapter = hasExplicitProductionRecoveryAdapterMarker(writer);
   return Boolean(
     writer
     && Object.hasOwn(writer, 'kind')
     && !hasHiddenOwnStringProperty(writer, 'kind')
     && writer.kind === 'production-recovery-journal'
-    && Object.hasOwn(writer, 'productionAdapter')
-    && !hasHiddenOwnStringProperty(writer, 'productionAdapter')
-    && writer.productionAdapter === true
-    && Object.hasOwn(writer, 'supportedSurface')
-    && !hasHiddenOwnStringProperty(writer, 'supportedSurface')
-    && writer.supportedSurface === 'production-recovery-journal-adapter'
+    && writerHasExplicitProductionAdapter
+    && writerSupportedSurface !== null
     && Object.hasOwn(writer, 'ownsJournal')
     && !hasHiddenOwnStringProperty(writer, 'ownsJournal')
     && writer.ownsJournal === true
     && Object.hasOwn(writer, 'close')
     && typeof writer.close === 'function',
   );
+}
+
+function hasExplicitProductionRecoveryAdapterMarker(container) {
+  return surfacedProductionRecoveryAdapterMarker(container) !== null;
+}
+
+function surfacedProductionRecoveryAdapterMarker(container) {
+  if (
+    !Object.hasOwn(container ?? {}, 'productionAdapter')
+    || hasHiddenOwnStringProperty(container, 'productionAdapter')
+  ) {
+    return null;
+  }
+  if (container.productionAdapter === true) {
+    return true;
+  }
+  if (
+    typeof container.productionAdapter === 'string'
+    && container.productionAdapter.trim().length > 0
+    && container.productionAdapter.trim() === container.productionAdapter
+  ) {
+    return container.productionAdapter;
+  }
+  return null;
+}
+
+function surfacedProductionRecoverySupportedSurface(container) {
+  if (
+    !Object.hasOwn(container ?? {}, 'supportedSurface')
+    || hasHiddenOwnStringProperty(container, 'supportedSurface')
+    || typeof container.supportedSurface !== 'string'
+  ) {
+    return null;
+  }
+  return PRODUCTION_RECOVERY_SUPPORTED_SURFACES.has(container.supportedSurface)
+    ? container.supportedSurface
+    : null;
 }
 
 export function closeOwnedDurableJournal(writer) {

@@ -21068,6 +21068,114 @@ test('production recovery support report accepts a fenced restart-readable journ
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'filesystem-compare-rename');
 });
 
+test('production recovery support report accepts the claim-fenced restart-readable adapter contract', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const claimId = 'claim-fenced-restart-readable';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimId,
+    claimHash,
+    writerLease: { id: claimId, epoch: 7 },
+    leaseFence: { id: claimId, epoch: 7 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    assertCurrentClaim() {
+      return null;
+    },
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        journalPath: filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        productionAdapter: 'filesystem-compare-rename',
+        supportedSurface: 'claim-fenced-restart-readable',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: true,
+        claimId,
+        claimHash,
+        writerLease: { id: claimId, epoch: 7 },
+        leaseFence: { id: claimId, epoch: 7 },
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'filesystem-compare-rename',
+          claimKeyUnique: true,
+          storageGuard: 'filesystem-compare-rename',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimId,
+            claimHash,
+            claimLease: { id: claimId, epoch: 7 },
+            observedHash: digest(baseSite()),
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+            planId: 'plan-compatibility',
+            state: 'opened',
+            observedHash: digest(baseSite()),
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+          },
+        ],
+      };
+    },
+  });
+
+  assert.equal(report.supported, true);
+  assert.deepEqual(report.missingDependency, []);
+  assert.equal(report.inspectedJournalPath, filePath);
+  assert.equal(report.writerJournalPath, filePath);
+  assert.equal(report.inspectionErrorMessage, null);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'filesystem-compare-rename');
+  assert.equal(report.checkedBoundaryProof.ownership.supportedSurface, 'claim-fenced-restart-readable');
+});
+
 test('production recovery support report surfaces a satisfied checked durable-journal boundary when the inspected lease fence matches the packaged production contract', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
@@ -52097,6 +52205,26 @@ test('idempotently skips closing an already closed owned production recovery jou
 
   closeOwnedDurableJournal(writer);
   closeOwnedDurableJournal(writer);
+  assert.equal(closeCalls.length, 1);
+  assert.equal(isDurableJournalClosed(writer), true);
+});
+
+test('idempotently closes an owned production recovery journal writer that uses the claim-fenced restart-readable markers', () => {
+  const closeCalls = [];
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    close() {
+      closeCalls.push('close');
+    },
+  };
+
+  closeOwnedDurableJournal(writer);
+  closeOwnedDurableJournal(writer);
+
   assert.equal(closeCalls.length, 1);
   assert.equal(isDurableJournalClosed(writer), true);
 });
