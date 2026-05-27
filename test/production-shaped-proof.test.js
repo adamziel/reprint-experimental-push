@@ -1660,6 +1660,47 @@ test('auth-session source loader fails closed when the source command returns a 
   });
 });
 
+test('auth-session source loader fails closed when the source command returns non-string required fields', () => {
+  const sourceUrlSource = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:8080, username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(sourceUrlSource, {
+    ok: false,
+    error: 'Auth session source command must return sourceUrl',
+  });
+
+  const usernameSource = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:['reprint_push_admin'], applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(usernameSource, {
+    ok: false,
+    error: 'Auth session source command must return username',
+  });
+
+  const applicationPasswordSource = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin', applicationPassword:{value:'secret-value'}}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+  );
+  assert.deepEqual(applicationPasswordSource, {
+    ok: false,
+    error: 'Auth session source command must return applicationPassword',
+  });
+});
+
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-release-proof.mjs'], {
     cwd: repoRoot,
@@ -1954,6 +1995,87 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
   assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
   assert.match(proof.stdout, /"error": "Auth session source command must return a JSON object"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command returns a non-string sourceUrl', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:8080, username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'non-string-source-url auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'non-string-source-url auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command must return sourceUrl"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command returns a non-string username', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:['reprint_push_admin'], applicationPassword:'secret-value'}))"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'non-string-username auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'non-string-username auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command must return username"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command returns a non-string applicationPassword', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin', applicationPassword:{value:'secret-value'}}))"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'non-string-application-password auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'non-string-application-password auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command must return applicationPassword"/);
   assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
