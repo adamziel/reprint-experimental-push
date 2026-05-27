@@ -19512,6 +19512,85 @@ test('allows an existing term-taxonomy row to reference a same-plan created pare
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], undefined);
 });
 
+test('allows an existing term-taxonomy row to reference a same-plan created parent term while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_terms","term_id:9"]';
+  const sourceResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const matchingEditResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local term taxonomy description',
+    },
+  };
+  local.db.wp_posts['ID:1'].post_title = 'Shared post title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared post title';
+  remote.db.wp_terms = {
+    'term_id:4': JSON.parse(JSON.stringify(base.db.wp_terms['term_id:4'])),
+  };
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, resourceKey);
+  const taxonomyMutation = mutationFor(plan, sourceResourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(
+    plan.graphDependencies.map((dependency) => [dependency.relationshipType, dependency.targetResourceKey]),
+    [['term-taxonomy-parent', resourceKey]],
+  );
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Shared post title');
+  assert.equal(result.site.db.wp_terms['term_id:9'].name, 'Local same-plan parent term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].parent, 9);
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local term-taxonomy parent references to a same-plan created term identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
