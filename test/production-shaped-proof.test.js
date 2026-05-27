@@ -3495,6 +3495,49 @@ test('production auth/session lifecycle trace summary preserves malformed warnin
   );
 });
 
+test('production auth/session lifecycle trace summary preserves cleanup alias metadata', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: true,
+      cleanup: true,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(summary.cleanedUp?.cleanup, true);
+  assert.equal(summary.read?.cleanup, true);
+  assert.equal(summary.observations[1]?.cleanup, true);
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.cleanup',
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary treats recovery inspect as a preserved read', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {

@@ -449,12 +449,12 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
       field: summary.revoked
         ? (
           normalizeAuthSessionObservationField(summary.revoked.unrevokedField)
-          || (summary.revoked.status === 'revoked' ? 'auth.session.status' : 'auth.session.revoked')
+          || resolveProductionAuthSessionUnrevokedField(summary.revoked)
         )
         : summary.cleanedUp
           ? (
             normalizeAuthSessionObservationField(summary.cleanedUp.unrevokedField)
-            || (summary.cleanedUp.status === 'cleaned-up' ? 'auth.session.status' : 'auth.session.cleanedUp')
+            || resolveProductionAuthSessionUnrevokedField(summary.cleanedUp)
           )
           : 'auth.session.cleanup',
       required: 'unrevoked',
@@ -515,6 +515,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       expired: entry.expired === true || entry.status === 'expired',
       revoked: entry.revoked === true || entry.status === 'revoked',
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
+      cleanup: entry.cleanup === true,
       rotated: entry.rotated === true || entry.status === 'rotated',
       preserved: isAuthSessionReadStep(entry.step) && entry.preserved === true,
       ...(entry.playgroundFallback === true ? { playgroundFallback: true } : {}),
@@ -1037,7 +1038,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   if (observation.cleanedUp === true || observation.cleanup === true) {
     return {
       ok: false,
-      field: observation.cleanedUp === true ? 'auth.session.cleanedUp' : 'auth.session.cleanup',
+      field: observation.cleanup === true ? 'auth.session.cleanup' : 'auth.session.cleanedUp',
       required: 'unrevoked',
       observed: 'cleaned-up',
     };
