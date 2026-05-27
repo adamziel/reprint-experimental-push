@@ -12020,6 +12020,33 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   });
 });
 
+test('guarded benchmark blocks release-bundle post-pause planning summaries when queue-headroom measurement is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueHeadroomVisible = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-measurement'));
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-headroom-measurement'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-measurement'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'queue-budget-visible-without-queue-headroom-measurement',
+      'memory-ceiling-visible-without-queue-headroom-measurement',
+      'queue-headroom-visible-without-measurement',
+    ],
+  });
+});
+
 test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling bytes drift under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
