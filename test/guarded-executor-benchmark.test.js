@@ -2597,6 +2597,34 @@ test('guarded benchmark surfaces row-batch-receipts blockers at runtime', () => 
   ]);
 });
 
+test('guarded benchmark surfaces row-receipts blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const rowReceiptsRejectedFastPaths = details.rejectedFastPaths
+    .filter((entry) => entry.id.includes('row-receipts'))
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  assert.deepEqual(rowReceiptsRejectedFastPaths.map(({ id }) => id), [
+    'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
+  ]);
+
+  assert.deepEqual(summarizeRejectedGates(rowReceiptsRejectedFastPaths), [
+    { rejectedGate: 'group', count: 9 },
+    { rejectedGate: 'recovery', count: 3 },
+  ]);
+});
+
 test('guarded benchmark surfaces plugin-install backpressure blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
