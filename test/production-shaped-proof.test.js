@@ -4553,6 +4553,114 @@ test('production auth/session lifecycle summary ignores later recovery-inspect r
   );
 });
 
+test('production auth/session lifecycle summary ignores later recovery-inspect expiry after a release-boundary read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    {
+      step: 'recovery-inspect',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'expired',
+      expiresAt: '2000-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: true,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(summary.expired, null);
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: true,
+      required: 'checked release production-auth-session lifecycle',
+      observed: 'replay',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary ignores later recovery-inspect rotation after a release-boundary read', () => {
+  const summary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+    {
+      step: 'recovery-inspect',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'rotated',
+      expiresAt: '2099-01-01T00:00:00Z',
+      authUser: 'reprint_push_admin',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: true,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(summary.rotated, null);
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: true,
+      required: 'checked release production-auth-session lifecycle',
+      observed: 'replay',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary fails closed when no preflight-issued session exists', () => {
   const summary = summarizeProductionAuthSessionLifecycleTrace([
     {
