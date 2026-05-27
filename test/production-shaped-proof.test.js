@@ -3803,6 +3803,42 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'cleaned-up auth session',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleanup alias auth session',
+      session: {
+        id: 'session_123',
+        status: 'cleaned_up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'expired auth session',
+      session: {
+        id: 'session_123',
+        status: 'expired',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'invalid auth session expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: 'not-a-timestamp',
+      },
+    },
+    {
       label: 'missing auth session expiry',
       session: {
         id: 'session_123',
@@ -7680,6 +7716,42 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         rotated: true,
+      },
+    },
+    {
+      label: 'cleaned-up auth session',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleanup alias auth session',
+      session: {
+        id: 'session_123',
+        status: 'cleaned_up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'expired auth session',
+      session: {
+        id: 'session_123',
+        status: 'expired',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'invalid auth session expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: 'not-a-timestamp',
       },
     },
     {
