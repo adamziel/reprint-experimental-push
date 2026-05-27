@@ -625,17 +625,83 @@ export function resolveProductionPluginPackageModeProofKey(modeValue) {
   };
 }
 
-export function resolveProductionPluginPackageModeProof(summary, modeValue) {
+export function resolveProductionPluginPackageModeProof(summary, modeValue, options = {}) {
   const resolved = resolveProductionPluginPackageModeProofKey(modeValue);
   if (resolved === null) {
     return null;
   }
 
-  return {
+  const proof = summary?.[resolved.proofKey] ?? null;
+  const legacyProof = summary?.[resolved.legacyProofKey] ?? null;
+  const baseModeProof = {
     ...resolved,
-    proof: summary?.[resolved.proofKey] ?? null,
-    legacyProof: summary?.[resolved.legacyProofKey] ?? null,
+    proof,
+    legacyProof,
   };
+
+  const hasModeProofContext = (
+    options?.requestedScenarios !== undefined
+    || options?.selectedScenarios !== undefined
+    || options?.resolvedMode !== undefined
+    || options?.canonicalMode !== undefined
+    || summary?.mode !== undefined
+    || summary?.canonicalMode !== undefined
+    || summary?.requestedScenarios !== undefined
+    || summary?.selectedScenarios !== undefined
+  );
+
+  const attachedModeProof = summary?.modeProof;
+  if (
+    attachedModeProof?.canonicalMode === resolved.canonicalMode
+    && attachedModeProof?.proofKey === resolved.proofKey
+  ) {
+    return {
+      ...baseModeProof,
+      ...attachedModeProof,
+      proof: attachedModeProof?.proof ?? proof,
+      legacyProof: attachedModeProof?.legacyProof ?? legacyProof,
+    };
+  }
+
+  const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
+  if (
+    attachedPluginDriverModeProof?.canonicalMode === resolved.canonicalMode
+    && attachedPluginDriverModeProof?.proofKey === resolved.proofKey
+  ) {
+    return {
+      ...baseModeProof,
+      ...attachedPluginDriverModeProof,
+      proof: attachedPluginDriverModeProof?.proof ?? proof,
+      legacyProof: attachedPluginDriverModeProof?.legacyProof ?? legacyProof,
+    };
+  }
+
+  if (!hasModeProofContext) {
+    return baseModeProof;
+  }
+
+  const modeProofOptions = resolveProductionPluginPackageProofSummaryOptions(summary, {
+    ...options,
+    resolvedMode: options?.resolvedMode ?? resolved.mode,
+    canonicalMode: options?.canonicalMode ?? resolved.canonicalMode,
+  });
+  const pluginDriverProof = summary?.pluginDriverProof === undefined
+    ? resolveProductionPluginPackagePluginDriverProof(summary, modeProofOptions)
+    : buildProductionPluginPackageProofSummary(summary, modeProofOptions);
+  const inferredModeProof = pluginDriverProof?.modeProof;
+  if (
+    inferredModeProof?.canonicalMode === resolved.canonicalMode
+    && inferredModeProof?.proofKey === resolved.proofKey
+  ) {
+    return {
+      ...baseModeProof,
+      ...inferredModeProof,
+      proof: inferredModeProof?.proof ?? proof,
+      legacyProof: inferredModeProof?.legacyProof ?? legacyProof,
+    };
+  }
+
+  return baseModeProof;
 }
 
 export function resolveProductionPluginPackagePluginDriverProof(
