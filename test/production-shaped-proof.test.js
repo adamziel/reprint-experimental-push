@@ -3915,6 +3915,101 @@ test('packaged release verifier readiness helper waits through packaged-route st
   ]);
 });
 
+test('packaged release verifier readiness helper fails closed when packaged-route startup exceeds the post-global-ready budget', async () => {
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const startupPreflightBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    packagedProductionPluginGlobalStartupStillWithinBudget: () => false,
+    buildPackagedTimeoutFallbackProbe: () => {
+      throw new Error('unexpected timeout fallback probe during packaged-route startup limit runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 404,
+            ok: false,
+          },
+          bodyText: startupPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback fetch in packaged-route startup limit runtime proof');
+    },
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9463,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP 200 for 4 consecutive responses \(limit 4\)/,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(sleepCalls.length, 3);
+  assert.deepEqual(
+    sleepCalls.map(({ ms, child: sleptChild }) => ({ ms, child: sleptChild })),
+    [
+      { ms: 1, child },
+      { ms: 1, child },
+      { ms: 1, child },
+    ],
+  );
+  assert.equal(fetchCalls.length, 8);
+});
+
 test('packaged release verifier readiness helper waits through global WordPress startup before the packaged route is ready', async () => {
   const snapshotStartupBody = JSON.stringify({
     code: 'rest_no_route',
