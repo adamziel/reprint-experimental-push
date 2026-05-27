@@ -2984,6 +2984,36 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     verifierSource,
     /packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
+  assert.match(smokeSource, /packagedProductionPluginMalformedTerminalIndexProbe\(indexProbe\)/);
+  assert.match(
+    smokeSource,
+    /returned an invalid readiness body after \$\{snapshotNotReadyProbeCount\} consecutive response[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /returned an invalid readiness body after \$\{preflightNotReadyProbeCount\} consecutive response[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
+    /returned an invalid readiness body after the snapshot probe timed out at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(verifierSource, /packagedProductionPluginMalformedTerminalIndexProbe\(indexProbe\)/);
+  assert.match(
+    verifierSource,
+    /returned an invalid readiness body after \$\{snapshotNotReadyProbeCount\} consecutive response[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /returned an invalid readiness body after \$\{preflightNotReadyProbeCount\} consecutive response[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /returned an invalid readiness body after the snapshot probe timed out at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight probe timed out while \/wp-json\/ returned an invalid readiness body after the snapshot probe timed out at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
   assert.match(smokeSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
   assert.match(verifierSource, /packagedProductionPluginClassifyTimeoutFallbackStartup\(/);
 });
@@ -3338,6 +3368,18 @@ test('packaged smoke readiness helper formats malformed snapshot and preflight b
   assert.match(
     helperSource,
     /Packaged production plugin preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
+  );
+  assert.match(
+    helperSource,
+    /returned an invalid readiness body after \$\{snapshotNotReadyProbeCount\} consecutive response[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    helperSource,
+    /returned an invalid readiness body after \$\{preflightNotReadyProbeCount\} consecutive response[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    helperSource,
+    /returned an invalid readiness body after the snapshot probe timed out at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.doesNotMatch(
     helperSource,

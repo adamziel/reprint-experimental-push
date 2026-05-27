@@ -15,6 +15,7 @@ import {
 import {
   packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
+  packagedProductionPluginMalformedTerminalIndexProbe,
   packagedProductionPluginMaxConsecutiveNotReadyProbes,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginNextTimeoutProbeCount,
@@ -661,14 +662,19 @@ async function waitForServer(child, baseUrl, logs) {
               }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  malformedIndexBody
+                    ? `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                    : `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   logs,
                   {
                     packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                     snapshotNotReadyProbeCount,
                   },
@@ -790,14 +796,19 @@ async function waitForServer(child, baseUrl, logs) {
               }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  malformedIndexBody
+                    ? `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                    : `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   logs,
                   {
                     packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                     snapshotNotReadyProbeCount,
                   },
@@ -911,14 +922,19 @@ async function waitForServer(child, baseUrl, logs) {
               }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  malformedIndexBody
+                    ? `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                    : `Packaged production plugin snapshot stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${snapshotNotReadyProbeCount} consecutive response${snapshotNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   logs,
                   {
                     packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                     snapshotNotReadyProbeCount,
                   },
@@ -1058,14 +1074,19 @@ async function waitForServer(child, baseUrl, logs) {
               }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  malformedIndexBody
+                    ? `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                    : `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                   lastError,
                   lastProbes,
                   logs,
                   {
                     packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                     preflightNotReadyProbeCount,
                   },
@@ -1206,14 +1227,19 @@ async function waitForServer(child, baseUrl, logs) {
             }
           }
           if (startupBranch?.kind === 'retryable-route-index-terminal') {
+            const malformedIndexBody =
+              packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
             throw new Error(
               formatPackagedReadinessFailure(
-                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                malformedIndexBody
+                  ? `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                  : `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 logs,
                 {
                   packagedProductionPlugin: true,
+                  ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                   indexTerminal: true,
                   preflightNotReadyProbeCount,
                 },
@@ -1326,14 +1352,19 @@ async function waitForServer(child, baseUrl, logs) {
               );
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
+                  malformedIndexBody
+                    ? `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after the snapshot probe timed out at ${baseUrl}`
+                    : `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
                   error,
                   lastProbes,
                   logs,
                   {
                     packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                   },
                   lastTimeoutFallbackProbes,
@@ -1419,14 +1450,19 @@ async function waitForServer(child, baseUrl, logs) {
               );
             }
             if (startupBranch?.kind === 'timed-out-route-index-terminal') {
+              const malformedIndexBody =
+                packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
               throw new Error(
                 formatPackagedReadinessFailure(
-                  `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
+                  malformedIndexBody
+                    ? `Packaged production plugin preflight probe timed out while /wp-json/ returned an invalid readiness body after the snapshot probe timed out at ${baseUrl}`
+                    : `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
                   error,
                   lastProbes,
                   logs,
                   {
                     packagedProductionPlugin: true,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                   },
                   lastTimeoutFallbackProbes,
@@ -1582,10 +1618,15 @@ async function fetchPackagedWordPressIndexProbe(baseUrl, child = null) {
       connection: 'close',
     },
   }, readinessProbeFetchTimeoutMs, child);
+  let parsedBody = null;
+  try {
+    parsedBody = JSON.parse(bodyText);
+  } catch {}
   return {
     route: '/wp-json/',
     status: response.status,
     body: bodyText.slice(0, readinessFailureBodyLimit),
+    parsedBody,
   };
 }
 

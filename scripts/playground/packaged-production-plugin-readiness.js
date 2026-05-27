@@ -366,6 +366,15 @@ export function packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedO
     && indexProbe?.timedOut === true;
 }
 
+export function packagedProductionPluginMalformedTerminalIndexProbe(indexProbe) {
+  return indexProbe?.timedOut !== true
+    && indexProbe?.parsedBody === null
+    && !packagedProductionPluginReadinessBodyRetryable(
+      indexProbe?.status,
+      indexProbe?.body || '',
+    );
+}
+
 export function packagedProductionPluginClassifyBoundedStartup(
   routeProbe,
   indexProbe,
