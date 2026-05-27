@@ -16395,18 +16395,24 @@ test('guarded benchmark carries hidden memory-headroom visibility blockers into 
       },
     ],
   );
-  assert.deepEqual(
-    releaseBundleBackpressure?.blockerRefs.filter((blockerRef) =>
-      HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS.includes(blockerRef),
-    ),
-    HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
-  );
-  assert.deepEqual(
-    replay?.blockerRefs.filter((blockerRef) =>
-      HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS.includes(blockerRef),
-    ),
-    HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
-  );
+  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
+    ...POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+  assert.deepEqual(replay?.blockerRefs, [
+    'memory-ceiling-match-visible-without-memory-headroom-visibility',
+    'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+    'queue-pause-without-visible-receipt-cursor-memory-headroom',
+    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
 });
 
 test('guarded benchmark surfaces receipt-flush blockers at runtime', async () => {
