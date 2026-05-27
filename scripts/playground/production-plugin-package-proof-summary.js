@@ -712,6 +712,28 @@ function requestedBundleStatusMapsMatch(left, right) {
   );
 }
 
+function requestedScenarioStatusMapsMatch(left, right) {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  if (left === null || right === null || left === 'all' || right === 'all') {
+    return left === right;
+  }
+  return JSON.stringify(
+    Object.fromEntries(
+      Object.entries(left)
+        .map(([scenarioName, status]) => [normalizeRequestedScenarioName(scenarioName), status])
+        .sort(([leftScenario], [rightScenario]) => leftScenario.localeCompare(rightScenario)),
+    ),
+  ) === JSON.stringify(
+    Object.fromEntries(
+      Object.entries(right)
+        .map(([scenarioName, status]) => [normalizeRequestedScenarioName(scenarioName), status])
+        .sort(([leftScenario], [rightScenario]) => leftScenario.localeCompare(rightScenario)),
+    ),
+  );
+}
+
 function filterRequestedBundleListForModeComparison(requestedValues, allowedValues) {
   if (requestedValues === 'all') {
     return Array.from(allowedValues).sort();
@@ -815,6 +837,57 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   if (
     pluginDriverProof?.requestedBundlesSatisfied !== undefined
     && pluginDriverProof?.requestedBundlesSatisfied !== nestedModeProof?.requestedBundlesSatisfied
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedStatus !== undefined
+    && pluginDriverProof?.requestedStatus !== nestedModeProof?.requestedStatus
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedScenarioStatuses !== undefined
+    && !requestedScenarioStatusMapsMatch(
+      pluginDriverProof?.requestedScenarioStatuses,
+      nestedModeProof?.requestedScenarioStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedConcreteScenarios !== undefined
+    && !requestedScenarioListsMatch(
+      pluginDriverProof?.requestedConcreteScenarios,
+      nestedModeProof?.requestedConcreteScenarios,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedConcreteScenarioStatuses !== undefined
+    && !requestedScenarioStatusMapsMatch(
+      pluginDriverProof?.requestedConcreteScenarioStatuses,
+      nestedModeProof?.requestedConcreteScenarioStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedScenariosSatisfied !== undefined
+    && pluginDriverProof?.requestedScenariosSatisfied !== nestedModeProof?.requestedScenariosSatisfied
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.requestedConcreteScenariosSatisfied !== undefined
+    && pluginDriverProof?.requestedConcreteScenariosSatisfied !== nestedModeProof?.requestedConcreteScenariosSatisfied
   ) {
     return false;
   }
