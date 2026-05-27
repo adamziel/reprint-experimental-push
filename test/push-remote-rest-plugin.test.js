@@ -1852,6 +1852,44 @@ test('checked recovery inspect evidence mirrors the accepted checked contract on
   assert.deepEqual(parsed.leaseFence, acceptedJournal.leaseFence);
 });
 
+test('checked recovery inspect evidence replaces structurally valid top-level recovery wrappers when they diverge from the accepted checked claim identity', { skip: !hasPhp }, () => {
+  const acceptedJournal = buildAcceptedInlineRecoveryJournal();
+  const result = runMirrorCheckedRecoveryContract({
+    journal: acceptedJournal,
+    claim: {
+      ...acceptedJournal.claim,
+      activeClaimId: 'stale-claim-id',
+      activeClaimKeyHash: 'stale-claim-key-hash',
+      previousClaimId: 'stale-previous-claim-id',
+      previousClaimKeyHash: 'stale-previous-claim-key-hash',
+    },
+    writerLease: {
+      ...acceptedJournal.writerLease,
+      claimId: 'stale-claim-id',
+      claimKeyHash: 'stale-claim-key-hash',
+    },
+    leaseFence: {
+      ...acceptedJournal.leaseFence,
+      writerLease: {
+        ...acceptedJournal.leaseFence.writerLease,
+        claimId: 'stale-claim-id',
+        claimKeyHash: 'stale-claim-key-hash',
+      },
+    },
+    ownership: {
+      ...acceptedJournal.ownership,
+      productionAdapter: 'fixture-storage-guard',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.deepEqual(parsed.ownership, acceptedJournal.ownership);
+  assert.deepEqual(parsed.claim, acceptedJournal.claim);
+  assert.deepEqual(parsed.writerLease, acceptedJournal.writerLease);
+  assert.deepEqual(parsed.leaseFence, acceptedJournal.leaseFence);
+});
+
 test('checked recovery inspect evidence fails closed when checked storage-guard evidence omits a coherent claim-scoped checked journal contract', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedDbJournalSummary();
   checkedSummary.latestRows = [

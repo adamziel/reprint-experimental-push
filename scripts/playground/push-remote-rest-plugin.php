@@ -712,12 +712,29 @@ function reprint_push_lab_rest_mirror_checked_recovery_contract(array $recovery)
         $current = isset($recovery[$key]) && is_array($recovery[$key])
             ? $recovery[$key]
             : null;
-        if (!$contract_matcher($current)) {
+        if (
+            !$contract_matcher($current)
+            || reprint_push_lab_rest_checked_recovery_top_level_wrapper_conflicts(
+                $current,
+                $journal[$key]
+            )
+        ) {
             $recovery[$key] = $journal[$key];
         }
     }
 
     return $recovery;
+}
+
+function reprint_push_lab_rest_checked_recovery_top_level_wrapper_conflicts(
+    ?array $current,
+    array $authoritative
+): bool {
+    if (!is_array($current)) {
+        return true;
+    }
+
+    return $current !== $authoritative;
 }
 
 function reprint_push_lab_rest_should_upgrade_checked_recovery_integrity_scope(string $existing_scope): bool
