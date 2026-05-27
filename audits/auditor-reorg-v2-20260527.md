@@ -1,6 +1,6 @@
 # Reorg Auditor V2 - 2026-05-27
 
-Audit time: 2026-05-27 18:32 CEST
+Audit time: 2026-05-27 18:34 CEST
 
 Verdict: `0/4`
 
@@ -11,23 +11,22 @@ No release gate moves without a checked command that uses a real live
 
 | Ref | Head | Current proof |
 | --- | --- | --- |
-| `origin/supervisor/release-boundary-consolidated-20260527` | `6f4c96294` | Consolidated support branch exists, includes the previous auditor topology refresh, and fails closed when the live source is absent. |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `4fe66dc8c` | Consolidated support branch exists, includes the previous auditor auth/durable refresh, and fails closed when the live source is absent. |
 | `origin/lane/auth-session-boundary-v2-20260527` | `19b4a5ad9` | Auth/session source-boundary and readback-drift test hardening; support evidence only. |
 | `origin/lane/durable-journal-boundary-v2-20260527` | `532a659f0` | Durable preserved-retry probe scoping; no live durable proof. |
-| `origin/lane/apply-revalidation-boundary-v2-20260527` | `25829dd1e` | Focused apply-revalidation boundary test hardening plus consolidated branch merge; support evidence only. |
-| `origin/lane/plugin-driver-boundary-v2-20260527` | `d0fe676b8` | Plugin-driver test hardening; support evidence only. |
-| `origin/lane/topology-verifier-v2-20260527` | `7edf24fee` | Topology fail-closed behavior proof; support evidence only. |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `ff23bd33e` | Focused apply-revalidation boundary test hardening plus consolidated branch merge; support evidence only. |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `08e6b1c3d` | Plugin-driver test hardening; support evidence only. |
+| `origin/lane/topology-verifier-v2-20260527` | `e824aaf48` | Topology fail-closed behavior proof plus consolidated topology base merge; support evidence only. |
 | `origin/lane/critic-reorg-v2-20260527` | `90a5c9f66` | Critic review rejects gate movement without live source evidence. |
 
 Local-only refs observed:
 
-- `lane/apply-revalidation-boundary-v2-20260527` at `ff23bd33e`
-- `lane/plugin-driver-boundary-v2-consolidated-20260527` at `ab3e891e4`
+- `lane/plugin-driver-boundary-v2-consolidated-20260527` at `08e6b1c3d`
 
 ## Command Evidence
 
 Run from `/tmp/reprint-reorg-integrator-20260527` on
-`supervisor/release-boundary-consolidated-20260527` at `6f4c96294`:
+`supervisor/release-boundary-consolidated-20260527` at `4fe66dc8c`:
 
 ```bash
 timeout 300s npm run verify:release
