@@ -11551,6 +11551,42 @@ test('checked db journal attachment fails closed on missing accepted inline owne
   });
 });
 
+test('checked db journal attachment fails closed on missing accepted inline ownership production adapter instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.ownership.productionAdapter;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline ownership journal-ownership flag instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.ownership.ownsJournal;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.ownership, {
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+});
+
 test('checked db journal attachment fails closed on missing accepted inline nested writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineDbJournal();
   delete inlineJournal.leaseFence.writerLease.staleClaimRejected;
