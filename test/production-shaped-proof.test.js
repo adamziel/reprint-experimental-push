@@ -1608,15 +1608,40 @@ test('auth-session source command builder fails closed when sourceUrl is not a s
   );
 });
 
-test('packaged production plugin source command resolver fails closed when sourceUrl is not a supported local runtime URL', () => {
-  assert.throws(
-    () => resolvePackagedProductionPluginSourceCommand({
-      sourceUrl: 'https://example.com/push',
-      username: 'reprint_push_admin',
-      applicationPassword: 'reprint-push-admin-app-password',
-    }),
-    /Missing or unsupported sourceUrl/,
-  );
+test('auth-session source command builder accepts a non-local sourceUrl when it matches the explicit live sourceUrl', () => {
+  const sourceUrl = 'https://example.com/push';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSource(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot, {
+    allowedSourceUrl: sourceUrl,
+  });
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('packaged production plugin source command resolver accepts an explicit live sourceUrl', () => {
+  const sourceUrl = 'https://example.com/push';
+  const sourceCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.match(sourceCommand, /^REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 /);
+  assert.match(sourceCommand, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.com\/push'/);
 });
 
 test('auth-session source loader fails closed when the source command times out', () => {
@@ -2272,6 +2297,41 @@ test('packaged production plugin auth/session source helper resolves and loads t
     sourceUrl: 'http://127.0.0.1:8080',
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('packaged production plugin auth/session source helper accepts an explicit live source URL', () => {
+  const explicitLiveSourceUrl = 'https://example.com/push';
+  const packaged = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl: explicitLiveSourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.equal(packaged.source?.ok, true);
+  assert.deepEqual(packaged.source, {
+    ok: true,
+    sourceUrl: explicitLiveSourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('packaged production plugin auth/session request helper marks an explicit live source URL as requested', () => {
+  const explicitLiveSourceUrl = 'https://example.com/push';
+  const request = resolvePackagedProductionPluginAuthSessionRequest({
+    sourceUrl: explicitLiveSourceUrl,
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(request.requested, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+  assert.deepEqual(request.source, {
+    ok: true,
+    sourceUrl: explicitLiveSourceUrl,
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
   });
 });
 

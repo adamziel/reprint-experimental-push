@@ -279,7 +279,7 @@ function isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrl) {
   );
 }
 
-function normalizeExplicitAllowedAuthSessionSourceUrl(value) {
+export function normalizeExplicitAllowedAuthSessionSourceUrl(value) {
   const normalizedValue = normalizeAuthSessionSourceField(value);
   if (!normalizedValue) {
     return '';

@@ -1,16 +1,20 @@
-import { normalizeSupportedAuthSessionSourceUrl } from './auth-session-source.js';
+import {
+  normalizeExplicitAllowedAuthSessionSourceUrl,
+  normalizeSupportedAuthSessionSourceUrl,
+} from './auth-session-source.js';
 
 export function buildAuthSessionSourceCommand({
   nodePath = process.execPath,
   sourceUrl,
   username,
   applicationPassword,
+  allowedSourceUrl = '',
 }) {
   const normalizedNodePath = normalizeAuthSessionSourceCommandField(nodePath);
   if (!normalizedNodePath) {
     throw new Error('Missing nodePath for auth-session source command');
   }
-  const normalizedSourceUrl = normalizeSupportedAuthSessionSourceUrl(sourceUrl);
+  const normalizedSourceUrl = normalizeCommandSourceUrl(sourceUrl, allowedSourceUrl);
   if (!normalizedSourceUrl) {
     throw new Error('Missing or unsupported sourceUrl for auth-session source command');
   }
@@ -53,6 +57,7 @@ export function resolveAuthSessionSourceCommand({
   username,
   applicationPassword,
   authSessionSourceCommand = '',
+  allowedSourceUrl = '',
 }) {
   const normalizedAuthSessionSourceCommand = normalizeAuthSessionSourceCommandField(authSessionSourceCommand);
   if (normalizedAuthSessionSourceCommand) {
@@ -63,5 +68,25 @@ export function resolveAuthSessionSourceCommand({
     sourceUrl,
     username,
     applicationPassword,
+    allowedSourceUrl,
   });
+}
+
+function normalizeCommandSourceUrl(sourceUrl, allowedSourceUrl) {
+  const normalizedSourceUrl = normalizeSupportedAuthSessionSourceUrl(sourceUrl);
+  if (normalizedSourceUrl) {
+    return normalizedSourceUrl;
+  }
+
+  const normalizedExplicitSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(sourceUrl);
+  const normalizedAllowedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(allowedSourceUrl);
+  if (
+    normalizedExplicitSourceUrl
+    && normalizedAllowedSourceUrl
+    && normalizedExplicitSourceUrl === normalizedAllowedSourceUrl
+  ) {
+    return sourceUrl;
+  }
+
+  return '';
 }

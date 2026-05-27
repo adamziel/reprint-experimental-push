@@ -12,6 +12,7 @@ export function resolvePackagedProductionPluginSourceCommand({
     username,
     applicationPassword,
     authSessionSourceCommand,
+    allowedSourceUrl: sourceUrl,
   });
 
   return `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${command}`;
@@ -36,7 +37,9 @@ export function resolvePackagedProductionPluginAuthSessionSource({
 
   return {
     command,
-    source: loadAuthSessionSource(command),
+    source: loadAuthSessionSource(command, process.env, process.cwd(), {
+      allowedSourceUrl: sourceUrl,
+    }),
   };
 }
 
