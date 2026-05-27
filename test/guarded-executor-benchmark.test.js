@@ -12839,6 +12839,7 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
 
   const details = productionThroughputDetails(mutated);
   const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
@@ -12855,6 +12856,17 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
         blockerRefs: entry.blockerRefs,
       })),
     [
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
@@ -12925,7 +12937,7 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
   );
 
   assert.deepEqual(summarizeRejectedGates(releaseBundlePauseRejectedFastPaths), [
-    { rejectedGate: 'group', count: 4 },
+    { rejectedGate: 'group', count: 5 },
     { rejectedGate: 'recovery', count: 2 },
   ]);
 });
