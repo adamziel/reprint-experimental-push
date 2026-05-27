@@ -1,25 +1,20 @@
 # Critic Verdict
 
-Current reliable head: `044b7e0e88ce9caf8efa95f59bee8bf6649204f6`
-(`Prove explicit live journal claim contract`).
+Current reliable head: `3b0df9c2efd16a4f68c907f6843b804dcbd2bbc8`
+(`Harden live release verify startup retries`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is still verifier-boundary hardening. The diff threads explicit
-  live topology URLs through `resolveCheckedLiveBoundaryEnv()` and
-  `resolveLiveApplyRevalidationEnv()`, and the top-level live release verify
-  path now fails closed when the explicit verifier run does not return
-  `ok === true`.
-- It also centralizes the checked journal claim contract across
-  `scripts/playground/push-db-journal-lib.php` and
-  `scripts/playground/push-remote-rest-plugin.php`, which is useful because
-  the release proof can now carry explicit live claim evidence instead of a
-  synthesized local fallback.
-- The retained evidence is still the checked wrapper path: retained
-  `node --check`, focused verifier unit coverage, and the bounded live-wrapper
-  run. That is material support evidence, but it is not yet one
+- This head is still startup and retry hardening in the checked live release
+  verify wrapper. The diff adjusts the bounded startup path in
+  `scripts/playground/production-shaped-live-release-verify.mjs` and the
+  focused proof expectations in `test/production-shaped-proof.test.js`, but it
+  does not change the production boundary itself.
+- The retained evidence is still the checked wrapper path: `node --check`,
+  focused verifier unit coverage, and the bounded live-wrapper retry path.
+  That is material support evidence, but it is not yet one
   production-owned, non-lab-backed checked release command on the real Reprint
   endpoint.
 - The patch does not yet prove live auth/session issuance and readback on the
@@ -27,13 +22,12 @@ Reason:
   ownership, preserved rejected remote evidence on the live boundary, and
   apply-time revalidation before the first mutation on the same production
   boundary.
-- So the verdict remains `0/4`: `044b7e0e` is a narrow but useful explicit
-  live-claim-contract and topology plumbing commit, not a gate-closing release
-  proof.
+- So the verdict remains `0/4`: `3b0df9c2` is useful startup-retry hardening
+  for the checked live verifier, not a gate-closing release proof.
 
 Next owner / command:
 
-- `main:reliable-exec` should use this explicit live path to prove the next
+- `main:reliable-exec` should use the now-hardened live path to prove the next
   exact primitive: one production-owned, non-lab-backed checked release
   command on the real Reprint endpoint, with the same executable command and
   same live `REPRINT_PUSH_SOURCE_URL` visibly minting and rereading a live
