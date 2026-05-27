@@ -123,7 +123,7 @@ function runCheckedReleaseVerify(envOverrides = {}) {
 function runApplyRevalidationProof(envOverrides = {}) {
   let proof = spawnApplyRevalidationProof(envOverrides);
 
-  for (let attempt = 0; attempt < applyRevalidationRetries && applyRevalidationStartupRetryable(proof); attempt += 1) {
+  for (let attempt = 0; attempt < applyRevalidationRetries && applyRevalidationRetryable(proof); attempt += 1) {
     proof = spawnApplyRevalidationProof(envOverrides);
   }
 
@@ -172,7 +172,7 @@ function spawnApplyRevalidationProof(envOverrides = {}) {
   });
 }
 
-function applyRevalidationStartupRetryable(proof) {
+function applyRevalidationRetryable(proof) {
   const combinedOutput = `${proof.stdout ?? ''}\n${proof.stderr ?? ''}`;
   return proof.status !== 0
     && /apply-revalidation:/.test(combinedOutput)
@@ -180,6 +180,10 @@ function applyRevalidationStartupRetryable(proof) {
       /Timed out waiting for Playground server/.test(combinedOutput)
       || /readiness probe error fetch failed/.test(combinedOutput)
       || /WordPress is not ready yet/.test(combinedOutput)
+      || (
+        /apply-revalidation:\s+apply\s+\/apply/.test(combinedOutput)
+        && /TimeoutError: The operation was aborted due to timeout/.test(combinedOutput)
+      )
     );
 }
 
