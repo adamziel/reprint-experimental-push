@@ -85,6 +85,18 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+    blockerRefs: Object.freeze([
+      'production-capability-measurement-not-aligned',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+    blockerRefs: Object.freeze([
+      'production-capability-measurement-not-aligned',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',

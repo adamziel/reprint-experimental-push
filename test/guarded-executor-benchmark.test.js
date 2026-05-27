@@ -1489,7 +1489,9 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
     details.rejectedFastPaths
       .filter((entry) => [
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
@@ -1524,6 +1526,11 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         ],
       },
       {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+        rejectedGate: 'live',
+        blockerRefs: ['production-capability-measurement-not-aligned'],
+      },
+      {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
         rejectedGate: 'group',
         blockerRefs: [
@@ -1531,6 +1538,11 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
           'production-row-batch-executor-not-measured',
           'production-row-batch-executor-measured-not-proven',
         ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+        rejectedGate: 'live',
+        blockerRefs: ['production-capability-measurement-not-aligned'],
       },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
@@ -1662,7 +1674,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
-    16,
+    18,
   );
 });
 
@@ -3161,6 +3173,36 @@ test('guarded benchmark exposes compressed cached dependency-graph plugin-update
   assert.deepEqual(
     fastPath.violates,
     ['remote-index-planning-only', 'compression', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
+  );
+});
+
+test('guarded benchmark exposes compressed cached dependency-graph plugin-update row-precondition shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'live');
+  assert.match(fastPath.proposal, /skip row preconditions in a plugin update/i);
+  assert.match(fastPath.rejectedBecause, /cannot replace the live per-row compares or the atomic-group barrier/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'row-preconditions', 'atomic-groups', 'plugin-preconditions'],
+  );
+});
+
+test('guarded benchmark exposes compressed cached dependency-graph plugin-update batch-sizing shortcuts as rejected', () => {
+  const fastPath = findRejectedFastPathById(
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+  );
+
+  assert.ok(fastPath);
+  assert.equal(fastPath.rejectedGate, 'live');
+  assert.match(fastPath.proposal, /skip bounded plugin-update batch sizing/i);
+  assert.match(fastPath.rejectedBecause, /cannot prove the live row preconditions, batch receipts, or atomic-group boundary survived failure/i);
+  assert.deepEqual(
+    fastPath.violates,
+    ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   );
 });
 
