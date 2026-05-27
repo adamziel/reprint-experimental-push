@@ -17173,6 +17173,10 @@ test('guarded benchmark carries hidden staging-disk visibility blockers into rel
     'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
     'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
   ].includes(entry.id));
+  const releaseBundleBackpressure = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+  );
 
   assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
   assert.deepEqual(
@@ -17241,6 +17245,21 @@ test('guarded benchmark carries hidden staging-disk visibility blockers into rel
       },
     ],
   );
+  assert.deepEqual({
+    id: releaseBundleBackpressure?.id,
+    rejectedGate: releaseBundleBackpressure?.rejectedGate,
+    blockerRefs: releaseBundleBackpressure?.blockerRefs,
+  }, {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'staging-disk-headroom-not-visible',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ],
+  });
   assert.deepEqual(summarizeRejectedGates(releaseBundlePauseRejectedFastPaths), [
     { rejectedGate: 'group', count: 7 },
     { rejectedGate: 'recovery', count: 4 },
