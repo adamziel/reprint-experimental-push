@@ -8471,6 +8471,13 @@ test('plugin-driver proof summary carries combined receipt and registration guar
       driverUpdateValidationGuard: {
         dryRunRejectedCode: 'INVALID_PLAN',
       },
+      driverReceiptBlankRowIdGuard: {
+        blankRejectedCode: 'INVALID_PLAN',
+        whitespaceRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
       driverReceiptPlanBindingGuard: {
         applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
         rowRetainedAfterReject: true,
@@ -8538,12 +8545,13 @@ test('plugin-driver proof summary carries combined receipt and registration guar
   );
 
   assert.equal(summary.modeProof?.guardProof?.ok, true);
-  assert.equal(summary.modeProof?.guardProof?.guardCount, 15);
-  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 15);
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 16);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 16);
   assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 0);
   assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
     deleteGuard: 'passed',
     updateValidationGuard: 'passed',
+    blankRowId: 'passed',
     planBinding: 'passed',
     expiry: 'passed',
     identity: 'passed',
@@ -8562,9 +8570,104 @@ test('plugin-driver proof summary carries combined receipt and registration guar
     status: 'passed',
     observed: true,
   });
+  assert.deepEqual(summary.modeProof?.guardProof?.blankRowId, {
+    status: 'passed',
+    rejectedCode: 'INVALID_PLAN',
+    blankRejectedCode: 'INVALID_PLAN',
+    whitespaceRejectedCode: 'INVALID_PLAN',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
   assert.deepEqual(summary.modeProof?.guardProof?.planBinding, {
     status: 'passed',
     rejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+});
+
+test('plugin-driver proof summary carries blank row id guard proof on release modeProof bundles', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptBlankRowIdGuard: {
+        blankRejectedCode: 'INVALID_PLAN',
+        whitespaceRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-release-proof',
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+      resolvedMode: 'driverMutationProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.equal(summary.modeProof?.proof.blankRowId, 'INVALID_PLAN');
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 8);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 8);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'passed',
+    blankRowId: 'passed',
+    planBinding: 'passed',
+    expiry: 'passed',
+    identity: 'passed',
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.blankRowId, {
+    status: 'passed',
+    rejectedCode: 'INVALID_PLAN',
+    blankRejectedCode: 'INVALID_PLAN',
+    whitespaceRejectedCode: 'INVALID_PLAN',
     rowRetainedAfterReject: true,
     payloadModeAfterReject: 'local-update',
     updatedMarkerAfterReject: 'local-update',
