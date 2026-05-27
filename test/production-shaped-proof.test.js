@@ -8593,6 +8593,149 @@ test('production auth/session lifecycle summary fails closed when top-level summ
   );
 });
 
+test('checked release auth/session lifecycle summary fails closed when top-level revoked and expired summary markers point to a different session id', () => {
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      revoked: {
+        step: 'journal',
+        id: 'session-02',
+        type: 'production-auth-session',
+        status: 'revoked',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.session.rotated',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      expired: {
+        step: 'replay',
+        id: 'session-02',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.session.rotated',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when top-level cleaned-up and rotated summary markers point to a different session id', () => {
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      cleanedUp: {
+        step: 'cleanup',
+        id: 'session-02',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.session.rotated',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      rotated: {
+        step: 'journal',
+        id: 'session-02',
+        type: 'production-auth-session',
+        status: 'rotated',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when top-level marker objects omit the matching lifecycle flag', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({
