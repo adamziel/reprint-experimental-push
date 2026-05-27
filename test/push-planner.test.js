@@ -1155,6 +1155,155 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
 });
 
+test('plans a safe same-plan taxonomy closure for a category term, relationship, and termmeta', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:21"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:31"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:31"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:41"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  base.db.wp_termmeta = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_terms['term_id:21'] = {
+    term_id: 21,
+    name: 'local-private-category-name',
+    slug: 'local-private-category',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:31'] = {
+    term_taxonomy_id: 31,
+    term_id: 21,
+    taxonomy: 'category',
+    parent: 0,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:1|term_taxonomy_id:31'] = {
+    object_id: 1,
+    term_taxonomy_id: 31,
+    term_order: 0,
+  };
+  local.db.wp_termmeta['meta_id:41'] = {
+    meta_id: 41,
+    term_id: 21,
+    meta_key: '_local_term_private_flag',
+    meta_value: 'local-private-termmeta-payload',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, termResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, termResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, taxonomyResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, taxonomyResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, relationshipResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, relationshipResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, termmetaResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, termmetaResourceKey).changeKind, 'create');
+  assert.equal(result.site.db.wp_term_relationships['object_id:1|term_taxonomy_id:31'].term_taxonomy_id, 31);
+  assert.equal(result.site.db.wp_termmeta['meta_id:41'].term_id, 21);
+});
+
+test('blocks a taxonomy relationship when its same-plan term_taxonomy target is itself blocked', () => {
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:31"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:31"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:22': {
+      term_id: 22,
+      name: 'base-private-parent-term',
+      slug: 'base-private-parent',
+    },
+  };
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_terms['term_id:21'] = {
+    term_id: 21,
+    name: 'local-private-child-term',
+    slug: 'local-private-child',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:31'] = {
+    term_taxonomy_id: 31,
+    term_id: 21,
+    taxonomy: 'category',
+    parent: 22,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:1|term_taxonomy_id:31'] = {
+    object_id: 1,
+    term_taxonomy_id: 31,
+    term_order: 0,
+  };
+  remote.db.wp_terms['term_id:22'] = {
+    term_id: 22,
+    name: 'remote-private-parent-term',
+    slug: 'remote-private-parent',
+  };
+
+  const plan = planFor(base, local, remote);
+  const taxonomyBlocker = plan.blockers.find((blocker) => blocker.resourceKey === taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((blocker) => blocker.resourceKey === relationshipResourceKey);
+  const relationshipJson = JSON.stringify(relationshipBlocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.references[0].relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, taxonomyResourceKey);
+  assert.equal(relationshipBlocker.references[0].targetSupport.supported, false);
+  assert.equal(relationshipJson.includes('remote-private-parent-term'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('keeps nav_menu taxonomy graph surfaces blocked', () => {
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:33"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:33"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_terms['term_id:23'] = {
+    term_id: 23,
+    name: 'local-private-menu-term',
+    slug: 'local-private-menu',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:33'] = {
+    term_taxonomy_id: 33,
+    term_id: 23,
+    taxonomy: 'nav_menu',
+    parent: 0,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:1|term_taxonomy_id:33'] = {
+    object_id: 1,
+    term_taxonomy_id: 33,
+    term_order: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const taxonomyBlocker = plan.blockers.find((blocker) => blocker.resourceKey === taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((blocker) => blocker.resourceKey === relationshipResourceKey);
+  const blockerJson = JSON.stringify({ taxonomyBlocker, relationshipBlocker });
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(taxonomyBlocker.reason, /unsupported taxonomy graph surface nav_menu/);
+  assert.equal(relationshipBlocker.references[0].targetSupport.supported, false);
+  assert.equal(blockerJson.includes('local-private-menu-term'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
