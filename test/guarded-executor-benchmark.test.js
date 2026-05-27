@@ -322,6 +322,15 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       ],
     },
     {
+      id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
       id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
       rejectedGate: 'recovery',
       blockerRefs: [
@@ -338,6 +347,15 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
         'production-atomic-group-commit-not-measured',
         'production-row-batch-executor-not-measured',
         'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
       ],
     },
     {
@@ -428,7 +446,7 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.deepEqual(
     report.claims.productionThroughputDetails.rejectedFastPathGateSummary,
     [
-      { rejectedGate: 'group', count: 7 },
+      { rejectedGate: 'group', count: 9 },
       { rejectedGate: 'live', count: 1 },
       { rejectedGate: 'recovery', count: 6 },
       { rejectedGate: 'skip', count: 2 },
@@ -9995,6 +10013,8 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
         'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
         'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
       ].includes(entry.id))
       .map((entry) => ({
         id: entry.id,
@@ -10050,6 +10070,24 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-storage-receipts-not-measured',
@@ -10121,6 +10159,8 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
         'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
       ].includes(entry.id))
       .map((entry) => ({
         id: entry.id,
@@ -10153,6 +10193,28 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
         blockerRefs: [
           'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
           'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
