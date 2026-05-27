@@ -941,6 +941,9 @@ test('plugin-driver proof summary reports requested callback bundle verdicts dir
     failedScenarios: [],
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverCallbackGuards: 'passed',
+    },
   });
 });
 
@@ -1054,6 +1057,9 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     failedScenarios: [],
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverReleaseProof: 'passed',
+    },
   });
   assert.deepEqual(summary.routeProof, {
     requested: true,
@@ -1235,6 +1241,9 @@ test('plugin-driver proof summary reports requested verifier bundle verdicts dir
     failedScenarios: [],
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverVerifierGuards: 'passed',
+    },
   });
 });
 
@@ -1307,6 +1316,9 @@ test('plugin-driver proof summary reports requested registration-shape bundle ve
     failedScenarios: [],
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverRegistrationShapeGuards: 'passed',
+    },
   });
 });
 
@@ -1699,6 +1711,7 @@ test('plugin-driver proof summary exposes failing requested concrete scenarios w
     failedScenarios: [],
     requestedStatus: null,
     requestedBundleStatus: null,
+    requestedBundleStatuses: null,
   });
 });
 
@@ -2073,6 +2086,9 @@ test('plugin-driver proof summary exposes failed requested bundles directly', ()
     failedScenarios: [],
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverRegistrationGuards: 'passed',
+    },
   });
 });
 
@@ -2209,6 +2225,7 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
     failedScenarios: [],
     requestedStatus: null,
     requestedBundleStatus: null,
+    requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.registrationGuards, {
     requested: false,
@@ -2248,6 +2265,7 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
     failedScenarios: [],
     requestedStatus: null,
     requestedBundleStatus: null,
+    requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.callbackGuards, {
     requested: false,
@@ -2272,6 +2290,7 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
     failedScenarios: [],
     requestedStatus: null,
     requestedBundleStatus: null,
+    requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.registrationShapeGuards, {
     requested: false,
@@ -2302,6 +2321,7 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
     failedScenarios: [],
     requestedStatus: null,
     requestedBundleStatus: null,
+    requestedBundleStatuses: null,
   });
 });
 
@@ -2401,6 +2421,9 @@ test('plugin-driver proof summary exposes missing requested release bundle state
     failedScenarios: ['driver-delete-apply'],
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
+    requestedBundleStatuses: {
+      driverReleaseProof: 'missing',
+    },
   });
   assert.deepEqual(summary.positiveProof, {
     requested: false,
@@ -2565,6 +2588,9 @@ test('plugin-driver proof summary marks incomplete requested verifier bundle as 
     ],
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
+    requestedBundleStatuses: {
+      driverVerifierGuards: 'missing',
+    },
   });
   assert.deepEqual(summary.receiptGuards, {
     requested: true,

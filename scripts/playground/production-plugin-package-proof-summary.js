@@ -240,6 +240,9 @@ function buildRequestedBundleStatusesForScenario(
   if (requestedScenarioAliases === 'all') {
     return 'all';
   }
+  if (!Array.isArray(requestedScenarioAliases) || requestedScenarioAliases.length === 0) {
+    return null;
+  }
   const bundleStatuses = Object.fromEntries(
     requestedScenarioAliases
       .filter(
@@ -729,6 +732,10 @@ export function buildProductionPluginPackageProofSummary(
       ),
       requestedStatus: requestedScenarioStatuses['driver-release-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverReleaseProof ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-release-proof'),
+        requestedBundleStatuses,
+      ),
     },
     verifierGuards: {
       requested: normalizedRequestedScenarios === null
@@ -767,6 +774,10 @@ export function buildProductionPluginPackageProofSummary(
       ),
       requestedStatus: requestedScenarioStatuses['driver-verifier-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverVerifierGuards ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-verifier-guards'),
+        requestedBundleStatuses,
+      ),
     },
     registrationGuards: {
       requested: normalizedRequestedScenarios === null
@@ -799,6 +810,10 @@ export function buildProductionPluginPackageProofSummary(
       ),
       requestedStatus: requestedScenarioStatuses['driver-registration-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationGuards ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-registration-guards'),
+        requestedBundleStatuses,
+      ),
     },
     callbackGuards: {
       requested: normalizedRequestedScenarios === null
@@ -821,6 +836,10 @@ export function buildProductionPluginPackageProofSummary(
       ),
       requestedStatus: requestedScenarioStatuses['driver-callback-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverCallbackGuards ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-callback-guards'),
+        requestedBundleStatuses,
+      ),
     },
     registrationShapeGuards: {
       requested: normalizedRequestedScenarios === null
@@ -847,6 +866,10 @@ export function buildProductionPluginPackageProofSummary(
       ),
       requestedStatus: requestedScenarioStatuses['driver-registration-shape-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationShapeGuards ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-registration-shape-guards'),
+        requestedBundleStatuses,
+      ),
     },
     bundles: bundleResults,
     scenarios: scenarioResults,
