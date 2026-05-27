@@ -85,8 +85,24 @@ function normalizeCommandSourceUrl(sourceUrl, allowedSourceUrl) {
     && normalizedAllowedSourceUrl
     && normalizedExplicitSourceUrl === normalizedAllowedSourceUrl
   ) {
-    return sourceUrl;
+    return sanitizeExplicitCommandSourceUrl(sourceUrl);
   }
 
   return '';
+}
+
+function sanitizeExplicitCommandSourceUrl(value) {
+  const normalizedValue = normalizeAuthSessionSourceCommandField(value);
+  if (!normalizedValue) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(normalizedValue);
+    parsed.hash = '';
+    parsed.search = '';
+    return parsed.toString().replace(/\/$/, parsed.pathname === '/' ? '/' : '');
+  } catch {
+    return '';
+  }
 }

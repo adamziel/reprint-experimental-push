@@ -1635,6 +1635,30 @@ test('auth-session source command builder accepts a non-local sourceUrl when it 
   });
 });
 
+test('auth-session source command builder strips query and hash from matching explicit live sourceUrl', () => {
+  const sourceUrl = 'https://example.com/push?token=secret#hash';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSource(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+  }, repoRoot, {
+    allowedSourceUrl: sourceUrl,
+  });
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl: 'https://example.com/push',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
 test('explicit allowed auth/session source URL resolver normalizes the first supported explicit source', () => {
   assert.equal(
     resolveExplicitAllowedAuthSessionSourceUrl(
@@ -1689,6 +1713,18 @@ test('packaged production plugin source command resolver accepts an explicit liv
 
   assert.match(sourceCommand, /^REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 /);
   assert.match(sourceCommand, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.com\/push'/);
+});
+
+test('packaged production plugin source command resolver strips query and hash from explicit live sourceUrl', () => {
+  const sourceCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'https://example.com/push?token=secret#hash',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.match(sourceCommand, /^REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 /);
+  assert.match(sourceCommand, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.com\/push'/);
+  assert.doesNotMatch(sourceCommand, /token=secret|#hash/);
 });
 
 test('auth-session source loader fails closed when the source command times out', () => {
