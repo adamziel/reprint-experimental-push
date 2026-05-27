@@ -1264,7 +1264,7 @@ test('production-shaped release verify sync timeout stays on the live budget wit
   );
 });
 
-test('auth-session source command builder emits a shell-safe node snippet', () => {
+test('auth-session source command builder emits a shell-safe cli command', () => {
   const command = buildAuthSessionSourceCommand({
     nodePath: '/opt/node/bin/node',
     sourceUrl: "http://127.0.0.1:8080/path?label=owner's",
@@ -1272,10 +1272,11 @@ test('auth-session source command builder emits a shell-safe node snippet', () =
     applicationPassword: "p@ss'word",
   });
 
-  assert.equal(
-    command,
-    `/opt/node/bin/node -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080/path?label=owner'\\''s', username:'reprint_push_owner'\\''oops', applicationPassword:'p@ss'\\''word'}))"`,
-  );
+  assert.match(command, /^'\/opt\/node\/bin\/node' /);
+  assert.match(command, /auth-session-source-command\.js'/);
+  assert.match(command, /'--source-url=http:\/\/127\.0\.0\.1:8080\/path\?label=owner'\\''s'/);
+  assert.match(command, /'--username=reprint_push_owner'\\''oops'/);
+  assert.match(command, /'--application-password=p@ss'\\''word'$/);
 });
 
 test('production-shaped release proof emits the exact gate output when no live source is supplied', () => {

@@ -1,4 +1,7 @@
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const authSessionSourceCommandScriptPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'auth-session-source-command.js');
 
 export function buildAuthSessionSourceCommand({
   nodePath = process.execPath,
@@ -16,11 +19,17 @@ export function buildAuthSessionSourceCommand({
     throw new Error('Missing applicationPassword for auth-session source command');
   }
 
-  return `${nodePath} -e "process.stdout.write(JSON.stringify({sourceUrl:'${escapeShellSingleQuotedString(sourceUrl)}', username:'${escapeShellSingleQuotedString(username)}', applicationPassword:'${escapeShellSingleQuotedString(applicationPassword)}'}))"`;
+  return [
+    shellQuote(nodePath),
+    shellQuote(authSessionSourceCommandScriptPath),
+    shellQuote(`--source-url=${sourceUrl}`),
+    shellQuote(`--username=${username}`),
+    shellQuote(`--application-password=${applicationPassword}`),
+  ].join(' ');
 }
 
-function escapeShellSingleQuotedString(value) {
-  return String(value).replace(/'/g, `'\\''`);
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
 export function resolveAuthSessionSourceCommand({
