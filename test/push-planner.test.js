@@ -28048,6 +28048,73 @@ test('blocks a local attachment parent reference when the same-plan attachment t
   );
 });
 
+test('blocks a local attachment parent reference when the same-plan attachment target is itself blocked by a revision parent even when unrelated remote wp_navigation noise exists', () => {
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const childAttachmentResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local blocked attachment target',
+    post_content: 'local-private-blocked-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local child attachment',
+    post_content: 'local-private-child-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 3,
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote wp_navigation noise',
+    post_content: 'remote-wp-navigation-noise-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetAttachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetAttachmentResourceKey);
+  const childAttachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === childAttachmentResourceKey);
+  const childAttachmentMutation = mutationFor(plan, childAttachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(mutationFor(plan, targetAttachmentResourceKey).changeKind, 'create');
+  assert.equal(childAttachmentMutation.changeKind, 'create');
+  assert.equal(targetAttachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(targetAttachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(targetAttachmentBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(childAttachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(childAttachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(childAttachmentBlocker.references[0].targetResourceKey, targetAttachmentResourceKey);
+  assert.equal(childAttachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(childAttachmentBlocker).includes('local-private-blocked-attachment-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(childAttachmentBlocker).includes('local-private-child-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(plan).includes('remote-wp-navigation-noise-body'),
+    false,
+  );
+});
+
 test('blocks a local attachment parent reference when the same-plan attachment target is itself blocked by a wp_navigation parent', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:2"]';
   const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
