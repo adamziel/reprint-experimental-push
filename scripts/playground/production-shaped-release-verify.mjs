@@ -3305,7 +3305,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         snapshotTimeoutProbeCount = 0;
         lastSnapshotTimeoutContext = null;
         timeoutProbeCount = 0;
-        const snapshotPreview = snapshotBody.slice(0, 500);
+        const snapshotPreview = snapshotBody.slice(0, readinessFailureBodyLimit);
         lastProbes.push({
           route: '/wp-json/reprint-push-lab/v1/snapshot',
           status: snapshot.status,
@@ -3449,7 +3449,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           timeoutProbeCount = 0;
           snapshotTimeoutProbeCount = 0;
           lastSnapshotTimeoutContext = null;
-          const snapshotPreview = snapshotBody.slice(0, 500);
+          const snapshotPreview = snapshotBody.slice(0, readinessFailureBodyLimit);
           lastProbes.push({
             route: '/wp-json/reprint-push-lab/v1/snapshot',
             status: snapshot.status,

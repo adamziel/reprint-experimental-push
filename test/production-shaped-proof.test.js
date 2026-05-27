@@ -7459,7 +7459,8 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   assert.match(sharedWaitSource, /let timeoutProbeCount = 0;/);
   assert.match(sharedWaitSource, /let snapshotNotReadyProbeCount = 0;/);
   assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const responsePreview = responseBody\.slice/);
-  assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const snapshotPreview = snapshotBody\.slice/);
+  assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const responsePreview = responseBody\.slice\(0, readinessFailureBodyLimit\);/);
+  assert.match(sharedWaitSource, /timeoutProbeCount = 0;\s*const snapshotPreview = snapshotBody\.slice\(0, readinessFailureBodyLimit\);/);
   assert.match(sharedWaitSource, /timeoutProbeCount = labNextTimeoutProbeCount\(timeoutProbeCount, error\);/);
   assert.match(
     verifierSource,
