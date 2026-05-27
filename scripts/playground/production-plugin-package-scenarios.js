@@ -191,7 +191,7 @@ const modeAliasesByCanonicalMode = Object.freeze(
     }, {}),
 );
 
-function canonicalizeScenarioName(name) {
+export function canonicalizeScenarioName(name) {
   return scenarioNameAliases.get(name) ?? name;
 }
 

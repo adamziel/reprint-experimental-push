@@ -1,4 +1,5 @@
 import {
+  canonicalizeScenarioName,
   modeAliasesByCanonicalMode,
   resolveProductionPluginPackageScenarios,
   scenarioGroups,
@@ -1007,15 +1008,18 @@ export function buildProductionPluginPackageProofSummary(
   const normalizedRequestedScenarios = requestedScenarios === null
     ? null
     : Array.from(new Set(requestedScenarios));
-  const requestedBundleAliases = normalizedRequestedScenarios === null
+  const canonicalRequestedScenarios = normalizedRequestedScenarios === null
+    ? null
+    : Array.from(new Set(normalizedRequestedScenarios.map(canonicalizeScenarioName)));
+  const requestedBundleAliases = canonicalRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios.filter((scenario) => isBundleAliasScenario(scenario));
-  const requestedBundles = normalizedRequestedScenarios === null
+    : canonicalRequestedScenarios.filter((scenario) => isBundleAliasScenario(scenario));
+  const requestedBundles = canonicalRequestedScenarios === null
     ? 'all'
-    : requestedBundleAliases.map((bundleName) => toBundleKey(bundleName));
-  const requestedConcreteScenarios = normalizedRequestedScenarios === null
+    : Array.from(new Set(requestedBundleAliases.map((bundleName) => toBundleKey(bundleName))));
+  const requestedConcreteScenarios = canonicalRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios.filter((scenario) => !isBundleAliasScenario(scenario));
+    : canonicalRequestedScenarios.filter((scenario) => !isBundleAliasScenario(scenario));
   const requestedConcreteScenarioSet = requestedConcreteScenarios === 'all'
     ? null
     : new Set(requestedConcreteScenarios);
@@ -1058,7 +1062,7 @@ export function buildProductionPluginPackageProofSummary(
   for (const definition of scenarioDefinitions) {
     requestedScenarioAliasMap.set(
       definition.scenario,
-      requestedScenarioAliases(normalizedRequestedScenarios, definition.scenario),
+      requestedScenarioAliases(canonicalRequestedScenarios, definition.scenario),
     );
     const selected = isScenarioSelected(selectedScenarios, definition.scenario);
     const countScenario = definition.counted !== 'explicit-only'
@@ -1093,9 +1097,9 @@ export function buildProductionPluginPackageProofSummary(
   }
 
   for (const [bundleName, bundleScenarios] of Object.entries(bundleSummaryGroups)) {
-    const selected = normalizedRequestedScenarios === null
+    const selected = canonicalRequestedScenarios === null
       ? selectedScenarios === null || bundleScenarios.some((scenario) => isScenarioSelected(selectedScenarios, scenario))
-      : normalizedRequestedScenarios.includes(bundleName);
+      : canonicalRequestedScenarios.includes(bundleName);
     const bundleCoverageSatisfied = selectedScenarios === null
       || bundleScenarios.every((scenario) => isScenarioSelected(selectedScenarios, scenario));
     const passed = bundleCoverageSatisfied
@@ -1213,7 +1217,7 @@ export function buildProductionPluginPackageProofSummary(
   const concreteBundleRequests = Object.fromEntries(
     Object.keys(bundleSummaryGroups).map((bundleName) => [
       bundleName,
-      hasFullConcreteBundleRequest(normalizedRequestedScenarios, bundleName),
+      hasFullConcreteBundleRequest(canonicalRequestedScenarios, bundleName),
     ]),
   );
   function buildConcreteRequestedBundleStatus(bundleName) {
@@ -1234,7 +1238,7 @@ export function buildProductionPluginPackageProofSummary(
   }
   function buildConcreteRequestedBundleStatuses(bundleName) {
     const aliasStatuses = buildRequestedBundleStatusesForScenario(
-      requestedScenarioAliases(normalizedRequestedScenarios, bundleName),
+      requestedScenarioAliases(canonicalRequestedScenarios, bundleName),
       requestedBundleStatuses,
     );
     if (aliasStatuses !== null) {
@@ -1249,11 +1253,11 @@ export function buildProductionPluginPackageProofSummary(
     };
   }
   function buildObjectBundleSelected(bundleName) {
-    if (normalizedRequestedScenarios === null) {
+    if (canonicalRequestedScenarios === null) {
       return isBundleSelected(selectedScenarios, bundleName);
     }
     if (
-      normalizedRequestedScenarios.includes(bundleName)
+      canonicalRequestedScenarios.includes(bundleName)
       || concreteBundleRequests[bundleName]
     ) {
       return isBundleSelected(selectedScenarios, bundleName);
@@ -1289,7 +1293,7 @@ export function buildProductionPluginPackageProofSummary(
   const positiveProof = {
     requested: normalizedRequestedScenarios === null
       ? true
-      : normalizedRequestedScenarios.includes('driver-positive-proof')
+      : canonicalRequestedScenarios.includes('driver-positive-proof')
         || concreteBundleRequests['driver-positive-proof'],
     selected: buildObjectBundleSelected('driver-positive-proof'),
     ok: buildObjectBundleStatus('driver-positive-proof') === 'passed',
@@ -1319,7 +1323,7 @@ export function buildProductionPluginPackageProofSummary(
   const releaseProof = {
     requested: normalizedRequestedScenarios === null
       ? true
-      : normalizedRequestedScenarios.includes('driver-release-proof')
+      : canonicalRequestedScenarios.includes('driver-release-proof')
         || concreteBundleRequests['driver-release-proof'],
     selected: buildObjectBundleSelected('driver-release-proof'),
     ok: buildObjectBundleStatus('driver-release-proof') === 'passed',
@@ -1376,7 +1380,7 @@ export function buildProductionPluginPackageProofSummary(
     skippedBundleCount,
     requestedScenarioCount: normalizedRequestedScenarios === null
       ? 'all'
-      : normalizedRequestedScenarios.length,
+      : canonicalRequestedScenarios.length,
     passedRequestedScenarioCount: normalizedRequestedScenarios === null
       ? 'all'
       : passedRequestedScenarios.length,
@@ -1561,7 +1565,7 @@ export function buildProductionPluginPackageProofSummary(
     driverProof: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-proof')
+        : canonicalRequestedScenarios.includes('driver-proof')
           || concreteBundleRequests['driver-proof'],
       selected: buildObjectBundleSelected('driver-proof'),
       ok: buildObjectBundleStatus('driver-proof') === 'passed',
@@ -1594,7 +1598,7 @@ export function buildProductionPluginPackageProofSummary(
     verifierGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-verifier-guards')
+        : canonicalRequestedScenarios.includes('driver-verifier-guards')
           || concreteBundleRequests['driver-verifier-guards'],
       selected: buildObjectBundleSelected('driver-verifier-guards'),
       ok: buildObjectBundleStatus('driver-verifier-guards') === 'passed',
@@ -1634,7 +1638,7 @@ export function buildProductionPluginPackageProofSummary(
     receiptRegistrationGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-receipt-registration-guards')
+        : canonicalRequestedScenarios.includes('driver-receipt-registration-guards')
           || concreteBundleRequests['driver-receipt-registration-guards'],
       selected: buildObjectBundleSelected('driver-receipt-registration-guards'),
       ok: buildObjectBundleStatus('driver-receipt-registration-guards') === 'passed',
@@ -1674,7 +1678,7 @@ export function buildProductionPluginPackageProofSummary(
     registrationGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-registration-guards')
+        : canonicalRequestedScenarios.includes('driver-registration-guards')
           || concreteBundleRequests['driver-registration-guards'],
       selected: buildObjectBundleSelected('driver-registration-guards'),
       ok: buildObjectBundleStatus('driver-registration-guards') === 'passed',
@@ -1708,7 +1712,7 @@ export function buildProductionPluginPackageProofSummary(
     callbackGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-callback-guards')
+        : canonicalRequestedScenarios.includes('driver-callback-guards')
           || concreteBundleRequests['driver-callback-guards'],
       selected: buildObjectBundleSelected('driver-callback-guards'),
       ok: buildObjectBundleStatus('driver-callback-guards') === 'passed',
@@ -1732,7 +1736,7 @@ export function buildProductionPluginPackageProofSummary(
     registrationShapeGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
-        : normalizedRequestedScenarios.includes('driver-registration-shape-guards')
+        : canonicalRequestedScenarios.includes('driver-registration-shape-guards')
           || concreteBundleRequests['driver-registration-shape-guards'],
       selected: buildObjectBundleSelected('driver-registration-shape-guards'),
       ok: buildObjectBundleStatus('driver-registration-shape-guards') === 'passed',

@@ -2964,6 +2964,73 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
   });
 });
 
+test('plugin-driver proof summary canonicalizes mixed release-proof aliases before deriving requested bundles', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labBacked: false,
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        payloadModeAfterReject: 'local-update',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driverReleaseProof', 'driverMutationProof'],
+      selectedScenarios: new Set(scenarioGroups['driver-release-proof']),
+    },
+  );
+
+  assert.deepEqual(summary.requestedScenarios, ['driverReleaseProof', 'driverMutationProof']);
+  assert.deepEqual(summary.requestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(summary.passedRequestedScenarios, []);
+  assert.deepEqual(summary.passedRequestedBundles, []);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-release-proof': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReleaseProof: 'missing',
+  });
+  assert.equal(summary.requestedScenarioCount, 1);
+  assert.equal(summary.requestedBundleCount, 1);
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, false);
+});
+
 test('plugin-driver proof summary tracks combined receipt and registration guard bundles', () => {
   const requestedScenarios = [
     'driver-receipt-registration-guards',
