@@ -3,6 +3,11 @@ const scenarioGroups = {
     'core-package-routes',
     'driver-delete-apply',
   ],
+  'driver-release-proof': [
+    'core-package-routes',
+    'driver-receipt-guards',
+    'driver-delete-apply',
+  ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
     'driver-missing-export-guard',
@@ -86,7 +91,7 @@ function resolveScenarioMode(modeValue) {
     return 'driver-positive-proof';
   }
   if (modeValue === 'driver-release-proof-only') {
-    return 'core-package-routes,driver-receipt-guards,driver-delete-apply';
+    return 'driver-release-proof';
   }
   if (modeValue === 'driver-proof-only') {
     return 'driver-delete-apply,driver-verifier-guards';

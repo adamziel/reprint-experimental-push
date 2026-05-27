@@ -87,8 +87,8 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.passedScenarioCount, 11);
   assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 0);
-  assert.equal(summary.checkedBundleCount, 5);
-  assert.equal(summary.passedBundleCount, 5);
+  assert.equal(summary.checkedBundleCount, 6);
+  assert.equal(summary.passedBundleCount, 6);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarios, 'all');
@@ -124,6 +124,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     'driverPositiveProof',
     'driverRegistrationGuards',
     'driverRegistrationShapeGuards',
+    'driverReleaseProof',
     'driverVerifierGuards',
   ]);
   assert.deepEqual(summary.failedBundles, []);
@@ -137,6 +138,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.deepEqual(summary.bundles, {
     driverVerifierGuards: 'passed',
     driverPositiveProof: 'passed',
+    driverReleaseProof: 'passed',
     driverRegistrationGuards: 'passed',
     driverCallbackGuards: 'passed',
     driverRegistrationShapeGuards: 'passed',
@@ -254,7 +256,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
   assert.equal(summary.failedBundleCount, 0);
-  assert.equal(summary.skippedBundleCount, 4);
+  assert.equal(summary.skippedBundleCount, 5);
   assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.requestedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.requestedConcreteScenarios, []);
@@ -311,6 +313,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   ]);
   assert.deepEqual(summary.bundles, {
     driverPositiveProof: 'skipped',
+    driverReleaseProof: 'skipped',
     driverVerifierGuards: 'passed',
     driverRegistrationGuards: 'skipped',
     driverCallbackGuards: 'skipped',
@@ -436,7 +439,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
-  assert.equal(summary.skippedBundleCount, 4);
+  assert.equal(summary.skippedBundleCount, 5);
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 8);
   assert.equal(summary.failedScenarioCount, 1);
@@ -575,6 +578,80 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
   assert.equal(summary.bundles.driverPositiveProof, 'passed');
   assert.equal(summary.bundles.driverVerifierGuards, 'skipped');
   assert.equal(summary.scenarios.driverMissingValidateGuard, 'missing');
+});
+
+test('plugin-driver proof summary exposes bounded release-proof bundle status', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set(scenarioGroups['driver-release-proof']),
+    },
+  );
+
+  assert.equal(summary.ok, true);
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.requestedScenarios, ['driver-release-proof']);
+  assert.deepEqual(summary.requestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(summary.requestedConcreteScenarios, []);
+  assert.deepEqual(summary.passedRequestedScenarios, ['driver-release-proof']);
+  assert.deepEqual(summary.failedRequestedScenarios, []);
+  assert.deepEqual(summary.passedRequestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(summary.failedRequestedBundles, []);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-release-proof': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReleaseProof: 'passed',
+  });
+  assert.equal(summary.bundles.driverReleaseProof, 'passed');
 });
 
 test('plugin-driver proof summary dedupes repeated requested bundle aliases', () => {

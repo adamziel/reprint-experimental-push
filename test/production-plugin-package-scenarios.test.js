@@ -242,19 +242,11 @@ test('scenario resolver maps driver-release-proof-only mode to the bounded route
     'driver-release-proof-only',
   );
 
-  assert.deepEqual(resolved.requestedScenarios, [
-    'core-package-routes',
-    'driver-receipt-guards',
-    'driver-delete-apply',
-  ]);
+  assert.deepEqual(resolved.requestedScenarios, ['driver-release-proof']);
   assert.equal(resolved.resolvedMode, 'driver-release-proof-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    [
-      'core-package-routes',
-      'driver-receipt-guards',
-      'driver-delete-apply',
-    ].sort(),
+    scenarioGroups['driver-release-proof'].slice().sort(),
   );
 });
 
