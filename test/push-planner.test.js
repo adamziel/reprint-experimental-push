@@ -1401,6 +1401,247 @@ test('blocks comment graph references when the remote post target is missing', (
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks core user, link, and multisite graph references when targets diverged remotely', () => {
+  const sourceResourceKeys = [
+    'row:["wp_comments","comment_ID:20"]',
+    'row:["wp_links","link_id:8"]',
+    'row:["wp_blogs","blog_id:9"]',
+    'row:["wp_sitemeta","meta_id:91"]',
+    'row:["wp_blogmeta","meta_id:92"]',
+    'row:["wp_blog_versions","blog_id:10"]',
+    'row:["wp_registration_log","ID:93"]',
+  ];
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-private-user',
+      user_email: 'base-private-user@example.test',
+      display_name: 'Base Private User',
+    },
+  };
+  base.db.wp_comments = {};
+  base.db.wp_links = {};
+  base.db.wp_site = {
+    'id:1': {
+      id: 1,
+      domain: 'base-private-network.test',
+      path: '/',
+    },
+  };
+  base.db.wp_blogs = {
+    'blog_id:9': {
+      blog_id: 9,
+      site_id: 1,
+      domain: 'source-blog.example.test',
+      path: '/',
+    },
+    'blog_id:10': {
+      blog_id: 10,
+      site_id: 1,
+      domain: 'base-private-target-blog.test',
+      path: '/',
+    },
+  };
+  base.db.wp_sitemeta = {};
+  base.db.wp_blogmeta = {};
+  base.db.wp_blog_versions = {};
+  base.db.wp_registration_log = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_comments['comment_ID:20'] = {
+    comment_ID: 20,
+    comment_post_ID: 1,
+    user_id: 7,
+    comment_content: 'local-private-comment-body',
+  };
+  local.db.wp_links['link_id:8'] = {
+    link_id: 8,
+    link_url: 'https://example.test/local-private-link',
+    link_name: 'Local private link',
+    link_owner: 7,
+  };
+  local.db.wp_blogs['blog_id:9'].path = '/local-private-source-blog/';
+  local.db.wp_sitemeta['meta_id:91'] = {
+    meta_id: 91,
+    site_id: 1,
+    meta_key: 'local_private_site_flag',
+    meta_value: 'local-private-sitemeta',
+  };
+  local.db.wp_blogmeta['meta_id:92'] = {
+    meta_id: 92,
+    blog_id: 10,
+    meta_key: 'local_private_blog_flag',
+    meta_value: 'local-private-blogmeta',
+  };
+  local.db.wp_blog_versions['blog_id:10'] = {
+    blog_id: 10,
+    db_version: 60000,
+    last_updated: '2026-05-24 00:00:00',
+  };
+  local.db.wp_registration_log['ID:93'] = {
+    ID: 93,
+    email: 'local-private-registration@example.test',
+    IP: '127.0.0.1',
+    blog_id: 10,
+    date_registered: '2026-05-24 00:00:00',
+  };
+  remote.db.wp_users['ID:7'].display_name = 'Remote Private User';
+  remote.db.wp_site['id:1'].domain = 'remote-private-network.test';
+  remote.db.wp_blogs['blog_id:10'].domain = 'remote-private-target-blog.test';
+
+  const plan = planFor(base, local, remote);
+  const relationshipTypes = plan.blockers
+    .flatMap((blocker) => blocker.references.map((reference) => reference.relationshipType))
+    .sort();
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.deepEqual(relationshipTypes, [
+    'blog-site',
+    'blog-version-blog',
+    'blogmeta-blog',
+    'comment-user',
+    'link-owner',
+    'registration-log-blog',
+    'sitemeta-site',
+  ]);
+  for (const resourceKey of sourceResourceKeys) {
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+  }
+  assert.equal(decisionFor(plan, 'row:["wp_users","ID:7"]').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'row:["wp_site","id:1"]').decision, 'keep-remote');
+  assert.equal(decisionFor(plan, 'row:["wp_blogs","blog_id:10"]').decision, 'keep-remote');
+  assert.equal(planJson.includes('local-private-comment-body'), false);
+  assert.equal(planJson.includes('local-private-registration@example.test'), false);
+  assert.equal(planJson.includes('remote-private-network.test'), false);
+  assert.equal(planJson.includes('Remote Private User'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('allows same-plan core user, link, and multisite graph closure when remote still matches base', () => {
+  const base = baseSite();
+  base.db.wp_users = {};
+  base.db.wp_comments = {};
+  base.db.wp_links = {};
+  base.db.wp_site = {};
+  base.db.wp_blogs = {};
+  base.db.wp_sitemeta = {};
+  base.db.wp_blogmeta = {};
+  base.db.wp_blog_versions = {};
+  base.db.wp_registration_log = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_users['ID:7'] = {
+    ID: 7,
+    user_login: 'local-network-owner',
+    user_email: 'network-owner@example.test',
+    display_name: 'Local Network Owner',
+  };
+  local.db.wp_comments['comment_ID:20'] = {
+    comment_ID: 20,
+    comment_post_ID: 1,
+    user_id: 7,
+    comment_content: 'Local user-owned comment',
+  };
+  local.db.wp_links['link_id:8'] = {
+    link_id: 8,
+    link_url: 'https://example.test/local-link',
+    link_name: 'Local link',
+    link_owner: 7,
+  };
+  local.db.wp_site['id:1'] = {
+    id: 1,
+    domain: 'network.example.test',
+    path: '/',
+  };
+  local.db.wp_blogs['blog_id:9'] = {
+    blog_id: 9,
+    site_id: 1,
+    domain: 'site.example.test',
+    path: '/',
+  };
+  local.db.wp_sitemeta['meta_id:91'] = {
+    meta_id: 91,
+    site_id: 1,
+    meta_key: 'site_flag',
+    meta_value: 'local-site-flag',
+  };
+  local.db.wp_blogmeta['meta_id:92'] = {
+    meta_id: 92,
+    blog_id: 9,
+    meta_key: 'blog_flag',
+    meta_value: 'local-blog-flag',
+  };
+  local.db.wp_blog_versions['blog_id:9'] = {
+    blog_id: 9,
+    db_version: 60000,
+    last_updated: '2026-05-24 00:00:00',
+  };
+  local.db.wp_registration_log['ID:93'] = {
+    ID: 93,
+    email: 'site-owner@example.test',
+    IP: '127.0.0.1',
+    blog_id: 9,
+    date_registered: '2026-05-24 00:00:00',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 9);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_comments['comment_ID:20'].user_id, 7);
+  assert.equal(result.site.db.wp_links['link_id:8'].link_owner, 7);
+  assert.equal(result.site.db.wp_blogs['blog_id:9'].site_id, 1);
+  assert.equal(result.site.db.wp_sitemeta['meta_id:91'].site_id, 1);
+  assert.equal(result.site.db.wp_blogmeta['meta_id:92'].blog_id, 9);
+  assert.equal(result.site.db.wp_blog_versions['blog_id:9'].blog_id, 9);
+  assert.equal(result.site.db.wp_registration_log['ID:93'].blog_id, 9);
+});
+
+test('blocks a graph row that still references a target deleted in the same local plan', () => {
+  const commentResourceKey = 'row:["wp_comments","comment_ID:20"]';
+  const userResourceKey = 'row:["wp_users","ID:7"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-private-user',
+      user_email: 'base-private-user@example.test',
+      display_name: 'Base Private User',
+    },
+  };
+  base.db.wp_comments = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  delete local.db.wp_users['ID:7'];
+  local.db.wp_comments['comment_ID:20'] = {
+    comment_ID: 20,
+    comment_post_ID: 1,
+    user_id: 7,
+    comment_content: 'local-private-comment-body',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === commentResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, userResourceKey).action, 'delete');
+  assert.equal(mutationFor(plan, commentResourceKey), undefined);
+  assert.equal(blocker.references[0].relationshipType, 'comment-user');
+  assert.equal(blocker.references[0].targetResourceKey, userResourceKey);
+  assert.equal(blocker.references[0].targetChange.localChange, 'delete');
+  assert.equal(planJson.includes('local-private-comment-body'), false);
+  assert.equal(planJson.includes('base-private-user@example.test'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('plans a safe same-plan taxonomy closure for a category term, relationship, and termmeta', () => {
   const termResourceKey = 'row:["wp_terms","term_id:21"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:31"]';
@@ -1547,6 +1788,47 @@ test('keeps nav_menu taxonomy graph surfaces blocked', () => {
   assert.match(taxonomyBlocker.reason, /unsupported taxonomy graph surface nav_menu/);
   assert.equal(relationshipBlocker.references[0].targetSupport.supported, false);
   assert.equal(blockerJson.includes('local-private-menu-term'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('keeps custom taxonomy graph surfaces blocked as plugin-owned or ambiguous', () => {
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:34"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:34"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_terms['term_id:24'] = {
+    term_id: 24,
+    name: 'local-private-product-term',
+    slug: 'local-private-product',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:34'] = {
+    term_taxonomy_id: 34,
+    term_id: 24,
+    taxonomy: 'product_cat',
+    parent: 0,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:1|term_taxonomy_id:34'] = {
+    object_id: 1,
+    term_taxonomy_id: 34,
+    term_order: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const taxonomyBlocker = plan.blockers.find((blocker) => blocker.resourceKey === taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((blocker) => blocker.resourceKey === relationshipResourceKey);
+  const blockerJson = JSON.stringify({ taxonomyBlocker, relationshipBlocker });
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(taxonomyBlocker.reason, /unsupported taxonomy graph surface product_cat/);
+  assert.equal(relationshipBlocker.references[0].targetSupport.supported, false);
+  assert.equal(blockerJson.includes('local-private-product-term'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
