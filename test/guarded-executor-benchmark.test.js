@@ -3094,6 +3094,90 @@ test('guarded benchmark keeps rollout summaries pinned to hidden parallelism-lim
   );
 });
 
+test('guarded benchmark carries direct staging-disk visibility blockers into upload rollout summaries', () => {
+  const report = smallBenchmark();
+  const tampered = clone(report);
+
+  tampered.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  tampered.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  tampered.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  tampered.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  tampered.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  tampered.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  tampered.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  tampered.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  tampered.evidence.parallelism.parallelismLimitsMeasured = true;
+  tampered.evidence.parallelism.parallelismLimitsVisible = true;
+  tampered.evidence.backpressure.stagingDiskHeadroomVisible = true;
+  tampered.evidence.backpressure.stagingDiskHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(tampered);
+  const blockers = productionThroughputBlockers(tampered);
+
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'chunk-upload-concurrency',
+    ),
+    {
+      surface: 'chunk-upload-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'staging-disk-headroom-visible-without-measurement',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'file-hashing-concurrency',
+    ),
+    {
+      surface: 'file-hashing-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'staging-disk-headroom-visible-without-measurement',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+  );
+  assert.deepEqual(
+    details.productionCapabilityRolloutSummary.find(
+      (entry) => entry.surface === 'row-batch-concurrency',
+    ),
+    {
+      surface: 'row-batch-concurrency',
+      status: 'blocked',
+      measured: false,
+      visible: false,
+      blockerRefs: [
+        'backpressure-evidence-incomplete',
+        'queue-memory-ceiling-does-not-match-queue-budget',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+  );
+  assert.equal(blockers.includes('staging-disk-headroom-visible-without-measurement'), true);
+});
+
 test('guarded benchmark keeps rollout summaries pinned to visible-without-measurement parallelism blockers', () => {
   const report = smallBenchmark();
   const tampered = clone(report);
