@@ -12,7 +12,7 @@
 - Release-classification heads verified before write-up:
   - `origin/lane/reliable-executor` -> `f89370f41d4cc0519c980f89e038c9fff6dbcbb1` (`Keep packaged release boundary support-only`)
   - `origin/lane/critic` -> `60fa348990579931acc4ea951a887f977ee8e5a4`
-  - `origin/lane/independent-auditor` -> `d5138961ebad3061c64924672373d60bafb844f2`
+  - `origin/lane/independent-auditor` -> `e8491f1b2c3f9c937ceea540995b48c5d9a55829`
 
 ## Evidence Table
 
