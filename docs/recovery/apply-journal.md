@@ -252,6 +252,15 @@ non-mutating `RECOVERY_BLOCKED` result, and retry does not overwrite the
 partial state. The smoke does not rely on the legacy option journal for this
 classification.
 
+The current process-kill smoke builds its crash plan from a live
+`GET /snapshot` response from the host-mounted Playground server instead of a
+separate PHP export. Before the kill, it waits until the DB journal has crossed
+the restart readback page size. After restart and again after retry, it reads
+the DB journal through `limit=10` paged `/db-journal` requests until the oldest
+sequence is reached. The accepted run proved complete, non-truncated readback
+over 10 pages, 99 rows, sequences 1 through 99, and preserved the same
+`RECOVERY_BLOCKED` old/new classification across the exact retry path.
+
 `npm run test:playground:db-journal-missing-commit-finalization` verifies the
 DB-only missing-commit finalization path. A deterministic lab hook performs the
 fixture target writes and DB mutation evidence, but omits the terminal

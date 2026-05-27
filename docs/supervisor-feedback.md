@@ -1,9 +1,40 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 00:49 CEST
+Last updated: 2026-05-28 00:59 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 00:59 CEST - Paged Restart Evidence
+
+- Going well: `npm run test:playground:db-journal-process-kill` passed in
+  `main:journal-restart-pages` with `[JOURNAL_RESTART_PAGES_STATUS:0]`.
+- Also going well: the hard-kill smoke now plans from the live host-mounted
+  Playground `/snapshot`, kills during an in-flight DB-journaled apply, then
+  reads the DB journal through complete, non-truncated `limit=10` pages after
+  restart and after retry. The accepted run crossed 10 pages, recovered 99
+  rows, and covered sequences 1 through 99.
+- Recovery evidence improved: the restarted site had no false
+  `apply-committed` state, classified 160 planned targets as `32 new`,
+  `128 old`, and `0 blockedUnknown`, returned `blocked-recovery`, and exact
+  retry returned `409 RECOVERY_BLOCKED` without overwriting the partial state.
+- Not going well: this is still local Playground SQLite/host-mount evidence.
+  Docker or external WordPress crash durability, storage `fsync`, generic
+  MySQL/InnoDB behavior, rollback, broader graph recovery, and arbitrary
+  plugin-driver safety remain blockers.
+- Progress change: recovery, reliable executor, fast-path cursor evidence, and
+  independent evidence move up modestly. Merge invariants stay flat.
+- Next nudge: move the same paged restart proof to Docker/external WordPress,
+  or pair it with a broader graph/plugin recovery surface while keeping final
+  release held.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep graph identity expansion separate; this proof did not add new graph surfaces. |
+| Recovery | Move paged process-kill readback to Docker/external storage and add crash-boundary variants. |
+| Reliable executor | Preserve complete paged readback, blocked retry, and no false commit on the checked release path. |
+| Fast paths | Use the restart-safe cursor behavior as a prerequisite for later chunk benchmarks. |
+| Audit and critic | Re-audit the integrated branch at the paged-restart commit and keep final readiness held. |
 
 ## 2026-05-28 00:49 CEST - Journal Pages Evidence
 

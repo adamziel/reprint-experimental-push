@@ -4,6 +4,44 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Paged Journal Restart Evidence
+
+- Last update: 2026-05-28 00:59 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run test:playground:db-journal-process-kill`
+  passed in tmux window `main:journal-restart-pages` with
+  `[JOURNAL_RESTART_PAGES_STATUS:0]`.
+- Code change: the local process-kill smoke now builds the crash plan from a
+  live host-mounted Playground `/snapshot` response, waits for the DB journal
+  to cross the restart readback page size before sending `SIGKILL`, and then
+  verifies paged DB-journal readback after restart and after exact retry.
+- Recovery evidence: after the restart and after retry, the smoke read
+  `/db-journal` with `limit=10` cursor pages until the oldest sequence was
+  reached. Both readbacks were complete and non-truncated, crossed 10 pages,
+  recovered 99 rows, and covered sequences 1 through 99.
+- Crash evidence: the kill happened after the DB journal had at least 11 rows,
+  while the apply was in flight. The restarted site reported no false
+  `apply-committed` state, classified 160 planned targets as `32 new`,
+  `128 old`, `0 blockedUnknown`, and exposed `blocked-recovery` without using
+  the legacy option journal for classification.
+- Retry evidence: exact same key/body retry returned
+  `409 RECOVERY_BLOCKED`, left the target snapshot unchanged, preserved the
+  same old/new classifications, and did not overwrite the partial state.
+- Focused checks passed:
+  `node --check scripts/playground/db-journal-process-kill-smoke.mjs`,
+  `git diff --check`, and
+  `npm run test:playground:db-journal-process-kill`.
+- Caveat: this is still local Playground SQLite/host-mount hard-kill evidence.
+  It does not prove Docker/external WordPress crash durability, storage
+  `fsync`, generic MySQL/InnoDB behavior, rollback, broader graph recovery, or
+  arbitrary plugin-driver safety.
+- Percent movement: recovery boundaries move from 55% to 58%; reliable
+  executor/protocol moves from 68% to 69%; fast path and chunking moves from
+  36% to 37%; independent evidence moves from 60% to 62%. Merge invariants stay
+  at 58% because this proof strengthens recovery readback, not new graph
+  identity coverage.
+
 ## 2026-05-28 - Journal Pages Complex-Site Evidence
 
 - Last update: 2026-05-28 00:49 CEST.

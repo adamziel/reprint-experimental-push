@@ -20,16 +20,8 @@ const idempotencyHeader = 'X-Reprint-Push-Idempotency-Key';
 const idempotencyKey = 'db-journal-process-kill-001';
 const crashMutationCount = 160;
 const crashFileBytes = 32 * 1024;
-
-const baseSnapshot = exportSnapshot('remote-base', baseFixture);
-assert.equal(baseSnapshot.meta.fixture, 'remote-base');
-
-const crashPlan = createProcessKillPlan(baseSnapshot);
-assert.equal(crashPlan.status, 'ready');
-assert.equal(crashPlan.summary.conflicts, 0);
-assert.equal(crashPlan.summary.blockers, 0);
-assert.equal(crashPlan.mutations.length, crashMutationCount);
-assertTargetHashes(crashPlan, baseSnapshot, 'expectedHash', 'process-kill preconditions');
+const restartDbJournalPageLimit = 10;
+const maxRestartDbJournalPages = 100;
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-db-journal-process-kill-'));
 const wpDir = path.join(tmpRoot, 'wordpress');
@@ -42,8 +34,8 @@ const summary = {
     servers: [],
   },
   plan: {
-    status: crashPlan.status,
-    mutations: crashPlan.mutations.length,
+    status: null,
+    mutations: null,
     syntheticFileMutations: crashMutationCount,
   },
   kill: {},
@@ -76,6 +68,19 @@ try {
   });
   summary.transport.servers.push(server.summary);
 
+  const baseSnapshotResponse = await getSnapshot(server);
+  const baseSnapshot = baseSnapshotResponse.body.snapshot;
+  assert.equal(baseSnapshot.meta.fixture, 'remote-base');
+
+  const crashPlan = createProcessKillPlan(baseSnapshot);
+  assert.equal(crashPlan.status, 'ready');
+  assert.equal(crashPlan.summary.conflicts, 0);
+  assert.equal(crashPlan.summary.blockers, 0);
+  assert.equal(crashPlan.mutations.length, crashMutationCount);
+  assertTargetHashes(crashPlan, baseSnapshot, 'expectedHash', 'process-kill preconditions');
+  summary.plan.status = crashPlan.status;
+  summary.plan.mutations = crashPlan.mutations.length;
+
   const dryRun = await postLab(server, '/dry-run', { plan: crashPlan });
   assert.equal(dryRun.status, 200);
   assert.equal(dryRun.body.ok, true);
@@ -102,6 +107,7 @@ try {
 
   await waitForDbJournalEvent(server, 'apply-started', evidenceTimeoutMs);
   const preKillMutationEvidence = await waitForDbJournalEvent(server, 'mutation-applied', evidenceTimeoutMs);
+  const preKillPagedThresholdEvidence = await waitForDbJournalRowCount(server, restartDbJournalPageLimit + 1, evidenceTimeoutMs);
   const preKillOptionEvidence = await getOptionMutationEvidence(server);
   const preKillDbJournal = await getDbJournal(server);
   const preKillDbEvents = journalEntries(preKillDbJournal.body).map(journalEvent);
@@ -121,6 +127,8 @@ try {
     portClosed: !(await isPortAccepting(server.port)),
     optionMutationEvidenceBeforeKill: preKillOptionEvidence.count,
     dbMutationEvidenceBeforeKill: countJournalEvents(preKillMutationEvidence.entries, 'mutation-applied'),
+    dbRowsBeforeKill: preKillPagedThresholdEvidence.entries.length,
+    dbPageLimitForRestartReadback: restartDbJournalPageLimit,
     dbEventsBeforeKill: preKillDbEvents,
   };
 
@@ -146,8 +154,11 @@ try {
     label: 'after restart live target hashes',
   });
 
-  const dbJournalAfterRestart = await getDbJournal(server);
-  const dbRowsAfterRestart = journalEntries(dbJournalAfterRestart.body);
+  const dbJournalAfterRestart = await getPagedDbJournal(server, restartDbJournalPageLimit);
+  assert.equal(dbJournalAfterRestart.complete, true, 'paged DB journal readback after restart must be complete');
+  assert.equal(dbJournalAfterRestart.truncated, false, 'paged DB journal readback after restart must not be truncated');
+  assert.ok(dbJournalAfterRestart.pages.length > 1, 'restart proof must cross more than one DB journal page');
+  const dbRowsAfterRestart = dbJournalAfterRestart.rows;
   const dbEventsAfterRestart = dbRowsAfterRestart.map(journalEvent);
   assert.ok(dbEventsAfterRestart.includes('idempotency-opened'), 'restarted DB journal missing idempotency-opened');
   assert.ok(dbEventsAfterRestart.includes('apply-started'), 'restarted DB journal missing apply-started');
@@ -191,6 +202,7 @@ try {
 
   summary.restart = {
     dbEventsAfterRestart,
+    dbJournalReadback: summarizePagedDbJournal(dbJournalAfterRestart),
     optionEventsAfterRestart,
     dbMutationRowsAfterRestart,
     dbPreparedRowsAfterRestart,
@@ -220,8 +232,11 @@ try {
   const afterRetryClassifications = classifyTargets(crashPlan, afterRetrySnapshot.body.snapshot);
   assert.deepEqual(publicCounts(afterRetryClassifications), publicCounts(restartClassifications), 'retry changed live classifications');
 
-  const dbJournalAfterRetry = await getDbJournal(server);
-  const dbEventsAfterRetry = journalEntries(dbJournalAfterRetry.body).map(journalEvent);
+  const dbJournalAfterRetry = await getPagedDbJournal(server, restartDbJournalPageLimit);
+  assert.equal(dbJournalAfterRetry.complete, true, 'paged DB journal readback after retry must be complete');
+  assert.equal(dbJournalAfterRetry.truncated, false, 'paged DB journal readback after retry must not be truncated');
+  assert.ok(dbJournalAfterRetry.pages.length > 1, 'retry proof must cross more than one DB journal page');
+  const dbEventsAfterRetry = dbJournalAfterRetry.rows.map(journalEvent);
   assert.ok(
     dbEventsAfterRetry.includes('apply-rejected')
       || dbEventsAfterRetry.includes('idempotency-in-progress')
@@ -235,11 +250,14 @@ try {
     code: retry.body.code,
     targetSnapshotUnchanged: true,
     liveClassifications: publicCounts(afterRetryClassifications),
+    dbJournalReadback: summarizePagedDbJournal(dbJournalAfterRetry),
     dbEventsAfterRetry,
   };
 
   summary.evidence = {
     dbRowsPersistedAcrossRestart: true,
+    pagedDbJournalReadbackAfterRestart: true,
+    pagedDbJournalReadbackAfterRetry: true,
     targetDataPersistedAcrossRestart: true,
     noFalseCommittedState: true,
     targetStateExplainable: true,
@@ -255,37 +273,6 @@ try {
   if (success) {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
-}
-
-function exportSnapshot(name, blueprintPath) {
-  const result = spawnSync('npx', [
-    '--yes',
-    '@wp-playground/cli@latest',
-    'php',
-    '--blueprint',
-    blueprintPath,
-    '--mount',
-    `${repoRoot}:/workspace`,
-    '--verbosity',
-    'quiet',
-    '--',
-    '/workspace/scripts/playground/export-site-snapshot.php',
-  ], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 20,
-  });
-
-  if (result.status !== 0) {
-    throw new Error(`Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`);
-  }
-
-  return parseMarkedJson(
-    result.stdout,
-    'REPRINT_PUSH_SNAPSHOT_JSON_BEGIN',
-    'REPRINT_PUSH_SNAPSHOT_JSON_END',
-    `Snapshot markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
-  );
 }
 
 function createProcessKillPlan(base) {
@@ -477,6 +464,20 @@ async function waitForDbJournalEvent(currentServer, event, timeoutMs) {
   throw new Error(`Timed out waiting for DB journal event ${event}`);
 }
 
+async function waitForDbJournalRowCount(currentServer, minimumRows, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const response = await getDbJournal(currentServer);
+    const entries = journalEntries(response.body);
+    if (entries.length >= minimumRows) {
+      return { entries };
+    }
+    assert.ok(!entries.some((entry) => journalEvent(entry) === 'apply-committed'), 'apply committed before DB journal row threshold');
+    await sleep(100);
+  }
+  throw new Error(`Timed out waiting for at least ${minimumRows} DB journal rows`);
+}
+
 async function waitForOptionJournalEvent(currentServer, event, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -595,6 +596,86 @@ async function getDbJournal(currentServer) {
   return getLab(currentServer, '/db-journal?limit=500');
 }
 
+async function getPagedDbJournal(currentServer, pageLimit) {
+  const pages = [];
+  let beforeSequence = null;
+  let rows = [];
+  let expectedRowCount = null;
+
+  for (let pageIndex = 0; pageIndex < maxRestartDbJournalPages; pageIndex += 1) {
+    const suffix = beforeSequence
+      ? `/db-journal?limit=${pageLimit}&beforeSequence=${beforeSequence}`
+      : `/db-journal?limit=${pageLimit}`;
+    const response = await getLab(currentServer, suffix);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.ok, true);
+    const dbJournal = response.body.dbJournal || {};
+    const pageRows = journalEntries(response.body);
+    const page = dbJournal.page || {};
+    const oldestSequence = page.oldestSequence ?? pageRows[0]?.sequence ?? null;
+    const newestSequence = page.newestSequence ?? pageRows.at(-1)?.sequence ?? null;
+    pages.push({
+      request: suffix,
+      rowCount: pageRows.length,
+      oldestSequence,
+      newestSequence,
+      hasOlder: page.hasOlder === true,
+      nextBeforeSequence: page.nextBeforeSequence ?? null,
+    });
+    rows = mergeJournalRows(rows, pageRows);
+    expectedRowCount = Math.max(
+      expectedRowCount ?? 0,
+      Number.isInteger(dbJournal.rowCount) ? dbJournal.rowCount : rows.length,
+    );
+    beforeSequence = Number.isInteger(page.nextBeforeSequence) && page.nextBeforeSequence > 0
+      ? page.nextBeforeSequence
+      : null;
+    if (!beforeSequence || rows.length >= expectedRowCount) {
+      break;
+    }
+  }
+
+  const lastPage = pages.at(-1) || {};
+  const complete = lastPage.hasOlder !== true && rows.length >= (expectedRowCount ?? rows.length);
+  return {
+    pageLimit,
+    pages,
+    rows,
+    rowCount: expectedRowCount ?? rows.length,
+    complete,
+    truncated: !complete,
+    oldestSequence: rows[0]?.sequence ?? null,
+    newestSequence: rows.at(-1)?.sequence ?? null,
+  };
+}
+
+function mergeJournalRows(existingRows, newRows) {
+  const rowsBySequence = new Map();
+  for (const row of [...existingRows, ...newRows]) {
+    const sequence = Number.isInteger(row?.sequence) ? row.sequence : null;
+    if (!sequence || rowsBySequence.has(sequence)) {
+      continue;
+    }
+    rowsBySequence.set(sequence, row);
+  }
+  return [...rowsBySequence.values()].sort((a, b) => a.sequence - b.sequence);
+}
+
+function summarizePagedDbJournal(readback) {
+  return {
+    pageLimit: readback.pageLimit,
+    pages: readback.pages.length,
+    rows: readback.rows.length,
+    rowCount: readback.rowCount,
+    complete: readback.complete,
+    truncated: readback.truncated,
+    oldestSequence: readback.oldestSequence,
+    newestSequence: readback.newestSequence,
+    firstRequest: readback.pages[0]?.request ?? null,
+    lastRequest: readback.pages.at(-1)?.request ?? null,
+  };
+}
+
 async function getOptionJournal(currentServer) {
   return getLab(currentServer, '/journal?limit=80');
 }
@@ -635,14 +716,6 @@ async function requestJson(currentServer, method, pathname, body = undefined, he
     status: response.status,
     body: json,
   };
-}
-
-function parseMarkedJson(stdout, begin, end, missingMessage) {
-  const match = stdout.match(new RegExp(`${begin}\\n([\\s\\S]*?)\\n${end}`));
-  if (!match) {
-    throw new Error(missingMessage);
-  }
-  return JSON.parse(match[1]);
 }
 
 function journalEntries(body) {
