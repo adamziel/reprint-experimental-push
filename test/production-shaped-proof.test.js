@@ -2494,6 +2494,22 @@ test('packaged release verifier readiness helper uses the provided output collec
   assert.doesNotMatch(helperSource, /getLogs\(\)/);
 });
 
+test('packaged release verifier readiness helper fails fast on signaled child termination', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.match(helperSource, /child\.exitCode !== null \|\| child\.signalCode !== null/);
+  assert.match(helperSource, /terminated by \$\{child\.signalCode\}/);
+  assert.match(helperSource, /writePlaygroundFailure\(message, lastProbes, getOutput\(\), lastError, lastTimeoutFallbackProbes\);/);
+});
+
 test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
