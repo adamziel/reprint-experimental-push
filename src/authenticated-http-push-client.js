@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createPushPlan } from './planner.js';
+import { checkedDurableJournalBoundarySatisfied } from './recovery-journal.js';
 import { digest } from './stable-json.js';
 
 const routeProfiles = {
@@ -1369,6 +1370,7 @@ export async function runAuthenticatedHttpPush({
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
     && dbJournalProofIsAcceptable(summary.dbJournal, {
+      requireCheckedBoundary: requireProductionAuthSession,
       requireStaleClaimRejected: simulateStaleClaimRetry,
     })
     && summary.after?.finalMatchesLocal === true;
@@ -1378,6 +1380,7 @@ export async function runAuthenticatedHttpPush({
     const journalProofFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
       && !dbJournalProofIsAcceptable(summary.dbJournal, {
+        requireCheckedBoundary: requireProductionAuthSession,
         requireStaleClaimRejected: simulateStaleClaimRetry,
       });
     const replayEquivalenceFailed = replay.status === 200
@@ -1867,12 +1870,15 @@ function summarizeDbJournal(response) {
 }
 
 export function dbJournalProofIsAcceptable(dbJournal, options = {}) {
+  const requireCheckedBoundary = options.requireCheckedBoundary === true;
+
   return dbJournalScopeIsTrusted(dbJournal?.scope)
     && dbJournal?.applyCommitted === true
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
     && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard)
     && dbJournalOwnershipIsTrusted(dbJournal?.ownership)
+    && (!requireCheckedBoundary || checkedDurableJournalBoundarySatisfied(dbJournal))
     && dbJournalLeaseFenceIsTrusted(dbJournal?.leaseFence, options);
 }
 
