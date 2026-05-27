@@ -1711,6 +1711,25 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
 
     if (
         is_array($checked_summary)
+        && reprint_push_lab_rest_checked_nested_contract_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal)) {
+            foreach (['ownership', 'writerLease', 'leaseFence'] as $key) {
+                if (array_key_exists($key, $premerge_journal)) {
+                    $journal[$key] = $premerge_journal[$key];
+                } else {
+                    unset($journal[$key]);
+                }
+            }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
         && reprint_push_lab_rest_checked_storage_guard_conflicts(
             $premerge_journal,
             $checked_summary
