@@ -23493,6 +23493,63 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   );
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a prototype top-level claimId', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype ClaimId Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-top-level-claim-id-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-top-level-claim-id';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const reopenOptions = Object.create({
+    claimId,
+  });
+  reopenOptions.writerLease = writerLease;
+  reopenOptions.ownsRemoteArtifact = true;
+  reopenOptions.remoteArtifactPath = remoteArtifactPath;
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, reopenOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires a strict plain options object.',
+  );
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden top-level writerLease', () => {
   const base = baseSite();
   const local = structuredClone(base);
@@ -23552,6 +23609,63 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.equal(
     error.message,
     'Production recovery journal support requires enumerable top-level options.',
+  );
+});
+
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a prototype top-level writerLease', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Writer Lease Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-top-level-writer-lease-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-top-level-writer-lease';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const reopenOptions = Object.create({
+    writerLease,
+  });
+  reopenOptions.claimId = claimId;
+  reopenOptions.ownsRemoteArtifact = true;
+  reopenOptions.remoteArtifactPath = remoteArtifactPath;
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, reopenOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires a strict plain options object.',
   );
 });
 
