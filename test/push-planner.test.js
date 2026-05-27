@@ -26229,7 +26229,7 @@ test('blocks local same-plan created comment post identity while preserving remo
   assert.equal(commentBlocker.references[0].relationshipKey, 'wp_comments.comment_post_ID');
   assert.equal(commentBlocker.references[0].relationshipType, 'comment-post');
   assert.equal(commentBlocker.references[0].targetResourceKey, targetResourceKey);
-  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, targetResourceKey);
   assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:17"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(reference.relationshipKey, 'wp_comments.comment_post_ID');
