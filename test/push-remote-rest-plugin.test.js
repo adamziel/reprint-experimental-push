@@ -12647,6 +12647,38 @@ test('checked db journal attachment accepts authoritative checked latestRows tha
   assert.deepEqual(parsed.dbJournal.latestRows, checkedSummary.latestRows);
 });
 
+test('checked db journal attachment keeps distinct accepted inline claim ids when claim-key hashes stay coherent', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.claim.activeClaimId = 'authoritative-claim-id-02';
+  inlineJournal.claim.previousClaimId = 'retry-claim-id-01';
+  inlineJournal.claimEvidence.activeRow.claimId = 'authoritative-claim-id-02';
+  inlineJournal.claimEvidence.abandonedRow.claimId = 'retry-claim-id-01';
+  inlineJournal.claimEvidence.previousRow.claimId = 'retry-claim-id-01';
+  inlineJournal.writerLease.claimId = 'authoritative-claim-id-02';
+  inlineJournal.leaseFence.writerLease.claimId = 'authoritative-claim-id-02';
+  inlineJournal.latestRows[0].claimId = 'authoritative-claim-id-02';
+  const checkedSummary = structuredClone(inlineJournal);
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, true);
+  assert.equal(parsed.dbJournal.claim.activeClaimId, 'authoritative-claim-id-02');
+  assert.equal(parsed.dbJournal.claim.activeClaimKeyHash, 'authoritative-claim-hash-02');
+  assert.equal(parsed.dbJournal.claim.previousClaimId, 'retry-claim-id-01');
+  assert.equal(parsed.dbJournal.claim.previousClaimKeyHash, 'retry-claim-hash-01');
+  assert.equal(parsed.dbJournal.writerLease.claimId, 'authoritative-claim-id-02');
+  assert.equal(parsed.dbJournal.writerLease.claimKeyHash, 'authoritative-claim-hash-02');
+  assert.equal(parsed.dbJournal.leaseFence.writerLease.claimId, 'authoritative-claim-id-02');
+  assert.equal(parsed.dbJournal.leaseFence.writerLease.claimKeyHash, 'authoritative-claim-hash-02');
+  assert.equal(parsed.dbJournal.latestRows[0].claimId, 'authoritative-claim-id-02');
+  assert.equal(parsed.dbJournal.latestRows[0].claimKeyHash, 'authoritative-claim-hash-02');
+});
+
 test('checked db journal attachment fails closed when stale-claim row omits request hash', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
