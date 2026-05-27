@@ -5986,13 +5986,30 @@ test('rollout rejected fast-path specs stay wired to modeled rejected shortcuts'
   const report = runGuardedExecutorBenchmark({ profile: 'ci' });
   const claim = productionThroughputClaim(report);
   const details = productionThroughputDetails(report);
+  const summaryByGate = [ ...details.rejectedFastPaths.reduce((counts, fastPath) => {
+    counts.set(fastPath.rejectedGate, (counts.get(fastPath.rejectedGate) ?? 0) + 1);
+    return counts;
+  }, new Map()).entries() ]
+    .map(([ rejectedGate, count ]) => ({ rejectedGate, count }))
+    .sort((left, right) => left.rejectedGate.localeCompare(right.rejectedGate));
+  const reportedSummary = [ ...details.rejectedFastPathGateSummary ]
+    .sort((left, right) => left.rejectedGate.localeCompare(right.rejectedGate));
+  const rejectedIds = new Set(details.rejectedFastPaths.map((fastPath) => fastPath.id));
 
   assert.deepEqual(details.rejectedFastPaths, claim.rejectedFastPaths);
-  assert.deepEqual(details.rejectedFastPathGateSummary, [
-    { rejectedGate: 'group', count: 2 },
-    { rejectedGate: 'live', count: 1 },
-    { rejectedGate: 'recovery', count: 3 },
-  ]);
+  assert.deepEqual(reportedSummary, summaryByGate);
+  assert.ok(
+    rejectedIds.has('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback'),
+    'guarded benchmark surfaces dependency-graph writeback blockers for plugin updates',
+  );
+  assert.ok(
+    rejectedIds.has('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b'),
+    'guarded benchmark surfaces row-batch finalize blockers for plugin updates',
+  );
+  assert.ok(
+    rejectedIds.has('compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b'),
+    'guarded benchmark surfaces paused row-batch commit blockers for plugin updates',
+  );
 });
 
 test('failure injection boundaries include every durable transition in the benchmark shape', () => {

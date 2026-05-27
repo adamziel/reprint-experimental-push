@@ -105,6 +105,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
@@ -301,6 +309,18 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
@@ -383,6 +403,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   }),
   Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
