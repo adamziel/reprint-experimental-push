@@ -2,7 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { resolveProductionPluginPackageScenarios } from '../scripts/playground/production-plugin-package-scenarios.js';
-import { guardProofModeNames } from '../scripts/playground/production-plugin-package-proof-summary.js';
+import {
+  guardProofModeAliases,
+  guardProofModeNames,
+} from '../scripts/playground/production-plugin-package-proof-summary.js';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -460,4 +463,23 @@ test('package scripts keep every guard-proof canonical mode reachable through ru
       .sort(),
     guardProofModeNames,
   );
+});
+
+test('package scripts keep every exported guard-proof mode alias reachable through runtime smoke entries', () => {
+  const driverModeScripts = Object.keys(packageJson.scripts)
+    .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'))
+    .map((scriptName) => packageSmokeMode(scriptName))
+    .filter((mode) => mode !== null);
+  const reachableModeAliases = new Set(driverModeScripts);
+
+  for (const canonicalMode of guardProofModeNames) {
+    const aliases = guardProofModeAliases[canonicalMode];
+    assert.ok(Array.isArray(aliases), `${canonicalMode} should expose a runtime alias list`);
+    assert.ok(aliases.length > 0, `${canonicalMode} should expose at least one runtime alias`);
+    assert.equal(
+      aliases.some((alias) => reachableModeAliases.has(alias)),
+      true,
+      `${canonicalMode} should stay reachable through at least one exported runtime alias`,
+    );
+  }
 });

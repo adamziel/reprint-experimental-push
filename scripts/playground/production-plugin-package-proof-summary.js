@@ -1,4 +1,4 @@
-import { scenarioGroups } from './production-plugin-package-scenarios.js';
+import { modeAliasesByCanonicalMode, scenarioGroups } from './production-plugin-package-scenarios.js';
 
 const registrationGuardScenarioNames = [
   ...scenarioGroups['driver-registration-guards'],
@@ -141,6 +141,13 @@ const guardProofScenarioMaps = Object.freeze({
 
 export const guardProofModeNames = Object.freeze(
   Object.keys(guardProofScenarioMaps).sort(),
+);
+
+export const guardProofModeAliases = Object.freeze(
+  guardProofModeNames.reduce((aliases, canonicalMode) => {
+    aliases[canonicalMode] = modeAliasesByCanonicalMode[canonicalMode] ?? Object.freeze([]);
+    return aliases;
+  }, {}),
 );
 
 function isBundleAliasScenario(name) {

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  modeAliasesByCanonicalMode,
   parseProductionPluginPackageSelectedScenarios,
   resolveProductionPluginPackageScenarios,
   scenarioGroups,
@@ -571,6 +572,35 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
     Array.from(routeProof.selectedScenarios).sort(),
     ['core-package-routes'],
   );
+});
+
+test('scenario resolver exports the shared runtime mode aliases for each canonical guard-capable bundle', () => {
+  assert.deepEqual(modeAliasesByCanonicalMode['driver-receipt-guards'], [
+    'driver-guard-only',
+    'driver-receipt-guards',
+    'driver-receipt-guards-only',
+    'driver-receipt-only',
+    'driverGuardOnly',
+    'driverReceiptGuards',
+    'driverReceiptGuardsOnly',
+    'driverReceiptOnly',
+  ]);
+  assert.deepEqual(modeAliasesByCanonicalMode['driver-verifier-guards'], [
+    'driver-verifier-guards',
+    'driver-verifier-guards-only',
+    'driver-verifier-only',
+    'driverVerifierGuards',
+    'driverVerifierGuardsOnly',
+    'driverVerifierOnly',
+  ]);
+  assert.deepEqual(modeAliasesByCanonicalMode['driver-registration-guards'], [
+    'driver-registration-guards',
+    'driver-registration-guards-only',
+    'driver-registration-only',
+    'driverRegistrationGuards',
+    'driverRegistrationGuardsOnly',
+    'driverRegistrationOnly',
+  ]);
 });
 
 test('scenario resolver accepts direct kebab-case route and delete proof modes', () => {

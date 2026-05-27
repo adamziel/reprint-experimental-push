@@ -169,6 +169,22 @@ const modeNameMappings = new Map([
   ['driverProofOnly', 'driver-proof'],
 ]);
 
+const modeAliasesByCanonicalMode = Object.freeze(
+  Array.from(
+    modeNameMappings.entries().reduce((aliases, [alias, canonicalMode]) => {
+      const existingAliases = aliases.get(canonicalMode) ?? [];
+      existingAliases.push(alias);
+      aliases.set(canonicalMode, existingAliases);
+      return aliases;
+    }, new Map()),
+  )
+    .sort(([leftMode], [rightMode]) => leftMode.localeCompare(rightMode))
+    .reduce((aliases, [canonicalMode, modeAliases]) => {
+      aliases[canonicalMode] = Object.freeze(Array.from(new Set(modeAliases)).sort());
+      return aliases;
+    }, {}),
+);
+
 function canonicalizeScenarioName(name) {
   return scenarioNameAliases.get(name) ?? name;
 }
@@ -246,4 +262,10 @@ export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
   return resolveProductionPluginPackageScenarios(argv, envValue).selectedScenarios;
 }
 
-export { knownScenarioNames, receiptGuardScenarioNames, scenarioGroups, scenarioNames };
+export {
+  knownScenarioNames,
+  modeAliasesByCanonicalMode,
+  receiptGuardScenarioNames,
+  scenarioGroups,
+  scenarioNames,
+};
