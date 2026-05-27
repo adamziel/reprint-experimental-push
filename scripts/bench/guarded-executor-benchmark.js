@@ -59,6 +59,10 @@ const HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
   'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
 ]);
+const POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS = Object.freeze([
+  ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
+  ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+]);
 
 export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
   unit: Object.freeze({
@@ -427,6 +431,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -443,6 +448,8 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -473,6 +480,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -549,7 +557,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -569,7 +577,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -588,7 +596,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -641,7 +649,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -694,7 +702,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -713,7 +721,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -732,7 +740,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -853,7 +861,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -872,7 +880,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -891,7 +899,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -944,7 +952,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1166,7 +1174,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
-      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+      ...POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
