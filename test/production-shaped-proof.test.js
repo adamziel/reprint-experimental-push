@@ -164,7 +164,7 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -2895,7 +2895,7 @@ test('packaged release verifier readiness helper fails fast on signaled child te
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -2911,7 +2911,7 @@ test('packaged release verifier readiness helper reports early child exit codes'
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -6839,7 +6839,7 @@ test('packaged release verifier readiness helper preserves timeout fallback prob
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -6856,7 +6856,7 @@ test('packaged release verifier readiness helper preserves bounded readiness pro
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -6975,7 +6975,7 @@ test('packaged release verifier tags packaged-route startup failures after globa
   const smokeHelperSource = smokeSource.slice(smokeStart, smokeEnd);
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
@@ -8073,7 +8073,7 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
   assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
-  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  const end = verifierSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
   assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
   const helperSource = verifierSource.slice(start, end);
 
