@@ -8,7 +8,10 @@ import {
   serializeResourceValue,
   setResource,
 } from './resources.js';
-import { classifyRecoveryJournalClaims } from './recovery-journal.js';
+import {
+  checkedDurableJournalBoundarySatisfied,
+  classifyRecoveryJournalClaims,
+} from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
@@ -1308,12 +1311,64 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
 
+  const checkedBoundaryProof = checkedDurableJournalBoundaryProof(writer, inspected);
+
   return {
     supported: missingDependency.length === 0,
     missingDependency,
     inspectedJournalPath,
     writerJournalPath: typeof writer?.journalPath === 'string' ? writer.journalPath : null,
     inspectionErrorMessage,
+    checkedBoundarySatisfied: checkedDurableJournalBoundarySatisfied(checkedBoundaryProof),
+    checkedBoundaryProof,
+  };
+}
+
+function checkedDurableJournalBoundaryProof(writer, inspected) {
+  const inspectedBoundary = isStrictPlainObject(inspected?.leaseFenceContract)
+    && !hasHiddenOwnStringKeys(inspected.leaseFenceContract)
+    && typeof inspected.leaseFenceContract.boundary === 'string'
+    ? inspected.leaseFenceContract.boundary
+    : null;
+  const scope = Object.hasOwn(writer ?? {}, 'scope')
+    && !hasHiddenOwnStringProperty(writer, 'scope')
+    && typeof writer.scope === 'string'
+    ? writer.scope
+    : (
+      Object.hasOwn(inspected ?? {}, 'scope')
+      && !hasHiddenOwnStringProperty(inspected, 'scope')
+      && typeof inspected.scope === 'string'
+        ? inspected.scope
+        : null
+    );
+  const acceptedOnCheckedBoundary = Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
+    && !hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')
+    ? writer.acceptedOnCheckedBoundary === true
+    : (
+      Object.hasOwn(inspected ?? {}, 'acceptedOnCheckedBoundary')
+      && !hasHiddenOwnStringProperty(inspected, 'acceptedOnCheckedBoundary')
+        ? inspected.acceptedOnCheckedBoundary === true
+        : false
+    );
+
+  return {
+    scope,
+    acceptedOnCheckedBoundary,
+    ownership: {
+      ownsJournal: Object.hasOwn(writer ?? {}, 'ownsJournal')
+        && !hasHiddenOwnStringProperty(writer, 'ownsJournal')
+        && writer.ownsJournal === true,
+      restartReadable: Object.hasOwn(writer ?? {}, 'restartReadable')
+        && !hasHiddenOwnStringProperty(writer, 'restartReadable')
+        && writer.restartReadable === true,
+      productionAdapter: inspectedBoundary,
+    },
+    writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+      ? inspected.writerLeaseContract
+      : null,
+    leaseFence: hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+      ? inspected.leaseFenceContract
+      : null,
   };
 }
 

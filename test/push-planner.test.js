@@ -20866,6 +20866,9 @@ test('production recovery support report exposes the remaining release-path bloc
   assert.equal(report.inspectedJournalPath, filePath);
   assert.equal(report.writerJournalPath, filePath);
   assert.equal(report.inspectionErrorMessage, null);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'filesystem-compare-rename');
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
 });
 
 test('production recovery support report accepts a fenced restart-readable journal without remote artifact ownership', () => {
@@ -20901,6 +20904,103 @@ test('production recovery support report accepts a fenced restart-readable journ
   assert.equal(report.inspectedJournalPath, filePath);
   assert.equal(report.writerJournalPath, filePath);
   assert.equal(report.inspectionErrorMessage, null);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'filesystem-compare-rename');
+});
+
+test('production recovery support report surfaces a satisfied checked durable-journal boundary when the inspected lease fence matches the packaged production contract', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const claimId = 'claim-checked-boundary';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    claimHash,
+    writerLease: { id: claimId, epoch: 3 },
+    leaseFence: { id: claimId, epoch: 3 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3 },
+        leaseFence: { id: claimId, epoch: 3 },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, true);
+  assert.equal(report.checkedBoundarySatisfied, true);
+  assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, true);
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
 });
 
 test('production recovery support report accepts a fenced claim before apply opens the journal body', () => {
