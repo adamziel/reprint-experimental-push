@@ -16,7 +16,9 @@ import {
 } from '../scripts/playground/release-verify-credentials.js';
 import {
   buildAuthSessionSourceCommand,
+  resolveAuthSessionSourceCommandPayload,
   resolveAuthSessionSourceCommand,
+  runAuthSessionSourceCommandCli,
 } from '../scripts/playground/auth-session-source-command.js';
 import {
   bindPackagedProductionPluginRuntimeSource,
@@ -747,6 +749,51 @@ test('production-shaped release verify request state marks synthesized packaged 
   });
 });
 
+test('auth session source command cli prints the requested source payload', () => {
+  let stdout = '';
+  let stderr = '';
+  const exitCode = runAuthSessionSourceCommandCli({
+    argv: [
+      '--source-url=http://127.0.0.1:49152',
+      '--username=reprint_push_admin',
+      '--application-password=reprint-push-admin-app-password',
+    ],
+    stdout: {
+      write(chunk) {
+        stdout += String(chunk);
+      },
+    },
+    stderr: {
+      write(chunk) {
+        stderr += String(chunk);
+      },
+    },
+  });
+
+  assert.equal(exitCode, 0, stderr);
+  assert.equal(stderr, '');
+  assert.deepEqual(JSON.parse(stdout), {
+    sourceUrl: 'http://127.0.0.1:49152',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth session source command payload falls back to the live-source env contract', () => {
+  assert.deepEqual(
+    resolveAuthSessionSourceCommandPayload([], {
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_USERNAME: 'env-user',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'env-password',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:49152',
+      username: 'env-user',
+      applicationPassword: 'env-password',
+    },
+  );
+});
+
 test('production-shaped release verify requests the packaged auth/session source only for the default checked path', () => {
   assert.equal(
     shouldRequestPackagedProductionPluginAuthSession({
@@ -802,6 +849,31 @@ test('production-shaped release verify command consumes the production auth/sess
     username: 'reprint_push_admin',
     applicationPassword: 'reprint-push-admin-app-password',
   });
+});
+
+test('production-shaped release verify command accepts the auth-session source cli command on the checked path', () => {
+  const authSessionSourceCommand = `${process.execPath} scripts/playground/auth-session-source-command.js --source-url=http://127.0.0.1:65535 --username=reprint_push_admin --application-password=reprint-push-admin-app-password`;
+  const proof = spawnProductionShapedReleaseVerify(
+    {
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:65535',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'cli auth/session source release verify',
+  );
+
+  assertSpawnCompletedWithoutSpawnError(proof, 'cli auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.doesNotMatch(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"liveAuthSessionSource": \{[\s\S]*"observed": "unreachable-live-source"/);
+  assert.match(proof.stdout, /"liveSource": \{\s*"url": "http:\/\/127\.0\.0\.1:65535",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",\s*"error": "fetch failed"\s*\}/);
 });
 
 test('production auth/session source loader fails closed when required fields are missing', () => {
