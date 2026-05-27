@@ -1331,6 +1331,7 @@ test('guarded benchmark surfaces package-hash plugin-install blockers at runtime
         'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation',
         'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
         'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-dependency-checks',
         'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize',
         'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
         'compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback',
@@ -1374,6 +1375,16 @@ test('guarded benchmark surfaces package-hash plugin-install blockers at runtime
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
           'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-dependency-checks',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
         ],
       },
       {
