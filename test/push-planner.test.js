@@ -28608,6 +28608,78 @@ test('blocks a local thumbnail reference when the same-plan attachment target is
   );
 });
 
+test('blocks a local thumbnail reference when the same-plan attachment target is itself blocked by a nav_menu_item parent even when unrelated remote attachment noise exists', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:47"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local nav menu item parent',
+    post_content: 'local-private-nav-menu-item-parent-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local blocked attachment target',
+    post_content: 'local-private-blocked-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:47': {
+      meta_id: 47,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated attachment',
+    post_content: 'remote-private-unrelated-thumbnail-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemBlocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+  const targetAttachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetAttachmentResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(mutationFor(plan, targetAttachmentResourceKey).changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(menuItemBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(menuItemBlocker.surface, 'nav_menu_item');
+  assert.equal(targetAttachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(targetAttachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(targetAttachmentBlocker.references[0].targetResourceKey, menuItemResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, targetAttachmentResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-attachment-target-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-nav-menu-item-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('remote-private-unrelated-thumbnail-attachment-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local attachment parent reference to a same-plan wp_navigation post', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:2"]';
   const attachmentResourceKey = 'row:["wp_posts","ID:3"]';
