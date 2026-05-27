@@ -23142,6 +23142,133 @@ test('production recovery support report keeps checked boundary artifact refs cl
   assert.ok(report.missingDependency.includes('restart-readable recovery artifact references'));
 });
 
+test('production recovery support report keeps checked boundary artifact refs closed when persisted history inherits artifact refs through the prototype', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const claimId = 'claim-checked-boundary-prototype-persisted-artifact-ref';
+  const staleClaimId = 'claim-checked-boundary-prototype-persisted-artifact-ref-stale';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+
+  for (const [label, prototypeKey] of [
+    ['journal', 'journal'],
+    ['remote', 'remote'],
+  ]) {
+    const inheritedArtifactRefs = Object.create(
+      prototypeKey === 'journal'
+        ? { journal: filePath }
+        : { remote: remoteArtifactPath },
+    );
+    if (prototypeKey !== 'journal') {
+      inheritedArtifactRefs.journal = filePath;
+    }
+    if (prototypeKey !== 'remote') {
+      inheritedArtifactRefs.remote = remoteArtifactPath;
+    }
+
+    const report = productionRecoverySupportReport({
+      kind: 'production-recovery-journal',
+      productionAdapter: true,
+      supportedSurface: 'production-recovery-journal-adapter',
+      restartReadable: true,
+      ownsJournal: true,
+      ownsRemoteArtifact: true,
+      acceptedOnCheckedBoundary: true,
+      scope: 'packaged production journal scope',
+      claimHash,
+      writerLease: { id: claimId, epoch: 3 },
+      leaseFence: { id: claimId, epoch: 3 },
+      journalPath: filePath,
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      appendEvent() {
+        return null;
+      },
+      flush() {},
+      close() {},
+      inspect() {
+        return {
+          filePath,
+          schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+          claimHash,
+          ownsJournal: true,
+          restartReadable: true,
+          ownsRemoteArtifact: true,
+          acceptedOnCheckedBoundary: true,
+          artifactRefs: {
+            journal: filePath,
+            remote: remoteArtifactPath,
+          },
+          writerLease: { id: claimId, epoch: 3 },
+          leaseFence: { id: claimId, epoch: 3 },
+          writerLeaseContract,
+          leaseFenceContract: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+            writerLease: writerLeaseContract,
+          },
+          records: [
+            {
+              sequence: 1,
+              type: 'recovery-claim-opened',
+              claimHash,
+              claimLease: { id: claimId, epoch: 3 },
+              artifactRefs: inheritedArtifactRefs,
+              fsync: { requested: true },
+            },
+            {
+              sequence: 2,
+              type: 'stale-claim-rejected',
+              claimHash: staleClaimHash,
+              previousClaimHash: claimHash,
+              claimLease: { id: staleClaimId, epoch: 2 },
+              artifactRefs: {
+                journal: filePath,
+                remote: remoteArtifactPath,
+              },
+              fsync: { requested: true },
+            },
+            {
+              sequence: 3,
+              type: 'journal-opened',
+              artifactRefs: {
+                journal: filePath,
+                remote: remoteArtifactPath,
+              },
+              fsync: { requested: true },
+            },
+          ],
+        };
+      },
+      assertCurrentClaim() {},
+    });
+
+    assert.equal(report.supported, false, label);
+    assert.equal(report.checkedBoundarySatisfied, false, label);
+    assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false, label);
+    assert.equal(report.checkedBoundaryProof.claim, null, label);
+    assert.equal(report.checkedBoundaryProof.artifactRefs, null, label);
+    assert.ok(report.missingDependency.includes('restart-readable recovery artifact references'), label);
+  }
+});
+
 test('production recovery support report keeps checked boundary closed when the inspected lease-fence boundary drifts from the writer contract', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';

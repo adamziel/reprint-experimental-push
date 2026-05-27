@@ -1435,6 +1435,7 @@ export function productionRecoverySupportReport(writer) {
     inspected,
     inspectedClaimIdentity,
     inspectedClaimState,
+    persistedArtifactRefs,
     missingDependency,
   );
 
@@ -1533,6 +1534,7 @@ function checkedDurableJournalBoundaryProof(
   inspected,
   inspectedClaimIdentity,
   inspectedClaimState,
+  persistedArtifactRefs,
   missingDependency = [],
 ) {
   const staleClaimLineageProven = hasStaleClaimRejectionEvidence(inspected?.records);
@@ -1565,6 +1567,7 @@ function checkedDurableJournalBoundaryProof(
           : null
       );
   const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
+    && !persistedArtifactRefs?.invalidReason
     && inspectedJournalPath !== null
     && inspected.artifactRefs.journal === inspectedJournalPath
       ? Object.freeze({
