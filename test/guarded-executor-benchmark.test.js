@@ -12141,6 +12141,39 @@ test('guarded benchmark surfaces file-hash release-bundle blockers at runtime', 
   ]);
 });
 
+test('guarded benchmark surfaces release-cursor release-bundle blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const releaseCursorReleaseBundleRejectedFastPaths = details.rejectedFastPaths
+    .filter(
+      (entry) =>
+        entry.id === 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    );
+
+  assert.deepEqual(
+    releaseCursorReleaseBundleRejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+    ],
+  );
+
+  assert.deepEqual(summarizeRejectedGates(releaseCursorReleaseBundleRejectedFastPaths), [
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
+});
+
 test('guarded benchmark carries direct measured queue-headroom proof blockers into rejected retry summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
