@@ -1437,10 +1437,20 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
   const writerAcceptedOnCheckedBoundaryHidden =
     Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
     && hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary');
+  const writerAcceptedOnCheckedBoundaryInherited =
+    writer !== null
+    && typeof writer === 'object'
+    && !Object.hasOwn(writer, 'acceptedOnCheckedBoundary')
+    && 'acceptedOnCheckedBoundary' in writer;
   const inspectedAcceptedOnCheckedBoundary = Object.hasOwn(inspected ?? {}, 'acceptedOnCheckedBoundary')
     && !hasHiddenOwnStringProperty(inspected, 'acceptedOnCheckedBoundary')
       ? inspected.acceptedOnCheckedBoundary === true
       : null;
+  const inspectedAcceptedOnCheckedBoundaryInherited =
+    inspected !== null
+    && typeof inspected === 'object'
+    && !Object.hasOwn(inspected, 'acceptedOnCheckedBoundary')
+    && 'acceptedOnCheckedBoundary' in inspected;
   const acceptedOnCheckedBoundary = (
     writerAcceptedOnCheckedBoundary === true
     || (
@@ -1448,6 +1458,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
       && inspectedAcceptedOnCheckedBoundary === true
     )
   ) && !writerAcceptedOnCheckedBoundaryHidden
+    && !writerAcceptedOnCheckedBoundaryInherited
+    && !inspectedAcceptedOnCheckedBoundaryInherited
     && inspectedAcceptedOnCheckedBoundary !== false
     && !checkedBoundaryBlockedByMissingDependency
     && CHECKED_DURABLE_JOURNAL_SCOPE_PATTERN.test(scope || '')
