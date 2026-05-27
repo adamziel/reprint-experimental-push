@@ -3836,6 +3836,130 @@ test('packaged production plugin smoke readiness helper waits through packaged-r
   ]);
 });
 
+test('packaged production plugin smoke readiness helper preserves timeout fallback probes when signed preflight and /wp-json/ both time out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
+  timeoutError.name = 'TimeoutError';
+  const timeoutFallbackProbes = {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 0,
+      ok: false,
+      body: 'Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight after 100ms',
+      ready: false,
+      retryable: false,
+      terminal: false,
+      timedOut: true,
+    },
+    indexProbe: {
+      route: '/wp-json/',
+      status: 0,
+      ok: false,
+      body: 'Timed out fetching http://127.0.0.1:65535/wp-json/ after 100ms',
+      ready: false,
+      retryable: false,
+      terminal: false,
+      timedOut: true,
+    },
+  };
+  const helper = buildPackagedSmokeWaitHelper({
+    fetchTextWithTimeout: async () => {
+      throw timeoutError;
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => timeoutFallbackProbes,
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => ({
+      kind: 'timed-out-route-index-timeout',
+    }),
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9459,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback preflight route: \/wp-json\/reprint\/v1\/push\/preflight/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback index route: \/wp-json\//,
+      );
+      return true;
+    },
+  );
+});
+
+test('packaged production plugin smoke readiness helper preserves invalid timeout fallback probes when signed preflight times out and /wp-json/ returns an invalid body', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
+  timeoutError.name = 'TimeoutError';
+  const timeoutFallbackProbes = {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 0,
+      ok: false,
+      body: 'Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight after 100ms',
+      ready: false,
+      retryable: false,
+      terminal: false,
+      timedOut: true,
+    },
+    indexProbe: {
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: '<!doctype html><html><body>not a REST index</body></html>',
+      parsedBody: null,
+      ready: false,
+      retryable: false,
+      terminal: true,
+    },
+  };
+  const helper = buildPackagedSmokeWaitHelper({
+    fetchTextWithTimeout: async () => {
+      throw timeoutError;
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => timeoutFallbackProbes,
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => ({
+      kind: 'timed-out-route-index-terminal',
+    }),
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9460,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight probe timed out while \/wp-json\/ returned an invalid readiness body after the snapshot probe timed out/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback preflight route: \/wp-json\/reprint\/v1\/push\/preflight/,
+      );
+      assert.match(
+        error.message,
+        /Last timeout fallback index route: \/wp-json\//,
+      );
+      assert.match(
+        error.message,
+        /invalidReadinessBody/,
+      );
+      return true;
+    },
+  );
+});
+
 test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
