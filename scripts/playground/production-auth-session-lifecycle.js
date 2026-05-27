@@ -515,7 +515,7 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       ...(typeof entry.unrevokedField === 'string' ? { unrevokedField: entry.unrevokedField } : {}),
       ...(typeof entry.expiredField === 'string' ? { expiredField: entry.expiredField } : {}),
       ...(typeof entry.rotatedField === 'string' ? { rotatedField: entry.rotatedField } : {}),
-      expired: entry.expired === true || entry.status === 'expired',
+      expired: entry.expired === true || entry.status === 'expired' || isExpiredAuthSession(entry),
       revoked: entry.revoked === true || entry.status === 'revoked',
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
       cleanup: entry.cleanup === true,

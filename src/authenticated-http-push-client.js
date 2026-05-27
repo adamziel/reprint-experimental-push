@@ -1217,7 +1217,7 @@ function summarizeAuthSessionLifecycle(session) {
         rotatedField: session.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
       }
       : {}),
-    expired: session.status === 'expired' || isExpiredSession(session),
+    expired: session.expired === true || session.status === 'expired' || isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
     cleanup: session.cleanup === true ? true : session.cleanup === false ? false : null,

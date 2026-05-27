@@ -1188,6 +1188,13 @@ test('production-shaped authenticated push fails closed when production auth ses
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
+    assert.equal(summary.authSessionLifecycleTrace[0]?.expired, true);
+    assert.equal(summary.authSessionLifecycle.minted?.expired, true);
+    assert.equal(summary.authSessionLifecycle.expired?.step, 'preflight');
+    assert.equal(summary.authSessionLifecycle.expired?.expired, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.expired, true);
+    assert.equal(summary.authSessionLifecycleSummary.expired?.step, 'preflight');
+    assert.equal(summary.authSessionLifecycleSummary.expired?.expired, true);
     assert.equal(seen.length, 1);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
   } finally {
