@@ -8024,11 +8024,15 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
-    /Packaged production plugin server reported the bounded readiness failure \$\{snapshot\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive startup-shaped snapshot response/s,
+    /Packaged production plugin snapshot hit the bounded readiness failure after \$\{snapshotNotReadyProbeCount\} consecutive startup-shaped response/s,
   );
   assert.match(
     helperSource,
-    /Packaged production plugin server reported the bounded readiness failure \$\{preflight\.status\} after \$\{preflightNotReadyProbeCount\} consecutive startup-shaped signed preflight response/s,
+    /Packaged production plugin signed preflight hit the bounded readiness failure after \$\{preflightNotReadyProbeCount\} consecutive startup-shaped response/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin readiness hit \$\{timeoutProbeCount\} consecutive probe timeout\$\{timeoutProbeCount === 1 \? '' : 's'\}/s,
   );
 });
 
