@@ -17157,6 +17157,90 @@ test('blocks a local thumbnail reference owned by an existing attachment when th
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local thumbnail reference owned by an existing attachment when the same-plan attachment target is itself blocked by a revision parent even when unrelated remote attachment noise exists', () => {
+  const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
+  const revisionResourceKey = 'row:["wp_posts","ID:2"]';
+  const targetAttachmentResourceKey = 'row:["wp_posts","ID:3"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:1491"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Existing source attachment',
+    post_content: 'base-private-source-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  remote.db.wp_posts['ID:1'] = {
+    ...base.db.wp_posts['ID:1'],
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local revision parent',
+    post_content: 'local-private-revision-parent-body',
+    post_type: 'revision',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local blocked attachment target',
+    post_content: 'local-private-blocked-attachment-target-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:1491': {
+      meta_id: 1491,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 3,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-attachment-noise-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetAttachmentMutation = mutationFor(plan, targetAttachmentResourceKey);
+  const targetAttachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetAttachmentResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourceAttachmentResourceKey), undefined);
+  assert.equal(mutationFor(plan, revisionResourceKey), undefined);
+  assert.equal(targetAttachmentMutation.changeKind, 'create');
+  assert.equal(targetAttachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(targetAttachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(targetAttachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(targetAttachmentBlocker.references[0].targetResourceKey, revisionResourceKey);
+  assert.equal(postmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(postmetaBlocker.surface, 'attachment');
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('base-private-source-attachment-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-revision-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('local-private-blocked-attachment-target-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(plan).includes('remote-attachment-noise-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local thumbnail reference owned by an existing attachment when the same-plan attachment target is itself blocked by a wp_navigation parent', () => {
   const sourceAttachmentResourceKey = 'row:["wp_posts","ID:1"]';
   const navigationResourceKey = 'row:["wp_posts","ID:2"]';
