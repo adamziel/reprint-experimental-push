@@ -2130,6 +2130,26 @@ function runBoundedSync(command, args, options, label) {
   return proof;
 }
 
+function describeSpawnProof(proof) {
+  return JSON.stringify(
+    {
+      status: proof.status,
+      signal: proof.signal ?? null,
+      error: proof.error
+        ? {
+            name: proof.error.name,
+            code: proof.error.code ?? null,
+            message: proof.error.message,
+          }
+        : null,
+      stdout: proof.stdout ?? '',
+      stderr: proof.stderr ?? '',
+    },
+    null,
+    2,
+  );
+}
+
 function summarizePackagedPluginDriverProof() {
   try {
     const proof = runBoundedSync(

@@ -27,9 +27,18 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
     };
   }
 
-  const observedType = session?.type || 'missing';
-  const observedStatus = session?.status || 'missing';
-  const observedExpiresAt = session?.expiresAt || 'missing';
+  const invalidIdentityField = resolveInvalidAuthSessionIdentityField(session);
+  if (invalidIdentityField) {
+    return {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidIdentityField}`,
+    };
+  }
+
+  const observedType = normalizeAuthSessionObservationField(session?.type) ?? 'missing';
+  const observedStatus = normalizeAuthSessionObservationField(session?.status) ?? 'missing';
+  const observedExpiresAt = normalizeAuthSessionObservationField(session?.expiresAt) ?? 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
   const cleanedUp = session?.cleanedUp === true || session?.cleanup === true || session?.status === 'cleaned-up';
   const rotated = session?.rotated === true || session?.status === 'rotated';

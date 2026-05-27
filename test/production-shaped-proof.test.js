@@ -1633,6 +1633,36 @@ test('production auth/session lifecycle helper fails closed on malformed lifecyc
   );
 });
 
+test('production auth/session lifecycle helper fails closed on malformed string lifecycle fields', () => {
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: ' psh_01j00000000000000000000000 ',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    }),
+    {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: 'invalid-id',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycle({
+      id: 'psh_01j00000000000000000000000',
+      type: 'production-auth-session',
+      status: ['active'],
+      expiresAt: '2099-01-01T00:00:00Z',
+    }),
+    {
+      ok: false,
+      required: 'string lifecycle fields',
+      observed: 'invalid-status',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary helper requires a preserved active read', () => {
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary({

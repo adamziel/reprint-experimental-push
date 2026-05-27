@@ -2281,10 +2281,22 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     };
   }
 
-  if (session?.type !== 'production-auth-session') {
+  const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
+  if (invalidIdentityField) {
+    return {
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidIdentityField}`,
+    };
+  }
+
+  const observedType = normalizeProductionAuthSessionLifecycleField(session?.type) ?? 'missing';
+  const observedStatus = normalizeProductionAuthSessionLifecycleField(session?.status) ?? 'missing';
+  const observedExpiresAt = normalizeProductionAuthSessionLifecycleField(session?.expiresAt) ?? 'missing';
+
+  if (observedType !== 'production-auth-session') {
     return {
       required: 'production-auth-session',
-      observed: session?.type || 'missing',
+      observed: observedType,
     };
   }
 
@@ -2314,20 +2326,20 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
     return {
       field: session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expiresAt',
       required: 'unexpired',
-      observed: session?.status === 'expired' ? 'expired' : (session?.expiresAt || 'missing'),
+      observed: observedStatus === 'expired' ? 'expired' : observedExpiresAt,
     };
   }
-  if (session?.status !== 'active') {
+  if (observedStatus !== 'active') {
     return {
       required: 'active',
-      observed: session?.status || 'missing',
+      observed: observedStatus,
     };
   }
 
-  if (!session?.expiresAt) {
+  if (!observedExpiresAt || observedExpiresAt === 'missing') {
     return {
       required: 'unexpired',
-      observed: session?.expiresAt || 'missing',
+      observed: observedExpiresAt,
     };
   }
 
@@ -2355,6 +2367,57 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
   }
 
   return null;
+}
+
+function resolveInvalidProductionAuthSessionIdentityField(session) {
+  if (!session || typeof session !== 'object') {
+    return null;
+  }
+
+  if (session.id !== undefined && session.id !== null && !normalizeProductionAuthSessionLifecycleId(session.id)) {
+    return 'id';
+  }
+
+  const identityFields = [
+    ['type', 'type'],
+    ['status', 'status'],
+    ['expiresAt', 'expires-at'],
+  ];
+
+  for (const [field, label] of identityFields) {
+    const value = session[field];
+    if (value !== undefined && value !== null && !normalizeProductionAuthSessionLifecycleField(value)) {
+      return label;
+    }
+  }
+
+  return null;
+}
+
+function normalizeProductionAuthSessionLifecycleId(id) {
+  if (typeof id !== 'string') {
+    return null;
+  }
+
+  const normalized = id.trim();
+  if (!normalized || normalized !== id || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
+function normalizeProductionAuthSessionLifecycleField(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (!normalized || normalized !== value || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    return null;
+  }
+
+  return normalized;
 }
 
 function setProductionAuthSessionBoundary(summary) {
