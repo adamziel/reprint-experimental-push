@@ -13143,7 +13143,7 @@ test('blocks plugin-owned deletes with missing driver metadata while preserving 
   assert.equal(conflictJson.includes('Shared title'), false);
 });
 
-test('stops plugin-owned deletes with missing driver metadata while preserving matching independent deletes, edits, type swaps, and remote-only plugin drift', () => {
+test('blocks plugin-owned deletes with missing driver metadata while preserving matching independent deletes, edits, type swaps, and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
   base.files['about.php'] = '<?php echo "base about";';
