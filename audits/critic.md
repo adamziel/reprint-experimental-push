@@ -1,31 +1,39 @@
 # Critic Verdict
 
-Current reliable head: `cb09dc2765a8e7463bdb1e2f218ebc180be5ddab`
-(`Support safe taxonomy closure references`).
+Current reliable head: `e4486374ac0c4de784e103bfbdff6d6054933873`
+(`Mirror validated recovery journal surface`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is planner-side support work in `src/planner.js` plus coverage in
-  `test/push-planner.test.js`. It adds safe same-plan handling for taxonomy
-  closure references and an explicit unsupported `nav_menu` taxonomy surface,
-  along with recursive reference support for WordPress graph identities.
-- That is useful invariants hardening, but it still only constrains planner
-  behavior. It does not prove a live production-owned Reprint endpoint
-  boundary that mints a session, reads it back from durable lease-fenced
-  journal storage after restart, preserves rejected-remote evidence, and
-  revalidates at apply time before the first mutation.
-- No supervised release gate closes here. The remaining primitive is still the
-  real endpoint proof rather than another planner/support-side graph check.
+- This head mirrors a validated recovery journal surface into the checked
+  authenticated client summary. In `src/authenticated-http-push-client.js` it
+  recognizes `production-recovery-journal` recovery-inspect data, carries the
+  validated `journal`, `claim`, and `leaseFence` surface into the summary, and
+  rejects untrusted recovery-inspect journal data with
+  `RECOVERY_INSPECT_JOURNAL_UNTRUSTED`.
+- In `src/recovery-journal.js` it adds the production recovery journal
+  inspection contract and extends stale-claim metadata handling so the checked
+  release path can recognize a richer validated journal surface.
+- That is still release-path support evidence, not a supervised gate closure.
+  The checked path remains verifier/scaffold-driven, and this head still does
+  not prove a production-owned, non-lab-backed source mutation boundary on the
+  real Reprint endpoint with live auth/session issuance and readback,
+  restart-readable durable journal storage with lease fencing, and apply-time
+  revalidation before mutation.
+- Verdict therefore remains `0/4`.
 
 Next owner / command:
 
-- `main:reliable-exec` should move to the next exact production-owned
-  boundary: live auth/session issuance and readback on the real Reprint
-  endpoint, or durable journal ownership/restart-readable replay if that is
-  the gating dependency. The checked proof should continue through
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
-  and `src/authenticated-http-push-client.js` under `timeout 300s npm run
-  verify:release`.
+- `main:reliable-exec` should land the next exact primitive beyond recovery
+  journal surface mirroring: a production-owned, non-lab-backed
+  source-mutation/auth-session boundary on the real Reprint endpoint that
+  issues a live session on the endpoint, reads it back after restart from
+  durable journal storage, enforces lease-fenced ownership of those journal
+  rows, and revalidates the session at apply time before mutation without
+  falling back to Playground package-mode scaffolding. The proof should come
+  through `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
+  `timeout 300s npm run verify:release`.
