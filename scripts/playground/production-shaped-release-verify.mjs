@@ -1877,7 +1877,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               }
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -1898,7 +1898,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               ) {
                 await throwPlaygroundReadinessFailure(
                   child,
-                  `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
+                  `Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                   lastError,
                   lastProbes,
                   getOutput(),
@@ -1926,8 +1926,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               await throwPlaygroundReadinessFailure(
                 child,
                 malformedIndexBody
-                  ? `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
-                  : `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                  ? `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                  : `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -1946,7 +1946,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped signed preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2057,7 +2057,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight stayed startup-shaped while /wp-json/ timed out after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ timed out after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2077,7 +2077,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             }
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2098,7 +2098,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             ) {
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
+                `Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe.status} for ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes})`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2126,8 +2126,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             await throwPlaygroundReadinessFailure(
               child,
               malformedIndexBody
-                ? `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
-                : `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+                ? `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`
+                : `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2146,7 +2146,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           }
           await throwPlaygroundReadinessFailure(
             child,
-            `Packaged production plugin server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+            `Packaged production plugin server reported the bounded readiness failure ${preflight.status} after ${preflightNotReadyProbeCount} consecutive startup-shaped signed preflight response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
             lastError,
             lastProbes,
             getOutput(),
@@ -2202,7 +2202,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             lastError = error;
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
+              `Packaged production plugin signed preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2230,7 +2230,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             lastError = error;
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe?.status ?? 0} following ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
+              `Packaged production plugin signed preflight probe timed out after global WordPress startup HTTP ${indexProbe?.status ?? 0} following ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? '' : 's'} at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2247,7 +2247,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             lastError = error;
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight probe timed out while /wp-json/ also timed out after snapshot responded at ${baseUrl}`,
+              `Packaged production plugin signed preflight probe timed out while /wp-json/ also timed out after snapshot responded at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2267,8 +2267,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             await throwPlaygroundReadinessFailure(
               child,
               malformedIndexBody
-                ? `Packaged production plugin preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
-                : `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
+                ? `Packaged production plugin signed preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
+                : `Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
@@ -2285,7 +2285,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           lastError = error;
           await throwPlaygroundReadinessFailure(
             child,
-            `Packaged production plugin preflight probe timed out after snapshot responded at ${baseUrl}`,
+            `Packaged production plugin signed preflight probe timed out after snapshot responded at ${baseUrl}`,
             lastError,
             lastProbes,
             getOutput(),
@@ -2335,7 +2335,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} for ${timeoutFallbackPreflightNotReadyProbeCount} consecutive response${timeoutFallbackPreflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount}) after the snapshot probe timed out at ${baseUrl}`,
+                `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} for ${timeoutFallbackPreflightNotReadyProbeCount} consecutive response${timeoutFallbackPreflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount}) after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2363,7 +2363,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} for ${timeoutFallbackPreflightNotReadyProbeCount} consecutive response${timeoutFallbackPreflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes}) while the snapshot probe timed out at ${baseUrl}`,
+                `Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP ${indexProbe?.status ?? 0} for ${timeoutFallbackPreflightNotReadyProbeCount} consecutive response${timeoutFallbackPreflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedRouteStartupAfterGlobalReadyProbes}) while the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2380,7 +2380,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight stayed startup-shaped while /wp-json/ timed out after the snapshot probe timed out at ${baseUrl}`,
+                `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ timed out after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2399,8 +2399,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               await throwPlaygroundReadinessFailure(
                 child,
                 malformedIndexBody
-                  ? `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after the snapshot probe timed out at ${baseUrl}`
-                  : `Packaged production plugin preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
+                  ? `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned an invalid readiness body after the snapshot probe timed out at ${baseUrl}`
+                  : `Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2454,7 +2454,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
+                  `Packaged production plugin signed preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2470,7 +2470,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight probe timed out while /wp-json/ also timed out after the snapshot probe timed out at ${baseUrl}`,
+                  `Packaged production plugin signed preflight probe timed out while /wp-json/ also timed out after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2486,7 +2486,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError = error;
               await throwPlaygroundReadinessFailure(
                 child,
-                `Packaged production plugin preflight probe timed out after global WordPress startup HTTP ${indexProbe.status} while the snapshot probe timed out at ${baseUrl}`,
+                  `Packaged production plugin signed preflight probe timed out after global WordPress startup HTTP ${indexProbe.status} while the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),
@@ -2505,8 +2505,8 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               await throwPlaygroundReadinessFailure(
                 child,
                 malformedIndexBody
-                  ? `Packaged production plugin preflight probe timed out while /wp-json/ returned an invalid readiness body after the snapshot probe timed out at ${baseUrl}`
-                  : `Packaged production plugin preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
+                    ? `Packaged production plugin signed preflight probe timed out while /wp-json/ returned an invalid readiness body after the snapshot probe timed out at ${baseUrl}`
+                    : `Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe.status} after the snapshot probe timed out at ${baseUrl}`,
                 lastError,
                 lastProbes,
                 getOutput(),

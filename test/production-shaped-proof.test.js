@@ -2972,87 +2972,87 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
 
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?for \$\{timeoutFallbackPreflightNotReadyProbeCount\} consecutive response\$\{timeoutFallbackPreflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedStartupNotReadyProbeCount\}\) after the snapshot probe timed out/,
+    /signed preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?for \$\{timeoutFallbackPreflightNotReadyProbeCount\} consecutive response\$\{timeoutFallbackPreflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedStartupNotReadyProbeCount\}\) after the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
-    /preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out/,
+    /signed preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?for \$\{timeoutFallbackPreflightNotReadyProbeCount\} consecutive response\$\{timeoutFallbackPreflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}\) while the snapshot probe timed out/,
+    /signed preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?for \$\{timeoutFallbackPreflightNotReadyProbeCount\} consecutive response\$\{timeoutFallbackPreflightNotReadyProbeCount === 1 \? '' : 's'\} \(limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}\) while the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out/,
+    /signed preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out/,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
+    /signed preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     smokeSource,
-    /preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+    /signed preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
+    /signed preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+    /signed preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+    /signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.match(
     smokeSource,
-    /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+    /signed preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
   );
   assert.match(
     smokeSource,
-    /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+    /signed preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.match(
     smokeSource,
-    /preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+    /signed preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
   );
   assert.match(
     smokeSource,
-    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out/,
+    /signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out/,
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
+    /signed preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe[\s\S]*?after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     verifierSource,
-    /preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
+    /signed preflight probe timed out while \/wp-json\/ kept reporting global WordPress startup HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?globalWordPressStartup:\s*true/s,
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
+    /signed preflight stayed startup-shaped after global WordPress startup HTTP \$\{indexProbe[\s\S]*?while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?preflightNotReadyProbeCount:\s*timeoutFallbackPreflightNotReadyProbeCount/s,
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+    /signed preflight stayed startup-shaped while \/wp-json\/ timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
   );
   assert.match(
     verifierSource,
-    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+    /signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.match(
     verifierSource,
-    /preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
+    /signed preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out[\s\S]*?indexProbeTimedOut:\s*true/s,
   );
   assert.match(
     verifierSource,
-    /preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
+    /signed preflight probe timed out after global WordPress startup HTTP \$\{indexProbe\.status\} while the snapshot probe timed out[\s\S]*?packagedRouteStartup:\s*true/s,
   );
   assert.match(
     verifierSource,
-    /preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
+    /signed preflight probe timed out while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after the snapshot probe timed out[\s\S]*?indexTerminal:\s*true/s,
   );
   for (const source of [smokeSource, verifierSource]) {
     assert.match(
@@ -3624,12 +3624,12 @@ test('packaged readiness helpers distinguish signed preflight timeouts after sna
       /const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>\s*buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),\s*\);/s,
     );
     assert.ok(
-      source.includes('Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? \'\' : \'s\'} at ${baseUrl}')
-      || source.includes('Packaged production plugin preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? "" : "s"} at ${baseUrl}'),
+      source.includes('Packaged production plugin signed preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? \'\' : \'s\'} at ${baseUrl}')
+      || source.includes('Packaged production plugin signed preflight probe timed out while /wp-json/ kept reporting global WordPress startup HTTP ${indexProbe?.status ?? 0} after ${activeSnapshotNotReadyProbeCount} consecutive startup-shaped snapshot response${activeSnapshotNotReadyProbeCount === 1 ? "" : "s"} at ${baseUrl}'),
       'expected packaged signed preflight timeout branch to retain snapshot-count-aware global-startup diagnostics',
     );
     assert.ok(
-      source.includes('Packaged production plugin preflight probe timed out after snapshot responded at ${baseUrl}'),
+      source.includes('Packaged production plugin signed preflight probe timed out after snapshot responded at ${baseUrl}'),
       'expected packaged signed preflight timeout branch to distinguish snapshot responses from snapshot timeouts',
     );
   }
@@ -3827,7 +3827,7 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
-    /Packaged production plugin server reported the bounded readiness failure \$\{preflight\.status\} after \$\{preflightNotReadyProbeCount\} consecutive startup-shaped preflight response/s,
+    /Packaged production plugin server reported the bounded readiness failure \$\{preflight\.status\} after \$\{preflightNotReadyProbeCount\} consecutive startup-shaped signed preflight response/s,
   );
 });
 
@@ -3955,7 +3955,7 @@ test('packaged readiness helpers keep a shorter route-startup budget after globa
     );
     assert.match(
       source,
-      /Packaged production plugin preflight stayed startup-shaped after global WordPress startup HTTP[\s\S]*?limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}/s,
+      /Packaged production plugin signed preflight stayed startup-shaped after global WordPress startup HTTP[\s\S]*?limit \$\{maxPackagedRouteStartupAfterGlobalReadyProbes\}/s,
     );
   }
 });
