@@ -91,6 +91,15 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.passedBundleCount, 6);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
+  assert.equal(summary.requestedScenarioCount, 'all');
+  assert.equal(summary.passedRequestedScenarioCount, 'all');
+  assert.equal(summary.failedRequestedScenarioCount, 'all');
+  assert.equal(summary.requestedBundleCount, 'all');
+  assert.equal(summary.passedRequestedBundleCount, 'all');
+  assert.equal(summary.failedRequestedBundleCount, 'all');
+  assert.equal(summary.requestedConcreteScenarioCount, 'all');
+  assert.equal(summary.passedRequestedConcreteScenarioCount, 'all');
+  assert.equal(summary.failedRequestedConcreteScenarioCount, 'all');
   assert.equal(summary.requestedScenarios, 'all');
   assert.equal(summary.requestedBundles, 'all');
   assert.equal(summary.requestedConcreteScenarios, 'all');
@@ -292,6 +301,15 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.passedBundleCount, 1);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 5);
+  assert.equal(summary.requestedScenarioCount, 1);
+  assert.equal(summary.passedRequestedScenarioCount, 1);
+  assert.equal(summary.failedRequestedScenarioCount, 0);
+  assert.equal(summary.requestedBundleCount, 1);
+  assert.equal(summary.passedRequestedBundleCount, 1);
+  assert.equal(summary.failedRequestedBundleCount, 0);
+  assert.equal(summary.requestedConcreteScenarioCount, 0);
+  assert.equal(summary.passedRequestedConcreteScenarioCount, 0);
+  assert.equal(summary.failedRequestedConcreteScenarioCount, 0);
   assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.requestedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.requestedConcreteScenarios, []);
@@ -588,6 +606,15 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.requestedScenariosSatisfied, false);
   assert.equal(summary.requestedBundlesSatisfied, false);
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.equal(summary.requestedScenarioCount, 1);
+  assert.equal(summary.passedRequestedScenarioCount, 0);
+  assert.equal(summary.failedRequestedScenarioCount, 1);
+  assert.equal(summary.requestedBundleCount, 1);
+  assert.equal(summary.passedRequestedBundleCount, 0);
+  assert.equal(summary.failedRequestedBundleCount, 1);
+  assert.equal(summary.requestedConcreteScenarioCount, 0);
+  assert.equal(summary.passedRequestedConcreteScenarioCount, 0);
+  assert.equal(summary.failedRequestedConcreteScenarioCount, 0);
   assert.deepEqual(summary.passedRequestedBundles, []);
   assert.deepEqual(summary.failedRequestedBundles, ['driverVerifierGuards']);
   assert.equal(summary.bundles.driverVerifierGuards, 'missing');
@@ -682,6 +709,15 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
   assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.equal(summary.requestedScenarioCount, 1);
+  assert.equal(summary.passedRequestedScenarioCount, 1);
+  assert.equal(summary.failedRequestedScenarioCount, 0);
+  assert.equal(summary.requestedBundleCount, 1);
+  assert.equal(summary.passedRequestedBundleCount, 1);
+  assert.equal(summary.failedRequestedBundleCount, 0);
+  assert.equal(summary.requestedConcreteScenarioCount, 0);
+  assert.equal(summary.passedRequestedConcreteScenarioCount, 0);
+  assert.equal(summary.failedRequestedConcreteScenarioCount, 0);
   assert.deepEqual(summary.passedRequestedScenarios, ['driver-positive-proof']);
   assert.deepEqual(summary.failedRequestedScenarios, []);
   assert.deepEqual(summary.passedRequestedBundles, ['driverPositiveProof']);
@@ -2373,6 +2409,15 @@ test('plugin-driver proof summary marks incomplete requested verifier bundle as 
 
   assert.equal(summary.requestedScenariosSatisfied, false);
   assert.equal(summary.requestedBundlesSatisfied, false);
+  assert.equal(summary.requestedScenarioCount, 1);
+  assert.equal(summary.passedRequestedScenarioCount, 0);
+  assert.equal(summary.failedRequestedScenarioCount, 1);
+  assert.equal(summary.requestedBundleCount, 1);
+  assert.equal(summary.passedRequestedBundleCount, 0);
+  assert.equal(summary.failedRequestedBundleCount, 1);
+  assert.equal(summary.requestedConcreteScenarioCount, 0);
+  assert.equal(summary.passedRequestedConcreteScenarioCount, 0);
+  assert.equal(summary.failedRequestedConcreteScenarioCount, 0);
   assert.deepEqual(summary.requestedScenarioStatuses, {
     'driver-verifier-guards': 'missing',
   });

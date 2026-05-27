@@ -293,6 +293,33 @@ export function buildProductionPluginPackageProofSummary(
     passedBundleCount,
     failedBundleCount,
     skippedBundleCount,
+    requestedScenarioCount: normalizedRequestedScenarios === null
+      ? 'all'
+      : normalizedRequestedScenarios.length,
+    passedRequestedScenarioCount: normalizedRequestedScenarios === null
+      ? 'all'
+      : passedRequestedScenarios.length,
+    failedRequestedScenarioCount: normalizedRequestedScenarios === null
+      ? 'all'
+      : failedRequestedScenarios.length,
+    requestedBundleCount: requestedBundles === 'all'
+      ? 'all'
+      : requestedBundleCount,
+    passedRequestedBundleCount: requestedBundles === 'all'
+      ? 'all'
+      : passedRequestedBundleCount,
+    failedRequestedBundleCount: requestedBundles === 'all'
+      ? 'all'
+      : failedRequestedBundleCount,
+    requestedConcreteScenarioCount: requestedConcreteScenarios === 'all'
+      ? 'all'
+      : requestedConcreteScenarios.length,
+    passedRequestedConcreteScenarioCount: requestedConcreteScenarios === 'all'
+      ? 'all'
+      : passedRequestedConcreteScenarios.length,
+    failedRequestedConcreteScenarioCount: requestedConcreteScenarios === 'all'
+      ? 'all'
+      : failedRequestedConcreteScenarios.length,
     requestedScenarios: normalizedRequestedScenarios === null ? 'all' : normalizedRequestedScenarios.slice(),
     requestedBundles,
     requestedConcreteScenarios,
