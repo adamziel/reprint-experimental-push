@@ -1228,3 +1228,122 @@ test('packaged server readiness requires a production-shaped preflight when pres
     false,
   );
 });
+
+test('packaged server readiness fails closed for terminal production auth session states', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+    },
+  };
+
+  const terminalSessions = [
+    {
+      label: 'missing expiry',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+      },
+    },
+    {
+      label: 'past expiry',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2000-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'invalid expiry',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: 'not-a-timestamp',
+      },
+    },
+    {
+      label: 'revoked status',
+      session: {
+        status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned up',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+  ];
+
+  for (const { label, session } of terminalSessions) {
+    const terminalPreflight = {
+      ...basePreflight,
+      body: {
+        ...basePreflight.body,
+        auth: {
+          session,
+        },
+      },
+    };
+
+    assert.equal(
+      packagedProductionPluginPreflightReady(terminalPreflight),
+      false,
+      `${label} should not be considered ready`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(terminalPreflight),
+      false,
+      `${label} should fail closed instead of retrying`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(terminalPreflight),
+      true,
+      `${label} should be terminal`,
+    );
+    assert.equal(
+      packagedProductionPluginServerReady({
+        snapshot: readySnapshot,
+        preflight: terminalPreflight,
+      }),
+      false,
+      `${label} should keep the packaged server unready`,
+    );
+  }
+});
