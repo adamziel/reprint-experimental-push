@@ -7,20 +7,16 @@ Verdict: `0/4`
 
 Reason:
 
-- This commit is classified as `support-only`. It adds authenticated-client
-  tests for checked cleanup evidence continuity, which is useful
-  auth/session-lifecycle hardening on the checked path, but it still does not
-  establish a production-owned, non-lab proof boundary on the real
-  `REPRINT_PUSH_SOURCE_URL` endpoint.
-- The diff is test-only: `test/authenticated-http-push-client.test.js` gains
-  authenticated client coverage for checked cleanup evidence continuity. That
-  strengthens confidence that checked auth/session handling keeps evidence
-  intact across the tested flow, but it is still laboratory coverage rather
-  than endpoint proof on the real `/wp-json/reprint/v1/push/*` surface.
-- The missing proof remains live auth/session issuance plus readback, a
-  durable restart-readable lease-fenced journal, plugin-driver ownership,
-  preserved rejected remote evidence, and apply-time revalidation before the
-  first mutation on the real `/wp-json/reprint/v1/push/*` endpoint.
+- This head adds more regression coverage for cleanup-evidence continuity in
+  `test/authenticated-http-push-client.test.js`. The new cases keep the checked
+  client fail-closed when replay, recovery-inspect, or db-journal paths drop
+  cleanup evidence, but they still exercise the same production-shaped
+  Playground/release-verifier scaffolding rather than a production-owned,
+  non-lab-backed mutation boundary on the real Reprint endpoint.
+- The diff does not introduce live auth/session issuance and readback on the
+  real endpoint, durable restart-readable journal storage with lease fencing,
+  or apply-time revalidation before mutation. It only extends the existing
+  cleanup-evidence continuity expectations inside the checked client tests.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
