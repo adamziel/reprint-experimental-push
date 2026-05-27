@@ -4022,6 +4022,15 @@ maybeTest('production-shaped live release verify command proves the packaged che
   assert.equal(summary.durableJournal?.checkedAccepted, true);
   assert.match(summary.durableJournal?.proof?.journal?.scope || '', /packaged production plugin recovery journal surface/);
   assert.equal(summary.durableJournal?.proof?.journal?.storageGuard?.boundary, 'wpdb-single-statement-cas');
+  assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
+  assert.equal(
+    summary.durableJournal?.proof?.journal?.writerLease?.claimId,
+    summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+  );
+  assert.equal(
+    summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimId,
+    summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+  );
   assert.equal(summary.boundary?.replayAndRetry?.required, '/snapshot');
   assert.equal(summary.boundary?.replayAndRetry?.observed, '/snapshot');
   assert.equal(summary.boundary?.replayAndRetry?.retryAttempts, 2);

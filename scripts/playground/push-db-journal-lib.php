@@ -762,6 +762,12 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
             && ($claim['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
             && ($claim['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null)
         );
+    $claim_identity_matches = !is_array($claim)
+        || !reprint_push_lab_db_journal_non_empty_string($claim['activeClaimId'] ?? null)
+        || (
+            ($writer_lease['claimId'] ?? null) === ($claim['activeClaimId'] ?? null)
+            && ($lease_fence_writer_lease['claimId'] ?? null) === ($claim['activeClaimId'] ?? null)
+        );
 
     return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($ownership['productionAdapter'] ?? null) === ($lease_fence['boundary'] ?? null)
@@ -778,7 +784,8 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
         && ($writer_lease['restartReadable'] ?? null) === ($lease_fence_writer_lease['restartReadable'] ?? null)
         && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence['staleClaimRejected'] ?? null)
         && ($writer_lease['staleClaimRejected'] ?? null) === ($lease_fence_writer_lease['staleClaimRejected'] ?? null)
-        && $claim_stale_rejected_matches;
+        && $claim_stale_rejected_matches
+        && $claim_identity_matches;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_contract_matches($journal): bool
