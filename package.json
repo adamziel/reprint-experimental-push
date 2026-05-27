@@ -67,6 +67,7 @@
     "test:playground:production-plugin-driver-route-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRouteProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-positive-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverPositiveProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-positive-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverPositiveProof node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-release-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReleaseProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-release-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReleaseProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",

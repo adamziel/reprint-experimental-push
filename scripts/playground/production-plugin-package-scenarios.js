@@ -157,6 +157,8 @@ const modeNameMappings = new Map([
   ['driverPositiveProof', 'driver-positive-proof'],
   ['driver-positive-proof-only', 'driver-positive-proof'],
   ['driverPositiveProofOnly', 'driver-positive-proof'],
+  ['driver-release-only', 'driver-release-proof'],
+  ['driverReleaseOnly', 'driver-release-proof'],
   ['driver-release-proof', 'driver-release-proof'],
   ['driverReleaseProof', 'driver-release-proof'],
   ['driver-release-proof-only', 'driver-release-proof'],

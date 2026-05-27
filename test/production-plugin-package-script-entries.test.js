@@ -333,6 +333,13 @@ test('package scripts pin the exact plugin-driver positive-proof-only mode alias
   );
 });
 
+test('package scripts pin the bounded plugin-driver release-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-release-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReleaseProof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver release-proof-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-release-proof-only'],
