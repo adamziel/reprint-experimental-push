@@ -849,6 +849,13 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   }
 
   if (
+    pluginDriverProof?.requestedSatisfied !== undefined
+    && pluginDriverProof?.requestedSatisfied !== nestedModeProof?.requestedSatisfied
+  ) {
+    return false;
+  }
+
+  if (
     pluginDriverProof?.requestedScenarioStatuses !== undefined
     && !requestedScenarioStatusMapsMatch(
       pluginDriverProof?.requestedScenarioStatuses,
