@@ -3,6 +3,43 @@
 Fetched reliable ref today:
 
 - `origin/lane/reliable-executor` resolves to
+  `86384b5ab0c6e4c5fee90aeb24643f04e403beb9`
+  (`Retry timed out signed release posts`).
+
+Previous classified reliable head: `f9425431664b542b9819064dcca4e69fd2872eb6`
+(`Preserve checked auth and journal drift detail`).
+
+Verdict for `86384b5ab0c6e4c5fee90aeb24643f04e403beb9`: `0/4`
+
+Reason:
+
+- The `f9425431..86384b5a` diff only changes `src/authenticated-http-push-client.js`
+  and `test/authenticated-http-push-client.test.js`.
+- The new logic retries timed-out signed release posts and records that
+  behavior in the client-side tests. That is useful release-path hardening,
+  but it still stays on the checked client/retry surface.
+- The commit does not prove the missing production-owned, non-lab-backed
+  boundary on the real Reprint endpoint: live auth/session issuance and
+  readback, restart-readable durable journal storage with lease fencing, or
+  apply-time revalidation before the first mutation on that same boundary.
+- So no supervised release gate closes here. `86384b5a` is still support-side
+  retry hardening, not the constrained production release primitive.
+
+Next exact reliable-owned primitive:
+
+- One production-owned, non-lab-backed checked release command on the real
+  Reprint endpoint where the same executable command string and same live
+  `REPRINT_PUSH_SOURCE_URL` visibly mint and then read back a live auth
+  session on that real source URL, persist it in durable restart-readable
+  journal storage with lease-fenced ownership, preserve the rejected remote
+  evidence for audit, and perform apply-time revalidation before the first
+  mutation on that same boundary.
+
+# Critic Verdict
+
+Fetched reliable ref today:
+
+- `origin/lane/reliable-executor` resolves to
   `f9425431664b542b9819064dcca4e69fd2872eb6`
   (`Preserve checked auth and journal drift detail`).
 
