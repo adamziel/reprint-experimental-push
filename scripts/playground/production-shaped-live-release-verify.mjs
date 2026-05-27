@@ -7,6 +7,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import {
   applyRevalidationRetryable,
+  buildDurableRecoveryJournalReleaseProof,
   hasExplicitCheckedBoundaryRequest,
   resolveCheckedReleaseRequirementEnv,
   resolveCheckedLiveBoundaryEnv,
@@ -255,10 +256,21 @@ function spawnApplyRevalidationProof(envOverrides = {}) {
 }
 
 function emitCombinedReleaseProof(verify, applyRevalidation, options = {}) {
+  const durableRecoveryJournalProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: verify,
+    applyRevalidation,
+  });
+  assert.equal(
+    durableRecoveryJournalProof.ok,
+    true,
+    `durable recovery journal release-boundary proof failed:\n${JSON.stringify(durableRecoveryJournalProof, null, 2)}`,
+  );
+
   process.stdout.write(
     JSON.stringify(
       {
         ...verify,
+        gate2DurableRecoveryJournal: durableRecoveryJournalProof,
         applyRevalidation: normalizeApplyRevalidationProof(applyRevalidation, options),
       },
       null,

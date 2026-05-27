@@ -1267,6 +1267,7 @@ try {
         // Require preserved-read retry proof on the checked verifier path and
         // allow focused tests to fail closed against a mismatched path.
         simulatePreservedRemoteRetryPath: requiredPreservedRemoteRetryPath,
+        proveDurableJournalBoundary: true,
         authSessionSource,
         labDriftAfterSnapshot,
         labAuthSessionDrift,

@@ -9,6 +9,212 @@ export function resolveCheckedReleaseRequirementEnv() {
   };
 }
 
+export function buildDurableRecoveryJournalReleaseProof({
+  releaseSummary,
+  applyRevalidation,
+} = {}) {
+  const releaseProof = releaseSummary?.releaseProof || releaseSummary || {};
+  const durableJournal = releaseSummary?.durableJournal || {};
+  const journal = durableJournal?.proof?.journal
+    || releaseProof?.recoveryInspect?.recovery?.journal
+    || releaseProof?.dbJournal
+    || null;
+  const leaseFence = durableJournal?.proof?.leaseFence
+    || journal?.leaseFence
+    || releaseProof?.dbJournal?.leaseFence
+    || null;
+  const claim = journal?.claim || releaseProof?.dbJournal?.claim || null;
+  const writerLease = journal?.writerLease || releaseProof?.dbJournal?.writerLease || null;
+  const leaseWriterLease = journal?.leaseFence?.writerLease
+    || leaseFence?.writerLease
+    || releaseProof?.dbJournal?.leaseFence?.writerLease
+    || null;
+  const planMutationCount = Number.isInteger(releaseProof?.plan?.mutations)
+    ? releaseProof.plan.mutations
+    : Array.isArray(releaseProof?.planObject?.mutations)
+      ? releaseProof.planObject.mutations.length
+      : null;
+  const latestEvents = Array.isArray(releaseProof?.dbJournal?.latestEvents)
+    ? releaseProof.dbJournal.latestEvents
+    : [];
+  const eventCounts = releaseProof?.dbJournal?.eventCounts || {};
+  const conflictEvent = [...latestEvents]
+    .reverse()
+    .find((entry) => entry?.event === 'idempotency-key-conflict' || entry?.event === 'idempotency-conflict')
+    || null;
+  const mutationEventsAfterConflict = conflictEvent
+    ? latestEvents.filter((entry) =>
+      Number.isInteger(entry?.sequence)
+      && entry.sequence > conflictEvent.sequence
+      && (entry.event === 'apply-started' || entry.event === 'mutation-applied'))
+    : [];
+  const recovery = releaseProof?.recoveryInspect?.recovery || {};
+  const recoveryCounts = recovery?.counts || {};
+  const applyRevalidationRecovery = applyRevalidation?.recoveryInspect?.recovery || {};
+  const applyRevalidationCounts = applyRevalidationRecovery?.counts || {};
+  const replay = releaseProof?.replay?.idempotency || {};
+  const conflict = releaseProof?.idempotencyConflict || {};
+  const mutationApplied = releaseProof?.dbJournal?.mutationApplied ?? null;
+  const expectedMutationEvents = Number.isInteger(planMutationCount) ? planMutationCount : mutationApplied;
+  const leaseOwnerIdentity = {
+    activeClaimId: claim?.activeClaimId || null,
+    activeClaimKeyHash: claim?.activeClaimKeyHash || null,
+    writerLeaseClaimId: writerLease?.claimId || null,
+    writerLeaseClaimKeyHash: writerLease?.claimKeyHash || null,
+    leaseFenceClaimId: leaseWriterLease?.claimId || null,
+    leaseFenceClaimKeyHash: leaseWriterLease?.claimKeyHash || null,
+    matches: Boolean(
+      claim?.activeClaimId
+      && claim?.activeClaimKeyHash
+      && writerLease?.claimId === claim.activeClaimId
+      && writerLease?.claimKeyHash === claim.activeClaimKeyHash
+      && leaseWriterLease?.claimId === claim.activeClaimId
+      && leaseWriterLease?.claimKeyHash === claim.activeClaimKeyHash,
+    ),
+  };
+  const staleOwnerFencing = {
+    proved: Boolean(
+      claim?.staleClaimRejected === true
+      && leaseFence?.staleClaimRejected === true
+      && writerLease?.staleClaimRejected === true
+      && leaseWriterLease?.staleClaimRejected === true
+      && claim?.previousClaimId
+      && claim?.previousClaimKeyHash,
+    ),
+    activeClaimId: claim?.activeClaimId || null,
+    previousClaimId: claim?.previousClaimId || null,
+    previousClaimKeyHash: claim?.previousClaimKeyHash || null,
+    activeClaimEvent: claim?.activeClaimEvent || null,
+    leaseFenceStaleClaimRejected: leaseFence?.staleClaimRejected === true,
+  };
+  const sameKeyBodyReplay = {
+    proved: Boolean(
+      replay?.replayed === true
+      && replay?.freshMutationWork === false
+      && mutationApplied === expectedMutationEvents,
+    ),
+    replayed: replay?.replayed === true,
+    freshMutationWork: replay?.freshMutationWork === true,
+    mutationEvents: mutationApplied,
+    expectedMutationEvents,
+    duplicateMutationEvents: Number.isInteger(mutationApplied)
+      && Number.isInteger(expectedMutationEvents)
+      ? mutationApplied !== expectedMutationEvents
+      : null,
+  };
+  const sameKeyDifferentBodyConflict = {
+    proved: Boolean(
+      conflict?.status === 409
+      && conflict?.code === 'IDEMPOTENCY_KEY_CONFLICT'
+      && conflict?.idempotency?.conflict === true
+      && conflict?.idempotency?.freshMutationWork === false
+      && conflict?.targetSnapshotUnchanged === true
+      && conflictEvent
+      && mutationEventsAfterConflict.length === 0,
+    ),
+    status: conflict?.status ?? null,
+    code: conflict?.code || null,
+    conflict: conflict?.idempotency?.conflict === true,
+    freshMutationWork: conflict?.idempotency?.freshMutationWork === true,
+    targetSnapshotUnchanged: conflict?.targetSnapshotUnchanged === true,
+    conflictEventSequence: conflictEvent?.sequence ?? null,
+    mutationEventsAfterConflict: mutationEventsAfterConflict.length,
+  };
+  const partialStates = {
+    old: {
+      proved: releaseProof?.staleClaimRetry?.abandoned?.code === 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+      source: 'stale-owner retry abandoned before mutation',
+      status: releaseProof?.staleClaimRetry?.abandoned?.status ?? null,
+      code: releaseProof?.staleClaimRetry?.abandoned?.code || null,
+    },
+    new: {
+      proved: Boolean(
+        Number.isInteger(planMutationCount)
+        && recoveryCounts?.new === planMutationCount
+        && recoveryCounts?.blockedUnknown === 0,
+      ),
+      source: 'release-path recovery inspect',
+      state: recovery?.state || null,
+      counts: recoveryCounts || null,
+    },
+    blocked: {
+      proved: Boolean(
+        (applyRevalidationRecovery?.state === 'blocked-recovery'
+          || applyRevalidationRecovery?.status === 'blocked-recovery')
+        && (applyRevalidationCounts?.blockedUnknown || 0) > 0,
+      ),
+      source: 'apply-time revalidation recovery inspect',
+      state: applyRevalidationRecovery?.state || applyRevalidationRecovery?.status || null,
+      counts: applyRevalidationCounts || null,
+    },
+  };
+  const recoveryInspectAfterRestart = {
+    proved: Boolean(
+      releaseProof?.recoveryInspect?.status === 200
+      && releaseProof?.recoveryInspect?.recovery?.journalState === 'ok'
+      && journal?.ownership?.restartReadable === true
+      && leaseFence?.restartReadable === true,
+    ),
+    status: releaseProof?.recoveryInspect?.status ?? null,
+    state: recovery?.state || null,
+    journalState: releaseProof?.recoveryInspect?.recovery?.journalState || null,
+    counts: recoveryCounts || null,
+  };
+  const preservedRejectedRemoteEvidence = {
+    proved: Boolean(
+      releaseProof?.replayAndRetry?.verdict === 'PRESERVED_REMOTE_RETRY_PROVEN'
+      && applyRevalidation?.apply?.status === 412
+      && applyRevalidation?.apply?.code === 'PRECONDITION_FAILED'
+      && (applyRevalidationRecovery?.state === 'blocked-recovery'
+        || applyRevalidationRecovery?.status === 'blocked-recovery')
+    ),
+    replayAndRetry: releaseProof?.replayAndRetry || null,
+    applyStatus: applyRevalidation?.apply?.status ?? null,
+    applyCode: applyRevalidation?.apply?.code || null,
+    recoveryState: applyRevalidationRecovery?.state || applyRevalidationRecovery?.status || null,
+  };
+  const ownership = {
+    ownsJournal: journal?.ownership?.ownsJournal === true || journal?.ownsJournal === true,
+    restartReadable: journal?.ownership?.restartReadable === true || journal?.restartReadable === true,
+    productionAdapter: journal?.ownership?.productionAdapter || journal?.productionAdapter || null,
+    supportedSurface: journal?.ownership?.supportedSurface || journal?.supportedSurface || null,
+  };
+
+  const checks = {
+    ownsJournal: ownership.ownsJournal === true,
+    restartReadable: ownership.restartReadable === true && leaseFence?.restartReadable === true,
+    leaseOwnerIdentity: leaseOwnerIdentity.matches === true,
+    staleOwnerFencing: staleOwnerFencing.proved === true,
+    recoveryInspectAfterRestart: recoveryInspectAfterRestart.proved === true,
+    sameKeyBodyReplay: sameKeyBodyReplay.proved === true,
+    sameKeyDifferentBodyConflict: sameKeyDifferentBodyConflict.proved === true,
+    oldState: partialStates.old.proved === true,
+    newState: partialStates.new.proved === true,
+    blockedState: partialStates.blocked.proved === true,
+    preservedRejectedRemoteEvidence: preservedRejectedRemoteEvidence.proved === true,
+  };
+
+  return {
+    gate: 'GATE-2',
+    durableRecoveryJournalBoundary: 'release-verifier',
+    ok: Object.values(checks).every(Boolean),
+    gateStatus: releaseSummary?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+      ? 'proven'
+      : 'support_only',
+    sameReleaseBoundary: true,
+    sourceUrl: releaseSummary?.topology?.sourceUrl || null,
+    checks,
+    ownership,
+    leaseOwnerIdentity,
+    staleOwnerFencing,
+    recoveryInspectAfterRestart,
+    sameKeyBodyReplay,
+    sameKeyDifferentBodyConflict,
+    partialStates,
+    preservedRejectedRemoteEvidence,
+  };
+}
+
 export function shouldRequestCheckedLivePackagedBoundary({
   liveSourceUrl = '',
   username = '',
