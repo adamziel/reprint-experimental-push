@@ -883,6 +883,18 @@ export function productionRecoverySupportReport(writer) {
     } else if (!isCanonicalAbsolutePath(inspected.filePath)) {
       addMissingDependency('restart-readable recovery artifact location');
     }
+    if (
+      Object.hasOwn(writer ?? {}, 'supportedSurface')
+      && !writerSupportedSurfaceHidden
+      && writer.supportedSurface === 'production-recovery-journal-adapter'
+      && (
+        !Object.hasOwn(inspected, 'supportedSurface')
+        || hasHiddenOwnStringProperty(inspected, 'supportedSurface')
+        || inspected.supportedSurface !== 'production-recovery-journal-adapter'
+      )
+    ) {
+      addMissingDependency('supported production recovery journal adapter surface');
+    }
     if (inspectedJournalPath !== writer.journalPath) {
       addMissingDependency('restart-readable recovery artifact location');
     }
@@ -1550,6 +1562,11 @@ function checkedDurableJournalBoundaryProof(
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
   const checkedBoundaryBlockedByMissingDependency = missingDependency.length > 0;
+  const inspectedSupportedSurface = Object.hasOwn(inspected ?? {}, 'supportedSurface')
+    && !hasHiddenOwnStringProperty(inspected, 'supportedSurface')
+    && inspected.supportedSurface === 'production-recovery-journal-adapter'
+      ? inspected.supportedSurface
+      : null;
   const inspectedOwnsJournal = Object.hasOwn(inspected ?? {}, 'ownsJournal')
     && !hasHiddenOwnStringProperty(inspected, 'ownsJournal')
     && inspected.ownsJournal === true;
@@ -1653,13 +1670,6 @@ function checkedDurableJournalBoundaryProof(
         ? inspected.scope
         : null
     );
-  const supportedSurface = (
-    Object.hasOwn(writer ?? {}, 'supportedSurface')
-    && !hasHiddenOwnStringProperty(writer, 'supportedSurface')
-    && writer.supportedSurface === 'production-recovery-journal-adapter'
-  )
-    ? writer.supportedSurface
-    : null;
   const writerAcceptedOnCheckedBoundary = Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
     && !hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')
       ? writer.acceptedOnCheckedBoundary === true
@@ -1716,7 +1726,7 @@ function checkedDurableJournalBoundaryProof(
       ownsJournal: inspectedOwnsJournal,
       restartReadable: inspectedRestartReadable,
       productionAdapter: inspectedBoundary,
-      supportedSurface,
+      supportedSurface: inspectedSupportedSurface,
     },
     writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
       ? {
