@@ -136,15 +136,13 @@ function checkedBoundaryLatestRowSequence(row) {
     return null;
   }
 
-  if (isPositiveInteger(row.id)) {
-    return row.id;
+  const id = isPositiveInteger(row.id) ? row.id : null;
+  const sequence = isPositiveInteger(row.sequence) ? row.sequence : null;
+  if (id !== null && sequence !== null && id !== sequence) {
+    return null;
   }
 
-  if (isPositiveInteger(row.sequence)) {
-    return row.sequence;
-  }
-
-  return null;
+  return id ?? sequence ?? null;
 }
 
 function checkedBoundaryEventSummariesEvidenceMatches(eventSummaries) {

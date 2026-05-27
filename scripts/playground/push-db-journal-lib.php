@@ -1007,15 +1007,18 @@ function reprint_push_lab_db_journal_checked_boundary_latest_rows_evidence_match
 
 function reprint_push_lab_db_journal_checked_boundary_latest_row_sequence(array $row)
 {
-    if (reprint_push_lab_db_journal_is_positive_int($row['id'] ?? null)) {
-        return (int) ($row['id'] ?? 0);
+    $id = reprint_push_lab_db_journal_is_positive_int($row['id'] ?? null)
+        ? (int) ($row['id'] ?? 0)
+        : null;
+    $sequence = reprint_push_lab_db_journal_is_positive_int($row['sequence'] ?? null)
+        ? (int) ($row['sequence'] ?? 0)
+        : null;
+
+    if ($id !== null && $sequence !== null && $id !== $sequence) {
+        return null;
     }
 
-    if (reprint_push_lab_db_journal_is_positive_int($row['sequence'] ?? null)) {
-        return (int) ($row['sequence'] ?? 0);
-    }
-
-    return null;
+    return $id ?? $sequence;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_event_summaries_evidence_matches($event_summaries): bool
