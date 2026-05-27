@@ -22328,6 +22328,127 @@ test('production recovery support report keeps checked boundary closed when the 
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
 });
 
+test('production recovery support report keeps checked boundary closed when the inspected lease-fence writer storage guard is hidden', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';
+  const claimId = 'claim-checked-boundary-hidden-lease-storage-guard';
+  const staleClaimId = 'claim-checked-boundary-hidden-lease-storage-guard-stale';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+  const hiddenLeaseFenceWriterLease = {
+    ...writerLeaseContract,
+  };
+  Object.defineProperty(hiddenLeaseFenceWriterLease, 'storageGuard', {
+    value: writerLeaseContract.storageGuard,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    acceptedOnCheckedBoundary: true,
+    scope: 'packaged production journal scope',
+    claimHash,
+    writerLease: { id: claimId, epoch: 3 },
+    leaseFence: { id: claimId, epoch: 3 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        ownsJournal: true,
+        restartReadable: true,
+        ownsRemoteArtifact: true,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3 },
+        leaseFence: { id: claimId, epoch: 3 },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'wpdb-single-statement-cas',
+          claimKeyUnique: true,
+          storageGuard: 'wpdb-single-statement-cas',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: true,
+          writerLease: hiddenLeaseFenceWriterLease,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'stale-claim-rejected',
+            claimHash: staleClaimHash,
+            previousClaimHash: claimHash,
+            claimLease: { id: staleClaimId, epoch: 2 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 3,
+            type: 'journal-opened',
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.leaseFence, null);
+});
+
 test('production recovery support report keeps checked boundary closed when the inspected lease-fence boundary drifts from the writer contract', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/recovery-remote.jsonl';

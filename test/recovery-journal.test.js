@@ -5647,6 +5647,25 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     checkedDurableJournalBoundarySatisfied(hiddenWriterLeaseContract),
     false,
   );
+  const hiddenNestedWriterLeaseContract = {
+    ...baseContract,
+    leaseFence: {
+      ...baseContract.leaseFence,
+      writerLease: {
+        ...baseContract.leaseFence.writerLease,
+      },
+    },
+  };
+  Object.defineProperty(hiddenNestedWriterLeaseContract.leaseFence.writerLease, 'storageGuard', {
+    value: baseContract.leaseFence.writerLease.storageGuard,
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(hiddenNestedWriterLeaseContract),
+    false,
+  );
 });
 
 test('checked durable journal boundary accepts the packaged production journal scope', () => {
