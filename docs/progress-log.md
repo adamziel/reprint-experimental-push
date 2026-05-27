@@ -3,6 +3,32 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 08:27:29
+
+<a id="2026-05-27-public-status-audit-082729"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `83d0fe8507f2b0cfaf5e376ec2501fe3c2266371` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head adds checked
+  apply-revalidation evidence before first mutation: packaged apply now
+  reports `applyRevalidation`, the client fails closed on missing or drifted
+  evidence, and the release verifier asserts plan hash, receipt hash, verified
+  resource keys, and active claim sequence binding. That is material
+  checked-path and packaged/Playground proof hardening, not a production
+  boundary gate move. Auditor and critic keep it at `0/4` because the proof is
+  still packaged/Playground-shaped, not a production-owned Reprint endpoint,
+  and `node --test test/authenticated-http-push-client.test.js` failed `16/105`
+  at the audited head.
+- The public page keeps the critic and independent-auditor verdicts aligned
+  with `83d0fe85` while leaving the release posture conservative. The stale
+  percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [critic audit](../audits/critic.md),
+  [current-head audit](../audits/current-head-83d0fe85.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 07:59:34
 
 <a id="2026-05-27-public-status-audit-075934"></a>
