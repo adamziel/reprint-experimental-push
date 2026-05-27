@@ -2837,12 +2837,16 @@ function isTransientFetchError(error) {
     return false;
   }
   const code = error.cause?.code || error.code;
-  return error.name === 'TypeError' && (
+  return error.name === 'TimeoutError'
+    || error.name === 'AbortError'
+    || (
+      error.name === 'TypeError' && (
     code === 'UND_ERR_SOCKET'
     || code === 'ECONNRESET'
     || code === 'EPIPE'
     || code === 'ETIMEDOUT'
-  );
+      )
+    );
 }
 
 function decorateRequestError(error, request) {

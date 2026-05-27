@@ -413,6 +413,43 @@ test('authenticated push client retries idempotent signed posts after a transien
   }
 });
 
+test('authenticated push client retries idempotent signed posts after a transient timeout', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let attempt = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    attempt += 1;
+    if (attempt === 1) {
+      throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+    }
+    return new Response(JSON.stringify({ ok: true, attempt }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential,
+      routeProfile: 'production-shaped',
+      requestTimeoutMs: 1_000,
+    });
+
+    const proof = await client.signedPost('/dry-run', { plan: { id: 'plan-01' } }, {
+      session: 'psh_01j00000000000000000000000',
+      idempotencyKey: 'idem-01-timeout',
+    });
+
+    assert.equal(proof.status, 200);
+    assert.deepEqual(proof.body, { ok: true, attempt: 2 });
+    assert.equal(seen.length, 2);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production auth session is required but not minted', async () => {
   const originalFetch = global.fetch;
   const seen = [];
