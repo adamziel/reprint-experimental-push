@@ -22711,6 +22711,62 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.deepEqual(error.details.activeClaimLease, persistedWriterLease);
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a drifted lease id', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Lease Id Drift Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-lease-id-drift-remote.jsonl`;
+  const claimId = 'claim-consumed-lease-id-drift';
+  const persistedWriterLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: persistedWriterLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease: persistedWriterLease,
+  });
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease: { id: `${claimId}-drifted`, epoch: 3 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires claimId to match writerLease.id.',
+  );
+  assert.deepEqual(error.details.writerLease, { id: `${claimId}-drifted`, epoch: 3 });
+});
+
 test('production recovery support report fails closed when a reopen introduces unpersisted remote artifact ownership', () => {
   const filePath = tempRecoveryJournalPath();
   const introducedRemoteArtifactPath = `${path.dirname(filePath)}/introduced-remote.jsonl`;
