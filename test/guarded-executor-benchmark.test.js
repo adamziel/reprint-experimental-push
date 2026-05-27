@@ -11971,6 +11971,38 @@ test('guarded benchmark surfaces receipt-cursor recovery blockers at runtime', (
   ]);
 });
 
+test('guarded benchmark surfaces replay blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const replayRejectedFastPaths = details.rejectedFastPaths
+    .filter((entry) => entry.id.includes('replay'))
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  assert.deepEqual(
+    replayRejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
+
+  assert.deepEqual(summarizeRejectedGates(replayRejectedFastPaths), [
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
+});
+
 test('guarded benchmark carries direct measured queue-headroom proof blockers into rejected retry summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
