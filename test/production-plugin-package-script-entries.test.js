@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { resolveProductionPluginPackageScenarios } from '../scripts/playground/production-plugin-package-scenarios.js';
+import { guardProofModeNames } from '../scripts/playground/production-plugin-package-proof-summary.js';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
@@ -429,4 +430,34 @@ test('package scripts keep every plugin-driver smoke entrypoint resolvable by th
       `${scriptName} should not infer a smoke mode for direct scenario entrypoints`,
     );
   }
+});
+
+test('package scripts keep every guard-proof canonical mode reachable through runtime smoke aliases', () => {
+  const driverModeScripts = Object.keys(packageJson.scripts)
+    .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'))
+    .map((scriptName) => packageSmokeMode(scriptName))
+    .filter((mode) => mode !== null);
+  const reachableCanonicalModes = new Set(
+    driverModeScripts.map(
+      (mode) => resolveProductionPluginPackageScenarios([], undefined, mode).canonicalMode,
+    ),
+  );
+
+  assert.deepEqual(guardProofModeNames, [
+    'driver-callback-guards',
+    'driver-proof',
+    'driver-receipt-guards',
+    'driver-receipt-registration-guards',
+    'driver-registration-guards',
+    'driver-registration-shape-guards',
+    'driver-release-proof',
+    'driver-verifier-guards',
+  ]);
+
+  assert.deepEqual(
+    [...reachableCanonicalModes]
+      .filter((canonicalMode) => guardProofModeNames.includes(canonicalMode))
+      .sort(),
+    guardProofModeNames,
+  );
 });

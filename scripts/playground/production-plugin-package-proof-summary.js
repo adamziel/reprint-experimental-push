@@ -45,6 +45,104 @@ const bundleSummaryGroups = {
 
 export { bundleSummaryGroups };
 
+const guardProofScenarioMaps = Object.freeze({
+  'driver-proof': Object.freeze({
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+    missingExport: 'driver-missing-export-guard',
+    missingApply: 'driver-missing-apply-guard',
+    missingValidate: 'driver-missing-validate-guard',
+    missingName: 'driver-missing-name-guard',
+    missingPluginOwner: 'driver-missing-plugin-owner-guard',
+    missingTable: 'driver-missing-table-guard',
+    duplicateName: 'driver-duplicate-name-guard',
+    duplicateTable: 'driver-duplicate-table-guard',
+  }),
+  'driver-release-proof': Object.freeze({
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+  }),
+  'driver-verifier-guards': Object.freeze({
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+    missingExport: 'driver-missing-export-guard',
+    missingApply: 'driver-missing-apply-guard',
+    missingValidate: 'driver-missing-validate-guard',
+    missingName: 'driver-missing-name-guard',
+    missingPluginOwner: 'driver-missing-plugin-owner-guard',
+    missingTable: 'driver-missing-table-guard',
+    duplicateName: 'driver-duplicate-name-guard',
+    duplicateTable: 'driver-duplicate-table-guard',
+  }),
+  'driver-receipt-registration-guards': Object.freeze({
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+    missingExport: 'driver-missing-export-guard',
+    missingApply: 'driver-missing-apply-guard',
+    missingValidate: 'driver-missing-validate-guard',
+    missingName: 'driver-missing-name-guard',
+    missingPluginOwner: 'driver-missing-plugin-owner-guard',
+    missingTable: 'driver-missing-table-guard',
+    duplicateName: 'driver-duplicate-name-guard',
+    duplicateTable: 'driver-duplicate-table-guard',
+  }),
+  'driver-receipt-guards': Object.freeze({
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    planBinding: 'driver-receipt-plan-binding-guard',
+    expiry: 'driver-receipt-expiry-guard',
+    identity: 'driver-receipt-identity-guard',
+    rotatedCredential: 'driver-receipt-rotated-credential-guard',
+    revokedCredential: 'driver-receipt-revoked-credential-guard',
+  }),
+  'driver-registration-guards': Object.freeze({
+    missingExport: 'driver-missing-export-guard',
+    missingApply: 'driver-missing-apply-guard',
+    missingValidate: 'driver-missing-validate-guard',
+    missingName: 'driver-missing-name-guard',
+    missingPluginOwner: 'driver-missing-plugin-owner-guard',
+    missingTable: 'driver-missing-table-guard',
+    duplicateName: 'driver-duplicate-name-guard',
+    duplicateTable: 'driver-duplicate-table-guard',
+  }),
+  'driver-callback-guards': Object.freeze({
+    missingExport: 'driver-missing-export-guard',
+    missingApply: 'driver-missing-apply-guard',
+    missingValidate: 'driver-missing-validate-guard',
+  }),
+  'driver-registration-shape-guards': Object.freeze({
+    missingName: 'driver-missing-name-guard',
+    missingPluginOwner: 'driver-missing-plugin-owner-guard',
+    missingTable: 'driver-missing-table-guard',
+    duplicateName: 'driver-duplicate-name-guard',
+    duplicateTable: 'driver-duplicate-table-guard',
+  }),
+});
+
+export const guardProofModeNames = Object.freeze(
+  Object.keys(guardProofScenarioMaps).sort(),
+);
+
 function isBundleAliasScenario(name) {
   return Object.hasOwn(bundleSummaryGroups, name) || name === 'driver-receipt-guards';
 }
@@ -124,96 +222,38 @@ function buildRegistrationShapeGuardProofMap(summary) {
 }
 
 function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
-  const receiptGuardScenarioMap = {
-    deleteGuard: 'driver-delete-guard',
-    updateValidationGuard: 'driver-update-validation-guard',
-    planBinding: 'driver-receipt-plan-binding-guard',
-    expiry: 'driver-receipt-expiry-guard',
-    identity: 'driver-receipt-identity-guard',
-    rotatedCredential: 'driver-receipt-rotated-credential-guard',
-    revokedCredential: 'driver-receipt-revoked-credential-guard',
-  };
-  const registrationGuardScenarioMap = {
-    missingExport: 'driver-missing-export-guard',
-    missingApply: 'driver-missing-apply-guard',
-    missingValidate: 'driver-missing-validate-guard',
-    missingName: 'driver-missing-name-guard',
-    missingPluginOwner: 'driver-missing-plugin-owner-guard',
-    missingTable: 'driver-missing-table-guard',
-    duplicateName: 'driver-duplicate-name-guard',
-    duplicateTable: 'driver-duplicate-table-guard',
-  };
-  const registrationShapeScenarioMap = {
-    missingName: 'driver-missing-name-guard',
-    missingPluginOwner: 'driver-missing-plugin-owner-guard',
-    missingTable: 'driver-missing-table-guard',
-    duplicateName: 'driver-duplicate-name-guard',
-    duplicateTable: 'driver-duplicate-table-guard',
-  };
-  const registrationCallbackScenarioMap = {
-    missingExport: 'driver-missing-export-guard',
-    missingApply: 'driver-missing-apply-guard',
-    missingValidate: 'driver-missing-validate-guard',
-  };
-  const guardConfigs = {
-    'driver-proof': {
-      scenarioMap: {
-        ...receiptGuardScenarioMap,
-        ...registrationGuardScenarioMap,
-      },
-      proofMap: {
-        ...buildReceiptGuardProofMap(summary),
-        ...buildRegistrationGuardProofMap(summary),
-      },
-    },
-    'driver-release-proof': {
-      scenarioMap: receiptGuardScenarioMap,
-      proofMap: buildReceiptGuardProofMap(summary),
-    },
-    'driver-verifier-guards': {
-      scenarioMap: {
-        ...receiptGuardScenarioMap,
-        ...registrationGuardScenarioMap,
-      },
-      proofMap: {
-        ...buildReceiptGuardProofMap(summary),
-        ...buildRegistrationGuardProofMap(summary),
-      },
-    },
-    'driver-receipt-registration-guards': {
-      scenarioMap: {
-        ...receiptGuardScenarioMap,
-        ...registrationGuardScenarioMap,
-      },
-      proofMap: {
-        ...buildReceiptGuardProofMap(summary),
-        ...buildRegistrationGuardProofMap(summary),
-      },
-    },
-    'driver-receipt-guards': {
-      scenarioMap: receiptGuardScenarioMap,
-      proofMap: buildReceiptGuardProofMap(summary),
-    },
-    'driver-registration-guards': {
-      scenarioMap: registrationGuardScenarioMap,
-      proofMap: buildRegistrationGuardProofMap(summary),
-    },
-    'driver-callback-guards': {
-      scenarioMap: registrationCallbackScenarioMap,
-      proofMap: buildRegistrationCallbackGuardProofMap(summary),
-    },
-    'driver-registration-shape-guards': {
-      scenarioMap: registrationShapeScenarioMap,
-      proofMap: buildRegistrationShapeGuardProofMap(summary),
-    },
-  };
-
-  const guardConfig = guardConfigs[canonicalMode];
-  if (!guardConfig) {
+  const guardScenarioMap = guardProofScenarioMaps[canonicalMode];
+  if (!guardScenarioMap) {
     return null;
   }
 
-  const { scenarioMap: guardScenarioMap, proofMap: guardProof } = guardConfig;
+  let guardProof;
+  switch (canonicalMode) {
+    case 'driver-proof':
+    case 'driver-verifier-guards':
+    case 'driver-receipt-registration-guards':
+      guardProof = {
+        ...buildReceiptGuardProofMap(summary),
+        ...buildRegistrationGuardProofMap(summary),
+      };
+      break;
+    case 'driver-release-proof':
+    case 'driver-receipt-guards':
+      guardProof = buildReceiptGuardProofMap(summary);
+      break;
+    case 'driver-registration-guards':
+      guardProof = buildRegistrationGuardProofMap(summary);
+      break;
+    case 'driver-callback-guards':
+      guardProof = buildRegistrationCallbackGuardProofMap(summary);
+      break;
+    case 'driver-registration-shape-guards':
+      guardProof = buildRegistrationShapeGuardProofMap(summary);
+      break;
+    default:
+      return null;
+  }
+
   const guardStatuses = Object.fromEntries(
     Object.entries(guardScenarioMap).map(([proofKey, scenarioName]) => [
       proofKey,
