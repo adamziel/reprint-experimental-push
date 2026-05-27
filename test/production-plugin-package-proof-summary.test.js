@@ -697,6 +697,120 @@ test('plugin-driver proof summary attach helper persists top-level modeProof on 
   assert.deepEqual(rawSummary.modeProof?.requestedScenarios, ['driverReleaseProof']);
 });
 
+test('plugin-driver proof summary attach helper persists verifier-guards-only top-level modeProof on raw smoke summaries', () => {
+  const rawSummary = {
+    mode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-verifier-guards'])).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverExportGuard: {
+      exportFailed: true,
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      exportFailed: true,
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      exportFailed: true,
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      exportFailed: true,
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      exportFailed: true,
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      exportFailed: true,
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      exportFailed: true,
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      exportFailed: true,
+      duplicateTable: true,
+    },
+  };
+
+  const pluginDriverProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-verifier-guards']),
+    resolvedMode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.equal(rawSummary.pluginDriverProof, pluginDriverProof);
+  assert.equal(rawSummary.modeProof, pluginDriverProof.modeProof);
+  assert.equal(rawSummary.modeProof?.mode, 'driverVerifierGuardsOnly');
+  assert.equal(rawSummary.modeProof?.canonicalMode, 'driver-verifier-guards');
+  assert.equal(rawSummary.modeProof?.proofKey, 'driverVerifierGuards');
+  assert.deepEqual(rawSummary.modeProof?.requestedScenarios, ['driverVerifierGuardsOnly']);
+  assert.deepEqual(rawSummary.modeProof?.requestedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(rawSummary.modeProof?.requestedBundleStatuses, {
+    driverVerifierGuards: 'missing',
+  });
+  assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'missing');
+});
+
 test('plugin-driver proof summary reuses an attached pluginDriverProof for repeated direct alias mode requests', () => {
   const rawSummary = {
     mode: 'driverReleaseProof',
