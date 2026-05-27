@@ -3020,7 +3020,9 @@ test('packaged release verifier readiness helper preserves timeout fallback prob
       captured.lastError = lastError;
       captured.lastProbes = lastProbes;
       captured.lastTimeoutFallbackProbes = lastTimeoutFallbackProbes;
-      throw new Error(prefix);
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
     },
   });
   const child = {
@@ -4030,6 +4032,96 @@ test('packaged release verifier readiness helper waits through packaged-route st
   ]);
 });
 
+test('packaged release verifier readiness helper waits through global WordPress startup after snapshot readiness reaches signed preflight', async () => {
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const startupPreflightBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const readyPreflightBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  let preflightAttempts = 0;
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    packagedProductionPluginGlobalStartupStillWithinBudget: () => true,
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        preflightAttempts += 1;
+        return {
+          response: {
+            status: preflightAttempts === 1 ? 404 : 200,
+            ok: preflightAttempts !== 1,
+          },
+          bodyText: preflightAttempts === 1 ? startupPreflightBody : readyPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 503,
+      ok: false,
+      body: 'WordPress is not ready yet',
+      parsedBody: null,
+      ready: false,
+      retryable: true,
+      terminal: false,
+    }),
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9460,
+  };
+
+  await helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log');
+
+  assert.equal(sleepCalls.length, 1);
+  assert.equal(sleepCalls[0].ms, 1);
+  assert.equal(sleepCalls[0].child, child);
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
 test('packaged production plugin smoke readiness helper waits through packaged-route startup after global WordPress readiness', async () => {
   const snapshotStartupBody = JSON.stringify({
     code: 'rest_no_route',
@@ -4449,6 +4541,97 @@ test('packaged production plugin smoke readiness helper waits through packaged-r
   assert.equal(sleepCalls[0].child, child);
   assert.deepEqual(fetchCalls, [
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
+test('packaged production plugin smoke readiness helper waits through packaged-route startup after snapshot readiness reaches signed preflight', async () => {
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const startupPreflightBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const readyPreflightBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  let preflightAttempts = 0;
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        preflightAttempts += 1;
+        return {
+          response: {
+            status: preflightAttempts === 1 ? 404 : 200,
+            ok: preflightAttempts !== 1,
+          },
+          bodyText: preflightAttempts === 1 ? startupPreflightBody : readyPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9461,
+  };
+
+  await helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']);
+
+  assert.equal(sleepCalls.length, 1);
+  assert.equal(sleepCalls[0].ms, 1);
+  assert.equal(sleepCalls[0].child, child);
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
   ]);
