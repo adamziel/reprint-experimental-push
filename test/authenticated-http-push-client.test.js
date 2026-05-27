@@ -31420,7 +31420,7 @@ test('production-shaped authenticated push fails closed when replay changes the 
   }
 });
 
-test('production-shaped authenticated push reports malformed replay auth session ids as invalid drift', async () => {
+test('production-shaped authenticated push fails closed on malformed replay auth session ids even without the stricter production-session gate', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   let applyCount = 0;
@@ -31554,6 +31554,10 @@ test('production-shaped authenticated push reports malformed replay auth session
       observed: 'invalid-id',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
+    assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
+    assert.equal(summary.boundary.status, 'unimplemented');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+    assert.equal(summary.boundary.durableJournal.phase, 'replay');
     assert.deepEqual(
       summary.authSessionLifecycleTrace.map(({ step, id, rotated, preserved }) => ({
         step,
@@ -31751,7 +31755,7 @@ test('production-shaped authenticated push fails closed on malformed replay auth
   }
 });
 
-test('production-shaped authenticated push reports malformed replay auth session statuses as invalid drift', async () => {
+test('production-shaped authenticated push fails closed on malformed replay auth session statuses even without the stricter production-session gate', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   let applyCount = 0;
@@ -31883,6 +31887,10 @@ test('production-shaped authenticated push reports malformed replay auth session
       observed: 'invalid-status',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
+    assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
+    assert.equal(summary.boundary.status, 'unimplemented');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+    assert.equal(summary.boundary.durableJournal.phase, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -32040,7 +32048,7 @@ test('production-shaped authenticated push fails closed on malformed replay auth
   }
 });
 
-test('production-shaped authenticated push reports malformed replay auth session types as invalid drift', async () => {
+test('production-shaped authenticated push fails closed on malformed replay auth session types even without the stricter production-session gate', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   let applyCount = 0;
@@ -32172,6 +32180,10 @@ test('production-shaped authenticated push reports malformed replay auth session
       observed: 'invalid-type',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
+    assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
+    assert.equal(summary.boundary.status, 'unimplemented');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+    assert.equal(summary.boundary.durableJournal.phase, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'type');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -32329,7 +32341,7 @@ test('production-shaped authenticated push fails closed on malformed replay auth
   }
 });
 
-test('production-shaped authenticated push reports malformed replay auth session expiry identities as invalid drift', async () => {
+test('production-shaped authenticated push fails closed on malformed replay auth session expiry identities even without the stricter production-session gate', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   let applyCount = 0;
@@ -32461,6 +32473,10 @@ test('production-shaped authenticated push reports malformed replay auth session
       observed: 'invalid-expires-at',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
+    assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
+    assert.equal(summary.boundary.status, 'unimplemented');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
+    assert.equal(summary.boundary.durableJournal.phase, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'expires-at');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
