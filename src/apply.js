@@ -1239,30 +1239,20 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
   if (
-    Object.hasOwn(writer ?? {}, 'claimId')
+    hasValidProductionLeaseIdentity(writer?.writerLease)
     && (
-      writerClaimIdHidden
+      !Object.hasOwn(writer ?? {}, 'claimId')
+      || writerClaimIdHidden
       || typeof writer.claimId !== 'string'
       || writer.claimId.trim().length === 0
       || writer.claimId.trim() !== writer.claimId
-      || (
-        hasValidProductionLeaseIdentity(writer?.writerLease)
-        && writer.claimId !== writer.writerLease.id
-      )
+      || writer.claimId !== writer.writerLease.id
       || (
         typeof writer?.claimHash === 'string'
         && /^[a-f0-9]{64}$/.test(writer.claimHash)
         && writer.claimHash !== digest({ recoveryJournalClaim: writer.claimId })
       )
     )
-  ) {
-    addMissingDependency('fencing or lease ownership for the journal writer');
-  }
-  if (
-    writer !== null
-    && typeof writer === 'object'
-    && !Object.hasOwn(writer, 'claimId')
-    && 'claimId' in writer
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
