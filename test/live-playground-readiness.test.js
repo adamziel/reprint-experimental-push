@@ -73,6 +73,15 @@ test('packaged rest-index helpers distinguish ready, retryable, and invalid term
 
   assert.equal(packagedProductionPluginRestIndexReady(200, readyIndex), true);
   assert.equal(packagedProductionPluginRestIndexRetryable({ status: 200, body: readyIndex }), false);
+  assert.equal(
+    packagedProductionPluginRestIndexReady(200, {
+      namespaces: ['reprint/v1'],
+      routes: {
+        '/reprint/v1/push/preflight': {},
+      },
+    }),
+    true,
+  );
 
   assert.equal(
     packagedProductionPluginRestIndexRetryable({
@@ -86,6 +95,13 @@ test('packaged rest-index helpers distinguish ready, retryable, and invalid term
     packagedProductionPluginRestIndexRetryable({
       status: 404,
       body: JSON.stringify({ code: 'rest_no_route', message: 'No route was found matching the URL and request method.' }),
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 404,
+      body: { code: 'rest_no_route', message: 'No route was found matching the URL and request method.' },
     }),
     true,
   );
@@ -193,6 +209,21 @@ test('packaged preflight retryability follows the freshest startup probe context
       indexProbe: {
         status: 500,
         body: 'Internal Server Error',
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        status: 200,
+        body: {
+          namespaces: ['reprint/v1'],
+          routes: {
+            '/reprint/v1/push/preflight': {},
+          },
+        },
       },
     }),
     false,

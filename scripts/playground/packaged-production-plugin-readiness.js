@@ -160,7 +160,7 @@ export function packagedProductionPluginRestIndexReady(status, bodyText = '') {
   }
 
   try {
-    const body = JSON.parse(bodyText);
+    const body = typeof bodyText === 'string' ? JSON.parse(bodyText) : bodyText;
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return false;
     }
@@ -299,7 +299,13 @@ export function packagedProductionPluginReadinessProbeTimedOut(error) {
 }
 
 export function packagedProductionPluginReadinessWordPressNotReady(status, bodyText = '') {
-  return packagedProductionPluginWordPressNotReadyPattern.test(bodyText);
+  const code = packagedProductionPluginFindCode(bodyText);
+  const message = packagedProductionPluginFindMessage(bodyText);
+  return packagedProductionPluginWordPressNotReadyPattern.test(
+    typeof bodyText === 'string' ? bodyText : '',
+  )
+    || packagedProductionPluginWordPressNotReadyPattern.test(message)
+    || packagedProductionPluginWordPressNotReadyCodePattern.test(code);
 }
 
 export function packagedProductionPluginNextNotReadyProbeCount(currentCount, status, bodyText = '') {
@@ -371,11 +377,16 @@ export function packagedProductionPluginReadinessBodyRetryable(status, bodyText 
     return false;
   }
 
+  const code = packagedProductionPluginFindCode(bodyText);
+  const message = packagedProductionPluginFindMessage(bodyText);
+  const text = typeof bodyText === 'string' ? bodyText : '';
   return (
     packagedProductionPluginReadinessWordPressNotReady(status, bodyText)
-    || packagedProductionPluginWordPressNotReadyCodePattern.test(bodyText)
-    || packagedProductionPluginRouteNotReadyPattern.test(bodyText)
-    || packagedProductionPluginRouteNotReadyCodePattern.test(bodyText)
+    || packagedProductionPluginWordPressNotReadyCodePattern.test(code)
+    || packagedProductionPluginRouteNotReadyPattern.test(text)
+    || packagedProductionPluginRouteNotReadyPattern.test(message)
+    || packagedProductionPluginRouteNotReadyCodePattern.test(text)
+    || packagedProductionPluginRouteNotReadyCodePattern.test(code)
   );
 }
 
