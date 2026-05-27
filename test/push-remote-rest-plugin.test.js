@@ -4762,6 +4762,56 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted top-level storage-guard operation', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.storageGuard.operation;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
+  });
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted top-level storage-guard outcome', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.storageGuard.outcome;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
+  });
+});
+
 test('checked recovery inspect evidence fails closed when accepted checked summaries preserve mismatched idempotency lineage', { skip: !hasPhp }, () => {
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
@@ -14423,6 +14473,46 @@ test('checked db journal attachment fails closed when authoritative checked summ
   assert.equal(parsed.dbJournal.schemaVersion, 1);
   assert.equal(parsed.dbJournal.table, 'wp_reprint_push_lab_push_journal');
   assert.equal(parsed.dbJournal.scope, 'checked live production-shaped journal surface; not local Playground fixture only');
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted top-level storage-guard operation', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.storageGuard.operation;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted top-level storage-guard outcome', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.storageGuard.outcome;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
+  });
 });
 
 test('checked db journal attachment fails closed on conflicting accepted inline top-level claim id', { skip: !hasPhp }, () => {
