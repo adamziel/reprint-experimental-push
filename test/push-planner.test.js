@@ -49180,6 +49180,78 @@ test('blocks a local menu item parent reference owned by a wp_navigation post wh
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local menu item parent reference owned by a wp_navigation post when the same-plan post target is itself blocked by a wp_navigation parent even when unrelated remote wp_navigation noise exists', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:3"]';
+  const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedTargetResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:2311"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  remote.db.wp_posts['ID:88'] = {
+    ID: 88,
+    post_title: 'Remote wp_navigation noise',
+    post_content: 'remote-wp-navigation-noise-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local navigation menu item',
+    post_content: 'local-private-navigation-menu-item-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 5,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Blocked same-plan parent post',
+    post_content: 'local-private-blocked-parent-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:2311': {
+      meta_id: 2311,
+      post_id: 3,
+      meta_key: 'menu_item_parent',
+      meta_value: '5',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockedTargetMutation = mutationFor(plan, blockedTargetResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const blockedTargetBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTargetResourceKey);
+  const childBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(mutationFor(plan, blockedParentResourceKey), undefined);
+  assert.equal(blockedTargetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation, undefined);
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(blockedTargetBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedTargetBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedTargetBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(childBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(childBlocker.surface, 'wp_navigation');
+  assert.equal(JSON.stringify(childBlocker).includes('remote-wp-navigation-noise-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-navigation-parent-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-blocked-parent-body'), false);
+  assert.equal(JSON.stringify(childBlocker).includes('local-private-navigation-menu-item-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local menu item parent reference owned by a wp_navigation post when the same-plan post target is itself blocked by a revision parent even when unrelated remote attachment noise exists', () => {
   const navigationResourceKey = 'row:["wp_posts","ID:3"]';
   const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
