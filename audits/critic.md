@@ -1,17 +1,17 @@
 # Critic Verdict
 
-Current reliable head: `a247efd1044ced53b7139698834ac1088310b251`
-(`Require journal auth on checked path`).
+Current reliable head: `d8bfe95164e1ba2df1dcf78d5310207176e74942`
+(`Fail closed on hidden auth session revocation drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens the checked-path auth/session client so malformed
-  `auth.identity.userId` and drift in `auth.identity.userLogin` are rejected
-  or reported consistently across preflight, dry-run, apply, recovery
-  inspect, replay, and db-journal paths when production auth/session is
-  required.
+- This head tightens the checked-path auth/session client so hidden
+  `auth.identity.userId` / `auth.identity.userLogin` drift tied to revocation
+  cannot slip through inconsistently across preflight, dry-run, apply,
+  recovery inspect, replay, and db-journal paths when production auth/session
+  is required.
 - That is useful checked-path hardening, but it is still not a
   production-owned source mutation boundary on the real Reprint endpoint, and
   it still does not prove live auth/session issuance/readback,
