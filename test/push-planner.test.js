@@ -39502,6 +39502,70 @@ test('blocks local serialized block references while preserving a matching indep
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks local serialized block references while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:72"]';
+  const matchingRestoreResourceKey = 'file:wp-content/uploads/serialized-block-restore-change.txt';
+  const base = baseSite();
+  base.db.wp_posts['ID:72'] = {
+    ID: 72,
+    post_title: 'Base restore change block post',
+    post_content: '<!-- wp:paragraph -->Base restore change block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  delete base.files['wp-content/uploads/serialized-block-restore-change.txt'];
+
+  const local = baseSite();
+  local.db.wp_posts['ID:72'] = {
+    ID: 72,
+    post_title: 'Local restore change block post',
+    post_content: '<!-- wp:paragraph -->Local restore change block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.files['wp-content/uploads/serialized-block-restore-change.txt'] =
+    'shared serialized block restore change bytes';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:72'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:72']));
+  remote.files['wp-content/uploads/serialized-block-restore-change.txt'] =
+    'shared serialized block restore change bytes';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local restore change block content'), false);
+  assert.equal(planJson.includes('Base restore change block content'), false);
+  assert.equal(planJson.includes('shared serialized block restore change bytes'), false);
+  assert.equal(
+    remote.files['wp-content/uploads/serialized-block-restore-change.txt'],
+    'shared serialized block restore change bytes',
+  );
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks steady unsupported serialized block rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:67"]';
   const base = baseSite();
