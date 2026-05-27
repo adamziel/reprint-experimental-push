@@ -11129,6 +11129,107 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into r
     'queue-pause-without-consistent-receipt-cursor-slack',
     'queue-pause-without-memory-safe-receipt-cursor-slack',
   ]);
+  assert.deepEqual(
+    pluginUpdatePauseRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-visible',
+          'memory-ceiling-match-visible-without-queue-headroom-visibility',
+          'memory-ceiling-visible-without-queue-headroom-visible',
+          'queue-headroom-not-visible',
+          'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'skip',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          ...HIDDEN_QUEUE_BUDGET_VISIBILITY_BLOCKER_REFS,
+        ],
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
 });
 
 test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw receipt-cursor queue-slack visibility disappears', () => {
@@ -11804,17 +11905,17 @@ test('guarded benchmark carries hidden raw memory-ceiling visibility blockers in
       {
         id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
         rejectedGate: 'recovery',
-        blockerRefs: POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
         id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
         rejectedGate: 'group',
-        blockerRefs: POST_PAUSE_HIDDEN_RESOURCE_VISIBILITY_BLOCKER_REFS,
+        blockerRefs: POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
