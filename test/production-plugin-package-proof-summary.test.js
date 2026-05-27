@@ -2479,6 +2479,169 @@ test('plugin-driver proof summary marks failing selected verifier guards directl
   assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.payloadModeAfterReject, 'local-delete');
 });
 
+test('plugin-driver proof summary carries bounded registration guard proof on modeProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-registration-guards'],
+      selectedScenarios: new Set([
+        'driver-registration-guards',
+        ...scenarioGroups['driver-registration-guards'],
+      ]),
+      resolvedMode: 'driverRegistrationGuards',
+      canonicalMode: 'driver-registration-guards',
+    },
+  );
+
+  assert.deepEqual(summary.modeProof?.guardProof, {
+    ok: true,
+    status: 'passed',
+    guardCount: 8,
+    passedGuardCount: 8,
+    failedGuardCount: 0,
+    guardStatuses: {
+      missingExport: 'passed',
+      missingApply: 'passed',
+      missingValidate: 'passed',
+      missingName: 'passed',
+      missingPluginOwner: 'passed',
+      missingTable: 'passed',
+      duplicateName: 'passed',
+      duplicateTable: 'passed',
+    },
+    passedGuards: [
+      'missingExport',
+      'missingApply',
+      'missingValidate',
+      'missingName',
+      'missingPluginOwner',
+      'missingTable',
+      'duplicateName',
+      'duplicateTable',
+    ],
+    failedGuards: [],
+    missingExport: {
+      status: 'passed',
+      observed: true,
+    },
+    missingApply: {
+      status: 'passed',
+      observed: true,
+    },
+    missingValidate: {
+      status: 'passed',
+      observed: true,
+    },
+    missingName: {
+      status: 'passed',
+      observed: true,
+    },
+    missingPluginOwner: {
+      status: 'passed',
+      observed: true,
+    },
+    missingTable: {
+      status: 'passed',
+      observed: true,
+    },
+    duplicateName: {
+      status: 'passed',
+      observed: true,
+    },
+    duplicateTable: {
+      status: 'passed',
+      observed: true,
+    },
+  });
+});
+
+test('plugin-driver proof summary marks failing selected registration guards directly on modeProof.guardProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: false,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-registration-guards'],
+      selectedScenarios: new Set([
+        'driver-registration-guards',
+        ...scenarioGroups['driver-registration-guards'],
+      ]),
+      resolvedMode: 'driverRegistrationGuards',
+      canonicalMode: 'driver-registration-guards',
+    },
+  );
+
+  assert.equal(summary.modeProof?.guardProof?.ok, false);
+  assert.equal(summary.modeProof?.guardProof?.status, 'missing');
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 7);
+  assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 1);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    missingExport: 'passed',
+    missingApply: 'passed',
+    missingValidate: 'missing',
+    missingName: 'passed',
+    missingPluginOwner: 'passed',
+    missingTable: 'passed',
+    duplicateName: 'passed',
+    duplicateTable: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.failedGuards, [
+    'missingValidate',
+  ]);
+  assert.deepEqual(summary.modeProof?.guardProof?.missingValidate, {
+    status: 'missing',
+    observed: false,
+  });
+});
+
 test('plugin-driver proof summary narrows modeProof requests to the selected canonical mode', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
