@@ -42003,6 +42003,75 @@ test('closes an owned production recovery journal writer after a partial commit 
   assert.equal(persisted.records.at(-1).state, 'blocked-recovery');
 });
 
+test('closes an owned production recovery journal writer after pre-mutation failures preserve the old remote', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+
+  for (const [label, options, expectedJournalStatus] of [
+    ['before mutation', { failBeforeMutation: true }, 'opened'],
+    ['after staging', { failAfterStaging: true }, 'staged'],
+    ['after dependency validation', { failAfterDependencyValidation: true }, 'dependencies-validated'],
+  ]) {
+    const productionJournalPath = tempRecoveryJournalPath();
+    const remoteArtifactPath = `${productionJournalPath}.remote`;
+    const claimId = `claim-close-after-${label.replaceAll(' ', '-')}`;
+    const writer = openProductionRecoveryJournal(productionJournalPath, {
+      truncate: true,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+
+    const remote = baseSite();
+    appendRecoveryClaimOpened(writer, {
+      plan,
+      current: remote,
+      claimId,
+      artifactRefs: {
+        journal: productionJournalPath,
+        remote: remoteArtifactPath,
+      },
+    });
+
+    const error = captureError(() => applyPlan(remote, plan, {
+      durableJournal: writer,
+      requireProductionDurableJournal: true,
+      ...options,
+    }));
+
+    assert.equal(error.details.recovery.status, 'old-remote', label);
+    assert.equal(error.details.recovery.artifacts.journal.status, expectedJournalStatus, label);
+    assert.equal(isDurableJournalClosed(writer), true, label);
+    assert.throws(() => writer.appendEvent('journal-opened', {
+      planId: plan.id,
+      state: 'reopened',
+      observedHash: 'snapshot-hash-only',
+      artifactRefs: {
+        journal: productionJournalPath,
+        remote: remoteArtifactPath,
+      },
+    }), /Recovery journal is closed/, label);
+
+    const persisted = readRecoveryJournal(productionJournalPath);
+    assert.equal(
+      persisted.records.some((record) => record.type === 'journal-replayed'),
+      false,
+      label,
+    );
+    assertJournalTailTypes(
+      persisted.records,
+      ['recovery-state'],
+      `${label} must persist the old-remote recovery boundary before close`,
+    );
+    assert.equal(persisted.records.at(-1).state, 'old-remote', label);
+  }
+});
+
 test('idempotently skips closing an already closed owned production recovery journal writer', () => {
   const closeCalls = [];
   const writer = {
