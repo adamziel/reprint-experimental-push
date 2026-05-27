@@ -13304,6 +13304,199 @@ test('production-shaped authenticated push fails closed on db-journal auth user 
   }
 });
 
+for (const {
+  fieldName,
+  expectedRequired,
+  expectedObserved,
+} of [
+  {
+    fieldName: 'status',
+    expectedRequired: 'active',
+    expectedObserved: 'missing',
+  },
+  {
+    fieldName: 'expiresAt',
+    expectedRequired: 'unexpired',
+    expectedObserved: 'missing',
+  },
+]) {
+  test(`production-shaped authenticated push fails closed when db-journal drops the production auth session ${fieldName} under the stricter production-session gate`, async () => {
+    const originalFetch = global.fetch;
+    const seen = [];
+    let applyCount = 0;
+    global.fetch = async (url, options) => {
+      seen.push({ url: String(url), options });
+      const pathname = String(url);
+      if (pathname.includes('/preflight')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          session: { id: 'psh_01j00000000000000000000000' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/snapshot')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          snapshot: { resources: [] },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/dry-run')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          receipt: { receiptHash: 'receipt-01' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/recovery/inspect')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          recovery: {
+            state: 'available',
+            counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+            journal: { integrity: { status: 'ok' } },
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/apply')) {
+        applyCount += 1;
+        return new Response(JSON.stringify({
+          ok: true,
+          receipt: { receiptHash: 'receipt-01' },
+          responseSchemaVersion: 1,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+            },
+          },
+          signedRequest: {
+            signed: true,
+          },
+          idempotency: {
+            replayed: applyCount > 1,
+            freshMutationWork: applyCount === 1,
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/db-journal')) {
+        const session = {
+          type: 'production-auth-session',
+          status: 'active',
+          id: 'psh_01j00000000000000000000000',
+          expiresAt: '2030-01-01T00:00:00Z',
+        };
+        delete session[fieldName];
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session,
+          },
+          dbJournal: {
+            latestRows: [
+              { event: 'idempotency-opened' },
+              { event: 'mutation-applied' },
+              { event: 'apply-committed' },
+            ],
+          },
+          storageGuard: {
+            boundary: 'filesystem-compare-rename',
+            operation: 'update',
+            outcome: 'applied',
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected fetch to ${url}`);
+    };
+
+    try {
+      const summary = await runAuthenticatedHttpPush({
+        sourceUrl: 'http://127.0.0.1:8080',
+        base: { resources: [] },
+        local: { resources: [] },
+        username: credential.username,
+        applicationPassword: credential.password,
+        idempotencyKey: `idem-07-journal-missing-${fieldName}-required`,
+        routeProfile: 'production-shaped',
+        requireProductionAuthSession: true,
+      });
+
+      assert.equal(summary.ok, false);
+      assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+      assert.deepEqual(summary.authSession, {
+        field: `auth.session.${fieldName}`,
+        required: expectedRequired,
+        observed: expectedObserved,
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      });
+      assert.deepEqual(summary.boundary, {
+        firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+        status: 'unimplemented',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        authSession: {
+          field: `auth.session.${fieldName}`,
+          required: expectedRequired,
+          observed: expectedObserved,
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+      });
+      assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
+      assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
+      assert.equal(summary.authSessionLifecycleSummary.read?.id, 'psh_01j00000000000000000000000');
+      assert.ok(seen.some(({ url }) => url.includes('/db-journal')));
+      assert.equal(applyCount, 2);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+}
+
 test('production-shaped authenticated push fails closed on db-journal auth user login mismatches even without the stricter production-session gate', async () => {
   const originalFetch = global.fetch;
   const seen = [];
