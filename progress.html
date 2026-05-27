@@ -477,21 +477,21 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <time class="update-stamp" datetime="2026-05-27T04:05:12+02:00">Last updated: May 27, 2026, 04:05:12 CEST</time>
-        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `2b21b0c9f2ab898c2cb466f021e4bbd0ea237107` is the current reliable-executor head on the visible current-head rows, and the status surface shows explicit evidence gaps. The release posture remains conservative at `0/4`; the current reliable head still stops short of the missing production-owned source mutation boundary on the real Reprint endpoint with auth/session issuance/readback, durable restart-readable journal storage with lease fencing, and apply-time revalidation before first mutation. Evidence links now point to the 2026-05-27 03:59:04 CEST audit refresh.</p>
+        <time class="update-stamp" datetime="2026-05-27T04:05:42+02:00">Last updated: May 27, 2026, 04:05:42 CEST</time>
+        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`. `f9425431664b542b9819064dcca4e69fd2872eb6` is the current reliable-executor head on the visible current-head rows, and the status surface shows explicit evidence gaps. The release posture remains conservative at `0/4`; the current reliable head still stops short of the missing production-owned source mutation boundary on the real Reprint endpoint with auth/session issuance/readback, durable restart-readable journal storage with lease fencing, and apply-time revalidation before first mutation. Evidence links now point to the 2026-05-27 04:05:42 CEST audit refresh.</p>
         <div class="meta" aria-label="Project status">
           <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `2b21b0c9f2ab898c2cb466f021e4bbd0ea237107` is the current reliable head on the visible current-head rows; release gates stay at `0/4`</span>
+          <span class="pill">Trend: `f9425431664b542b9819064dcca4e69fd2872eb6` is the current reliable head on the visible current-head rows; release gates stay at `0/4`</span>
           <span class="pill">Top blocker: production-owned, non-lab-backed source mutation boundary on the real Reprint endpoint still blocks release-gate movement</span>
           <span class="pill">Gate status: 0/4 verified; 4 pending</span>
           <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
           <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Previous audit: <a href="docs/progress-log.md#2026-05-27-public-status-audit-035904">2026-05-27 03:59:04</a></span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-27-public-status-audit-040512">2026-05-27 04:05:12</a></span>
+          <span class="pill">Previous audit: <a href="docs/progress-log.md#2026-05-27-public-status-audit-040512">2026-05-27 04:05:12</a></span>
+          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-27-public-status-audit-040542">2026-05-27 04:05:42</a></span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-27-public-status-audit-040512">Open newest audit</a>
+        <a class="log-link" href="docs/progress-log.md#2026-05-27-public-status-audit-040542">Open newest audit</a>
         <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
         <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
       </div>
@@ -500,7 +500,7 @@
     <section class="summary" aria-label="Current evidence summary">
           <div class="metric">
             <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-          <span>Latest lane evidence keeps the checked release boundary, the live `/db-journal` durability requirement, live auth/session release evidence, and the supporting no-data-loss, recovery, same-plan, critic, and no-data-loss-invariants proofs visible without changing the 0/4 release gates; the latest reliable-executor head is `2b21b0c9f2ab898c2cb466f021e4bbd0ea237107`, and the auth session source reuse release check remains support evidence because it hardens the checked path without proving the missing production-owned source mutation boundary. Evidence links now point to the 2026-05-27 03:59:04 CEST audit refresh.</span>
+          <span>Latest lane evidence keeps the checked release boundary, the live `/db-journal` durability requirement, live auth/session release evidence, and the supporting no-data-loss, recovery, same-plan, critic, and no-data-loss-invariants proofs visible without changing the 0/4 release gates; the latest reliable-executor head is `f9425431664b542b9819064dcca4e69fd2872eb6`, and the auth session source reuse release check remains support evidence because it hardens the checked path without proving the missing production-owned source mutation boundary. Evidence links now point to the 2026-05-27 04:05:42 CEST audit refresh.</span>
         </div>
       <div class="metric">
         <strong>Pending</strong>
@@ -556,10 +556,10 @@
             <li><strong>Lab evidence</strong><span>89 Node tests pass in lab evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
             <li><strong>Top blocker</strong><span>Real WordPress executor/auth still blocks any production push claim.</span></li>
             <li><strong>Release gates</strong><span>Four pending gates stay explicit below: executor/auth, recovery journal, Docker/Playground, and plugin drivers.</span></li>
-            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor head at `2b21b0c9f2ab898c2cb466f021e4bbd0ea237107` keeping the posture at `0/4` while the remaining boundary is still the production-owned, non-lab-backed source mutation boundary on the real Reprint endpoint.</span></li>
-            <li><strong>Going well</strong><span>Reliable head `2b21b0c9f2ab898c2cb466f021e4bbd0ea237107` keeps the release verifier on the current checked-path evidence surface.</span></li>
+            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor head at `f9425431664b542b9819064dcca4e69fd2872eb6` keeping the posture at `0/4` while the remaining boundary is still the production-owned, non-lab-backed source mutation boundary on the real Reprint endpoint.</span></li>
+            <li><strong>Going well</strong><span>Reliable head `f9425431664b542b9819064dcca4e69fd2872eb6` keeps the release verifier on the current checked-path evidence surface.</span></li>
             <li><strong>Not going well</strong><span>Production-owned durable journal storage, restart-readable replay, and the releasable production source-boundary primitive are still missing.</span></li>
-            <li><strong>Progress change</strong><span>Public surfaces were stale; the live reliable head is now reflected with the classifier verdict that this remains Playground/package-mode verifier scaffolding.</span></li>
+            <li><strong>Progress change</strong><span>Public surfaces were stale; the live reliable head is now reflected with the current conservative gate posture while the classifier verdict still treats this as Playground/package-mode verifier scaffolding.</span></li>
             <li><strong>Next nudge</strong><span>Have reliable executor prove the releasable production source boundary or return the exact missing primitive.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
@@ -589,6 +589,7 @@
           <summary id="recent-audits">Recent Public Audits</summary>
           <div class="details-body">
             <ul class="link-list">
+            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-040542">2026-05-27 04:05:42</a></li>
             <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-014211">2026-05-27 01:42:11</a></li>
             <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-014006">2026-05-27 01:40:06</a></li>
             <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-013818">2026-05-27 01:38:18</a></li>
@@ -641,10 +642,10 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Release Gate Checklist</h2>
           <div class="proof-list">
-          <div class="proof-item"><span class="status">Lab proof</span><p>Freshness update: the public page is current as of the active supervision cycle, but release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`; `2b21b0c9f2ab898c2cb466f021e4bbd0ea237107` is the current reliable-executor head on the visible current-head rows. The lane evidence was replaced with explicit evidence gaps. The current reliable head stays on the checked-path evidence surface, but still does not prove the production-owned source mutation boundary on the real Reprint endpoint. Packaged plugin-driver guards remain pinned into `verify:release` as support evidence. Evidence: <a href="docs/progress-log.md#2026-05-27-public-status-audit-040512">latest log entry</a>, <a href="audits/objective-audit.md">objective audit</a>.</p></div>
+          <div class="proof-item"><span class="status">Lab proof</span><p>Freshness update: the public page is current as of the active supervision cycle, but release gates remain `0/4`. The runtime anchor remains `npm run verify:release` from commit `3089aee2`; `f9425431664b542b9819064dcca4e69fd2872eb6` is the current reliable-executor head on the visible current-head rows. The lane evidence was replaced with explicit evidence gaps. The current reliable head stays on the checked-path evidence surface, but still does not prove the production-owned source mutation boundary on the real Reprint endpoint. Packaged plugin-driver guards remain pinned into `verify:release` as support evidence. Evidence: <a href="docs/progress-log.md#2026-05-27-public-status-audit-040542">latest log entry</a>, <a href="audits/objective-audit.md">objective audit</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth. Next executable proof: make <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a> fail closed if the packaged route is lab-backed or if the source gate is not production-shaped. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Next executable proof: publish the durable storage result or the exact missing lease/fencing primitive. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
-          <div class="proof-item"><span class="status">Lab proof</span><p>Release gates remain `0/4`. `d9ec5130979968098ac7b16b93220bd0d3fdbe38` is the current reliable head on the public current-head rows. Supporting evidence remains `b9aebe71`, `134d0401`, `4e13d882`, `63dd27cc`, and `9208c2da`; the current head stays on the checked-path evidence surface. The checked release verifier still stops short of the missing production-owned source mutation boundary on the real Reprint endpoint. The public page now names evidence gaps directly and the release-path proof still stops short of the missing production-owned source mutation boundary. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-27-public-status-audit-035904">latest log entry</a>.</p></div>
+          <div class="proof-item"><span class="status">Lab proof</span><p>Release gates remain `0/4`. `f9425431664b542b9819064dcca4e69fd2872eb6` is the current reliable head on the public current-head rows. Supporting evidence remains `b9aebe71`, `134d0401`, `4e13d882`, `63dd27cc`, and `9208c2da`; the current head stays on the checked-path evidence surface. The checked release verifier still stops short of the missing production-owned source mutation boundary on the real Reprint endpoint. The public page now names evidence gaps directly and the release-path proof still stops short of the missing production-owned source mutation boundary. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="docs/progress-log.md#2026-05-27-public-status-audit-040542">latest log entry</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth, with fail-closed source-gate proof in the production-shaped release command. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>, <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
             <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
