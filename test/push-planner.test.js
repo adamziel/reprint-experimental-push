@@ -31136,6 +31136,49 @@ test('production recovery support report fails closed when the writer omits its 
 
   assert.equal(report.supported, false);
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence, null);
+});
+
+test('production recovery support report fails closed when claimHash is hidden instead of enumerable', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const claimId = 'lease-hidden-claim-hash';
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-hidden-claim-hash' },
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const writerWithHiddenClaimHash = { ...journal };
+  Object.defineProperty(writerWithHiddenClaimHash, 'claimHash', {
+    value: journal.claimHash,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const report = productionRecoverySupportReport(writerWithHiddenClaimHash);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence, null);
 });
 
 test('production recovery support report fails closed when claimHash is inherited through the prototype', () => {
@@ -31170,6 +31213,9 @@ test('production recovery support report fails closed when claimHash is inherite
 
   assert.equal(report.supported, false);
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence, null);
 });
 
 test('production recovery support report fails closed when a surfaced writer claimId diverges from the fenced lease identity', () => {
