@@ -11429,6 +11429,60 @@ test('checked db journal attachment fails closed when authoritative checked summ
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked db journal attachment fails closed on conflicting accepted inline restart artifact refs', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.storage = 'inline-restart-storage';
+  inlineJournal.planHash = 'inline-plan-hash';
+  inlineJournal.receiptHash = 'inline-receipt-hash';
+
+  const checkedSummary = buildCheckedDbJournalSummary();
+  checkedSummary.storage = 'checked-restart-storage';
+  checkedSummary.planHash = 'checked-plan-hash';
+  checkedSummary.receiptHash = 'checked-receipt-hash';
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.storage, 'inline-restart-storage');
+  assert.equal(parsed.dbJournal.planHash, 'inline-plan-hash');
+  assert.equal(parsed.dbJournal.receiptHash, 'inline-receipt-hash');
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted restart artifact refs', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.storage = 'inline-restart-storage';
+  inlineJournal.planHash = 'inline-plan-hash';
+  inlineJournal.receiptHash = 'inline-receipt-hash';
+
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.storage;
+  delete checkedSummary.planHash;
+  delete checkedSummary.receiptHash;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: inlineJournal,
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.storage, 'inline-restart-storage');
+  assert.equal(parsed.dbJournal.planHash, 'inline-plan-hash');
+  assert.equal(parsed.dbJournal.receiptHash, 'inline-receipt-hash');
+});
+
 for (const [label, propertyPath] of checkedClaimContractOmissionCases) {
   test(`checked db journal attachment fails closed when authoritative checked summaries omit accepted ${label}`, { skip: !hasPhp }, () => {
     const checkedSummary = buildCheckedRecoveryJournalSummary();

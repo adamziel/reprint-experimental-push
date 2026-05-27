@@ -678,6 +678,9 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         'mutationApplied',
         'idempotencyOpened',
         'claim',
+        'storage',
+        'planHash',
+        'receiptHash',
         'claimEvidence',
         'latestRows',
         'eventSummaries',
@@ -965,6 +968,25 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
             $db_journal['idempotencyEvidence'] = $premerge_db_journal['idempotencyEvidence'];
         } else {
             unset($db_journal['idempotencyEvidence']);
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_recovery_restart_artifact_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal)) {
+            foreach (['storage', 'planHash', 'receiptHash'] as $key) {
+                if (array_key_exists($key, $premerge_db_journal)) {
+                    $db_journal[$key] = $premerge_db_journal[$key];
+                } else {
+                    unset($db_journal[$key]);
+                }
+            }
         }
     }
 
