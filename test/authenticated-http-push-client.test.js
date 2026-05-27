@@ -6917,6 +6917,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
           acceptedOnCheckedBoundary: true,
           claim: {
             status: 'active',
+            activeClaimId: 'retry-claim-id-02',
             activeClaimKeyHash: 'retry-claim-hash-02',
             activeClaimSequence: 20,
             activeClaimEvent: 'stale-claim-retry-started',
@@ -6924,6 +6925,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
             requestHash: 'request-hash-01',
             staleClaimRejected: false,
             previousStartedSequence: 12,
+            previousClaimId: 'retry-claim-id-01',
             previousClaimSequence: 11,
             previousClaimKeyHash: 'retry-claim-hash-01',
             previousClaimEvent: 'idempotency-opened',
@@ -6934,6 +6936,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
             productionAdapter: 'wpdb-single-statement-cas',
           },
           writerLease: {
+            claimId: 'retry-claim-id-02',
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
             fsyncEvidence: true,
@@ -6949,6 +6952,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
             monotonicSequence: true,
             restartReadable: true,
             writerLease: {
+              claimId: 'retry-claim-id-02',
               strategy: 'claim-fenced-single-writer',
               claimKeyUnique: true,
               fsyncEvidence: true,
@@ -7051,6 +7055,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
       },
       claim: {
         status: 'active',
+        activeClaimId: 'retry-claim-id-02',
         activeClaimKeyHash: 'retry-claim-hash-02',
         activeClaimSequence: 20,
         activeClaimEvent: 'stale-claim-retry-started',
@@ -7058,11 +7063,13 @@ test('production-shaped authenticated push accepts checked durable journal proof
         requestHash: 'request-hash-01',
         staleClaimRejected: false,
         previousStartedSequence: 12,
+        previousClaimId: 'retry-claim-id-01',
         previousClaimSequence: 11,
         previousClaimKeyHash: 'retry-claim-hash-01',
         previousClaimEvent: 'idempotency-opened',
       },
       writerLease: {
+        claimId: 'retry-claim-id-02',
         strategy: 'claim-fenced-single-writer',
         claimKeyUnique: true,
         fsyncEvidence: true,
@@ -7079,6 +7086,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
         restartReadable: true,
         staleClaimRejected: false,
         writerLease: {
+          claimId: 'retry-claim-id-02',
           strategy: 'claim-fenced-single-writer',
           claimKeyUnique: true,
           fsyncEvidence: true,
@@ -7100,6 +7108,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
       productionAdapter: 'wpdb-single-statement-cas',
     });
     assert.deepEqual(summary.dbJournal?.writerLease, {
+      claimId: 'retry-claim-id-02',
       strategy: 'claim-fenced-single-writer',
       claimKeyUnique: true,
       fsyncEvidence: true,
@@ -7116,6 +7125,7 @@ test('production-shaped authenticated push accepts checked durable journal proof
       restartReadable: true,
       staleClaimRejected: false,
       writerLease: {
+        claimId: 'retry-claim-id-02',
         strategy: 'claim-fenced-single-writer',
         claimKeyUnique: true,
         fsyncEvidence: true,
@@ -7317,6 +7327,7 @@ test('production-shaped authenticated push refetches db journal when checked rec
           acceptedOnCheckedBoundary: true,
           claim: {
             status: 'active',
+            activeClaimId: 'retry-claim-id-02',
             activeClaimKeyHash: 'retry-claim-hash-02',
             activeClaimSequence: 20,
             activeClaimEvent: 'stale-claim-retry-started',
@@ -7324,6 +7335,7 @@ test('production-shaped authenticated push refetches db journal when checked rec
             requestHash: 'request-hash-01',
             staleClaimRejected: false,
             previousStartedSequence: 12,
+            previousClaimId: 'retry-claim-id-01',
             previousClaimSequence: 11,
             previousClaimKeyHash: 'retry-claim-hash-01',
             previousClaimEvent: 'idempotency-opened',
@@ -7334,6 +7346,7 @@ test('production-shaped authenticated push refetches db journal when checked rec
             productionAdapter: 'wpdb-single-statement-cas',
           },
           writerLease: {
+            claimId: 'retry-claim-id-02',
             strategy: 'claim-fenced-single-writer',
             claimKeyUnique: true,
             fsyncEvidence: true,
@@ -7349,6 +7362,7 @@ test('production-shaped authenticated push refetches db journal when checked rec
             monotonicSequence: true,
             restartReadable: true,
             writerLease: {
+              claimId: 'retry-claim-id-02',
               strategy: 'claim-fenced-single-writer',
               claimKeyUnique: true,
               fsyncEvidence: true,

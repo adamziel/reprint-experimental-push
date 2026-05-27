@@ -1053,6 +1053,7 @@ function dbJournalClaimContractIsPresent(claim) {
     || hasNonEmptyString(claim.abandonedEvent);
 
   return hasNonEmptyString(claim.status)
+    && hasNonEmptyString(claim.activeClaimId)
     && hasNonEmptyString(claim.activeClaimKeyHash)
     && Number.isInteger(claim.activeClaimSequence)
     && hasNonEmptyString(claim.activeClaimEvent)
@@ -1060,7 +1061,8 @@ function dbJournalClaimContractIsPresent(claim) {
     && hasNonEmptyString(claim.requestHash)
     && typeof claim.staleClaimRejected === 'boolean'
     && (!hasPreviousClaimIdentity || (
-      hasNonEmptyString(claim.previousClaimKeyHash)
+      hasNonEmptyString(claim.previousClaimId)
+      && hasNonEmptyString(claim.previousClaimKeyHash)
       && Number.isInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ))
@@ -1081,7 +1083,8 @@ function dbJournalWriterLeaseContractsArePresent(dbJournal) {
 }
 
 function dbJournalWriterLeaseContractMatches(candidate) {
-  return typeof candidate?.strategy === 'string'
+  return hasNonEmptyString(candidate?.claimId)
+    && typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
     && candidate?.fsyncEvidence === true
@@ -1092,6 +1095,9 @@ function dbJournalWriterLeaseContractMatches(candidate) {
 }
 
 function dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease) {
+  if (writerLease?.claimId !== nestedWriterLease?.claimId) {
+    return false;
+  }
   for (const key of [
     'strategy',
     'claimKeyUnique',
@@ -1183,6 +1189,7 @@ function summarizeDbJournalClaim(dbJournal) {
 
   const summary = {
     status: claim.status || null,
+    activeClaimId: claim.activeClaimId || null,
     activeClaimKeyHash: claim.activeClaimKeyHash || null,
     activeClaimSequence: Number.isInteger(claim.activeClaimSequence)
       ? claim.activeClaimSequence
@@ -1207,6 +1214,9 @@ function summarizeDbJournalClaim(dbJournal) {
   }
   if (typeof claim.previousClaimKeyHash === 'string' && claim.previousClaimKeyHash.length > 0) {
     summary.previousClaimKeyHash = claim.previousClaimKeyHash;
+  }
+  if (typeof claim.previousClaimId === 'string' && claim.previousClaimId.length > 0) {
+    summary.previousClaimId = claim.previousClaimId;
   }
   if (typeof claim.previousClaimEvent === 'string' && claim.previousClaimEvent.length > 0) {
     summary.previousClaimEvent = claim.previousClaimEvent;
@@ -1255,6 +1265,7 @@ function summarizeDbJournalWriterLease(dbJournal) {
   }
 
   return {
+    claimId: candidate.claimId || null,
     strategy: candidate.strategy || null,
     claimKeyUnique: candidate.claimKeyUnique === true,
     fsyncEvidence: candidate.fsyncEvidence === true,
