@@ -1567,6 +1567,7 @@ export async function runAuthenticatedHttpPush({
     : dbJournalAccepted;
   const recoveryInspectProductionJournalAccepted = productionRecoveryJournalProofIsAcceptable(
     summary.recoveryInspect?.recovery?.productionJournal,
+    { requireStaleClaimRejected: simulateStaleClaimRetry },
   );
   const durableJournalBoundaryAccepted = dbJournalCheckedBoundaryAccepted
     || recoveryInspectProductionJournalAccepted;
@@ -2327,12 +2328,14 @@ function dbJournalCheckedBoundaryIsAcceptable(dbJournal, options = {}) {
   });
 }
 
-export function productionRecoveryJournalProofIsAcceptable(productionJournal) {
+export function productionRecoveryJournalProofIsAcceptable(productionJournal, options = {}) {
+  const requireStaleClaimRejected = options.requireStaleClaimRejected === true;
   return productionRecoveryJournalInspectionSurfaceIsPresent(productionJournal)
     && productionJournal?.journal?.consumed === true
     && productionJournal?.journal?.ownership?.ownsJournal === true
     && productionJournal?.journal?.ownership?.restartReadable === true
-    && productionJournal?.leaseFence?.restartReadable === true;
+    && productionJournal?.leaseFence?.restartReadable === true
+    && (!requireStaleClaimRejected || productionJournal?.leaseFence?.staleClaimRejected === true);
 }
 
 function normalizeCheckedBoundaryDbJournal(dbJournal) {
