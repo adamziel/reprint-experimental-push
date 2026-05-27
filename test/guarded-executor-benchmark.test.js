@@ -359,8 +359,35 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       ],
     },
     {
+      id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
       id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
       rejectedGate: 'recovery',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+      rejectedGate: 'group',
       blockerRefs: [
         'production-atomic-group-commit-not-measured',
         'production-row-batch-executor-not-measured',
@@ -491,7 +518,7 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.deepEqual(
     report.claims.productionThroughputDetails.rejectedFastPathGateSummary,
     [
-      { rejectedGate: 'group', count: 13 },
+      { rejectedGate: 'group', count: 16 },
       { rejectedGate: 'live', count: 1 },
       { rejectedGate: 'recovery', count: 7 },
       { rejectedGate: 'skip', count: 2 },
@@ -955,7 +982,10 @@ test('guarded benchmark surfaces plugin-install finalize and commit-after-pause 
   assert.deepEqual(
     details.rejectedFastPaths
       .filter((entry) => [
+        'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
         'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
         'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
         'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
       ].includes(entry.id))
@@ -966,8 +996,35 @@ test('guarded benchmark surfaces plugin-install finalize and commit-after-pause 
       })),
     [
       {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
         id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-row-batch-executor-not-measured',

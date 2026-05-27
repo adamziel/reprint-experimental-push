@@ -257,7 +257,31 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
