@@ -25330,6 +25330,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     assert.equal(summary.boundary.durableJournal.phase, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'id');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'id');
     assert.ok(!seen.some(({ url }) => url.includes('/recovery/inspect')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 1);
@@ -25562,6 +25564,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     assert.equal(summary.boundary.durableJournal.phase, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'status');
     assert.ok(!seen.some(({ url }) => url.includes('/recovery/inspect')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 1);
@@ -25683,6 +25687,8 @@ for (const [fieldName, invalidValue, observed, keySuffix] of [
       assert.equal(summary.boundary.durableJournal.phase, 'apply');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, fieldName);
+      assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+      assert.equal(summary.authSessionLifecycleSummary.read?.invalidLifecycleFlag, fieldName);
       assert.ok(!seen.some(({ url }) => url.includes('/recovery/inspect')));
       assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
       assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 1);
@@ -25796,6 +25802,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     assert.equal(summary.boundary.durableJournal.phase, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'expires-at');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'expires-at');
     assert.ok(!seen.some(({ url }) => url.includes('/recovery/inspect')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.filter(({ url }) => url.includes('/apply')).length, 1);
