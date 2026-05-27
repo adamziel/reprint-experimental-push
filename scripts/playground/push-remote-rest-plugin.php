@@ -1121,10 +1121,21 @@ function reprint_push_lab_rest_checked_latest_row_field_conflicts(
         return true;
     }
 
+    if (
+        reprint_push_lab_db_journal_is_positive_int($existing_sequence)
+        && !reprint_push_lab_db_journal_is_positive_int($checked_sequence)
+    ) {
+        return true;
+    }
+
     foreach ($keys as $key) {
         $existing_value = isset($existing_row[$key]) ? (string) $existing_row[$key] : '';
         $checked_value = isset($checked_row[$key]) ? (string) $checked_row[$key] : '';
         if ($existing_value === '' && $checked_value !== '') {
+            return true;
+        }
+
+        if ($existing_value !== '' && $checked_value === '') {
             return true;
         }
 
@@ -1436,12 +1447,23 @@ function reprint_push_lab_rest_checked_claim_evidence_row_conflicts(
             ) {
                 return true;
             }
+
+            if (
+                reprint_push_lab_db_journal_is_positive_int($existing_value)
+                && !reprint_push_lab_db_journal_is_positive_int($checked_value)
+            ) {
+                return true;
+            }
             continue;
         }
 
         $existing_value = is_string($existing_value) ? $existing_value : '';
         $checked_value = is_string($checked_value) ? $checked_value : '';
         if (!array_key_exists($key, $existing_row) && $checked_value !== '') {
+            return true;
+        }
+
+        if ($existing_value !== '' && $checked_value === '') {
             return true;
         }
 

@@ -1261,6 +1261,65 @@ test('checked recovery inspect evidence fails closed when the authoritative chec
   assert.equal(parsed.recovery.journal.leaseFence.writerLease.claimId, 'retry-claim-hash-02');
 });
 
+test('checked db journal attachment fails closed when authoritative claim evidence omits previously accepted claim lineage', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.claimEvidence.abandonedRow.claimId;
+  delete checkedSummary.claimEvidence.previousRow.claimId;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimId, undefined);
+  assert.equal(parsed.dbJournal.claimEvidence.previousRow.claimId, undefined);
+});
+
+test('checked db journal attachment fails closed when authoritative latest rows omit previously accepted stale-claim lineage', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.latestRows = [
+    ...inlineJournal.latestRows,
+    {
+      sequence: 24,
+      event: 'stale-claim-abandoned',
+      claimId: 'retry-claim-hash-01',
+      claimKeyHash: 'retry-claim-hash-01',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  ];
+
+  const checkedSummary = buildCheckedDbJournalSummary();
+  checkedSummary.latestRows = [
+    ...checkedSummary.latestRows,
+    {
+      sequence: 24,
+      event: 'stale-claim-abandoned',
+      claimKeyHash: 'retry-claim-hash-01',
+      idempotencyKeyHash: 'idem-hash-01',
+      requestHash: 'request-hash-01',
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  ];
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.latestRows[1].claimId, 'retry-claim-hash-01');
+});
+
 test('recovery inspect journal evidence upgrades scope on checked and packaged boundaries', { skip: !hasPhp }, () => {
   const localResult = runRecoveryJournalEvidence();
   assert.equal(localResult.status, 0, localResult.stderr);
