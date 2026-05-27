@@ -1977,7 +1977,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             preflightNotReadyProbeCount,
           )
         ) {
-          const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
+          const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
+            buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
+          );
           lastProbes.push(indexProbe);
           // Once /wp-json/ is available, re-evaluate retryability against the
           // current startup signal instead of the broad packaged-startup hint.
@@ -1986,7 +1988,14 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               status: preflight.status,
               body: preflightBody,
             },
-            { indexProbe },
+            {
+              packagedStartup: true,
+              snapshotProbe: {
+                status: activeSnapshotProbe?.status,
+                body: activeSnapshotProbe?.body || '',
+              },
+              indexProbe,
+            },
           );
           if (!preflightRetryableWithIndex) {
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
@@ -2012,6 +2021,34 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             },
             indexProbe,
           );
+          if (startupBranch?.kind === 'retryable-route-index-timeout') {
+            lastTimeoutFallbackProbes = {
+              preflightProbe: {
+                route: '/wp-json/reprint/v1/push/preflight',
+                status: preflight.status,
+                body: preflightText.slice(0, readinessFailureBodyLimit),
+              },
+              indexProbe,
+            };
+            if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
+            }
+            await throwPlaygroundReadinessFailure(
+              child,
+              `Packaged production plugin preflight stayed startup-shaped while /wp-json/ timed out after ${preflightNotReadyProbeCount} consecutive response${preflightNotReadyProbeCount === 1 ? '' : 's'} (limit ${maxPackagedStartupNotReadyProbeCount})`,
+              lastError,
+              lastProbes,
+              getOutput(),
+              {
+                childPid: child.pid ?? null,
+                packagedProductionPlugin: true,
+                indexProbeTimedOut: true,
+                preflightNotReadyProbeCount,
+              },
+              lastTimeoutFallbackProbes,
+            );
+          }
           if (startupBranch?.kind === 'retryable-route-wordpress-starting') {
             if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
               await sleepUnlessChildExit(readinessProbeIntervalMs, child);

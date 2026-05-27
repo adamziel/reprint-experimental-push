@@ -3355,16 +3355,20 @@ test('packaged readiness helpers recompute parsed signed preflight retryability 
       'expected packaged signed preflight parsed-body path to keep an explicit readiness context',
     );
     assert.ok(
-      source.includes('const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);'),
-      'expected packaged signed preflight parsed-body path to fetch the current index probe',
+      source.includes("const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>")
+      && source.includes("buildPackagedTimeoutFallbackProbe('/wp-json/', indexError)"),
+      'expected packaged signed preflight parsed-body path to preserve index timeouts as bounded fallback probes',
     );
     assert.ok(
       source.includes('const preflightRetryableWithIndex = packagedProductionPluginPreflightRetryable('),
       'expected packaged signed preflight parsed-body path to recompute retryability with the current index probe',
     );
     assert.ok(
-      source.includes('{ indexProbe }'),
-      'expected packaged signed preflight parsed-body path to recheck against the current index probe without the broad packaged-startup hint',
+      source.includes('snapshotProbe: {')
+      && source.includes('status: activeSnapshotProbe?.status')
+      && source.includes("body: activeSnapshotProbe?.body || ''")
+      && source.includes('indexProbe,'),
+      'expected packaged signed preflight parsed-body path to recheck against the current index probe while preserving snapshot startup context',
     );
     assert.ok(
       source.includes('if (!preflightRetryableWithIndex) {'),
@@ -3415,6 +3419,37 @@ test('packaged preflight retryability turns terminal once the live index probe s
   assert.equal(
     packagedProductionPluginPreflightTerminal(preflight, { indexProbe: terminalIndexProbe }),
     true,
+  );
+});
+
+test('packaged preflight retryability ignores timed-out index overrides and falls back to startup context', () => {
+  const preflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+  const startupSnapshotProbe = {
+    status: 404,
+    body: 'No route was found matching the URL and request method.',
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      snapshotProbe: startupSnapshotProbe,
+      indexProbe: { timedOut: true },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, {
+      packagedStartup: true,
+      snapshotProbe: startupSnapshotProbe,
+      indexProbe: { timedOut: true },
+    }),
+    false,
   );
 });
 

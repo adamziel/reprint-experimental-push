@@ -226,7 +226,7 @@ export function packagedProductionPluginPreflightRetryable(preflight, context = 
   ) {
     // A fresh /wp-json/ probe is the strongest startup signal. Once it shows
     // startup is over, do not keep retrying on an older packaged-startup hint.
-    if (context.indexProbe) {
+    if (context.indexProbe?.timedOut !== true && context.indexProbe) {
       return packagedProductionPluginReadinessBodyRetryable(
         context.indexProbe?.status,
         context.indexProbe?.body || '',
