@@ -736,6 +736,112 @@ test('plugin-driver proof summary reuses an attached pluginDriverProof and repai
   assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
 });
 
+test('plugin-driver proof summary attach helper preserves an unrelated top-level modeProof cache', () => {
+  const unrelatedModeProof = {
+    mode: 'releaseProof',
+    canonicalMode: 'release-proof',
+    proofKey: 'releaseProof',
+    legacyProofKey: 'releaseProof',
+    requestedBundleStatus: 'passed',
+  };
+  const rawSummary = {
+    modeProof: unrelatedModeProof,
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: ['core-package-routes', 'driver-delete-apply', 'driver-receipt-guards'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const pluginDriverProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set([
+      'driverReleaseProof',
+      ...scenarioGroups['driver-release-proof'],
+    ]),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(rawSummary.pluginDriverProof, pluginDriverProof);
+  assert.equal(rawSummary.modeProof, unrelatedModeProof);
+  assert.equal(rawSummary.pluginDriverProof?.modeProof?.mode, 'driverReleaseProof');
+});
+
+test('plugin-driver proof summary attach helper does not null an unrelated top-level modeProof when no plugin-driver mode proof is available', () => {
+  const unrelatedModeProof = {
+    mode: 'releaseProof',
+    canonicalMode: 'release-proof',
+    proofKey: 'releaseProof',
+    legacyProofKey: 'releaseProof',
+  };
+  const rawSummary = {
+    modeProof: unrelatedModeProof,
+  };
+
+  const pluginDriverProof = attachProductionPluginPackagePluginDriverProof(rawSummary);
+
+  assert.equal(rawSummary.pluginDriverProof, pluginDriverProof);
+  assert.equal(rawSummary.modeProof, unrelatedModeProof);
+  assert.equal(pluginDriverProof?.modeProof, null);
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',

@@ -905,7 +905,9 @@ export function attachProductionPluginPackagePluginDriverProof(
   const pluginDriverProof = resolveProductionPluginPackagePluginDriverProof(summary, options);
   if (summary && typeof summary === 'object') {
     summary.pluginDriverProof = pluginDriverProof;
-    summary.modeProof = pluginDriverProof?.modeProof ?? null;
+    if (shouldSyncTopLevelModeProof(summary.modeProof, pluginDriverProof?.modeProof)) {
+      summary.modeProof = pluginDriverProof.modeProof;
+    }
   }
   return pluginDriverProof;
 }
