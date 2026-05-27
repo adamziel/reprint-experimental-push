@@ -12902,6 +12902,243 @@ test('blocks _menu_item_object_id taxonomy metadata owned by an existing nav_men
   );
 });
 
+test('blocks _menu_item_object_id taxonomy metadata owned by an existing nav_menu_item post even when it targets a same-plan term and unrelated remote wp_navigation noise exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:498"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing nav menu item owner',
+    post_content: 'base-private-existing-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu object term',
+      slug: 'local-menu-object-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:498': {
+      meta_id: 498,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:499': {
+      meta_id: 499,
+      post_id: 2,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:500': {
+      meta_id: 500,
+      post_id: 2,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote unrelated wp_navigation noise',
+    post_content: 'remote-private-unrelated-wp-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-menu-object-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-wp-navigation-body'),
+    false,
+  );
+});
+
+test('blocks _menu_item_object_id taxonomy metadata owned by an existing nav_menu_item post even when it targets a same-plan term and unrelated remote nav_menu_item noise exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:498"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing nav menu item owner',
+    post_content: 'base-private-existing-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu object term',
+      slug: 'local-menu-object-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:498': {
+      meta_id: 498,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:499': {
+      meta_id: 499,
+      post_id: 2,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:500': {
+      meta_id: 500,
+      post_id: 2,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote unrelated nav_menu_item noise',
+    post_content: 'remote-private-unrelated-nav-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-menu-object-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-nav-menu-item-body'),
+    false,
+  );
+});
+
+test('blocks _menu_item_object_id taxonomy metadata owned by an existing nav_menu_item post even when it targets a same-plan term and unrelated remote revision noise exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:498"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Existing nav menu item owner',
+    post_content: 'base-private-existing-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  const local = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local menu object term',
+      slug: 'local-menu-object-term',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:498': {
+      meta_id: 498,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:499': {
+      meta_id: 499,
+      post_id: 2,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:500': {
+      meta_id: 500,
+      post_id: 2,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_title: 'Remote unrelated revision noise',
+    post_content: 'remote-private-unrelated-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+
+  const plan = planFor(base, local, remote);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(plan.summary.mutations > 0);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(blocker).includes('base-private-existing-nav-menu-item-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-menu-object-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('remote-private-unrelated-revision-body'),
+    false,
+  );
+});
+
 test('blocks an existing _menu_item_object_id taxonomy row when its same-plan owner post is itself blocked by a revision parent', () => {
   const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
   const blockedOwnerResourceKey = 'row:["wp_posts","ID:5"]';
