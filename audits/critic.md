@@ -189,3 +189,49 @@ Next focused regression test after that primitive exists:
   session and lease-fenced journal ownership, revalidate `/apply` before any
   mutation, reject the stale preserved remote with retained audit evidence, and
   classify recovery as replayed or blocked without fresh mutation work.
+# Critic Verdict
+
+Fetched reliable ref today:
+
+- `origin/lane/reliable-executor` resolves to
+  `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
+  (`Fail closed on malformed auth identity drift`).
+
+Previous classified reliable head: `4fec89c9d6f853bd066f0b3a58cd22a738c1c747`
+(`Fail closed on malformed auth lifecycle fields`).
+
+Verdict for `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`: `0/4`
+
+Reason:
+
+- The `4fec89c9..fd202823` diff is still narrow and client-side. It only edits
+  `src/authenticated-http-push-client.js` and
+  `test/authenticated-http-push-client.test.js`.
+- The new logic adds fail-closed handling for malformed observed auth identity
+  fields (`auth.identity.userLogin` and malformed auth session identity
+  fields) across the preflight, dry-run, apply, recovery-inspect, and replay
+  checks. That is good hardening, but it is still the same checked client
+  path.
+- The added tests prove the client now rejects malformed identity shapes and
+  stops before `apply`/`db-journal` when the bad identity is seen. They do not
+  execute a production-owned, non-lab-backed checked release boundary against
+  the real Reprint endpoint.
+- The retained release criterion still requires one rerunnable checked release
+  command on the same live `REPRINT_PUSH_SOURCE_URL` that mints and rereads a
+  live auth session, persists it in durable restart-readable journal storage
+  with lease-fenced ownership, preserves rejected remote evidence for audit,
+  and performs apply-time revalidation before the first mutation on that same
+  boundary.
+- So no supervised release gate closes here. `fd202823` removes malformed
+  auth-identity drift from the checked client path, but it does not supply the
+  missing production-owned real-endpoint boundary.
+
+Next exact reliable-owned primitive:
+
+- One production-owned, non-lab-backed checked release command on the real
+  Reprint endpoint where the same executable command string and same live
+  `REPRINT_PUSH_SOURCE_URL` visibly mint and then read back a live auth
+  session on that real source URL, persist it in durable restart-readable
+  journal storage with lease-fenced ownership, preserve the rejected remote
+  evidence for audit, and perform apply-time revalidation before the first
+  mutation on that same boundary.
