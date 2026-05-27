@@ -1003,9 +1003,15 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
 
     if (
         is_array($checked_summary)
-        && reprint_push_lab_rest_checked_top_level_identity_conflicts(
-            $premerge_db_journal,
-            $checked_summary
+        && (
+            reprint_push_lab_rest_checked_top_level_identity_conflicts(
+                $premerge_db_journal,
+                $checked_summary
+            )
+            || reprint_push_lab_rest_checked_top_level_identity_omissions(
+                $premerge_db_journal,
+                $checked_summary
+            )
         )
     ) {
         $db_journal['acceptedOnCheckedBoundary'] = false;
@@ -1346,6 +1352,33 @@ function reprint_push_lab_rest_checked_top_level_identity_conflicts(
             array_key_exists($key, $premerge_db_journal)
             && array_key_exists($key, $checked_summary)
             && $premerge_db_journal[$key] !== $checked_summary[$key]
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_top_level_identity_omissions(
+    ?array $premerge_db_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_db_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_db_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    foreach (['schemaVersion', 'table', 'scope'] as $key) {
+        if (
+            !array_key_exists($key, $premerge_db_journal)
+            && array_key_exists($key, $checked_summary)
         ) {
             return true;
         }
@@ -1886,9 +1919,15 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
 
     if (
         is_array($checked_summary)
-        && reprint_push_lab_rest_checked_top_level_identity_conflicts(
-            $premerge_journal,
-            $checked_summary
+        && (
+            reprint_push_lab_rest_checked_top_level_identity_conflicts(
+                $premerge_journal,
+                $checked_summary
+            )
+            || reprint_push_lab_rest_checked_top_level_identity_omissions(
+                $premerge_journal,
+                $checked_summary
+            )
         )
     ) {
         $journal['acceptedOnCheckedBoundary'] = false;
