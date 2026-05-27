@@ -67,12 +67,12 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 1_500;
-const playgroundServerTimeoutMs = 8;
-const serverFetchTimeoutMs = 3_000;
-const playgroundStopTimeoutMs = 3_000;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
+const serverStartupTimeoutMs = runLivePlaygroundTopologyTests ? 8_000 : 1_500;
+const playgroundServerTimeoutMs = runLivePlaygroundTopologyTests ? 16 : 8;
+const serverFetchTimeoutMs = 3_000;
+const playgroundStopTimeoutMs = 3_000;
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 const liveCredentials = {
   username: 'reprint_push_admin',
@@ -85,6 +85,7 @@ const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubprocessTimeoutMs - 8_000));
 const liveWrapperSubprocessTimeoutMs = 180_000;
+const livePlaygroundMaxConsecutiveNotReadyProbes = Math.max(4, packagedProductionPluginMaxConsecutiveNotReadyProbes);
 // Give the verifier enough time to reach its own bounded readiness failure and
 // emit probe diagnostics before the outer subprocess timeout can kill it.
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubprocessTimeoutMs - 4_000));
@@ -4157,6 +4158,62 @@ maybeTest('production-shaped release verify command runs the live protocol branc
   });
 });
 
+maybeTest('production-shaped live release verify command proves the explicit checked live boundary end to end', () => {
+  return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
+    return withPlaygroundServer('remote-changed', path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'), async (remoteChangedServer) => {
+      return withPlaygroundServer('local-edited', path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'), async (localServer) => {
+        const proof = spawnBoundedSync(
+          process.execPath,
+          ['scripts/playground/production-shaped-live-release-verify.mjs'],
+          {
+            cwd: repoRoot,
+            timeout: liveWrapperSubprocessTimeoutMs,
+            killSignal: 'SIGKILL',
+            env: {
+              ...process.env,
+              REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+              REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+              REPRINT_PUSH_REMOTE_CHANGED_URL: remoteChangedServer.baseUrl,
+              REPRINT_PUSH_LOCAL_URL: localServer.baseUrl,
+              REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+              REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+              NODE_NO_WARNINGS: '1',
+            },
+            encoding: 'utf8',
+            maxBuffer: 1024 * 1024 * 20,
+          },
+          'explicit live release verify wrapper',
+        );
+
+        assertLiveReleaseVerifyProof(proof, 'explicit live release verify wrapper', liveWrapperSubprocessTimeoutMs);
+        assert.equal(proof.status, 0, proof.stderr);
+        const summary = JSON.parse(proof.stdout);
+
+        assert.equal(summary.ok, true);
+        assert.equal(summary.topology?.sourceUrl, remoteServer.baseUrl);
+        assert.equal(summary.topology?.remoteBase, remoteServer.baseUrl);
+        assert.equal(summary.topology?.remoteChanged, remoteChangedServer.baseUrl);
+        assert.equal(summary.topology?.localEdited, localServer.baseUrl);
+        assert.equal(summary.boundary?.firstRemainingProductionBoundary, null);
+        assert.equal(summary.boundary?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+        assert.equal(summary.boundary?.authSession?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+        assert.equal(summary.boundary?.durableJournal?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+        assert.equal(summary.boundary?.replayAndRetry?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+        assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.type, 'production-auth-session');
+        assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.status, 'active');
+        assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.expired, false);
+        assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.type, 'production-auth-session');
+        assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.status, 'active');
+        assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.expired, false);
+        assert.equal(summary.durableJournal?.checkedAccepted, true);
+        assert.equal(summary.applyRevalidation?.ok, true);
+        assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, null);
+        assert.equal(summary.applyRevalidation?.boundary?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+      });
+    });
+  });
+});
+
 maybeTest('production-shaped release verify command fails closed when remote drift appears after the authenticated snapshot', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnProductionShapedReleaseVerify(
@@ -4447,7 +4504,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
   const lastProbes = [];
-  let consecutiveIndex502s = 0;
+  let consecutiveNotReadyResponses = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -4484,7 +4541,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         `Playground probe ${baseUrl}/wp-json/ -> ${response.status} ${responseBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
       );
       if (response.status === 200) {
-        consecutiveIndex502s = 0;
+        consecutiveNotReadyResponses = 0;
         await response.arrayBuffer();
         const snapshot = await fetchWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
@@ -4507,16 +4564,25 @@ async function waitForServer(child, baseUrl, getLogs) {
           return;
         }
         lastError = new Error(`Playground lab snapshot readiness HTTP ${snapshot.status}`);
+        if (isWordPressNotReadyResponse(snapshot.status, snapshotBody)) {
+          consecutiveNotReadyResponses += 1;
+        } else {
+          consecutiveNotReadyResponses = 0;
+        }
       } else {
         lastError = new Error(`Playground index readiness HTTP ${response.status}`);
-        consecutiveIndex502s = response.status === 502 ? consecutiveIndex502s + 1 : 0;
+        if (isWordPressNotReadyResponse(response.status, responseBody)) {
+          consecutiveNotReadyResponses += 1;
+        } else {
+          consecutiveNotReadyResponses = 0;
+        }
       }
-      if (consecutiveIndex502s >= 1) {
+      if (consecutiveNotReadyResponses >= livePlaygroundMaxConsecutiveNotReadyProbes) {
         break;
       }
     } catch (error) {
       lastError = error;
-      consecutiveIndex502s = 0;
+      consecutiveNotReadyResponses = 0;
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
@@ -4535,6 +4601,10 @@ async function waitForServer(child, baseUrl, getLogs) {
     );
   }
   throw new Error(failureText);
+}
+
+function isWordPressNotReadyResponse(status, body = '') {
+  return status === 502 && /WordPress is not ready yet/i.test(body);
 }
 
 function writePlaygroundFailure(message, lastProbes, logs, lastError) {
