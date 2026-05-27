@@ -4,6 +4,66 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Journal Pages Complex-Site Evidence
+
+- Last update: 2026-05-28 00:49 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:journal-pages`
+  passed in tmux window `main:journal-pages-proof` with
+  `[JOURNAL_PAGES_PROOF_FINAL_STATUS:0]`.
+- Code change: the DB-journal REST surface now supports paged readback with
+  `beforeSequence`/`beforeCursor`, keeps page metadata, and allows up to 500
+  rows per DB-journal page. The authenticated push client now reads the first
+  mutation-sized journal page and follows older pages until the reported
+  journal `rowCount` is covered or the page cap is hit.
+- Release-client guardrail: a paginated DB-journal proof is rejected if the
+  readback is incomplete or truncated. The same work also fixed signed retry
+  behavior so retried authenticated requests regenerate their nonce while
+  preserving the idempotency key and body.
+- Unit regression: the focused authenticated client test now fakes a 602-row
+  durable journal and verifies three readback requests:
+  `?limit=80`, `?limit=500&beforeSequence=523`, and
+  `?limit=500&beforeSequence=23`. It asserts 602 recovered rows,
+  600 `mutation-applied` events, `readbackPages: 3`,
+  `paginationComplete: true`, and `paginationTruncated: false`.
+- Planner evidence: the journal-pages command expanded the local production
+  topology to 180 complex posts per site, 182 exported posts per site,
+  5 complex form-schema postmeta rows, 3 complex upload files, 4 forms-lab
+  rows, 1 release-state row, and 12 plugin-owned allowlist entries. The ready
+  plan had 190 mutations and 190 live-remote preconditions. The remote-drift
+  plan still failed closed with 9 `preserve-remote-and-stop` conflicts.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `2b533a363d288706575ae2772edd54aa51a150aa97c96b436d36f64ced3222dd`,
+  reported 580 durable DB journal rows, `mutationApplied: 190`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 190`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session and durable journal, replay
+  equivalence, and `releaseMovement.gates: candidate-for-review`.
+- Recovery evidence now includes same-key/body replay with 190 mutation
+  events, same-key/different-body conflict before mutation, stale-owner
+  fencing, 190/190 fully updated recovery inspect, and blocked apply-time
+  revalidation state with `old: 189`, `new: 0`, `blockedUnknown: 1`.
+- Focused checks passed:
+  `node --check src/authenticated-http-push-client.js`,
+  `node --check scripts/playground/production-shaped-release-verify.mjs`,
+  `node --check scripts/playground/production-shaped-live-release-verify.mjs`,
+  `php -l scripts/playground/push-remote-rest-plugin.php`,
+  `php -l scripts/playground/push-db-journal-lib.php`,
+  `node --test --test-name-pattern "retries idempotent signed posts|paginates durable db journal readback|db journal readback window scales" test/authenticated-http-push-client.test.js`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:journal-pages`.
+- Caveat: this is still local Playground loopback WordPress evidence. It does
+  not prove Docker/external restart behavior, external crash durability,
+  rollback, broader WordPress graph surfaces, or arbitrary plugin-driver
+  correctness.
+- Percent movement: merge invariants move from 57% to 58%; recovery boundaries
+  move from 50% to 55%; reliable executor/protocol moves from 64% to 68%;
+  fast path and chunking moves from 30% to 36% because the proof now crosses
+  more than one durable journal page; independent evidence moves from 56% to
+  60%.
+
 ## 2026-05-28 - Journal Window Complex-Site Evidence
 
 - Last update: 2026-05-28 00:16 CEST.

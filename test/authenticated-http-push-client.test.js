@@ -633,6 +633,9 @@ test('authenticated push client retries idempotent signed posts after a transien
     assert.equal(proof.status, 200);
     assert.deepEqual(proof.body, { ok: true, attempt: 2 });
     assert.equal(seen.length, 2);
+    assert.notEqual(seen[0].options.headers['X-Auth-Nonce'], seen[1].options.headers['X-Auth-Nonce']);
+    assert.equal(seen[0].options.headers['X-Reprint-Push-Idempotency-Key'], 'idem-01');
+    assert.equal(seen[1].options.headers['X-Reprint-Push-Idempotency-Key'], 'idem-01');
   } finally {
     global.fetch = originalFetch;
   }
@@ -670,6 +673,9 @@ test('authenticated push client retries idempotent signed posts after a transien
     assert.equal(proof.status, 200);
     assert.deepEqual(proof.body, { ok: true, attempt: 2 });
     assert.equal(seen.length, 2);
+    assert.notEqual(seen[0].options.headers['X-Auth-Nonce'], seen[1].options.headers['X-Auth-Nonce']);
+    assert.equal(seen[0].options.headers['X-Reprint-Push-Idempotency-Key'], 'idem-01-timeout');
+    assert.equal(seen[1].options.headers['X-Reprint-Push-Idempotency-Key'], 'idem-01-timeout');
   } finally {
     global.fetch = originalFetch;
   }
@@ -5342,6 +5348,266 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
     assert.equal(summary.replayEquivalence?.equivalent, true);
     assert.deepEqual(summary.replayEquivalence?.mismatches, []);
     assert.equal(seen.length, 8);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push paginates durable db journal readback across older windows', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  const session = {
+    type: 'production-auth-session',
+    status: 'active',
+    id: 'psh_01j00000000000000000000000',
+    expiresAt: '2030-01-01T00:00:00Z',
+  };
+  const auth = {
+    identity: { userLogin: 'reprint_push_admin' },
+    session,
+  };
+  const journalRows = [
+    { sequence: 1, event: 'idempotency-opened' },
+    ...Array.from({ length: 600 }, (_, index) => ({
+      sequence: index + 2,
+      event: 'mutation-applied',
+    })),
+    { sequence: 602, event: 'apply-committed' },
+  ];
+  const journalContract = {
+    scope: trustedDbJournalScope,
+    claim: {
+      status: 'active',
+      activeClaimId: session.id,
+      activeClaimKeyHash: session.id,
+      activeClaimSequence: 1,
+      activeClaimEvent: 'recovery-claim-opened',
+      staleClaimRejected: false,
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'filesystem-compare-rename',
+      supportedSurface: 'claim-fenced-restart-readable',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimId: session.id,
+      claimKeyHash: session.id,
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'filesystem-compare-rename',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+    },
+    leaseFence: {
+      boundary: 'filesystem-compare-rename',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: false,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimId: session.id,
+        claimKeyHash: session.id,
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'filesystem-compare-rename',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: false,
+      },
+    },
+  };
+
+  function journalPage(urlString) {
+    const url = new URL(urlString);
+    const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
+    const beforeSequence = Number.parseInt(url.searchParams.get('beforeSequence') || '0', 10);
+    const availableRows = beforeSequence > 0
+      ? journalRows.filter((row) => row.sequence < beforeSequence)
+      : journalRows;
+    const latestRows = availableRows.slice(-limit);
+    const oldestSequence = latestRows[0]?.sequence ?? null;
+    const newestSequence = latestRows.at(-1)?.sequence ?? null;
+    const hasOlder = oldestSequence !== null && journalRows.some((row) => row.sequence < oldestSequence);
+    return {
+      ok: true,
+      auth,
+      dbJournal: {
+        ...journalContract,
+        rowCount: journalRows.length,
+        latestRows,
+        page: {
+          limit,
+          beforeSequence: beforeSequence > 0 ? beforeSequence : null,
+          rowCount: latestRows.length,
+          oldestSequence,
+          newestSequence,
+          hasOlder,
+          nextBeforeSequence: hasOlder ? oldestSequence : null,
+        },
+      },
+      storageGuard: {
+        boundary: 'filesystem-compare-rename',
+        operation: 'update',
+        outcome: 'applied',
+      },
+    };
+  }
+
+  global.fetch = async (url, options) => {
+    const urlObject = new URL(String(url));
+    seen.push({
+      url: String(url),
+      pathname: urlObject.pathname,
+      search: urlObject.search,
+      options,
+    });
+    const pathname = urlObject.pathname;
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        session: { id: session.id },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        recovery: {
+          state: 'fully-updated-remote',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify(journalPage(String(url))), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify(applyCount === 1 ? {
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
+        auth,
+        receipt: { receiptHash: 'receipt-01' },
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-01',
+          timestamp: '2026-05-26T10:00:00.000Z',
+          nonceHash: 'nonce-01',
+          sessionHash: 'session-01',
+          signingKeyHash: 'signing-key-01',
+          request: { mutations: [1] },
+        },
+        idempotency: {
+          replayed: false,
+          freshMutationWork: true,
+          conflict: false,
+        },
+      } : {
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: 'BATCH_ALREADY_COMMITTED',
+        responseSchemaVersion: 1,
+        auth,
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-01',
+          timestamp: '2026-05-26T10:00:04.000Z',
+          nonceHash: 'nonce-02',
+          sessionHash: 'session-01',
+          signingKeyHash: 'signing-key-01',
+          request: { mutations: [1] },
+        },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-paginated-db-journal',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.dbJournal.rows, 602);
+    assert.equal(summary.dbJournal.rowCount, 602);
+    assert.equal(summary.dbJournal.mutationApplied, 600);
+    assert.equal(summary.dbJournal.idempotencyOpened, 1);
+    assert.equal(summary.dbJournal.applyCommitted, true);
+    assert.equal(summary.dbJournal.readbackPages, 3);
+    assert.equal(summary.dbJournal.paginationComplete, true);
+    assert.equal(summary.dbJournal.paginationTruncated, false);
+    assert.deepEqual(
+      seen
+        .filter(({ pathname }) => pathname.endsWith('/db-journal'))
+        .map(({ search }) => search),
+      ['?limit=80', '?limit=500&beforeSequence=523', '?limit=500&beforeSequence=23'],
+    );
   } finally {
     global.fetch = originalFetch;
   }

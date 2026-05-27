@@ -96,8 +96,17 @@ function reprint_push_lab_rest_register_routes(): void
                     'type' => 'integer',
                     'default' => 20,
                     'minimum' => 1,
-                    'maximum' => 80,
+                    'maximum' => 500,
                     'sanitize_callback' => 'absint',
+                ],
+                'beforeSequence' => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'sanitize_callback' => 'absint',
+                ],
+                'beforeCursor' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
                 ],
             ],
         ]);
@@ -156,8 +165,17 @@ function reprint_push_lab_rest_register_routes(): void
                     'type' => 'integer',
                     'default' => 20,
                     'minimum' => 1,
-                    'maximum' => 80,
+                    'maximum' => 500,
                     'sanitize_callback' => 'absint',
+                ],
+                'beforeSequence' => [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'sanitize_callback' => 'absint',
+                ],
+                'beforeCursor' => [
+                    'type' => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
                 ],
             ],
         ]);
@@ -223,8 +241,17 @@ function reprint_push_lab_rest_register_routes(): void
                 'type' => 'integer',
                 'default' => 20,
                 'minimum' => 1,
-                'maximum' => 80,
+                'maximum' => 500,
                 'sanitize_callback' => 'absint',
+            ],
+            'beforeSequence' => [
+                'type' => 'integer',
+                'minimum' => 1,
+                'sanitize_callback' => 'absint',
+            ],
+            'beforeCursor' => [
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
             ],
         ],
     ]);
@@ -3537,7 +3564,11 @@ function reprint_push_lab_rest_journal(WP_REST_Request $request): WP_REST_Respon
 function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Response
 {
     $limit = max(1, min(500, (int) $request->get_param('limit')));
-    $db_journal = reprint_push_lab_db_journal_summary($limit);
+    $before_sequence = (int) $request->get_param('beforeSequence');
+    if ($before_sequence <= 0) {
+        $before_sequence = reprint_push_lab_db_journal_cursor_sequence((string) $request->get_param('beforeCursor')) ?? 0;
+    }
+    $db_journal = reprint_push_lab_db_journal_summary($limit, $before_sequence > 0 ? $before_sequence : null);
     if (reprint_push_lab_rest_checked_production_journal_surface($request)) {
         $db_journal = reprint_push_lab_db_journal_attach_checked_contract(
             $db_journal,

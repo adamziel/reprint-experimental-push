@@ -52,7 +52,10 @@ const packagedBoundaryRequested = shouldRequestCheckedLivePackagedBoundary({
   fixtureUsername: credentials.username,
   fixtureApplicationPassword: credentials.applicationPassword,
 });
-const innerVerifyTimeoutMs = packagedBoundaryRequested ? 180_000 : 90_000;
+const innerVerifyTimeoutMs = positiveIntegerEnv(
+  'REPRINT_PUSH_LIVE_RELEASE_VERIFY_TIMEOUT_MS',
+  packagedBoundaryRequested ? 180_000 : 90_000,
+);
 const applyRevalidationTimeoutMs = 240_000;
 const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
@@ -180,6 +183,11 @@ function resolveReleaseTopologyBlocker() {
   }
 
   return null;
+}
+
+function positiveIntegerEnv(name, fallback) {
+  const value = Number.parseInt(process.env[name] || '', 10);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
 function resolveApplyRevalidationAuthEnv({

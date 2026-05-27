@@ -35,6 +35,14 @@ Current sandbox result:
   35-mutation ready plan and verifies 115 durable DB-journal rows with
   `mutationApplied: 35`, `applyRevalidationVerifiedCount: 35`, checked
   auth/session and durable-journal gates, and replay equivalence.
+- Journal-pages local substitute:
+  `npm run verify:release:local-production:complex-site:journal-pages` passed
+  on 2026-05-28 00:49 CEST in `main:journal-pages-proof`. It expands the local
+  Playground topology to 180 complex posts, a 190-mutation ready plan, and
+  verifies paged durable DB-journal readback with 580 rows,
+  `mutationApplied: 190`, `applyRevalidationVerifiedCount: 190`, checked
+  auth/session and durable-journal gates, stale-claim fencing, and replay
+  equivalence.
 - Full Brewcommerce/WooCommerce import was attempted with
   `REPRINT_PUSH_LOCAL_PRODUCTION_FULL_BREWCOMMERCE=1`; all four sites booted,
   but the checked release verifier failed closed with

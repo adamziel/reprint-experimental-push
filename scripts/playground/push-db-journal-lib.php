@@ -469,7 +469,7 @@ function reprint_push_lab_db_journal_row_by_id(int $id): array
     return is_array($row) ? reprint_push_lab_db_journal_public_row($row) : [];
 }
 
-function reprint_push_lab_db_journal_summary(int $limit = 20): array
+function reprint_push_lab_db_journal_summary(int $limit = 20, ?int $before_sequence = null): array
 {
     global $wpdb;
 
@@ -477,12 +477,34 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
     $package_mode = reprint_push_lab_db_journal_package_mode_enabled();
 
     $limit = max(1, min(500, $limit));
+    $before_sequence = $before_sequence !== null && $before_sequence > 0 ? $before_sequence : null;
     $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
     $row_count = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$quoted_table}");
-    $latest = $wpdb->get_results(
-        $wpdb->prepare("SELECT * FROM {$quoted_table} ORDER BY id DESC LIMIT %d", $limit),
-        ARRAY_A
-    ) ?: [];
+    if ($before_sequence !== null) {
+        $latest = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM {$quoted_table} WHERE id < %d ORDER BY id DESC LIMIT %d", $before_sequence, $limit),
+            ARRAY_A
+        ) ?: [];
+    } else {
+        $latest = $wpdb->get_results(
+            $wpdb->prepare("SELECT * FROM {$quoted_table} ORDER BY id DESC LIMIT %d", $limit),
+            ARRAY_A
+        ) ?: [];
+    }
+    $latest_rows = array_map('reprint_push_lab_db_journal_public_row', array_reverse($latest));
+    $oldest_sequence = null;
+    $newest_sequence = null;
+    foreach ($latest_rows as $row) {
+        $sequence = (int) ($row['sequence'] ?? 0);
+        if ($sequence <= 0) {
+            continue;
+        }
+        $oldest_sequence = $oldest_sequence === null ? $sequence : min($oldest_sequence, $sequence);
+        $newest_sequence = $newest_sequence === null ? $sequence : max($newest_sequence, $sequence);
+    }
+    $has_older = $oldest_sequence !== null
+        ? (int) $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$quoted_table} WHERE id < %d", $oldest_sequence)) > 0
+        : false;
     $events = $wpdb->get_results(
         "SELECT event, COUNT(*) AS count, MAX(id) AS latestId FROM {$quoted_table} GROUP BY event ORDER BY latestId DESC",
         ARRAY_A
@@ -504,7 +526,16 @@ function reprint_push_lab_db_journal_summary(int $limit = 20): array
             ? 'packaged production plugin journal surface; not local Playground fixture only'
             : 'local Playground fixture only; not production durability',
         'rowCount' => $row_count,
-        'latestRows' => array_map('reprint_push_lab_db_journal_public_row', array_reverse($latest)),
+        'latestRows' => $latest_rows,
+        'page' => [
+            'limit' => $limit,
+            'beforeSequence' => $before_sequence,
+            'rowCount' => count($latest_rows),
+            'oldestSequence' => $oldest_sequence,
+            'newestSequence' => $newest_sequence,
+            'hasOlder' => $has_older,
+            'nextBeforeSequence' => $has_older ? $oldest_sequence : null,
+        ],
         'eventSummaries' => array_map(static function (array $row): array {
             return [
                 'event' => (string) $row['event'],

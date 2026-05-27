@@ -86,6 +86,7 @@ const requireProductionDurableJournal = process.env.REPRINT_PUSH_REQUIRE_PRODUCT
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const labAuthSessionDrift = process.env.REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT || '';
 const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
+const authenticatedRequestTimeoutMs = positiveIntegerEnv('REPRINT_PUSH_AUTHENTICATED_REQUEST_TIMEOUT_MS', 10_000);
 const explicitReleaseVerifySourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 const explicitReleaseVerifyRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const explicitReleaseVerifyLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
@@ -273,6 +274,11 @@ export function resolveAuthSessionBoundaryProof({
         ? 'PACKAGED_RELEASE_BOUNDARY_SUPPORT_ONLY'
         : 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED',
   };
+}
+
+function positiveIntegerEnv(name, fallback) {
+  const value = Number.parseInt(process.env[name] || '', 10);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
 }
 
 function normalizeAuthSessionBoundaryObservation(observation) {
@@ -1580,6 +1586,7 @@ try {
         simulatePreservedRemoteRetryPath: requiredPreservedRemoteRetryPath,
         proveDurableJournalBoundary: true,
         authSessionSource,
+        requestTimeoutMs: authenticatedRequestTimeoutMs,
         labDriftAfterSnapshot,
         labAuthSessionDrift,
         now: new Date('2026-05-25T10:12:00.000Z'),

@@ -32,6 +32,7 @@ const transientFetchAttempts = 4;
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
 const minimumDbJournalReadbackLimit = 80;
 const maximumDbJournalReadbackLimit = 500;
+const maximumDbJournalReadbackPages = 20;
 const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
   `${profile.namespacePath}/preflight`,
   `${profile.namespacePath}/snapshot`,
@@ -58,6 +59,7 @@ export async function runAuthenticatedHttpPush({
   proveDurableJournalBoundary = false,
   labAuthSessionDrift = '',
   authSessionSource = null,
+  requestTimeoutMs = 10_000,
   now = new Date(),
 }) {
   const resolvedSource = resolveAuthenticatedHttpPushSource({
@@ -89,6 +91,7 @@ export async function runAuthenticatedHttpPush({
     credential,
     routeProfile: profile.name,
     simulatePreservedRemoteRetryPath,
+    requestTimeoutMs,
   });
   const summary = {
     ok: false,
@@ -1378,12 +1381,12 @@ export async function runAuthenticatedHttpPush({
   }
 
   let dbJournal;
-  const dbJournalReadbackLimit = dbJournalReadbackLimitForPlan(plan);
   try {
-    dbJournal = await client.signedGet(withAuthSessionDrift(`/db-journal?limit=${dbJournalReadbackLimit}`), {
+    dbJournal = await fetchDbJournalReadback(client, {
+      plan,
       session,
       idempotencyKey,
-      retryable: true,
+      withAuthSessionDrift,
     });
   } catch (error) {
     captureTransportFailure(summary, 'dbJournal', error, 'DURABLE_JOURNAL_NOT_PROVEN', 'journal-inspect');
@@ -1956,7 +1959,7 @@ export function authenticatedHttpClient({
         'GET',
         pathname,
         undefined,
-        signedRequestHeaders(credential, 'GET', pathname, '', options),
+        () => signedRequestHeaders(credential, 'GET', pathname, '', options),
         requestTimeoutMs,
         {
           retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
@@ -1973,7 +1976,7 @@ export function authenticatedHttpClient({
         'POST',
         pathname,
         rawBody,
-        signedRequestHeaders(credential, 'POST', pathname, rawBody, options),
+        () => signedRequestHeaders(credential, 'POST', pathname, rawBody, options),
         requestTimeoutMs,
         {
           retryable: options.retryable === true || options.idempotencyKey !== undefined,
@@ -2445,6 +2448,161 @@ function summarizeSnapshot(response, local) {
   };
 }
 
+async function fetchDbJournalReadback(client, {
+  plan,
+  session,
+  idempotencyKey,
+  withAuthSessionDrift = (pathname) => pathname,
+}) {
+  const requestedLimit = dbJournalReadbackLimitForPlan(plan);
+  const firstPage = await client.signedGet(withAuthSessionDrift(`/db-journal?limit=${requestedLimit}`), {
+    session,
+    idempotencyKey,
+    retryable: true,
+  });
+  if (firstPage.status !== 200 || firstPage.body?.ok !== true) {
+    return firstPage;
+  }
+
+  const pages = [firstPage];
+  let combinedRows = dbJournalRowsFromResponse(firstPage);
+  let rowCount = dbJournalRowCountFromResponse(firstPage, combinedRows.length);
+  let nextBeforeSequence = dbJournalNextBeforeSequence(firstPage.body?.dbJournal);
+
+  while (
+    nextBeforeSequence
+    && combinedRows.length < rowCount
+    && pages.length < maximumDbJournalReadbackPages
+  ) {
+    const page = await client.signedGet(
+      withAuthSessionDrift(`/db-journal?limit=${maximumDbJournalReadbackLimit}&beforeSequence=${nextBeforeSequence}`),
+      {
+        session,
+        idempotencyKey,
+        retryable: true,
+      },
+    );
+    pages.push(page);
+    if (page.status !== 200 || page.body?.ok !== true) {
+      return combineDbJournalReadbackPages(pages, {
+        requestedLimit,
+        incompleteCode: page.body?.code || 'DURABLE_JOURNAL_PAGE_NOT_PROVEN',
+      });
+    }
+
+    const previousRowCount = combinedRows.length;
+    combinedRows = mergeDbJournalRows(combinedRows, dbJournalRowsFromResponse(page));
+    rowCount = Math.max(rowCount, dbJournalRowCountFromResponse(page, combinedRows.length));
+    nextBeforeSequence = dbJournalNextBeforeSequence(page.body?.dbJournal);
+    if (combinedRows.length === previousRowCount) {
+      break;
+    }
+  }
+
+  return combineDbJournalReadbackPages(pages, { requestedLimit });
+}
+
+function combineDbJournalReadbackPages(pages, {
+  requestedLimit,
+  incompleteCode = '',
+} = {}) {
+  const firstPage = pages[0];
+  const body = cloneJson(firstPage.body || {});
+  const pageRows = pages.flatMap((page) => dbJournalRowsFromResponse(page));
+  const combinedRows = mergeDbJournalRows([], pageRows);
+  const rowCount = Math.max(
+    combinedRows.length,
+    ...pages.map((page) => dbJournalRowCountFromResponse(page, combinedRows.length)),
+  );
+  const lastPage = pages[pages.length - 1];
+  const hasOlder = dbJournalHasOlderRows(lastPage?.body?.dbJournal);
+  const complete = !incompleteCode && (!hasOlder || combinedRows.length >= rowCount);
+  body.dbJournal = {
+    ...(body.dbJournal || {}),
+    rowCount,
+    latestRows: combinedRows,
+    readback: {
+      requestedLimit,
+      pageLimit: maximumDbJournalReadbackLimit,
+      pages: pages.length,
+      rows: combinedRows.length,
+      rowCount,
+      oldestSequence: combinedRows[0]?.sequence ?? null,
+      newestSequence: combinedRows.at(-1)?.sequence ?? null,
+      complete,
+      truncated: !complete,
+      nextBeforeSequence: complete ? null : dbJournalNextBeforeSequence(lastPage?.body?.dbJournal),
+      ...(incompleteCode ? { code: incompleteCode } : {}),
+    },
+  };
+  return {
+    ...firstPage,
+    status: incompleteCode ? (lastPage?.status || firstPage.status) : firstPage.status,
+    body: incompleteCode
+      ? {
+        ...body,
+        ok: false,
+        code: incompleteCode,
+      }
+      : body,
+    retryAttempts: Math.max(...pages.map((page) => page.retryAttempts || 1)),
+  };
+}
+
+function dbJournalRowsFromResponse(response) {
+  return Array.isArray(response?.body?.dbJournal?.latestRows)
+    ? response.body.dbJournal.latestRows.filter((row) => row && typeof row === 'object')
+    : [];
+}
+
+function mergeDbJournalRows(existingRows, newRows) {
+  const rowsByKey = new Map();
+  let syntheticIndex = 0;
+  for (const row of [...existingRows, ...newRows]) {
+    const sequence = Number.isInteger(row?.sequence) ? row.sequence : null;
+    if (!sequence || sequence <= 0) {
+      rowsByKey.set(`synthetic:${syntheticIndex}`, {
+        row,
+        order: syntheticIndex,
+      });
+      syntheticIndex += 1;
+      continue;
+    }
+    const key = `sequence:${sequence}`;
+    if (rowsByKey.has(key)) {
+      continue;
+    }
+    rowsByKey.set(key, {
+      row,
+      order: sequence,
+    });
+  }
+  return [...rowsByKey.values()]
+    .sort((a, b) => a.order - b.order)
+    .map((entry) => entry.row);
+}
+
+function dbJournalRowCountFromResponse(response, fallback = 0) {
+  const rowCount = response?.body?.dbJournal?.rowCount;
+  return Number.isInteger(rowCount) && rowCount >= 0 ? rowCount : fallback;
+}
+
+function dbJournalNextBeforeSequence(dbJournal) {
+  const nextBeforeSequence = dbJournal?.page?.nextBeforeSequence;
+  return Number.isInteger(nextBeforeSequence) && nextBeforeSequence > 0 ? nextBeforeSequence : null;
+}
+
+function dbJournalHasOlderRows(dbJournal) {
+  if (dbJournal?.page?.hasOlder === true) {
+    return true;
+  }
+  return dbJournalNextBeforeSequence(dbJournal) !== null;
+}
+
+function cloneJson(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
 function summarizeDbJournal(response) {
   if (response.status !== 200 || response.body?.ok !== true) {
     return summarizeResponse(response);
@@ -2463,6 +2621,15 @@ function summarizeDbJournal(response) {
     ok: true,
     retryAttempts: response.retryAttempts || 1,
     requestedLimit: dbJournalLimitFromRequestPath(response.request?.pathname),
+    readbackPages: Number.isInteger(response.body?.dbJournal?.readback?.pages)
+      ? response.body.dbJournal.readback.pages
+      : (response.body?.dbJournal?.page ? 1 : null),
+    paginationComplete: response.body?.dbJournal?.readback?.complete !== undefined
+      ? response.body.dbJournal.readback.complete === true
+      : response.body?.dbJournal?.rowCount === undefined || response.body.dbJournal.rowCount <= rows.length,
+    paginationTruncated: response.body?.dbJournal?.readback?.truncated === true,
+    oldestSequence: rows[0]?.sequence ?? null,
+    newestSequence: rows.at(-1)?.sequence ?? null,
     scope: response.body?.dbJournal?.scope,
     rows: rows.length,
     rowCount: Number.isInteger(response.body?.dbJournal?.rowCount)
@@ -2532,10 +2699,16 @@ export function dbJournalProofIsAcceptable(dbJournal, options = {}) {
     && dbJournal?.applyCommitted === true
     && dbJournal?.idempotencyOpened > 0
     && dbJournal?.mutationApplied > 0
+    && dbJournalReadbackIsComplete(dbJournal)
     && dbJournalStorageGuardIsTrusted(dbJournal?.storageGuard)
     && dbJournalOwnershipIsTrusted(dbJournal?.ownership, { requireCheckedBoundary })
     && (!requireCheckedBoundary || checkedDurableJournalBoundarySatisfied(dbJournal))
     && dbJournalLeaseFenceIsTrusted(dbJournal?.leaseFence, options);
+}
+
+function dbJournalReadbackIsComplete(dbJournal) {
+  return dbJournal?.paginationTruncated !== true
+    && dbJournal?.paginationComplete !== false;
 }
 
 function summarizeAuthIdentityCapabilities(identity) {
@@ -3805,7 +3978,8 @@ async function requestJson(baseUrl, method, pathname, body = undefined, headers 
 }
 
 async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, headers = {}, requestTimeoutMs = 10_000, options = {}) {
-  const retryable = options.retryable === true || isRetryableReadOnlyGet(baseUrl, method, pathname, headers);
+  const retryable = options.retryable === true
+    || (typeof headers !== 'function' && isRetryableReadOnlyGet(baseUrl, method, pathname, headers));
   const attempts = retryable ? transientFetchAttempts : 1;
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -3818,7 +3992,8 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
           attempt,
         });
       }
-      const response = await requestJsonRawOnce(baseUrl, method, pathname, rawBody, headers, requestTimeoutMs);
+      const attemptHeaders = typeof headers === 'function' ? headers({ attempt }) : headers;
+      const response = await requestJsonRawOnce(baseUrl, method, pathname, rawBody, attemptHeaders, requestTimeoutMs);
       return {
         ...response,
         attempts,

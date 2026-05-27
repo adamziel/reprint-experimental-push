@@ -1,9 +1,41 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 00:16 CEST
+Last updated: 2026-05-28 00:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 00:49 CEST - Journal Pages Evidence
+
+- Going well: `npm run verify:release:local-production:complex-site:journal-pages`
+  passed in `main:journal-pages-proof`. The proof expanded the complex local
+  topology to 180 complex posts and a 190-mutation ready plan.
+- Also going well: DB-journal readback now uses cursor-style pages instead of
+  a single large window. The accepted run reported 580 durable journal rows,
+  `mutationApplied: 190`, `applyRevalidationVerifiedCount: 190`, a dry-run
+  receipt, auth/session continuity, durable-journal acceptance, same-key/body
+  replay, same-key/different-body conflict, stale-claim fencing, and replay
+  equivalence.
+- Guardrail found and fixed: long apply/retry paths exposed a signed nonce
+  replay failure. Retried signed requests now keep the same idempotency key and
+  body while regenerating the signed nonce per attempt.
+- Not going well: this is still local Playground loopback evidence. Docker or
+  external WordPress, external crash durability, rollback, broader WordPress
+  graph surfaces, and arbitrary plugin-driver proof remain blockers.
+- Progress change: the previous single-window journal readback is now replaced
+  by multi-page evidence. Recovery, reliable executor, fast-path, and
+  independent evidence move up, but final readiness remains held.
+- Next nudge: run the same checked release path on Docker/external WordPress,
+  or add a crash/restart proof that preserves the paginated journal evidence
+  across process and storage boundaries.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep the 190-mutation remote-drift conflicts preserve-remote while broadening graph surfaces. |
+| Recovery | Move the paginated 580-row DB-journal proof to Docker/external restart/crash durability. |
+| Reliable executor | Preserve paginated readback, fresh retry nonces, auth/session, and lease-fence gates on the external release path. |
+| Fast paths | Build the next chunk benchmark on the new cursor proof rather than a single readback window. |
+| Audit and critic | Re-audit the integrated branch at the journal-pages commit and keep final readiness held. |
 
 ## 2026-05-28 00:16 CEST - Journal Window Evidence
 
