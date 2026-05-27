@@ -3290,6 +3290,37 @@ test('guarded benchmark carries direct queue-headroom measurement blockers into 
   assert.equal(blockers.includes('queue-budget-visible-without-queue-headroom-measurement'), true);
   assert.equal(blockers.includes('memory-ceiling-visible-without-queue-headroom-measurement'), true);
   assert.equal(blockers.includes('queue-headroom-visible-without-measurement'), true);
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-visible-without-queue-headroom-measurement',
+          'memory-ceiling-visible-without-queue-headroom-measurement',
+          'queue-headroom-visible-without-measurement',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
 });
 
 test('guarded benchmark keeps rollout summaries pinned to visible-without-measurement parallelism blockers', () => {
