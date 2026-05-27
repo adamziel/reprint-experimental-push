@@ -9171,6 +9171,30 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
         ],
       },
       {
+        id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-queue-slack-visibility',
+          'queue-headroom-visible-without-queue-slack-visibility',
+        ],
+      },
+      {
         id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
         rejectedGate: 'recovery',
         blockerRefs: [
@@ -9184,7 +9208,7 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
     ],
   );
   assert.deepEqual(details.rejectedFastPathGateSummary, [
-    { rejectedGate: 'recovery', count: 3 },
+    { rejectedGate: 'recovery', count: 6 },
   ]);
 });
 
@@ -9306,6 +9330,30 @@ test('guarded benchmark carries direct memory-headroom visibility blockers into 
         ],
       },
       {
+        id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-memory-headroom-visibility',
+          'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-memory-headroom-visibility',
+          'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'memory-ceiling-match-visible-without-memory-headroom-visibility',
+          'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+        ],
+      },
+      {
         id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
         rejectedGate: 'recovery',
         blockerRefs: [
@@ -9319,7 +9367,7 @@ test('guarded benchmark carries direct memory-headroom visibility blockers into 
     ],
   );
   assert.deepEqual(details.rejectedFastPathGateSummary, [
-    { rejectedGate: 'recovery', count: 3 },
+    { rejectedGate: 'recovery', count: 6 },
   ]);
 });
 

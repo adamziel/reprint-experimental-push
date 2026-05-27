@@ -163,8 +163,12 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
     blockerRefs: Object.freeze([
       'queue-budget-not-visible',
+      'memory-ceiling-match-visible-without-queue-slack-visibility',
+      'memory-ceiling-match-visible-without-memory-headroom-visibility',
       'memory-ceiling-match-visible-without-queue-budget-visibility',
       'memory-ceiling-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-queue-slack-visibility',
+      'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
       'queue-headroom-visible-without-queue-budget-visibility',
       'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
       'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
@@ -173,6 +177,10 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
     blockerRefs: Object.freeze([
+      'memory-ceiling-match-visible-without-queue-slack-visibility',
+      'memory-ceiling-match-visible-without-memory-headroom-visibility',
+      'queue-headroom-visible-without-queue-slack-visibility',
+      'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
       'queue-budget-visible-without-queue-headroom-measurement',
       'memory-ceiling-visible-without-queue-headroom-measurement',
       'queue-headroom-visible-without-measurement',
@@ -181,6 +189,10 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
     blockerRefs: Object.freeze([
+      'memory-ceiling-match-visible-without-queue-slack-visibility',
+      'memory-ceiling-match-visible-without-memory-headroom-visibility',
+      'queue-headroom-visible-without-queue-slack-visibility',
+      'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
       'queue-budget-visible-without-queue-headroom-measurement',
       'memory-ceiling-visible-without-queue-headroom-measurement',
       'queue-headroom-visible-without-measurement',
