@@ -1870,6 +1870,88 @@ test('plugin-driver proof summary reuses attached pluginDriverProof for positive
   assert.deepEqual(reusedProof.modeProof?.requestedBundles, ['driverPositiveProof']);
 });
 
+test('plugin-driver mode proof resolver reuses the attached callback modeProof object for canonical alias requests', () => {
+  const attachedModeProof = {
+    mode: 'driverCallbackGuards',
+    canonicalMode: 'driver-callback-guards',
+    proofKey: 'driverCallbackGuards',
+    legacyProofKey: 'driverCallbackGuards',
+    requestedScenarios: ['driverCallbackGuards'],
+    requestedBundles: ['driverCallbackGuards'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-callback-guards'])).sort(),
+    requestedBundleStatus: 'passed',
+    marker: 'callback-attached',
+  };
+
+  const rawSummary = {
+    requestedScenarios: ['driverCallbackGuards'],
+    requestedBundles: ['driverCallbackGuards'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-callback-guards'])).sort(),
+    pluginDriverProof: {
+      mode: 'driverCallbackGuards',
+      canonicalMode: 'driver-callback-guards',
+      requestedScenarios: ['driverCallbackGuards'],
+      requestedBundles: ['driverCallbackGuards'],
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-callback-guards'])).sort(),
+      modeProof: attachedModeProof,
+    },
+    driverCallbackGuards: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverCallbackGuardsOnly', {
+    requestedScenarios: ['driverCallbackGuards'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-callback-guards']),
+    resolvedMode: 'driverCallbackGuardsOnly',
+    canonicalMode: 'driver-callback-guards',
+  });
+
+  assert.equal(modeProof, attachedModeProof);
+  assert.equal(modeProof?.marker, 'callback-attached');
+});
+
+test('plugin-driver mode proof resolver reuses the attached registration-shape modeProof object for canonical alias requests', () => {
+  const attachedModeProof = {
+    mode: 'driverRegistrationShapeGuards',
+    canonicalMode: 'driver-registration-shape-guards',
+    proofKey: 'driverRegistrationShapeGuards',
+    legacyProofKey: 'driverRegistrationShapeGuards',
+    requestedScenarios: ['driverRegistrationShapeGuards'],
+    requestedBundles: ['driverRegistrationShapeGuards'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-registration-shape-guards'])).sort(),
+    requestedBundleStatus: 'passed',
+    marker: 'registration-shape-attached',
+  };
+
+  const rawSummary = {
+    requestedScenarios: ['driverRegistrationShapeGuards'],
+    requestedBundles: ['driverRegistrationShapeGuards'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-registration-shape-guards'])).sort(),
+    pluginDriverProof: {
+      mode: 'driverRegistrationShapeGuards',
+      canonicalMode: 'driver-registration-shape-guards',
+      requestedScenarios: ['driverRegistrationShapeGuards'],
+      requestedBundles: ['driverRegistrationShapeGuards'],
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-registration-shape-guards'])).sort(),
+      modeProof: attachedModeProof,
+    },
+    driverRegistrationShapeGuards: {
+      status: 'passed',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverRegistrationShapeGuardsOnly', {
+    requestedScenarios: ['driverRegistrationShapeGuards'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-registration-shape-guards']),
+    resolvedMode: 'driverRegistrationShapeGuardsOnly',
+    canonicalMode: 'driver-registration-shape-guards',
+  });
+
+  assert.equal(modeProof, attachedModeProof);
+  assert.equal(modeProof?.marker, 'registration-shape-attached');
+});
+
 test('plugin-driver mode proof resolver rebuilds a stale attached top-level modeProof when the selected scenario scope changes', () => {
   const rawSummary = {
     mode: 'driverVerifierGuards',

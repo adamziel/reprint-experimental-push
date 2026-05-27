@@ -844,12 +844,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       || modeProofMatchesResolvedContext(summary, attachedModeProof, resolvedModeProofOptions)
     )
   ) {
-    return {
-      ...baseModeProof,
-      ...attachedModeProof,
-      proof: attachedModeProof?.proof ?? proof,
-      legacyProof: attachedModeProof?.legacyProof ?? legacyProof,
-    };
+    return attachedModeProof;
   }
 
   const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
@@ -864,12 +859,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       )
     )
   ) {
-    return {
-      ...baseModeProof,
-      ...attachedPluginDriverModeProof,
-      proof: attachedPluginDriverModeProof?.proof ?? proof,
-      legacyProof: attachedPluginDriverModeProof?.legacyProof ?? legacyProof,
-    };
+    return attachedPluginDriverModeProof;
   }
 
   if (!hasModeProofContext) {
