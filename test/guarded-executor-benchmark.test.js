@@ -16627,35 +16627,72 @@ test('guarded benchmark surfaces receipt-flush blockers at runtime', async () =>
   );
 
   assert.deepEqual(
-    receiptFlushRejectedFastPaths.map(({ id, rejectedGate }) => ({ id, rejectedGate })),
+    receiptFlushRejectedFastPaths.map(({ id, rejectedGate, blockerRefs }) => ({
+      id,
+      rejectedGate,
+      blockerRefs,
+    })),
     [
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
         rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
       },
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
         rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
       },
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
       },
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
         rejectedGate: 'skip',
+        blockerRefs: ['production-capability-measurement-not-aligned'],
       },
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
       },
       {
         id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
         rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
       },
       {
         id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
         rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
       },
     ],
   );
