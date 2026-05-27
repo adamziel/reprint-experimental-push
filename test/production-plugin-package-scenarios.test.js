@@ -15,6 +15,8 @@ test('scenario parser expands malformed driver aliases into concrete checks', ()
   assert.deepEqual(
     Array.from(selected).sort(),
     [
+      'driver-callback-guards',
+      'driver-registration-shape-guards',
       ...scenarioGroups['driver-callback-guards'],
       ...scenarioGroups['driver-registration-shape-guards'],
     ].sort(),
@@ -29,7 +31,10 @@ test('scenario parser expands the full driver-registration alias into every malf
 
   assert.deepEqual(
     Array.from(selected).sort(),
-    scenarioGroups['driver-registration-guards'].slice().sort(),
+    [
+      'driver-registration-guards',
+      ...scenarioGroups['driver-registration-guards'],
+    ].sort(),
   );
 });
 
@@ -41,7 +46,10 @@ test('scenario parser expands the verifier alias into receipt and registration g
 
   assert.deepEqual(
     Array.from(selected).sort(),
-    scenarioGroups['driver-verifier-guards'].slice().sort(),
+    [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ].sort(),
   );
 });
 
@@ -59,6 +67,7 @@ test('scenario resolver preserves requested aliases alongside expanded scenarios
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
+      'driver-verifier-guards',
       ...scenarioGroups['driver-verifier-guards'],
       'driver-delete-apply',
     ].sort(),
@@ -79,6 +88,7 @@ test('scenario resolver dedupes repeated aliases before returning requested scen
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
+      'driver-verifier-guards',
       ...scenarioGroups['driver-verifier-guards'],
       'driver-delete-apply',
     ].sort(),
@@ -126,7 +136,10 @@ test('scenario resolver maps driver-guard-only mode to the bounded receipt guard
   assert.equal(resolved.resolvedMode, 'driver-guard-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    ['driver-receipt-guards'],
+    [
+      'driver-receipt-guards',
+      ...scenarioGroups['driver-receipt-guards'],
+    ].sort(),
   );
 });
 
@@ -141,7 +154,30 @@ test('scenario resolver maps driver-receipt-only mode to the bounded receipt gua
   assert.equal(resolved.resolvedMode, 'driver-receipt-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    ['driver-receipt-guards'],
+    [
+      'driver-receipt-guards',
+      ...scenarioGroups['driver-receipt-guards'],
+    ].sort(),
+  );
+});
+
+test('scenario parser accepts direct receipt guard scenarios', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driver-receipt-plan-binding-guard,driver-receipt-expiry-guard'],
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'driver-receipt-plan-binding-guard',
+    'driver-receipt-expiry-guard',
+  ]);
+  assert.equal(resolved.resolvedMode, null);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      'driver-receipt-plan-binding-guard',
+      'driver-receipt-expiry-guard',
+    ].sort(),
   );
 });
 
@@ -156,7 +192,10 @@ test('scenario resolver maps driver-verifier-only mode to the bounded verifier b
   assert.equal(resolved.resolvedMode, 'driver-verifier-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    scenarioGroups['driver-verifier-guards'].slice().sort(),
+    [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ].sort(),
   );
 });
 
@@ -171,7 +210,10 @@ test('scenario resolver maps driver-registration-only mode to the malformed regi
   assert.equal(resolved.resolvedMode, 'driver-registration-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    scenarioGroups['driver-registration-guards'].slice().sort(),
+    [
+      'driver-registration-guards',
+      ...scenarioGroups['driver-registration-guards'],
+    ].sort(),
   );
 });
 
@@ -186,7 +228,10 @@ test('scenario resolver maps driver-callback-only mode to the bounded callback g
   assert.equal(resolved.resolvedMode, 'driver-callback-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    scenarioGroups['driver-callback-guards'].slice().sort(),
+    [
+      'driver-callback-guards',
+      ...scenarioGroups['driver-callback-guards'],
+    ].sort(),
   );
 });
 
@@ -201,7 +246,10 @@ test('scenario resolver maps driver-registration-shape-only mode to the bounded 
   assert.equal(resolved.resolvedMode, 'driver-registration-shape-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    scenarioGroups['driver-registration-shape-guards'].slice().sort(),
+    [
+      'driver-registration-shape-guards',
+      ...scenarioGroups['driver-registration-shape-guards'],
+    ].sort(),
   );
 });
 
@@ -231,7 +279,10 @@ test('scenario resolver maps driver-positive-only mode to the bounded packaged p
   assert.equal(resolved.resolvedMode, 'driver-positive-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    scenarioGroups['driver-positive-proof'].slice().sort(),
+    [
+      'driver-positive-proof',
+      ...scenarioGroups['driver-positive-proof'],
+    ].sort(),
   );
 });
 
@@ -246,7 +297,10 @@ test('scenario resolver maps driver-release-proof-only mode to the bounded route
   assert.equal(resolved.resolvedMode, 'driver-release-proof-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
-    scenarioGroups['driver-release-proof'].slice().sort(),
+    [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ].sort(),
   );
 });
 
@@ -265,6 +319,7 @@ test('scenario resolver maps driver-proof-only mode to the bounded driver delete
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
+      'driver-verifier-guards',
       'driver-delete-apply',
       ...scenarioGroups['driver-verifier-guards'],
     ].sort(),

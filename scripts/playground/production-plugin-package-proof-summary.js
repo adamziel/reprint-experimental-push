@@ -1,5 +1,50 @@
 import { scenarioGroups } from './production-plugin-package-scenarios.js';
 
+const bundleSummaryGroups = {
+  'driver-positive-proof': [
+    'core-package-routes',
+    'driver-delete-apply',
+  ],
+  'driver-release-proof': [
+    'core-package-routes',
+    'driver-receipt-guards',
+    'driver-delete-apply',
+  ],
+  'driver-verifier-guards': [
+    'driver-receipt-guards',
+    'driver-missing-export-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-validate-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
+  'driver-registration-guards': [
+    'driver-missing-export-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-validate-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
+  'driver-callback-guards': [
+    'driver-missing-export-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-validate-guard',
+  ],
+  'driver-registration-shape-guards': [
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
+};
+
 const scenarioDefinitions = [
   {
     key: 'corePackageRoutes',
@@ -24,6 +69,62 @@ const scenarioDefinitions = [
         && summary?.driverReceiptIdentityGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode === 'reprint_push_lab_auth_required';
+    },
+  },
+  {
+    key: 'driverDeleteGuard',
+    scenario: 'driver-delete-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverDeleteGuard?.dryRunRejectedCode !== undefined;
+    },
+  },
+  {
+    key: 'driverUpdateValidationGuard',
+    scenario: 'driver-update-validation-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverUpdateValidationGuard?.dryRunRejectedCode !== undefined;
+    },
+  },
+  {
+    key: 'driverReceiptPlanBindingGuard',
+    scenario: 'driver-receipt-plan-binding-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverReceiptPlanBindingGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH';
+    },
+  },
+  {
+    key: 'driverReceiptExpiryGuard',
+    scenario: 'driver-receipt-expiry-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverReceiptExpiryGuard?.applyRejectedCode === 'AUTH_RECEIPT_EXPIRED';
+    },
+  },
+  {
+    key: 'driverReceiptIdentityGuard',
+    scenario: 'driver-receipt-identity-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverReceiptIdentityGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH';
+    },
+  },
+  {
+    key: 'driverReceiptRotatedCredentialGuard',
+    scenario: 'driver-receipt-rotated-credential-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode === 'AUTH_RECEIPT_MISMATCH';
+    },
+  },
+  {
+    key: 'driverReceiptRevokedCredentialGuard',
+    scenario: 'driver-receipt-revoked-credential-guard',
+    counted: 'explicit-only',
+    evaluate(summary) {
+      return summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode === 'reprint_push_lab_auth_required';
     },
   },
   {
@@ -95,6 +196,10 @@ function isScenarioSelected(selectedScenarios, name) {
   if (selectedScenarios === null) {
     return true;
   }
+  if (name === 'driver-receipt-guards') {
+    return selectedScenarios.has(name)
+      || scenarioGroups['driver-receipt-guards'].every((scenario) => selectedScenarios.has(scenario));
+  }
   return selectedScenarios.has(name);
 }
 
@@ -115,6 +220,7 @@ function requestedScenarioAliases(normalizedRequestedScenarios, scenario) {
   }
   return normalizedRequestedScenarios.filter(
     (requestedScenario) => requestedScenario === scenario
+      || bundleSummaryGroups[requestedScenario]?.includes(scenario)
       || scenarioGroups[requestedScenario]?.includes(scenario),
   );
 }
@@ -124,7 +230,7 @@ function summarizeRequestedScenario(selected, passed) {
 }
 
 function buildBundleScenarioDetails(bundleName, scenarioPasses) {
-  const requiredScenarios = scenarioGroups[bundleName].slice().sort();
+  const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
   const passedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) === true);
   const failedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) !== true);
   return {
@@ -146,13 +252,13 @@ export function buildProductionPluginPackageProofSummary(
     : Array.from(new Set(requestedScenarios));
   const requestedBundleAliases = normalizedRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios.filter((scenario) => Object.hasOwn(scenarioGroups, scenario));
+    : normalizedRequestedScenarios.filter((scenario) => Object.hasOwn(bundleSummaryGroups, scenario));
   const requestedBundles = normalizedRequestedScenarios === null
     ? 'all'
     : requestedBundleAliases.map((bundleName) => toBundleKey(bundleName));
   const requestedConcreteScenarios = normalizedRequestedScenarios === null
     ? 'all'
-    : normalizedRequestedScenarios.filter((scenario) => !Object.hasOwn(scenarioGroups, scenario));
+    : normalizedRequestedScenarios.filter((scenario) => !Object.hasOwn(bundleSummaryGroups, scenario));
   const requestedConcreteScenarioSet = requestedConcreteScenarios === 'all'
     ? null
     : new Set(requestedConcreteScenarios);
@@ -198,11 +304,15 @@ export function buildProductionPluginPackageProofSummary(
       requestedScenarioAliases(normalizedRequestedScenarios, definition.scenario),
     );
     const selected = isScenarioSelected(selectedScenarios, definition.scenario);
+    const countScenario = definition.counted !== 'explicit-only'
+      || requestedConcreteScenarioSet?.has(definition.scenario) === true;
     const passed = definition.evaluate(summary);
     scenarioPasses.set(definition.scenario, passed);
     const status = summarizeScenario(selected, passed);
-    scenarioResults[definition.key] = status;
-    if (selected) {
+    if (countScenario) {
+      scenarioResults[definition.key] = status;
+    }
+    if (selected && countScenario) {
       checkedScenarioCount += 1;
       checkedScenarios.push(definition.scenario);
       if (passed) {
@@ -220,17 +330,17 @@ export function buildProductionPluginPackageProofSummary(
           requestedConcreteScenarioStatuses[definition.scenario] = 'missing';
         }
       }
-    } else {
+    } else if (countScenario) {
       skippedScenarioCount += 1;
     }
   }
 
-  for (const [bundleName, bundleScenarios] of Object.entries(scenarioGroups)) {
+  for (const [bundleName, bundleScenarios] of Object.entries(bundleSummaryGroups)) {
     const selected = normalizedRequestedScenarios === null
-      ? selectedScenarios === null || bundleScenarios.some((scenario) => selectedScenarios.has(scenario))
+      ? selectedScenarios === null || bundleScenarios.some((scenario) => isScenarioSelected(selectedScenarios, scenario))
       : normalizedRequestedScenarios.includes(bundleName);
     const bundleCoverageSatisfied = selectedScenarios === null
-      || bundleScenarios.every((scenario) => selectedScenarios.has(scenario));
+      || bundleScenarios.every((scenario) => isScenarioSelected(selectedScenarios, scenario));
     const passed = bundleCoverageSatisfied
       && bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
     const bundleKey = toBundleKey(bundleName);
@@ -439,8 +549,7 @@ export function buildProductionPluginPackageProofSummary(
     receiptGuards: {
       requested: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
         || requestedScenarioAliasMap.get('driver-receipt-guards').length > 0,
-      selected: selectedScenarios === null
-        || selectedScenarios.has('driver-receipt-guards'),
+      selected: isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
       ok: scenarioResults.driverReceiptGuards === 'passed',
       status: scenarioResults.driverReceiptGuards,
       planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
@@ -451,7 +560,7 @@ export function buildProductionPluginPackageProofSummary(
       requestedStatus: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
         || requestedScenarioAliasMap.get('driver-receipt-guards').length > 0
         ? summarizeRequestedScenario(
-          selectedScenarios === null || selectedScenarios.has('driver-receipt-guards'),
+          isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
           scenarioPasses.get('driver-receipt-guards') === true,
         )
         : null,

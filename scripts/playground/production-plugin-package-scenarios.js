@@ -1,3 +1,13 @@
+const receiptGuardScenarioNames = [
+  'driver-delete-guard',
+  'driver-update-validation-guard',
+  'driver-receipt-plan-binding-guard',
+  'driver-receipt-expiry-guard',
+  'driver-receipt-identity-guard',
+  'driver-receipt-rotated-credential-guard',
+  'driver-receipt-revoked-credential-guard',
+];
+
 const scenarioGroups = {
   'driver-positive-proof': [
     'core-package-routes',
@@ -5,11 +15,12 @@ const scenarioGroups = {
   ],
   'driver-release-proof': [
     'core-package-routes',
-    'driver-receipt-guards',
+    ...receiptGuardScenarioNames,
     'driver-delete-apply',
   ],
+  'driver-receipt-guards': receiptGuardScenarioNames,
   'driver-verifier-guards': [
-    'driver-receipt-guards',
+    ...receiptGuardScenarioNames,
     'driver-missing-export-guard',
     'driver-missing-apply-guard',
     'driver-missing-validate-guard',
@@ -46,6 +57,7 @@ const scenarioGroups = {
 const scenarioNames = [
   'core-package-routes',
   'driver-receipt-guards',
+  ...receiptGuardScenarioNames,
   'driver-delete-apply',
   'driver-missing-export-guard',
   'driver-missing-apply-guard',
@@ -139,7 +151,10 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
   return {
     resolvedMode: resolvedFromMode ? modeValue : null,
     requestedScenarios: uniqueRequestedNames,
-    selectedScenarios: new Set(expandedNames),
+    selectedScenarios: new Set([
+      ...uniqueRequestedNames,
+      ...expandedNames,
+    ]),
   };
 }
 
@@ -147,4 +162,4 @@ export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
   return resolveProductionPluginPackageScenarios(argv, envValue).selectedScenarios;
 }
 
-export { knownScenarioNames, scenarioGroups, scenarioNames };
+export { knownScenarioNames, receiptGuardScenarioNames, scenarioGroups, scenarioNames };

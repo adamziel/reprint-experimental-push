@@ -11,7 +11,10 @@ import { createPushPlan } from '../../src/planner.js';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { deepClone, digest } from '../../src/stable-json.js';
 import { buildProductionPluginPackageProofSummary } from './production-plugin-package-proof-summary.js';
-import { resolveProductionPluginPackageScenarios } from './production-plugin-package-scenarios.js';
+import {
+  receiptGuardScenarioNames,
+  resolveProductionPluginPackageScenarios,
+} from './production-plugin-package-scenarios.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -274,7 +277,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   if (shouldRunAnyScenario(Array.from(packagedDriverRegistryGuardScenarioNames))) {
     writePackagedPluginOnlyBlueprint(path.join(repoRoot, fixtures.base), registryGuardBlueprintPath);
   }
-  if (shouldRunAnyScenario(['driver-receipt-guards'])) {
+  if (shouldRunAnyScenario(['driver-receipt-guards', ...receiptGuardScenarioNames])) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
@@ -358,7 +361,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     fs.writeFileSync(basePath, `${JSON.stringify(packageSnapshots.base, null, 2)}\n`);
     fs.writeFileSync(localPath, `${JSON.stringify(packageSnapshots.local, null, 2)}\n`);
   }
-  const reuseGuardServerForDelete = shouldRunAnyScenario(['driver-receipt-guards'])
+  const reuseGuardServerForDelete = shouldRunAnyScenario(['driver-receipt-guards', ...receiptGuardScenarioNames])
     && shouldRunAnyScenario(['driver-delete-apply']);
   const activeDeleteFixture = reuseGuardServerForDelete ? deleteDriverFixture : driverFixture;
   const driverDeleteBaseSnapshot = shouldRunAnyScenario(['driver-delete-apply'])
@@ -598,14 +601,22 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     });
   });
 
-  if (shouldRunAnyScenario(['driver-receipt-guards'])) {
+  if (shouldRunAnyScenario(['driver-receipt-guards', ...receiptGuardScenarioNames])) {
     await withPlaygroundServer(
       'production-plugin-driver-delete-guard',
       driverGuardServerBlueprintPath,
       pluginDir,
       { authBootstrap: false },
       async (server) => {
-        await runScenario('driver-receipt-guards', async () => {
+        const runBundledReceiptGuards = shouldRunScenario('driver-receipt-guards');
+        const runDeleteGuard = runBundledReceiptGuards || shouldRunScenario('driver-delete-guard');
+        const runUpdateValidationGuard = runBundledReceiptGuards || shouldRunScenario('driver-update-validation-guard');
+        const runPlanBindingGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-plan-binding-guard');
+        const runExpiryGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-expiry-guard');
+        const runIdentityGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-identity-guard');
+        const runRotatedCredentialGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-rotated-credential-guard');
+        const runRevokedCredentialGuard = runBundledReceiptGuards || shouldRunScenario('driver-receipt-revoked-credential-guard');
+
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
       credential: credentials,
@@ -795,24 +806,32 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       updatedMarkerAfterApply: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
       payloadModeAfterApply: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
     };
-    summary.driverReceiptPlanBindingGuard = {
-      resourceKey: driverFixture.resourceKey,
-      tamperedMode: tamperedPlan.mutations[0].value.value.payload.mode,
-      tamperedVersion: tamperedPlan.mutations[0].value.value.payload.version,
-      applyRejectedCode: tamperedPlanApply.body?.code,
-      applyRejectedMessage: tamperedPlanApply.body?.message,
-      rowRetainedAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      payloadModeAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
-      updatedMarkerAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-    };
-    summary.driverDeleteGuard = {
-      resourceKey: driverFixture.resourceKey,
-      remoteSupportsDelete: allowedEntry.supportsDelete,
-      forgedPlanAcceptedByDryRun: dryRun.body?.ok === true,
-      dryRunRejectedCode: dryRun.body?.code,
-      dryRunRejectedMessage: dryRun.body?.message,
-      rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-    };
+    if (runPlanBindingGuard) {
+      await runScenario('driver-receipt-plan-binding-guard', async () => {
+        summary.driverReceiptPlanBindingGuard = {
+          resourceKey: driverFixture.resourceKey,
+          tamperedMode: tamperedPlan.mutations[0].value.value.payload.mode,
+          tamperedVersion: tamperedPlan.mutations[0].value.value.payload.version,
+          applyRejectedCode: tamperedPlanApply.body?.code,
+          applyRejectedMessage: tamperedPlanApply.body?.message,
+          rowRetainedAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
+          updatedMarkerAfterReject: afterUpdateApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
+    if (runDeleteGuard) {
+      await runScenario('driver-delete-guard', async () => {
+        summary.driverDeleteGuard = {
+          resourceKey: driverFixture.resourceKey,
+          remoteSupportsDelete: allowedEntry.supportsDelete,
+          forgedPlanAcceptedByDryRun: dryRun.body?.ok === true,
+          dryRunRejectedCode: dryRun.body?.code,
+          dryRunRejectedMessage: dryRun.body?.message,
+          rowRetainedAfterReject: afterRejectedApply.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+        };
+      });
+    }
 
     const invalidUpdatePlan = createPushPlan({
       base: driverGuardBaseSnapshot,
@@ -865,14 +884,18 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       'rejected packaged driver update changed the arbitrary driver payload',
     );
 
-    summary.driverUpdateValidationGuard = {
-      resourceKey: driverFixture.resourceKey,
-      invalidUpdatedMarker: driverLocalInvalidUpdateSnapshot.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-      dryRunRejectedCode: invalidUpdateDryRun.body?.code,
-      dryRunRejectedMessage: invalidUpdateDryRun.body?.message,
-      rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-    };
+    if (runUpdateValidationGuard) {
+      await runScenario('driver-update-validation-guard', async () => {
+        summary.driverUpdateValidationGuard = {
+          resourceKey: driverFixture.resourceKey,
+          invalidUpdatedMarker: driverLocalInvalidUpdateSnapshot.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+          dryRunRejectedCode: invalidUpdateDryRun.body?.code,
+          dryRunRejectedMessage: invalidUpdateDryRun.body?.message,
+          rowRetainedAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          updatedMarkerAfterReject: afterInvalidUpdateReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
 
     const expiredReceiptApply = await client.signedPost(
       '/apply',
@@ -909,13 +932,17 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       'expired packaged driver receipt changed the arbitrary driver payload',
     );
 
-    summary.driverReceiptExpiryGuard = {
-      resourceKey: driverFixture.resourceKey,
-      applyRejectedCode: expiredReceiptApply.body?.code,
-      applyRejectedMessage: expiredReceiptApply.body?.message,
-      rowRetainedAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-    };
+    if (runExpiryGuard) {
+      await runScenario('driver-receipt-expiry-guard', async () => {
+        summary.driverReceiptExpiryGuard = {
+          resourceKey: driverFixture.resourceKey,
+          applyRejectedCode: expiredReceiptApply.body?.code,
+          applyRejectedMessage: expiredReceiptApply.body?.message,
+          rowRetainedAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          updatedMarkerAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
 
     const alternateClient = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
@@ -962,14 +989,18 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       'identity-mismatched packaged apply changed the arbitrary driver payload',
     );
 
-    summary.driverReceiptIdentityGuard = {
-      resourceKey: driverFixture.resourceKey,
-      mismatchedUser: alternateCredentials.username,
-      applyRejectedCode: identityMismatchApply.body?.code,
-      applyRejectedMessage: identityMismatchApply.body?.message,
-      rowRetainedAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-    };
+    if (runIdentityGuard) {
+      await runScenario('driver-receipt-identity-guard', async () => {
+        summary.driverReceiptIdentityGuard = {
+          resourceKey: driverFixture.resourceKey,
+          mismatchedUser: alternateCredentials.username,
+          applyRejectedCode: identityMismatchApply.body?.code,
+          applyRejectedMessage: identityMismatchApply.body?.message,
+          rowRetainedAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          updatedMarkerAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
 
     const rotatedClient = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
@@ -1022,16 +1053,20 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       'rotated-credential packaged apply changed the arbitrary driver payload',
     );
 
-    summary.driverReceiptRotatedCredentialGuard = {
-      resourceKey: driverFixture.resourceKey,
-      rotatedUser: rotatedCredentials.username,
-      rotatedCredentialRejectedCode: rotatedCredentialApply.body?.code,
-      rotatedCredentialRejectedMessage: rotatedCredentialApply.body?.message,
-      originalApplicationPasswordUuid: preflight.body?.auth?.session?.applicationPasswordUuid,
-      rotatedApplicationPasswordUuid: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
-      rowRetainedAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-    };
+    if (runRotatedCredentialGuard) {
+      await runScenario('driver-receipt-rotated-credential-guard', async () => {
+        summary.driverReceiptRotatedCredentialGuard = {
+          resourceKey: driverFixture.resourceKey,
+          rotatedUser: rotatedCredentials.username,
+          rotatedCredentialRejectedCode: rotatedCredentialApply.body?.code,
+          rotatedCredentialRejectedMessage: rotatedCredentialApply.body?.message,
+          originalApplicationPasswordUuid: preflight.body?.auth?.session?.applicationPasswordUuid,
+          rotatedApplicationPasswordUuid: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
+          rowRetainedAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          updatedMarkerAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
 
     const revokedCredentialUuid = preflight.body?.auth?.session?.applicationPasswordUuid;
     assert.equal(typeof revokedCredentialUuid, 'string');
@@ -1079,17 +1114,20 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       'revoked-credential packaged apply changed the arbitrary driver payload',
     );
 
-    summary.driverReceiptRevokedCredentialGuard = {
-      resourceKey: driverFixture.resourceKey,
-      revokedCredentialUuid,
-      rotatedCredentialUsedForRevocation: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
-      revokeDeleted: revokeResponse.body?.deleted === true,
-      applyRejectedCode: revokedCredentialApply.body?.code,
-      applyRejectedMessage: revokedCredentialApply.body?.message,
-      rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
-      updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
-    };
-        });
+    if (runRevokedCredentialGuard) {
+      await runScenario('driver-receipt-revoked-credential-guard', async () => {
+        summary.driverReceiptRevokedCredentialGuard = {
+          resourceKey: driverFixture.resourceKey,
+          revokedCredentialUuid,
+          rotatedCredentialUsedForRevocation: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
+          revokeDeleted: revokeResponse.body?.deleted === true,
+          applyRejectedCode: revokedCredentialApply.body?.code,
+          applyRejectedMessage: revokedCredentialApply.body?.message,
+          rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
+        };
+      });
+    }
 
         if (reuseGuardServerForDelete) {
           await runScenario('driver-delete-apply', async () => {

@@ -67,6 +67,55 @@ test('package scripts pin the bounded plugin-driver release proof entrypoint', (
   );
 });
 
+test('package scripts pin the bounded plugin-driver delete guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-delete-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver update validation guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-update-validation-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-update-validation-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver receipt plan binding guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-plan-binding-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-plan-binding-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver receipt expiry guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-expiry-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-expiry-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver receipt identity guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-identity-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-identity-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver rotated credential guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-rotated-credential-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-rotated-credential-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver revoked credential guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-revoked-credential-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-revoked-credential-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver missing-export guard entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-missing-export-guard'],
