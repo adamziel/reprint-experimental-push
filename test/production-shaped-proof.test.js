@@ -4403,6 +4403,66 @@ test('packaged release verifier readiness helper fails closed when the snapshot 
   ]);
 });
 
+test('packaged release verifier readiness helper fails closed when the snapshot route returns an invalid readiness body', async () => {
+  const invalidSnapshotBody = '<!doctype html><html><body>not a snapshot response</body></html>';
+  const fetchCalls = [];
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => {
+      throw new Error('unexpected route startup classification during invalid snapshot runtime proof');
+    },
+    fetchPackagedWordPressIndexProbe: async () => {
+      throw new Error('unexpected /wp-json/ probe during invalid snapshot runtime proof');
+    },
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during invalid snapshot runtime proof');
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback probes during invalid snapshot runtime proof');
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: invalidSnapshotBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9463,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot returned an invalid readiness body at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+  ]);
+});
+
 test('packaged release verifier readiness helper fails closed when signed preflight returns a terminal response after snapshot readiness succeeds', async () => {
   const readySnapshotBody = JSON.stringify({
     ok: true,
@@ -5269,6 +5329,61 @@ test('packaged production plugin smoke readiness helper fails closed when the sn
       assert.match(
         error.message,
         /Packaged production plugin snapshot returned a terminal readiness failure at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+  ]);
+});
+
+test('packaged production plugin smoke readiness helper fails closed when the snapshot route returns an invalid readiness body', async () => {
+  const invalidSnapshotBody = '<!doctype html><html><body>not a snapshot response</body></html>';
+  const fetchCalls = [];
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => {
+      throw new Error('unexpected route startup classification during invalid snapshot runtime proof');
+    },
+    fetchPackagedWordPressIndexProbe: async () => {
+      throw new Error('unexpected /wp-json/ probe during invalid snapshot runtime proof');
+    },
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during invalid snapshot runtime proof');
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback probes during invalid snapshot runtime proof');
+    },
+    fetchPackagedPreflightProbe: async () => {
+      throw new Error('unexpected snapshot-startup fallback preflight probe');
+    },
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: invalidSnapshotBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9464,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot returned an invalid readiness body at http:\/\/127\.0\.0\.1:65535/,
       );
       return true;
     },
