@@ -60,8 +60,10 @@ import {
   shouldUseProductionSnapshotExport,
 } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 import {
+  productionPluginDriverBoundary,
   resolveAuthSessionBoundaryProof,
   resolveSuccessfulReleaseBoundary,
+  summarizeProductionPluginDriverBoundaryProof,
 } from '../scripts/playground/production-shaped-release-verify.mjs';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
@@ -74,6 +76,9 @@ import {
   loadBlueprintSnapshotFixture,
   resolveBlueprintSnapshotFixturePath,
 } from '../scripts/playground/blueprint-snapshot-fixture.js';
+import { createPushPlan } from '../src/planner.js';
+import { resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -307,6 +312,41 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
   stopAllPlaygroundChildrenSync();
 });
+
+function productionPluginDriverSnapshot(mode, version, marker) {
+  return {
+    files: {},
+    plugins: {},
+    db: {
+      wp_reprint_push_release_state: {
+        'state_id:1': {
+          state_id: 1,
+          payload: {
+            owner: productionPluginDriverBoundary.owner,
+            mode,
+            version,
+            releaseBoundaryProof: 'plugin-driver-boundary',
+          },
+          updated_marker: marker,
+          __pluginOwner: productionPluginDriverBoundary.owner,
+        },
+      },
+    },
+    meta: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: productionPluginDriverBoundary.resourceKey,
+            pluginOwner: productionPluginDriverBoundary.owner,
+            driver: productionPluginDriverBoundary.driver,
+            table: productionPluginDriverBoundary.table,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
+  };
+}
 
 function stopAllPlaygroundChildrenSync() {
   for (const child of activePlaygroundChildren) {
@@ -1218,12 +1258,20 @@ test('production-shaped release verify rejects an auth/session source command fo
   );
   assert.equal(proof.status, 1, proof.stderr);
   const summary = JSON.parse(proof.stdout);
-  assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
+  assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
   assert.equal(summary.topology?.sourceUrl, 'http://127.0.0.1:65535');
-  assert.equal(summary.boundary?.liveAuthSessionSource?.requiredSourceUrl, 'http://127.0.0.1:65535');
-  assert.equal(summary.boundary?.liveAuthSessionSource?.observedSourceUrl, 'http://127.0.0.1:65534');
-  assert.equal(summary.authSessionBoundary?.source?.matchesLiveSourceUrl, false);
-  assert.equal(summary.authSessionBoundary?.forgedSessionSourceAccepted, false);
+  assert.equal(summary.boundary?.authSession?.observed, 'invalid-production-auth-session-source');
+  assert.equal(summary.boundary?.liveAuthSessionSource?.observed, 'invalid-production-auth-session-source');
+  assert.equal(
+    summary.boundary?.liveAuthSessionSource?.error,
+    'Auth session source command must return the exact checked sourceUrl',
+  );
+  assert.equal(summary.authSessionSource?.ok, false);
+  assert.equal(summary.authSessionSource?.sourceUrl, '');
+  assert.equal(
+    summary.authSessionSource?.error,
+    'Auth session source command must return the exact checked sourceUrl',
+  );
 });
 
 test('auth/session boundary proof reports same-source readback and capability continuity', () => {
@@ -1645,7 +1693,141 @@ test('production-shaped release verify source runs the packaged plugin driver re
   assert.match(verifySource, /REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-receipt-guards'/);
   assert.match(verifySource, /packagedRevokedCredentialGuard: summary\.driverReceiptRevokedCredentialGuard \|\| null/);
   assert.match(verifySource, /const packagedPluginDriverProof = packagedSourceFixture\s*\?\s*summarizePackagedPluginDriverProof\(\)\s*:\s*null;/);
-  assert.match(verifySource, /\.\.\.\(packagedPluginDriverProof \? \{ pluginDriver: packagedPluginDriverProof \} : \{\}\)/);
+  assert.match(verifySource, /const productionPluginDriverProof = summarizeProductionPluginDriverBoundaryProof\(\{/);
+  assert.match(verifySource, /productionOwned: productionPluginDriverProof/);
+  assert.match(verifySource, /packagedGuard: packagedPluginDriverProof/);
+  assert.match(verifySource, /pluginDriver: pluginDriverProof/);
+});
+
+test('production-shaped release verify owns the production plugin-driver boundary proof fields', () => {
+  const verifySource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(verifySource, /driver: 'reprint-push-release-state'/);
+  assert.match(verifySource, /owner: 'reprint-push'/);
+  assert.match(verifySource, /resourceKey: 'row:\["wp_reprint_push_release_state","state_id:1"\]'/);
+  assert.match(verifySource, /createProductionPluginDriverBlueprints/);
+  assert.match(verifySource, /sourcePluginStateEvidence/);
+  assert.match(verifySource, /localPluginStateEvidence/);
+  assert.match(verifySource, /rejectedRemoteEvidence/);
+  assert.match(verifySource, /failureClosedUnknownPluginData/);
+  assert.match(verifySource, /noArbitraryCustomTableMutation/);
+  assert.match(verifySource, /noActivePluginsDirectMutation/);
+  assert.match(verifySource, /noUnownedSerializedOptionMutation/);
+  assert.match(verifySource, /applyTimeRevalidation/);
+  assert.match(verifySource, /preconditionHashes/);
+});
+
+test('snapshot package registers only the production-owned release state driver boundary', () => {
+  const snapshotSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/snapshot-lib.php'),
+    'utf8',
+  );
+
+  assert.match(snapshotSource, /function reprint_push_production_owned_release_state_driver\(\): array/);
+  assert.match(snapshotSource, /'driver' => 'reprint-push-release-state'/);
+  assert.match(snapshotSource, /'pluginOwner' => 'reprint-push'/);
+  assert.match(snapshotSource, /'table' => 'wp_reprint_push_release_state'/);
+  assert.match(snapshotSource, /'row:\["wp_reprint_push_release_state","state_id:1"\]'/);
+  assert.match(snapshotSource, /Release state driver does not support deletes/);
+  assert.match(snapshotSource, /Unsupported release state driver row id/);
+  assert.match(snapshotSource, /Unsupported release state driver payload key/);
+  assert.match(snapshotSource, /reprint_push_validate_release_state_driver_mutation/);
+});
+
+test('production plugin-driver boundary proof accepts one owned row and fails closed for remote or unknown data', () => {
+  const boundary = productionPluginDriverBoundary;
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+  const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteBaseSnapshot,
+    now: new Date('2026-05-27T10:12:00.000Z'),
+  });
+  const resource = {
+    type: 'row',
+    table: boundary.table,
+    id: boundary.rowId,
+    key: boundary.resourceKey,
+  };
+  const baseHash = resourceHash(remoteBaseSnapshot, resource);
+  const localHash = resourceHash(localEditedSnapshot, resource);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.mutations.length, 1);
+  assert.equal(plan.mutations[0].resourceKey, boundary.resourceKey);
+  assert.equal(plan.mutations[0].pluginOwnedResource.pluginOwner, boundary.owner);
+  assert.equal(plan.mutations[0].pluginOwnedResource.driver, boundary.driver);
+
+  const summary = summarizeProductionPluginDriverBoundaryProof({
+    proof: {
+      planObject: plan,
+      dryRun: {
+        status: 200,
+        receiptHash: 'a'.repeat(64),
+      },
+      apply: {
+        status: 200,
+        applyRevalidation: {
+          required: 'fresh-live-hashes-before-first-mutation',
+          phase: 'before-first-mutation',
+          checkedAgainst: 'live-remote',
+          verifiedResourceKeys: [boundary.resourceKey],
+          planHash: digest(plan),
+          receiptHash: 'a'.repeat(64),
+          preconditionSetHash: 'b'.repeat(64),
+          mutationSetHash: 'c'.repeat(64),
+        },
+      },
+      recoveryInspect: {
+        status: 200,
+      },
+      replay: {
+        status: 200,
+      },
+      dbJournal: {
+        rows: 2,
+        applyCommitted: true,
+        mutationApplied: 1,
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+        },
+      },
+      latestReadRetryEvidence: {
+        path: '/snapshot',
+        preservedRemote: true,
+      },
+    },
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(summary.status, 'checked');
+  assert.equal(summary.verdict, 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK');
+  assert.equal(summary.driver, boundary.driver);
+  assert.equal(summary.owner, boundary.owner);
+  assert.equal(summary.allowlist.entry.resourceKey, boundary.resourceKey);
+  assert.equal(summary.sourcePluginStateEvidence.hash, baseHash);
+  assert.equal(summary.sourcePluginStateEvidence.mode, 'base');
+  assert.equal(summary.localPluginStateEvidence.hash, localHash);
+  assert.equal(summary.localPluginStateEvidence.mode, 'local-update');
+  assert.equal(summary.rejectedRemoteEvidence.failureClosed, true);
+  assert.equal(summary.rejectedRemoteEvidence.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(summary.rejectedRemoteEvidence.remoteChangedState.mode, 'remote-changed');
+  assert.equal(summary.noArbitraryCustomTableMutation, true);
+  assert.equal(summary.noActivePluginsDirectMutation, true);
+  assert.equal(summary.noUnownedSerializedOptionMutation, true);
+  assert.equal(summary.preconditionHashes.expectedHash, baseHash);
+  assert.equal(summary.preconditionHashes.mutationLocalHash, localHash);
+  assert.equal(summary.applyTimeRevalidation.verifiedBeforeFirstMutation, true);
+  assert.equal(summary.failureClosedUnknownPluginData.failureClosed, true);
+  assert.equal(summary.auditEvidence.dbJournalOwnership.ownsJournal, true);
 });
 
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {
@@ -5331,13 +5513,16 @@ test('production-shaped live release verify forces checked release requirements 
   assert.match(source, /\.\.\.resolveCheckedReleaseRequirementEnv\(\),\s*\.\.\.envOverrides,/);
   assert.match(
     source,
-    /runCheckedReleaseVerify\(\s*resolveCheckedLiveBoundaryEnv\(\{\s*sourceUrl: remoteServer\.baseUrl,/,
+    /runCheckedReleaseVerify\(\s*liveBoundaryEnv\s*\)/,
   );
-  assert.match(source, /const explicitLiveSourceUrl = process\.env\.REPRINT_PUSH_SOURCE_URL \|\| '';/);
+  assert.match(source, /const configuredLiveSourceUrl = process\.env\.REPRINT_PUSH_SOURCE_URL \|\| '';/);
+  assert.match(source, /const configuredRemoteUrl = process\.env\.REPRINT_PUSH_REMOTE_URL \|\| '';/);
+  assert.match(source, /const explicitLiveSourceUrl = configuredLiveSourceUrl;/);
   assert.doesNotMatch(
     source,
-    /const explicitLiveSourceUrl = process\.env\.REPRINT_PUSH_SOURCE_URL \|\| process\.env\.REPRINT_PUSH_REMOTE_URL/,
+    /explicitLiveSourceUrl\s*=.*REPRINT_PUSH_REMOTE_URL/,
   );
+  assert.match(source, /REPRINT_PUSH_SOURCE_URL_MISMATCH/);
   assert.match(source, /return await run\(server\);/);
 });
 
@@ -5376,7 +5561,7 @@ test('production-shaped live release verify retries helper Playground port colli
   assert.match(source, /Unable to start Playground server for \$\{name\} after retrying port collisions/);
 });
 
-test('production-shaped live release verify defaults the checked live branch to the packaged auth/session boundary', () => {
+test('production-shaped live release verify classifies packaged auth/session fallback for rejection', () => {
   assert.equal(
     shouldRequestCheckedLivePackagedBoundary({
       fixtureUsername: liveCredentials.username,
@@ -5406,9 +5591,23 @@ test('production-shaped live release verify defaults the checked live branch to 
     }),
     false,
   );
+
+  assert.equal(
+    shouldRequestCheckedLivePackagedBoundary({
+      authSessionSourceCommand: resolvePackagedProductionPluginSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+      }),
+      liveSourceUrl: 'http://127.0.0.1:49152',
+      fixtureUsername: liveCredentials.username,
+      fixtureApplicationPassword: liveCredentials.password,
+    }),
+    true,
+  );
 });
 
-maybeTest('production-shaped live release verify command proves the packaged checked boundary end to end by default', () => {
+test('production-shaped live release verify command fails closed instead of using packaged fallback by default', () => {
   const proof = spawnBoundedSync(
     process.execPath,
     ['scripts/playground/production-shaped-live-release-verify.mjs'],
@@ -5427,68 +5626,150 @@ maybeTest('production-shaped live release verify command proves the packaged che
   );
 
   assertLiveReleaseVerifyProof(proof, 'live release verify wrapper', liveWrapperSubprocessTimeoutMs);
-  assert.equal(proof.status, 0, proof.stderr);
+  assert.equal(proof.status, 1, proof.stderr);
   const summary = JSON.parse(proof.stdout);
 
-  assert.equal(summary.ok, true);
+  assert.equal(summary.ok, false);
   assert.equal(summary.boundary?.firstRemainingProductionBoundary, 'explicit live production-owned release boundary');
-  assert.equal(summary.boundary?.status, 'support-only');
+  assert.equal(summary.boundary?.status, 'blocked');
   assert.equal(summary.boundary?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(summary.boundary?.liveSource?.required, 'REPRINT_PUSH_SOURCE_URL');
-  assert.equal(summary.boundary?.liveSource?.observed, 'packaged-production-plugin-fallback');
+  assert.equal(summary.boundary?.liveSource?.observed, 'missing-live-source');
   assert.equal(summary.boundary?.liveSource?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
-  assert.equal(summary.boundary?.authSession?.required, 'checked release production-auth-session lifecycle');
-  assert.equal(summary.boundary?.authSession?.observed, 'journal');
-  assert.equal(summary.boundary?.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
-  assert.equal(summary.preflight?.routeProfile?.profile, 'production-shaped');
-  assert.equal(summary.preflight?.routeProfile?.labBacked, false);
-  assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.type, 'production-auth-session');
-  assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.status, 'active');
-  assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.expired, false);
-  assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.type, 'production-auth-session');
-  assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.status, 'active');
-  assert.equal(summary.releaseProof?.authSessionLifecycle?.read?.expired, false);
-  assert.equal(summary.durableJournal?.checkedAccepted, true);
-  assert.match(summary.durableJournal?.proof?.journal?.scope || '', /packaged production plugin recovery journal surface/);
-  assert.equal(summary.durableJournal?.proof?.journal?.storageGuard?.boundary, 'wpdb-single-statement-cas');
-  assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
-  assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash || '', /^[a-f0-9]{64}$/);
-  assert.notEqual(
-    summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
-    summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
+  assert.equal(summary.releaseMovement?.allowed, false);
+  assert.equal(summary.releaseMovement?.gates, '0/4');
+  assert.equal(summary.topologyEvidence?.runner?.packagedFallbackAllowed, false);
+  assert.equal(summary.topologyEvidence?.services?.source?.kind, 'missing');
+  assert.doesNotMatch(`${proof.stdout}\n${proof.stderr}`, /Starting Playground server/);
+});
+
+test('production-shaped live release verify rejects a packaged fallback source even when a source URL is present', () => {
+  const proof = spawnBoundedSync(
+    process.execPath,
+    ['scripts/playground/production-shaped-live-release-verify.mjs'],
+    {
+      cwd: repoRoot,
+      timeout: proofSubprocessTimeoutMs,
+      killSignal: 'SIGKILL',
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+        REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+        REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+        REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: resolvePackagedProductionPluginSourceCommand({
+          sourceUrl: 'http://127.0.0.1:49152',
+          username: liveCredentials.username,
+          applicationPassword: liveCredentials.password,
+        }),
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    },
+    'packaged fallback live release verify wrapper',
   );
-  assert.equal(
-    summary.durableJournal?.proof?.journal?.writerLease?.claimId,
-    summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+
+  assertLiveReleaseVerifyProof(proof, 'packaged fallback live release verify wrapper', proofSubprocessTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+  assert.equal(summary.releaseProof?.code, 'REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED');
+  assert.equal(summary.topologyEvidence?.topology?.packagedFallbackSource, true);
+  assert.equal(summary.releaseMovement?.allowed, false);
+  assert.equal(summary.releaseMovement?.gates, '0/4');
+  assert.doesNotMatch(`${proof.stdout}\n${proof.stderr}`, /Starting Playground server/);
+});
+
+test('production-shaped live release verify rejects mismatched source URL aliases before network access', () => {
+  const proof = spawnBoundedSync(
+    process.execPath,
+    ['scripts/playground/production-shaped-live-release-verify.mjs'],
+    {
+      cwd: repoRoot,
+      timeout: proofSubprocessTimeoutMs,
+      killSignal: 'SIGKILL',
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+        REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49199',
+        REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+        REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    },
+    'wrong source URL live release verify wrapper',
   );
-  assert.equal(
-    summary.durableJournal?.proof?.journal?.writerLease?.claimKeyHash,
-    summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
+
+  assertLiveReleaseVerifyProof(proof, 'wrong source URL live release verify wrapper', proofSubprocessTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+  assert.equal(summary.releaseProof?.code, 'REPRINT_PUSH_SOURCE_URL_MISMATCH');
+  assert.equal(summary.boundary?.liveSource?.observed, 'http://127.0.0.1:49199');
+  assert.equal(summary.releaseMovement?.allowed, false);
+  assert.doesNotMatch(`${proof.stdout}\n${proof.stderr}`, /Starting Playground server/);
+});
+
+test('production-shaped live release verify rejects auth/session source command URL drift at readback', () => {
+  const authSessionSourceCommand = `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:49199', username:'${liveCredentials.username}', applicationPassword:'${liveCredentials.password}'}))"`;
+  const proof = spawnBoundedSync(
+    process.execPath,
+    ['scripts/playground/production-shaped-live-release-verify.mjs'],
+    {
+      cwd: repoRoot,
+      timeout: proofSubprocessTimeoutMs,
+      killSignal: 'SIGKILL',
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+        REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+        REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+        REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
+        REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    },
+    'source command URL drift live release verify wrapper',
   );
-  assert.equal(
-    summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimId,
-    summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+
+  assertLiveReleaseVerifyProof(proof, 'source command URL drift live release verify wrapper', proofSubprocessTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /Auth session source command must return the exact checked sourceUrl/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"releaseMovement": \{\s*"allowed": false,\s*"gates": "0\/4"/);
+});
+
+test('production-shaped apply revalidation refuses to proceed without a confirmed live source', () => {
+  const proof = spawnBoundedSync(
+    process.execPath,
+    ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'],
+    {
+      cwd: repoRoot,
+      timeout: proofSubprocessTimeoutMs,
+      killSignal: 'SIGKILL',
+      env: {
+        ...process.env,
+        REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+        REPRINT_PUSH_SOURCE_URL: '',
+        REPRINT_PUSH_REMOTE_URL: '',
+        REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
+        NODE_NO_WARNINGS: '1',
+      },
+      encoding: 'utf8',
+      maxBuffer: 1024 * 1024 * 20,
+    },
+    'apply revalidation missing live source',
   );
-  assert.equal(
-    summary.durableJournal?.proof?.journal?.leaseFence?.writerLease?.claimKeyHash,
-    summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
-  );
-  assert.equal(summary.boundary?.replayAndRetry?.required, '/snapshot');
-  assert.equal(summary.boundary?.replayAndRetry?.observed, '/snapshot');
-  assert.equal(summary.boundary?.replayAndRetry?.retryAttempts, 2);
-  assert.equal(summary.boundary?.replayAndRetry?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
-  assert.equal(summary.applyRevalidation?.ok, true);
-  assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, 'explicit live production-owned release boundary');
-  assert.equal(summary.applyRevalidation?.boundary?.status, 'support-only');
-  assert.equal(summary.applyRevalidation?.boundary?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
-  assert.deepEqual(summary.applyRevalidation?.boundary?.liveSource, {
-    required: 'REPRINT_PUSH_SOURCE_URL',
-    observed: 'packaged-production-plugin-fallback',
-    verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
-  });
-  assert.equal(summary.applyRevalidation?.boundary?.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
-  assert.equal(summary.applyRevalidation?.boundary?.durableJournal?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
-  assert.equal(summary.applyRevalidation?.boundary?.replayAndRetry?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+
+  assertLiveReleaseVerifyProof(proof, 'apply revalidation missing live source', proofSubprocessTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+  assert.equal(summary.boundary?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.equal(summary.releaseMovement?.allowed, false);
+  assert.doesNotMatch(`${proof.stdout}\n${proof.stderr}`, /apply-revalidation: dry-run/);
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
