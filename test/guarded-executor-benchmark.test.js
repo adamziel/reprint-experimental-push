@@ -18018,24 +18018,44 @@ test('guarded benchmark carries hidden memory-ceiling-match blockers into reject
   assert.ok(
     blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
   );
-  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
-    'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
-    'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
-    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
-  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
-    'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
-    'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
-    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
+  assert.deepEqual(
+    [releaseBundleBackpressure, stagingDiskReplay]
+      .filter(Boolean)
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
+          'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
+          'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
   assert.deepEqual(
     summarizeRejectedGates(
       [releaseBundleBackpressure, stagingDiskReplay].filter(Boolean),
