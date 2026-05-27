@@ -616,6 +616,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
     ownsRemoteArtifact,
     leaseFence,
     writerLease,
+    claimId,
     claimHash,
     journalPath: journal.filePath,
     artifactRefs: Object.freeze({
@@ -652,6 +653,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
         ownsRemoteArtifact,
         leaseFence,
         writerLease,
+        claimId,
         claimHash,
         journalPath: journal.filePath,
         writerLeaseContract,

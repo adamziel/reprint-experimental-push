@@ -1,49 +1,39 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-27 06:20:57 CEST (+0200)
-- Branch head at handoff: `bc2129fe017ed7b29bcd7ea10dffd64c855601bc`
-- Current remote reliable head checked this pass: `ef5e52cec9072c278f751ff2fe0be78659912987`
+- Timestamp: 2026-05-27 06:37:47 CEST (+0200)
+- Branch head at handoff: `5cbae451e93215c8c91f4199a233df76a2c27137`
 
 What changed:
 
-- Tightened `src/recovery-journal.js` again so `checkedDurableJournalBoundarySatisfied()` fails closed when the surfaced checked-boundary claim ids are inherited or malformed, not just when explicit own-property values drift. The matcher now requires own trimmed string values for `claim.activeClaimId`, `writerLease.claimId`, and `leaseFence.writerLease.claimId` whenever those fields are surfaced.
-- Extended `test/recovery-journal.test.js` with focused regressions proving the checked packaged/live matcher rejects an inherited `claim.activeClaimId` and an inherited nested `leaseFence.writerLease.claimId`.
+- Fixed completed-plan replay on the production recovery writer path in [src/apply.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js).
+  Fresh production writers are no longer rejected before replay can append their first restart-readable records, and non-blocked replay now recomputes production support after those records exist if the cached pre-open report was still unsupported.
+- Surfaced owned `claimId` on the production recovery adapter and its inspection result in [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js), which lets `productionRecoverySupportReport()` validate replay/failure paths against the same claim identity the writer already owns.
+- Added a planner-level replay proof in [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js) showing that a completed replay on `openProductionRecoveryJournal()` stays `fully-updated-remote`, closes the owned writer, and preserves owned restart-readable `artifactRefs` without adding a second planning envelope.
 
 Changed files:
 
+- [src/apply.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js)
 - [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js)
-- [test/recovery-journal.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/recovery-journal.test.js)
+- [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
 - [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
 
 Commands:
 
+- `timeout 60s node --test --test-name-pattern "completed replay on a production durable journal preserves owned restart-readable proof" test/push-planner.test.js`
+- `timeout 60s node --test --test-name-pattern "closes an owned production recovery journal writer after replaying a completed plan successfully" test/push-planner.test.js`
+- `timeout 60s node --test --test-name-pattern "closes an owned production recovery journal writer after a partial commit blocks recovery|closes an owned production recovery journal writer after pre-mutation failures preserve the old remote" test/push-planner.test.js`
+- `git diff --check -- src/apply.js src/recovery-journal.js test/push-planner.test.js`
 - `git status --short --branch`
-- `sed -n '1,220p' AGENTS.md`
-- `sed -n '1,220p' supervision/README.md`
-- `sed -n '1,220p' supervision/lanes/no-data-loss-recovery.md`
-- `ls -1t .lane-output/final*.md | head -n 5`
-- `git ls-remote origin refs/heads/lane/reliable-executor refs/heads/lane/no-data-loss-recovery refs/heads/lane/durable-journal`
-- `git log --oneline --decorate -8 origin/lane/reliable-executor`
-- `git show --stat --patch $(git rev-parse origin/lane/reliable-executor) -- scripts/playground/push-db-journal-lib.php scripts/playground/push-remote-rest-plugin.php src/recovery-journal.js test/recovery-journal.test.js test/production-shaped-proof.test.js`
-- `grep -RniE "claimId|activeClaimId|checkedDurableJournalBoundarySatisfied|openProductionRecoveryJournal|consumeProductionRecoveryJournal|productionRecoverySupportReport" src test | sed -n '1,260p'`
-- `sed -n '1180,1575p' src/apply.js`
-- `sed -n '1,260p' src/recovery-journal.js`
-- `sed -n '5000,5260p' test/recovery-journal.test.js`
-- `sed -n '20890,22320p' test/push-planner.test.js`
-- `node --check src/recovery-journal.js`
-- `node --check test/recovery-journal.test.js`
-- `timeout 120s node --test --test-name-pattern='checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence|checked durable journal boundary accepts the packaged production journal scope|checked durable journal boundary accepts the explicit packaged recovery journal scope|checked durable journal boundary accepts the explicit live recovery journal scope|checked durable journal boundary rejects nearby stale scope wording' test/recovery-journal.test.js`
-- `git diff --check`
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 
-- Pending in this pass.
+- Pending in this handoff; commit/push is the next lane action.
 
 Worktree status:
 
-- Dirty tracked files: `.lane-output/final.md`, `src/recovery-journal.js`, `test/recovery-journal.test.js`
+- Dirty tracked files: `.lane-output/final.md`, `src/apply.js`, `src/recovery-journal.js`, `test/push-planner.test.js`
 
 Next supervisor nudge:
 
-- Reliable is currently at `ef5e52cec` and that head is auth-session read-preference test work, not a new recovery adapter contract. This lane now fail-closes another checked-boundary consumer gap: inherited surfaced claim ids can no longer keep the durable-journal boundary green. After this push, keep the lane parked unless reliable exposes a deeper recovery-owned release-path mismatch between surfaced claim identity and reopened lease state, or a production durable-storage artifact contract gap beyond the already-pushed claim-id fences.
+- Once this lane pushes, reliable can consume the stronger production recovery writer replay path without tripping on pre-open support-report drift or hidden claim identity.
+- The next recovery-owned patch should only happen if reliable still exposes a restart-readable production journal consumption gap after this adapter/replay fix.

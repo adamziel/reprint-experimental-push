@@ -5148,6 +5148,68 @@ test('completed replay on an existing durable journal keeps replay evidence appe
   assert.equal(persisted.records.some((record) => record.type === 'target-planned'), false);
 });
 
+test('completed replay on a production durable journal preserves owned restart-readable proof', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const completed = applyPlan(remote, plan);
+  const journalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${journalPath}.remote`;
+  const claimId = 'claim-production-replay';
+  const durableJournal = openProductionRecoveryJournal(journalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: completed.site,
+    claimId,
+    artifactRefs: {
+      journal: journalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const replay = applyPlan(completed.site, plan, {
+    journal: completed.journal,
+    durableJournal,
+    requireProductionDurableJournal: true,
+  });
+
+  const persisted = readRecoveryJournal(journalPath);
+  assert.equal(isDurableJournalClosed(durableJournal), true);
+  assert.equal(replay.appliedMutations, 0);
+  assert.equal(replay.recoveryState.status, 'fully-updated-remote');
+  assert.equal(replay.recoveryState.artifacts.remote, undefined);
+  assert.equal(persisted.integrity.status, 'ok');
+  assertJournalTailTypes(
+    persisted.records,
+    ['recovery-state', 'journal-replayed'],
+    'production replay should append only the completed recovery envelope after the opened claim',
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'recovery-claim-opened').length,
+    1,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'target-planned').length,
+    0,
+  );
+  for (const record of persisted.records) {
+    assert.deepEqual(record.artifactRefs, {
+      journal: journalPath,
+      remote: remoteArtifactPath,
+    });
+  }
+});
+
 test('completed replay on a durable journal stays inert after local drift and keeps inserts stable', () => {
   const base = baseSite();
   const local = baseSite();

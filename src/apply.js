@@ -149,7 +149,14 @@ export function applyPlan(remote, plan, options = {}) {
       try {
         replayResult = replayCompletedPlan(remote, plan, journal);
         assertRecoveryStateEnvelope(replayResult.recoveryState);
-        ensureDurableJournalSupportReport();
+        if (
+          !(
+            durableJournal?.kind === 'production-recovery-journal'
+            && !durableJournalHasPriorRecords(durableJournal)
+          )
+        ) {
+          ensureDurableJournalSupportReport();
+        }
         recordDurableReplay(durableJournal, remote, plan, replayResult.recoveryState, journal, durableJournalSupportReport);
         return replayResult;
       } catch (error) {
@@ -2434,7 +2441,11 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     ? (
       recoveryState.status === 'blocked-recovery'
         ? productionRecoverySupportReport(writer)
-        : (supportReport || productionRecoverySupportReport(writer))
+        : (
+          supportReport?.supported === true
+            ? supportReport
+            : productionRecoverySupportReport(writer)
+        )
     )
     : null;
   const blockedInspection = writer?.kind === 'production-recovery-journal'
