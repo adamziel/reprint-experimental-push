@@ -12858,6 +12858,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(blockers.includes('queue-budget-visible-without-memory-ceiling-visibility'));
   assert.ok(blockers.includes('queue-pause-without-visible-memory-ceiling'));
@@ -12878,6 +12883,21 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark blocks release-bundle post-pause planning summaries when memory-headroom visibility is hidden', () => {
@@ -12888,6 +12908,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-headroom-visibility'));
   assert.ok(blockers.includes('queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility'));
@@ -12906,6 +12931,25 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        'memory-ceiling-match-visible-without-memory-headroom-visibility',
+        'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+        'queue-pause-without-visible-receipt-cursor-memory-headroom',
+        'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark blocks release-bundle post-pause planning summaries when queue-headroom measurement is hidden', () => {
@@ -12917,6 +12961,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-measurement'));
   assert.ok(blockers.includes('memory-ceiling-visible-without-queue-headroom-measurement'));
@@ -12933,6 +12982,21 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'queue-headroom-visible-without-measurement',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark blocks release-bundle post-pause planning summaries when aligned queue-slack proof is missing after a full pause footprint', () => {
@@ -12958,6 +13022,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(
     blockers.includes(
@@ -12980,6 +13049,25 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+        'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+        'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk measurement is hidden', () => {
@@ -12991,6 +13079,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(blockers.includes('staging-disk-headroom-visible-without-measurement'));
   assert.deepEqual(details.releaseBundlePlanningSummary, {
@@ -13002,6 +13095,20 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'staging-disk-headroom-visible-without-measurement',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk visibility is hidden', () => {
@@ -13015,6 +13122,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
   assert.deepEqual(details.releaseBundlePlanningSummary, {
@@ -13026,6 +13138,21 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'staging-disk-headroom-not-visible',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+        'staging-disk-headroom-not-visible',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk headroom drifts outside the plan reserve', () => {
@@ -13036,6 +13163,11 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
+  const releaseBundlePlanning = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+  );
 
   assert.ok(blockers.includes('staging-disk-headroom-outside-plan-reserve'));
   assert.deepEqual(details.releaseBundlePlanningSummary, {
@@ -13047,6 +13179,20 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
       'staging-disk-headroom-outside-plan-reserve',
     ],
   });
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'production-capability-measurement-not-aligned',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling bytes drift under visible production capability evidence', () => {
