@@ -1,23 +1,25 @@
-Audited `22e1eb7bb37846fb379e6ea7e71a73304235e3da` as support-side auth/session lifecycle hardening only. Release gates remain `0/4`.
+Audited `62b3d28edc31bd13776bbe110fda4f5721027aef` as release-path support hardening only. Release gates remain `0/4`.
 
 Changed files:
 - `audits/objective-audit.md`
-- `audits/current-head-22e1eb7b.md`
+- `audits/current-head-62b3d28e.md`
 
 Commands run:
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git status --short --branch`
 - `git ls-remote origin refs/heads/lane/reliable-executor`
-- `git show --stat --summary 22e1eb7bb37846fb379e6ea7e71a73304235e3da --`
-- `git show --no-patch --format=fuller 22e1eb7bb37846fb379e6ea7e71a73304235e3da`
-- `git show --unified=40 22e1eb7bb37846fb379e6ea7e71a73304235e3da -- scripts/playground/production-auth-session-lifecycle.js src/authenticated-http-push-client.js test/production-shaped-proof.test.js`
-- `git diff --check -- audits/objective-audit.md audits/current-head-22e1eb7b.md`
+- `git ls-remote origin refs/heads/lane/critic refs/heads/lane/independent-auditor`
+- `git show --stat --summary 62b3d28edc31bd13776bbe110fda4f5721027aef --`
+- `git show --no-patch --format=fuller 62b3d28edc31bd13776bbe110fda4f5721027aef`
+- `git show --unified=80 62b3d28edc31bd13776bbe110fda4f5721027aef -- src/authenticated-http-push-client.js test/authenticated-http-push-client.test.js`
+- `git diff --check -- audits/objective-audit.md audits/current-head-62b3d28e.md`
 
 Push result:
-- Pending
+- Not pushed yet
 
 Worktree status:
-- Pending validation
+- Modified: `audits/objective-audit.md`, `audits/current-head-62b3d28e.md`, `.lane-output/final.md`
+- Clean push not yet attempted
 
 Next supervisor nudge:
-- Have `main:critic` classify `22e1eb7b` and keep the verdict at `0/4`; the missing proof is still a production-owned real-endpoint auth/session and durable-journal boundary.
+- Have `main:critic` and `main:independent-auditor` classify `62b3d28e` and keep the verdict at `0/4`; the missing proof is still a production-owned real-endpoint auth/session and durable-journal boundary.
