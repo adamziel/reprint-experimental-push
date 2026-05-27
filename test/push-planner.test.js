@@ -19692,6 +19692,109 @@ test('allows an existing term-relationship row to reference same-plan created po
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('allows an existing term-relationship row to reference same-plan created post and taxonomy identities while preserving a matching independent edit and remote-only plugin changes', () => {
+  const postResourceKey = 'row:["wp_posts","ID:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const matchingEditResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.files[matchingEditResourceKey.slice('file:'.length)] = '<?php echo "base relationship edit";';
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base relationship term', slug: 'base-relationship-term' },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'base relationship note',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingEditResourceKey.slice('file:'.length)] = '<?php echo "shared relationship edit";';
+  local.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Local relationship post',
+    post_content: 'Local relationship post body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'Local relationship taxonomy',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingEditResourceKey.slice('file:'.length)] = '<?php echo "shared relationship edit";';
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_relationships = JSON.parse(JSON.stringify(base.db.wp_term_relationships));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(relationshipMutation),
+    'post create must be ordered before dependent existing term-relationship update',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'taxonomy create must be ordered before dependent existing term-relationship update',
+  );
+  assert.deepEqual(
+    [...relationshipMutation.dependsOnMutationIds].sort(),
+    [postMutation.id, taxonomyMutation.id].sort(),
+  );
+  assert.equal(plan.summary.graphDependencies, 2);
+  assert.deepEqual(
+    plan.graphDependencies.map((dependency) => [dependency.relationshipType, dependency.targetResourceKey]),
+    [
+      ['term-relationship-object', postResourceKey],
+      ['term-relationship-taxonomy', taxonomyResourceKey],
+    ],
+  );
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files[matchingEditResourceKey.slice('file:'.length)], '<?php echo "shared relationship edit";');
+  assert.equal(result.site.db.wp_posts['ID:7'].post_title, 'Local relationship post');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'Local relationship taxonomy');
+  assert.equal(result.site.db.wp_term_relationships['object_id:7,term_taxonomy_id:5'].term_order, 1);
+  assert.equal(result.site.db.wp_term_relationships['object_id:7,term_taxonomy_id:5'].note, 'local relationship note');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks an existing term-relationship row when its same-plan post belongs to an unsupported revision surface even if the taxonomy create is otherwise supported', () => {
   const postResourceKey = 'row:["wp_posts","ID:7"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
