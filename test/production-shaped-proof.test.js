@@ -3288,6 +3288,35 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
 });
 
+test('packaged smoke readiness helper formats malformed snapshot and preflight bodies as bounded readiness failures', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  assert.match(
+    helperSource,
+    /Packaged production plugin snapshot returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?formatPackagedReadinessFailure\(/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Expected JSON from GET \/wp-json\/reprint\/v1\/push\/snapshot/,
+  );
+  assert.doesNotMatch(
+    helperSource,
+    /Expected JSON from GET \/wp-json\/reprint\/v1\/push\/preflight/,
+  );
+});
+
 test('packaged snapshot readiness helper enforces the bounded classifier before retryable preflight loops continue', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

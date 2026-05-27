@@ -690,8 +690,18 @@ async function waitForServer(child, baseUrl, logs) {
           await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
+        lastError = error;
         throw new Error(
-          `Expected JSON from GET /wp-json/reprint/v1/push/snapshot, got HTTP ${snapshotResponse.status}\n${snapshotText}\n${error.message}`,
+          formatPackagedReadinessFailure(
+            `Packaged production plugin snapshot returned an invalid readiness body at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            logs,
+            {
+              packagedProductionPlugin: true,
+            },
+            lastTimeoutFallbackProbes,
+          ),
         );
       }
 
@@ -1069,8 +1079,20 @@ async function waitForServer(child, baseUrl, logs) {
           await sleepUnlessChildExit(readinessProbeIntervalMs, child);
           continue;
         }
+        lastError = error;
+        notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          notReadyProbeCounts,
+          'preflight',
+        );
         throw new Error(
-          `Expected JSON from GET /wp-json/reprint/v1/push/preflight, got HTTP ${preflightResponse.status}\n${preflightText}\n${error.message}`,
+          formatPackagedReadinessFailure(
+            `Packaged production plugin preflight returned an invalid readiness body at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            logs,
+            packagedProductionPluginPreflightTerminalContext({}),
+            lastTimeoutFallbackProbes,
+          ),
         );
       }
 
