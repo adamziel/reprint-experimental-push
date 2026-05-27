@@ -869,7 +869,15 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery inspection');
   } else {
-    if (hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')) {
+    if (
+      hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')
+      || (
+        writer !== null
+        && typeof writer === 'object'
+        && !Object.hasOwn(writer, 'acceptedOnCheckedBoundary')
+        && 'acceptedOnCheckedBoundary' in writer
+      )
+    ) {
       addMissingDependency('restart-readable recovery inspection');
     }
     if (hasHiddenOwnStringKeys(inspected)) {

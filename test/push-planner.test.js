@@ -21946,7 +21946,7 @@ test('production recovery support report keeps checked boundary closed when insp
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
   assert.equal(report.checkedBoundaryProof.ownership.ownsJournal, false);
   assert.equal(report.checkedBoundaryProof.ownership.restartReadable, false);
-  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, null);
 });
 
 test('production recovery support report keeps checked boundary closed when inspected ownership markers hide behind non-enumerable keys', () => {
@@ -24295,7 +24295,7 @@ test('production recovery support report keeps checked boundary closed when the 
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.scope, 'unsupported recovery lab scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
-  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, null);
 });
 
 test('production recovery support report keeps checked boundary closed when the writer omits its surfaced top-level scope', () => {
@@ -25123,7 +25123,7 @@ test('production recovery support report keeps checked boundary closed when the 
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
-  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, null);
 });
 
 test('production recovery support report keeps checked boundary closed when durable writer cleanup is missing', () => {
@@ -25351,11 +25351,12 @@ test('production recovery support report keeps checked boundary closed when the 
 
   const report = productionRecoverySupportReport(writer);
 
-  assert.equal(report.supported, true);
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('restart-readable recovery inspection'));
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
-  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, null);
 });
 
 test('production recovery support report keeps checked boundary closed when restart inspection is invalid despite surfaced checked acceptance', () => {
