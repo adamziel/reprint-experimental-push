@@ -1603,12 +1603,20 @@ function checkedDurableJournalBoundaryProof(
   )
     ? inspected.claimHash
     : null;
-  const checkedBoundaryWriterClaimId = Object.hasOwn(inspected ?? {}, 'writerLease')
+  const checkedBoundaryWriterClaimId = (
+    checkedBoundaryActiveClaimId !== null
+    && Object.hasOwn(inspected ?? {}, 'writerLease')
     && hasValidProductionLeaseIdentity(inspected?.writerLease)
+    && inspected.writerLease.id === checkedBoundaryActiveClaimId
+  )
     ? inspected.writerLease.id
     : null;
-  const checkedBoundaryLeaseFenceClaimId = Object.hasOwn(inspected ?? {}, 'leaseFence')
+  const checkedBoundaryLeaseFenceClaimId = (
+    checkedBoundaryActiveClaimId !== null
+    && Object.hasOwn(inspected ?? {}, 'leaseFence')
     && hasValidProductionLeaseIdentity(inspected?.leaseFence)
+    && inspected.leaseFence.id === checkedBoundaryActiveClaimId
+  )
     ? inspected.leaseFence.id
     : null;
   const checkedBoundaryWriterClaimHash = (
