@@ -2117,6 +2117,8 @@ function summarizeRecoveryInspectJournal(journal) {
 function summarizeReplayEquivalence(applyResponse, replayResponse) {
   const applyBody = applyResponse?.body || {};
   const replayBody = replayResponse?.body || {};
+  const applyAuthSessionLifecycle = summarizeReplayAuthSessionLifecycle(applyBody.auth?.session);
+  const replayAuthSessionLifecycle = summarizeReplayAuthSessionLifecycle(replayBody.auth?.session);
   const hasResponseSchemaVersion = applyBody.responseSchemaVersion !== undefined
     && replayBody.responseSchemaVersion !== undefined;
   const applySignedRequestDigest = digest(applyBody.signedRequest?.request || null);
@@ -2147,6 +2149,11 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
     && applyBody.auth?.session?.status === replayBody.auth?.session?.status
     && applyBody.auth?.session?.expiresAt === replayBody.auth?.session?.expiresAt
+    && applyAuthSessionLifecycle.revoked === replayAuthSessionLifecycle.revoked
+    && applyAuthSessionLifecycle.cleanedUp === replayAuthSessionLifecycle.cleanedUp
+    && applyAuthSessionLifecycle.rotated === replayAuthSessionLifecycle.rotated
+    && applyAuthSessionLifecycle.preserved === replayAuthSessionLifecycle.preserved
+    && applyAuthSessionLifecycle.expired === replayAuthSessionLifecycle.expired
     && applyBody.signedRequest?.signed === replayBody.signedRequest?.signed
     && applyBody.signedRequest?.schemaVersion === replayBody.signedRequest?.schemaVersion
     && applyBody.signedRequest?.contentHash === replayBody.signedRequest?.contentHash
@@ -2167,6 +2174,11 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     ['authSessionType', applyBody.auth?.session?.type, replayBody.auth?.session?.type],
     ['authSessionStatus', applyBody.auth?.session?.status, replayBody.auth?.session?.status],
     ['authSessionExpiresAt', applyBody.auth?.session?.expiresAt, replayBody.auth?.session?.expiresAt],
+    ['authSessionRevoked', applyAuthSessionLifecycle.revoked, replayAuthSessionLifecycle.revoked],
+    ['authSessionCleanedUp', applyAuthSessionLifecycle.cleanedUp, replayAuthSessionLifecycle.cleanedUp],
+    ['authSessionRotated', applyAuthSessionLifecycle.rotated, replayAuthSessionLifecycle.rotated],
+    ['authSessionPreserved', applyAuthSessionLifecycle.preserved, replayAuthSessionLifecycle.preserved],
+    ['authSessionExpired', applyAuthSessionLifecycle.expired, replayAuthSessionLifecycle.expired],
     ['signedRequest.signed', applyBody.signedRequest?.signed, replayBody.signedRequest?.signed],
     ['signedRequest.schemaVersion', applyBody.signedRequest?.schemaVersion, replayBody.signedRequest?.schemaVersion],
     ['signedRequest.contentHash', applyBody.signedRequest?.contentHash, replayBody.signedRequest?.contentHash],
@@ -2179,6 +2191,26 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
   return {
     equivalent,
     mismatches,
+  };
+}
+
+function summarizeReplayAuthSessionLifecycle(session) {
+  if (!session || typeof session !== 'object') {
+    return {
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+      expired: false,
+    };
+  }
+
+  return {
+    revoked: session.revoked === true || session.status === 'revoked',
+    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    rotated: session.rotated === true || session.status === 'rotated',
+    preserved: session.preserved === true,
+    expired: session.expired === true || session.status === 'expired' || isExpiredSession(session),
   };
 }
 
