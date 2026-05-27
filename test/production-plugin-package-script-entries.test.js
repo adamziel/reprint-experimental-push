@@ -214,9 +214,23 @@ test('package scripts pin the bounded plugin-driver verifier-only mode entrypoin
   );
 });
 
+test('package scripts pin the exact plugin-driver verifier-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-verifier-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverVerifierGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver registration-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-registration-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the exact plugin-driver registration-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-guards-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
@@ -228,9 +242,23 @@ test('package scripts pin the bounded plugin-driver receipt-registration-only mo
   );
 });
 
+test('package scripts pin the exact plugin-driver receipt-registration-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-registration-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptRegistrationGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver callback-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-callback-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverCallbackGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the exact plugin-driver callback-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-callback-guards-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverCallbackGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
@@ -242,9 +270,23 @@ test('package scripts pin the bounded plugin-driver registration-shape-only mode
   );
 });
 
+test('package scripts pin the exact plugin-driver registration-shape-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-shape-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationShapeGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver receipt-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the exact plugin-driver receipt-guards-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-guards-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
@@ -256,6 +298,13 @@ test('package scripts pin the bounded plugin-driver delete-only mode entrypoint'
   );
 });
 
+test('package scripts pin the exact plugin-driver delete-apply-proof-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-delete-apply-proof-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteApplyProof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver route-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-route-only'],
@@ -263,9 +312,23 @@ test('package scripts pin the bounded plugin-driver route-only mode entrypoint',
   );
 });
 
+test('package scripts pin the exact plugin-driver route-proof-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-route-proof-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRouteProof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver positive-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-positive-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverPositiveProof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the exact plugin-driver positive-proof-only mode alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-positive-proof-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverPositiveProof node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
