@@ -851,6 +851,85 @@ test('production recovery journal inspection ignores consumed records that omit 
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
 });
 
+test('production recovery journal wrapper rejects reopened artifact refs that drift from the active claim evidence', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-artifact-refs-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-original',
+    },
+    now: fixedNow,
+    claimId,
+  });
+  journal.close();
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-drifted',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    /openProductionRecoveryJournal\(\) requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+  );
+});
+
+test('production recovery journal inspection fails closed when persisted active-claim artifact refs are missing on restart', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-artifact-refs-02';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-contract',
+    },
+    now: fixedNow,
+    claimId,
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const claimRecord = persisted.records.find(
+    (record) => record.type === 'recovery-claim-opened' && record.claimId === claimId,
+  );
+  assert.ok(claimRecord);
+  delete claimRecord.artifactRefs;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-contract',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    /openProductionRecoveryJournal\(\) requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal\./,
+  );
+});
+
 test('production recovery journal wrapper rejects hidden open options', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

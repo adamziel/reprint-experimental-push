@@ -80,6 +80,37 @@ function claimScopedConsumedRecord(records, claim) {
   ) || null;
 }
 
+function artifactRefsEqual(left, right) {
+  const leftEntries = Object.entries(left ?? {}).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+  const rightEntries = Object.entries(right ?? {}).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+  return leftEntries.length === rightEntries.length
+    && leftEntries.every(([leftKey, leftValue], index) => {
+      const [rightKey, rightValue] = rightEntries[index] || [];
+      return leftKey === rightKey && leftValue === rightValue;
+    });
+}
+
+function claimScopedArtifactRefs(records, claim) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
+    return null;
+  }
+
+  const scopedRecord = (Array.isArray(records) ? [...records] : [])
+    .reverse()
+    .find(
+      (record) => record.claimHash === claim.activeClaimHash
+        && record.claimId === claim.activeClaimId
+        && artifactRefsContractMatches(record.artifactRefs),
+    );
+
+  return scopedRecord ? { ...scopedRecord.artifactRefs } : null;
+}
+
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   const providedOptions = options && typeof options === 'object' ? options : {};
   const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
@@ -997,6 +1028,15 @@ export function openProductionRecoveryJournal(options) {
     : { status: 'none', activeClaimHash: null };
   const reusingActiveClaim =
     existingClaim.status !== 'blocked' && existingClaim.activeClaimHash === nextClaimHash;
+  const persistedArtifactRefs = reusingActiveClaim
+    ? claimScopedArtifactRefs(existingJournal.records, existingClaim)
+    : null;
+
+  if (reusingActiveClaim && !artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
+    throw new Error(
+      'openProductionRecoveryJournal() requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
+    );
+  }
 
   if (!reusingActiveClaim) {
     appendRecoveryClaimOpened(journal, {
@@ -1018,11 +1058,12 @@ export function openProductionRecoveryJournal(options) {
   journal.restartReadable = true;
   journal.journalPath = filePath;
   journal.claimId = claimId;
-  journal.artifactRefs = { ...artifactRefs };
+  journal.artifactRefs = persistedArtifactRefs ? { ...persistedArtifactRefs } : { ...artifactRefs };
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
     const claim = summarizeProductionRecoveryJournalClaim(persisted);
+    const effectiveArtifactRefs = claimScopedArtifactRefs(persisted.records, claim) || {};
     const persistedClaimId = claim?.activeClaimId || claimId;
     const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
@@ -1048,7 +1089,7 @@ export function openProductionRecoveryJournal(options) {
         path: filePath,
         journalPath: filePath,
         checked: [filePath],
-        artifactRefs: { ...artifactRefs },
+        artifactRefs: { ...effectiveArtifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
         supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
         ownership: {
