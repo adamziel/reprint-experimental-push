@@ -14240,6 +14240,23 @@ test('checked db journal boundary contract fails closed when the checked claim c
   assert.equal(JSON.parse(result.stdout), false);
 });
 
+test('checked db journal boundary contract accepts distinct claim ids when claim-key hashes stay coherent', { skip: !hasPhp }, () => {
+  const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
+  baseJournal.claim.activeClaimId = 'authoritative-claim-id-02';
+  baseJournal.claim.previousClaimId = 'retry-claim-id-01';
+  baseJournal.claimEvidence.activeRow.claimId = 'authoritative-claim-id-02';
+  baseJournal.claimEvidence.abandonedRow.claimId = 'retry-claim-id-01';
+  baseJournal.claimEvidence.previousRow.claimId = 'retry-claim-id-01';
+  baseJournal.writerLease.claimId = 'authoritative-claim-id-02';
+  baseJournal.leaseFence.writerLease.claimId = 'authoritative-claim-id-02';
+  baseJournal.latestRows[0].claimId = 'authoritative-claim-id-02';
+
+  const result = runCheckedBoundaryContractMatches(baseJournal);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), true);
+});
+
 test('checked db journal boundary contract fails closed when stale-claim rejection is claimed without persisted stale-claim evidence', { skip: !hasPhp }, () => {
   const result = runCheckedBoundaryContractMatches({
     schemaVersion: 1,
