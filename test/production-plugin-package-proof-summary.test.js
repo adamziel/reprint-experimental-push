@@ -17,6 +17,101 @@ import {
   scenarioNames,
 } from '../scripts/playground/production-plugin-package-scenarios.js';
 
+function buildAliasRepairRawSummary(canonicalMode, mode) {
+  return {
+    mode,
+    canonicalMode,
+    requestedScenarios: [canonicalMode],
+    selectedScenarios: Array.from(
+      new Set([canonicalMode, ...(scenarioGroups[canonicalMode] ?? [])]),
+    ).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptBlankRowIdGuard: {
+      blankRejectedCode: 'INVALID_PLAN',
+      whitespaceRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: false,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: false,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: false,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: false,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: false,
+    },
+    driverMissingTableGuard: {
+      missingTable: false,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: false,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: false,
+    },
+    driverUpdateApply: {
+      applied: 1,
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+}
+
+function applyStaleAliasProofFieldMutation(value) {
+  if (Array.isArray(value)) {
+    return [];
+  }
+  if (value && typeof value === 'object') {
+    return {};
+  }
+  if (typeof value === 'boolean') {
+    return !value;
+  }
+  if (typeof value === 'number') {
+    return -1;
+  }
+  return '__stale__';
+}
+
 test('plugin-driver proof summary bundle groups stay aligned with shared scenario groups', () => {
   assert.deepEqual(
     bundleSummaryGroups['driver-positive-proof'],
@@ -819,6 +914,82 @@ test('plugin-driver proof summary attach helper persists verifier-guards-only to
     driverVerifierGuards: 'missing',
   });
   assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'missing');
+});
+
+test('plugin-driver proof summary attach helper repairs stale alias caches for every exported runtime mode alias when the nested mode proof is current', () => {
+  const staleFields = [
+    'requestedStatus',
+    'requestedSatisfied',
+    'requestedScenarioStatuses',
+    'requestedConcreteScenarios',
+    'requestedConcreteScenarioStatuses',
+    'requestedBundles',
+    'requestedBundleStatus',
+    'requestedBundleStatuses',
+    'requestedBundlesSatisfied',
+    'legacyRequestedBundles',
+    'legacyRequestedBundleStatus',
+    'legacyRequestedBundleStatuses',
+  ];
+
+  for (const [canonicalMode, aliases] of Object.entries(modeAliasesByCanonicalMode)) {
+    for (const mode of aliases) {
+      const rawSummary = buildAliasRepairRawSummary(canonicalMode, mode);
+      const currentProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+        requestedScenarios: [mode],
+        selectedScenarios: new Set([mode]),
+        resolvedMode: mode,
+        canonicalMode,
+      });
+      const expectedProof = structuredClone(currentProof);
+      const staleProof = structuredClone(currentProof);
+
+      for (const field of staleFields) {
+        if (staleProof[field] !== undefined) {
+          staleProof[field] = applyStaleAliasProofFieldMutation(staleProof[field]);
+        }
+        if (staleProof.modeProof?.[field] !== undefined) {
+          staleProof.modeProof[field] = applyStaleAliasProofFieldMutation(
+            staleProof.modeProof[field],
+          );
+        }
+      }
+
+      rawSummary.pluginDriverProof = staleProof;
+      rawSummary.modeProof = staleProof.modeProof;
+
+      const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+        requestedScenarios: [mode],
+        selectedScenarios: new Set([mode]),
+        resolvedMode: mode,
+        canonicalMode,
+      });
+
+      assert.equal(
+        rawSummary.pluginDriverProof,
+        repairedProof,
+        `${mode} should update the attached top-level proof in place`,
+      );
+      assert.equal(
+        rawSummary.modeProof,
+        repairedProof.modeProof,
+        `${mode} should resync the top-level modeProof cache`,
+      );
+
+      for (const field of staleFields) {
+        assert.deepEqual(
+          repairedProof[field],
+          expectedProof[field],
+          `${mode} should repair top-level ${field}`,
+        );
+        assert.deepEqual(
+          repairedProof.modeProof?.[field],
+          expectedProof.modeProof?.[field],
+          `${mode} should repair nested modeProof ${field}`,
+        );
+      }
+    }
+  }
 });
 
 test('plugin-driver proof summary reuses an attached pluginDriverProof for repeated direct alias mode requests', () => {
