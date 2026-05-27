@@ -336,6 +336,24 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      if (isPluginOwnedDataResource(resource, owner)) {
+        const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        if (!support.supported) {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support,
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
+      }
+
       continue;
     }
 
@@ -1489,6 +1507,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
           resourceKind: customTable ? 'custom-table' : null,
+          allowSteadyUnsupported: customTable,
           reason: customTable
             ? 'Plugin-owned custom tables, including deletes, are not yet supported by the planner.'
             : 'Plugin-owned resource has no explicit driver metadata and cannot be applied safely.',
@@ -3916,6 +3935,7 @@ function addPluginOwnedResourceBlocker(plan, {
       baseValue,
       localValue,
       remoteValue,
+      allowSteadyUnsupported: Boolean(support.allowSteadyUnsupported),
     }),
     ...(ownerContext.length > 0 ? { ownerContext, ownerContextTruncated: Boolean((support.ownerContext || []).length > ownerContext.length) } : {}),
     reason,
