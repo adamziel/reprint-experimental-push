@@ -21609,6 +21609,59 @@ test('blocks local same-plan created comment parent identity while preserving re
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
+test('blocks local same-plan created comment parent identity while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:18"]';
+  const targetResourceKey = 'row:["wp_comments","comment_ID:19"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:18': {
+      comment_ID: 18,
+      comment_post_ID: 1,
+      comment_parent: 19,
+      comment_content: 'Base child comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:18': {
+      comment_ID: 18,
+      comment_post_ID: 1,
+      comment_parent: 19,
+      comment_content: 'Local child comment content',
+    },
+  };
+  local.db.wp_comments['comment_ID:19'] = {
+    comment_ID: 19,
+    comment_post_ID: 1,
+    comment_parent: 0,
+    comment_content: 'Local same-plan parent comment',
+  };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:18"] is created in the same plan as a parent comment identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(planJson.includes('Local child comment content'), false);
+  assert.equal(planJson.includes('Base child comment content'), false);
+  assert.equal(planJson.includes('Local same-plan parent comment'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+});
+
 test('blocks local same-plan created comment parent identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:18"]';
   const targetResourceKey = 'row:["wp_comments","comment_ID:19"]';
