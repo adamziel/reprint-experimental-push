@@ -6,7 +6,10 @@ import {
   packagedProductionPluginClassifyBoundedStartup,
   packagedProductionPluginClassifyTimeoutFallbackStartup,
   packagedProductionPluginMalformedTerminalIndexProbe,
+  packagedProductionPluginNextNotReadyProbeCount,
   packagedProductionPluginNextRouteNotReadyProbeCounts,
+  packagedProductionPluginNextTimeoutProbeCount,
+  packagedProductionPluginNotReadyProbeLimitReached,
   packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPackagedRouteStartupStillWithinBudget,
   packagedProductionPluginPreflightReady,
@@ -14,10 +17,14 @@ import {
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginReadinessBodyRetryable,
+  packagedProductionPluginReadinessErrorRetryable,
+  packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginReadinessWordPressNotReady,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRestIndexReady,
   packagedProductionPluginRestIndexRetryable,
+  packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
+  packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
   packagedProductionPluginSnapshotProbeContext,
   packagedProductionPluginSnapshotReady,
@@ -829,6 +836,123 @@ test('packaged route startup helpers keep the tighter post-global-ready budget f
   assert.equal(
     packagedProductionPluginPackagedRouteStartupLimitReached(4, 4),
     true,
+  );
+});
+
+test('packaged readiness helper counters and direct startup predicates stay fail-closed', () => {
+  assert.equal(
+    packagedProductionPluginReadinessProbeTimedOut(
+      new Error('Timed out fetching http://127.0.0.1:8080/wp-json/'),
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessProbeTimedOut(
+      new Error('connect ECONNREFUSED 127.0.0.1:8080'),
+    ),
+    false,
+  );
+
+  assert.equal(
+    packagedProductionPluginReadinessErrorRetryable({
+      isPlaygroundReadinessFailure: true,
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginReadinessErrorRetryable(
+      new Error('ordinary fetch failure'),
+    ),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginNextTimeoutProbeCount(
+      2,
+      new Error('Timed out fetching http://127.0.0.1:8080/wp-json/'),
+    ),
+    3,
+  );
+  assert.equal(
+    packagedProductionPluginNextTimeoutProbeCount(
+      2,
+      new Error('socket hang up'),
+    ),
+    0,
+  );
+
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      1,
+      503,
+      'WordPress is not ready yet',
+    ),
+    2,
+  );
+  assert.equal(
+    packagedProductionPluginNextNotReadyProbeCount(
+      3,
+      500,
+      'Internal Server Error',
+    ),
+    0,
+  );
+  assert.equal(
+    packagedProductionPluginNotReadyProbeLimitReached(4, 4),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginNotReadyProbeLimitReached(3, 4),
+    false,
+  );
+
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      404,
+      'No route was found matching the URL and request method.',
+      503,
+      JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }),
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhileWordPressStarting(
+      404,
+      'No route was found matching the URL and request method.',
+      200,
+      '<!doctype html><html><body>not a REST index</body></html>',
+    ),
+    false,
+  );
+
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      404,
+      'No route was found matching the URL and request method.',
+      200,
+      JSON.stringify({
+        namespaces: ['reprint/v1'],
+        routes: {
+          '/reprint/v1/push/preflight': {},
+        },
+      }),
+    ),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRouteRetryableWhilePackagedRouteStarting(
+      404,
+      'No route was found matching the URL and request method.',
+      503,
+      JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }),
+    ),
+    false,
   );
 });
 
