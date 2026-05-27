@@ -1631,6 +1631,128 @@ test('packaged production plugin readiness helper retries only startup-shaped pa
     false,
   );
   assert.equal(
+    packagedProductionPluginPreflightReady({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2099-01-01T00:00:00Z',
+            cleanedUp: true,
+          },
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2099-01-01T00:00:00Z',
+            cleanedUp: true,
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightReady({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2000-01-01T00:00:00Z',
+          },
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            expiresAt: '2000-01-01T00:00:00Z',
+          },
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {},
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal({
+      status: 200,
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {},
+      },
+    }),
+    true,
+  );
+  assert.equal(
     packagedProductionPluginPreflightRetryable(strictReadyPreflight),
     false,
   );
