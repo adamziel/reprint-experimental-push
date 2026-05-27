@@ -223,19 +223,26 @@ export function packagedProductionPluginPreflightRetryable(preflight, context = 
 
   if (
     packagedProductionPluginLabAuthRequiredResponse(preflight)
-    && (
-      context.packagedStartup === true
-      || packagedProductionPluginReadinessBodyRetryable(
+  ) {
+    // A fresh /wp-json/ probe is the strongest startup signal. Once it shows
+    // startup is over, do not keep retrying on an older packaged-startup hint.
+    if (context.indexProbe) {
+      return packagedProductionPluginReadinessBodyRetryable(
         context.indexProbe?.status,
         context.indexProbe?.body || '',
-      )
-      || packagedProductionPluginReadinessBodyRetryable(
+      );
+    }
+
+    if (context.snapshotProbe) {
+      return packagedProductionPluginReadinessBodyRetryable(
         context.snapshotProbe?.status,
         context.snapshotProbe?.body || '',
-      )
-    )
-  ) {
-    return true;
+      );
+    }
+
+    if (context.packagedStartup === true) {
+      return true;
+    }
   }
 
   // Once the packaged preflight responds normally, a wrong route profile or

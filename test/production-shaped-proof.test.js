@@ -3418,6 +3418,53 @@ test('packaged preflight retryability turns terminal once the live index probe s
   );
 });
 
+test('packaged preflight retryability lets a live index probe override stale packaged-startup hints', () => {
+  const preflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+  const startupSnapshotProbe = {
+    status: 404,
+    body: 'No route was found matching the URL and request method.',
+  };
+  const terminalIndexProbe = {
+    status: 200,
+    body: '{"namespaces":["reprint/v1"]}',
+  };
+  const startupIndexProbe = {
+    status: 503,
+    body: 'WordPress is not ready yet',
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      snapshotProbe: startupSnapshotProbe,
+      indexProbe: terminalIndexProbe,
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, {
+      packagedStartup: true,
+      snapshotProbe: startupSnapshotProbe,
+      indexProbe: terminalIndexProbe,
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      snapshotProbe: startupSnapshotProbe,
+      indexProbe: startupIndexProbe,
+    }),
+    true,
+  );
+});
+
 test('packaged timeout fallback helpers preserve packaged startup context for signed preflight probes', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
