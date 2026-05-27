@@ -4192,15 +4192,10 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
-      REPRINT_PUSH_USERNAME: liveCredentials.username,
-      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
-        sourceUrl: 'http://127.0.0.1:49152',
-        username: liveCredentials.username,
-        applicationPassword: liveCredentials.password,
-      }),
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
     },
   );
 
@@ -4216,11 +4211,57 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
+    },
+  );
+
+  assert.deepEqual(
+    resolveCheckedLiveBoundaryEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+      allowCredentialFallback: true,
+    }),
+    {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_USERNAME: liveCredentials.username,
       REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+      }),
+    },
+  );
+
+  assert.deepEqual(
+    resolveLiveApplyRevalidationEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
+      remoteChangedUrl: 'http://127.0.0.1:49154',
+      localUrl: 'http://127.0.0.1:49153',
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+    }),
+    {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+      REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
     },
   );
 
@@ -4240,10 +4281,10 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
       REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
-      REPRINT_PUSH_USERNAME: liveCredentials.username,
-      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
       REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
     },
   );

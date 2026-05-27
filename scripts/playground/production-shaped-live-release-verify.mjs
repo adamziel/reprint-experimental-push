@@ -55,9 +55,12 @@ const applyRevalidationTimeoutMs = packagedBoundaryRequested ? 90_000 : 75_000;
 const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
 if (packagedBoundaryRequested) {
-  const verify = runCheckedReleaseVerify();
-  await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
-    await withPlaygroundServer('local-edited', localEditedFixturePath, async (localServer) => {
+  const failedVerify = await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
+    return withPlaygroundServer('local-edited', localEditedFixturePath, async (localServer) => {
+      const verify = runCheckedReleaseVerify();
+      if (verify.status !== 0) {
+        return verify;
+      }
       const applyRevalidation = runApplyRevalidationProof({
         ...resolveApplyRevalidationAuthEnv({
           sourceUrl: remoteServer.baseUrl,
@@ -65,10 +68,22 @@ if (packagedBoundaryRequested) {
           packagedBoundaryRequested: true,
         }),
       });
-      emitCombinedReleaseProof(verify, applyRevalidation);
+      emitCombinedReleaseProof(verify.proof, applyRevalidation);
+      return null;
     });
   });
+  if (failedVerify) {
+    emitReleaseFailureAndExit(failedVerify);
+  }
 } else if (explicitCheckedBoundaryRequested) {
+  if (
+    explicitLiveSourceUrl
+    && !explicitAuthSessionSourceCommand
+    && (!explicitLiveUsername || !explicitLiveApplicationPassword)
+  ) {
+    emitMissingExplicitCredentialGateAndExit();
+  }
+
   const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
     sourceUrl: explicitLiveSourceUrl,
     username: explicitLiveUsername,
@@ -76,8 +91,12 @@ if (packagedBoundaryRequested) {
     authSessionSourceCommand: explicitAuthSessionSourceCommand,
     fallbackUsername: credentials.username,
     fallbackApplicationPassword: credentials.applicationPassword,
+    allowCredentialFallback: false,
   });
   const verify = runCheckedReleaseVerify(liveBoundaryEnv);
+  if (verify.status !== 0) {
+    emitReleaseFailureAndExit(verify);
+  }
   const applyRevalidation = runApplyRevalidationProof(resolveApplyRevalidationAuthEnv({
     // Keep apply-time revalidation on an independently preserved base when the
     // explicit wrapper provides one. The checked release verify leg can advance
@@ -91,24 +110,32 @@ if (packagedBoundaryRequested) {
     applicationPassword: explicitLiveApplicationPassword,
     authSessionSourceCommand: explicitAuthSessionSourceCommand,
   }));
-  emitCombinedReleaseProof(verify, applyRevalidation);
+  emitCombinedReleaseProof(verify.proof, applyRevalidation);
 } else {
-  await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
+  const failedVerify = await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
     const verify = runCheckedReleaseVerify(
       resolveCheckedLiveBoundaryEnv({
         sourceUrl: remoteServer.baseUrl,
         fallbackUsername: credentials.username,
         fallbackApplicationPassword: credentials.applicationPassword,
+        allowCredentialFallback: true,
       }),
     );
+    if (verify.status !== 0) {
+      return verify;
+    }
     const applyRevalidation = runApplyRevalidationProof(
       resolveApplyRevalidationAuthEnv({
         sourceUrl: remoteServer.baseUrl,
         packagedBoundaryRequested: false,
       }),
     );
-    emitCombinedReleaseProof(verify, applyRevalidation);
+    emitCombinedReleaseProof(verify.proof, applyRevalidation);
+    return null;
   });
+  if (failedVerify) {
+    emitReleaseFailureAndExit(failedVerify);
+  }
 }
 
 function resolveApplyRevalidationAuthEnv({
@@ -130,6 +157,7 @@ function resolveApplyRevalidationAuthEnv({
     authSessionSourceCommand,
     fallbackUsername: credentials.username,
     fallbackApplicationPassword: credentials.applicationPassword,
+    allowCredentialFallback: packagedBoundaryRequested || !sourceUrl,
   });
 }
 
@@ -151,8 +179,24 @@ function runCheckedReleaseVerify(envOverrides = {}) {
   process.stderr.write(verify.stderr || '');
   assert.equal(verify.error, undefined, verify.error?.stack || verify.stderr || verify.stdout);
   assert.equal(verify.signal, null, verify.stderr || verify.stdout);
-  assert.equal(verify.status, 0, verify.stderr || verify.stdout);
-  return parseJsonOutput(verify.stdout, 'checked live release verify');
+
+  let proof = null;
+  try {
+    proof = parseJsonOutput(verify.stdout, 'checked live release verify');
+  } catch (error) {
+    if (verify.status === 0) {
+      throw error;
+    }
+  }
+
+  if (verify.status !== 0) {
+    assert.ok(proof, verify.stderr || verify.stdout);
+  }
+
+  return {
+    status: verify.status,
+    proof,
+  };
 }
 
 function runApplyRevalidationProof(envOverrides = {}) {
@@ -220,6 +264,66 @@ function emitCombinedReleaseProof(verify, applyRevalidation) {
     ),
   );
   process.stdout.write('\n');
+}
+
+function emitReleaseFailureAndExit(verify) {
+  process.stdout.write(JSON.stringify(verify.proof, null, 2));
+  process.stdout.write('\n');
+  process.exit(verify.status || 1);
+}
+
+function emitMissingExplicitCredentialGateAndExit() {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: explicitLiveSourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+          authSession: {
+            required: 'production-auth-session',
+            observed: 'missing-production-credentials',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            requiredCommand: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            observed: 'missing-production-credentials',
+          },
+        },
+        preflight: {
+          status: 0,
+          authSessionType: 'missing-production-credentials',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'missing-production-credentials',
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 1,
+          code: 'REPRINT_PUSH_SECRET_REQUIRED',
+        },
+        authSessionSource: null,
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  process.exit(1);
 }
 
 function parseJsonOutput(stdout, label, details = stdout) {

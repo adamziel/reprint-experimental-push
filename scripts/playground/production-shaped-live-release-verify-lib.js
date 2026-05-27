@@ -64,11 +64,14 @@ export function resolveCheckedLiveBoundaryEnv({
   authSessionSourceCommand = '',
   fallbackUsername = '',
   fallbackApplicationPassword = '',
+  allowCredentialFallback = false,
 } = {}) {
-  const resolvedUsername = username || fallbackUsername;
-  const resolvedApplicationPassword = applicationPassword || fallbackApplicationPassword;
+  const resolvedUsername = username || (allowCredentialFallback ? fallbackUsername : '');
+  const resolvedApplicationPassword = applicationPassword || (allowCredentialFallback ? fallbackApplicationPassword : '');
   const resolvedAuthSessionSourceCommand = authSessionSourceCommand
     || (sourceUrl
+      && resolvedUsername
+      && resolvedApplicationPassword
       ? buildAuthSessionSourceCommand({
           sourceUrl,
           username: resolvedUsername,
@@ -104,11 +107,14 @@ export function resolveLiveApplyRevalidationEnv({
   authSessionSourceCommand = '',
   fallbackUsername = '',
   fallbackApplicationPassword = '',
+  allowCredentialFallback = false,
 } = {}) {
-  const resolvedUsername = username || fallbackUsername;
-  const resolvedApplicationPassword = applicationPassword || fallbackApplicationPassword;
+  const resolvedUsername = username || (allowCredentialFallback ? fallbackUsername : '');
+  const resolvedApplicationPassword = applicationPassword || (allowCredentialFallback ? fallbackApplicationPassword : '');
   const resolvedAuthSessionSourceCommand = authSessionSourceCommand
     || (sourceUrl
+      && resolvedUsername
+      && resolvedApplicationPassword
       ? packagedBoundaryRequested
         ? resolvePackagedProductionPluginSourceCommand({
             sourceUrl,
