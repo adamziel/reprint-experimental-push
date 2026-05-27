@@ -5063,6 +5063,181 @@ test('shared lab waitForServer clears snapshot-timeout context after the snapsho
   assert.equal(snapshotCalls, 2);
 });
 
+test('shared lab waitForServer fails closed when /wp-json/ turns terminal after the snapshot probe timed out', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const sockets = new Set();
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      if (indexCalls === 1) {
+        response.statusCode = 502;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+        return;
+      }
+
+      response.statusCode = 500;
+      response.setHeader('content-type', 'text/plain; charset=utf-8');
+      response.end('terminal index failure after snapshot timeout');
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground \/wp-json\/ returned a terminal readiness failure HTTP 500 after the snapshot probe timed out/);
+        assert.equal(error.context?.snapshotProbeTimedOut, true);
+        assert.equal(error.context?.timeoutProbeCount, 1);
+        assert.equal(error.context?.startupIndexStatus, 502);
+        assert.equal(error.context?.indexTerminal, true);
+        return true;
+      },
+    );
+  } finally {
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 2);
+  assert.equal(snapshotCalls, 1);
+});
+
+test('shared lab waitForServer fails closed when /wp-json/ times out after the snapshot probe timed out', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const sockets = new Set();
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      if (indexCalls === 1) {
+        response.statusCode = 502;
+        response.setHeader('content-type', 'text/html; charset=utf-8');
+        response.end('<!doctype html><html><body>WordPress is not ready yet</body></html>');
+        return;
+      }
+
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+  server.on('connection', (socket) => {
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground \/wp-json\/ probe timed out after the snapshot probe timed out/);
+        assert.equal(error.context?.snapshotProbeTimedOut, true);
+        assert.equal(error.context?.timeoutProbeCount, 1);
+        assert.equal(error.context?.startupIndexStatus, 502);
+        assert.equal(error.context?.indexProbeTimedOut, true);
+        return true;
+      },
+    );
+  } finally {
+    for (const socket of sockets) {
+      socket.destroy();
+    }
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 2);
+  assert.equal(snapshotCalls, 1);
+});
+
 test('live Playground proof helpers keep lab readiness probes child-aware', () => {
   const liveSources = [
     readFileSync(
