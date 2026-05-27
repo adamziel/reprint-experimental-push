@@ -6078,6 +6078,160 @@ test('shared lab waitForServer fails closed when snapshot keeps returning malfor
   assert.equal(snapshotCalls, maxSnapshotStartupAfterGlobalReadyProbes);
 });
 
+test('shared lab waitForServer fails closed when snapshot turns terminal after global WordPress readiness', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 500;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({
+        ok: false,
+        code: 'snapshot_terminal_failure',
+        message: 'snapshot storage failed after global readiness',
+      }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground lab snapshot returned a terminal readiness failure/);
+        assert.equal(error.context?.childPid ?? null, null);
+        assert.equal(error.context?.globalWordPressReady, undefined);
+        return true;
+      },
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
+  assert.equal(snapshotCalls, 1);
+});
+
+test('shared lab waitForServer fails closed when snapshot returns an invalid non-startup body after global WordPress readiness', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      response.statusCode = 500;
+      response.setHeader('content-type', 'text/plain; charset=utf-8');
+      response.end('snapshot storage failed after global readiness before JSON payload');
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await assert.rejects(
+      waitForServer(
+        {
+          exitCode: null,
+          signalCode: null,
+          pid: null,
+          kill() {
+            this.exitCode = 1;
+            return true;
+          },
+        },
+        `http://127.0.0.1:${address.port}`,
+        () => '',
+      ),
+      (error) => {
+        assert.match(error.message, /Playground lab snapshot returned an invalid readiness body/);
+        assert.equal(error.context?.childPid ?? null, null);
+        assert.equal(error.context?.globalWordPressReady, undefined);
+        return true;
+      },
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, 1);
+  assert.equal(snapshotCalls, 1);
+});
+
 test('shared lab waitForServer preserves snapshot-timeout context across the next /wp-json/ failure branch', () => {
   const verifierSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
