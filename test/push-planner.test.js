@@ -36822,6 +36822,62 @@ test('blocks local users graph resources while preserving a matching independent
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local users graph resources while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_users","ID:16"]';
+  const matchingDeleteKey = 'file:wp-content/uploads/user-delete-removal.txt';
+  const base = baseSite();
+  base.files['wp-content/uploads/user-delete-removal.txt'] = 'base user delete removal bytes';
+  base.db.wp_users = {
+    'ID:16': {
+      ID: 16,
+      user_login: 'base-delete-removal-user',
+      user_email: 'base-delete-removal@example.test',
+    },
+  };
+
+  const local = baseSite();
+  delete local.files['wp-content/uploads/user-delete-removal.txt'];
+  local.db.wp_users = {
+    'ID:16': {
+      ID: 16,
+      user_login: 'local-delete-removal-user',
+      user_email: 'local-delete-removal@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  delete remote.files['wp-content/uploads/user-delete-removal.txt'];
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingDelete = decisionFor(plan, matchingDeleteKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-delete-removal-user'), false);
+  assert.equal(planJson.includes('base-delete-removal-user'), false);
+  assert.equal(planJson.includes('base user delete removal bytes'), false);
+  assert.equal(Object.hasOwn(remote.files, matchingDeleteKey.slice('file:'.length)), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local users graph resources while preserving a matching independent restore and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_users","ID:15"]';
   const matchingRestoreKey = 'file:wp-content/uploads/user-restore.txt';
