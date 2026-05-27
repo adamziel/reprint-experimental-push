@@ -105,3 +105,73 @@ until a later run uses a real live `REPRINT_PUSH_SOURCE_URL` and proves the
 full boundary.
 
 Verdict: `0/4`
+
+## Follow-up - Local Consolidated Branch Became Reviewable
+
+Commit:
+
+- Reviewed local shared-worktree branch
+  `supervisor/release-boundary-consolidated-20260527` at
+  `24ec8558b14eec8fc26c049f6a2427bf261fccb9`
+  (`Fail closed release topology verifier`).
+- Local v2 refs observed:
+  - `lane/auth-session-boundary-v2-20260527` at `ce6ded3de`
+  - `lane/durable-journal-boundary-v2-20260527` at `ce6ded3de`
+  - `lane/apply-revalidation-boundary-v2-20260527` at `4e30d9883`
+  - `lane/plugin-driver-boundary-v2-20260527` at `275dfac34`
+  - `lane/topology-verifier-v2-20260527` at `4e30d9883`
+
+Claim:
+
+- New fact: the local consolidated branch no longer has unresolved conflicts
+  and now contains all five support commits on top of
+  `origin/lane/reliable-executor`.
+- Remote consolidated and remote v2 lane refs were still absent after fetch.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git -C /tmp/reprint-reorg-integrator-20260527 status --short --branch`
+  showed the branch ahead of `origin/lane/reliable-executor` with only
+  untracked `.agents/` files.
+- `git -C /tmp/reprint-reorg-integrator-20260527 log --oneline --decorate
+  --max-count=12` showed the consolidated stack:
+  `3ff789513`, `8af2d22f5`, `ce6ded3de`, `4e30d9883`, `24ec8558b`.
+- I ran:
+
+```bash
+env -u REPRINT_PUSH_SOURCE_URL -u REPRINT_PUSH_REMOTE_URL timeout 300s npm run verify:release
+```
+
+  in `/tmp/reprint-reorg-integrator-20260527`. It exited `1` and failed closed
+  with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`,
+  `gates: "0/4"`, `packagedFallbackAllowed: false`, and no source/local/changed
+  service ports.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. Missing live-source fail-closed output does not prove
+  auth/session issuance and readback on a real source URL.
+- GATE-2: no movement. No live durable journal run proves restart-readable
+  lease-fenced ownership on the mutation boundary.
+- GATE-3: no movement. The command proves missing-source refusal, not a live
+  source/local/changed production topology.
+- GATE-4: no movement. No live plugin-driver mutation proof exists.
+
+First missing production primitive:
+
+- A live run of the consolidated `timeout 300s npm run verify:release` with a
+  real `REPRINT_PUSH_SOURCE_URL` and the same-boundary auth/session, durable
+  journal, plugin-driver, preserved-remote, and apply-revalidation evidence.
+
+Next exact command:
+
+```bash
+git -C /tmp/reprint-reorg-integrator-20260527 push origin HEAD:supervisor/release-boundary-consolidated-20260527
+```
+
+Then a reviewer can classify the pushed consolidated branch. No release gate
+can move until the command is rerun with real live `REPRINT_PUSH_SOURCE_URL`
+evidence.
+
+Verdict: `0/4`
