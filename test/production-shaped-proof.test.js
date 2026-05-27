@@ -345,9 +345,7 @@ function failReleaseVerifySpawnProof(proof, command, args, label = 'release veri
 }
 
 function spawnReleaseVerifySync(command, args, env, options = {}) {
-  const timeoutBudgetMs = requiresPackagedReleaseVerifyBudget(env)
-    ? packagedProofSubprocessTimeoutMs
-    : proofSubprocessTimeoutMs;
+  const timeoutBudgetMs = resolveReleaseVerifyTimeoutBudgetMs(env);
   const timeout = Math.max(1_000, Math.min(options.timeout ?? releaseVerifyInnerTimeoutMs, timeoutBudgetMs));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
   const proof = spawnBoundedReleaseVerify(command, args, env, {
@@ -361,9 +359,7 @@ function spawnReleaseVerifySync(command, args, env, options = {}) {
 }
 
 function spawnBoundedReleaseVerify(command, args, env, options = {}, label = 'release verify') {
-  const timeoutBudgetMs = requiresPackagedReleaseVerifyBudget(env)
-    ? packagedProofSubprocessTimeoutMs
-    : proofSubprocessTimeoutMs;
+  const timeoutBudgetMs = resolveReleaseVerifyTimeoutBudgetMs(env);
   const timeoutCeiling = Math.max(1_000, timeoutBudgetMs - 2_000);
   const timeout = Math.max(1_000, Math.min(options.timeout ?? proofSubprocessTimeoutMs, timeoutCeiling));
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
@@ -414,9 +410,25 @@ function requiresPackagedReleaseVerifyBudget(env = {}) {
     || env.REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN === '1';
 }
 
+function requiresLiveTopologyReleaseVerifyBudget(env = {}) {
+  return Boolean(env.REPRINT_PUSH_REMOTE_CHANGED_URL || env.REPRINT_PUSH_LOCAL_URL);
+}
+
+function resolveReleaseVerifyTimeoutBudgetMs(env = {}) {
+  if (requiresPackagedReleaseVerifyBudget(env)) {
+    return packagedProofSubprocessTimeoutMs;
+  }
+
+  if (requiresLiveTopologyReleaseVerifyBudget(env)) {
+    return packagedProofSubprocessTimeoutMs;
+  }
+
+  return liveProofSubprocessTimeoutMs;
+}
+
 function resolveProductionShapedReleaseVerifySyncTimeout(env = {}, requestedTimeout) {
   const packagedProof = requiresPackagedReleaseVerifyBudget(env);
-  const timeoutBudgetMs = packagedProof ? packagedProofSubprocessTimeoutMs : liveProofSubprocessTimeoutMs;
+  const timeoutBudgetMs = resolveReleaseVerifyTimeoutBudgetMs(env);
   const defaultTimeoutMs = packagedProof ? packagedReleaseVerifyInnerTimeoutMs : releaseVerifyInnerTimeoutMs;
   const timeoutCeiling = Math.max(1_000, timeoutBudgetMs - 2_000);
   return Math.max(1_000, Math.min(requestedTimeout ?? defaultTimeoutMs, timeoutCeiling));
@@ -4421,10 +4433,18 @@ test('production-shaped live release verify stops failed Playground children dur
   );
 
   assert.match(source, /async function stopPlaygroundChild\(child\)/);
-  assert.match(
-    source,
-    /try \{\s*await waitForServer\(child, baseUrl, \(\) => output\);\s*\} catch \(error\) \{\s*await stopPlaygroundChild\(child\)\.catch\(\(\) => \{\}\);\s*throw error;\s*\}/s,
+  assert.match(source, /await stopPlaygroundChild\(child\)\.catch\(\(\) => \{\}\);/);
+});
+
+test('production-shaped live release verify retries helper Playground port collisions before failing closed', () => {
+  const source = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-live-release-verify.mjs'),
+    'utf8',
   );
+
+  assert.match(source, /for \(let attempt = 1; attempt <= 3; attempt \+= 1\)/);
+  assert.match(source, /if \(!\/EADDRINUSE\/i\.test\(logs\) \|\| attempt === 3\) \{\s*throw error;\s*\}/s);
+  assert.match(source, /Unable to start Playground server for \$\{name\} after retrying port collisions/);
 });
 
 test('production-shaped live release verify defaults the checked live branch to the packaged auth/session boundary', () => {
@@ -4557,6 +4577,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     return withPlaygroundServer('remote-changed', path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json'), async (remoteChangedServer) => {
       return withPlaygroundServer('local-edited', path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'), async (localServer) => {
+        // This branch now drives the full checked release verifier across the
+        // remote-base, remote-changed, and local-edited topology, so it needs
+        // the same long bounded budget as the packaged checked path rather
+        // than the old short live-proof shortcut.
         const proof = spawnProductionShapedReleaseVerifySync(
           {
             ...process.env,
@@ -4569,33 +4593,33 @@ maybeTest('production-shaped release verify command runs the live protocol branc
             NODE_NO_WARNINGS: '1',
           },
           {
-            timeout: liveProofInnerTimeoutMs,
+            timeout: packagedReleaseVerifyInnerTimeoutMs,
             killSignal: liveProofSubprocessKillSignal,
           },
           'live release verify',
         );
-        assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
+        assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', packagedReleaseVerifyInnerTimeoutMs);
         assert.equal(proof.status, 0, proof.stderr);
+        const summary = JSON.parse(proof.stdout);
+
         assert.match(proof.stdout, /"ok": true/);
         assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-        assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
-        assert.match(
-          proof.stdout,
-          new RegExp(`"remoteChanged": ${JSON.stringify(remoteChangedServer.baseUrl)}`),
-        );
-        assert.match(
-          proof.stdout,
-          new RegExp(`"localEdited": ${JSON.stringify(localServer.baseUrl)}`),
-        );
+        assert.equal(summary.topology?.sourceUrl, remoteServer.baseUrl);
+        assert.equal(summary.topology?.remoteBase, remoteServer.baseUrl);
+        assert.equal(summary.topology?.remoteChanged, remoteChangedServer.baseUrl);
+        assert.equal(summary.topology?.localEdited, localServer.baseUrl);
         assert.match(
           proof.stdout,
           /"protocolExtension": \{\s*"stages": \[\s*"preflight",\s*"remote-snapshot-hashes",\s*"dry-run-plan-upload",\s*"mutation-batch-apply",\s*"journal-inspect",\s*"recovery-inspect",\s*"recovery-mutate"\s*\],\s*"pullToPushMapping": \{\s*"exporter": "discovers the merge base and coverage evidence before any push request exists"/,
         );
-        assert.match(
-          proof.stdout,
-          /"remoteSnapshotHashes": \{\s*"sameRemoteIdentity": true,\s*"baseHash": "[a-f0-9]{64}",\s*"changedHash": "[a-f0-9]{64}"\s*\}/,
-        );
-        assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"snapshotHash": "[a-f0-9]{64}",\s*"visibleSurfaceHash": "[a-f0-9]{64}",\s*"finalMatchesLocal": false\s*\}/);
+        assert.equal(summary.remoteSnapshotHashes?.sameRemoteIdentity, true);
+        assert.match(summary.remoteSnapshotHashes?.baseHash || '', /^[a-f0-9]{64}$/);
+        assert.match(summary.remoteSnapshotHashes?.changedHash || '', /^[a-f0-9]{64}$/);
+        assert.equal(summary.remoteSnapshot?.status, 200);
+        assert.equal(summary.remoteSnapshot?.ok, true);
+        assert.match(summary.remoteSnapshot?.snapshotHash || '', /^[a-f0-9]{64}$/);
+        assert.match(summary.remoteSnapshot?.visibleSurfaceHash || '', /^[a-f0-9]{64}$/);
+        assert.equal(summary.remoteSnapshot?.finalMatchesLocal, false);
         assert.match(proof.stdout, /"boundary": \{/);
         assert.match(proof.stdout, /"firstRemainingProductionBoundary": null/);
         assert.match(proof.stdout, /"verdict": "LIVE_RELEASE_BOUNDARY_OK"/);
@@ -4989,63 +5013,69 @@ async function withPlaygroundServer(name, blueprintPath, run) {
 }
 
 async function startPlaygroundServer(name, blueprintPath) {
-  const port = await findLocalPort();
-  const baseUrl = `http://127.0.0.1:${port}`;
-  const args = [
-    '--yes',
-    '@wp-playground/cli@latest',
-    'server',
-    '--blueprint',
-    blueprintPath,
-    '--mount',
-    `${repoRoot}:/workspace`,
-    '--mount',
-    `${muPluginDir}:/wordpress/wp-content/mu-plugins`,
-    '--site-url',
-    baseUrl,
-    '--port',
-    String(port),
-    '--workers',
-    '1',
-    '--verbosity',
-    'quiet',
-  ];
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const port = await findLocalPort();
+    const baseUrl = `http://127.0.0.1:${port}`;
+    const args = [
+      '--yes',
+      '@wp-playground/cli@latest',
+      'server',
+      '--blueprint',
+      blueprintPath,
+      '--mount',
+      `${repoRoot}:/workspace`,
+      '--mount',
+      `${muPluginDir}:/wordpress/wp-content/mu-plugins`,
+      '--site-url',
+      baseUrl,
+      '--port',
+      String(port),
+      '--workers',
+      '1',
+      '--verbosity',
+      'quiet',
+    ];
 
-  const child = spawn(
-    'timeout',
-    ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
-    {
-      cwd: repoRoot,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    },
-  );
-  activePlaygroundChildren.add(child);
+    const child = spawn(
+      'timeout',
+      ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
+      {
+        cwd: repoRoot,
+        env: process.env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
+    activePlaygroundChildren.add(child);
 
-  let output = '';
-  child.stdout.on('data', (chunk) => {
-    output += chunk;
-  });
-  child.stderr.on('data', (chunk) => {
-    output += chunk;
-  });
+    let output = '';
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk;
+    });
 
-  try {
-    await waitForServer(child, baseUrl, () => output);
-  } catch (error) {
-    process.stderr.write(`${output}\n`);
     try {
-      await stopPlaygroundChild(child);
-    } catch (cleanupError) {
-      process.stderr.write(
-        `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
-      );
+      await waitForServer(child, baseUrl, () => output);
+      return { name, baseUrl, port, child };
+    } catch (error) {
+      process.stderr.write(`${output}\n`);
+      try {
+        await stopPlaygroundChild(child);
+      } catch (cleanupError) {
+        process.stderr.write(
+          `${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}\n`,
+        );
+      }
+      activePlaygroundChildren.delete(child);
+      const logs = `${output}\n${error instanceof Error ? error.message : String(error)}`;
+      if (!/EADDRINUSE/i.test(logs) || attempt === 3) {
+        throw error;
+      }
     }
-    activePlaygroundChildren.delete(child);
-    throw error;
   }
 
-  return { name, baseUrl, port, child };
+  throw new Error(`Unable to start Playground server for ${name} after retrying port collisions`);
 }
 
 async function stopPlaygroundServer(server) {
