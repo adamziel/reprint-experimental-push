@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createPushPlan } from './planner.js';
+import { productionRecoveryJournalInspectionSurfaceIsPresent } from './recovery-journal.js';
 import { digest } from './stable-json.js';
 
 const routeProfiles = {
@@ -462,6 +463,14 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   if (!summary.recoveryInspect.recovery || summary.recoveryInspect.recovery.journalState !== 'ok') {
+    summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
+    setDurableJournalBoundary(summary, 'recovery-inspect');
+    return summary;
+  }
+  if (recoveryInspectClaimsProductionRecoveryJournalSurface(recoveryInspect.body?.recovery)
+    && !productionRecoveryJournalInspectionSurfaceIsPresent(
+      recoveryInspectProductionJournalInspection(recoveryInspect.body?.recovery),
+    )) {
     summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
@@ -1392,6 +1401,26 @@ function summarizeRecoveryInspect(response) {
     } : undefined,
     journalState,
     dbJournal,
+  };
+}
+
+function recoveryInspectClaimsProductionRecoveryJournalSurface(recovery) {
+  if (!recovery || typeof recovery !== 'object') {
+    return false;
+  }
+
+  return recovery?.journal?.kind === 'production-recovery-journal'
+    || recovery?.journal?.productionAdapter === 'openProductionRecoveryJournal'
+    || hasNonEmptyString(recovery?.journal?.claimHash)
+    || hasNonEmptyString(recovery?.claim?.activeClaimHash)
+    || hasNonEmptyString(recovery?.leaseFence?.writerLease?.claimHash);
+}
+
+function recoveryInspectProductionJournalInspection(recovery) {
+  return {
+    journal: recovery?.journal,
+    claim: recovery?.claim ?? recovery?.journal?.claim,
+    leaseFence: recovery?.leaseFence,
   };
 }
 
