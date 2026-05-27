@@ -100,6 +100,36 @@ function runHasStaleClaimRejectionEvidence(rows, eventSummaries = []) {
   });
 }
 
+function runClaimScopedStaleClaimRejectionEvidence(summary, claim) {
+  return spawnSync('php', [
+    '-r',
+    [
+      'define("ABSPATH", dirname($argv[1]));',
+      'function add_filter(...$args) {}',
+      'function add_action(...$args) {}',
+      'function register_rest_route(...$args) {}',
+      'class WP_REST_Server { const CREATABLE = "POST"; const READABLE = "GET"; }',
+      'class WP_REST_Response {',
+      '  private $data;',
+      '  public function __construct($data = null, $status = null) { $this->data = $data; }',
+      '  public function get_data() { return $this->data; }',
+      '  public function set_data($data) { $this->data = $data; }',
+      '}',
+      'class WP_REST_Request {}',
+      'require $argv[1];',
+      '$summary = json_decode($argv[2], true);',
+      '$claim = json_decode($argv[3], true);',
+      'echo json_encode(reprint_push_lab_db_journal_claim_scoped_stale_claim_rejection_evidence_matches($summary, $claim));',
+    ].join(' '),
+    pluginFile,
+    JSON.stringify(summary),
+    JSON.stringify(claim),
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+}
+
 function runDbJournalStorageGuard(summary) {
   return spawnSync('php', [
     '-r',
@@ -3735,6 +3765,47 @@ test('db journal claim summary ignores unrelated journal-wide stale evidence wit
     requestHash: 'request-hash-02',
     staleClaimRejected: false,
   });
+});
+
+test('db journal claim-scoped stale evidence rejects contradictory latest rows from another claim lineage', { skip: !hasPhp }, () => {
+  const result = runClaimScopedStaleClaimRejectionEvidence(
+    {
+      latestRows: [
+        {
+          sequence: 22,
+          event: 'stale-claim-rejected',
+          claimKeyHash: 'other-claim-hash-03',
+          idempotencyKeyHash: 'other-idempotency-hash-03',
+          requestHash: 'other-request-hash-03',
+        },
+      ],
+      eventSummaries: [
+        {
+          event: 'stale-claim-rejected',
+          count: 1,
+          latestId: 22,
+        },
+      ],
+    },
+    {
+      status: 'stale-claim-rejected',
+      activeClaimKeyHash: 'retry-claim-hash-02',
+      activeClaimSequence: 20,
+      activeClaimEvent: 'stale-claim-retry-started',
+      idempotencyKeyHash: 'idempotency-hash-01',
+      requestHash: 'request-hash-01',
+      staleClaimRejected: true,
+      abandonedSequence: 18,
+      abandonedEvent: 'stale-claim-abandoned',
+      previousStartedSequence: 12,
+      previousClaimSequence: 11,
+      previousClaimKeyHash: 'retry-claim-hash-01',
+      previousClaimEvent: 'idempotency-opened',
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
 });
 
 test('checked authenticated apply evidence is upgraded to the authoritative db journal contract', { skip: !hasPhp }, () => {

@@ -48,6 +48,18 @@ function hasStaleClaimRejectionEvidence(records) {
   );
 }
 
+function claimScopedStaleClaimRejectionEvidence(records, claim) {
+  if (!CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')) {
+    return false;
+  }
+
+  return (Array.isArray(records) ? records : []).some(
+    (record) => (record.type === 'stale-claim-advanced' || record.type === 'stale-claim-rejected')
+      && (record.claimHash === claim.activeClaimHash
+        || record.previousClaimHash === claim.activeClaimHash),
+  );
+}
+
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   const providedOptions = options && typeof options === 'object' ? options : {};
   const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
@@ -531,7 +543,7 @@ export function openProductionRecoveryJournal(options) {
     const persistedClaimId = claim.activeClaimId || claimId;
     const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
-    const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
+    const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
     const writerLease = {
       strategy: 'claim-fenced-single-writer',
       claimId: persistedClaimId,

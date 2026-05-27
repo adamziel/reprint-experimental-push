@@ -607,6 +607,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
             $summary['latestRows'],
             $summary['eventSummaries']
         );
+        $scoped_stale_claim_rejected = $stale_claim_rejected;
         $latest_claim_row = $wpdb->get_row(
             "SELECT * FROM {$quoted_table} WHERE claim_key_hash IS NOT NULL AND claim_key_hash <> '' ORDER BY id DESC LIMIT 1",
             ARRAY_A
@@ -649,6 +650,18 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
                 $stale_claim_rejected
             );
             if ($claim !== []) {
+                $scoped_stale_claim_rejected = reprint_push_lab_db_journal_claim_scoped_stale_claim_rejection_evidence_matches(
+                    $summary,
+                    $claim
+                );
+                if (($claim['staleClaimRejected'] ?? false) !== $scoped_stale_claim_rejected) {
+                    $claim = reprint_push_lab_db_journal_claim_summary(
+                        $latest_claim,
+                        $latest_abandoned,
+                        $previous_claim,
+                        $scoped_stale_claim_rejected
+                    );
+                }
                 $summary['claim'] = $claim;
                 $summary['claimEvidence'] = reprint_push_lab_db_journal_claim_evidence(
                     $latest_claim,
@@ -661,7 +674,7 @@ function reprint_push_lab_db_journal_summary(int $limit = 20, bool $checked_surf
             $summary,
             reprint_push_lab_db_journal_checked_boundary_contract(
                 $checked_surface,
-                $stale_claim_rejected,
+                $scoped_stale_claim_rejected,
                 $claim_key_unique,
                 $monotonic_sequence
             )
@@ -749,6 +762,25 @@ function reprint_push_lab_db_journal_claim_summary(
     }
 
     return $summary;
+}
+
+function reprint_push_lab_db_journal_claim_scoped_stale_claim_rejection_evidence_matches(
+    array $summary,
+    array $claim
+): bool {
+    if ($claim === []) {
+        return false;
+    }
+
+    $candidate_claim = $claim;
+    $candidate_claim['status'] = 'stale-claim-rejected';
+    $candidate_claim['staleClaimRejected'] = true;
+
+    return reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_matches([
+        'claim' => $candidate_claim,
+        'latestRows' => is_array($summary['latestRows'] ?? null) ? $summary['latestRows'] : [],
+        'eventSummaries' => is_array($summary['eventSummaries'] ?? null) ? $summary['eventSummaries'] : [],
+    ]);
 }
 
 function reprint_push_lab_db_journal_claim_evidence_row(array $row): array
