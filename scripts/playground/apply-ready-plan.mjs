@@ -21,7 +21,15 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
+const blockedPlan = createPushPlan({
+  base: snapshots.base,
+  local: snapshots.local,
+  remote: snapshots.base,
+  now: fixedNow,
+});
 const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+
+assertExactGraphIdentityBlocker(blockedPlan);
 
 const plan = createPushPlan({
   base: snapshots.base,
@@ -308,6 +316,30 @@ function assertAppliedPluginValues(snapshot) {
     },
     version: '1',
   });
+}
+
+function assertExactGraphIdentityBlocker(plan) {
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.blockers, 1);
+  assert.equal(plan.summary.conflicts, 0);
+
+  const blocker = plan.blockers.find(
+    (entry) => entry.resourceKey === 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+  );
+  assert.ok(blocker, 'missing graph blocker for local post schema meta');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(blocker.change.localChange, 'create');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assert.equal(blocker.references.length, 1);
+
+  const [reference] = blocker.references;
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, blocker.resourceKey);
+  assert.equal(reference.targetResourceKey, 'row:["wp_posts","ID:2001"]');
+  assert.equal(reference.targetChange.localChange, 'create');
+  assert.equal(reference.targetChange.remoteChange, 'unchanged');
 }
 
 function assertPhpStableHashMatchesJsForUnicode() {
