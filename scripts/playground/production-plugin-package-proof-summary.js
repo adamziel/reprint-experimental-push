@@ -128,6 +128,9 @@ function buildBundleScenarioDetails(bundleName, scenarioPasses) {
   const passedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) === true);
   const failedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) !== true);
   return {
+    requiredScenarioCount: requiredScenarios.length,
+    passedScenarioCount: passedScenarios.length,
+    failedScenarioCount: failedScenarios.length,
     requiredScenarios,
     passedScenarios,
     failedScenarios,
