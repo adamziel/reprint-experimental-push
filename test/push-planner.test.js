@@ -27199,6 +27199,57 @@ test('blocks steady unsupported user meta rows before they can be treated as alr
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported user meta rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:85"]';
+  const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-usermeta-delete.txt';
+  const base = baseSite();
+  base.db.wp_usermeta = {
+    'umeta_id:85': {
+      umeta_id: 85,
+      user_id: 19,
+      meta_key: 'nickname',
+      meta_value: 'Steady unsupported user meta value',
+    },
+  };
+  base.files[matchingDeleteKey.slice('file:'.length)] = 'steady unsupported usermeta delete bytes';
+
+  const local = baseSite();
+  local.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  delete local.files[matchingDeleteKey.slice('file:'.length)];
+
+  const remote = baseSite();
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  delete remote.files[matchingDeleteKey.slice('file:'.length)];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, matchingDeleteKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-usermeta-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'User meta graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported user meta value'), false);
+  assert.equal(planJson.includes('steady unsupported usermeta delete bytes'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks remote-only user meta deletion while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:83"]';
   const base = baseSite();
