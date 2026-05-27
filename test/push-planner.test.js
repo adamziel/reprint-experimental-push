@@ -13865,6 +13865,78 @@ test('blocks local postmeta references to a same-plan created post identity whil
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local postmeta references to a same-plan created post identity while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:57"]';
+  const targetResourceKey = 'row:["wp_posts","ID:57"]';
+  const base = baseSite();
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared restore";';
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.db.wp_posts['ID:57'] = {
+    ID: 57,
+    post_title: 'local-created post restore removal title',
+    post_content: 'local-created post restore removal body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:57': {
+      meta_id: 57,
+      post_id: 57,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-post-restore-removal-payload',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = postmetaBlocker.references[0];
+  const matchingRestore = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(postmetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(postmetaBlocker.resourceKey, resourceKey);
+  assert.equal(postmetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created post restore removal title'), false);
+  assert.equal(planJson.includes('local-created post restore removal body'), false);
+  assert.equal(planJson.includes('local-private-post-restore-removal-payload'), false);
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('allows an existing postmeta row to reference a post created by the same plan while preserving remote-only plugin drift', () => {
   const postResourceKey = 'row:["wp_posts","ID:87"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:55"]';
