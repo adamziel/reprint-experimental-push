@@ -3848,6 +3848,10 @@ test('packaged release verifier readiness helper fails closed when signed prefli
 
 test('packaged release verifier readiness helper fails closed when signed preflight keeps a broken auth session envelope after the snapshot probe times out', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const authIdentity = {
+    userLogin: 'admin',
+    userId: 1,
+  };
   const brokenAuthSessionEnvelopes = [
     {
       label: 'missing auth session id',
@@ -4007,6 +4011,7 @@ test('packaged release verifier readiness helper fails closed when signed prefli
             },
             auth: {
               session,
+              identity: authIdentity,
             },
             session: {
               id: 'session_123',
@@ -8141,6 +8146,10 @@ test('packaged release verifier readiness helper fails closed when signed prefli
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'active',
@@ -8166,6 +8175,10 @@ test('packaged release verifier readiness helper fails closed when signed prefli
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'cleaned-up',
@@ -8190,6 +8203,10 @@ test('packaged release verifier readiness helper fails closed when signed prefli
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'cleaned_up',
@@ -8214,6 +8231,10 @@ test('packaged release verifier readiness helper fails closed when signed prefli
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'active',
@@ -8239,6 +8260,10 @@ test('packaged release verifier readiness helper fails closed when signed prefli
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'active',
@@ -9089,6 +9114,10 @@ test('packaged production plugin smoke readiness helper fails closed when signed
 
 test('packaged production plugin smoke readiness helper fails closed when signed preflight keeps a broken auth session envelope after the snapshot probe times out', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const authIdentity = {
+    userLogin: 'admin',
+    userId: 1,
+  };
   const brokenAuthSessionEnvelopes = [
     {
       label: 'missing auth session id',
@@ -9239,6 +9268,7 @@ test('packaged production plugin smoke readiness helper fails closed when signed
             },
             auth: {
               session,
+              identity: authIdentity,
             },
             session: {
               id: 'session_123',
@@ -12401,6 +12431,10 @@ test('packaged production plugin smoke readiness helper fails closed when signed
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'active',
@@ -12426,6 +12460,10 @@ test('packaged production plugin smoke readiness helper fails closed when signed
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'cleaned-up',
@@ -12450,6 +12488,10 @@ test('packaged production plugin smoke readiness helper fails closed when signed
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'cleaned_up',
@@ -12474,6 +12516,10 @@ test('packaged production plugin smoke readiness helper fails closed when signed
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'active',
@@ -12499,6 +12545,10 @@ test('packaged production plugin smoke readiness helper fails closed when signed
           labBacked: false,
         },
         auth: {
+          identity: {
+            userLogin: 'admin',
+            userId: 1,
+          },
           session: {
             id: 'session_123',
             status: 'active',

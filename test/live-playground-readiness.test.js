@@ -1923,6 +1923,7 @@ test('packaged server readiness fails closed for terminal production auth sessio
       body: {
         ...basePreflight.body,
         auth: {
+          ...basePreflight.body.auth,
           session,
         },
       },
