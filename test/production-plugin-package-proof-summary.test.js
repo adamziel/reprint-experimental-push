@@ -356,6 +356,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     requestedStatus: 'passed',
     requestedBundleStatuses: 'all',
   });
+  assert.equal(summary.driverRouteProof, summary.routeProof);
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
     selected: true,
@@ -381,7 +382,9 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     requestedStatus: 'passed',
     requestedBundleStatuses: 'all',
   });
+  assert.equal(summary.driverDeleteApplyProof, summary.deleteApplyProof);
   assert.equal(summary.mutationProof.deleteRejected, true);
+  assert.equal(summary.driverMutationProof, summary.mutationProof);
   assert.deepEqual(summary.bundles, {
     driverPositiveProof: 'passed',
     driverProof: 'passed',
@@ -1716,9 +1719,12 @@ test('plugin-driver proof summary exposes release and positive proof aliases alo
     },
   );
 
+  assert.equal(summary.driverRouteProof, summary.routeProof);
   assert.deepEqual(summary.driverPositiveProof, summary.positiveProof);
   assert.deepEqual(summary.driverReleaseProof, summary.releaseProof);
   assert.equal(summary.driverReceiptGuards, summary.receiptGuards);
+  assert.equal(summary.driverDeleteApplyProof, summary.deleteApplyProof);
+  assert.equal(summary.driverMutationProof, summary.mutationProof);
   assert.equal(summary.driverVerifierGuards, summary.verifierGuards);
   assert.equal(summary.driverReceiptRegistrationGuards, summary.receiptRegistrationGuards);
   assert.equal(summary.driverRegistrationGuards, summary.registrationGuards);

@@ -1100,7 +1100,10 @@ export function buildProductionPluginPackageProofSummary(
     scenarios: scenarioResults,
   };
 
+  proofSummary.driverRouteProof = proofSummary.routeProof;
   proofSummary.driverReceiptGuards = proofSummary.receiptGuards;
+  proofSummary.driverDeleteApplyProof = proofSummary.deleteApplyProof;
+  proofSummary.driverMutationProof = proofSummary.mutationProof;
   proofSummary.driverVerifierGuards = proofSummary.verifierGuards;
   proofSummary.driverReceiptRegistrationGuards = proofSummary.receiptRegistrationGuards;
   proofSummary.driverRegistrationGuards = proofSummary.registrationGuards;
