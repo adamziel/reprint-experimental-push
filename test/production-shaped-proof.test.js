@@ -69,8 +69,16 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
-const serverStartupTimeoutMs = runLivePlaygroundTopologyTests ? 8_000 : 1_500;
-const playgroundServerTimeoutMs = runLivePlaygroundTopologyTests ? 16 : 8;
+// The opt-in live wrapper proof can start three separate Playground sources
+// before it even enters the checked release verifier, so give the helper
+// servers the same bounded startup shape as the release wrapper instead of
+// failing during the pre-proof bootstrap.
+const serverStartupTimeoutMs = runLivePlaygroundTopologyTests ? 30_000 : 1_500;
+// The opt-in explicit checked-live proof boots three helper sources before the
+// wrapper child consumes them, so the helper process timeout must cover both
+// startup and the downstream wrapper run instead of expiring the first source
+// mid-proof.
+const playgroundServerTimeoutMs = runLivePlaygroundTopologyTests ? 180 : 8;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -85,7 +93,12 @@ const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubprocessTimeoutMs - 8_000));
 const liveWrapperSubprocessTimeoutMs = 180_000;
-const livePlaygroundMaxConsecutiveNotReadyProbes = Math.max(4, packagedProductionPluginMaxConsecutiveNotReadyProbes);
+const livePlaygroundMaxConsecutiveNotReadyProbes = runLivePlaygroundTopologyTests
+  ? Math.max(
+      packagedProductionPluginMaxConsecutiveNotReadyProbes,
+      Math.ceil(serverStartupTimeoutMs / 500),
+    )
+  : Math.max(4, packagedProductionPluginMaxConsecutiveNotReadyProbes);
 // Give the verifier enough time to reach its own bounded readiness failure and
 // emit probe diagnostics before the outer subprocess timeout can kill it.
 const liveProofLaunchTimeoutMs = Math.max(1_000, Math.min(7_000, liveProofSubprocessTimeoutMs - 4_000));
