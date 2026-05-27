@@ -1170,7 +1170,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
   });
 });
 
-test('checked db journal merge fills missing claim ownership evidence from the authoritative summary', { skip: !hasPhp }, () => {
+test('checked db journal merge fails closed when the authoritative summary omits explicit claim identity', { skip: !hasPhp }, () => {
   const result = runMerge(
     {
       acceptedOnCheckedBoundary: true,
@@ -1208,7 +1208,7 @@ test('checked db journal merge fills missing claim ownership evidence from the a
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
-    acceptedOnCheckedBoundary: true,
+    acceptedOnCheckedBoundary: false,
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -1231,6 +1231,34 @@ test('checked db journal merge fills missing claim ownership evidence from the a
       previousClaimEvent: 'idempotency-opened',
     },
   });
+});
+
+test('checked recovery inspect evidence fails closed when the authoritative checked summary omits explicit claim identity', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.claim.activeClaimId;
+  delete checkedSummary.claim.previousClaimId;
+  delete checkedSummary.claimEvidence.activeRow.claimId;
+  delete checkedSummary.claimEvidence.abandonedRow.claimId;
+  delete checkedSummary.claimEvidence.previousRow.claimId;
+  delete checkedSummary.writerLease.claimId;
+  delete checkedSummary.leaseFence.writerLease.claimId;
+  delete checkedSummary.latestRows[0].claimId;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: buildAcceptedInlineRecoveryJournal() } },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.claim.activeClaimId, undefined);
+  assert.equal(parsed.recovery.journal.claimEvidence.activeRow.claimId, undefined);
+  assert.equal(parsed.recovery.journal.latestRows[0].claimId, undefined);
+  assert.equal(parsed.recovery.journal.writerLease.claimId, 'retry-claim-hash-02');
+  assert.equal(parsed.recovery.journal.leaseFence.writerLease.claimId, 'retry-claim-hash-02');
 });
 
 test('recovery inspect journal evidence upgrades scope on checked and packaged boundaries', { skip: !hasPhp }, () => {

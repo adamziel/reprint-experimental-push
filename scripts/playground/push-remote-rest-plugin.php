@@ -759,7 +759,13 @@ function reprint_push_lab_rest_merge_checked_recovery_journal_contract(
         }
     }
 
-    return reprint_push_lab_rest_normalize_authoritative_checked_contract($journal, $checked_db_journal);
+    $journal = reprint_push_lab_rest_normalize_authoritative_checked_contract($journal, $checked_db_journal);
+
+    if (!reprint_push_lab_rest_checked_authoritative_db_journal_contract_matches($checked_db_journal)) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+    }
+
+    return $journal;
 }
 
 function reprint_push_lab_rest_attach_checked_db_journal_contract(
@@ -2122,7 +2128,13 @@ function reprint_push_lab_rest_merge_checked_db_journal_contract(array $db_journ
         );
     }
 
-    return reprint_push_lab_rest_normalize_authoritative_checked_contract($db_journal, $checked_summary);
+    $db_journal = reprint_push_lab_rest_normalize_authoritative_checked_contract($db_journal, $checked_summary);
+
+    if (!reprint_push_lab_rest_checked_authoritative_db_journal_contract_matches($checked_summary)) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+    }
+
+    return $db_journal;
 }
 
 function reprint_push_lab_rest_should_fill_checked_db_journal_field(array $db_journal, array $checked_summary, string $key): bool
@@ -2203,6 +2215,19 @@ function reprint_push_lab_rest_checked_boundary_contract_is_authoritative(array 
 {
     return ($checked_summary['acceptedOnCheckedBoundary'] ?? false) === true
         && ($db_journal['acceptedOnCheckedBoundary'] ?? false) === true;
+}
+
+function reprint_push_lab_rest_checked_authoritative_db_journal_contract_matches(?array $checked_summary): bool
+{
+    if (!is_array($checked_summary)) {
+        return false;
+    }
+
+    if (($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return false;
+    }
+
+    return reprint_push_lab_db_journal_checked_boundary_contract_matches($checked_summary);
 }
 
 function reprint_push_lab_rest_merge_checked_contract_fields(
