@@ -11,6 +11,13 @@ test('package scripts pin the bounded plugin-driver guard-only mode entrypoint',
   );
 });
 
+test('package scripts pin the direct core package routes scenario entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-core-package-routes'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=core-package-routes node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver verifier bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-verifier-guards'],
