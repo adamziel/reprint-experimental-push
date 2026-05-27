@@ -229,8 +229,18 @@ function summarizeRequestedScenario(selected, passed) {
   return selected && passed ? 'passed' : 'missing';
 }
 
-function buildBundleScenarioDetails(bundleName, scenarioPasses) {
+function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
+  if (!includeCoverageDetails) {
+    return {
+      requiredScenarioCount: requiredScenarios.length,
+      passedScenarioCount: 0,
+      failedScenarioCount: 0,
+      requiredScenarios,
+      passedScenarios: [],
+      failedScenarios: [],
+    };
+  }
   const passedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) === true);
   const failedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) !== true);
   return {
@@ -608,7 +618,11 @@ export function buildProductionPluginPackageProofSummary(
       remoteSupportsDelete: summary?.driverDeleteApply?.remoteSupportsDelete ?? null,
       deletedAfterApply: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? null,
-      ...buildBundleScenarioDetails('driver-positive-proof', scenarioPasses),
+      ...buildBundleScenarioDetails(
+        'driver-positive-proof',
+        scenarioPasses,
+        bundleResults.driverPositiveProof !== 'skipped',
+      ),
       requestedStatus: requestedScenarioStatuses['driver-positive-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverPositiveProof ?? null,
     },
@@ -637,7 +651,11 @@ export function buildProductionPluginPackageProofSummary(
       remoteSupportsDelete: summary?.driverDeleteApply?.remoteSupportsDelete ?? null,
       deletedAfterApply: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? null,
-      ...buildBundleScenarioDetails('driver-release-proof', scenarioPasses),
+      ...buildBundleScenarioDetails(
+        'driver-release-proof',
+        scenarioPasses,
+        bundleResults.driverReleaseProof !== 'skipped',
+      ),
       requestedStatus: requestedScenarioStatuses['driver-release-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverReleaseProof ?? null,
     },
@@ -671,7 +689,11 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
       duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
-      ...buildBundleScenarioDetails('driver-verifier-guards', scenarioPasses),
+      ...buildBundleScenarioDetails(
+        'driver-verifier-guards',
+        scenarioPasses,
+        bundleResults.driverVerifierGuards !== 'skipped',
+      ),
       requestedStatus: requestedScenarioStatuses['driver-verifier-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverVerifierGuards ?? null,
     },
@@ -699,7 +721,11 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
       duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
-      ...buildBundleScenarioDetails('driver-registration-guards', scenarioPasses),
+      ...buildBundleScenarioDetails(
+        'driver-registration-guards',
+        scenarioPasses,
+        bundleResults.driverRegistrationGuards !== 'skipped',
+      ),
       requestedStatus: requestedScenarioStatuses['driver-registration-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationGuards ?? null,
     },
@@ -717,7 +743,11 @@ export function buildProductionPluginPackageProofSummary(
       missingExportRowsCallback: summary?.driverExportGuard?.missingExportRowsCallback ?? false,
       missingApplyRowCallback: summary?.driverApplyGuard?.missingApplyRowCallback ?? false,
       missingValidateMutationCallback: summary?.driverValidateGuard?.missingValidateMutationCallback ?? false,
-      ...buildBundleScenarioDetails('driver-callback-guards', scenarioPasses),
+      ...buildBundleScenarioDetails(
+        'driver-callback-guards',
+        scenarioPasses,
+        bundleResults.driverCallbackGuards !== 'skipped',
+      ),
       requestedStatus: requestedScenarioStatuses['driver-callback-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverCallbackGuards ?? null,
     },
@@ -739,7 +769,11 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
       duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
-      ...buildBundleScenarioDetails('driver-registration-shape-guards', scenarioPasses),
+      ...buildBundleScenarioDetails(
+        'driver-registration-shape-guards',
+        scenarioPasses,
+        bundleResults.driverRegistrationShapeGuards !== 'skipped',
+      ),
       requestedStatus: requestedScenarioStatuses['driver-registration-shape-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationShapeGuards ?? null,
     },
