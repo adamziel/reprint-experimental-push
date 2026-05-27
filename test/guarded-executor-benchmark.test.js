@@ -10951,40 +10951,64 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rol
     blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
   );
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
-  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
-    'queue-budget-not-visible',
-    'memory-ceiling-match-visible-without-queue-budget-visibility',
-    'memory-ceiling-visible-without-queue-budget-visibility',
-    'queue-headroom-visible-without-queue-budget-visibility',
-    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
-    'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
-    'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
-  assert.deepEqual(queueBudgetPauseAfterRetry?.blockerRefs, [
-    'queue-budget-not-visible',
-    'memory-ceiling-match-visible-without-queue-budget-visibility',
-    'memory-ceiling-visible-without-queue-budget-visibility',
-    'queue-headroom-visible-without-queue-budget-visibility',
-    'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
-    'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
-  ]);
-  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
-    'queue-budget-not-visible',
-    'memory-ceiling-match-visible-without-queue-budget-visibility',
-    'memory-ceiling-visible-without-queue-budget-visibility',
-    'queue-headroom-visible-without-queue-budget-visibility',
-    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
-    'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
-    'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
+  assert.deepEqual({
+    id: releaseBundleBackpressure?.id,
+    rejectedGate: releaseBundleBackpressure?.rejectedGate,
+    blockerRefs: releaseBundleBackpressure?.blockerRefs,
+  }, {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'queue-budget-not-visible',
+      'memory-ceiling-match-visible-without-queue-budget-visibility',
+      'memory-ceiling-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-queue-budget-visibility',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ],
+  });
+  assert.deepEqual({
+    id: queueBudgetPauseAfterRetry?.id,
+    rejectedGate: queueBudgetPauseAfterRetry?.rejectedGate,
+    blockerRefs: queueBudgetPauseAfterRetry?.blockerRefs,
+  }, {
+    id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'queue-budget-not-visible',
+      'memory-ceiling-match-visible-without-queue-budget-visibility',
+      'memory-ceiling-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+    ],
+  });
+  assert.deepEqual({
+    id: stagingDiskReplay?.id,
+    rejectedGate: stagingDiskReplay?.rejectedGate,
+    blockerRefs: stagingDiskReplay?.blockerRefs,
+  }, {
+    id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'queue-budget-not-visible',
+      'memory-ceiling-match-visible-without-queue-budget-visibility',
+      'memory-ceiling-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-queue-budget-visibility',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ],
+  });
   assert.ok(details.rejectedFastPathGateSummary.some((entry) => entry.rejectedGate === 'recovery'));
 });
 
