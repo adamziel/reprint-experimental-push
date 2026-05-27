@@ -1803,6 +1803,49 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
   );
 });
 
+test('guarded benchmark surfaces plugin-update blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const pluginUpdateRejectedFastPaths = details.rejectedFastPaths
+    .filter((entry) => entry.id.includes('plugin-update'))
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  assert.deepEqual(pluginUpdateRejectedFastPaths.map(({ id }) => id), [
+    'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+    'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+  ]);
+
+  assert.deepEqual(summarizeRejectedGates(pluginUpdateRejectedFastPaths), [
+    { rejectedGate: 'group', count: 16 },
+    { rejectedGate: 'live', count: 3 },
+    { rejectedGate: 'recovery', count: 7 },
+  ]);
+});
+
 test('guarded benchmark surfaces plugin-install finalize and commit-after-pause blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
