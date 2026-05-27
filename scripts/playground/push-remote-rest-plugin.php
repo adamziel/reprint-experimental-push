@@ -1448,6 +1448,13 @@ function reprint_push_lab_rest_checked_top_level_identity_omissions(
 
     foreach (['schemaVersion', 'table', 'scope'] as $key) {
         if (
+            array_key_exists($key, $premerge_db_journal)
+            && !array_key_exists($key, $checked_summary)
+        ) {
+            return true;
+        }
+
+        if (
             !array_key_exists($key, $premerge_db_journal)
             && array_key_exists($key, $checked_summary)
         ) {
