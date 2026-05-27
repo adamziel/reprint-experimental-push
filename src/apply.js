@@ -1474,6 +1474,18 @@ function surfaceProductionClaimIdentity(inspected, inspectedClaimState) {
   }
 
   if (
+    inspected !== null
+    && typeof inspected === 'object'
+    && (
+      (!Object.hasOwn(inspected, 'claimHash') && 'claimHash' in inspected)
+      || (!Object.hasOwn(inspected, 'writerLease') && 'writerLease' in inspected)
+      || (!Object.hasOwn(inspected, 'leaseFence') && 'leaseFence' in inspected)
+    )
+  ) {
+    return { valid: false, claimId: null };
+  }
+
+  if (
     inspectedClaimState
     && inspectedClaimState.status !== 'none'
   ) {
