@@ -2624,6 +2624,37 @@ test('checked recovery inspect evidence fails closed when accepted checked journ
   assert.equal(parsed.recovery.journal.receiptHash, 'receipt-hash-456');
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline restart artifact refs', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.storage = 'inline-restart-storage';
+  inlineJournal.planHash = 'inline-plan-hash';
+  inlineJournal.receiptHash = 'inline-receipt-hash';
+
+  const checkedSummary = buildCheckedDbJournalSummary();
+  checkedSummary.storage = 'checked-restart-storage';
+  checkedSummary.planHash = 'checked-plan-hash';
+  checkedSummary.receiptHash = 'checked-receipt-hash';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      ok: true,
+      recovery: {
+        journal: inlineJournal,
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.storage, 'inline-restart-storage');
+  assert.equal(parsed.recovery.journal.planHash, 'inline-plan-hash');
+  assert.equal(parsed.recovery.journal.receiptHash, 'inline-receipt-hash');
+});
+
 test('checked recovery inspect evidence fails closed when accepted checked summaries omit the checked-boundary marker', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {

@@ -1898,6 +1898,42 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
     return false;
 }
 
+function reprint_push_lab_rest_checked_recovery_restart_artifact_conflicts(
+    ?array $premerge_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    foreach (['storage', 'planHash', 'receiptHash'] as $key) {
+        $premerge_has_key = array_key_exists($key, $premerge_journal);
+        $checked_has_key = array_key_exists($key, $checked_summary);
+        if (!$premerge_has_key && !$checked_has_key) {
+            continue;
+        }
+
+        $premerge_value = $premerge_has_key && is_string($premerge_journal[$key]) ? $premerge_journal[$key] : '';
+        $checked_value = $checked_has_key && is_string($checked_summary[$key]) ? $checked_summary[$key] : '';
+        if ($premerge_value === '' && $checked_value === '') {
+            continue;
+        }
+
+        if ($premerge_value === '' || $checked_value === '' || $premerge_value !== $checked_value) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function reprint_push_lab_rest_checked_top_level_claim_identity_conflicts(
     array $journal
 ): bool {
@@ -2085,6 +2121,25 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         $journal['acceptedOnCheckedBoundary'] = false;
         if (is_array($premerge_journal)) {
             foreach (['schemaVersion', 'table', 'scope'] as $key) {
+                if (array_key_exists($key, $premerge_journal)) {
+                    $journal[$key] = $premerge_journal[$key];
+                } else {
+                    unset($journal[$key]);
+                }
+            }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_recovery_restart_artifact_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal)) {
+            foreach (['storage', 'planHash', 'receiptHash'] as $key) {
                 if (array_key_exists($key, $premerge_journal)) {
                     $journal[$key] = $premerge_journal[$key];
                 } else {
