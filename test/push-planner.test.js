@@ -2549,6 +2549,88 @@ test('blocks an existing postmeta row when the same-plan post target is itself b
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing postmeta row when the same-plan post target is itself blocked by a wp_navigation parent even when unrelated remote wp_navigation noise exists', () => {
+  const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedPostResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:64"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_postmeta = {
+    'meta_id:64': {
+      meta_id: 64,
+      post_id: 1,
+      meta_key: '_local_graph_note',
+      meta_value: 'base-private-existing-postmeta-payload',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:64': {
+      meta_id: 64,
+      post_id: 5,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-existing-postmeta-payload',
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:64': {
+      ...base.db.wp_postmeta['meta_id:64'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_type: 'wp_navigation',
+    post_title: 'Local navigation parent',
+    post_content: 'local-private-navigation-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Blocked same-plan post',
+    post_content: 'local-private-blocked-post-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_type: 'wp_navigation',
+    post_title: 'Remote unrelated navigation post',
+    post_content: 'remote-private-unrelated-navigation-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockedPostMutation = mutationFor(plan, blockedPostResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedPostResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, blockedParentResourceKey), undefined);
+  assert.equal(mutationFor(plan, 'row:["wp_posts","ID:21"]'), undefined);
+  assert.equal(blockedPostMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'wp_navigation');
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(postmetaBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(postmetaBlocker.references[0].relationshipType, 'postmeta-post');
+  assert.equal(postmetaBlocker.references[0].targetResourceKey, blockedPostResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-navigation-parent-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-blocked-post-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-existing-postmeta-payload'), false);
+  assert.equal(
+    JSON.stringify(postmetaBlocker).includes('remote-private-unrelated-navigation-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing postmeta row when the same-plan post target is itself blocked by a wp_navigation parent even when unrelated remote revision noise exists', () => {
   const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
   const blockedPostResourceKey = 'row:["wp_posts","ID:5"]';
