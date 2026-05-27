@@ -963,6 +963,25 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         }
     }
 
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_nested_contract_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal)) {
+            foreach (['ownership', 'writerLease', 'leaseFence'] as $key) {
+                if (array_key_exists($key, $premerge_db_journal)) {
+                    $db_journal[$key] = $premerge_db_journal[$key];
+                } else {
+                    unset($db_journal[$key]);
+                }
+            }
+        }
+    }
+
     return $db_journal;
 }
 
@@ -1281,6 +1300,103 @@ function reprint_push_lab_rest_checked_claim_evidence_row_conflicts(
         $existing_value = is_string($existing_value) ? $existing_value : '';
         $checked_value = is_string($checked_value) ? $checked_value : '';
         if ($existing_value !== '' && $checked_value !== '' && $existing_value !== $checked_value) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_nested_contract_conflicts(
+    ?array $premerge_db_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_db_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_db_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    if (
+        reprint_push_lab_rest_checked_contract_field_conflicts(
+            isset($premerge_db_journal['ownership']) && is_array($premerge_db_journal['ownership'])
+                ? $premerge_db_journal['ownership']
+                : null,
+            isset($checked_summary['ownership']) && is_array($checked_summary['ownership'])
+                ? $checked_summary['ownership']
+                : null,
+            ['ownsJournal', 'restartReadable'],
+            ['productionAdapter']
+        )
+    ) {
+        return true;
+    }
+
+    if (
+        reprint_push_lab_rest_checked_contract_field_conflicts(
+            isset($premerge_db_journal['writerLease']) && is_array($premerge_db_journal['writerLease'])
+                ? $premerge_db_journal['writerLease']
+                : null,
+            isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
+                ? $checked_summary['writerLease']
+                : null,
+            ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+            ['storageGuard']
+        )
+    ) {
+        return true;
+    }
+
+    return reprint_push_lab_rest_checked_contract_field_conflicts(
+        isset($premerge_db_journal['leaseFence']) && is_array($premerge_db_journal['leaseFence'])
+            ? $premerge_db_journal['leaseFence']
+            : null,
+        isset($checked_summary['leaseFence']) && is_array($checked_summary['leaseFence'])
+            ? $checked_summary['leaseFence']
+            : null,
+        ['claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+        ['boundary']
+    ) || reprint_push_lab_rest_checked_contract_field_conflicts(
+        isset($premerge_db_journal['leaseFence']['writerLease']) && is_array($premerge_db_journal['leaseFence']['writerLease'])
+            ? $premerge_db_journal['leaseFence']['writerLease']
+            : null,
+        isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
+            ? $checked_summary['leaseFence']['writerLease']
+            : null,
+        ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+        ['storageGuard']
+    );
+}
+
+function reprint_push_lab_rest_checked_contract_field_conflicts(
+    ?array $existing_fields,
+    ?array $checked_fields,
+    array $keys,
+    array $anchor_keys
+): bool {
+    if (!is_array($existing_fields) || !is_array($checked_fields)) {
+        return false;
+    }
+
+    foreach ($anchor_keys as $anchor_key) {
+        $existing_anchor = isset($existing_fields[$anchor_key]) ? (string) $existing_fields[$anchor_key] : '';
+        $checked_anchor = isset($checked_fields[$anchor_key]) ? (string) $checked_fields[$anchor_key] : '';
+        if ($existing_anchor === '' || $checked_anchor === '' || $existing_anchor !== $checked_anchor) {
+            return false;
+        }
+    }
+
+    foreach ($keys as $key) {
+        if (
+            array_key_exists($key, $existing_fields)
+            && array_key_exists($key, $checked_fields)
+            && $existing_fields[$key] !== $checked_fields[$key]
+        ) {
             return true;
         }
     }
