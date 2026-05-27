@@ -35779,6 +35779,64 @@ test('blocks local comments graph resources while preserving a matching independ
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local comments graph resources while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:15"]';
+  const matchingRestoreKey = 'file:wp-content/uploads/comments-restore.txt';
+  const base = baseSite();
+  delete base.files['wp-content/uploads/comments-restore.txt'];
+  base.db.wp_comments = {
+    'comment_ID:15': {
+      comment_ID: 15,
+      comment_post_ID: 7,
+      comment_content: 'Base matching restore comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/comments-restore.txt'] = 'shared comments restore bytes';
+  local.db.wp_comments = {
+    'comment_ID:15': {
+      comment_ID: 15,
+      comment_post_ID: 7,
+      comment_content: 'Local matching restore comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/comments-restore.txt'] = 'shared comments restore bytes';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingRestore = decisionFor(plan, matchingRestoreKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local matching restore comment content'), false);
+  assert.equal(planJson.includes('Base matching restore comment content'), false);
+  assert.equal(planJson.includes('shared comments restore bytes'), false);
+  assert.equal(remote.files['wp-content/uploads/comments-restore.txt'], 'shared comments restore bytes');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local comments graph resources while preserving a matching independent file creation and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:13"]';
   const base = baseSite();
