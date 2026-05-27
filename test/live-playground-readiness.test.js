@@ -1508,6 +1508,10 @@ test('packaged server readiness requires a production-shaped preflight when pres
           expiresAt: '2099-01-01T00:00:00Z',
           expired: false,
         },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
+        },
       },
       session: {
         id: 'session_123',
@@ -1532,6 +1536,10 @@ test('packaged server readiness requires a production-shaped preflight when pres
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
           expired: false,
+        },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
         },
       },
       session: {
@@ -2146,6 +2154,16 @@ test('packaged server readiness fails closed for broken signed preflight auth id
       },
     },
     {
+      label: 'non-string auth identity userLogin',
+      auth: {
+        ...basePreflight.body.auth,
+        identity: {
+          userLogin: 7,
+          userId: 1,
+        },
+      },
+    },
+    {
       label: 'missing auth identity userId',
       auth: {
         ...basePreflight.body.auth,
@@ -2161,6 +2179,16 @@ test('packaged server readiness fails closed for broken signed preflight auth id
         identity: {
           userLogin: 'admin',
           userId: 0,
+        },
+      },
+    },
+    {
+      label: 'string auth identity userId',
+      auth: {
+        ...basePreflight.body.auth,
+        identity: {
+          userLogin: 'admin',
+          userId: '1',
         },
       },
     },
