@@ -4,6 +4,13 @@ import fs from 'node:fs';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 
+test('package scripts pin the bounded plugin-driver guard-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-guard-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver verifier bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-verifier-guards'],
