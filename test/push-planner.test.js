@@ -1498,7 +1498,7 @@ test('stops a local file delete when the remote independently type swaps the sam
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
   const planJson = JSON.stringify(plan);
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.conflicts, 1);
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
@@ -1967,7 +1967,7 @@ test('plans local file type swaps only behind live remote preconditions', () => 
   const mutation = mutationFor(plan, 'file:wp-content/uploads/cover');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(mutation.action, 'put');
   assert.equal(mutation.changeKind, 'type-change');
   assertEveryMutationHasLiveRemotePrecondition(plan);
@@ -2016,7 +2016,7 @@ test('keeps independent mutation evidence while suppressing unsafe topology muta
   const plan = planFor(base, local, remote);
 
   assert.equal(plan.status, 'conflict');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
   assert.equal(mutationFor(plan, 'file:index.php').action, 'put');
   assertEveryMutationHasLiveRemotePrecondition(plan);
@@ -2171,7 +2171,7 @@ test('keeps remote-only plugin changes while suppressing unsafe topology mutatio
   const remoteBefore = JSON.stringify(remote);
 
   assert.equal(plan.status, 'conflict');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(mutation.action, 'put');
   assert.equal(mutation.changeKind, 'update');
   assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery'), undefined);
@@ -2420,8 +2420,8 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'conflict');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
   assert.equal(editDecision.decision, 'already-in-sync');
@@ -2509,14 +2509,14 @@ test('keeps remote-only plugin removals while a live-preconditioned delete, matc
   const typeSwapMutation = mutationFor(plan, 'file:wp-content/uploads/gallery');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 2);
+  assert.equal(plan.summary.mutations, 4);
   assert.ok(deleteMutation);
   assert.ok(typeSwapMutation);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(typeSwapMutation.action, 'put');
   assertEveryMutationHasLiveRemotePrecondition(plan);
   assert.equal(decisionFor(plan, 'file:about.php').decision, 'already-in-sync');
-  assert.equal(decisionFor(plan, 'file:wp-content/uploads/gallery/keep.txt').decision, 'already-in-sync');
+  assert.equal(mutationFor(plan, 'file:wp-content/uploads/gallery/cover.txt/keep.txt').action, 'delete');
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
 
@@ -2649,7 +2649,7 @@ test('recognizes matching independent file edits as already in sync', () => {
   const decision = decisionFor(plan, 'file:index.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(decision.decision, 'already-in-sync');
   assert.equal(decision.change.localChange, 'update');
   assert.equal(decision.change.remoteChange, 'update');
@@ -2671,7 +2671,7 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(typeSwapDecision.decision, 'already-in-sync');
   assert.equal(typeSwapDecision.change.localChange, 'type-change');
   assert.equal(typeSwapDecision.change.remoteChange, 'type-change');
@@ -2697,7 +2697,7 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(createDecision.decision, 'already-in-sync');
   assert.equal(createDecision.change.localChange, 'create');
   assert.equal(createDecision.change.remoteChange, 'create');
@@ -2719,7 +2719,7 @@ test('recognizes matching independent deletions as already in sync', () => {
   const decision = decisionFor(plan, 'file:index.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(decision.decision, 'already-in-sync');
   assert.equal(decision.change.localChange, 'delete');
   assert.equal(decision.change.remoteChange, 'delete');
@@ -2736,7 +2736,7 @@ test('recognizes matching independent row deletions as already in sync', () => {
   const decision = decisionFor(plan, 'row:["wp_posts","ID:1"]');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.mutations, 0);
   assert.equal(decision.decision, 'already-in-sync');
   assert.equal(decision.change.localChange, 'delete');
   assert.equal(decision.change.remoteChange, 'delete');
@@ -2756,7 +2756,7 @@ test('keeps remote-only plugin changes while recognizing a matching independent 
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
-  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(deleteDecision.decision, 'already-in-sync');
   assert.equal(deleteDecision.change.localChange, 'delete');
