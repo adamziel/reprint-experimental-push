@@ -625,6 +625,55 @@ export function resolveProductionPluginPackageModeProofKey(modeValue) {
   };
 }
 
+function requestedListsMatch(left, right) {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  if (left === null || right === null) {
+    return left === right;
+  }
+  return JSON.stringify(left.slice().sort()) === JSON.stringify(right.slice().sort());
+}
+
+function selectedScenariosMatch(left, right) {
+  const normalizedLeft = normalizeSelectedScenarios(left);
+  const normalizedRight = normalizeSelectedScenarios(right);
+  if (normalizedLeft === null || normalizedRight === null) {
+    return normalizedLeft === normalizedRight;
+  }
+  if (normalizedLeft === undefined || normalizedRight === undefined) {
+    return normalizedLeft === normalizedRight;
+  }
+  return JSON.stringify(Array.from(normalizedLeft).sort()) === JSON.stringify(Array.from(normalizedRight).sort());
+}
+
+function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
+  return requestedListsMatch(
+    modeProof?.requestedScenarios,
+    resolvedOptions.requestedScenarios,
+  )
+    && selectedScenariosMatch(
+      summary?.selectedScenarios,
+      resolvedOptions.selectedScenarios,
+    )
+    && (
+      modeProof?.requestedBundles === undefined
+      || requestedListsMatch(
+        modeProof?.requestedBundles,
+        filterRequestedListForMode(
+          summary?.requestedBundles ?? [],
+          new Set(
+            resolvedOptions.canonicalMode === null
+              ? []
+              : isBundleAliasScenario(resolvedOptions.canonicalMode)
+                ? [toBundleKey(resolvedOptions.canonicalMode)]
+                : [],
+          ),
+        ),
+      )
+    );
+}
+
 export function resolveProductionPluginPackageModeProof(summary, modeValue, options = {}) {
   const resolved = resolveProductionPluginPackageModeProofKey(modeValue);
   if (resolved === null) {
@@ -649,6 +698,13 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
     || summary?.requestedScenarios !== undefined
     || summary?.selectedScenarios !== undefined
   );
+  const resolvedModeProofOptions = hasModeProofContext
+    ? resolveProductionPluginPackageProofSummaryOptions(summary, {
+      ...options,
+      resolvedMode: options?.resolvedMode ?? resolved.mode,
+      canonicalMode: options?.canonicalMode ?? resolved.canonicalMode,
+    })
+    : null;
 
   const attachedModeProof = summary?.modeProof;
   if (
@@ -656,6 +712,10 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
     && attachedModeProof?.canonicalMode === resolved.canonicalMode
     && attachedModeProof?.proofKey === resolved.proofKey
     && attachedModeProof?.legacyProofKey === resolved.legacyProofKey
+    && (
+      resolvedModeProofOptions === null
+      || modeProofMatchesResolvedContext(summary, attachedModeProof, resolvedModeProofOptions)
+    )
   ) {
     return {
       ...baseModeProof,
@@ -684,11 +744,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
     return baseModeProof;
   }
 
-  const modeProofOptions = resolveProductionPluginPackageProofSummaryOptions(summary, {
-    ...options,
-    resolvedMode: options?.resolvedMode ?? resolved.mode,
-    canonicalMode: options?.canonicalMode ?? resolved.canonicalMode,
-  });
+  const modeProofOptions = resolvedModeProofOptions;
   const pluginDriverProof = summary?.pluginDriverProof === undefined
     ? resolveProductionPluginPackagePluginDriverProof(summary, modeProofOptions)
     : buildProductionPluginPackageProofSummary(summary, modeProofOptions);
