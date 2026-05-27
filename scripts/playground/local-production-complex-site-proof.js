@@ -246,6 +246,12 @@ export function buildComplexSiteReleaseEvidence({
       },
       durableJournal: {
         rows: journal.rows ?? null,
+        rowCount: journal.rowCount ?? null,
+        readbackPages: journal.readbackPages ?? null,
+        paginationComplete: journal.paginationComplete ?? null,
+        paginationTruncated: journal.paginationTruncated ?? null,
+        oldestSequence: journal.oldestSequence ?? null,
+        newestSequence: journal.newestSequence ?? null,
         mutationApplied: journal.mutationApplied ?? null,
         applyCommitted: journal.applyCommitted ?? null,
         checkedAccepted: journal.checkedAccepted ?? null,

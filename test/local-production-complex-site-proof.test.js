@@ -85,6 +85,9 @@ test('complex-site release evidence extracts release verifier receipts and gates
 
   assert.equal(evidence.ok, true);
   assert.equal(evidence.verifier.receipt.present, true);
+  assert.equal(evidence.verifier.durableJournal.readbackPages, 2);
+  assert.equal(evidence.verifier.durableJournal.paginationComplete, true);
+  assert.equal(evidence.verifier.durableJournal.paginationTruncated, false);
   assert.equal(evidence.verifier.durableJournal.mutationApplied, 9);
   assert.equal(evidence.invariants.authSessionGateOk, true);
   assert.equal(evidence.invariants.durableJournalGateOk, true);
@@ -262,6 +265,12 @@ function syntheticReleaseSummary(mutations) {
     },
     durableJournal: {
       rows: mutations + 10,
+      rowCount: mutations + 10,
+      readbackPages: 2,
+      paginationComplete: true,
+      paginationTruncated: false,
+      oldestSequence: 1,
+      newestSequence: mutations + 10,
       mutationApplied: mutations,
       applyCommitted: true,
       checkedAccepted: true,
