@@ -64,15 +64,15 @@ function claimScopedStaleClaimRejectionEvidence(records, claim) {
   );
 }
 
-function claimScopedConsumedEvidence(records, claim) {
+function claimScopedConsumedRecord(records, claim) {
   if (!CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')) {
-    return false;
+    return null;
   }
 
-  return (Array.isArray(records) ? records : []).some(
+  return (Array.isArray(records) ? records : []).find(
     (record) => record.type === 'recovery-journal-consumed'
       && record.claimHash === claim.activeClaimHash,
-  );
+  ) || null;
 }
 
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
@@ -171,6 +171,10 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
   const writerLease = journal?.writerLease;
   const leaseFence = inspection?.leaseFence;
   const leaseFenceWriterLease = leaseFence?.writerLease;
+  const consumedIdentityMatches = journal?.consumed === true
+    ? journal?.consumedClaimId === claim?.activeClaimId
+      && journal?.consumedClaimHash === claim?.activeClaimHash
+    : journal?.consumedClaimId == null && journal?.consumedClaimHash == null;
 
   return journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
     && hasNonEmptyString(journal?.path)
@@ -194,6 +198,7 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && productionRecoveryJournalClaimsAgree(journalClaim, claim)
     && journal?.claimId === claim.activeClaimId
     && journal?.claimHash === claim.activeClaimHash
+    && consumedIdentityMatches
     && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
     && productionRecoveryJournalLeaseFenceContractMatches(leaseFence)
     && productionRecoveryJournalWriterLeaseContractMatches(leaseFenceWriterLease, claim)
@@ -843,6 +848,7 @@ export function openProductionRecoveryJournal(options) {
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
     const claim = classifyRecoveryJournalClaims(persisted.records);
+    const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
     const persistedClaimId = claim.activeClaimId || claimId;
     const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
@@ -878,7 +884,9 @@ export function openProductionRecoveryJournal(options) {
         claimId: persistedClaimId,
         ownsJournal: true,
         claimHash,
-        consumed: claimScopedConsumedEvidence(persisted.records, claim),
+        consumed: consumedRecord !== null,
+        consumedClaimId: consumedRecord?.claimId || null,
+        consumedClaimHash: consumedRecord?.claimHash || null,
         restartReadable,
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,

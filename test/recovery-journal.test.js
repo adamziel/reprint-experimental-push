@@ -458,6 +458,8 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.claimId, activeClaimId);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.consumed, true);
+  assert.equal(inspection.journal.consumedClaimId, activeClaimId);
+  assert.equal(inspection.journal.consumedClaimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
   assert.equal(inspection.journal.claim.activeClaimId, activeClaimId);
@@ -535,6 +537,10 @@ test('production recovery journal inspection surface helper fails closed when le
   missingArtifactRefs.journal.artifactRefs = {};
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingArtifactRefs), false);
 
+  const divergentConsumedClaimId = clone(inspection);
+  divergentConsumedClaimId.journal.consumedClaimId = 'fabricated-production-claim-id';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentConsumedClaimId), false);
+
   const divergentActiveClaimHash = clone(inspection);
   const fabricatedActiveClaimHash = recoveryClaimHash('fabricated-production-claim-id');
   divergentActiveClaimHash.claim.activeClaimHash = fabricatedActiveClaimHash;
@@ -542,6 +548,7 @@ test('production recovery journal inspection surface helper fails closed when le
   divergentActiveClaimHash.journal.claimHash = fabricatedActiveClaimHash;
   divergentActiveClaimHash.journal.writerLease.claimHash = fabricatedActiveClaimHash;
   divergentActiveClaimHash.leaseFence.writerLease.claimHash = fabricatedActiveClaimHash;
+  divergentActiveClaimHash.journal.consumedClaimHash = fabricatedActiveClaimHash;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentActiveClaimHash), false);
 });
 
@@ -677,6 +684,8 @@ test('production recovery journal inspection scopes consumed evidence to the act
   assert.equal(advancedInspection.claim.activeClaimId, activeClaimId);
   assert.equal(advancedInspection.journal.claimHash, recoveryClaimHash(activeClaimId));
   assert.equal(advancedInspection.journal.consumed, false);
+  assert.equal(advancedInspection.journal.consumedClaimId, null);
+  assert.equal(advancedInspection.journal.consumedClaimHash, null);
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(advancedInspection), true);
 });
 
