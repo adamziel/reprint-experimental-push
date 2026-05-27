@@ -1,4 +1,5 @@
 import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
+import { isPackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-production-plugin-source-command.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
@@ -223,6 +224,10 @@ export function shouldRequestCheckedLivePackagedBoundary({
   fixtureUsername = '',
   fixtureApplicationPassword = '',
 } = {}) {
+  if (isPackagedProductionPluginSourceCommand(authSessionSourceCommand)) {
+    return true;
+  }
+
   return shouldRequestPackagedProductionPluginAuthSession({
     requireProductionAuthSession: true,
     authSessionSourceCommand,

@@ -50,6 +50,8 @@ const authSessionSource = loadAuthSessionSourceFromRuntimeEnvironment(
     sourceUrl: externalRemoteBaseUrl,
     remoteUrl: externalRemoteChangedUrl,
     localUrl: externalLocalEditedUrl,
+    requireExactSourceUrl: requireProductionAuthSession && Boolean(externalRemoteBaseUrl),
+    checkedSourceUrl: externalRemoteBaseUrl,
   },
 );
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
@@ -85,7 +87,13 @@ process.on('unhandledRejection', (reason) => {
 });
 
 try {
-  if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSource?.ok) {
+  if (requireProductionAuthSession && !externalRemoteBaseUrl) {
+    emitUnconfirmedLiveSourceProof();
+    process.exitCode = 1;
+  } else if (requireProductionAuthSession && !externalLocalEditedUrl) {
+    emitIncompleteTopologyProof('missing-local-edited-site');
+    process.exitCode = 1;
+  } else if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSource?.ok) {
     emitInvalidAuthSessionSourceProof();
     process.exitCode = 1;
   } else if (resolvedExternalRemoteBaseUrl) {
@@ -703,6 +711,69 @@ function emitInvalidAuthSessionSourceProof() {
       },
       durableJournal: {
         verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      },
+    },
+  }, null, 2));
+  process.stdout.write('\n');
+}
+
+function emitUnconfirmedLiveSourceProof() {
+  process.stdout.write(JSON.stringify({
+    ok: false,
+    topology: {
+      sourceUrl: '',
+      remoteBase: null,
+      remoteChanged: externalRemoteChangedUrl || null,
+      localEdited: externalLocalEditedUrl || null,
+      externalTopology: false,
+      proxyPolicy: 'local-only',
+      ingressPort: 8080,
+    },
+    releaseMovement: {
+      allowed: false,
+      gates: '0/4',
+      reason: 'REPRINT_PUSH_SOURCE_URL is required before apply revalidation can reach preflight, dry-run, or apply.',
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'explicit live production-owned release boundary',
+      verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      liveSource: {
+        required: 'REPRINT_PUSH_SOURCE_URL',
+        observed: 'missing-live-source',
+        verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      },
+    },
+  }, null, 2));
+  process.stdout.write('\n');
+}
+
+function emitIncompleteTopologyProof(observed) {
+  process.stdout.write(JSON.stringify({
+    ok: false,
+    topology: {
+      sourceUrl: externalRemoteBaseUrl,
+      remoteBase: externalRemoteBaseUrl,
+      remoteChanged: externalRemoteChangedUrl || null,
+      localEdited: externalLocalEditedUrl || null,
+      externalTopology: false,
+      proxyPolicy: 'local-only',
+      ingressPort: 8080,
+    },
+    releaseMovement: {
+      allowed: false,
+      gates: '0/4',
+      reason: 'A checked release apply revalidation proof requires explicit source, local edited, and remote changed URLs.',
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'source/local/changed production topology',
+      verdict: 'REPRINT_PUSH_TOPOLOGY_REQUIRED',
+      topology: {
+        required: [
+          'REPRINT_PUSH_SOURCE_URL',
+          'REPRINT_PUSH_LOCAL_URL',
+          'REPRINT_PUSH_REMOTE_CHANGED_URL',
+        ],
+        observed,
       },
     },
   }, null, 2));
