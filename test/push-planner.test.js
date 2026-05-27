@@ -22941,6 +22941,122 @@ test('consumeProductionRecoveryJournal fails closed when ownsRemoteArtifact is h
   });
 });
 
+test('consumeProductionRecoveryJournal fails closed when remoteArtifactPath is sourced from the prototype for a persisted owned remote artifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Consume Remote Artifact Path Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-consume-remote-artifact-path.jsonl`;
+  const claimId = 'claim-consumed-prototype-consume-remote-artifact-path';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+    ownsRemoteArtifact: true,
+  };
+  Object.setPrototypeOf(consumeOptions, {
+    remoteArtifactPath,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal(consumeOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires a strict plain options object.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
+test('consumeProductionRecoveryJournal fails closed when ownsRemoteArtifact is sourced from the prototype for a persisted owned remote artifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Consume Remote Ownership Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-consume-owns-remote-artifact.jsonl`;
+  const claimId = 'claim-consumed-prototype-consume-owns-remote-artifact';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const consumeOptions = {
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+    remoteArtifactPath,
+  };
+  Object.setPrototypeOf(consumeOptions, {
+    ownsRemoteArtifact: true,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal(consumeOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires a strict plain options object.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
+});
+
 test('consumeProductionRecoveryJournal fails closed when remote ownership drifts from the persisted owned remote artifact path', () => {
   const base = baseSite();
   const local = structuredClone(base);
