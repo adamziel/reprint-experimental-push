@@ -652,6 +652,17 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     driverReleaseProof: 'passed',
   });
   assert.equal(summary.bundles.driverReleaseProof, 'passed');
+  assert.deepEqual(summary.releaseProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    routeStatus: 'passed',
+    receiptStatus: 'passed',
+    deleteStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+  });
 });
 
 test('plugin-driver proof summary dedupes repeated requested bundle aliases', () => {
@@ -1008,6 +1019,17 @@ test('plugin-driver proof summary exposes failing requested concrete scenarios w
   });
   assert.deepEqual(summary.requestedConcreteScenarioStatuses, {
     'driver-delete-apply': 'missing',
+  });
+  assert.deepEqual(summary.releaseProof, {
+    requested: false,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    routeStatus: 'skipped',
+    receiptStatus: 'passed',
+    deleteStatus: 'missing',
+    requestedStatus: null,
+    requestedBundleStatus: null,
   });
 });
 
@@ -1414,4 +1436,90 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
   });
   assert.equal(summary.bundles.driverVerifierGuards, 'missing');
   assert.equal(summary.scenarios.driverDuplicateTableGuard, 'skipped');
+  assert.deepEqual(summary.releaseProof, {
+    requested: false,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    routeStatus: 'skipped',
+    receiptStatus: 'passed',
+    deleteStatus: 'skipped',
+    requestedStatus: null,
+    requestedBundleStatus: null,
+  });
+});
+
+test('plugin-driver proof summary exposes missing requested release bundle state directly', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set([
+        'core-package-routes',
+        'driver-receipt-guards',
+      ]),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, false);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-release-proof': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReleaseProof: 'missing',
+  });
+  assert.deepEqual(summary.releaseProof, {
+    requested: true,
+    selected: false,
+    ok: false,
+    status: 'missing',
+    routeStatus: 'passed',
+    receiptStatus: 'passed',
+    deleteStatus: 'skipped',
+    requestedStatus: 'missing',
+    requestedBundleStatus: 'missing',
+  });
 });

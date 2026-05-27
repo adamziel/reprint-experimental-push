@@ -367,6 +367,20 @@ export function buildProductionPluginPackageProofSummary(
       deleteApplied: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? false,
     },
+    releaseProof: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-release-proof'),
+      selected: selectedScenarios === null
+        || scenarioGroups['driver-release-proof'].every((scenario) => selectedScenarios.has(scenario)),
+      ok: bundleResults.driverReleaseProof === 'passed',
+      status: bundleResults.driverReleaseProof,
+      routeStatus: scenarioResults.corePackageRoutes,
+      receiptStatus: scenarioResults.driverReceiptGuards,
+      deleteStatus: scenarioResults.driverDeleteApply,
+      requestedStatus: requestedScenarioStatuses['driver-release-proof'] ?? null,
+      requestedBundleStatus: requestedBundleStatuses.driverReleaseProof ?? null,
+    },
     bundles: bundleResults,
     scenarios: scenarioResults,
   };
