@@ -18153,6 +18153,131 @@ test('blocks an existing _menu_item_object_id taxonomy row when its same-plan ow
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing _menu_item_object_id taxonomy row when its same-plan owner post is itself blocked by an attachment parent even when unrelated remote wp_navigation noise exists', () => {
+  const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedOwnerResourceKey = 'row:["wp_posts","ID:5"]';
+  const targetResourceKey = 'row:["wp_terms","term_id:7"]';
+  const resourceKey = 'row:["wp_postmeta","meta_id:49443"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_postmeta = {
+    'meta_id:49443': {
+      meta_id: 49443,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+    'meta_id:49543': {
+      meta_id: 49543,
+      post_id: 1,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:49643': {
+      meta_id: 49643,
+      post_id: 1,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:49443': {
+      meta_id: 49443,
+      post_id: 5,
+      meta_key: '_menu_item_object_id',
+      meta_value: 7,
+    },
+    'meta_id:49543': {
+      meta_id: 49543,
+      post_id: 5,
+      meta_key: '_menu_item_type',
+      meta_value: 'taxonomy',
+    },
+    'meta_id:49643': {
+      meta_id: 49643,
+      post_id: 5,
+      meta_key: '_menu_item_object',
+      meta_value: 'category',
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:49443': {
+      ...base.db.wp_postmeta['meta_id:49443'],
+    },
+    'meta_id:49543': {
+      ...base.db.wp_postmeta['meta_id:49543'],
+    },
+    'meta_id:49643': {
+      ...base.db.wp_postmeta['meta_id:49643'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_type: 'attachment',
+    post_title: 'Local blocked attachment parent',
+    post_content: 'local-private-blocked-attachment-parent-body',
+    post_status: 'inherit',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Blocked same-plan taxonomy owner',
+    post_content: 'local-private-blocked-taxonomy-owner-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local blocked-owner taxonomy term',
+      slug: 'local-blocked-owner-taxonomy-term',
+    },
+  };
+  remote.db.wp_posts['ID:91'] = {
+    ID: 91,
+    post_title: 'Remote wp_navigation noise',
+    post_content: 'remote-wp-navigation-noise-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockedParentMutation = mutationFor(plan, blockedParentResourceKey);
+  const blockedOwnerMutation = mutationFor(plan, blockedOwnerResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const postmetaMutation = mutationFor(plan, resourceKey);
+  const blockedOwnerBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedOwnerResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(blockedParentMutation.changeKind, 'create');
+  assert.equal(blockedOwnerMutation.changeKind, 'create');
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.equal(blockedOwnerBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedOwnerBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedOwnerBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blocker.references[0].relationshipType, 'postmeta-post');
+  assert.equal(blocker.references[0].targetResourceKey, blockedOwnerResourceKey);
+  assert.equal(postmetaMutation.dependsOnMutationIds, undefined);
+  assert.equal(JSON.stringify(blocker).includes('remote-wp-navigation-noise-body'), false);
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-blocked-attachment-parent-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-private-blocked-taxonomy-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(blocker).includes('local-blocked-owner-taxonomy-term'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing _menu_item_object_id taxonomy row when its same-plan owner post is itself blocked by an attachment parent even when unrelated remote revision noise exists', () => {
   const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
   const blockedOwnerResourceKey = 'row:["wp_posts","ID:5"]';
