@@ -4070,6 +4070,147 @@ test('plugin-driver proof summary attach helper repairs stale route alias concre
   assert.equal(repairedProof.modeProof?.requestedConcreteScenariosSatisfied, true);
 });
 
+test('plugin-driver proof summary attach helper repairs stale positive-proof alias scenario statuses when the nested mode proof is current', () => {
+  const rawSummary = {
+    mode: 'driverPositiveProofOnly',
+    canonicalMode: 'driver-positive-proof',
+    requestedScenarios: ['driverPositiveProofOnly'],
+    selectedScenarios: ['driverPositiveProofOnly'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverPositiveProofOnly'],
+    selectedScenarios: new Set(['driverPositiveProofOnly']),
+    resolvedMode: 'driverPositiveProofOnly',
+    canonicalMode: 'driver-positive-proof',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedScenarioStatuses: {
+      driverPositiveProofOnly: 'missing',
+    },
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverPositiveProofOnly'],
+    selectedScenarios: new Set(['driverPositiveProofOnly']),
+    resolvedMode: 'driverPositiveProofOnly',
+    canonicalMode: 'driver-positive-proof',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    repairedProof.requestedScenarioStatuses,
+    repairedProof.modeProof?.requestedScenarioStatuses,
+  );
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.deepEqual(repairedProof.modeProof?.requestedScenarioStatuses, {
+    'driver-positive-proof': 'passed',
+  });
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
+});
+
+test('plugin-driver proof summary attach helper repairs stale delete-apply alias scenario statuses when the nested mode proof is current', () => {
+  const rawSummary = {
+    mode: 'driverDeleteApplyProofOnly',
+    canonicalMode: 'driver-delete-apply',
+    requestedScenarios: ['driverDeleteApplyProofOnly'],
+    selectedScenarios: ['driver-delete-apply'],
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverDeleteApplyProofOnly'],
+    selectedScenarios: new Set(['driver-delete-apply']),
+    resolvedMode: 'driverDeleteApplyProofOnly',
+    canonicalMode: 'driver-delete-apply',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'missing',
+    requestedScenarioStatuses: {
+      driverDeleteApplyProofOnly: 'missing',
+    },
+    requestedConcreteScenarioStatuses: {
+      driverDeleteApplyProofOnly: 'missing',
+    },
+    requestedSatisfied: false,
+    requestedScenariosSatisfied: false,
+    requestedConcreteScenariosSatisfied: false,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverDeleteApplyProofOnly'],
+    selectedScenarios: new Set(['driver-delete-apply']),
+    resolvedMode: 'driverDeleteApplyProofOnly',
+    canonicalMode: 'driver-delete-apply',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    repairedProof.requestedScenarioStatuses,
+    repairedProof.modeProof?.requestedScenarioStatuses,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarioStatuses,
+    repairedProof.modeProof?.requestedConcreteScenarioStatuses,
+  );
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, true);
+  assert.equal(
+    repairedProof.requestedConcreteScenariosSatisfied,
+    repairedProof.modeProof?.requestedConcreteScenariosSatisfied,
+  );
+  assert.deepEqual(repairedProof.modeProof?.requestedScenarioStatuses, {
+    'driver-delete-apply': 'passed',
+  });
+  assert.deepEqual(repairedProof.modeProof?.requestedConcreteScenarioStatuses, {
+    'driver-delete-apply': 'passed',
+  });
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'passed');
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(repairedProof.modeProof?.requestedConcreteScenariosSatisfied, true);
+});
+
 test('plugin-driver proof summary attach helper repairs stale callback alias scenario statuses when the nested mode proof is current', () => {
   const callbackSelection = new Set([
     'driver-callback-guards',
