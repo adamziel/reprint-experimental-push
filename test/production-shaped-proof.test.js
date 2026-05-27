@@ -6189,6 +6189,42 @@ test('packaged production plugin smoke readiness helper reports early child exit
   assert.match(helperSource, /Playground server \$\{exitLabel\}/);
 });
 
+test('packaged production plugin smoke readiness helper fails closed when the Playground child exits before packaged probing completes', async () => {
+  const helper = buildPackagedSmokeWaitHelper();
+  const child = {
+    exitCode: 23,
+    signalCode: null,
+    pid: 7123,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged server boot log']),
+    (error) => {
+      assert.match(error.message, /Playground server exited early with 23/);
+      assert.match(error.message, /packaged server boot log/);
+      return true;
+    },
+  );
+});
+
+test('packaged production plugin smoke readiness helper fails closed when the Playground child is signaled before packaged probing completes', async () => {
+  const helper = buildPackagedSmokeWaitHelper();
+  const child = {
+    exitCode: null,
+    signalCode: 'SIGTERM',
+    pid: 9451,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged server boot log']),
+    (error) => {
+      assert.match(error.message, /Playground server terminated by SIGTERM/);
+      assert.match(error.message, /packaged server boot log/);
+      return true;
+    },
+  );
+});
+
 test('packaged production plugin smoke readiness helper preserves timeout fallback probe details', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
