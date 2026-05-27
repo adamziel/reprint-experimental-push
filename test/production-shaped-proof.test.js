@@ -1398,6 +1398,61 @@ test('production-shaped release verify does not mix partial explicit direct cred
   );
 });
 
+test('production-shaped release verify lets a required auth/session source override partial explicit direct credentials', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: 'trusted-runtime-username',
+        applicationPassword: '',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      credentials: {
+        username: 'reprint_push_admin',
+        password: 'reprint-push-admin-app-password',
+      },
+    },
+  );
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'http://127.0.0.1:9090',
+        username: '',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      credentials: {
+        username: 'reprint_push_admin',
+        password: 'reprint-push-admin-app-password',
+      },
+    },
+  );
+});
+
 test('production-shaped release verify does not replace malformed explicit direct credentials with fallback auth defaults before source override', () => {
   assert.deepEqual(
     resolveAuthSessionRequestState(
