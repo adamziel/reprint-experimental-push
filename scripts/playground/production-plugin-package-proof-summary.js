@@ -508,6 +508,13 @@ const scenarioDefinitions = [
     },
   },
   {
+    key: 'driverWhitespaceNameGuard',
+    scenario: 'driver-whitespace-name-guard',
+    evaluate(summary) {
+      return summary?.driverWhitespaceNameGuard?.missingDriverName === true;
+    },
+  },
+  {
     key: 'driverMissingPluginOwnerGuard',
     scenario: 'driver-missing-plugin-owner-guard',
     evaluate(summary) {
@@ -515,10 +522,24 @@ const scenarioDefinitions = [
     },
   },
   {
+    key: 'driverWhitespacePluginOwnerGuard',
+    scenario: 'driver-whitespace-plugin-owner-guard',
+    evaluate(summary) {
+      return summary?.driverWhitespacePluginOwnerGuard?.missingPluginOwner === true;
+    },
+  },
+  {
     key: 'driverMissingTableGuard',
     scenario: 'driver-missing-table-guard',
     evaluate(summary) {
       return summary?.driverMissingTableGuard?.missingTable === true;
+    },
+  },
+  {
+    key: 'driverWhitespaceTableGuard',
+    scenario: 'driver-whitespace-table-guard',
+    evaluate(summary) {
+      return summary?.driverWhitespaceTableGuard?.missingTable === true;
     },
   },
   {
@@ -1293,8 +1314,11 @@ function summaryHasDirectPluginDriverEvidence(summary) {
     || summary?.driverApplyGuard !== undefined
     || summary?.driverValidateGuard !== undefined
     || summary?.driverMissingNameGuard !== undefined
+    || summary?.driverWhitespaceNameGuard !== undefined
     || summary?.driverPluginOwnerGuard !== undefined
+    || summary?.driverWhitespacePluginOwnerGuard !== undefined
     || summary?.driverMissingTableGuard !== undefined
+    || summary?.driverWhitespaceTableGuard !== undefined
     || summary?.driverDuplicateNameGuard !== undefined
     || summary?.driverDuplicateTableGuard !== undefined;
 }

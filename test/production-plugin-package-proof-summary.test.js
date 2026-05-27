@@ -7713,6 +7713,55 @@ test('plugin-driver proof summary reports blank row id receipt guards when packa
   assert.equal(summary.failedRequestedScenarios.length, 0);
 });
 
+test('plugin-driver proof summary reports standalone whitespace registration guard scenarios', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverWhitespaceNameGuard: {
+        exportFailed: true,
+        missingDriverName: true,
+      },
+      driverWhitespacePluginOwnerGuard: {
+        exportFailed: true,
+        missingPluginOwner: true,
+      },
+      driverWhitespaceTableGuard: {
+        exportFailed: true,
+        missingTable: true,
+      },
+    },
+    {
+      requestedScenarios: [
+        'driver-whitespace-name-guard',
+        'driver-whitespace-plugin-owner-guard',
+        'driver-whitespace-table-guard',
+      ],
+      selectedScenarios: new Set([
+        'driver-whitespace-name-guard',
+        'driver-whitespace-plugin-owner-guard',
+        'driver-whitespace-table-guard',
+      ]),
+    },
+  );
+
+  assert.equal(summary.scenarios.driverWhitespaceNameGuard, 'passed');
+  assert.equal(summary.scenarios.driverWhitespacePluginOwnerGuard, 'passed');
+  assert.equal(summary.scenarios.driverWhitespaceTableGuard, 'passed');
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-whitespace-name-guard': 'passed',
+    'driver-whitespace-plugin-owner-guard': 'passed',
+    'driver-whitespace-table-guard': 'passed',
+  });
+  assert.deepEqual(summary.requestedConcreteScenarioStatuses, {
+    'driver-whitespace-name-guard': 'passed',
+    'driver-whitespace-plugin-owner-guard': 'passed',
+    'driver-whitespace-table-guard': 'passed',
+  });
+  assert.equal(summary.failedScenarios.length, 0);
+  assert.equal(summary.failedRequestedScenarios.length, 0);
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+});
+
 test('plugin-driver proof summary fails receipt guards when the forged delete payload mutates after rejection', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
