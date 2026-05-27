@@ -721,6 +721,9 @@ export async function runAuthenticatedHttpPush({
     ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, dbJournal)
     : null;
   const dbJournalLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
+  const dbJournalObservedAuthLifecycleFlagDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionLifecycleFlagDrift(dbJournal);
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
@@ -756,6 +759,12 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (dbJournalObservedAuthLifecycleFlagDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = dbJournalObservedAuthLifecycleFlagDrift;
+    setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dbJournal)) {
