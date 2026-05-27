@@ -140,6 +140,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ]),
+  }),
+  Object.freeze({
     id: 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
     blockerRefs: Object.freeze([
       'memory-ceiling-match-visible-without-queue-slack-visibility',
