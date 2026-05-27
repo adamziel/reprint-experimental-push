@@ -182,9 +182,7 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
 
 function checkedBoundaryStaleClaimEventMatches(event) {
   return event === 'stale-claim-abandoned'
-    || event === 'stale-claim-rejected'
-    || event === 'stale-claim-retry-started'
-    || event === 'stale-claim-retry-in-progress';
+    || event === 'stale-claim-rejected';
 }
 
 function checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary) {
