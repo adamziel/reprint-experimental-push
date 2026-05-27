@@ -2157,6 +2157,15 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
     },
     {
+      label: 'cleanup underscore flag',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
+      },
+    },
+    {
       label: 'rotated status',
       session: {
         status: 'rotated',
@@ -2376,6 +2385,16 @@ test('packaged preflight startup context still fails closed for terminal product
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
       },
     },
     {

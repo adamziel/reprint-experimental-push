@@ -26,7 +26,9 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   const observedStatus = session?.status || 'missing';
   const observedExpiresAt = session?.expiresAt || 'missing';
   const revoked = session?.revoked === true || session?.status === 'revoked';
-  const cleanedUp = session?.cleanedUp === true || session?.cleanup === true;
+  const cleanedUp = session?.cleanedUp === true
+    || session?.cleanup === true
+    || session?.cleaned_up === true;
   const rotated = session?.rotated === true;
 
   if (observedType !== 'production-auth-session') {
