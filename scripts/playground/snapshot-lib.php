@@ -4,6 +4,7 @@
  *
  * These helpers intentionally cover only the fixture surface used by the lab:
  * marked posts, their author identities, selected fixture graph postmeta,
+ * selected fixture taxonomy graph rows,
  * allowlisted plugin-owned options/postmeta,
  * fixture-scoped lab plugin/table metadata, named lab plugin files, and upload files under
  * wp-content/uploads/reprint-push.
@@ -29,6 +30,10 @@ function reprint_push_export_snapshot(): array
             'wp_options' => [],
             'wp_postmeta' => [],
             'wp_reprint_push_forms_lab' => [],
+            'wp_terms' => [],
+            'wp_term_taxonomy' => [],
+            'wp_term_relationships' => [],
+            'wp_termmeta' => [],
         ],
     ];
 
@@ -64,6 +69,7 @@ function reprint_push_export_snapshot(): array
 
     reprint_push_export_fixture_post_authors($snapshot);
     reprint_push_export_fixture_postmeta($snapshot);
+    reprint_push_export_fixture_taxonomy_graph($snapshot);
     reprint_push_export_fixture_plugin_metadata($snapshot);
     reprint_push_export_fixture_custom_table($snapshot);
     reprint_push_export_registered_plugin_owned_rows($snapshot);
@@ -81,6 +87,10 @@ function reprint_push_export_snapshot(): array
     ksort($snapshot['db']['wp_options']);
     ksort($snapshot['db']['wp_postmeta']);
     ksort($snapshot['db']['wp_reprint_push_forms_lab']);
+    ksort($snapshot['db']['wp_terms']);
+    ksort($snapshot['db']['wp_term_taxonomy']);
+    ksort($snapshot['db']['wp_term_relationships']);
+    ksort($snapshot['db']['wp_termmeta']);
 
     return $snapshot;
 }
@@ -137,6 +147,134 @@ function reprint_push_export_fixture_postmeta(array &$snapshot): void
             }
             $snapshot['db']['wp_postmeta'][reprint_push_postmeta_row_id($post_id, $meta_key)] = $row;
         }
+    }
+}
+
+function reprint_push_export_fixture_taxonomy_graph(array &$snapshot): void
+{
+    global $wpdb;
+
+    $marker_key = reprint_push_taxonomy_fixture_meta_key();
+    $marker_rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT meta_id, term_id, meta_key, meta_value
+             FROM {$wpdb->termmeta}
+             WHERE meta_key = %s
+               AND meta_value <> ''
+             ORDER BY meta_id ASC",
+            $marker_key
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    if (count($marker_rows) === 0) {
+        return;
+    }
+
+    $term_ids = [];
+    foreach ($marker_rows as $row) {
+        $term_id = (int) ($row['term_id'] ?? 0);
+        if ($term_id > 0) {
+            $term_ids[$term_id] = $term_id;
+        }
+    }
+    if (count($term_ids) === 0) {
+        return;
+    }
+
+    $term_placeholders = implode(', ', array_fill(0, count($term_ids), '%d'));
+    $terms = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT term_id, name, slug, term_group
+             FROM {$wpdb->terms}
+             WHERE term_id IN ({$term_placeholders})
+             ORDER BY term_id ASC",
+            ...array_values($term_ids)
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    foreach ($terms as $term) {
+        $term['term_id'] = (int) $term['term_id'];
+        $term['term_group'] = (int) $term['term_group'];
+        $snapshot['db']['wp_terms']['term_id:' . $term['term_id']] = $term;
+    }
+
+    $taxonomies = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT term_taxonomy_id, term_id, taxonomy, description, parent, count
+             FROM {$wpdb->term_taxonomy}
+             WHERE term_id IN ({$term_placeholders})
+             ORDER BY term_taxonomy_id ASC",
+            ...array_values($term_ids)
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    $term_taxonomy_ids = [];
+    foreach ($taxonomies as $taxonomy) {
+        if (!in_array((string) ($taxonomy['taxonomy'] ?? ''), reprint_push_supported_fixture_taxonomies(), true)) {
+            continue;
+        }
+        $taxonomy['term_taxonomy_id'] = (int) $taxonomy['term_taxonomy_id'];
+        $taxonomy['term_id'] = (int) $taxonomy['term_id'];
+        $taxonomy['parent'] = (int) $taxonomy['parent'];
+        $taxonomy['count'] = (int) $taxonomy['count'];
+        $term_taxonomy_ids[$taxonomy['term_taxonomy_id']] = $taxonomy['term_taxonomy_id'];
+        $snapshot['db']['wp_term_taxonomy']['term_taxonomy_id:' . $taxonomy['term_taxonomy_id']] = $taxonomy;
+    }
+
+    if (count($term_taxonomy_ids) > 0 && count($snapshot['db']['wp_posts']) > 0) {
+        $post_ids = [];
+        foreach (array_keys($snapshot['db']['wp_posts']) as $post_row_id) {
+            $post_ids[] = reprint_push_numeric_id($post_row_id, 'ID');
+        }
+        $post_placeholders = implode(', ', array_fill(0, count($post_ids), '%d'));
+        $taxonomy_placeholders = implode(', ', array_fill(0, count($term_taxonomy_ids), '%d'));
+        $relationships = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT object_id, term_taxonomy_id, term_order
+                 FROM {$wpdb->term_relationships}
+                 WHERE object_id IN ({$post_placeholders})
+                   AND term_taxonomy_id IN ({$taxonomy_placeholders})
+                 ORDER BY object_id ASC, term_taxonomy_id ASC",
+                ...array_values($post_ids),
+                ...array_values($term_taxonomy_ids)
+            ),
+            ARRAY_A
+        ) ?: [];
+
+        foreach ($relationships as $relationship) {
+            $relationship['object_id'] = (int) $relationship['object_id'];
+            $relationship['term_taxonomy_id'] = (int) $relationship['term_taxonomy_id'];
+            $relationship['term_order'] = (int) $relationship['term_order'];
+            $snapshot['db']['wp_term_relationships'][reprint_push_term_relationship_row_id(
+                $relationship['object_id'],
+                $relationship['term_taxonomy_id']
+            )] = $relationship;
+        }
+    }
+
+    $allowed_meta_keys = reprint_push_fixture_termmeta_export_keys();
+    $meta_key_placeholders = implode(', ', array_fill(0, count($allowed_meta_keys), '%s'));
+    $termmeta_rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT meta_id, term_id, meta_key, meta_value
+             FROM {$wpdb->termmeta}
+             WHERE term_id IN ({$term_placeholders})
+               AND meta_key IN ({$meta_key_placeholders})
+             ORDER BY meta_id ASC",
+            ...array_values($term_ids),
+            ...$allowed_meta_keys
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    foreach ($termmeta_rows as $row) {
+        $row['meta_id'] = (int) $row['meta_id'];
+        $row['term_id'] = (int) $row['term_id'];
+        $row['meta_value'] = reprint_push_normalize_snapshot_value($row['meta_value']);
+        $snapshot['db']['wp_termmeta']['meta_id:' . $row['meta_id']] = $row;
     }
 }
 
@@ -1173,6 +1311,22 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
             reprint_push_forms_lab_row_id($id);
             return;
         }
+        if ($table === 'wp_terms') {
+            reprint_push_term_row_id($id);
+            return;
+        }
+        if ($table === 'wp_term_taxonomy') {
+            reprint_push_term_taxonomy_row_id($id);
+            return;
+        }
+        if ($table === 'wp_term_relationships') {
+            reprint_push_parse_term_relationship_row_id($id);
+            return;
+        }
+        if ($table === 'wp_termmeta') {
+            reprint_push_termmeta_row_id($id);
+            return;
+        }
         $driver = reprint_push_plugin_owned_row_driver_for_table($table);
         if (is_array($driver)) {
             if ($id === '' || strpos($id, ':') === false) {
@@ -1233,6 +1387,22 @@ function reprint_push_apply_row_resource(string $table, string $id, bool $is_del
     }
     if ($table === 'wp_reprint_push_forms_lab') {
         reprint_push_apply_forms_lab_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_terms') {
+        reprint_push_apply_term_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_term_taxonomy') {
+        reprint_push_apply_term_taxonomy_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_term_relationships') {
+        reprint_push_apply_term_relationship_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_termmeta') {
+        reprint_push_apply_termmeta_row($id, $is_delete, $value);
         return;
     }
     $driver = reprint_push_plugin_owned_row_driver_for_table($table);
@@ -1392,6 +1562,201 @@ function reprint_push_update_fixture_postmeta(string $id, int $post_id, string $
     }
 
     update_post_meta($post_id, $meta_key, $value['meta_value']);
+}
+
+function reprint_push_apply_term_row(string $id, bool $is_delete, $value): void
+{
+    global $wpdb;
+
+    $term_id = reprint_push_term_row_id($id);
+    $existing = $wpdb->get_row(
+        $wpdb->prepare("SELECT term_id, slug FROM {$wpdb->terms} WHERE term_id = %d", $term_id),
+        ARRAY_A
+    );
+    if (is_array($existing) && !reprint_push_is_fixture_term($term_id, (string) ($existing['slug'] ?? ''))) {
+        throw new RuntimeException('Refusing to mutate non-fixture term: ' . $id);
+    }
+
+    if ($is_delete) {
+        if (is_array($existing)) {
+            $wpdb->delete($wpdb->terms, ['term_id' => $term_id], ['%d']);
+        }
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Term row payload must be an object');
+    }
+    if ((int) ($value['term_id'] ?? 0) !== $term_id) {
+        throw new RuntimeException('Term row payload does not match row id: ' . $id);
+    }
+    $slug = (string) ($value['slug'] ?? '');
+    if (!reprint_push_is_fixture_term($term_id, $slug)) {
+        throw new RuntimeException('Unsupported fixture term slug: ' . $slug);
+    }
+
+    $result = $wpdb->replace(
+        $wpdb->terms,
+        [
+            'term_id' => $term_id,
+            'name' => (string) ($value['name'] ?? ''),
+            'slug' => $slug,
+            'term_group' => (int) ($value['term_group'] ?? 0),
+        ],
+        ['%d', '%s', '%s', '%d']
+    );
+    if ($result === false) {
+        throw new RuntimeException('Could not apply term row: ' . $wpdb->last_error);
+    }
+}
+
+function reprint_push_apply_term_taxonomy_row(string $id, bool $is_delete, $value): void
+{
+    global $wpdb;
+
+    $term_taxonomy_id = reprint_push_term_taxonomy_row_id($id);
+    $existing = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT tt.term_taxonomy_id, tt.term_id, t.slug
+             FROM {$wpdb->term_taxonomy} tt
+             LEFT JOIN {$wpdb->terms} t ON t.term_id = tt.term_id
+             WHERE tt.term_taxonomy_id = %d",
+            $term_taxonomy_id
+        ),
+        ARRAY_A
+    );
+    if (is_array($existing) && !reprint_push_is_fixture_term((int) ($existing['term_id'] ?? 0), (string) ($existing['slug'] ?? ''))) {
+        throw new RuntimeException('Refusing to mutate non-fixture term taxonomy: ' . $id);
+    }
+
+    if ($is_delete) {
+        if (is_array($existing)) {
+            $wpdb->delete($wpdb->term_taxonomy, ['term_taxonomy_id' => $term_taxonomy_id], ['%d']);
+        }
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Term taxonomy row payload must be an object');
+    }
+    if ((int) ($value['term_taxonomy_id'] ?? 0) !== $term_taxonomy_id) {
+        throw new RuntimeException('Term taxonomy row payload does not match row id: ' . $id);
+    }
+    $term_id = (int) ($value['term_id'] ?? 0);
+    $taxonomy = (string) ($value['taxonomy'] ?? '');
+    if ($term_id <= 0 || !in_array($taxonomy, reprint_push_supported_fixture_taxonomies(), true)) {
+        throw new RuntimeException('Unsupported fixture term taxonomy row: ' . $id);
+    }
+
+    $result = $wpdb->replace(
+        $wpdb->term_taxonomy,
+        [
+            'term_taxonomy_id' => $term_taxonomy_id,
+            'term_id' => $term_id,
+            'taxonomy' => $taxonomy,
+            'description' => (string) ($value['description'] ?? ''),
+            'parent' => (int) ($value['parent'] ?? 0),
+            'count' => (int) ($value['count'] ?? 0),
+        ],
+        ['%d', '%d', '%s', '%s', '%d', '%d']
+    );
+    if ($result === false) {
+        throw new RuntimeException('Could not apply term taxonomy row: ' . $wpdb->last_error);
+    }
+}
+
+function reprint_push_apply_term_relationship_row(string $id, bool $is_delete, $value): void
+{
+    global $wpdb;
+
+    [$object_id, $term_taxonomy_id] = reprint_push_parse_term_relationship_row_id($id);
+    if (!reprint_push_is_fixture_post($object_id)) {
+        throw new RuntimeException('Refusing to mutate term relationship for non-fixture post: ' . $id);
+    }
+
+    if ($is_delete) {
+        $wpdb->delete(
+            $wpdb->term_relationships,
+            ['object_id' => $object_id, 'term_taxonomy_id' => $term_taxonomy_id],
+            ['%d', '%d']
+        );
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Term relationship row payload must be an object');
+    }
+    if ((int) ($value['object_id'] ?? 0) !== $object_id || (int) ($value['term_taxonomy_id'] ?? 0) !== $term_taxonomy_id) {
+        throw new RuntimeException('Term relationship row payload does not match row id: ' . $id);
+    }
+
+    $result = $wpdb->replace(
+        $wpdb->term_relationships,
+        [
+            'object_id' => $object_id,
+            'term_taxonomy_id' => $term_taxonomy_id,
+            'term_order' => (int) ($value['term_order'] ?? 0),
+        ],
+        ['%d', '%d', '%d']
+    );
+    if ($result === false) {
+        throw new RuntimeException('Could not apply term relationship row: ' . $wpdb->last_error);
+    }
+}
+
+function reprint_push_apply_termmeta_row(string $id, bool $is_delete, $value): void
+{
+    global $wpdb;
+
+    $meta_id = reprint_push_termmeta_row_id($id);
+    $existing = $wpdb->get_row(
+        $wpdb->prepare("SELECT meta_id, term_id, meta_key FROM {$wpdb->termmeta} WHERE meta_id = %d", $meta_id),
+        ARRAY_A
+    );
+    if (is_array($existing) && !in_array((string) ($existing['meta_key'] ?? ''), reprint_push_fixture_termmeta_export_keys(), true)) {
+        throw new RuntimeException('Refusing to mutate non-fixture termmeta: ' . $id);
+    }
+
+    if ($is_delete) {
+        if (is_array($existing)) {
+            $wpdb->delete($wpdb->termmeta, ['meta_id' => $meta_id], ['%d']);
+        }
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Termmeta row payload must be an object');
+    }
+    if ((int) ($value['meta_id'] ?? 0) !== $meta_id) {
+        throw new RuntimeException('Termmeta row payload does not match row id: ' . $id);
+    }
+    $meta_key = (string) ($value['meta_key'] ?? '');
+    if (!in_array($meta_key, reprint_push_fixture_termmeta_export_keys(), true)) {
+        throw new RuntimeException('Unsupported fixture termmeta key: ' . $meta_key);
+    }
+    $term_id = (int) ($value['term_id'] ?? 0);
+    if ($term_id <= 0) {
+        throw new RuntimeException('Termmeta row payload must include a positive term_id: ' . $id);
+    }
+
+    $meta_value = $value['meta_value'] ?? '';
+    if (is_array($meta_value) || is_object($meta_value)) {
+        $meta_value = wp_json_encode(reprint_push_normalize_snapshot_value($meta_value));
+    }
+
+    $result = $wpdb->replace(
+        $wpdb->termmeta,
+        [
+            'meta_id' => $meta_id,
+            'term_id' => $term_id,
+            'meta_key' => $meta_key,
+            'meta_value' => (string) $meta_value,
+        ],
+        ['%d', '%d', '%s', '%s']
+    );
+    if ($result === false) {
+        throw new RuntimeException('Could not apply termmeta row: ' . $wpdb->last_error);
+    }
 }
 
 function reprint_push_apply_forms_lab_row(string $id, bool $is_delete, $value): void
@@ -1557,6 +1922,65 @@ function reprint_push_forms_lab_row_id(string $id): int
         throw new RuntimeException('Unsupported row id: ' . $id);
     }
     return $row_id;
+}
+
+function reprint_push_term_row_id(string $id): int
+{
+    $row_id = reprint_push_numeric_id($id, 'term_id');
+    if ($row_id < 1 || $id !== 'term_id:' . (string) $row_id) {
+        throw new RuntimeException('Unsupported term row id: ' . $id);
+    }
+    return $row_id;
+}
+
+function reprint_push_term_taxonomy_row_id(string $id): int
+{
+    $row_id = reprint_push_numeric_id($id, 'term_taxonomy_id');
+    if ($row_id < 1 || $id !== 'term_taxonomy_id:' . (string) $row_id) {
+        throw new RuntimeException('Unsupported term taxonomy row id: ' . $id);
+    }
+    return $row_id;
+}
+
+function reprint_push_parse_term_relationship_row_id(string $id): array
+{
+    if (!preg_match('/^object_id:([1-9]\d*)\|term_taxonomy_id:([1-9]\d*)$/', $id, $matches)) {
+        throw new RuntimeException('Unsupported term relationship row id: ' . $id);
+    }
+    return [(int) $matches[1], (int) $matches[2]];
+}
+
+function reprint_push_term_relationship_row_id(int $object_id, int $term_taxonomy_id): string
+{
+    if ($object_id <= 0 || $term_taxonomy_id <= 0) {
+        throw new RuntimeException('Unsupported term relationship ids.');
+    }
+    return 'object_id:' . $object_id . '|term_taxonomy_id:' . $term_taxonomy_id;
+}
+
+function reprint_push_termmeta_row_id(string $id): int
+{
+    $row_id = reprint_push_numeric_id($id, 'meta_id');
+    if ($row_id < 1 || $id !== 'meta_id:' . (string) $row_id) {
+        throw new RuntimeException('Unsupported termmeta row id: ' . $id);
+    }
+    return $row_id;
+}
+
+function reprint_push_is_fixture_term(int $term_id, string $slug = ''): bool
+{
+    if ($term_id <= 0) {
+        return false;
+    }
+    if ($slug !== '' && str_starts_with($slug, 'reprint-push-taxonomy-')) {
+        return true;
+    }
+    return get_term_meta($term_id, reprint_push_taxonomy_fixture_meta_key(), true) !== '';
+}
+
+function reprint_push_supported_fixture_taxonomies(): array
+{
+    return ['category', 'post_tag', 'post_format'];
 }
 
 function reprint_push_forms_lab_table_name(): string
@@ -2417,11 +2841,23 @@ function reprint_push_featured_image_meta_key(): string
     return '_thumbnail_id';
 }
 
+function reprint_push_taxonomy_fixture_meta_key(): string
+{
+    return 'reprint_push_taxonomy_fixture';
+}
+
 function reprint_push_fixture_postmeta_export_keys(): array
 {
     return [
         reprint_push_forms_schema_meta_key(),
         reprint_push_featured_image_meta_key(),
+    ];
+}
+
+function reprint_push_fixture_termmeta_export_keys(): array
+{
+    return [
+        reprint_push_taxonomy_fixture_meta_key(),
     ];
 }
 

@@ -18,6 +18,7 @@ const smallShape = Object.freeze({
   remoteDriftPosts: 1,
   remoteDriftFiles: 1,
   featuredImageGraph: false,
+  taxonomyGraph: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -41,16 +42,31 @@ test('complex-site seed PHP can add a featured image graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_featured_image_graph = false/);
 });
 
+test('complex-site seed PHP can add a taxonomy graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    taxonomyGraph: true,
+  });
+
+  assert.match(php, /reprint-push-taxonomy-graph/);
+  assert.match(php, /term_relationships/);
+  assert.match(php, /reprint_push_taxonomy_fixture/);
+  assert.match(php, /if \(\$complex_taxonomy_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_taxonomy_graph = false/);
+});
+
 test('complex-site fixture shape can be expanded for journal-window evidence', () => {
   const shape = complexSiteFixtureShapeFromEnv({
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
   });
 
   assert.equal(shape.postCount, 25);
   assert.equal(shape.schemaMetaCount, 5);
   assert.equal(shape.fileCount, 3);
   assert.equal(shape.featuredImageGraph, true);
+  assert.equal(shape.taxonomyGraph, true);
 });
 
 test('complex-site planner proof reports dense counts, receipts prerequisites, and no-data-loss invariants', () => {
@@ -100,6 +116,30 @@ test('complex-site planner proof covers real featured image attachment graph clo
   assert.equal(proof.invariants.featuredImageGraphCountsPresent, true);
   assert.equal(proof.invariants.featuredImageGraphPlanned, true);
   assert.equal(proof.invariants.featuredImageGraphHasLivePreconditions, true);
+});
+
+test('complex-site planner proof covers real taxonomy graph closure', () => {
+  const graphShape = { ...smallShape, taxonomyGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.taxonomyGraphTerms, 0);
+  assert.equal(proof.counts.localEdited.taxonomyGraphTerms, 1);
+  assert.equal(proof.counts.localEdited.taxonomyGraphTaxonomies, 1);
+  assert.equal(proof.counts.localEdited.taxonomyGraphRelationships, 1);
+  assert.equal(proof.counts.localEdited.taxonomyGraphTermmeta, 1);
+  assert.equal(proof.taxonomyGraphEvidence.type, 'category-term-relationship-termmeta');
+  assert.equal(proof.taxonomyGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.taxonomyGraphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.taxonomyGraphCountsPresent, true);
+  assert.equal(proof.invariants.taxonomyGraphPlanned, true);
+  assert.equal(proof.invariants.taxonomyGraphHasLivePreconditions, true);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -176,6 +216,10 @@ function syntheticComplexSnapshot(variant, shape) {
       wp_postmeta: {},
       wp_reprint_push_forms_lab: {},
       wp_reprint_push_release_state: {},
+      wp_terms: {},
+      wp_term_taxonomy: {},
+      wp_term_relationships: {},
+      wp_termmeta: {},
     },
   };
   const local = variant === 'local-edited';
@@ -229,6 +273,34 @@ function syntheticComplexSnapshot(variant, shape) {
       post_id: 71001,
       meta_key: '_thumbnail_id',
       meta_value: '71901',
+    };
+  }
+
+  if (shape.taxonomyGraph && local) {
+    snapshot.db.wp_terms['term_id:72901'] = {
+      term_id: 72901,
+      name: 'Reprint Push Taxonomy Graph',
+      slug: 'reprint-push-taxonomy-graph',
+      term_group: 0,
+    };
+    snapshot.db.wp_term_taxonomy['term_taxonomy_id:72911'] = {
+      term_taxonomy_id: 72911,
+      term_id: 72901,
+      taxonomy: 'category',
+      description: 'Local taxonomy graph fixture.',
+      parent: 0,
+      count: 1,
+    };
+    snapshot.db.wp_term_relationships['object_id:71001|term_taxonomy_id:72911'] = {
+      object_id: 71001,
+      term_taxonomy_id: 72911,
+      term_order: 0,
+    };
+    snapshot.db.wp_termmeta['meta_id:72921'] = {
+      meta_id: 72921,
+      term_id: 72901,
+      meta_key: 'reprint_push_taxonomy_fixture',
+      meta_value: 'local-taxonomy-graph',
     };
   }
 

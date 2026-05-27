@@ -4,6 +4,66 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Taxonomy Graph Evidence
+
+- Last update: 2026-05-28 01:20 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:taxonomy-graph`
+  passed in tmux window `main:taxonomy-graph-proof` with
+  `[TAXONOMY_GRAPH_PROOF_STATUS:0]`.
+- Code change: the Brewcommerce-derived local production proof can now opt into
+  a category taxonomy graph fixture through
+  `REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF=1`. The fixture
+  creates a local-only term row `row:["wp_terms","term_id:72901"]`, term
+  taxonomy row `row:["wp_term_taxonomy","term_taxonomy_id:72911"]`, post-term
+  relationship row
+  `row:["wp_term_relationships","object_id:71001|term_taxonomy_id:72911"]`,
+  and marker termmeta row `row:["wp_termmeta","meta_id:72921"]`.
+- Planner evidence: the graph-enabled topology reported 12 complex posts,
+  5 complex form-schema postmeta rows, 3 complex upload files, 4 forms-lab
+  rows, 1 local taxonomy term, 1 local term taxonomy, 1 local term
+  relationship, and 1 local termmeta row. The ready plan had 26 mutations,
+  26 live-remote preconditions, 0 blockers, and mutation families `file: 3`,
+  `row:wp_options: 1`, `row:wp_postmeta: 5`, `row:wp_posts: 12`,
+  `row:wp_reprint_push_release_state: 1`, `row:wp_term_relationships: 1`,
+  `row:wp_term_taxonomy: 1`, `row:wp_termmeta: 1`, and `row:wp_terms: 1`.
+- Taxonomy graph evidence: the term, term taxonomy, relationship, and termmeta
+  resources were all planned with live preconditions, and the planner reported
+  `staleGraphBlockers: 0`. The remote-drift plan still failed closed with
+  9 preserve-remote conflicts and 1 blocker.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `59a91092bc6b928fb8e2e25a2ea6151018af15525b5aea7f05cc475e545b9d93`,
+  reported 88 durable DB journal rows, `mutationApplied: 26`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 26`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session, durable journal, replay/retry,
+  replay equivalence, and `releaseMovement.gates: candidate-for-review`.
+- Recovery and retry evidence on the same release verifier path includes
+  same-key/body replay with 26 mutation events, same-key/different-body
+  `409 IDEMPOTENCY_KEY_CONFLICT` before mutation, stale-owner fencing, 26/26
+  fully updated recovery inspect, and blocked apply-time revalidation state
+  with `old: 25`, `new: 0`, `blockedUnknown: 1`.
+- Focused checks passed:
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `php -l scripts/playground/snapshot-lib.php`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `node --test --test-name-pattern "featured image|taxonomy|termmeta|term relationship|same-plan post|graph closure|menu item graph|postmeta references" test/push-planner.test.js`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:taxonomy-graph`.
+- Caveat: this closes one local Playground category taxonomy fixture with
+  stable fixture identities. It does not prove general WordPress identity
+  rewriting for arbitrary terms, term splitting, custom taxonomies, GUIDs,
+  menus, serialized blocks, `post_parent`, production importer/exporter
+  identity maps, external WordPress durability, rollback, or general
+  plugin-driver correctness.
+- Percent movement: merge invariants move from 61% to 64%; reliable
+  executor/protocol moves from 70% to 71%; independent evidence moves from 64%
+  to 66%. Recovery boundaries stay at 58%, and fast path/chunking stays at 37%
+  because this proof adds graph coverage, not external crash durability or a
+  larger transfer benchmark.
+
 ## 2026-05-28 - Featured Image Graph Evidence
 
 - Last update: 2026-05-28 01:08 CEST.

@@ -10,6 +10,7 @@ export const complexSiteFixtureShape = Object.freeze({
   remoteDriftPosts: 3,
   remoteDriftFiles: 1,
   featuredImageGraph: false,
+  taxonomyGraph: false,
 });
 
 const proofNow = new Date('2026-05-27T21:45:00.000Z');
@@ -20,6 +21,22 @@ const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
 const featuredImageMetaKey = '_thumbnail_id';
 const featuredImageAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageAttachmentId}"]`;
 const featuredImageMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImagePostId}:meta_key:${featuredImageMetaKey}"]`;
+const taxonomyGraphPostId = 71001;
+const taxonomyGraphTermId = 72901;
+const taxonomyGraphTermTaxonomyId = 72911;
+const taxonomyGraphTermMetaId = 72921;
+const taxonomyGraphTermSlug = 'reprint-push-taxonomy-graph';
+const taxonomyGraphMetaKey = 'reprint_push_taxonomy_fixture';
+const taxonomyGraphTermResourceKey = `row:["wp_terms","term_id:${taxonomyGraphTermId}"]`;
+const taxonomyGraphTaxonomyResourceKey = `row:["wp_term_taxonomy","term_taxonomy_id:${taxonomyGraphTermTaxonomyId}"]`;
+const taxonomyGraphRelationshipResourceKey = `row:["wp_term_relationships","object_id:${taxonomyGraphPostId}|term_taxonomy_id:${taxonomyGraphTermTaxonomyId}"]`;
+const taxonomyGraphTermMetaResourceKey = `row:["wp_termmeta","meta_id:${taxonomyGraphTermMetaId}"]`;
+const taxonomyGraphResourceKeys = Object.freeze([
+  taxonomyGraphTermResourceKey,
+  taxonomyGraphTaxonomyResourceKey,
+  taxonomyGraphRelationshipResourceKey,
+  taxonomyGraphTermMetaResourceKey,
+]);
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
   return Object.freeze({
@@ -30,6 +47,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     remoteDriftPosts: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_POSTS, complexSiteFixtureShape.remoteDriftPosts),
     remoteDriftFiles: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_FILES, complexSiteFixtureShape.remoteDriftFiles),
     featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
+    taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
   });
 }
 
@@ -46,6 +64,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_remote_drift_posts = ${positiveInt(shape.remoteDriftPosts)};`,
     `$complex_remote_drift_files = ${positiveInt(shape.remoteDriftFiles)};`,
     `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
+    `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
     "  $stable_id = 71000 + $i;",
     "  $suffix = str_pad((string) $i, 2, '0', STR_PAD_LEFT);",
@@ -77,6 +96,17 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  if (is_wp_error($attachment_result)) { throw new RuntimeException($attachment_result->get_error_message()); }",
     "  add_post_meta((int) $attachment_result, 'reprint_push_fixture', 'complex-featured-image', true);",
     `  update_post_meta($featured_post_id, ${phpString(featuredImageMetaKey)}, (string) $attachment_id);`,
+    "}",
+    "if ($complex_taxonomy_graph && $complex_is_local) {",
+    `  $taxonomy_post_id = ${taxonomyGraphPostId};`,
+    `  $taxonomy_term_id = ${taxonomyGraphTermId};`,
+    `  $taxonomy_term_taxonomy_id = ${taxonomyGraphTermTaxonomyId};`,
+    `  $taxonomy_termmeta_id = ${taxonomyGraphTermMetaId};`,
+    `  $wpdb->replace($wpdb->terms, array('term_id'=>$taxonomy_term_id,'name'=>'Reprint Push Taxonomy Graph','slug'=>${phpString(taxonomyGraphTermSlug)},'term_group'=>0), array('%d','%s','%s','%d'));`,
+    "  $wpdb->replace($wpdb->term_taxonomy, array('term_taxonomy_id'=>$taxonomy_term_taxonomy_id,'term_id'=>$taxonomy_term_id,'taxonomy'=>'category','description'=>'Local taxonomy graph fixture.','parent'=>0,'count'=>1), array('%d','%d','%s','%s','%d','%d'));",
+    "  $wpdb->replace($wpdb->term_relationships, array('object_id'=>$taxonomy_post_id,'term_taxonomy_id'=>$taxonomy_term_taxonomy_id,'term_order'=>0), array('%d','%d','%d'));",
+    `  $wpdb->replace($wpdb->termmeta, array('meta_id'=>$taxonomy_termmeta_id,'term_id'=>$taxonomy_term_id,'meta_key'=>${phpString(taxonomyGraphMetaKey)},'meta_value'=>'local-taxonomy-graph'), array('%d','%d','%s','%s'));`,
+    "  clean_term_cache(array($taxonomy_term_id), 'category');",
     "}",
     "wp_mkdir_p($dir);",
     "for ($i = 1; $i <= $complex_file_count; $i++) {",
@@ -124,7 +154,8 @@ export function buildComplexSitePlannerProof({
     + positiveInt(shape.schemaMetaCount)
     + positiveInt(shape.fileCount)
     + 2
-    + (shape.featuredImageGraph ? 2 : 0);
+    + (shape.featuredImageGraph ? 2 : 0)
+    + (shape.taxonomyGraph ? taxonomyGraphResourceKeys.length : 0);
   const expectedMinimumConflicts =
     positiveInt(shape.remoteDriftPosts)
     + Math.min(positiveInt(shape.schemaMetaCount), positiveInt(shape.remoteDriftPosts))
@@ -170,6 +201,23 @@ export function buildComplexSitePlannerProof({
           && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
     featuredImageGraphNoStaleBlocker: !shape.featuredImageGraph
       || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
+    taxonomyGraphCountsPresent: !shape.taxonomyGraph
+      || (summarizeComplexSnapshot(localEditedSnapshot).taxonomyGraphTerms >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).taxonomyGraphTaxonomies >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).taxonomyGraphRelationships >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).taxonomyGraphTermmeta >= 1),
+    taxonomyGraphPlanned: !shape.taxonomyGraph
+      || taxonomyGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+    taxonomyGraphHasLivePreconditions: !shape.taxonomyGraph
+      || taxonomyGraphResourceKeys.every((resourceKey) =>
+        readyPlan.preconditions?.some((precondition) =>
+          precondition.resourceKey === resourceKey
+          && precondition.checkedAgainst === 'live-remote'
+          && typeof precondition.expectedHash === 'string'
+          && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
+    taxonomyGraphNoStaleBlocker: !shape.taxonomyGraph
+      || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
     remoteDriftFailsClosed: ['blocked', 'conflict'].includes(remoteDriftPlan.status)
       && remoteConflicts.length >= expectedMinimumConflicts,
     remoteDriftPreservesRemote: remoteConflicts.every((conflict) =>
@@ -211,6 +259,17 @@ export function buildComplexSitePlannerProof({
         mutation.resourceKey === featuredImageAttachmentResourceKey),
       thumbnailMetaPlanned: readyMutations.some((mutation) =>
         mutation.resourceKey === featuredImageMetaResourceKey),
+      staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
+        blocker.class === 'stale-wordpress-graph-identity').length,
+    } : null,
+    taxonomyGraphEvidence: shape.taxonomyGraph ? {
+      type: 'category-term-relationship-termmeta',
+      termResourceKey: taxonomyGraphTermResourceKey,
+      termTaxonomyResourceKey: taxonomyGraphTaxonomyResourceKey,
+      relationshipResourceKey: taxonomyGraphRelationshipResourceKey,
+      termmetaResourceKey: taxonomyGraphTermMetaResourceKey,
+      allResourcesPlanned: taxonomyGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
       staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
         blocker.class === 'stale-wordpress-graph-identity').length,
     } : null,
@@ -353,6 +412,10 @@ export function summarizeComplexSnapshot(snapshot) {
   const db = snapshot?.db || {};
   const posts = db.wp_posts || {};
   const postmeta = db.wp_postmeta || {};
+  const terms = db.wp_terms || {};
+  const termTaxonomy = db.wp_term_taxonomy || {};
+  const termRelationships = db.wp_term_relationships || {};
+  const termmeta = db.wp_termmeta || {};
   const files = snapshot?.files || {};
   const formsLab = db.wp_reprint_push_forms_lab || {};
   const releaseState = db.wp_reprint_push_release_state || {};
@@ -373,6 +436,19 @@ export function summarizeComplexSnapshot(snapshot) {
     featuredImageMeta: Object.values(postmeta).filter((row) =>
       String(row?.meta_key || '') === featuredImageMetaKey
       && String(row?.meta_value || '') === String(featuredImageAttachmentId)).length,
+    taxonomyGraphTerms: Object.values(terms).filter((row) =>
+      String(row?.slug || '') === taxonomyGraphTermSlug).length,
+    taxonomyGraphTaxonomies: Object.values(termTaxonomy).filter((row) =>
+      Number(row?.term_taxonomy_id) === taxonomyGraphTermTaxonomyId
+      && Number(row?.term_id) === taxonomyGraphTermId
+      && String(row?.taxonomy || '') === 'category').length,
+    taxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
+      Number(row?.object_id) === taxonomyGraphPostId
+      && Number(row?.term_taxonomy_id) === taxonomyGraphTermTaxonomyId).length,
+    taxonomyGraphTermmeta: Object.values(termmeta).filter((row) =>
+      Number(row?.meta_id) === taxonomyGraphTermMetaId
+      && Number(row?.term_id) === taxonomyGraphTermId
+      && String(row?.meta_key || '') === taxonomyGraphMetaKey).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,

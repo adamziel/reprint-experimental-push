@@ -1,9 +1,46 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 01:08 CEST
+Last updated: 2026-05-28 01:20 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 01:20 CEST - Taxonomy Graph Evidence
+
+- Going well:
+  `npm run verify:release:local-production:complex-site:taxonomy-graph`
+  passed in `main:taxonomy-graph-proof` with
+  `[TAXONOMY_GRAPH_PROOF_STATUS:0]`.
+- Also going well: the Brewcommerce-derived local production proof now covers a
+  same-plan category taxonomy graph surface. The planner emitted the term,
+  term taxonomy, post-term relationship, and marker termmeta rows with live
+  remote preconditions, 26 ready mutations, 26 preconditions, and
+  `staleGraphBlockers: 0`.
+- Release evidence improved: the checked verifier reported receipt
+  `59a91092bc6b928fb8e2e25a2ea6151018af15525b5aea7f05cc475e545b9d93`,
+  88 durable DB-journal rows, 26 `mutation-applied` events,
+  `applyRevalidationVerifiedCount: 26`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK`, replay equivalence, stale-owner fencing, and
+  same-key/different-body conflict before mutation.
+- Not going well: this is still local Playground loopback evidence with stable
+  fixture IDs. It does not prove general term rewriting, custom taxonomies,
+  term splitting, menus, serialized blocks, production importer/exporter
+  identity maps, Docker/external WordPress durability, rollback, or arbitrary
+  plugin drivers.
+- Progress change: merge invariants, reliable executor/protocol, and
+  independent evidence move up modestly. Recovery and fast-path percentages
+  stay flat.
+- Next nudge: move the same release and journal boundary to Docker/external
+  WordPress, or add another narrow graph surface while keeping the final
+  release held.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Expand graph proof carefully; the same-plan closures now include featured image and category taxonomy fixtures only. |
+| Recovery | Do not count this as external crash durability; keep pushing Docker/external restart proof. |
+| Reliable executor | Preserve receipt, auth/session, DB-journal, replay, and conflict guards on every graph proof. |
+| Fast paths | Still needs a guarded transfer/chunk benchmark; this proof is not a speed proof. |
+| Audit and critic | Re-audit the integrated branch at the taxonomy graph commit and keep final readiness held. |
 
 ## 2026-05-28 01:08 CEST - Featured Image Graph Evidence
 
