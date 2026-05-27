@@ -1626,6 +1626,21 @@ test('packaged server readiness fails closed for broken top-level signed preflig
       },
     },
     {
+      label: 'mismatched auth and top-level session ids',
+      auth: {
+        session: {
+          id: 'session_456',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+    {
       label: 'wrong top-level session type',
       session: {
         id: 'session_123',
@@ -1634,11 +1649,12 @@ test('packaged server readiness fails closed for broken top-level signed preflig
     },
   ];
 
-  for (const { label, session } of terminalEnvelopes) {
+  for (const { label, auth, session } of terminalEnvelopes) {
     const terminalPreflight = {
       ...basePreflight,
       body: {
         ...basePreflight.body,
+        ...(auth === undefined ? {} : { auth }),
         ...(session === undefined ? { session: undefined } : { session }),
       },
     };
@@ -1923,6 +1939,21 @@ test('packaged preflight startup context still fails closed for broken top-level
       },
     },
     {
+      label: 'mismatched auth and top-level session ids',
+      auth: {
+        session: {
+          id: 'session_456',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+    {
       label: 'wrong top-level session type',
       session: {
         id: 'session_123',
@@ -1931,11 +1962,12 @@ test('packaged preflight startup context still fails closed for broken top-level
     },
   ];
 
-  for (const { label, session } of terminalEnvelopes) {
+  for (const { label, auth, session } of terminalEnvelopes) {
     const terminalPreflight = {
       ...basePreflight,
       body: {
         ...basePreflight.body,
+        ...(auth === undefined ? {} : { auth }),
         ...(session === undefined ? { session: undefined } : { session }),
       },
     };
