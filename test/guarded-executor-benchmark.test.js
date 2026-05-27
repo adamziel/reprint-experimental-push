@@ -13623,6 +13623,51 @@ test('guarded benchmark carries hidden staging-disk visibility blockers into plu
   ]);
 });
 
+test('guarded benchmark carries hidden staging-disk visibility blockers into plugin-update backpressure-after-pause summaries under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const pluginUpdateBackpressure = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id ===
+        'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+  );
+
+  assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
+  assert.deepEqual({
+    id: pluginUpdateBackpressure?.id,
+    rejectedGate: pluginUpdateBackpressure?.rejectedGate,
+    blockerRefs: pluginUpdateBackpressure?.blockerRefs,
+  }, {
+    id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'staging-disk-headroom-not-visible',
+    ],
+  });
+});
+
 test('guarded benchmark carries direct aligned queue-slack proof blockers into package-hash and dependency-graph plugin-install backpressure summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
