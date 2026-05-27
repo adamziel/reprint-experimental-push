@@ -1468,9 +1468,38 @@ function reprint_push_allowed_plugin_options(): array
     ];
 }
 
+function reprint_push_production_owned_release_state_driver(): array
+{
+    return [
+        'driver' => 'reprint-push-release-state',
+        'table' => 'wp_reprint_push_release_state',
+        'pluginOwner' => 'reprint-push',
+        'supportsDelete' => false,
+        'exportRowsCallback' => 'reprint_push_export_release_state_driver_rows',
+        'applyRowCallback' => 'reprint_push_apply_release_state_driver_row',
+        'validateMutationCallback' => 'reprint_push_validate_release_state_driver_mutation',
+        'allowlist' => [
+            'resourceKeys' => [
+                'row:["wp_reprint_push_release_state","state_id:1"]',
+            ],
+            'rowIds' => [
+                'state_id:1',
+            ],
+            'payloadModes' => [
+                'base',
+                'local-update',
+                'remote-changed',
+            ],
+        ],
+    ];
+}
+
 function reprint_push_registered_plugin_owned_row_drivers(): array
 {
-    $drivers = apply_filters('reprint_push_plugin_owned_row_drivers', []);
+    $drivers = [
+        'reprint-push-release-state' => reprint_push_production_owned_release_state_driver(),
+    ];
+    $drivers = apply_filters('reprint_push_plugin_owned_row_drivers', $drivers);
     if (!is_array($drivers)) {
         return [];
     }
@@ -1544,6 +1573,155 @@ function reprint_push_export_registered_plugin_owned_rows(array &$snapshot): voi
         }
         $callback($snapshot, $driver);
     }
+}
+
+function reprint_push_export_release_state_driver_rows(array &$snapshot, array $driver): void
+{
+    global $wpdb;
+
+    $table_name = reprint_push_release_state_driver_storage_table();
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    if ($exists !== $table_name) {
+        return;
+    }
+
+    $snapshot_table = (string) ($driver['table'] ?? 'wp_reprint_push_release_state');
+    if ($snapshot_table !== 'wp_reprint_push_release_state') {
+        return;
+    }
+    if (!isset($snapshot['db'][$snapshot_table]) || !is_array($snapshot['db'][$snapshot_table])) {
+        $snapshot['db'][$snapshot_table] = [];
+    }
+
+    $rows = $wpdb->get_results(
+        "SELECT state_id, payload_json, updated_marker FROM {$table_name} WHERE state_id = 1 ORDER BY state_id ASC",
+        ARRAY_A
+    );
+
+    foreach ($rows as $row) {
+        $payload = json_decode((string) $row['payload_json'], true);
+        $snapshot['db'][$snapshot_table]['state_id:' . (int) $row['state_id']] = [
+            'state_id' => (int) $row['state_id'],
+            'payload' => json_last_error() === JSON_ERROR_NONE && is_array($payload)
+                ? reprint_push_normalize_snapshot_value($payload)
+                : [],
+            'updated_marker' => (string) $row['updated_marker'],
+            '__pluginOwner' => 'reprint-push',
+        ];
+    }
+}
+
+function reprint_push_apply_release_state_driver_row(string $id, bool $is_delete, $value, array $driver): void
+{
+    global $wpdb;
+
+    if ((string) ($driver['driver'] ?? '') !== 'reprint-push-release-state'
+        || (string) ($driver['pluginOwner'] ?? '') !== 'reprint-push'
+        || (string) ($driver['table'] ?? '') !== 'wp_reprint_push_release_state') {
+        throw new RuntimeException('Unsupported release state driver registration.');
+    }
+    if ($id !== 'state_id:1') {
+        throw new RuntimeException('Unsupported release state driver row id: ' . $id);
+    }
+    if ($is_delete) {
+        throw new RuntimeException('Release state driver does not support deletes: ' . $id);
+    }
+    if (!is_array($value) || array_is_list($value)) {
+        throw new RuntimeException('Release state driver payload must be an object.');
+    }
+    reprint_push_validate_release_state_driver_value($value);
+
+    $table_name = reprint_push_release_state_driver_storage_table();
+    $wpdb->query('CREATE TABLE IF NOT EXISTS ' . $table_name . ' (state_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (state_id)) ' . $wpdb->get_charset_collate());
+    $payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($value['payload']));
+    if (!is_string($payload_json)) {
+        throw new RuntimeException('Could not encode release state driver payload.');
+    }
+
+    $sql = $wpdb->prepare(
+        'INSERT INTO ' . $table_name . ' (state_id, payload_json, updated_marker) VALUES (%d, %s, %s) ON DUPLICATE KEY UPDATE payload_json = VALUES(payload_json), updated_marker = VALUES(updated_marker)',
+        1,
+        $payload_json,
+        (string) $value['updated_marker']
+    );
+    if ($wpdb->query($sql) === false) {
+        throw new RuntimeException('Could not apply release state driver row: ' . $wpdb->last_error);
+    }
+}
+
+function reprint_push_validate_release_state_driver_mutation(array $mutation, array $snapshot, array $driver): bool
+{
+    $resource = is_array($mutation['resource'] ?? null) ? $mutation['resource'] : [];
+    if ((string) ($driver['driver'] ?? '') !== 'reprint-push-release-state'
+        || (string) ($driver['pluginOwner'] ?? '') !== 'reprint-push'
+        || (string) ($driver['table'] ?? '') !== 'wp_reprint_push_release_state'
+        || (string) ($resource['table'] ?? '') !== 'wp_reprint_push_release_state'
+        || (string) ($resource['id'] ?? '') !== 'state_id:1'
+        || (string) ($mutation['resourceKey'] ?? '') !== 'row:["wp_reprint_push_release_state","state_id:1"]') {
+        return false;
+    }
+    if (!empty($mutation['value']['absent'])) {
+        return false;
+    }
+    $value = is_array($mutation['value']['value'] ?? null) ? $mutation['value']['value'] : null;
+    if (!is_array($value)) {
+        return false;
+    }
+
+    reprint_push_validate_release_state_driver_value($value);
+    return true;
+}
+
+function reprint_push_validate_release_state_driver_value(array $value): void
+{
+    $allowed_keys = ['state_id', 'payload', 'updated_marker', '__pluginOwner'];
+    foreach (array_keys($value) as $key) {
+        if (!in_array($key, $allowed_keys, true)) {
+            throw new RuntimeException('Unsupported release state driver payload key: ' . (string) $key);
+        }
+    }
+    if ((int) ($value['state_id'] ?? 0) !== 1) {
+        throw new RuntimeException('Release state driver payload does not match state_id:1.');
+    }
+    if ((string) ($value['__pluginOwner'] ?? '') !== 'reprint-push') {
+        throw new RuntimeException('Release state driver payload owner must be reprint-push.');
+    }
+    if (!is_array($value['payload'] ?? null) || array_is_list($value['payload'])) {
+        throw new RuntimeException('Release state driver payload must include an object payload.');
+    }
+    $payload = $value['payload'];
+    $payload_allowed_keys = ['owner', 'mode', 'version', 'releaseBoundaryProof'];
+    foreach (array_keys($payload) as $key) {
+        if (!in_array($key, $payload_allowed_keys, true)) {
+            throw new RuntimeException('Unsupported release state driver nested payload key: ' . (string) $key);
+        }
+    }
+    if ((string) ($payload['owner'] ?? '') !== 'reprint-push') {
+        throw new RuntimeException('Release state driver nested payload owner must be reprint-push.');
+    }
+    if (!in_array((string) ($payload['mode'] ?? ''), ['base', 'local-update', 'remote-changed'], true)) {
+        throw new RuntimeException('Unsupported release state driver payload mode.');
+    }
+    if (!in_array((int) ($payload['version'] ?? 0), [1, 2, 3], true)) {
+        throw new RuntimeException('Unsupported release state driver payload version.');
+    }
+    if ((string) ($payload['releaseBoundaryProof'] ?? '') !== 'plugin-driver-boundary') {
+        throw new RuntimeException('Release state driver payload proof marker is missing.');
+    }
+    if (!preg_match('/^(base|local-update|remote-changed)$/', (string) ($value['updated_marker'] ?? ''))) {
+        throw new RuntimeException('Unsupported release state driver updated_marker.');
+    }
+}
+
+function reprint_push_release_state_driver_storage_table(): string
+{
+    global $wpdb;
+
+    $prefix = (string) $wpdb->prefix;
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $prefix)) {
+        throw new RuntimeException('Unsupported WordPress table prefix for release state driver table.');
+    }
+    return $prefix . 'reprint_push_release_state';
 }
 
 function reprint_push_allowed_fixture_plugins(): array

@@ -58,7 +58,11 @@ import {
   shouldRequestCheckedLivePackagedBoundary,
   shouldUseProductionSnapshotExport,
 } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
-import { resolveSuccessfulReleaseBoundary } from '../scripts/playground/production-shaped-release-verify.mjs';
+import {
+  productionPluginDriverBoundary,
+  resolveSuccessfulReleaseBoundary,
+  summarizeProductionPluginDriverBoundaryProof,
+} from '../scripts/playground/production-shaped-release-verify.mjs';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
@@ -70,6 +74,9 @@ import {
   loadBlueprintSnapshotFixture,
   resolveBlueprintSnapshotFixturePath,
 } from '../scripts/playground/blueprint-snapshot-fixture.js';
+import { createPushPlan } from '../src/planner.js';
+import { resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -140,6 +147,41 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
   stopAllPlaygroundChildrenSync();
 });
+
+function productionPluginDriverSnapshot(mode, version, marker) {
+  return {
+    files: {},
+    plugins: {},
+    db: {
+      wp_reprint_push_release_state: {
+        'state_id:1': {
+          state_id: 1,
+          payload: {
+            owner: productionPluginDriverBoundary.owner,
+            mode,
+            version,
+            releaseBoundaryProof: 'plugin-driver-boundary',
+          },
+          updated_marker: marker,
+          __pluginOwner: productionPluginDriverBoundary.owner,
+        },
+      },
+    },
+    meta: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: productionPluginDriverBoundary.resourceKey,
+            pluginOwner: productionPluginDriverBoundary.owner,
+            driver: productionPluginDriverBoundary.driver,
+            table: productionPluginDriverBoundary.table,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
+  };
+}
 
 function stopAllPlaygroundChildrenSync() {
   for (const child of activePlaygroundChildren) {
@@ -1240,7 +1282,141 @@ test('production-shaped release verify source runs the packaged plugin driver re
   assert.match(verifySource, /REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-receipt-guards'/);
   assert.match(verifySource, /packagedRevokedCredentialGuard: summary\.driverReceiptRevokedCredentialGuard \|\| null/);
   assert.match(verifySource, /const packagedPluginDriverProof = packagedSourceFixture\s*\?\s*summarizePackagedPluginDriverProof\(\)\s*:\s*null;/);
-  assert.match(verifySource, /\.\.\.\(packagedPluginDriverProof \? \{ pluginDriver: packagedPluginDriverProof \} : \{\}\)/);
+  assert.match(verifySource, /const productionPluginDriverProof = summarizeProductionPluginDriverBoundaryProof\(\{/);
+  assert.match(verifySource, /productionOwned: productionPluginDriverProof/);
+  assert.match(verifySource, /packagedGuard: packagedPluginDriverProof/);
+  assert.match(verifySource, /pluginDriver: pluginDriverProof/);
+});
+
+test('production-shaped release verify owns the production plugin-driver boundary proof fields', () => {
+  const verifySource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(verifySource, /driver: 'reprint-push-release-state'/);
+  assert.match(verifySource, /owner: 'reprint-push'/);
+  assert.match(verifySource, /resourceKey: 'row:\["wp_reprint_push_release_state","state_id:1"\]'/);
+  assert.match(verifySource, /createProductionPluginDriverBlueprints/);
+  assert.match(verifySource, /sourcePluginStateEvidence/);
+  assert.match(verifySource, /localPluginStateEvidence/);
+  assert.match(verifySource, /rejectedRemoteEvidence/);
+  assert.match(verifySource, /failureClosedUnknownPluginData/);
+  assert.match(verifySource, /noArbitraryCustomTableMutation/);
+  assert.match(verifySource, /noActivePluginsDirectMutation/);
+  assert.match(verifySource, /noUnownedSerializedOptionMutation/);
+  assert.match(verifySource, /applyTimeRevalidation/);
+  assert.match(verifySource, /preconditionHashes/);
+});
+
+test('snapshot package registers only the production-owned release state driver boundary', () => {
+  const snapshotSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/snapshot-lib.php'),
+    'utf8',
+  );
+
+  assert.match(snapshotSource, /function reprint_push_production_owned_release_state_driver\(\): array/);
+  assert.match(snapshotSource, /'driver' => 'reprint-push-release-state'/);
+  assert.match(snapshotSource, /'pluginOwner' => 'reprint-push'/);
+  assert.match(snapshotSource, /'table' => 'wp_reprint_push_release_state'/);
+  assert.match(snapshotSource, /'row:\["wp_reprint_push_release_state","state_id:1"\]'/);
+  assert.match(snapshotSource, /Release state driver does not support deletes/);
+  assert.match(snapshotSource, /Unsupported release state driver row id/);
+  assert.match(snapshotSource, /Unsupported release state driver payload key/);
+  assert.match(snapshotSource, /reprint_push_validate_release_state_driver_mutation/);
+});
+
+test('production plugin-driver boundary proof accepts one owned row and fails closed for remote or unknown data', () => {
+  const boundary = productionPluginDriverBoundary;
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+  const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteBaseSnapshot,
+    now: new Date('2026-05-27T10:12:00.000Z'),
+  });
+  const resource = {
+    type: 'row',
+    table: boundary.table,
+    id: boundary.rowId,
+    key: boundary.resourceKey,
+  };
+  const baseHash = resourceHash(remoteBaseSnapshot, resource);
+  const localHash = resourceHash(localEditedSnapshot, resource);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.mutations.length, 1);
+  assert.equal(plan.mutations[0].resourceKey, boundary.resourceKey);
+  assert.equal(plan.mutations[0].pluginOwnedResource.pluginOwner, boundary.owner);
+  assert.equal(plan.mutations[0].pluginOwnedResource.driver, boundary.driver);
+
+  const summary = summarizeProductionPluginDriverBoundaryProof({
+    proof: {
+      planObject: plan,
+      dryRun: {
+        status: 200,
+        receiptHash: 'a'.repeat(64),
+      },
+      apply: {
+        status: 200,
+        applyRevalidation: {
+          required: 'fresh-live-hashes-before-first-mutation',
+          phase: 'before-first-mutation',
+          checkedAgainst: 'live-remote',
+          verifiedResourceKeys: [boundary.resourceKey],
+          planHash: digest(plan),
+          receiptHash: 'a'.repeat(64),
+          preconditionSetHash: 'b'.repeat(64),
+          mutationSetHash: 'c'.repeat(64),
+        },
+      },
+      recoveryInspect: {
+        status: 200,
+      },
+      replay: {
+        status: 200,
+      },
+      dbJournal: {
+        rows: 2,
+        applyCommitted: true,
+        mutationApplied: 1,
+        ownership: {
+          ownsJournal: true,
+          restartReadable: true,
+        },
+      },
+      latestReadRetryEvidence: {
+        path: '/snapshot',
+        preservedRemote: true,
+      },
+    },
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(summary.status, 'checked');
+  assert.equal(summary.verdict, 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK');
+  assert.equal(summary.driver, boundary.driver);
+  assert.equal(summary.owner, boundary.owner);
+  assert.equal(summary.allowlist.entry.resourceKey, boundary.resourceKey);
+  assert.equal(summary.sourcePluginStateEvidence.hash, baseHash);
+  assert.equal(summary.sourcePluginStateEvidence.mode, 'base');
+  assert.equal(summary.localPluginStateEvidence.hash, localHash);
+  assert.equal(summary.localPluginStateEvidence.mode, 'local-update');
+  assert.equal(summary.rejectedRemoteEvidence.failureClosed, true);
+  assert.equal(summary.rejectedRemoteEvidence.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(summary.rejectedRemoteEvidence.remoteChangedState.mode, 'remote-changed');
+  assert.equal(summary.noArbitraryCustomTableMutation, true);
+  assert.equal(summary.noActivePluginsDirectMutation, true);
+  assert.equal(summary.noUnownedSerializedOptionMutation, true);
+  assert.equal(summary.preconditionHashes.expectedHash, baseHash);
+  assert.equal(summary.preconditionHashes.mutationLocalHash, localHash);
+  assert.equal(summary.applyTimeRevalidation.verifiedBeforeFirstMutation, true);
+  assert.equal(summary.failureClosedUnknownPluginData.failureClosed, true);
+  assert.equal(summary.auditEvidence.dbJournalOwnership.ownsJournal, true);
 });
 
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {

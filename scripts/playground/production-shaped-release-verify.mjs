@@ -13,7 +13,9 @@ import {
   dbJournalProofIsAcceptable,
   runAuthenticatedHttpPush,
 } from '../../src/authenticated-http-push-client.js';
-import { digest } from '../../src/stable-json.js';
+import { createPushPlan } from '../../src/planner.js';
+import { resourceHash, getResource } from '../../src/resources.js';
+import { ABSENT, digest } from '../../src/stable-json.js';
 import {
   describeAuthSessionSourceMetadataDrift,
   loadAuthSessionSourceFromRuntimeEnvironment,
@@ -179,6 +181,307 @@ function summarizeAuthSessionSource(command, source) {
     username: source?.username || '',
     applicationPasswordPresent: Boolean(source?.applicationPassword),
     error: source?.error || '',
+  };
+}
+
+export const productionPluginDriverBoundary = Object.freeze({
+  driver: 'reprint-push-release-state',
+  owner: 'reprint-push',
+  table: 'wp_reprint_push_release_state',
+  rowId: 'state_id:1',
+  resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
+  allowlist: Object.freeze({
+    resourceKeys: Object.freeze(['row:["wp_reprint_push_release_state","state_id:1"]']),
+    rowIds: Object.freeze(['state_id:1']),
+    payloadModes: Object.freeze(['base', 'local-update', 'remote-changed']),
+    supportsDelete: false,
+  }),
+});
+
+export function summarizeProductionPluginDriverBoundaryProof({
+  proof,
+  remoteBaseSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+  packagedSourceFixture = false,
+} = {}) {
+  const boundary = productionPluginDriverBoundary;
+  const resource = productionPluginDriverResource();
+  const missing = [];
+  if (!proof?.planObject) {
+    missing.push('releaseProof.planObject');
+  }
+  if (!remoteBaseSnapshot) {
+    missing.push('remoteBaseSnapshot');
+  }
+  if (!localEditedSnapshot) {
+    missing.push('localEditedSnapshot');
+  }
+  if (!remoteChangedSnapshot) {
+    missing.push('remoteChangedSnapshot');
+  }
+  if (missing.length > 0) {
+    return {
+      status: 'unproven',
+      verdict: 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED',
+      driver: boundary.driver,
+      owner: boundary.owner,
+      missing,
+    };
+  }
+
+  const sourceState = pluginDriverStateEvidence(remoteBaseSnapshot, resource);
+  const localState = pluginDriverStateEvidence(localEditedSnapshot, resource);
+  const remoteChangedState = pluginDriverStateEvidence(remoteChangedSnapshot, resource);
+  const allowlistEntry = pluginDriverAllowlistEntry(remoteBaseSnapshot, boundary.resourceKey)
+    || pluginDriverAllowlistEntry(localEditedSnapshot, boundary.resourceKey);
+  const mutation = proof.planObject.mutations?.find?.((entry) => entry?.resourceKey === boundary.resourceKey) || null;
+  const precondition = proof.planObject.preconditions?.find?.((entry) => entry?.resourceKey === boundary.resourceKey) || null;
+  const failureClosedUnknownPluginData = summarizeUnknownPluginDataFailureClosed(remoteBaseSnapshot);
+  const rejectedRemoteEvidence = summarizePluginDriverRejectedRemoteEvidence({
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  const missingEvidence = [];
+  if (!sourceState.present) {
+    missingEvidence.push('source-plugin-state');
+  }
+  if (!localState.present) {
+    missingEvidence.push('local-plugin-state');
+  }
+  if (!allowlistEntry) {
+    missingEvidence.push('allowlist-entry');
+  }
+  if (!mutation) {
+    missingEvidence.push('release-plan-mutation');
+  }
+  if (!precondition) {
+    missingEvidence.push('release-plan-precondition');
+  }
+
+  const applyRevalidation = proof.apply?.applyRevalidation || null;
+  const verifiedBeforeFirstMutation = applyRevalidation?.phase === 'before-first-mutation'
+    && applyRevalidation?.checkedAgainst === 'live-remote'
+    && Array.isArray(applyRevalidation?.verifiedResourceKeys)
+    && applyRevalidation.verifiedResourceKeys.includes(boundary.resourceKey);
+
+  const plannedMutations = Array.isArray(proof.planObject.mutations)
+    ? proof.planObject.mutations
+    : [];
+  const pluginDriverMutations = plannedMutations.filter((entry) => entry?.resourceKey === boundary.resourceKey);
+  const noActivePluginsDirectMutation = plannedMutations.every((entry) =>
+    !(entry?.resource?.type === 'row'
+      && entry.resource.table === 'wp_options'
+      && entry.resource.id === 'option_name:active_plugins'));
+  const noUnownedSerializedOptionMutation = plannedMutations.every((entry) =>
+    !(entry?.resource?.type === 'row' && entry.resource.table === 'wp_options'));
+  const noArbitraryCustomTableMutation = plannedMutations.length === 1
+    && plannedMutations.every((entry) =>
+      entry?.resource?.type === 'row'
+        && entry.resource.table === boundary.table
+        && entry.resource.id === boundary.rowId
+        && entry?.pluginOwnedResource?.driver === boundary.driver
+        && entry?.pluginOwnedResource?.pluginOwner === boundary.owner);
+
+  const ok = missingEvidence.length === 0
+    && sourceState.hash === precondition?.expectedHash
+    && mutation?.baseHash === sourceState.hash
+    && mutation?.remoteBeforeHash === sourceState.hash
+    && mutation?.localHash === localState.hash
+    && allowlistEntry?.driver === boundary.driver
+    && allowlistEntry?.pluginOwner === boundary.owner
+    && allowlistEntry?.table === boundary.table
+    && allowlistEntry?.supportsDelete === false
+    && verifiedBeforeFirstMutation
+    && noActivePluginsDirectMutation
+    && noUnownedSerializedOptionMutation
+    && noArbitraryCustomTableMutation
+    && rejectedRemoteEvidence.failureClosed === true
+    && failureClosedUnknownPluginData.failureClosed === true;
+
+  return {
+    status: ok
+      ? (packagedSourceFixture ? 'support_only' : 'checked')
+      : 'blocked',
+    verdict: ok
+      ? (packagedSourceFixture ? 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK' : 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK')
+      : 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED',
+    driver: boundary.driver,
+    owner: boundary.owner,
+    allowlist: {
+      ...boundary.allowlist,
+      entry: allowlistEntry ? {
+        resourceKey: allowlistEntry.resourceKey,
+        pluginOwner: allowlistEntry.pluginOwner,
+        driver: allowlistEntry.driver,
+        table: allowlistEntry.table,
+        supportsDelete: allowlistEntry.supportsDelete === true,
+      } : null,
+    },
+    sourcePluginStateEvidence: sourceState,
+    localPluginStateEvidence: localState,
+    rejectedRemoteEvidence,
+    mutationBoundary: mutation ? {
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      owner: mutation.pluginOwnedResource?.pluginOwner || null,
+      baseHash: mutation.baseHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      localHash: mutation.localHash,
+    } : null,
+    preconditionHashes: precondition ? {
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      mutationBaseHash: mutation?.baseHash || null,
+      mutationRemoteBeforeHash: mutation?.remoteBeforeHash || null,
+      mutationLocalHash: mutation?.localHash || null,
+      planHash: digest(proof.planObject),
+      receiptHash: proof.dryRun?.receiptHash || proof.dryRun?.receipt?.receiptHash || null,
+      preconditionSetHash: applyRevalidation?.preconditionSetHash || null,
+      mutationSetHash: applyRevalidation?.mutationSetHash || null,
+    } : null,
+    applyTimeRevalidation: applyRevalidation ? {
+      required: applyRevalidation.required,
+      phase: applyRevalidation.phase,
+      checkedAgainst: applyRevalidation.checkedAgainst,
+      verifiedBeforeFirstMutation,
+      verifiedResourceKeys: applyRevalidation.verifiedResourceKeys || [],
+      planHash: applyRevalidation.planHash || null,
+      receiptHash: applyRevalidation.receiptHash || null,
+      preconditionSetHash: applyRevalidation.preconditionSetHash || null,
+      mutationSetHash: applyRevalidation.mutationSetHash || null,
+    } : {
+      verifiedBeforeFirstMutation: false,
+    },
+    noArbitraryCustomTableMutation,
+    noActivePluginsDirectMutation,
+    noUnownedSerializedOptionMutation,
+    failureClosedUnknownPluginData,
+    auditEvidence: {
+      dryRunStatus: proof.dryRun?.status ?? null,
+      applyStatus: proof.apply?.status ?? null,
+      recoveryInspectStatus: proof.recoveryInspect?.status ?? null,
+      replayStatus: proof.replay?.status ?? null,
+      dbJournalRows: proof.dbJournal?.rows ?? null,
+      dbJournalApplyCommitted: proof.dbJournal?.applyCommitted === true,
+      dbJournalMutationApplied: proof.dbJournal?.mutationApplied ?? null,
+      dbJournalOwnership: proof.dbJournal?.ownership || null,
+      readRetryEvidence: proof.latestReadRetryEvidence || proof.readRetryEvidence || null,
+    },
+    missingEvidence,
+  };
+}
+
+function productionPluginDriverResource() {
+  return {
+    type: 'row',
+    table: productionPluginDriverBoundary.table,
+    id: productionPluginDriverBoundary.rowId,
+    key: productionPluginDriverBoundary.resourceKey,
+  };
+}
+
+function pluginDriverStateEvidence(snapshot, resource) {
+  const value = getResource(snapshot, resource);
+  const present = value !== ABSENT;
+  return {
+    present,
+    resourceKey: resource.key,
+    hash: resourceHash(snapshot, resource),
+    owner: present ? value.__pluginOwner || null : null,
+    mode: present ? value.payload?.mode || null : null,
+    version: present ? value.payload?.version ?? null : null,
+    updatedMarker: present ? value.updated_marker || null : null,
+  };
+}
+
+function pluginDriverAllowlistEntry(snapshot, resourceKey) {
+  const entries = snapshot?.meta?.pluginOwnedResources?.allowedResources;
+  if (!Array.isArray(entries)) {
+    return null;
+  }
+  return entries.find((entry) => entry?.resourceKey === resourceKey) || null;
+}
+
+function summarizePluginDriverRejectedRemoteEvidence({
+  remoteBaseSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+}) {
+  const boundary = productionPluginDriverBoundary;
+  const conflictPlan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteChangedSnapshot,
+    now: new Date('2026-05-27T10:00:00.000Z'),
+  });
+  const conflict = conflictPlan.conflicts.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const remoteChangedState = pluginDriverStateEvidence(remoteChangedSnapshot, productionPluginDriverResource());
+  return {
+    status: conflictPlan.status,
+    failureClosed: conflict?.resolutionPolicy === 'preserve-remote-and-stop',
+    resourceKey: boundary.resourceKey,
+    conflictId: conflict?.id || null,
+    conflictClass: conflict?.class || null,
+    resolutionPolicy: conflict?.resolutionPolicy || null,
+    baseHash: conflict?.baseHash || null,
+    localHash: conflict?.localHash || null,
+    remoteHash: conflict?.remoteHash || null,
+    remoteChangedState,
+  };
+}
+
+function summarizeUnknownPluginDataFailureClosed(remoteBaseSnapshot) {
+  const base = JSON.parse(JSON.stringify(remoteBaseSnapshot));
+  const local = JSON.parse(JSON.stringify(remoteBaseSnapshot));
+  const remote = JSON.parse(JSON.stringify(remoteBaseSnapshot));
+  const table = 'wp_reprint_push_unknown_plugin_data';
+  const rowId = 'id:1';
+  const resourceKey = `row:${JSON.stringify([table, rowId])}`;
+  const baseRow = {
+    id: 1,
+    payload: {
+      mode: 'base',
+    },
+    __pluginOwner: 'unknown-plugin',
+  };
+  base.db ||= {};
+  local.db ||= {};
+  remote.db ||= {};
+  base.db[table] = {
+    [rowId]: baseRow,
+  };
+  remote.db[table] = {
+    [rowId]: JSON.parse(JSON.stringify(baseRow)),
+  };
+  local.db[table] = {
+    [rowId]: {
+      ...baseRow,
+      payload: {
+        mode: 'local-update',
+      },
+    },
+  };
+
+  const plan = createPushPlan({
+    base,
+    local,
+    remote,
+    now: new Date('2026-05-27T10:05:00.000Z'),
+  });
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey) || null;
+  return {
+    status: plan.status,
+    failureClosed: plan.status === 'blocked'
+      && blocker?.class === 'unsupported-plugin-owned-resource',
+    resourceKey,
+    blockerClass: blocker?.class || null,
+    blockerReason: blocker?.reason || null,
   };
 }
 
@@ -896,9 +1199,15 @@ if (requireProductionAuthSession && !packagedProductionPluginRequested) {
   }
 }
 
-const remoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
-const localEditedFixturePath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
-const remoteChangedFixturePath = path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json');
+const originalRemoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
+const originalLocalEditedFixturePath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
+const originalRemoteChangedFixturePath = path.join(repoRoot, 'fixtures/playground/remote-changed.blueprint.json');
+const productionPluginDriverBlueprints = packagedProductionPluginRequested
+  ? createProductionPluginDriverBlueprints(originalRemoteBaseFixturePath)
+  : null;
+const remoteBaseFixturePath = productionPluginDriverBlueprints?.remoteBase || originalRemoteBaseFixturePath;
+const localEditedFixturePath = productionPluginDriverBlueprints?.localEdited || originalLocalEditedFixturePath;
+const remoteChangedFixturePath = productionPluginDriverBlueprints?.remoteChanged || originalRemoteChangedFixturePath;
 const packagedSourceFixture = packagedProductionPluginRequested
   ? createPackagedProductionPluginFixture()
   : null;
@@ -993,6 +1302,20 @@ try {
       });
 
       if (!proof.ok) {
+        const packagedPluginDriverProof = packagedSourceFixture
+          ? summarizePackagedPluginDriverProof()
+          : null;
+        const productionPluginDriverProof = summarizeProductionPluginDriverBoundaryProof({
+          proof,
+          remoteBaseSnapshot,
+          localEditedSnapshot,
+          remoteChangedSnapshot,
+          packagedSourceFixture: packagedSourceFixture !== null,
+        });
+        const pluginDriverProof = {
+          productionOwned: productionPluginDriverProof,
+          ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
+        };
         process.stdout.write(
           JSON.stringify(
             {
@@ -1040,6 +1363,10 @@ try {
               replayEquivalence: proof.replayEquivalence,
               after: proof.after,
               dbJournal: proof.dbJournal,
+              preservedRemoteRetry: proof.preservedRemoteRetry || null,
+              readRetryEvidence: proof.readRetryEvidence || null,
+              latestReadRetryEvidence: proof.latestReadRetryEvidence || null,
+              pluginDriver: pluginDriverProof,
             },
             null,
             2,
@@ -1258,6 +1585,20 @@ try {
       const packagedPluginDriverProof = packagedSourceFixture
         ? summarizePackagedPluginDriverProof()
         : null;
+      const productionPluginDriverProof = summarizeProductionPluginDriverBoundaryProof({
+        proof,
+        remoteBaseSnapshot,
+        localEditedSnapshot,
+        remoteChangedSnapshot,
+        packagedSourceFixture: packagedSourceFixture !== null,
+      });
+      const pluginDriverProof = {
+        productionOwned: productionPluginDriverProof,
+        ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
+      };
+      const checkedProductionPluginDriverAccepted = packagedSourceFixture !== null
+        ? productionPluginDriverProof.verdict === 'PACKAGED_PLUGIN_DRIVER_BOUNDARY_OK'
+        : productionPluginDriverProof.verdict === 'LIVE_PLUGIN_DRIVER_BOUNDARY_OK';
       const checkedDurableJournalAccepted = packagedSourceFixture !== null
         ? checkedDurableJournalBoundarySatisfied(proof.dbJournal) || recoveryInspectJournalAccepted
         : liveDbJournalAccepted || recoveryInspectJournalAccepted;
@@ -1309,7 +1650,7 @@ try {
               },
               authSessionLifecycle: proof.authSessionLifecycle,
               authSessionLifecycleTrace: proof.authSessionLifecycleTrace,
-              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+              pluginDriver: pluginDriverProof,
             },
             null,
             2,
@@ -1336,6 +1677,56 @@ try {
               ? (proof.remoteSnapshotObject?.meta?.fixture || null)
             : remoteChangedSnapshot.meta?.fixture,
       };
+      if (productionPluginDriverBlueprints && !checkedProductionPluginDriverAccepted) {
+        process.stdout.write(
+          JSON.stringify(
+            {
+              ok: false,
+              topology: {
+                sourceUrl: liveSourceUrl,
+                remoteBase: checkedTopology.remoteBase,
+                remoteChanged: checkedTopology.remoteChanged,
+                localEdited: checkedTopology.localEdited,
+              },
+              remoteSnapshotHashes: {
+                sameRemoteIdentity: true,
+                baseHash: liveDrift.baseHash,
+                changedHash: liveDrift.changedHash,
+              },
+              liveDrift,
+              boundary: {
+                firstRemainingProductionBoundary: 'plugin-driver ownership on the checked release path',
+                status: 'support-only',
+                verdict: 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED',
+                pluginDriver: productionPluginDriverProof,
+              },
+              protocolExtension,
+              preflight: {
+                status: preflight.status,
+                authSessionType: preflight.body.auth.session.type,
+                routeProfile: preflight.body.routeProfile,
+                session: {
+                  id: preflight.body.session.id,
+                  type: preflight.body.session.type,
+                },
+              },
+              releaseProof: {
+                ok: false,
+                status: 409,
+                code: 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED',
+                mode: proof.mode,
+                retryAttempts: proof.retryAttempts,
+              },
+              authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+              pluginDriver: pluginDriverProof,
+            },
+            null,
+            2,
+          ),
+        );
+        process.stdout.write('\n');
+        throw new ProofFailure();
+      }
       const authSessionLifecycleSummary =
         proof.authSessionLifecycleSummary
         || summarizeProductionAuthSessionLifecycleTrace(proof.authSessionLifecycleTrace);
@@ -1418,7 +1809,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
-              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+              pluginDriver: pluginDriverProof,
             },
             null,
             2,
@@ -1508,7 +1899,7 @@ try {
                 liveLeaseFence: proof.dbJournal.leaseFence || null,
                 checkedAccepted: checkedDurableJournalAccepted,
               },
-              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+              pluginDriver: pluginDriverProof,
             },
             null,
             2,
@@ -1619,7 +2010,7 @@ try {
                 checkedAccepted: checkedDurableJournalAccepted,
               },
               replayAndRetry: proof.replayAndRetry || null,
-              ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+              pluginDriver: pluginDriverProof,
             },
             null,
             2,
@@ -1695,7 +2086,7 @@ try {
               liveLeaseFence: proof.dbJournal.leaseFence || null,
               checkedAccepted: checkedDurableJournalAccepted,
             },
-            ...(packagedPluginDriverProof ? { pluginDriver: packagedPluginDriverProof } : {}),
+            pluginDriver: pluginDriverProof,
           },
           null,
           2,
@@ -1766,6 +2157,9 @@ try {
   await stopPlaygroundServer(remoteServer);
   if (packagedSourceFixture) {
     packagedSourceFixture.cleanup();
+  }
+  if (productionPluginDriverBlueprints) {
+    productionPluginDriverBlueprints.cleanup();
   }
 }
 
@@ -2550,6 +2944,81 @@ function writeSpawnOutputTail(proof, commandLabel = '') {
 
 function snapshotHash(snapshot) {
   return createHash('sha256').update(JSON.stringify(snapshot), 'utf8').digest('hex');
+}
+
+function createProductionPluginDriverBlueprints(sourceBlueprintPath) {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-release-plugin-driver-'));
+  const remoteBase = path.join(tmpDir, 'remote-base-release-driver.blueprint.json');
+  const localEdited = path.join(tmpDir, 'local-edited-release-driver.blueprint.json');
+  const remoteChanged = path.join(tmpDir, 'remote-changed-release-driver.blueprint.json');
+
+  writeProductionPluginDriverBlueprint(sourceBlueprintPath, remoteBase, {
+    fixture: 'remote-base',
+    mode: 'base',
+    version: 1,
+    marker: 'base',
+  });
+  writeProductionPluginDriverBlueprint(sourceBlueprintPath, localEdited, {
+    fixture: 'local-edited',
+    mode: 'local-update',
+    version: 2,
+    marker: 'local-update',
+  });
+  writeProductionPluginDriverBlueprint(sourceBlueprintPath, remoteChanged, {
+    fixture: 'remote-changed',
+    mode: 'remote-changed',
+    version: 3,
+    marker: 'remote-changed',
+  });
+
+  return {
+    tmpDir,
+    remoteBase,
+    localEdited,
+    remoteChanged,
+    cleanup() {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    },
+  };
+}
+
+function writeProductionPluginDriverBlueprint(sourceBlueprintPath, targetBlueprintPath, {
+  fixture,
+  mode,
+  version,
+  marker,
+}) {
+  const blueprint = JSON.parse(fs.readFileSync(sourceBlueprintPath, 'utf8'));
+  blueprint.meta = {
+    ...blueprint.meta,
+    title: `Reprint Push ${fixture} Release Driver Boundary`,
+    description: 'Production-owned Reprint Push release-state driver boundary fixture.',
+  };
+  blueprint.steps.push({
+    step: 'setSiteOptions',
+    options: {
+      blogname: `Reprint Push ${fixture} Release Driver Boundary`,
+      reprint_push_fixture: fixture,
+    },
+  });
+  blueprint.steps.push({
+    step: 'runPHP',
+    code: [
+      '<?php',
+      "require_once '/wordpress/wp-load.php';",
+      'global $wpdb;',
+      "$table = $wpdb->prefix . 'reprint_push_release_state';",
+      "$wpdb->query('CREATE TABLE IF NOT EXISTS ' . $table . ' (state_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (state_id)) ' . $wpdb->get_charset_collate());",
+      `$payload = wp_json_encode(array('owner' => 'reprint-push', 'mode' => ${phpSingleQuoted(mode)}, 'version' => ${Number(version)}, 'releaseBoundaryProof' => 'plugin-driver-boundary'));`,
+      `if (!is_string($payload)) { throw new RuntimeException('Could not encode release driver payload for ${fixture}.'); }`,
+      `$wpdb->replace($table, array('state_id' => 1, 'payload_json' => $payload, 'updated_marker' => ${phpSingleQuoted(marker)}), array('%d', '%s', '%s'));`,
+    ].join(' '),
+  });
+  fs.writeFileSync(targetBlueprintPath, `${JSON.stringify(blueprint, null, 2)}\n`);
+}
+
+function phpSingleQuoted(value) {
+  return `'${String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
 function createPackagedProductionPluginFixture() {

@@ -21,7 +21,7 @@ const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 // Match the checked release verifier's bounded readiness window so the inline
 // apply-revalidation proof does not fail earlier than the wrapper it now runs
 // inside.
-const serverStartupTimeoutMs = 30_000;
+const serverStartupTimeoutMs = 60_000;
 const serverFetchTimeoutMs = 1_000;
 const requestTimeoutMs = 10_000;
 const readinessProbeIntervalMs = 500;
