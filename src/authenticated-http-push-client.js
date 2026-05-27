@@ -26,6 +26,7 @@ const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
+const checkedDbJournalStorageBoundary = 'wpdb-single-statement-cas';
 const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
   `${profile.namespacePath}/preflight`,
   `${profile.namespacePath}/snapshot`,
@@ -1030,19 +1031,19 @@ function dbJournalCheckedBoundaryContractIsPresent(dbJournal) {
   return dbJournal?.acceptedOnCheckedBoundary === true
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
-    && typeof dbJournal?.ownership?.productionAdapter === 'string'
-    && dbJournal.ownership.productionAdapter.length > 0
+    && dbJournal?.ownership?.productionAdapter === checkedDbJournalStorageBoundary
     && dbJournal?.ownership?.supportedSurface === checkedDbJournalSupportedSurface
     && dbJournalClaimContractIsPresent(dbJournal?.claim)
     && dbJournalWriterLeaseContractsArePresent(dbJournal)
     && dbJournalClaimIdentityCoherenceIsPresent(dbJournal)
-    && typeof dbJournal?.leaseFence?.boundary === 'string'
-    && dbJournal.leaseFence.boundary.length > 0
+    && dbJournal?.leaseFence?.boundary === checkedDbJournalStorageBoundary
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
-    && dbJournal?.leaseFence?.staleClaimRejected === true;
+    && dbJournal?.leaseFence?.staleClaimRejected === true
+    && dbJournal?.writerLease?.storageGuard === checkedDbJournalStorageBoundary
+    && dbJournal?.leaseFence?.writerLease?.storageGuard === checkedDbJournalStorageBoundary;
 }
 
 function dbJournalClaimContractIsPresent(claim) {
@@ -1124,8 +1125,7 @@ function dbJournalWriterLeaseContractMatches(candidate) {
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
     && candidate?.fsyncEvidence === true
-    && typeof candidate?.storageGuard === 'string'
-    && candidate.storageGuard.length > 0
+    && candidate?.storageGuard === checkedDbJournalStorageBoundary
     && candidate?.monotonicSequence === true
     && candidate?.restartReadable === true
     && candidate?.staleClaimRejected === true;
