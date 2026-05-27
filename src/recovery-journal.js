@@ -587,6 +587,26 @@ export function consumeProductionRecoveryJournal(options) {
     : null;
   const claimId = explicitClaimId ?? writerLease?.id ?? null;
   const leaseFence = freezeProductionWriterLease(writerLease);
+  if (normalized.ownsRemoteArtifact === true && normalized.remoteArtifactPath === null) {
+    throw new UnsupportedProductionRecoveryJournalError(
+      'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
+      {
+        kind: 'production-recovery-journal',
+        productionAdapter: true,
+        supportedSurface: 'production-recovery-journal-adapter',
+        restartReadable: true,
+        ownsJournal: true,
+        ownsRemoteArtifact: true,
+        writerLease,
+        journalPath: filePath,
+        artifactRefs: Object.freeze({
+          journal: filePath,
+          remote: null,
+        }),
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      },
+    );
+  }
   const artifactRefs = normalizeProductionArtifactRefs(
     normalized.artifactRefs,
     filePath,

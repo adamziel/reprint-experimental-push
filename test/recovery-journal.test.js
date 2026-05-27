@@ -5164,6 +5164,21 @@ test('production recovery journal compatibility overload fails closed when artif
       filePath,
       plan,
       current: remote,
+      claimId: 'claim-open-undefined-remote-artifact-path',
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: undefined,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
+  });
+
+  assert.throws(() => {
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
       claimId: 'claim-open-undefined-journal-ref',
       artifactRefs: {
         journal: undefined,
@@ -5193,6 +5208,22 @@ test('production recovery journal compatibility overload fails closed when artif
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
     message: 'Production recovery journal support requires artifactRefs.remote to match the owned remote artifact path.',
+  });
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: undefined,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires an explicit remote artifact path when remote ownership is claimed.',
   });
 
   assert.throws(() => {
