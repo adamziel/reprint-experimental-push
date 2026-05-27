@@ -3927,9 +3927,49 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease claim-key hash', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.claimKeyHash;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested writer-lease claim identity', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.claimId;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested writer-lease claim-key hash', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.claimKeyHash;
 
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -10646,9 +10686,43 @@ test('checked db journal attachment fails closed when authoritative checked summ
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease claim-key hash', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.claimKeyHash;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested writer-lease claim identity', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.claimId;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested writer-lease claim-key hash', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.claimKeyHash;
 
   const result = runAttachCheckedDbJournalContract(
     {
