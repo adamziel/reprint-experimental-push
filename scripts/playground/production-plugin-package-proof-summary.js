@@ -193,7 +193,10 @@ export function buildProductionPluginPackageProofSummary(
     const selected = normalizedRequestedScenarios === null
       ? selectedScenarios === null || bundleScenarios.some((scenario) => selectedScenarios.has(scenario))
       : normalizedRequestedScenarios.includes(bundleName);
-    const passed = bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
+    const bundleCoverageSatisfied = selectedScenarios === null
+      || bundleScenarios.every((scenario) => selectedScenarios.has(scenario));
+    const passed = bundleCoverageSatisfied
+      && bundleScenarios.every((scenario) => scenarioPasses.get(scenario) === true);
     const bundleKey = toBundleKey(bundleName);
     bundleResults[bundleKey] = summarizeScenario(selected, passed);
     if (selected) {
@@ -226,14 +229,20 @@ export function buildProductionPluginPackageProofSummary(
   }
 
   if (requestedConcreteScenarios !== 'all') {
-    passedRequestedScenarios.push(...passedRequestedConcreteScenarios);
-    failedRequestedScenarios.push(...failedRequestedConcreteScenarios);
+    for (const scenario of requestedConcreteScenarios) {
+      if (!requestedConcreteScenarioStatuses[scenario]) {
+        failedRequestedConcreteScenarios.push(scenario);
+        requestedConcreteScenarioStatuses[scenario] = 'missing';
+      }
+    }
     for (const scenario of passedRequestedConcreteScenarios) {
       requestedScenarioStatuses[scenario] = 'passed';
     }
     for (const scenario of failedRequestedConcreteScenarios) {
       requestedScenarioStatuses[scenario] = 'missing';
     }
+    passedRequestedScenarios.push(...passedRequestedConcreteScenarios);
+    failedRequestedScenarios.push(...failedRequestedConcreteScenarios);
   }
 
   return {
