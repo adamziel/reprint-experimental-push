@@ -46688,6 +46688,89 @@ test('blocks a local term relationship owned by a navigation post even when it t
   );
 });
 
+test('blocks a local term relationship owned by a navigation post even when it targets a same-plan post and unrelated remote revision noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const taggedPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local navigation post',
+    post_content: 'local-private-navigation-post-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local tagged post',
+    post_content: 'local-private-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local taxonomy term',
+      slug: 'local-taxonomy-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated revision noise',
+    post_content: 'remote-private-nav-relationship-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const taggedPostMutation = mutationFor(plan, taggedPostResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const navigationBlocker = plan.blockers.find((entry) => entry.resourceKey === navigationPostResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navigationBlocker.surface, 'nav_menu_item');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(taggedPostMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-navigation-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-private-tagged-post-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-private-nav-relationship-revision-body'),
+    false,
+  );
+});
+
 test('blocks a local term relationship owned by a revision even when it targets a same-plan post', () => {
   const revisionPostResourceKey = 'row:["wp_posts","ID:5"]';
   const taggedPostResourceKey = 'row:["wp_posts","ID:4"]';
