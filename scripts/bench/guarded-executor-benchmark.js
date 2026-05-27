@@ -930,6 +930,12 @@ export function productionThroughputBlockers(report) {
     blockers.push('staging-disk-headroom-visible-without-measurement');
   }
   if (
+    report.evidence.backpressure?.queuePausedBeforeOverflow === true
+    && report.evidence.backpressure?.stagingDiskHeadroomVisible !== true
+  ) {
+    blockers.push('staging-disk-headroom-not-visible');
+  }
+  if (
     report.evidence.backpressure?.queueHeadroomVisible === true
     && report.evidence.backpressure?.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack !== true
   ) {
@@ -2530,6 +2536,7 @@ function summarizeProductionCapabilityRollout({
         'missing-staging-disk-reserve-evidence',
         'staging-disk-reserve-not-aligned-to-chunk-window',
         'staging-disk-headroom-not-positive',
+        'staging-disk-headroom-not-visible',
         'staging-disk-headroom-visible-without-measurement',
         'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
         'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
@@ -2631,6 +2638,7 @@ function summarizeProductionCapabilityRollout({
         'missing-staging-disk-reserve-evidence',
         'staging-disk-reserve-not-aligned-to-chunk-window',
         'staging-disk-headroom-not-positive',
+        'staging-disk-headroom-not-visible',
         'staging-disk-headroom-visible-without-measurement',
         'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
         'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
@@ -2726,6 +2734,7 @@ function summarizeProductionCapabilityRollout({
         'queue-budget-visible-and-memory-ceiling-visible-without-aligned-receipt-cursor-queue-slack-proof',
         'queue-budget-visible-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
         'memory-ceiling-and-queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'staging-disk-headroom-not-visible',
         'memory-ceiling-match-visible-without-memory-ceiling-visibility',
         'memory-ceiling-match-visible-without-memory-headroom-visibility',
         'memory-ceiling-match-visible-without-queue-slack-visibility',
