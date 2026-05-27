@@ -12,7 +12,7 @@ import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/aut
 import { digest } from '../../src/stable-json.js';
 import {
   describeAuthSessionSourceMetadataDrift,
-  loadAuthSessionSource,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestCredentials,
   resolveAuthSessionRequestState,
 } from './auth-session-source.js';
@@ -67,7 +67,9 @@ const liveAuthSessionSourceBlocker = {
   verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
 };
 let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
-let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
+let authSessionSource = authSessionSourceCommand
+  ? loadAuthSessionSourceFromRuntimeEnvironment(authSessionSourceCommand, process.env, process.cwd())
+  : null;
 let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState({

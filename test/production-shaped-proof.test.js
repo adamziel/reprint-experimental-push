@@ -2224,6 +2224,22 @@ test('auth-session source loader falls back past invalid option values to runtim
   });
 });
 
+test('production-shaped release verify loads auth-session source commands against runtime env candidates', () => {
+  const releaseVerifySource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(
+    releaseVerifySource,
+    /loadAuthSessionSourceFromRuntimeEnvironment\(authSessionSourceCommand, process\.env, process\.cwd\(\)\)/,
+  );
+  assert.doesNotMatch(
+    releaseVerifySource,
+    /loadAuthSessionSource\(authSessionSourceCommand\)/,
+  );
+});
+
 test('auth-session source loader fails closed when the source command exits non-zero', () => {
   const source = loadAuthSessionSource(
     `${process.execPath} -e "process.stderr.write('boom\\n'); process.exit(23)"`,
