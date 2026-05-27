@@ -65,7 +65,6 @@ const packageRoot = path.join(tmpDir, 'package');
 const pluginDir = path.join(packageRoot, 'reprint-push');
 const blueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin.blueprint.json');
 const registryGuardBlueprintPath = path.join(tmpDir, 'remote-base-with-reprint-push-plugin-registry-guards.blueprint.json');
-const driverGuardSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-snapshot.blueprint.json');
 const driverGuardServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-guard-server.blueprint.json');
 const driverDeleteSnapshotBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-snapshot.blueprint.json');
 const driverDeleteServerBlueprintPath = path.join(tmpDir, 'remote-base-with-driver-fixture-delete-server.blueprint.json');
@@ -276,10 +275,6 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     writePackagedPluginOnlyBlueprint(path.join(repoRoot, fixtures.base), registryGuardBlueprintPath);
   }
   if (shouldRunAnyScenario(['driver-receipt-guards'])) {
-    writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath, {
-      enableCredentialRevocationRoute: true,
-      includeDeleteDriver: shouldRunAnyScenario(['driver-delete-apply']),
-    });
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
@@ -363,34 +358,17 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     fs.writeFileSync(basePath, `${JSON.stringify(packageSnapshots.base, null, 2)}\n`);
     fs.writeFileSync(localPath, `${JSON.stringify(packageSnapshots.local, null, 2)}\n`);
   }
-  const driverGuardBaseSnapshot = shouldRunAnyScenario(['driver-receipt-guards'])
-    ? exportSnapshotWithStage('driver-fixture-guard-base', driverGuardSnapshotBlueprintPath)
-    : null;
   const reuseGuardServerForDelete = shouldRunAnyScenario(['driver-receipt-guards'])
     && shouldRunAnyScenario(['driver-delete-apply']);
   const activeDeleteFixture = reuseGuardServerForDelete ? deleteDriverFixture : driverFixture;
   const driverDeleteBaseSnapshot = shouldRunAnyScenario(['driver-delete-apply'])
     ? (reuseGuardServerForDelete
-        ? deepClone(driverGuardBaseSnapshot)
-        : (driverGuardBaseSnapshot
-            ? enableForgedDeletePolicy(deepClone(driverGuardBaseSnapshot), driverFixture.resourceKey)
-            : exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath)))
+        ? null
+        : exportSnapshotWithStage('driver-fixture-delete-base', driverDeleteSnapshotBlueprintPath))
     : null;
   const driverLocalDeleteSnapshot = driverDeleteBaseSnapshot ? deepClone(driverDeleteBaseSnapshot) : null;
   if (driverLocalDeleteSnapshot) {
     delete driverLocalDeleteSnapshot.db?.[activeDeleteFixture.table]?.['entry_id:1'];
-  }
-  const driverLocalUpdateSnapshot = driverGuardBaseSnapshot ? deepClone(driverGuardBaseSnapshot) : null;
-  if (driverLocalUpdateSnapshot) {
-    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
-    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
-    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
-  }
-  const driverLocalInvalidUpdateSnapshot = driverGuardBaseSnapshot ? deepClone(driverGuardBaseSnapshot) : null;
-  if (driverLocalInvalidUpdateSnapshot) {
-    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'invalid-update';
-    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 3;
-    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'INVALID marker!';
   }
 
   const summary = {
@@ -643,6 +621,15 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     const remoteSnapshot = await client.get('/snapshot');
     assert.equal(remoteSnapshot.status, 200);
     assert.equal(remoteSnapshot.body?.ok, true);
+    const driverGuardBaseSnapshot = deepClone(remoteSnapshot.body.snapshot);
+    const driverLocalUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
+    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'local-update';
+    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 2;
+    driverLocalUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'local-update';
+    const driverLocalInvalidUpdateSnapshot = deepClone(driverGuardBaseSnapshot);
+    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.mode = 'invalid-update';
+    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].payload.version = 3;
+    driverLocalInvalidUpdateSnapshot.db[driverFixture.table]['entry_id:1'].updated_marker = 'INVALID marker!';
     const allowedEntry = remoteSnapshot.body.snapshot?.meta?.pluginOwnedResources?.allowedResources?.find?.(
       (entry) => entry?.resourceKey === driverFixture.resourceKey,
     );
