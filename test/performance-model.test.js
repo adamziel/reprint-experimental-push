@@ -3367,7 +3367,18 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   assert.ok(rejectedById.get('compressed-row-batch-replaces-atomic-group').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('parallel-finalize-merged-across-groups').violates.includes('atomic-groups'));
   assert.ok(rejectedById.get('parallelize-finalize-across-groups').violates.includes('atomic-groups'));
+  assert.equal(rejectedById.get('backpressure-drops-evidence').rejectedGate, 'recovery');
+  assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('backpressure-drops-evidence').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('backpressure-drops-queued-receipts').violates.includes('durable-progress'));
+  assert.equal(rejectedById.get('compressed-buffer-means-complete').rejectedGate, 'recovery');
+  assert.ok(rejectedById.get('compressed-buffer-means-complete').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-buffer-means-complete').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-buffer-means-complete').violates.includes('durable-progress'));
+  assert.equal(rejectedById.get('compressed-queue-drains-means-complete').rejectedGate, 'recovery');
+  assert.ok(rejectedById.get('compressed-queue-drains-means-complete').violates.includes('compression'));
+  assert.ok(rejectedById.get('compressed-queue-drains-means-complete').violates.includes('backpressure'));
+  assert.ok(rejectedById.get('compressed-queue-drains-means-complete').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('compressed-receipt-log-authorizes-apply').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('batched-receipt-journal-flush').violates.includes('durable-progress'));
   assert.ok(rejectedById.get('unbounded-parallel-large-upload-resume').violates.includes('backpressure'));
