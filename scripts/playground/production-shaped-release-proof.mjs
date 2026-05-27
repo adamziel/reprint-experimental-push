@@ -3,20 +3,13 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 import {
-  loadAuthSessionSource,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestState,
-  resolveExplicitAllowedAuthSessionSourceUrl,
 } from './auth-session-source.js';
 
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
-const explicitAllowedSourceUrl = resolveExplicitAllowedAuthSessionSourceUrl(
-  process.env.REPRINT_PUSH_SOURCE_URL || '',
-  process.env.REPRINT_PUSH_REMOTE_URL || '',
-);
 const authSessionSource = authSessionSourceCommand
-  ? loadAuthSessionSource(authSessionSourceCommand, process.env, process.cwd(), {
-      allowedSourceUrl: explicitAllowedSourceUrl,
-    })
+  ? loadAuthSessionSourceFromRuntimeEnvironment(authSessionSourceCommand, process.env, process.cwd())
   : null;
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState(
   {

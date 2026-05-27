@@ -249,6 +249,28 @@ export function resolveExplicitAllowedAuthSessionSourceUrl(...values) {
   return '';
 }
 
+export function loadAuthSessionSourceFromRuntimeEnvironment(
+  command,
+  baseEnv = process.env,
+  cwd = process.cwd(),
+  options = {},
+) {
+  if (typeof command !== 'string' || command.trim() === '') {
+    return null;
+  }
+
+  const allowedSourceUrl = resolveExplicitAllowedAuthSessionSourceUrl(
+    options.sourceUrl ?? baseEnv.REPRINT_PUSH_SOURCE_URL ?? '',
+    options.remoteUrl ?? baseEnv.REPRINT_PUSH_REMOTE_URL ?? '',
+    options.localUrl ?? baseEnv.REPRINT_PUSH_LOCAL_URL ?? '',
+  );
+
+  return loadAuthSessionSource(command, baseEnv, cwd, {
+    ...options,
+    allowedSourceUrl,
+  });
+}
+
 function normalizeAuthSessionSourceField(value) {
   if (typeof value !== 'string') {
     return '';

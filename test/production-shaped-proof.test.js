@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadAuthSessionSource,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveExplicitAllowedAuthSessionSourceUrl,
   resolveAuthSessionRequestCredentials,
   resolveAuthSessionRequestState,
@@ -1655,6 +1656,17 @@ test('explicit allowed auth/session source URL resolver falls back across source
   );
 });
 
+test('explicit allowed auth/session source URL resolver falls back to the first supported local URL', () => {
+  assert.equal(
+    resolveExplicitAllowedAuthSessionSourceUrl(
+      '',
+      '',
+      'https://example.com/local?token=secret',
+    ),
+    'https://example.com/local/',
+  );
+});
+
 test('explicit allowed auth/session source URL resolver returns empty when every candidate is invalid', () => {
   assert.equal(
     resolveExplicitAllowedAuthSessionSourceUrl(
@@ -1694,6 +1706,52 @@ test('auth-session source loader fails closed when the source command times out'
   assert.deepEqual(source, {
     ok: false,
     error: 'Auth session source command timed out after 50ms',
+  });
+});
+
+test('auth-session source loader derives allowedSourceUrl from explicit runtime source env', () => {
+  const sourceUrl = 'https://example.com/push';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_SOURCE_URL: sourceUrl,
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth-session source loader derives allowedSourceUrl from explicit local runtime env', () => {
+  const sourceUrl = 'https://example.com/local';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_LOCAL_URL: sourceUrl,
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
   });
 });
 

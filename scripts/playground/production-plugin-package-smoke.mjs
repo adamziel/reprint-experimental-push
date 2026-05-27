@@ -9,8 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createHmac } from 'node:crypto';
 import { digest } from '../../src/stable-json.js';
 import {
-  loadAuthSessionSource,
-  resolveExplicitAllowedAuthSessionSourceUrl,
+  loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestCredentials,
 } from './auth-session-source.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
@@ -26,14 +25,8 @@ const credentials = {
   password: 'reprint-push-admin-app-password',
 };
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
-const explicitAllowedSourceUrl = resolveExplicitAllowedAuthSessionSourceUrl(
-  process.env.REPRINT_PUSH_SOURCE_URL || '',
-  process.env.REPRINT_PUSH_REMOTE_URL || '',
-);
 const authSessionSource = authSessionSourceCommand
-  ? loadAuthSessionSource(authSessionSourceCommand, process.env, process.cwd(), {
-      allowedSourceUrl: explicitAllowedSourceUrl,
-    })
+  ? loadAuthSessionSourceFromRuntimeEnvironment(authSessionSourceCommand, process.env, process.cwd())
   : null;
 const resolvedCredentials = resolveAuthSessionRequestCredentials({
   liveSourceUrl: '',
