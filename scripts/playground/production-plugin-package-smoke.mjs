@@ -1397,6 +1397,18 @@ async function waitForServer(child, baseUrl, logs) {
         ),
       );
     } catch (error) {
+      if (
+        error?.isPlaygroundReadinessFailure === true
+        || (
+          typeof error?.message === 'string'
+          && (
+            error.message.startsWith('Packaged production plugin ')
+            || error.message.startsWith('Timed out waiting for Playground server at ')
+          )
+        )
+      ) {
+        throw error;
+      }
       if (!packagedProductionPluginReadinessErrorRetryable(error)) {
         throw error;
       }
