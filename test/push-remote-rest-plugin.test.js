@@ -3774,6 +3774,41 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit claim-scoped idempotency evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  checkedSummary.idempotencyEvidence = [
+    {
+      idempotencyKeyHash: 'other-idempotency-hash-99',
+      events: 1,
+      requestHashes: 1,
+      latestId: 40,
+    },
+  ];
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.idempotencyEvidence, [
+    {
+      idempotencyKeyHash: 'other-idempotency-hash-99',
+      events: 1,
+      requestHashes: 1,
+      latestId: 40,
+    },
+  ]);
+});
+
 test('checked recovery inspect evidence fails closed when accepted checked summaries preserve mismatched idempotency lineage', { skip: !hasPhp }, () => {
   const checkedSummary = {
     acceptedOnCheckedBoundary: true,
@@ -10363,6 +10398,38 @@ test('checked db journal attachment fails closed on missing accepted inline idem
       idempotencyKeyHash: 'idem-hash-01',
       events: 1,
       latestId: 33,
+    },
+  ]);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit claim-scoped idempotency evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  checkedSummary.idempotencyEvidence = [
+    {
+      idempotencyKeyHash: 'other-idempotency-hash-99',
+      events: 1,
+      requestHashes: 1,
+      latestId: 40,
+    },
+  ];
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.idempotencyEvidence, [
+    {
+      idempotencyKeyHash: 'other-idempotency-hash-99',
+      events: 1,
+      requestHashes: 1,
+      latestId: 40,
     },
   ]);
 });

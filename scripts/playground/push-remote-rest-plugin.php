@@ -1292,7 +1292,7 @@ function reprint_push_lab_rest_checked_idempotency_evidence_conflicts(
         $idempotency_key_hash
     );
     if (!is_array($checked_evidence)) {
-        return false;
+        return is_array($premerge_evidence);
     }
 
     if (!is_array($premerge_evidence)) {
