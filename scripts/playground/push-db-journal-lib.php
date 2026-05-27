@@ -1005,6 +1005,7 @@ function reprint_push_lab_db_journal_claim_evidence_contract_matches($claim, $cl
         'claimId' => $claim['previousClaimId'] ?? null,
         'sequence' => $claim['abandonedSequence'] ?? null,
         'event' => $claim['abandonedEvent'] ?? null,
+        'claimKeyHash' => $claim['previousClaimKeyHash'] ?? null,
         'idempotencyKeyHash' => $claim['idempotencyKeyHash'] ?? null,
         'requestHash' => $claim['requestHash'] ?? null,
     ])) {

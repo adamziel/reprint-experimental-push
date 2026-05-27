@@ -1279,6 +1279,38 @@ test('checked db journal attachment fails closed when authoritative claim eviden
   assert.equal(parsed.dbJournal.claimEvidence.previousRow.claimId, undefined);
 });
 
+test('checked db journal attachment fails closed when authoritative claim evidence omits the abandoned-row claim-key lineage', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.claimEvidence.abandonedRow.claimKeyHash;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimKeyHash, undefined);
+});
+
+test('checked db journal attachment fails closed when authoritative claim evidence drifts the abandoned-row claim-key lineage', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  checkedSummary.claimEvidence.abandonedRow.claimKeyHash = 'wrong-previous-claim-key-hash';
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.claimEvidence.abandonedRow.claimKeyHash, 'wrong-previous-claim-key-hash');
+});
+
 test('checked db journal attachment fails closed when authoritative latest rows omit previously accepted stale-claim lineage', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineDbJournal();
   inlineJournal.latestRows = [
