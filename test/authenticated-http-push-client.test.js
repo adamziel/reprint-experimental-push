@@ -4069,8 +4069,52 @@ test('production-shaped authenticated push fails closed immediately when apply r
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.revoked, true);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: true,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 3);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycle.read?.revoked, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.revoked, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.revoked, true);
     assert.equal(summary.authSessionLifecycleSummary.revoked?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.revoked?.status, 'revoked');
     assert.equal(seen.length, 4);
@@ -4184,8 +4228,52 @@ test('production-shaped authenticated push fails closed immediately when apply r
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.cleanedUp, true);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: true,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 3);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycle.read?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.cleanedUp, true);
     assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.cleanedUp, true);
     assert.equal(seen.length, 4);
@@ -4300,9 +4388,55 @@ test('production-shaped authenticated push fails closed immediately when apply r
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.rotated, true);
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.preserved, false);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: true,
+          preserved: false,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 3);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycle.read?.rotated, true);
+    assert.equal(summary.authSessionLifecycle.read?.preserved, false);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.rotated, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.preserved, false);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.rotated, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.preserved, false);
     assert.equal(summary.authSessionLifecycleSummary.rotated?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.rotated?.rotated, true);
     assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
