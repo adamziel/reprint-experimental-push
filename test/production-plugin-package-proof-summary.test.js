@@ -821,6 +821,52 @@ test('plugin-driver proof summary reuses an attached pluginDriverProof and repai
   assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
 });
 
+test('plugin-driver proof summary repairs an alias-stale top-level modeProof cache when the nested proof is reused', () => {
+  const pluginDriverProof = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    modeProof: {
+      mode: 'driverReleaseProof',
+      canonicalMode: 'driver-release-proof',
+      proofKey: 'driverReleaseProof',
+      legacyProofKey: 'driverReleaseProof',
+      requestedScenarios: ['driverReleaseProof'],
+      requestedBundles: ['driverReleaseProof'],
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+      requestedBundleStatus: 'passed',
+    },
+    ok: true,
+  };
+
+  const rawSummary = {
+    pluginDriverProof,
+    modeProof: {
+      ...pluginDriverProof.modeProof,
+      mode: 'driverMutationProof',
+      legacyProofKey: 'driverMutationProof',
+      requestedScenarios: ['driverMutationProof'],
+      requestedBundles: ['driverMutationProof'],
+      requestedBundleStatus: 'missing',
+    },
+  };
+
+  const reusedProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-release-proof']),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(reusedProof, pluginDriverProof);
+  assert.equal(rawSummary.modeProof, pluginDriverProof.modeProof);
+  assert.equal(rawSummary.modeProof?.mode, 'driverReleaseProof');
+  assert.deepEqual(rawSummary.modeProof?.requestedBundles, ['driverReleaseProof']);
+  assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
+});
+
 test('plugin-driver mode proof resolver reuses an attached top-level modeProof when the raw summary widened to all bundles', () => {
   const attachedModeProof = {
     mode: 'driverReleaseProof',

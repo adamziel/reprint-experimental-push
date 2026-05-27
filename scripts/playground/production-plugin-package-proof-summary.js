@@ -935,10 +935,15 @@ function shouldSyncTopLevelModeProof(currentModeProof, nextModeProof) {
   if (currentModeProof === undefined || currentModeProof === null) {
     return true;
   }
-  return currentModeProof?.mode === nextModeProof?.mode
+  return (
+    currentModeProof?.mode === nextModeProof?.mode
     && currentModeProof?.canonicalMode === nextModeProof?.canonicalMode
     && currentModeProof?.proofKey === nextModeProof?.proofKey
-    && currentModeProof?.legacyProofKey === nextModeProof?.legacyProofKey;
+    && currentModeProof?.legacyProofKey === nextModeProof?.legacyProofKey
+  ) || (
+    currentModeProof?.canonicalMode === nextModeProof?.canonicalMode
+    && currentModeProof?.proofKey === nextModeProof?.proofKey
+  );
 }
 
 function normalizeSelectedScenarios(selectedScenarios) {
