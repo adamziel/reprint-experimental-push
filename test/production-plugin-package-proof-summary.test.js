@@ -2794,6 +2794,7 @@ test('plugin-driver proof summary attach helper repairs stale verifier alias sce
     repairedProof.requestedConcreteScenarioStatuses,
     repairedProof.modeProof?.requestedConcreteScenarioStatuses,
   );
+  assert.equal(repairedProof.requestedStatus, undefined);
   assert.equal(repairedProof.requestedScenariosSatisfied, false);
   assert.equal(
     repairedProof.requestedConcreteScenariosSatisfied,
@@ -3182,6 +3183,8 @@ test('plugin-driver proof summary attach helper repairs stale receipt-registrati
   assert.notEqual(repairedProof, currentProof);
   assert.equal(repairedProof, rawSummary.pluginDriverProof);
   assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedBundleStatus, undefined);
   assert.deepEqual(repairedProof.requestedBundles, ['driverReceiptRegistrationGuards']);
   assert.deepEqual(repairedProof.requestedBundleStatuses, {
     driverReceiptRegistrationGuards: 'missing',
