@@ -1896,10 +1896,16 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
 function reprint_push_lab_rest_checked_recovery_journal_claim_identity_conflicts(
     array $journal
 ): bool {
+    $has_top_level_claim_id = array_key_exists('claimId', $journal);
+    $has_top_level_claim_key_hash = array_key_exists('claimKeyHash', $journal);
+    if ($has_top_level_claim_id !== $has_top_level_claim_key_hash) {
+        return true;
+    }
+
     $active_claim_id = isset($journal['claim']) && is_array($journal['claim'])
         ? ($journal['claim']['activeClaimId'] ?? null)
         : null;
-    if (array_key_exists('claimId', $journal)) {
+    if ($has_top_level_claim_id) {
         $claim_id = $journal['claimId'] ?? null;
         if (!reprint_push_lab_db_journal_non_empty_string($claim_id)) {
             return true;
@@ -1914,7 +1920,7 @@ function reprint_push_lab_rest_checked_recovery_journal_claim_identity_conflicts
         }
     }
 
-    if (!array_key_exists('claimKeyHash', $journal)) {
+    if (!$has_top_level_claim_key_hash) {
         return false;
     }
 

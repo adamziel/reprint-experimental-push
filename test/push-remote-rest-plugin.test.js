@@ -8561,6 +8561,42 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   assert.equal(parsed.recovery.journal.claimKeyHash, 'drifted-top-level-claim-key-hash');
 });
 
+test('checked recovery inspect evidence fails closed on accepted inline top-level claim id without a matching top-level claim-key hash', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimId = inlineJournal.claim.activeClaimId;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.claimId, inlineJournal.claim.activeClaimId);
+  assert.equal('claimKeyHash' in parsed.recovery.journal, false);
+});
+
+test('checked recovery inspect evidence fails closed on accepted inline top-level claim-key hash without a matching top-level claim id', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.claimKeyHash = inlineJournal.claim.activeClaimKeyHash;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.claimKeyHash, inlineJournal.claim.activeClaimKeyHash);
+  assert.equal('claimId' in parsed.recovery.journal, false);
+});
+
 test('checked recovery inspect evidence fails closed on conflicting accepted inline ownership contract flags instead of silently normalizing them', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
