@@ -1,31 +1,38 @@
 # Critic Verdict
 
-Current reliable head: `f6fff35388d2c1060b15c16aa8e5e731a881b7d3`
-(`Bound explicit live startup proof`).
+Fetched reliable ref today:
 
-Previous classified reliable head: `7ed8cc290d0a56918f71b4aa06b5b658a2e4e8d9`
-(`Bound explicit live startup readiness failures`).
+- `origin/lane/reliable-executor` resolves to
+  `4d3ded260a350a749520543389f4fd751fd10c03`
+  (`Widen explicit live proof startup budget`).
 
-Verdict: `0/4`
+Previous classified reliable head:
+
+- `9d0279a3b` (`Prove recovery claim fencing`).
+
+Verdict for `4d3ded260a350a749520543389f4fd751fd10c03`: `0/4`
 
 Reason:
 
-- I repolled `origin/lane/reliable-executor` and confirmed it now points at
-  `f6fff35388d2c1060b15c16aa8e5e731a881b7d3`.
-- The `7ed8cc29..f6fff353` delta stays inside
-  `test/production-shaped-proof.test.js` and only tightens the explicit live
-  startup proof shape. It improves the checked verifier's failure reporting,
-  but it still does not change the production boundary being exercised.
-- This is still harness and wrapper-boundary plumbing, not one rerunnable
-  checked release command on the real Reprint endpoint where the same
-  executable command mints and reads back a live auth session on the real
-  source URL, persists it in durable restart-readable journal storage with
-  lease-fenced ownership, preserves the rejected remote evidence for audit,
-  and performs apply-time revalidation before the first mutation on that same
-  live boundary.
-- So the verdict remains `0/4`: `f6fff353` improves bounded startup proof
-  behavior inside the checked verifier path, but it still does not prove the
-  missing production-owned, non-lab-backed checked release boundary.
+- The `9d0279a3..4d3ded26` delta stays entirely in
+  `test/production-shaped-proof.test.js`.
+- It only widens the opt-in live proof startup and helper-server budgets so
+  the explicit live proof can boot longer before the wrapper times out. That is
+  still test harness tuning, not a change to the production boundary being
+  exercised.
+- The retained evidence remains bounded startup behavior and the same checked
+  release path continuing to fail closed at
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` /
+  `PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED`.
+- This does not execute one rerunnable checked release command on the real
+  Reprint endpoint where the same executable command mints and rereads a live
+  auth session on the real source URL, persists it in durable restart-readable
+  journal storage with lease-fenced ownership, preserves rejected remote
+  evidence for audit, and performs apply-time revalidation before the first
+  mutation on that same live boundary.
+- So the verdict remains `0/4`: `4d3ded26` makes the explicit live proof less
+  likely to fail during helper startup, but it still does not prove the missing
+  production-owned, non-lab-backed checked release boundary.
 
 Next exact reliable-owned primitive:
 
