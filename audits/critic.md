@@ -1,21 +1,26 @@
 # Critic Verdict
 
-Current reliable head: `3161b049e885694f8fbd5127050a8c45330ad50d`
-(`Accept matching runtime auth session sources`).
+Current reliable head: `c208a12d28b3abcef15920c27eef424d68cad996`
+(`Fail closed on malformed auth identity drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head widens accepted explicit runtime auth-session source URLs in
-  `scripts/playground/auth-session-source.js` and adds a focused regression in
-  `test/production-shaped-proof.test.js`.
-- The diff is still support-side release-verifier plumbing: it keeps the
-  checked path accepting matching runtime sources, but it does not prove a
-  production-owned, non-lab-backed mutation boundary on the real Reprint
-  endpoint, live auth/session issuance and readback, durable restart-readable
-  journal storage with lease fencing, or apply-time revalidation before the
-  first mutation.
+- This head adds fail-closed checks for malformed auth identity fields in the
+  checked release-path client. In `src/authenticated-http-push-client.js`, the
+  production-auth-session path now rejects malformed `auth.identity.userLogin`
+  values at preflight, dry-run, apply, recovery inspect, replay, and db-journal
+  inspection time when `requireProductionAuthSession` is enabled.
+- The added tests in `test/authenticated-http-push-client.test.js` cover array-
+  valued and whitespace-padded auth identity/session fields and prove the
+  client returns `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` with invalid
+  field diagnostics.
+- The diff is still support-side hardening on the checked verifier path: it
+  does not prove a production-owned, non-lab-backed mutation boundary on the
+  real Reprint endpoint, live auth/session issuance and readback, durable
+  restart-readable journal storage with lease fencing, or apply-time
+  revalidation before the first mutation.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
