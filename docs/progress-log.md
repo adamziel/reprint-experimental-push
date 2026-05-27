@@ -3,6 +3,31 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 07:59:34
+
+<a id="2026-05-27-public-status-audit-075934"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `3ee9908847b2e2b89bad40abc4d0add4acd96731` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head prioritizes checked
+  journal validation and journal auth/session drift before accepting
+  preserved-remote retry proof: durable journal and auth/session failures now
+  win over missing retry evidence. That is material support-side checked-path
+  ordering hardening, not a production boundary gate move, and it still stops
+  short of the missing production-owned, non-lab-backed source mutation
+  boundary on the real Reprint endpoint: one primitive that owns auth/session
+  issuance/readback, durable restart-readable journal storage with lease
+  fencing, plugin-driver ownership on the release boundary, preserved rejected
+  remote evidence, and apply-time revalidation before first mutation.
+- The public page keeps the critic and independent-auditor verdicts aligned
+  with `3ee99088` while leaving the release posture conservative. The stale
+  percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [critic audit](../audits/critic.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 07:47:37
 
 <a id="2026-05-27-public-status-audit-074737"></a>
@@ -17027,13 +17052,13 @@ Newest entries stay short and link back to the evidence trail.
 
 ## 2026-05-24 - Status By Area
 
-| Area | Progress | What changed | Next proof |
-| --- | ---: | --- | --- |
-| Merge invariants | 42% | Planner/apply tests, Playground snapshots, fixture plugin/data checks, unsafe topology mutation suppression, stale owner-plugin context blocking, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
-| Recovery boundaries | 27% | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, durable old-remote retry evidence, durable replay envelopes, journal-write failure recovery artifacts, and stale-at-write refusal are lab/model-proved. | Production DB journal durability, `fsync`/locking/leases/fencing, and crash-boundary behavior. |
-| Reliable executor and protocol | 40% | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, production transport binding docs, production-shaped route smoke, packaged-plugin route activation, and signed session/nonce cleanup evidence exist. | Production auth/TLS/session/nonce lifecycle, real exporter credentials, durable audit records, leases/fencing, and arbitrary plugin drivers. |
-| Fast path and chunking | 17% | Performance model now records safe fast-path proof obligations for each speedup area, plus staged chunks, group finalization, idempotency, missing receipts, pressure budgets, and rejected unsafe shortcuts. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
-| Independent evidence and critique | 30% | Objective audit, critic production gate, source notes, and supervisor feedback were refreshed against the production-shaped/package evidence. | External review against live integration behavior. |
+| Area | Evidence status | What changed | Next proof |
+| --- | --- | --- | --- |
+| Merge invariants | Lab proof only | Planner/apply tests, Playground snapshots, fixture plugin/data checks, unsafe topology mutation suppression, stale owner-plugin context blocking, JIT drift refusal, and storage-boundary DB/file guards are passing. | Production resource identity, semantic preservation, and storage-level guards over real WordPress data. |
+| Recovery boundaries | Lab/model proof only | DB journal idempotency, process-kill, missing-commit finalization, all-old stale-claim retry, durable old-remote retry evidence, durable replay envelopes, journal-write failure recovery artifacts, and stale-at-write refusal are lab/model-proved. | Production DB journal durability, `fsync`/locking/leases/fencing, and crash-boundary behavior. |
+| Reliable executor and protocol | Lab proof only | Lab preflight, dry-run receipts, signed auth routes, idempotency, replay, conflict refusal, hash-only guard evidence, authenticated CLI push, post-snapshot drift refusal, production transport binding docs, production-shaped route smoke, packaged-plugin route activation, and signed session/nonce cleanup evidence exist. | Production auth/TLS/session/nonce lifecycle, real exporter credentials, durable audit records, leases/fencing, and arbitrary plugin drivers. |
+| Fast path and chunking | Model proof only | Performance model now records safe fast-path proof obligations for each speedup area, plus staged chunks, group finalization, idempotency, missing receipts, pressure budgets, and rejected unsafe shortcuts. | Transfer benchmarks, streaming/chunking implementation, and large-site runtime evidence. |
+| Independent evidence and critique | Audit proof only | Objective audit, critic production gate, source notes, and supervisor feedback were refreshed against the production-shaped/package evidence. | External review against live integration behavior. |
 
 ## 2026-05-24 - Explicit Pending Proof Gates
 
