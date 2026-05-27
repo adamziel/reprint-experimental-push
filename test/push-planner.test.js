@@ -28932,6 +28932,60 @@ test('allows a term taxonomy parent reference to a same-plan term when an unrela
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
 });
 
+test('allows a term taxonomy parent reference to a same-plan term when an unrelated remote nav_menu_item post exists', () => {
+  const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
+  const childTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local parent term',
+      slug: 'local-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 7,
+      count: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts = {
+    'ID:21': {
+      ID: 21,
+      post_title: 'Remote menu item post',
+      post_content: 'remote-menu-item-body',
+      post_type: 'nav_menu_item',
+      post_status: 'publish',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, parentTermResourceKey);
+  const taxonomyMutation = mutationFor(plan, childTaxonomyResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childTaxonomyResourceKey);
+  const reference = taxonomyMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-taxonomy-parent');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blocker, undefined);
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipType, 'term-taxonomy-parent');
+  assert.equal(reference.targetResourceKey, parentTermResourceKey);
+  assert.equal(JSON.stringify(reference).includes('remote-menu-item-body'), false);
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'nav_menu_item');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:9'].parent, 7);
+});
+
 test('blocks a term taxonomy parent reference when the same-plan parent term is itself blocked by a same-plan nav menu taxonomy', () => {
   const parentTermResourceKey = 'row:["wp_terms","term_id:7"]';
   const childTermResourceKey = 'row:["wp_terms","term_id:8"]';
