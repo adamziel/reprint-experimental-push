@@ -17,6 +17,7 @@ const smallShape = Object.freeze({
   formsLabRows: 2,
   remoteDriftPosts: 1,
   remoteDriftFiles: 1,
+  featuredImageGraph: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -28,14 +29,28 @@ test('complex-site seed PHP is bounded and variant-aware', () => {
   assert.match(php, /brewcommerce-complex-/);
 });
 
+test('complex-site seed PHP can add a featured image graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    featuredImageGraph: true,
+  });
+
+  assert.match(php, /brewcommerce-featured-attachment/);
+  assert.match(php, /_thumbnail_id/);
+  assert.match(php, /if \(\$complex_featured_image_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_featured_image_graph = false/);
+});
+
 test('complex-site fixture shape can be expanded for journal-window evidence', () => {
   const shape = complexSiteFixtureShapeFromEnv({
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
   });
 
   assert.equal(shape.postCount, 25);
   assert.equal(shape.schemaMetaCount, 5);
   assert.equal(shape.fileCount, 3);
+  assert.equal(shape.featuredImageGraph, true);
 });
 
 test('complex-site planner proof reports dense counts, receipts prerequisites, and no-data-loss invariants', () => {
@@ -62,6 +77,29 @@ test('complex-site planner proof reports dense counts, receipts prerequisites, a
   assert.equal(proof.invariants.remoteDriftPreservesRemote, true);
   assert.equal(proof.invariants.noDeleteMutations, true);
   assert.equal(proof.invariants.pluginOwnedMutationsHaveDrivers, true);
+});
+
+test('complex-site planner proof covers real featured image attachment graph closure', () => {
+  const graphShape = { ...smallShape, featuredImageGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.featuredImageAttachments, 0);
+  assert.equal(proof.counts.localEdited.featuredImageAttachments, 1);
+  assert.equal(proof.counts.localEdited.featuredImageMeta, 1);
+  assert.equal(proof.graphEvidence.type, 'featured-image-attachment');
+  assert.equal(proof.graphEvidence.attachmentPlanned, true);
+  assert.equal(proof.graphEvidence.thumbnailMetaPlanned, true);
+  assert.equal(proof.graphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.featuredImageGraphCountsPresent, true);
+  assert.equal(proof.invariants.featuredImageGraphPlanned, true);
+  assert.equal(proof.invariants.featuredImageGraphHasLivePreconditions, true);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -174,6 +212,24 @@ function syntheticComplexSnapshot(variant, shape) {
         driver: 'wp-postmeta',
       });
     }
+  }
+
+  if (shape.featuredImageGraph && local) {
+    snapshot.db.wp_posts['ID:71901'] = {
+      ID: 71901,
+      post_title: 'Brewcommerce Featured Image Attachment',
+      post_name: 'brewcommerce-featured-attachment',
+      post_content: 'Local featured image attachment used for graph identity proof.',
+      post_status: 'inherit',
+      post_type: 'attachment',
+      post_parent: 71001,
+      post_author: 0,
+    };
+    snapshot.db.wp_postmeta['post_id:71001:meta_key:_thumbnail_id'] = {
+      post_id: 71001,
+      meta_key: '_thumbnail_id',
+      meta_value: '71901',
+    };
   }
 
   for (let index = 1; index <= shape.fileCount; index += 1) {

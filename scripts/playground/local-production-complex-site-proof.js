@@ -9,10 +9,17 @@ export const complexSiteFixtureShape = Object.freeze({
   formsLabRows: 4,
   remoteDriftPosts: 3,
   remoteDriftFiles: 1,
+  featuredImageGraph: false,
 });
 
 const proofNow = new Date('2026-05-27T21:45:00.000Z');
 const formsFixtureOption = 'reprint_push_forms_fixture';
+const featuredImagePostId = 71001;
+const featuredImageAttachmentId = 71901;
+const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
+const featuredImageMetaKey = '_thumbnail_id';
+const featuredImageAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageAttachmentId}"]`;
+const featuredImageMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImagePostId}:meta_key:${featuredImageMetaKey}"]`;
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
   return Object.freeze({
@@ -22,6 +29,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     formsLabRows: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_FORMS_ROWS, complexSiteFixtureShape.formsLabRows),
     remoteDriftPosts: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_POSTS, complexSiteFixtureShape.remoteDriftPosts),
     remoteDriftFiles: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_FILES, complexSiteFixtureShape.remoteDriftFiles),
+    featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
   });
 }
 
@@ -37,6 +45,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_forms_rows = ${positiveInt(shape.formsLabRows)};`,
     `$complex_remote_drift_posts = ${positiveInt(shape.remoteDriftPosts)};`,
     `$complex_remote_drift_files = ${positiveInt(shape.remoteDriftFiles)};`,
+    `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
     "  $stable_id = 71000 + $i;",
     "  $suffix = str_pad((string) $i, 2, '0', STR_PAD_LEFT);",
@@ -60,6 +69,14 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "    $schema_marker = $complex_is_local ? 'local-edit' : (($complex_is_remote && $i <= $complex_remote_drift_posts) ? 'remote-drift' : 'base');",
     "    update_post_meta($post_id, '_reprint_push_forms_schema', array('owner'=>'forms','schemaVersion'=>'brewcommerce-complex-' . $schema_version,'form'=>'complex-checkout-' . $suffix,'marker'=>$schema_marker,'fields'=>array(array('key'=>'email','type'=>'email','enabled'=>true),array('key'=>'quantity','type'=>'number','enabled'=>true),array('key'=>'delivery','type'=>'select','enabled'=>true,'choices'=>array('pickup','ship','courier')))));",
     "  }",
+    "}",
+    "if ($complex_featured_image_graph && $complex_is_local) {",
+    `  $featured_post_id = ${featuredImagePostId};`,
+    `  $attachment_id = ${featuredImageAttachmentId};`,
+    `  $attachment_result = wp_insert_post(array('import_id'=>$attachment_id,'post_title'=>'Brewcommerce Featured Image Attachment','post_name'=>${phpString(featuredImageAttachmentSlug)},'post_content'=>'Local featured image attachment used for graph identity proof.','post_status'=>'inherit','post_type'=>'attachment','post_parent'=>$featured_post_id,'post_author'=>0));`,
+    "  if (is_wp_error($attachment_result)) { throw new RuntimeException($attachment_result->get_error_message()); }",
+    "  add_post_meta((int) $attachment_result, 'reprint_push_fixture', 'complex-featured-image', true);",
+    `  update_post_meta($featured_post_id, ${phpString(featuredImageMetaKey)}, (string) $attachment_id);`,
     "}",
     "wp_mkdir_p($dir);",
     "for ($i = 1; $i <= $complex_file_count; $i++) {",
@@ -106,7 +123,8 @@ export function buildComplexSitePlannerProof({
     positiveInt(shape.postCount)
     + positiveInt(shape.schemaMetaCount)
     + positiveInt(shape.fileCount)
-    + 2;
+    + 2
+    + (shape.featuredImageGraph ? 2 : 0);
   const expectedMinimumConflicts =
     positiveInt(shape.remoteDriftPosts)
     + Math.min(positiveInt(shape.schemaMetaCount), positiveInt(shape.remoteDriftPosts))
@@ -137,6 +155,21 @@ export function buildComplexSitePlannerProof({
         && mutation.pluginOwnedResource.driver.length > 0),
     noUnsupportedPluginOwnedBlockers: readyPlan.blockers.every((blocker) =>
       blocker.class !== 'unsupported-plugin-owned-resource'),
+    featuredImageGraphCountsPresent: !shape.featuredImageGraph
+      || (summarizeComplexSnapshot(localEditedSnapshot).featuredImageAttachments >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).featuredImageMeta >= 1),
+    featuredImageGraphPlanned: !shape.featuredImageGraph
+      || [featuredImageAttachmentResourceKey, featuredImageMetaResourceKey].every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+    featuredImageGraphHasLivePreconditions: !shape.featuredImageGraph
+      || [featuredImageAttachmentResourceKey, featuredImageMetaResourceKey].every((resourceKey) =>
+        readyPlan.preconditions?.some((precondition) =>
+          precondition.resourceKey === resourceKey
+          && precondition.checkedAgainst === 'live-remote'
+          && typeof precondition.expectedHash === 'string'
+          && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
+    featuredImageGraphNoStaleBlocker: !shape.featuredImageGraph
+      || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
     remoteDriftFailsClosed: ['blocked', 'conflict'].includes(remoteDriftPlan.status)
       && remoteConflicts.length >= expectedMinimumConflicts,
     remoteDriftPreservesRemote: remoteConflicts.every((conflict) =>
@@ -170,6 +203,17 @@ export function buildComplexSitePlannerProof({
       })),
     },
     mutationFamilies: countMutationFamilies(readyMutations),
+    graphEvidence: shape.featuredImageGraph ? {
+      type: 'featured-image-attachment',
+      attachmentResourceKey: featuredImageAttachmentResourceKey,
+      thumbnailMetaResourceKey: featuredImageMetaResourceKey,
+      attachmentPlanned: readyMutations.some((mutation) =>
+        mutation.resourceKey === featuredImageAttachmentResourceKey),
+      thumbnailMetaPlanned: readyMutations.some((mutation) =>
+        mutation.resourceKey === featuredImageMetaResourceKey),
+      staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
+        blocker.class === 'stale-wordpress-graph-identity').length,
+    } : null,
     invariants,
     ok: Object.values(invariants).every(Boolean),
   };
@@ -323,6 +367,12 @@ export function summarizeComplexSnapshot(snapshot) {
     complexSchemaMeta: Object.values(postmeta).filter((row) =>
       String(row?.meta_key || '') === '_reprint_push_forms_schema'
       && String(row?.meta_value?.form || '').startsWith('complex-checkout-')).length,
+    featuredImageAttachments: Object.values(posts).filter((row) =>
+      String(row?.post_type || '') === 'attachment'
+      && String(row?.post_name || '') === featuredImageAttachmentSlug).length,
+    featuredImageMeta: Object.values(postmeta).filter((row) =>
+      String(row?.meta_key || '') === featuredImageMetaKey
+      && String(row?.meta_value || '') === String(featuredImageAttachmentId)).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,

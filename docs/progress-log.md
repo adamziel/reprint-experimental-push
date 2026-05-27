@@ -4,6 +4,62 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Featured Image Graph Evidence
+
+- Last update: 2026-05-28 01:08 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:graph`
+  passed in tmux window `main:graph-featured-proof` with
+  `[GRAPH_FEATURED_PROOF_STATUS:0]`.
+- Code change: the Brewcommerce-derived local production proof can now opt into
+  a featured-image attachment graph fixture through
+  `REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF=1`. The fixture creates a
+  local-only attachment row `row:["wp_posts","ID:71901"]` and matching
+  `_thumbnail_id` postmeta row
+  `row:["wp_postmeta","post_id:71001:meta_key:_thumbnail_id"]`.
+- Planner evidence: the graph-enabled topology reported 12 complex posts,
+  5 complex form-schema postmeta rows, 3 complex upload files, 4 forms-lab
+  rows, 1 local featured image attachment, and 1 local featured image meta row.
+  The ready plan had 24 mutations, 24 live-remote preconditions, 0 blockers,
+  and mutation families `file: 3`, `row:wp_options: 1`,
+  `row:wp_postmeta: 6`, `row:wp_posts: 13`, and
+  `row:wp_reprint_push_release_state: 1`.
+- Graph evidence: the attachment resource and `_thumbnail_id` resource were
+  both planned with live preconditions, and the planner reported
+  `staleGraphBlockers: 0`. The remote-drift plan still failed closed with
+  9 preserve-remote conflicts and 2 blockers.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `3dfc96ccc1a4688078cc53a624de366dd4aa11e797b33e90ad83476b85e1c00b`,
+  reported 80 durable DB journal rows, `mutationApplied: 24`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 24`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session, durable journal, replay/retry,
+  replay equivalence, and `releaseMovement.gates: candidate-for-review`.
+- Recovery and retry evidence on the same release verifier path includes
+  same-key/body replay with 24 mutation events, same-key/different-body
+  `409 IDEMPOTENCY_KEY_CONFLICT` before mutation, stale-owner fencing, 24/24
+  fully updated recovery inspect, and blocked apply-time revalidation state
+  with `old: 23`, `new: 0`, `blockedUnknown: 1`.
+- Focused checks passed:
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `php -l scripts/playground/snapshot-lib.php`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `node --test --test-name-pattern "featured image|postmeta references|same-plan post|graph closure|taxonomy|menu item graph|post author|comment|link owner" test/push-planner.test.js`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:graph`.
+- Caveat: this closes one local Playground featured-image attachment graph
+  surface with stable fixture identities. It does not prove general WordPress
+  identity rewriting for arbitrary attachments, GUIDs, menus, terms,
+  serialized blocks, production importer/exporter identity maps, external
+  WordPress durability, rollback, or general plugin-driver correctness.
+- Percent movement: merge invariants move from 58% to 61%; reliable
+  executor/protocol moves from 69% to 70%; independent evidence moves from 62%
+  to 64%. Recovery boundaries stay at 58%, and fast path/chunking stays at 37%
+  because this proof adds graph coverage, not external crash durability or a
+  larger transfer benchmark.
+
 ## 2026-05-28 - Paged Journal Restart Evidence
 
 - Last update: 2026-05-28 00:59 CEST.

@@ -3,7 +3,8 @@
  * Shared snapshot helpers for the Playground push lab.
  *
  * These helpers intentionally cover only the fixture surface used by the lab:
- * marked posts, their author identities, allowlisted plugin-owned options/postmeta,
+ * marked posts, their author identities, selected fixture graph postmeta,
+ * allowlisted plugin-owned options/postmeta,
  * fixture-scoped lab plugin/table metadata, named lab plugin files, and upload files under
  * wp-content/uploads/reprint-push.
  */
@@ -121,16 +122,21 @@ function reprint_push_export_fixture_postmeta(array &$snapshot): void
 {
     foreach (array_keys($snapshot['db']['wp_posts']) as $post_row_id) {
         $post_id = reprint_push_numeric_id($post_row_id, 'ID');
-        $value = get_post_meta($post_id, reprint_push_forms_schema_meta_key(), true);
-        if ($value === '') {
-            continue;
+        foreach (reprint_push_fixture_postmeta_export_keys() as $meta_key) {
+            $value = get_post_meta($post_id, $meta_key, true);
+            if ($value === '') {
+                continue;
+            }
+            $row = [
+                'post_id' => $post_id,
+                'meta_key' => $meta_key,
+                'meta_value' => reprint_push_normalize_snapshot_value($value),
+            ];
+            if ($meta_key === reprint_push_forms_schema_meta_key()) {
+                $row['__pluginOwner'] = 'forms';
+            }
+            $snapshot['db']['wp_postmeta'][reprint_push_postmeta_row_id($post_id, $meta_key)] = $row;
         }
-        $snapshot['db']['wp_postmeta'][reprint_push_postmeta_row_id($post_id, reprint_push_forms_schema_meta_key())] = [
-            'post_id' => $post_id,
-            'meta_key' => reprint_push_forms_schema_meta_key(),
-            'meta_value' => reprint_push_normalize_snapshot_value($value),
-            '__pluginOwner' => 'forms',
-        ];
     }
 }
 
@@ -209,7 +215,10 @@ function reprint_push_add_fixture_plugin_owned_policy(array &$snapshot): void
         ];
     }
     foreach (array_keys($snapshot['db']['wp_postmeta']) as $row_id) {
-        reprint_push_parse_postmeta_row_id($row_id);
+        [, $meta_key] = reprint_push_parse_postmeta_row_id($row_id);
+        if ($meta_key !== reprint_push_forms_schema_meta_key()) {
+            continue;
+        }
         $allowed_resources[] = [
             'resourceKey' => 'row:' . wp_json_encode(['wp_postmeta', $row_id], JSON_UNESCAPED_SLASHES),
             'pluginOwner' => 'forms',
@@ -2403,6 +2412,19 @@ function reprint_push_forms_schema_meta_key(): string
     return '_reprint_push_forms_schema';
 }
 
+function reprint_push_featured_image_meta_key(): string
+{
+    return '_thumbnail_id';
+}
+
+function reprint_push_fixture_postmeta_export_keys(): array
+{
+    return [
+        reprint_push_forms_schema_meta_key(),
+        reprint_push_featured_image_meta_key(),
+    ];
+}
+
 function reprint_push_postmeta_row_id(int $post_id, string $meta_key): string
 {
     return 'post_id:' . $post_id . ':meta_key:' . $meta_key;
@@ -2415,7 +2437,7 @@ function reprint_push_parse_postmeta_row_id(string $id): array
     }
     $post_id = (int) $matches[1];
     $meta_key = $matches[2];
-    if ($post_id <= 0 || $meta_key !== reprint_push_forms_schema_meta_key()) {
+    if ($post_id <= 0 || !in_array($meta_key, reprint_push_fixture_postmeta_export_keys(), true)) {
         throw new RuntimeException('Unsupported postmeta id: ' . $id);
     }
     return [$post_id, $meta_key];

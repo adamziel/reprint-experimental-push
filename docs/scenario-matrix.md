@@ -31,6 +31,7 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Fixture forms lab row conflict/stale safety | Divergent local/remote forms lab rows stay `plugin-data-conflict`; stale preconditions reject with `PRECONDITION_FAILED` and preserve the target. Journal/recovery evidence is hash-only/redacted for raw row payload values. | `fixture forms lab table conflicts and stale preconditions preserve remote` / `fixture forms lab table blocked recovery redacts raw remote payload values` |
 | Plugin metadata is detection-only | `reprint-push-forms-fixture` metadata is exported/detected but not applied as a ready mutation. | `npm run test:playground` / Playground plugin-owned forms fixture smokes |
 | Local WordPress graph row references a stale remote-created post identity | Plan is `blocked`; the local `wp_postmeta` mutation is not emitted; the remote-created `wp_posts` row is kept; blocker evidence records relationship key, target resource key, hashes, and change kinds without raw post or meta payload values. | `blocks local postmeta references to stale remote-created post identity` |
+| Local production featured image attachment graph closure | The Brewcommerce-derived local production proof plans the same-plan attachment row `row:["wp_posts","ID:71901"]` and `_thumbnail_id` postmeta row `row:["wp_postmeta","post_id:71001:meta_key:_thumbnail_id"]` with live remote preconditions, zero stale graph blockers, a 24-mutation release receipt, and 80 durable DB-journal rows. | `npm run verify:release:local-production:complex-site:graph` |
 | Atomic plugin install is missing dependency | Plan is `blocked`; apply refuses. | `blocks an atomic plugin install when dependencies are absent` |
 | Atomic plugin dependency metadata includes private fields | Plan evidence records only normalized plugin dependency audit fields and omits raw dependency payloads from blockers and atomic-group dependencies. | `redacts raw plugin dependency metadata from blocker evidence` |
 | Plugin install and dependency are included together | All files, plugin metadata, and options apply as one atomic group. | `applies an atomic plugin install when dependencies are included in the same plan` |
@@ -132,11 +133,12 @@ The first executable matrix lives in `test/push-planner.test.js`.
 - General WordPress graph identity mapping and reference rewriting. The current
   planner proof blocks a local `wp_postmeta.post_id` reference when the target
   `wp_posts` identity changed on the remote since the pull base, and it records
-  hash-only relationship evidence. The planner also refuses reference-bearing
-  rows whose targets are absent from the live remote, so same-plan graph
-  identity creates stay blocked. It does not prove safe automatic rewriting for
-  attachments, GUIDs, nav menus, term splitting, serialized blocks,
-  `_thumbnail_id`, `post_parent`, `wp_term_relationships`,
+  hash-only relationship evidence. The local production graph proof now covers
+  one stable same-plan featured-image fixture: attachment row plus
+  `_thumbnail_id` postmeta row, both with live preconditions and release
+  verifier acceptance. Outside that narrow stable-ID fixture, it does not prove
+  safe automatic rewriting for arbitrary attachments, GUIDs, nav menus, term
+  splitting, serialized blocks, `post_parent`, `wp_term_relationships`,
   `wp_term_taxonomy`, `wp_termmeta`, cross-table create batches, or production
   importer/exporter identity maps.
 - Production DB-table journal and kill-process recovery tests around every

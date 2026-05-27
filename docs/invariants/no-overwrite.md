@@ -28,6 +28,11 @@ the live remote immediately before apply.
   pull base or local has independently reached the same target hash as the live
   remote. This is a narrow stale-reference guard, not a proof of general
   identity remapping.
+- The checked local production featured-image fixture may create the attachment
+  row and matching `_thumbnail_id` postmeta row in the same plan only when both
+  resources carry live-remote preconditions and no stale graph blocker is
+  present. This covers one stable-ID fixture closure, not arbitrary attachment
+  or relationship remapping.
 
 Every automatic mutation must include a precondition tied to the mutation id,
 the resource key, the live remote hash observed during planning, and the
@@ -79,8 +84,11 @@ the resource key, the live remote hash observed during planning, and the
   target hash. This includes stale local `wp_postmeta.post_id` writes pointing
   at a post identity created on the remote after pull.
 - WordPress graph mutations that reference a graph target absent from the live
-  remote. Creating new target identities and rewriting relationship rows in the
-  same plan remains blocked until an identity-map/rewrite proof exists.
+  remote, unless the mutation belongs to a specifically proven same-plan graph
+  closure with both the target and relationship resource preconditioned. Today
+  that exception is only the local featured-image attachment fixture; general
+  same-plan identity creation and relationship rewriting remain blocked until
+  broader identity-map/rewrite proof exists.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather

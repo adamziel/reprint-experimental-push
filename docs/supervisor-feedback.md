@@ -1,9 +1,45 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 00:59 CEST
+Last updated: 2026-05-28 01:08 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 01:08 CEST - Featured Image Graph Evidence
+
+- Going well: `npm run verify:release:local-production:complex-site:graph`
+  passed in `main:graph-featured-proof` with
+  `[GRAPH_FEATURED_PROOF_STATUS:0]`.
+- Also going well: the Brewcommerce-derived local production proof now covers a
+  same-plan featured-image attachment graph surface. The planner emitted both
+  `row:["wp_posts","ID:71901"]` and
+  `row:["wp_postmeta","post_id:71001:meta_key:_thumbnail_id"]` with live
+  remote preconditions, 24 ready mutations, 24 preconditions, and
+  `staleGraphBlockers: 0`.
+- Release evidence improved: the checked verifier reported receipt
+  `3dfc96ccc1a4688078cc53a624de366dd4aa11e797b33e90ad83476b85e1c00b`,
+  80 durable DB-journal rows, 24 `mutation-applied` events,
+  `applyRevalidationVerifiedCount: 24`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK`, replay equivalence, stale-owner fencing, and
+  same-key/different-body conflict before mutation.
+- Not going well: this is still local Playground loopback evidence with stable
+  fixture IDs. It does not prove general attachment rewriting, GUIDs, nav
+  menus, terms, serialized blocks, production importer/exporter identity maps,
+  Docker/external WordPress durability, rollback, or arbitrary plugin drivers.
+- Progress change: merge invariants, reliable executor/protocol, and
+  independent evidence move up modestly. Recovery and fast-path percentages
+  stay flat.
+- Next nudge: either move the same release and journal boundary to
+  Docker/external WordPress, or add the next narrow graph surface while keeping
+  the final release held.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Expand graph proof carefully; the only new same-plan closure is featured image attachment plus `_thumbnail_id`. |
+| Recovery | Do not count this as external crash durability; keep pushing Docker/external restart proof. |
+| Reliable executor | Preserve receipt, auth/session, DB-journal, replay, and conflict guards on every graph proof. |
+| Fast paths | Still needs a guarded transfer/chunk benchmark; this proof is not a speed proof. |
+| Audit and critic | Re-audit the integrated branch at the featured-image graph commit and keep final readiness held. |
 
 ## 2026-05-28 00:59 CEST - Paged Restart Evidence
 
