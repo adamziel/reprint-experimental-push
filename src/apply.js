@@ -1239,7 +1239,7 @@ export function productionRecoverySupportReport(writer) {
   }
   if (
     !Object.hasOwn(writer ?? {}, 'leaseFence')
-    || !hasValidProductionLeaseIdentity(writer.leaseFence)
+    || !hasValidProductionLeaseFenceIdentity(writer.leaseFence)
     || hasHiddenOwnStringKeys(writer.leaseFence)
     || !productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease)
   ) {
@@ -1320,7 +1320,7 @@ export function productionRecoverySupportReport(writer) {
     && (openedInspectionRecords || claimInspectionRecords)
     && (
       !Object.hasOwn(inspected ?? {}, 'leaseFence')
-      || !hasValidProductionLeaseIdentity(inspected.leaseFence)
+      || !hasValidProductionLeaseFenceIdentity(inspected.leaseFence)
     )
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
@@ -1342,7 +1342,7 @@ export function productionRecoverySupportReport(writer) {
   if (
     hasValidProductionLeaseIdentity(writer?.leaseFence)
     && Object.hasOwn(inspected ?? {}, 'leaseFence')
-    && !productionLeaseIdentitiesMatch(inspected.leaseFence, writer.leaseFence)
+    && !productionLeaseFenceIdentitiesMatch(inspected.leaseFence, writer.leaseFence)
   ) {
     addMissingDependency('fencing or lease ownership for the journal writer');
   }
@@ -1358,7 +1358,7 @@ export function productionRecoverySupportReport(writer) {
       )
       || (
         Object.hasOwn(inspected ?? {}, 'leaseFence')
-        && hasValidProductionLeaseIdentity(inspected.leaseFence)
+        && hasValidProductionLeaseFenceIdentity(inspected.leaseFence)
         && inspectedClaimIdentity.claimId !== inspected.leaseFence.id
       )
       || (
@@ -1526,7 +1526,7 @@ function surfaceProductionClaimIdentity(inspected, inspectedClaimState) {
     || (Object.hasOwn(inspected ?? {}, 'writerLease')
       && hasValidProductionLeaseIdentity(inspected.writerLease))
     || (Object.hasOwn(inspected ?? {}, 'leaseFence')
-      && hasValidProductionLeaseIdentity(inspected.leaseFence))
+      && hasValidProductionLeaseFenceIdentity(inspected.leaseFence))
   ) {
     return { valid: false, claimId: null };
   }
@@ -1538,7 +1538,7 @@ function surfaceProductionClaimIdentity(inspected, inspectedClaimState) {
     hasValidProductionLeaseIdentity(inspected?.writerLease)
       ? inspected.writerLease.id
       : null,
-    hasValidProductionLeaseIdentity(inspected?.leaseFence)
+    hasValidProductionLeaseFenceIdentity(inspected?.leaseFence)
       ? inspected.leaseFence.id
       : null,
   ].filter((claimId) => typeof claimId === 'string' && claimId.length > 0);
@@ -1574,6 +1574,7 @@ function checkedDurableJournalBoundaryProof(
     ? inspected.leaseFenceContract.boundary
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
+  const checkedBoundaryLeaseFenceSurfaceAligned = inspectedLeaseFenceSurfaceMatchesWriterContract(inspected);
   const checkedBoundaryBlockedByMissingDependency = missingDependency.length > 0;
   const inspectedProductionAdapter = surfacedProductionRecoveryAdapterMarker(inspected);
   const inspectedSupportedSurface = surfacedProductionRecoverySupportedSurface(inspected);
@@ -1645,7 +1646,7 @@ function checkedDurableJournalBoundaryProof(
   const checkedBoundaryLeaseFenceClaimId = (
     checkedBoundaryActiveClaimIdentityComplete
     && Object.hasOwn(inspected ?? {}, 'leaseFence')
-    && hasValidProductionLeaseIdentity(inspected?.leaseFence)
+    && hasValidProductionLeaseFenceIdentity(inspected?.leaseFence)
     && inspected.leaseFence.id === checkedBoundaryActiveClaimId
   )
     ? inspected.leaseFence.id
@@ -1719,6 +1720,7 @@ function checkedDurableJournalBoundaryProof(
     && inspectedOwnsJournal
     && inspectedRestartReadable
     && checkedBoundaryContractAligned
+    && checkedBoundaryLeaseFenceSurfaceAligned
     && checkedBoundaryStaleClaimRejected;
   const checkedBoundaryFencingBlocked = missingDependency.includes(
     'fencing or lease ownership for the journal writer',
@@ -1780,6 +1782,18 @@ function inspectedLeaseFenceBoundaryMatchesWriterContract(inspected) {
       inspected.leaseFenceContract.writerLease,
       inspected.writerLeaseContract,
     );
+}
+
+function inspectedLeaseFenceSurfaceMatchesWriterContract(inspected) {
+  return hasValidProductionLeaseFenceIdentity(inspected?.leaseFence)
+    && Object.hasOwn(inspected.leaseFence, 'storageGuard')
+    && !hasHiddenOwnStringProperty(inspected.leaseFence, 'storageGuard')
+    && typeof inspected.leaseFence.storageGuard === 'string'
+    && inspected.leaseFence.storageGuard.length > 0
+    && hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+    && hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+    && inspected.leaseFence.storageGuard === inspected.leaseFenceContract.boundary
+    && inspected.leaseFence.storageGuard === inspected.writerLeaseContract.storageGuard;
 }
 
 function productionRecoveryArtifactRefs(writer, inspected) {
@@ -2398,6 +2412,29 @@ function hasValidProductionLeaseIdentity(value) {
     );
 }
 
+function hasValidProductionLeaseFenceIdentity(value) {
+  const ownKeys = Reflect.ownKeys(value ?? {});
+  return isStrictPlainObject(value)
+    && !hasHiddenOwnStringKeys(value)
+    && ownKeys.every((key) => key === 'id' || key === 'epoch' || key === 'storageGuard')
+    && Object.hasOwn(value, 'id')
+    && typeof value.id === 'string'
+    && value.id.trim().length > 0
+    && value.id.trim() === value.id
+    && (
+      !Object.hasOwn(value, 'epoch')
+      || (Number.isInteger(value.epoch) && value.epoch >= 0)
+    )
+    && (
+      !Object.hasOwn(value, 'storageGuard')
+      || (
+        typeof value.storageGuard === 'string'
+        && value.storageGuard.trim().length > 0
+        && value.storageGuard.trim() === value.storageGuard
+      )
+    );
+}
+
 function productionLeaseIdentitiesMatch(left, right) {
   if (!hasValidProductionLeaseIdentity(left) || !hasValidProductionLeaseIdentity(right)) {
     return false;
@@ -2413,6 +2450,29 @@ function productionLeaseIdentitiesMatch(left, right) {
   }
 
   return leftHasEpoch && rightHasEpoch && left.epoch === right.epoch;
+}
+
+function productionLeaseFenceIdentitiesMatch(left, right) {
+  if (!hasValidProductionLeaseFenceIdentity(left) || !hasValidProductionLeaseFenceIdentity(right)) {
+    return false;
+  }
+  if (left.id !== right.id) {
+    return false;
+  }
+
+  const leftHasEpoch = Object.hasOwn(left, 'epoch');
+  const rightHasEpoch = Object.hasOwn(right, 'epoch');
+  if ((leftHasEpoch && rightHasEpoch && left.epoch !== right.epoch) || (leftHasEpoch !== rightHasEpoch)) {
+    return false;
+  }
+
+  const leftHasStorageGuard = Object.hasOwn(left, 'storageGuard');
+  const rightHasStorageGuard = Object.hasOwn(right, 'storageGuard');
+  if (leftHasStorageGuard && rightHasStorageGuard) {
+    return left.storageGuard === right.storageGuard;
+  }
+
+  return true;
 }
 
 function durableJournalInspectPath(inspected) {
