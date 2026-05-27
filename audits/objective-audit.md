@@ -2,46 +2,46 @@
 
 ## Verdict
 
-- Audited commit: `bf495d928e18a1021ff2401b44b503ffbc97cd01` (`Prove retry boundary after journal fallback`)
-- Previous audited reliable head: `927733fd00f96d28d1794d2dad6663feb8f3e557`
+- Audited commit: `f89370f41d4cc0519c980f89e038c9fff6dbcbb1` (`Keep packaged release boundary support-only`)
+- Previous audited reliable head: `f2d518c492622a9bbbf7867918c11ef94e213750`
+- Critic reference: `60fa348990579931acc4ea951a887f977ee8e5a4` (`Update critic audit for packaged support-only boundary`)
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 11:33:17 CEST (+0200)
+- Audit time: 2026-05-27 12:00:32 CEST (+0200)
 - Release-classification heads verified before write-up:
-  - `origin/lane/reliable-executor` -> `bf495d928e18a1021ff2401b44b503ffbc97cd01` (`Prove retry boundary after journal fallback`)
-  - `origin/lane/critic` -> `7616f95aa8061964eba898ddd216777c21089253`
-  - `origin/lane/independent-auditor` -> `bfb6020c5b57c8553a6abcd2868f059367eab256`
-  - `origin/lane/progress-publisher` -> `6ec015170c8396d954dd8a10fc300de8dab23c51`
-  - `origin/main` -> `f8cc8282a48674298e4573623ddb15dd749db55e`
+  - `origin/lane/reliable-executor` -> `f89370f41d4cc0519c980f89e038c9fff6dbcbb1` (`Keep packaged release boundary support-only`)
+  - `origin/lane/critic` -> `60fa348990579931acc4ea951a887f977ee8e5a4`
+  - `origin/lane/independent-auditor` -> `e8491f1b2c3f9c937ceea540995b48c5d9a55829`
 
 ## Evidence Table
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Recovery fallback retry boundary | `bf495d9` adds a targeted test that keeps the recovery fallback boundary honest by requiring the retry path to remain observable after journal fallback. The new proof is still confined to `test/authenticated-http-push-client.test.js`; it does not execute a production-owned endpoint. | A production-owned release boundary that proves the same executable live command on the real Reprint endpoint, not just local retry classification inside the checked client surface. | Support-only |
-| Durable restart-readable journal ownership | This commit does not alter recovery-journal ownership or restart-readable replay semantics; it only exercises retry handling after journal fallback in the checked test surface. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
-| Live mutation boundary | The change stays in `test/authenticated-http-push-client.test.js`; it does not exercise a production-owned mutation path on the real endpoint. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
-| Auth/session lifecycle | This commit does not change auth issuance/readback/expiry/rotation/revocation/cleanup behavior. | One checked real-endpoint command proving the lifecycle on the same production-owned endpoint. | Blocked |
-| Release-boundary proof | The checked client now keeps the retry boundary covered in a focused test, but that still does not prove the same executable real-endpoint path issues and reads back auth, persists the journal durably with lease fencing, preserves rejected remote evidence, and revalidates before first mutation. | One production-owned checked release artifact on the real Reprint endpoint tying together auth issuance/readback, durable journal ownership, rejected-remote preservation, and pre-mutation apply-time revalidation. | Blocked |
+| Packaged/live-wrapper boundary | `f89370f41` explicitly keeps packaged and live-wrapper proof in support-only verification. The added coverage strengthens packaged shaping checks without reclassifying them as release-boundary proof. | A production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` using a real `/wp-json/reprint/v1/push/*` endpoint on the release boundary. | Support-only |
+| Production source boundary | The commit preserves `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, which is the correct guard because the release boundary still lacks a real production-owned source endpoint. | One checked command on the real production-owned endpoint proving the source is not a lab wrapper and is owned by the release path being audited. | Blocked |
+| Auth/session issuance and readback | The support verification can shape packaged/live-wrapper expectations, but it does not prove production auth/session issuance and readback on the release boundary. | Real endpoint proof of auth/session issuance plus readback on the same production-owned `/wp-json/reprint/v1/push/*` path. | Blocked |
+| Durable journal ownership | No production release artifact proves durable, restart-readable journal ownership with lease/fencing on the real boundary. | Durable restart-readable journal ownership with lease/fencing, demonstrated by the release path that owns the real endpoint. | Blocked |
+| Plugin-driver release ownership | The commit does not establish plugin-driver ownership on the release boundary; it only tightens support-only packaged verification. | Evidence that the plugin-driven release path owns the real boundary instead of a support harness or lab wrapper. | Blocked |
+| Rejected remote evidence and revalidation | No new production artifact proves rejected remote evidence is preserved or that apply-time revalidation happens before first mutation on the real boundary. | Preserved rejected remote evidence and apply-time revalidation before first mutation on the production-owned release path. | Blocked |
 
 ## Change Assessment
 
-1. `bf495d9` is useful support because it adds a focused retry-boundary test for the recovery fallback path after journal fallback.
-2. It does not exercise a real Reprint source boundary, so it cannot prove live auth/session issuance, durable journal ownership on the real endpoint, or apply-time revalidation on the production endpoint.
-3. The change lives under `test/authenticated-http-push-client.test.js`. It tightens the checked surface, but it does not consume a live `REPRINT_PUSH_SOURCE_URL` or prove the production-owned mutation boundary.
-4. The tests now validate the retry boundary after journal fallback, but they do not prove a production-owned real-endpoint artifact. The release verdict therefore stays at `0/4`.
+1. `f89370f41` is correctly classified as support-only.
+2. Its key effect is to make packaged/live-wrapper proof explicit as support-only while keeping `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` in place for the still-missing production-owned endpoint boundary.
+3. That means no release gate moved. The project remains `0/4`.
+4. The critic reference `60fa34899` matches this classification and also keeps the reliable head at `0/4`.
 
 ## Conclusion
 
-`bf495d928e18a1021ff2401b44b503ffbc97cd01` closes no supervised release gate. It is a checked support expansion for retry-boundary proof in the recovery fallback, but it still leaves the missing production-owned real-endpoint proof unchanged. The verdict remains `0/4`.
+`f89370f41d4cc0519c980f89e038c9fff6dbcbb1` does not close any release gate. It explicitly keeps packaged/live-wrapper proof on the support-only side of the boundary and correctly preserves `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` because the audit still lacks the real production-owned source endpoint proof.
 
-The next exact production primitive is still one checked live release command on the real Reprint endpoint that shows:
+The missing proof remains a production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` on a real `/wp-json/reprint/v1/push/*` endpoint that proves:
 
-  - the exact live `REPRINT_PUSH_SOURCE_URL`
-  - the same executable auth-session source command at issuance and readback
-  - durable-journal `ownsJournal: true` plus `restartReadable: true` under lease-fenced ownership
-  - preserved rejected-remote evidence for audit
-  - apply-time revalidation before the first mutation on that same live boundary
+- auth/session issuance and readback
+- durable restart-readable journal ownership with lease/fencing
+- plugin-driver ownership on the release boundary
+- preserved rejected remote evidence
+- apply-time revalidation before the first mutation
 
-Until that exists, the release-gate verdict stays at `0/4`.
+Until that exact proof exists on the release boundary, the release-gate verdict remains `0/4`.
