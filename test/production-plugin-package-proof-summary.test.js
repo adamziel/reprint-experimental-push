@@ -1765,6 +1765,126 @@ test('plugin-driver proof summary attach helper repairs selected-scenario drift 
   assert.equal(rawSummary.modeProof, repairedProof.modeProof);
 });
 
+test('plugin-driver proof summary attach helper repairs a stale nested mode proof when the top-level cache is current', () => {
+  const fullVerifierSelection = new Set([
+    'driver-verifier-guards',
+    ...scenarioGroups['driver-verifier-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: Array.from(fullVerifierSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_DRIVER_ROW',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_PLAN_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_IDENTITY_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: fullVerifierSelection,
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+  rawSummary.modeProof = {
+    ...currentProof.modeProof,
+  };
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    modeProof: {
+      ...currentProof.modeProof,
+      selectedScenarios: ['driver-delete-guard'],
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: fullVerifierSelection,
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    rawSummary.pluginDriverProof.selectedScenarios,
+    Array.from(fullVerifierSelection).sort(),
+  );
+  assert.deepEqual(
+    rawSummary.pluginDriverProof.modeProof?.selectedScenarios,
+    Array.from(fullVerifierSelection).sort(),
+  );
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',
