@@ -1769,6 +1769,23 @@ test('packaged server readiness fails closed for terminal production auth sessio
       },
     },
     {
+      label: 'expired status',
+      session: {
+        status: 'expired',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly expired',
+      session: {
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
       label: 'revoked status',
       session: {
         status: 'revoked',
