@@ -889,6 +889,12 @@ export function productionRecoverySupportReport(writer) {
     writerArtifactRefsHiddenOwnKeys,
     inspectedArtifactRefsHiddenOwnKeys,
   } = artifactRefs;
+  const remoteArtifactHistoryReason = blockedRecoveryRemoteArtifactHistoryReason(
+    inspected,
+    typeof writer?.journalPath === 'string' ? writer.journalPath : null,
+    writerRemoteArtifactRef,
+    writerOwnsRemoteArtifact,
+  );
   if (writerArtifactRefsHiddenOwnKeys) {
     addMissingDependency('restart-readable recovery artifact references');
     if (Object.hasOwn(writer?.artifactRefs ?? {}, 'remote')) {
@@ -1130,6 +1136,9 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery remote artifact references');
     addMissingDependency('restart-readable remote recovery artifact ownership');
+  }
+  if (remoteArtifactHistoryReason) {
+    addMissingDependency('restart-readable recovery remote artifact references');
   }
   if (
     !Object.hasOwn(writer ?? {}, 'journalPath')
