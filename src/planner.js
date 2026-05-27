@@ -950,9 +950,13 @@ function isPluginOwnedDataResource(resource, owner) {
 }
 
 const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
+  'commentmeta',
+  'comments',
   'term_relationships',
   'term_taxonomy',
   'postmeta',
+  'usermeta',
+  'users',
   'termmeta',
   'posts',
   'terms',
@@ -1076,7 +1080,11 @@ function isSafeSamePlanWordPressGraphReference(reference) {
 }
 
 const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
+  'comment-post',
+  'comment-parent',
+  'commentmeta-comment',
   'post-parent',
+  'post-author',
   'postmeta-post',
   'featured-image-attachment',
   'term-relationship-object',
@@ -1084,6 +1092,7 @@ const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
   'term-taxonomy-term',
   'term-taxonomy-parent',
   'termmeta-term',
+  'usermeta-user',
 ]);
 
 function wordpressGraphReferences(resource, value) {
@@ -1122,6 +1131,36 @@ function wordpressGraphReferences(resource, value) {
       relationshipType: 'post-parent',
       targetTable: 'posts',
       targetId: value.post_parent,
+    });
+    addReference({
+      field: 'post_author',
+      relationshipType: 'post-author',
+      targetTable: 'users',
+      targetId: value.post_author,
+    });
+  }
+
+  if (suffix === 'comments') {
+    addReference({
+      field: 'comment_post_ID',
+      relationshipType: 'comment-post',
+      targetTable: 'posts',
+      targetId: value.comment_post_ID,
+    });
+    addReference({
+      field: 'comment_parent',
+      relationshipType: 'comment-parent',
+      targetTable: 'comments',
+      targetId: value.comment_parent,
+    });
+  }
+
+  if (suffix === 'commentmeta') {
+    addReference({
+      field: 'comment_id',
+      relationshipType: 'commentmeta-comment',
+      targetTable: 'comments',
+      targetId: value.comment_id,
     });
   }
 
@@ -1178,6 +1217,15 @@ function wordpressGraphReferences(resource, value) {
       relationshipType: 'termmeta-term',
       targetTable: 'terms',
       targetId: value.term_id,
+    });
+  }
+
+  if (suffix === 'usermeta') {
+    addReference({
+      field: 'user_id',
+      relationshipType: 'usermeta-user',
+      targetTable: 'users',
+      targetId: value.user_id,
     });
   }
 
@@ -1263,7 +1311,13 @@ function wordpressGraphTableSuffix(table) {
 }
 
 function wordpressGraphPrimaryIdField(suffix) {
+  if (suffix === 'comments') {
+    return 'comment_ID';
+  }
   if (suffix === 'posts') {
+    return 'ID';
+  }
+  if (suffix === 'users') {
     return 'ID';
   }
   if (suffix === 'terms') {
