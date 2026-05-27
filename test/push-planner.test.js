@@ -41740,6 +41740,68 @@ test('blocks a local term relationship when the same-plan target taxonomy is nav
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks a local term relationship when the same-plan target taxonomy is nav menu even with an unrelated remote wp_navigation post', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local taxonomy object post',
+    post_content: 'local-private-taxonomy-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Remote wp_navigation',
+    post_content: 'remote-wp-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(relationshipBlocker).includes('remote-wp-navigation-body'), false);
+  assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
+});
+
 test('allows local termmeta references to a term created by the same plan', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
