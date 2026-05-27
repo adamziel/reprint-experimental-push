@@ -249,7 +249,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     blockerRefs: Object.freeze([
       'receipt-flushes-not-kind-scoped',
       'production-capability-measurement-not-aligned',
-      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
