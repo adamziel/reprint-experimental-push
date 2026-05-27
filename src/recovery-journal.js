@@ -832,6 +832,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       const inspectionRecords = Array.isArray(inspection.records) ? inspection.records : [];
       const writerLeaseContract = fileLeaseFenceContract({
         claimHash,
+        claimKeyHash: writerLease?.claimKeyHash ?? null,
         fsyncEvidence: inspectionRecords.every((record) => record?.fsync?.requested === true),
         monotonicSequence: inspectionRecords.every((record, index) => record?.sequence === index + 1),
         restartReadable: inspection.integrity?.status === 'ok',
@@ -949,6 +950,7 @@ export function consumeProductionRecoveryJournal(options) {
   const restartReadable = inspection.integrity?.status === 'ok';
   const leaseFenceContract = fileLeaseFenceContract({
     claimHash: claimId ? recoveryClaimHash(claimId) : null,
+    claimKeyHash: writerLease?.claimKeyHash ?? null,
     fsyncEvidence,
     monotonicSequence,
     restartReadable,
@@ -1097,6 +1099,7 @@ export function describeProductionRecoveryJournal(writer) {
 
 function fileLeaseFenceContract({
   claimHash = null,
+  claimKeyHash = null,
   fsyncEvidence,
   monotonicSequence,
   restartReadable,
@@ -1111,6 +1114,7 @@ function fileLeaseFenceContract({
     restartReadable,
     staleClaimRejected,
     ...(typeof claimHash === 'string' ? { claimHash } : {}),
+    ...(typeof claimKeyHash === 'string' ? { claimKeyHash } : {}),
   });
 }
 
@@ -1132,7 +1136,7 @@ function isValidProductionWriterLease(writerLease) {
   return (
     isStrictPlainObject(writerLease)
     && !hasHiddenOwnStringKeys(writerLease)
-    && ownKeys.every((key) => key === 'id' || key === 'epoch')
+    && ownKeys.every((key) => key === 'id' || key === 'epoch' || key === 'claimKeyHash')
     && Object.hasOwn(writerLease, 'id')
     && typeof writerLease.id === 'string'
     && writerLease.id.trim().length > 0
@@ -1140,6 +1144,13 @@ function isValidProductionWriterLease(writerLease) {
     && (
       !Object.hasOwn(writerLease, 'epoch')
       || (Number.isInteger(writerLease.epoch) && writerLease.epoch >= 0)
+    )
+    && (
+      !Object.hasOwn(writerLease, 'claimKeyHash')
+      || (
+        typeof writerLease.claimKeyHash === 'string'
+        && CLAIM_HASH_PATTERN.test(writerLease.claimKeyHash)
+      )
     )
   );
 }
@@ -1149,7 +1160,7 @@ function isValidProductionWriterLeaseFence(writerLease) {
   return (
     isStrictPlainObject(writerLease)
     && !hasHiddenOwnStringKeys(writerLease)
-    && ownKeys.every((key) => key === 'id' || key === 'epoch' || key === 'storageGuard')
+    && ownKeys.every((key) => key === 'id' || key === 'epoch' || key === 'storageGuard' || key === 'claimKeyHash')
     && Object.hasOwn(writerLease, 'id')
     && typeof writerLease.id === 'string'
     && writerLease.id.trim().length > 0
@@ -1163,6 +1174,13 @@ function isValidProductionWriterLeaseFence(writerLease) {
       || (
         typeof writerLease.storageGuard === 'string'
         && writerLease.storageGuard === 'filesystem-compare-rename'
+      )
+    )
+    && (
+      !Object.hasOwn(writerLease, 'claimKeyHash')
+      || (
+        typeof writerLease.claimKeyHash === 'string'
+        && CLAIM_HASH_PATTERN.test(writerLease.claimKeyHash)
       )
     )
   );
@@ -1179,7 +1197,8 @@ function productionLeaseFenceMatchesWriterLease(leaseFence, writerLease) {
         && Object.hasOwn(writerLease, 'epoch')
         && leaseFence.epoch === writerLease.epoch
       )
-    );
+    )
+    && optionalProductionLeaseIdentityMatches(leaseFence, writerLease, 'claimKeyHash');
 }
 
 function productionLeaseIdentitiesMatch(left, right) {
@@ -1193,7 +1212,23 @@ function productionLeaseIdentitiesMatch(left, right) {
         && Object.hasOwn(right, 'epoch')
         && left.epoch === right.epoch
       )
-    );
+    )
+    && optionalProductionLeaseIdentityMatches(left, right, 'claimKeyHash');
+}
+
+function optionalProductionLeaseIdentityMatches(left, right, key) {
+  const leftHasKey = Object.hasOwn(left, key);
+  const rightHasKey = Object.hasOwn(right, key);
+
+  if (leftHasKey !== rightHasKey) {
+    return false;
+  }
+
+  if (!leftHasKey) {
+    return true;
+  }
+
+  return left[key] === right[key];
 }
 
 function normalizeProductionRecoveryJournalOptions(filePathOrOptions, options = {}) {

@@ -289,11 +289,12 @@ test('production recovery journal adapter is restart-readable and release-path c
 
 test('production recovery journal descriptor normalizes lease and artifact evidence for release consumption', () => {
   const filePath = tempJournalPath();
+  const claimKeyHash = 'a'.repeat(64);
   const journal = openProductionRecoveryJournal(filePath, {
     truncate: true,
     now: fixedNow,
     claimId: 'claim-describe',
-    writerLease: { id: 'claim-describe', epoch: 11 },
+    writerLease: { id: 'claim-describe', epoch: 11, claimKeyHash },
     ownsRemoteArtifact: true,
     remoteArtifactPath: `${filePath}.remote`,
   });
@@ -309,8 +310,8 @@ test('production recovery journal descriptor normalizes lease and artifact evide
     ownsRemoteArtifact: true,
     claimId: 'claim-describe',
     claimHash: recoveryClaimHash('claim-describe'),
-    leaseFence: { id: 'claim-describe', epoch: 11, storageGuard: 'filesystem-compare-rename' },
-    writerLease: { id: 'claim-describe', epoch: 11 },
+    leaseFence: { id: 'claim-describe', epoch: 11, storageGuard: 'filesystem-compare-rename', claimKeyHash },
+    writerLease: { id: 'claim-describe', epoch: 11, claimKeyHash },
     journalPath: filePath,
     artifactRefs: { journal: filePath, remote: `${filePath}.remote` },
     schemaVersion: 1,
@@ -871,6 +872,55 @@ test('production recovery journal adapter fails closed when a fenced reopen upgr
       now: fixedNow,
       claimId: 'claim-legacy',
       writerLease: { id: 'claim-legacy', epoch: 7 },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support requires reopening with the persisted fenced writer lease.',
+  });
+});
+
+test('production recovery journal adapter fails closed when a fenced reopen changes the persisted claim key hash', () => {
+  const filePath = tempJournalPath();
+  const remoteArtifactPath = `${filePath}.remote`;
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-legacy-claim-key-hash';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId, epoch: 7, claimKeyHash: 'a'.repeat(64) },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId,
+      writerLease: { id: claimId, epoch: 7, claimKeyHash: 'b'.repeat(64) },
       ownsRemoteArtifact: true,
       remoteArtifactPath,
     });
@@ -1764,7 +1814,8 @@ test('production recovery journal consumption derives claim identity from the fe
   const remote = baseSite();
   const plan = planFor(baseSite(), localSite(), remote);
   const claimId = 'claim-consume-derived-identity';
-  const writerLease = { id: claimId, epoch: 4 };
+  const claimKeyHash = 'a'.repeat(64);
+  const writerLease = { id: claimId, epoch: 4, claimKeyHash };
   const artifactRefs = {
     journal: filePath,
   };
@@ -1796,6 +1847,27 @@ test('production recovery journal consumption derives claim identity from the fe
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(claimId));
   assert.deepEqual(inspection.journal.writerLease, writerLease);
   assert.deepEqual(inspection.journal.leaseFence, { ...writerLease, storageGuard: 'filesystem-compare-rename' });
+  assert.deepEqual(inspection.journal.writerLeaseContract, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+    claimHash: recoveryClaimHash(claimId),
+    claimKeyHash,
+  });
+  assert.deepEqual(inspection.journal.leaseFenceContract, {
+    boundary: 'filesystem-compare-rename',
+    claimKeyUnique: true,
+    storageGuard: 'filesystem-compare-rename',
+    fsyncEvidence: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+    writerLease: inspection.journal.writerLeaseContract,
+  });
   assert.deepEqual(inspection.journal.consumedClaim, {
     sequence: 2,
     claimId,
