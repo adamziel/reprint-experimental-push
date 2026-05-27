@@ -202,17 +202,6 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
     return staleClaimRows.some((row) => checkedBoundaryStaleClaimRowMatches(row, dbJournal?.claim));
   }
 
-  for (const summary of Array.isArray(dbJournal?.eventSummaries) ? dbJournal.eventSummaries : []) {
-    if (
-      checkedBoundaryStaleClaimEventMatches(summary?.event)
-      && isPositiveInteger(summary?.count)
-      && isPositiveInteger(summary?.latestId)
-      && summary.latestId >= staleClaimEvidenceFloor
-    ) {
-      return true;
-    }
-  }
-
   return false;
 }
 

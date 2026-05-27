@@ -1159,21 +1159,6 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_match
         return false;
     }
 
-    foreach ((is_array($journal['eventSummaries'] ?? null) ? $journal['eventSummaries'] : []) as $summary) {
-        if (!is_array($summary)) {
-            continue;
-        }
-        $event = (string) ($summary['event'] ?? '');
-        if (
-            ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
-            && reprint_push_lab_db_journal_is_positive_int($summary['count'] ?? null)
-            && reprint_push_lab_db_journal_is_positive_int($summary['latestId'] ?? null)
-            && (int) ($summary['latestId'] ?? 0) >= $stale_claim_evidence_floor
-        ) {
-            return true;
-        }
-    }
-
     return false;
 }
 
