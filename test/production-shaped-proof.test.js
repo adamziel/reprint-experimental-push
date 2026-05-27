@@ -1795,6 +1795,33 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
+test('production-shaped release verify fails closed when a required production auth/session source command times out', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "setTimeout(() => process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin', applicationPassword:'secret-value'})), 15000)"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'timed-out auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'timed-out auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"error": "Auth session source command timed out after 5000ms"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
 maybeTest('production-shaped release verify command surfaces the consumed production auth/session source evidence', async () => {
   await withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
     const proof = spawnProductionShapedReleaseVerifySync(
