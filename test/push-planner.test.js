@@ -23264,6 +23264,7 @@ test('production recovery support report keeps checked boundary artifact refs cl
     assert.equal(report.checkedBoundarySatisfied, false, label);
     assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false, label);
     assert.equal(report.checkedBoundaryProof.claim, null, label);
+    assert.equal(report.checkedBoundaryProof.journalPath, null, label);
     assert.equal(report.checkedBoundaryProof.artifactRefs, null, label);
     assert.ok(report.missingDependency.includes('restart-readable recovery artifact references'), label);
   }

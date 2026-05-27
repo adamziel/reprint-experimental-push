@@ -1566,10 +1566,23 @@ function checkedDurableJournalBoundaryProof(
           ? inspectedJournalPathFromInspection
           : null
       );
+  const checkedBoundaryJournalPath = (
+    inspectedJournalPath !== null
+    && (
+      !persistedArtifactRefs?.invalidReason
+      || (
+        persistedArtifactRefs.invalidReason !== 'invalid artifact ref keys'
+        && !persistedArtifactRefs.invalidReason.includes('journal artifact ref')
+        && !persistedArtifactRefs.invalidReason.includes('journal artifact path')
+      )
+    )
+  )
+    ? inspectedJournalPath
+    : null;
   const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
     && !persistedArtifactRefs?.invalidReason
-    && inspectedJournalPath !== null
-    && inspected.artifactRefs.journal === inspectedJournalPath
+    && checkedBoundaryJournalPath !== null
+    && inspected.artifactRefs.journal === checkedBoundaryJournalPath
       ? Object.freeze({
         journal: inspected.artifactRefs.journal,
         remote: Object.hasOwn(inspected.artifactRefs, 'remote')
@@ -1685,7 +1698,7 @@ function checkedDurableJournalBoundaryProof(
         activeClaimId: checkedBoundaryActiveClaimId,
         activeClaimHash: checkedBoundaryActiveClaimHash,
       },
-    journalPath: inspectedJournalPath,
+    journalPath: checkedBoundaryJournalPath,
     artifactRefs: inspectedArtifactRefs,
     ownership: {
       ownsJournal: inspectedOwnsJournal,
