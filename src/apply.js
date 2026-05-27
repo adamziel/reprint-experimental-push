@@ -889,6 +889,18 @@ export function productionRecoverySupportReport(writer) {
     writerArtifactRefsHiddenOwnKeys,
     inspectedArtifactRefsHiddenOwnKeys,
   } = artifactRefs;
+  const writerArtifactRefsHasHiddenJournal = isStrictPlainObject(writer?.artifactRefs)
+    && hasHiddenOwnStringProperty(writer.artifactRefs, 'journal');
+  const writerArtifactRefsHasHiddenRemote = isStrictPlainObject(writer?.artifactRefs)
+    && hasHiddenOwnStringProperty(writer.artifactRefs, 'remote');
+  const writerArtifactRefsHasHiddenExtraKeys = isStrictPlainObject(writer?.artifactRefs)
+    && Reflect.ownKeys(writer.artifactRefs).some((key) => key !== 'journal' && key !== 'remote');
+  const inspectedArtifactRefsHasHiddenJournal = isStrictPlainObject(inspectedArtifactRefs)
+    && hasHiddenOwnStringProperty(inspectedArtifactRefs, 'journal');
+  const inspectedArtifactRefsHasHiddenRemote = isStrictPlainObject(inspectedArtifactRefs)
+    && hasHiddenOwnStringProperty(inspectedArtifactRefs, 'remote');
+  const inspectedArtifactRefsHasHiddenExtraKeys = isStrictPlainObject(inspectedArtifactRefs)
+    && Reflect.ownKeys(inspectedArtifactRefs).some((key) => key !== 'journal' && key !== 'remote');
   const remoteArtifactHistoryReason = blockedRecoveryRemoteArtifactHistoryReason(
     inspected,
     typeof writer?.journalPath === 'string' ? writer.journalPath : null,
@@ -896,8 +908,10 @@ export function productionRecoverySupportReport(writer) {
     writerOwnsRemoteArtifact,
   );
   if (writerArtifactRefsHiddenOwnKeys) {
-    addMissingDependency('restart-readable recovery artifact references');
-    if (Object.hasOwn(writer?.artifactRefs ?? {}, 'remote')) {
+    if (writerArtifactRefsHasHiddenJournal || writerArtifactRefsHasHiddenExtraKeys) {
+      addMissingDependency('restart-readable recovery artifact references');
+    }
+    if (writerArtifactRefsHasHiddenRemote) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
   }
@@ -936,8 +950,10 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('restart-readable recovery artifact references');
   }
   if (inspectedArtifactRefsHiddenOwnKeys) {
-    addMissingDependency('restart-readable recovery artifact references');
-    if (Object.hasOwn(inspectedArtifactRefs ?? {}, 'remote')) {
+    if (inspectedArtifactRefsHasHiddenJournal || inspectedArtifactRefsHasHiddenExtraKeys) {
+      addMissingDependency('restart-readable recovery artifact references');
+    }
+    if (inspectedArtifactRefsHasHiddenRemote) {
       addMissingDependency('restart-readable recovery remote artifact references');
     }
   }

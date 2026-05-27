@@ -39078,6 +39078,89 @@ test('production durable journal partial commits fail closed when writer artifac
   );
 });
 
+test('production durable journal partial commits fail closed when writer artifactRefs hide remote behind a non-enumerable key mid-run', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-hidden-remote-artifact-ref';
+  const baseWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  const durableJournal = {
+    ...baseWriter,
+    appendEvent(type, payload) {
+      if (type === 'apply-committing') {
+        const hiddenArtifactRefs = { journal: durableJournalPath };
+        Object.defineProperty(hiddenArtifactRefs, 'remote', {
+          value: remoteArtifactPath,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+        this.artifactRefs = hiddenArtifactRefs;
+      }
+      return baseWriter.appendEvent(type, payload);
+    },
+    close() {
+      return baseWriter.close();
+    },
+  };
+  const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.durableRecoveryStateWriteFailed, true);
+  assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
+  assert.match(
+    error.details.durableJournalError.causeMessage,
+    /restart-readable remote artifact reference/,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state'),
+    false,
+  );
+});
+
 test('production durable journal partial commits fail closed when writer artifactRefs.journal falls back to the prototype mid-run', () => {
   const base = baseSite();
   const local = baseSite();
