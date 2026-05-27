@@ -36766,6 +36766,60 @@ test('blocks local users graph resources while preserving a matching independent
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local users graph resources while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_users","ID:12"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/user-cover'] = 'Base user cover bytes';
+  base.db.wp_users = {
+    'ID:12': {
+      ID: 12,
+      user_login: 'base-type-swap-user',
+      user_email: 'base-type-swap@example.test',
+    },
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/user-cover'] = { type: 'directory' };
+  local.db.wp_users = {
+    'ID:12': {
+      ID: 12,
+      user_login: 'local-type-swap-user',
+      user_email: 'local-type-swap@example.test',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/user-cover'] = { type: 'directory' };
+  remote.db.wp_users = JSON.parse(JSON.stringify(base.db.wp_users));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/user-cover');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'User graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-type-swap-user'), false);
+  assert.equal(planJson.includes('base-type-swap-user'), false);
+  assert.equal(planJson.includes('Base user cover bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local same-plan created user identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_users","ID:12"]';
   const base = baseSite();
