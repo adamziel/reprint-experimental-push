@@ -191,14 +191,20 @@ function resolveApplyRevalidationAuthEnv({
   applicationPassword = credentials.applicationPassword,
   authSessionSourceCommand = '',
 }) {
+  const effectiveSourceUrl = sourceUrl || explicitLiveSourceUrl;
+  const reuseAuthSessionSourceCommand = Boolean(
+    authSessionSourceCommand
+    && effectiveSourceUrl
+    && sameReleaseTopologyUrl(effectiveSourceUrl, explicitLiveSourceUrl),
+  );
   return resolveLiveApplyRevalidationEnv({
-    sourceUrl: sourceUrl || explicitLiveSourceUrl,
+    sourceUrl: effectiveSourceUrl,
     remoteChangedUrl: remoteChangedUrl || explicitLiveRemoteChangedUrl,
     localUrl,
     packagedBoundaryRequested,
     username,
     applicationPassword,
-    authSessionSourceCommand,
+    authSessionSourceCommand: reuseAuthSessionSourceCommand ? authSessionSourceCommand : '',
     fallbackUsername: credentials.username,
     fallbackApplicationPassword: credentials.applicationPassword,
     allowCredentialFallback: packagedBoundaryRequested || !sourceUrl,

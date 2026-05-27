@@ -2726,6 +2726,7 @@ function summarizeDbJournalLeaseFence(dbJournal) {
 
   return {
     boundary: leaseFence.boundary || null,
+    storageGuard: leaseFence.storageGuard || leaseFence.boundary || null,
     claimKeyUnique: leaseFence.claimKeyUnique === true,
     fsyncEvidence: leaseFence.fsyncEvidence === true || summarizedWriterLease?.fsyncEvidence === true,
     monotonicSequence: leaseFence.monotonicSequence === true,

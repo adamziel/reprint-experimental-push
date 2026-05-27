@@ -366,6 +366,9 @@ function reprint_push_apply_resource_with_storage_guard(array $resource, array $
     if ($table === 'wp_reprint_push_forms_lab') {
         return reprint_push_guarded_update_existing_forms_lab_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
     }
+    if ($table === 'wp_reprint_push_release_state') {
+        return reprint_push_guarded_update_existing_release_state_driver_row($id, $expected_resource_value['value'], $value, $expected_storage_value);
+    }
 
     reprint_push_apply_resource($resource, $payload);
     return [
@@ -561,6 +564,55 @@ function reprint_push_guarded_update_existing_forms_lab_row(string $id, array $e
     return reprint_push_storage_guard_result('fixture-forms-lab-table', 'wp_reprint_push_forms_lab', $table_name, 'update', ['id', 'form_slug', 'payload_json', 'updated_marker'], $expected, $expected_storage, $rows, $shape);
 }
 
+function reprint_push_guarded_update_existing_release_state_driver_row(string $id, array $expected, array $value, ?array $expected_storage_value = null): array
+{
+    global $wpdb;
+
+    if ($id !== 'state_id:1') {
+        throw new RuntimeException('Unsupported release state driver row id: ' . $id);
+    }
+    if ((int) ($expected['state_id'] ?? 0) !== 1 || (int) ($value['state_id'] ?? 0) !== 1) {
+        throw new RuntimeException('Release state driver guarded payload does not match state_id:1.');
+    }
+    reprint_push_validate_release_state_driver_value($expected);
+    reprint_push_validate_release_state_driver_value($value);
+
+    $table_name = reprint_push_release_state_driver_storage_table();
+    $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+    $expected_payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($expected['payload'] ?? null));
+    $payload_json = wp_json_encode(reprint_push_normalize_snapshot_value($value['payload'] ?? null));
+    if (!is_string($expected_payload_json) || !is_string($payload_json)) {
+        throw new RuntimeException('Could not encode release state driver guarded payload: ' . $id);
+    }
+
+    $expected_storage = [
+        'state_id' => 1,
+        'payload_json' => $expected_payload_json,
+        'updated_marker' => (string) ($expected['updated_marker'] ?? ''),
+    ];
+    if (($expected_storage_value['exists'] ?? false) === true && is_array($expected_storage_value['value'] ?? null)) {
+        $expected_storage = $expected_storage_value['value'];
+    }
+    $table = reprint_push_quote_identifier($table_name);
+    $shape = "UPDATE {$table} SET payload_json = %s, updated_marker = %s WHERE state_id = %d AND payload_json = %s AND updated_marker = %s";
+    if ($exists !== $table_name) {
+        return reprint_push_storage_guard_result('reprint-push-release-state', 'wp_reprint_push_release_state', $table_name, 'update', ['state_id', 'payload_json', 'updated_marker'], $expected, $expected_storage, 0, $shape);
+    }
+    $rows = $wpdb->query($wpdb->prepare(
+        $shape,
+        $payload_json,
+        (string) $value['updated_marker'],
+        1,
+        (string) ($expected_storage['payload_json'] ?? ''),
+        (string) ($expected_storage['updated_marker'] ?? '')
+    ));
+    if ($rows === false) {
+        throw new RuntimeException('Could not apply guarded release state driver row update: ' . $wpdb->last_error);
+    }
+
+    return reprint_push_storage_guard_result('reprint-push-release-state', 'wp_reprint_push_release_state', $table_name, 'update', ['state_id', 'payload_json', 'updated_marker'], $expected, $expected_storage, $rows, $shape);
+}
+
 function reprint_push_storage_guard_result(
     string $driver,
     string $logical_table,
@@ -681,6 +733,25 @@ function reprint_push_get_storage_resource(array $resource): array
             return ['exists' => false, 'value' => null];
         }
         $row['id'] = (int) $row['id'];
+        return ['exists' => true, 'value' => $row];
+    }
+    if ($table === 'wp_reprint_push_release_state') {
+        if ($id !== 'state_id:1') {
+            throw new RuntimeException('Unsupported release state driver row id: ' . $id);
+        }
+        $table_name = reprint_push_release_state_driver_storage_table();
+        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+        if ($exists !== $table_name) {
+            return ['exists' => false, 'value' => null];
+        }
+        $row = $wpdb->get_row(
+            'SELECT state_id, payload_json, updated_marker FROM ' . reprint_push_quote_identifier($table_name) . ' WHERE state_id = 1',
+            ARRAY_A
+        );
+        if (!is_array($row)) {
+            return ['exists' => false, 'value' => null];
+        }
+        $row['state_id'] = (int) $row['state_id'];
         return ['exists' => true, 'value' => $row];
     }
 

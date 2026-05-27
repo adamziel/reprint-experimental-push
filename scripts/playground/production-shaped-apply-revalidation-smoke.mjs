@@ -557,6 +557,19 @@ function fallbackValueForCreatedResource(resource) {
         __pluginOwner: 'forms',
       };
     }
+    if (resource.table === 'wp_reprint_push_release_state') {
+      return {
+        state_id: Number(String(resource.id || '').replace(/^state_id:/, '')) || 1,
+        payload: {
+          owner: 'reprint-push',
+          mode: 'remote-changed',
+          version: 3,
+          releaseBoundaryProof: 'plugin-driver-boundary',
+        },
+        updated_marker: 'remote-changed',
+        __pluginOwner: 'reprint-push',
+      };
+    }
   }
   if (resource.type === 'plugin') {
     const name = String(resource.name || 'reprint-push-drift-plugin');
@@ -591,6 +604,19 @@ function driftRowValue(resource, value) {
   }
   if (resource.table === 'wp_reprint_push_forms_lab') {
     next.updated_marker = 'production-shaped apply revalidation drift';
+    return next;
+  }
+  if (resource.table === 'wp_reprint_push_release_state') {
+    next.state_id = Number(String(resource.id || '').replace(/^state_id:/, '')) || next.state_id || 1;
+    next.payload = {
+      ...(next.payload && typeof next.payload === 'object' ? next.payload : {}),
+      owner: 'reprint-push',
+      mode: 'remote-changed',
+      version: 3,
+      releaseBoundaryProof: 'plugin-driver-boundary',
+    };
+    next.updated_marker = 'remote-changed';
+    next.__pluginOwner = 'reprint-push';
     return next;
   }
   throw new Error(`Unsupported row drift target table: ${resource.table}`);

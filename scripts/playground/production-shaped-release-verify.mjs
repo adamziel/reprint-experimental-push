@@ -1639,6 +1639,7 @@ try {
                 status: proof.dryRun?.status || proof.apply?.status || 1,
                 code: proof.code || proof.apply?.body?.code || proof.dryRun?.body?.code || 'APPLY_FAILED',
               },
+              plan: proof.plan || null,
               authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
               dryRun: proof.dryRun,
               apply: proof.apply,
