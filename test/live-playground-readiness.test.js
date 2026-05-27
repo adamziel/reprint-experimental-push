@@ -13,6 +13,8 @@ import {
   packagedProductionPluginPreflightRetryable,
   packagedProductionPluginPreflightTerminal,
   packagedProductionPluginPreflightTerminalContext,
+  packagedProductionPluginReadinessBodyRetryable,
+  packagedProductionPluginReadinessWordPressNotReady,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRestIndexReady,
   packagedProductionPluginRestIndexRetryable,
@@ -126,6 +128,42 @@ test('packaged rest-index helpers distinguish ready, retryable, and invalid term
     packagedProductionPluginRestIndexRetryable({
       status: 500,
       body: 'Internal Server Error',
+    }),
+    false,
+  );
+});
+
+test('packaged readiness body helpers accept nested startup payloads but fail closed once startup signals go terminal', () => {
+  assert.equal(
+    packagedProductionPluginReadinessWordPressNotReady(502, {
+      data: {
+        details: [
+          {
+            error: {
+              code: 'wordpress_not_ready',
+              message: 'WordPress is not ready yet',
+            },
+          },
+        ],
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(404, {
+      details: {
+        error_code: 'rest_no_route',
+        reason: 'No route was found matching the URL and request method.',
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginReadinessBodyRetryable(200, {
+      ok: true,
+      note: 'missing namespaces and routes should stay terminal',
     }),
     false,
   );
@@ -275,6 +313,37 @@ test('packaged preflight retryability follows the freshest startup probe context
             error_code: 'rest_no_route',
           },
         }),
+      },
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 200,
+        body: {
+          ok: true,
+          note: 'missing snapshot payload should terminate startup fallback',
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+      snapshotProbe: {
+        status: 200,
+        body: {
+          ok: true,
+          note: 'missing snapshot payload should terminate startup fallback',
+        },
       },
     }),
     true,
