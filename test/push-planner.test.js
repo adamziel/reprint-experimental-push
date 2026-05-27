@@ -38083,13 +38083,22 @@ test('production durable journal retries an old-remote failure append-only witho
     requireProductionDurableJournal: true,
     mutateRemote: true,
   });
-  retryWriter.close();
 
   const persisted = readRecoveryJournal(durableJournalPath);
   const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
 
   assert.equal(retry.appliedMutations, 1);
   assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(isDurableJournalClosed(retryWriter), true);
+  assert.throws(() => retryWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'retrying-old-remote',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
   assert.equal(remote.db.wp_options['option_name:blogname'].option_value, 'Local Site');
   assert.equal(persisted.integrity.status, 'ok');
   assert.equal(
@@ -38160,13 +38169,22 @@ test('production durable journal retries a staged old-remote failure append-only
     requireProductionDurableJournal: true,
     mutateRemote: true,
   });
-  retryWriter.close();
 
   const persisted = readRecoveryJournal(durableJournalPath);
   const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
 
   assert.equal(retry.appliedMutations, 1);
   assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(isDurableJournalClosed(retryWriter), true);
+  assert.throws(() => retryWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'retrying-old-remote',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
   assert.equal(remote.db.wp_options['option_name:blogname'].option_value, 'Local Site');
   assert.equal(persisted.integrity.status, 'ok');
   assert.equal(
@@ -38241,13 +38259,22 @@ test('production durable journal retries a dependency-validation failure append-
     requireProductionDurableJournal: true,
     mutateRemote: true,
   });
-  retryWriter.close();
 
   const persisted = readRecoveryJournal(durableJournalPath);
   const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
 
   assert.equal(retry.appliedMutations, 1);
   assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(isDurableJournalClosed(retryWriter), true);
+  assert.throws(() => retryWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'retrying-old-remote',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
   assert.equal(remote.db.wp_options['option_name:blogname'].option_value, 'Local Site');
   assert.equal(persisted.integrity.status, 'ok');
   assert.equal(
