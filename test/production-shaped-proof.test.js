@@ -10522,6 +10522,73 @@ test('checked release auth/session lifecycle summary fails closed when direct re
   );
 });
 
+test('checked release auth/session lifecycle summary fails closed when direct revoked summary carries stale field attribution metadata', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    revoked: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      revoked: true,
+      unrevokedField: 'auth.session.cleanup',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+        unrevokedField: 'auth.session.status',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-revoked-summary',
+    },
+  );
+});
+
 test('checked release auth/session lifecycle summary fails closed when direct cleaned-up summary carries stale lifecycle fields', () => {
   const summary = {
     issued: {
@@ -10579,6 +10646,71 @@ test('checked release auth/session lifecycle summary fails closed when direct cl
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
         preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-cleaned-up-summary',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct cleaned-up summary carries stale field attribution metadata', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    cleanedUp: {
+      step: 'cleanup',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleanedUp: true,
+      unrevokedField: 'auth.session.status',
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'cleanup',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+        unrevokedField: 'auth.session.cleanup',
       },
     ],
   };
@@ -10842,6 +10974,73 @@ test('checked release auth/session lifecycle summary fails closed when direct ex
   );
 });
 
+test('checked release auth/session lifecycle summary fails closed when direct expired summary carries stale field attribution metadata', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    expired: {
+      step: 'replay',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2098-01-01T00:00:00Z',
+      expired: true,
+      expiredField: 'auth.session.status',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2098-01-01T00:00:00Z',
+        expired: true,
+        expiredField: 'auth.session.expired',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unexpired',
+      observed: 'stale-expired-summary',
+    },
+  );
+});
+
 test('checked release auth/session lifecycle summary fails closed when direct rotated summary carries stale lifecycle fields', () => {
   const summary = {
     issued: {
@@ -10891,6 +11090,73 @@ test('checked release auth/session lifecycle summary fails closed when direct ro
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-rotated-summary',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct rotated summary carries stale field attribution metadata', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    rotated: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      rotated: true,
+      rotatedField: 'auth.session.status',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+        rotatedField: 'auth.session.rotated',
         preserved: true,
       },
     ],
