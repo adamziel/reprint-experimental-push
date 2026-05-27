@@ -145,7 +145,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     authBootstrapDisabled: true,
     cliOk: true,
     finalMatchesLocal: true,
-    requestedStatus: null,
+    requestedStatus: 'passed',
   });
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
@@ -157,7 +157,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     expiry: 'AUTH_RECEIPT_EXPIRED',
     rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
     revokedCredential: 'reprint_push_lab_auth_required',
-    requestedStatus: null,
+    requestedStatus: 'passed',
   });
   assert.equal(summary.mutationProof.deleteRejected, true);
   assert.deepEqual(summary.bundles, {
@@ -695,6 +695,20 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
   });
+  assert.deepEqual(summary.routeProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    namespace: 'reprint/v1',
+    profile: 'production-shaped',
+    labBacked: false,
+    labNamespaceDisabled: true,
+    authBootstrapDisabled: true,
+    cliOk: true,
+    finalMatchesLocal: true,
+    requestedStatus: 'passed',
+  });
 });
 
 test('plugin-driver proof summary reports requested receipt guard verdicts directly', () => {
@@ -875,6 +889,32 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     deleteStatus: 'passed',
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+  });
+  assert.deepEqual(summary.routeProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    namespace: 'reprint/v1',
+    profile: 'production-shaped',
+    labBacked: false,
+    labNamespaceDisabled: true,
+    authBootstrapDisabled: true,
+    cliOk: true,
+    finalMatchesLocal: true,
+    requestedStatus: 'passed',
+  });
+  assert.deepEqual(summary.receiptGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    planBinding: 'AUTH_RECEIPT_MISMATCH',
+    identity: 'AUTH_RECEIPT_MISMATCH',
+    expiry: 'AUTH_RECEIPT_EXPIRED',
+    rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
+    revokedCredential: 'reprint_push_lab_auth_required',
+    requestedStatus: 'passed',
   });
 });
 
@@ -2032,6 +2072,18 @@ test('plugin-driver proof summary marks incomplete requested verifier bundle as 
     duplicateTableStatus: 'skipped',
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
+  });
+  assert.deepEqual(summary.receiptGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    planBinding: 'AUTH_RECEIPT_MISMATCH',
+    identity: 'AUTH_RECEIPT_MISMATCH',
+    expiry: 'AUTH_RECEIPT_EXPIRED',
+    rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
+    revokedCredential: 'reprint_push_lab_auth_required',
+    requestedStatus: 'passed',
   });
 });
 

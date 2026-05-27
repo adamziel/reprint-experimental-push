@@ -109,6 +109,20 @@ function toBundleKey(name) {
   return name.replace(/-([a-z])/g, (_match, character) => character.toUpperCase());
 }
 
+function requestedScenarioAliases(normalizedRequestedScenarios, scenario) {
+  if (normalizedRequestedScenarios === null) {
+    return 'all';
+  }
+  return normalizedRequestedScenarios.filter(
+    (requestedScenario) => requestedScenario === scenario
+      || scenarioGroups[requestedScenario]?.includes(scenario),
+  );
+}
+
+function summarizeRequestedScenario(selected, passed) {
+  return selected && passed ? 'passed' : 'missing';
+}
+
 export function buildProductionPluginPackageProofSummary(
   summary,
   { requestedScenarios = null, selectedScenarios = null } = {},
@@ -158,12 +172,17 @@ export function buildProductionPluginPackageProofSummary(
   let failedBundleCount = 0;
   let skippedBundleCount = 0;
   const scenarioPasses = new Map();
+  const requestedScenarioAliasMap = new Map();
   let checkedScenarioCount = 0;
   let passedScenarioCount = 0;
   let failedScenarioCount = 0;
   let skippedScenarioCount = 0;
 
   for (const definition of scenarioDefinitions) {
+    requestedScenarioAliasMap.set(
+      definition.scenario,
+      requestedScenarioAliases(normalizedRequestedScenarios, definition.scenario),
+    );
     const selected = isScenarioSelected(selectedScenarios, definition.scenario);
     const passed = definition.evaluate(summary);
     scenarioPasses.set(definition.scenario, passed);
@@ -355,9 +374,8 @@ export function buildProductionPluginPackageProofSummary(
       authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
     },
     routeProof: {
-      requested: normalizedRequestedScenarios === null
-        ? true
-        : normalizedRequestedScenarios.includes('core-package-routes'),
+      requested: requestedScenarioAliasMap.get('core-package-routes') === 'all'
+        || requestedScenarioAliasMap.get('core-package-routes').length > 0,
       selected: selectedScenarios === null
         || selectedScenarios.has('core-package-routes'),
       ok: scenarioResults.corePackageRoutes === 'passed',
@@ -369,12 +387,17 @@ export function buildProductionPluginPackageProofSummary(
       authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
       cliOk: summary?.cli?.ok ?? null,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? null,
-      requestedStatus: requestedScenarioStatuses['core-package-routes'] ?? null,
+      requestedStatus: requestedScenarioAliasMap.get('core-package-routes') === 'all'
+        || requestedScenarioAliasMap.get('core-package-routes').length > 0
+        ? summarizeRequestedScenario(
+          selectedScenarios === null || selectedScenarios.has('core-package-routes'),
+          scenarioPasses.get('core-package-routes') === true,
+        )
+        : null,
     },
     receiptGuards: {
-      requested: normalizedRequestedScenarios === null
-        ? true
-        : normalizedRequestedScenarios.includes('driver-receipt-guards'),
+      requested: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
+        || requestedScenarioAliasMap.get('driver-receipt-guards').length > 0,
       selected: selectedScenarios === null
         || selectedScenarios.has('driver-receipt-guards'),
       ok: scenarioResults.driverReceiptGuards === 'passed',
@@ -384,7 +407,13 @@ export function buildProductionPluginPackageProofSummary(
       expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
       rotatedCredential: summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode ?? null,
       revokedCredential: summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode ?? null,
-      requestedStatus: requestedScenarioStatuses['driver-receipt-guards'] ?? null,
+      requestedStatus: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
+        || requestedScenarioAliasMap.get('driver-receipt-guards').length > 0
+        ? summarizeRequestedScenario(
+          selectedScenarios === null || selectedScenarios.has('driver-receipt-guards'),
+          scenarioPasses.get('driver-receipt-guards') === true,
+        )
+        : null,
     },
     mutationProof: {
       updateApplied: summary?.driverUpdateApply?.applied ?? 0,
