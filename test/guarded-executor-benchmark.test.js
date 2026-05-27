@@ -12285,17 +12285,17 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
   mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
 
   const details = productionThroughputDetails(mutated);
+  const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+  ].includes(entry.id));
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
-      ].includes(entry.id))
+    releaseBundlePauseRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -12370,6 +12370,11 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
       },
     ],
   );
+
+  assert.deepEqual(summarizeRejectedGates(releaseBundlePauseRejectedFastPaths), [
+    { rejectedGate: 'group', count: 4 },
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
 });
 
 test('guarded benchmark carries hidden staging-disk visibility blockers into rollout summaries under visible production capability evidence', () => {
