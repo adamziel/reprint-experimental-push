@@ -1701,6 +1701,225 @@ test('plugin-driver mode proof resolver repairs a matching top-level modeProof c
   assert.equal(rawSummary.modeProof?.marker, 'nested-canonical');
 });
 
+test('plugin-driver mode proof resolver rebuilds a stale attached top-level modeProof when bundle satisfaction drifts', () => {
+  const rawSummary = {
+    mode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+    modeProof: {
+      mode: 'driverVerifierGuardsOnly',
+      canonicalMode: 'driver-verifier-guards',
+      proofKey: 'driverVerifierGuards',
+      legacyProofKey: 'driverVerifierGuards',
+      requestedScenarios: ['driverVerifierGuardsOnly'],
+      requestedBundles: ['driverVerifierGuards'],
+      requestedBundleStatus: 'missing',
+      requestedBundleStatuses: {
+        driverVerifierGuards: 'missing',
+      },
+      requestedBundlesSatisfied: true,
+      selectedScenarios: [
+        'driver-verifier-guards',
+        ...scenarioGroups['driver-verifier-guards'],
+      ],
+      marker: 'stale-top-level',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverVerifierGuardsOnly', {
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: new Set([
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ]),
+    resolvedMode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.notEqual(modeProof, rawSummary.modeProof);
+  assert.equal(modeProof?.requestedBundleStatus, 'missing');
+  assert.deepEqual(modeProof?.requestedBundleStatuses, {
+    driverVerifierGuards: 'missing',
+  });
+  assert.equal(modeProof?.requestedBundlesSatisfied, false);
+  assert.equal(rawSummary.modeProof?.requestedBundlesSatisfied, false);
+});
+
+test('plugin-driver mode proof resolver rebuilds a stale attached nested modeProof when bundle satisfaction drifts', () => {
+  const currentSelection = [
+    'driver-verifier-guards',
+    ...scenarioGroups['driver-verifier-guards'],
+  ];
+  const rawSummary = {
+    mode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: currentSelection,
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+    pluginDriverProof: {
+      mode: 'driverVerifierGuardsOnly',
+      canonicalMode: 'driver-verifier-guards',
+      requestedScenarios: ['driverVerifierGuardsOnly'],
+      requestedBundles: ['driverVerifierGuards'],
+      requestedBundleStatus: 'missing',
+      requestedBundleStatuses: {
+        driverVerifierGuards: 'missing',
+      },
+      requestedBundlesSatisfied: false,
+      selectedScenarios: currentSelection,
+      modeProof: {
+        mode: 'driverVerifierGuardsOnly',
+        canonicalMode: 'driver-verifier-guards',
+        proofKey: 'driverVerifierGuards',
+        legacyProofKey: 'driverVerifierGuards',
+        requestedScenarios: ['driverVerifierGuardsOnly'],
+        requestedBundles: ['driverVerifierGuards'],
+        requestedBundleStatus: 'missing',
+        requestedBundleStatuses: {
+          driverVerifierGuards: 'missing',
+        },
+        requestedBundlesSatisfied: true,
+        selectedScenarios: currentSelection,
+        marker: 'stale-nested',
+      },
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverVerifierGuardsOnly', {
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: new Set(currentSelection),
+    resolvedMode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.notEqual(modeProof, rawSummary.pluginDriverProof.modeProof);
+  assert.equal(modeProof?.requestedBundleStatus, 'missing');
+  assert.deepEqual(modeProof?.requestedBundleStatuses, {
+    driverVerifierGuards: 'missing',
+  });
+  assert.equal(modeProof?.requestedBundlesSatisfied, false);
+  assert.equal(rawSummary.pluginDriverProof.modeProof?.requestedBundlesSatisfied, true);
+});
+
 test('plugin-driver proof summary attach helper preserves an unrelated top-level modeProof cache', () => {
   const unrelatedModeProof = {
     mode: 'releaseProof',

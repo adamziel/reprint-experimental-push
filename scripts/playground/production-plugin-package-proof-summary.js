@@ -1001,6 +1001,147 @@ function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
     );
 }
 
+function modeProofTopLevelViewMatchesExpectedModeProof(modeProof, expectedModeProof) {
+  if (expectedModeProof === undefined || expectedModeProof === null) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedBundles !== undefined
+    && !requestedBundleListsMatch(
+      modeProof?.requestedBundles,
+      expectedModeProof?.requestedBundles,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.legacyRequestedBundles !== undefined
+    && !requestedBundleListsMatch(
+      modeProof?.legacyRequestedBundles,
+      expectedModeProof?.legacyRequestedBundles,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedBundleStatus !== undefined
+    && modeProof?.requestedBundleStatus !== expectedModeProof?.requestedBundleStatus
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedBundleStatuses !== undefined
+    && !requestedBundleStatusMapsMatch(
+      modeProof?.requestedBundleStatuses,
+      expectedModeProof?.requestedBundleStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.legacyRequestedBundleStatus !== undefined
+    && modeProof?.legacyRequestedBundleStatus !== expectedModeProof?.legacyRequestedBundleStatus
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.legacyRequestedBundleStatuses !== undefined
+    && !requestedBundleStatusMapsMatch(
+      modeProof?.legacyRequestedBundleStatuses,
+      expectedModeProof?.legacyRequestedBundleStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedBundlesSatisfied !== undefined
+    && modeProof?.requestedBundlesSatisfied !== expectedModeProof?.requestedBundlesSatisfied
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedStatus !== undefined
+    && modeProof?.requestedStatus !== expectedModeProof?.requestedStatus
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedSatisfied !== undefined
+    && modeProof?.requestedSatisfied !== expectedModeProof?.requestedSatisfied
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedScenarioStatuses !== undefined
+    && !requestedScenarioStatusMapsMatch(
+      modeProof?.requestedScenarioStatuses,
+      expectedModeProof?.requestedScenarioStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedConcreteScenarios !== undefined
+    && !requestedScenarioListsMatch(
+      modeProof?.requestedConcreteScenarios,
+      expectedModeProof?.requestedConcreteScenarios,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedConcreteScenarioStatuses !== undefined
+    && !requestedScenarioStatusMapsMatch(
+      modeProof?.requestedConcreteScenarioStatuses,
+      expectedModeProof?.requestedConcreteScenarioStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedScenariosSatisfied !== undefined
+    && modeProof?.requestedScenariosSatisfied !== expectedModeProof?.requestedScenariosSatisfied
+  ) {
+    return false;
+  }
+
+  if (
+    modeProof?.requestedConcreteScenariosSatisfied !== undefined
+    && modeProof?.requestedConcreteScenariosSatisfied !== expectedModeProof?.requestedConcreteScenariosSatisfied
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function proofSummaryHasRequestedViewFields(summary) {
+  return summary?.requestedStatus !== undefined
+    || summary?.requestedBundleStatus !== undefined
+    || summary?.requestedBundleStatuses !== undefined
+    || summary?.legacyRequestedBundleStatus !== undefined
+    || summary?.legacyRequestedBundleStatuses !== undefined
+    || summary?.requestedBundlesSatisfied !== undefined
+    || summary?.requestedSatisfied !== undefined
+    || summary?.requestedScenarioStatuses !== undefined
+    || summary?.requestedConcreteScenarioStatuses !== undefined
+    || summary?.requestedScenariosSatisfied !== undefined
+    || summary?.requestedConcreteScenariosSatisfied !== undefined;
+}
+
 function modeProofMatchesResolvedKey(modeProof, resolved) {
   const attachedModeKey = modeProof?.mode === undefined || modeProof?.mode === null
     ? null
@@ -1057,6 +1198,25 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       canonicalMode: options?.canonicalMode ?? resolved.canonicalMode,
     })
     : null;
+  let expectedModeProof;
+  const reuseCandidateMatchesExpectedModeProof = (sourceSummary, modeProofCandidate) => {
+    if (resolvedModeProofOptions === null) {
+      return true;
+    }
+    if (!proofSummaryHasRequestedViewFields(sourceSummary)) {
+      return true;
+    }
+    if (expectedModeProof === undefined) {
+      expectedModeProof = buildProductionPluginPackageProofSummary(
+        summary,
+        resolvedModeProofOptions,
+      )?.modeProof ?? null;
+    }
+    return modeProofTopLevelViewMatchesExpectedModeProof(
+      modeProofCandidate,
+      expectedModeProof,
+    );
+  };
 
   const attachedModeProof = summary?.modeProof;
   const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
@@ -1066,6 +1226,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       resolvedModeProofOptions === null
       || modeProofMatchesResolvedContext(summary, attachedModeProof, resolvedModeProofOptions)
     )
+    && reuseCandidateMatchesExpectedModeProof(summary, attachedModeProof)
   ) {
     if (
       modeProofMatchesResolvedKey(attachedPluginDriverModeProof, resolved)
@@ -1077,6 +1238,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
           resolvedModeProofOptions,
         )
       )
+      && reuseCandidateMatchesExpectedModeProof(summary?.pluginDriverProof, attachedPluginDriverModeProof)
     ) {
       if (
         summary
@@ -1100,6 +1262,7 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
         resolvedModeProofOptions,
       )
     )
+    && reuseCandidateMatchesExpectedModeProof(summary?.pluginDriverProof, attachedPluginDriverModeProof)
   ) {
     if (
       summary
