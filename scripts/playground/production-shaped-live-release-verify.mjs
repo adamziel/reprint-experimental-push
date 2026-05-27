@@ -29,7 +29,7 @@ const credentials = {
   username: releaseVerifyFixtureCredentials.username,
   applicationPassword: releaseVerifyFixtureCredentials.applicationPassword,
 };
-const explicitLiveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitLiveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || '';
 const explicitApplyRevalidationSourceUrl = process.env.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL || '';
 const explicitLiveRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const explicitLiveLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
@@ -452,7 +452,7 @@ function extractFirstJsonObject(text, label, details) {
 async function withPlaygroundServer(name, blueprintPath, run) {
   const server = await startPlaygroundServer(name, blueprintPath);
   try {
-    await run(server);
+    return await run(server);
   } finally {
     await stopPlaygroundServer(server);
   }

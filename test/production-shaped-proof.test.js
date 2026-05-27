@@ -934,6 +934,44 @@ test('production-shaped release verify fails fast with the live-source gate befo
   assert.doesNotMatch(proof.stderr, /Starting Playground server/);
 });
 
+test('production-shaped release verify does not let REPRINT_PUSH_REMOTE_URL substitute for REPRINT_PUSH_SOURCE_URL', () => {
+  const remoteUrl = 'http://127.0.0.1:65534';
+  const authSessionSourceCommand = buildAuthSessionSourceCommand({
+    sourceUrl: remoteUrl,
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: remoteUrl,
+      REPRINT_PUSH_USERNAME: liveCredentials.username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'remote-url-only checked release verify',
+  );
+
+  assertSpawnCompletedWithoutSpawnError(proof, 'remote-url-only checked release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  const summary = JSON.parse(proof.stdout);
+  assert.equal(summary.releaseProof?.code, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.equal(summary.topology?.sourceUrl, '');
+  assert.equal(summary.boundary?.authSession?.observed, 'missing-live-source');
+  assert.equal(summary.authSessionSource?.sourceUrl, remoteUrl);
+  assert.doesNotMatch(proof.stdout, /LIVE_RELEASE_BOUNDARY_OK/);
+  assert.doesNotMatch(proof.stdout, /Starting Playground server/);
+  assert.doesNotMatch(proof.stderr, /Starting Playground server/);
+});
+
 test('production-shaped release verify keeps the packaged checked boundary explicitly open until a live source is provided', () => {
   const boundary = resolveSuccessfulReleaseBoundary({
     packagedSourceFixture: true,
@@ -5245,6 +5283,12 @@ test('production-shaped live release verify forces checked release requirements 
     source,
     /runCheckedReleaseVerify\(\s*resolveCheckedLiveBoundaryEnv\(\{\s*sourceUrl: remoteServer\.baseUrl,/,
   );
+  assert.match(source, /const explicitLiveSourceUrl = process\.env\.REPRINT_PUSH_SOURCE_URL \|\| '';/);
+  assert.doesNotMatch(
+    source,
+    /const explicitLiveSourceUrl = process\.env\.REPRINT_PUSH_SOURCE_URL \|\| process\.env\.REPRINT_PUSH_REMOTE_URL/,
+  );
+  assert.match(source, /return await run\(server\);/);
 });
 
 test('production-shaped live release verify bounds repeated startup-shaped 502 responses before the outer wrapper times out', () => {
