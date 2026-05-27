@@ -1232,6 +1232,143 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
   });
 });
 
+test('plugin-driver proof summary tracks combined receipt and registration guard bundles', () => {
+  const requestedScenarios = [
+    'driver-receipt-guards',
+    'driver-registration-guards',
+  ];
+  const selectedScenarios = new Set([
+    'driver-receipt-guards',
+    ...scenarioGroups['driver-receipt-guards'],
+    'driver-registration-guards',
+    ...scenarioGroups['driver-registration-guards'],
+  ]);
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        payloadModeAfterReject: 'local-update',
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios,
+      selectedScenarios,
+    },
+  );
+
+  assert.equal(summary.ok, true);
+  assert.deepEqual(summary.requestedScenarios, requestedScenarios);
+  assert.deepEqual(summary.requestedBundles, [
+    'driverReceiptGuards',
+    'driverRegistrationGuards',
+  ]);
+  assert.deepEqual(summary.passedRequestedScenarios, requestedScenarios);
+  assert.deepEqual(summary.failedRequestedScenarios, []);
+  assert.deepEqual(summary.passedRequestedBundles, [
+    'driverReceiptGuards',
+    'driverRegistrationGuards',
+  ]);
+  assert.deepEqual(summary.failedRequestedBundles, []);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-receipt-guards': 'passed',
+    'driver-registration-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReceiptGuards: 'passed',
+    driverRegistrationGuards: 'passed',
+  });
+  assert.deepEqual(summary.checkedBundles, [
+    'driverReceiptGuards',
+    'driverRegistrationGuards',
+  ]);
+  assert.deepEqual(summary.passedBundles, [
+    'driverReceiptGuards',
+    'driverRegistrationGuards',
+  ]);
+  assert.deepEqual(summary.failedBundles, []);
+  assert.equal(summary.receiptGuards.requested, true);
+  assert.equal(summary.receiptGuards.selected, true);
+  assert.equal(summary.receiptGuards.ok, true);
+  assert.equal(summary.receiptGuards.status, 'passed');
+  assert.deepEqual(summary.receiptGuards.requestedBundleStatuses, {
+    driverReceiptGuards: 'passed',
+  });
+  assert.equal(summary.registrationGuards.requested, true);
+  assert.equal(summary.registrationGuards.selected, true);
+  assert.equal(summary.registrationGuards.ok, true);
+  assert.equal(summary.registrationGuards.status, 'passed');
+  assert.deepEqual(summary.registrationGuards.requestedBundleStatuses, {
+    driverRegistrationGuards: 'passed',
+  });
+  assert.deepEqual(summary.bundles, {
+    driverPositiveProof: 'skipped',
+    driverReleaseProof: 'skipped',
+    driverVerifierGuards: 'skipped',
+    driverRegistrationGuards: 'passed',
+    driverCallbackGuards: 'skipped',
+    driverRegistrationShapeGuards: 'skipped',
+    driverReceiptGuards: 'passed',
+  });
+});
+
 test('plugin-driver proof summary treats bundled receipt alias as selected for release-proof coverage', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
