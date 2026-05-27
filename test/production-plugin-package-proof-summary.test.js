@@ -1791,6 +1791,68 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
   assert.equal(summary.canonicalMode, 'driver-positive-proof');
   assert.equal(summary.driverPositiveProof.status, 'passed');
   assert.deepEqual(summary.requestedBundles, ['driverPositiveProof']);
+  assert.deepEqual(summary.modeProof, {
+    proofKey: 'driverPositiveProof',
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverPositiveProof: 'passed',
+    },
+  });
+});
+
+test('plugin-driver proof summary exposes direct mode proof for scenario modes', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+    },
+    {
+      requestedScenarios: ['core-package-routes'],
+      selectedScenarios: new Set(['core-package-routes']),
+      resolvedMode: 'driverRouteProof',
+      canonicalMode: 'core-package-routes',
+    },
+  );
+
+  assert.deepEqual(summary.modeProof, {
+    proofKey: 'driverRouteProof',
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: null,
+    requestedBundleStatuses: null,
+  });
+});
+
+test('plugin-driver proof summary leaves mode proof null without a canonical mode', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {},
+    {
+      requestedScenarios: null,
+      selectedScenarios: null,
+    },
+  );
+
+  assert.equal(summary.canonicalMode, null);
+  assert.equal(summary.modeProof, null);
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {

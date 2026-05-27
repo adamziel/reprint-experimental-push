@@ -328,6 +328,20 @@ function collapseRequestedBundleStatus(requestedBundleStatusesForScenario) {
   return statuses.length === 1 ? statuses[0] : null;
 }
 
+const canonicalModeProofKeyMap = {
+  'core-package-routes': 'driverRouteProof',
+  'driver-receipt-guards': 'driverReceiptGuards',
+  'driver-delete-apply': 'driverDeleteApplyProof',
+  'driver-positive-proof': 'driverPositiveProof',
+  'driver-proof': 'driverProof',
+  'driver-release-proof': 'driverReleaseProof',
+  'driver-verifier-guards': 'driverVerifierGuards',
+  'driver-receipt-registration-guards': 'driverReceiptRegistrationGuards',
+  'driver-registration-guards': 'driverRegistrationGuards',
+  'driver-callback-guards': 'driverCallbackGuards',
+  'driver-registration-shape-guards': 'driverRegistrationShapeGuards',
+};
+
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
   if (!includeCoverageDetails) {
@@ -1132,6 +1146,24 @@ export function buildProductionPluginPackageProofSummary(
   proofSummary.driverRegistrationGuards = proofSummary.registrationGuards;
   proofSummary.driverCallbackGuards = proofSummary.callbackGuards;
   proofSummary.driverRegistrationShapeGuards = proofSummary.registrationShapeGuards;
+  const canonicalProofKey = canonicalMode === null
+    ? null
+    : canonicalModeProofKeyMap[canonicalMode] ?? null;
+  const canonicalProof = canonicalProofKey === null
+    ? null
+    : proofSummary[canonicalProofKey] ?? null;
+  proofSummary.modeProof = canonicalProof === null
+    ? null
+    : {
+      proofKey: canonicalProofKey,
+      requested: canonicalProof.requested,
+      selected: canonicalProof.selected,
+      ok: canonicalProof.ok,
+      status: canonicalProof.status,
+      requestedStatus: canonicalProof.requestedStatus ?? null,
+      requestedBundleStatus: canonicalProof.requestedBundleStatus ?? null,
+      requestedBundleStatuses: canonicalProof.requestedBundleStatuses ?? null,
+    };
 
   return proofSummary;
 }
