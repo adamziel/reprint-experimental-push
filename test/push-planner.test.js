@@ -25810,6 +25810,83 @@ test('blocks local featured image references to a same-plan created attachment i
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local featured image references to a same-plan created attachment identity while preserving a matching independent restore and remote-only plugin removals', () => {
+  const attachmentResourceKey = 'row:["wp_posts","ID:8"]';
+  const featuredImageResourceKey = 'row:["wp_postmeta","meta_id:12"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared restore";';
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'local-created attachment target',
+    post_content: 'local-created attachment body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: 8,
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  remote.db.wp_postmeta = {};
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+  const metaBlocker = plan.blockers.find((entry) => entry.resourceKey === featuredImageResourceKey);
+  const matchingRestore = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, attachmentResourceKey), undefined);
+  assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(attachmentBlocker.resourceKey, attachmentResourceKey);
+  assert.equal(
+    attachmentBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a featured image attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(attachmentBlocker.references.length, 1);
+  assert.equal(attachmentBlocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(attachmentBlocker.references[0].sourceResourceKey, featuredImageResourceKey);
+  assert.equal(attachmentBlocker.references[0].targetResourceKey, attachmentResourceKey);
+  assert.equal(attachmentBlocker.references[0].targetChange.remote.state, 'absent');
+  assert.equal(attachmentBlocker.references[0].targetChange.local.state, 'present');
+  assert.equal(metaBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(metaBlocker.resourceKey, featuredImageResourceKey);
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created attachment target'), false);
+  assert.equal(planJson.includes('local-created attachment body'), false);
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('prioritizes featured image attachment blocker wording while carrying bounded featured image, post parent, and term relationship references for a same-plan created attachment identity', () => {
   const attachmentResourceKey = 'row:["wp_posts","ID:88"]';
   const featuredImageResourceKey = 'row:["wp_postmeta","meta_id:88"]';
