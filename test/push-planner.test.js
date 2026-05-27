@@ -22415,6 +22415,151 @@ test('production recovery support report keeps checked boundary closed when insp
   assert.ok(report.missingDependency.includes('restart-readable remote recovery artifact ownership'));
 });
 
+test('production recovery support report keeps checked boundary closed when inspected remote artifact ownership is hidden or inherited through the prototype', () => {
+  const filePath = '/var/lib/reprint/recovery.jsonl';
+  const remoteArtifactPath = '/var/lib/reprint/remote.json';
+  const staleClaimId = 'claim-inspected-remote-ownership-hidden-or-inherited-stale';
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+
+  for (const [label, mutateInspection, expectedArtifactRefs] of [
+    [
+      'hidden inspected remote artifact ownership',
+      (inspected) => {
+        Object.defineProperty(inspected, 'ownsRemoteArtifact', {
+          value: true,
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      },
+      {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+    ],
+    [
+      'prototype-inherited inspected remote artifact ownership',
+      (inspected) => {
+        delete inspected.ownsRemoteArtifact;
+        Object.setPrototypeOf(inspected, {
+          ownsRemoteArtifact: true,
+        });
+      },
+      null,
+    ],
+  ]) {
+    const claimId = `claim-${label.replaceAll(/[^a-z]+/gi, '-')}`.toLowerCase();
+    const claimHash = digest({ recoveryJournalClaim: claimId });
+    const staleClaimHash = digest({ recoveryJournalClaim: staleClaimId });
+    const inspected = {
+      filePath,
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      claimHash,
+      ownsJournal: true,
+      restartReadable: true,
+      ownsRemoteArtifact: true,
+      acceptedOnCheckedBoundary: true,
+      scope: 'packaged production journal scope',
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+      writerLease: { id: claimId, epoch: 3 },
+      leaseFence: { id: claimId, epoch: 3 },
+      writerLeaseContract,
+      leaseFenceContract: {
+        boundary: 'wpdb-single-statement-cas',
+        claimKeyUnique: true,
+        storageGuard: 'wpdb-single-statement-cas',
+        fsyncEvidence: true,
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+        writerLease: writerLeaseContract,
+      },
+      integrity: { status: 'ok' },
+      records: [
+        {
+          sequence: 1,
+          type: 'recovery-claim-opened',
+          claimHash,
+          claimLease: { id: claimId, epoch: 3 },
+          artifactRefs: {
+            journal: filePath,
+            remote: remoteArtifactPath,
+          },
+          fsync: { requested: true },
+        },
+        {
+          sequence: 2,
+          type: 'stale-claim-rejected',
+          claimHash: staleClaimHash,
+          previousClaimHash: claimHash,
+          claimLease: { id: staleClaimId, epoch: 2 },
+          artifactRefs: {
+            journal: filePath,
+            remote: remoteArtifactPath,
+          },
+          fsync: { requested: true },
+        },
+        {
+          sequence: 3,
+          type: 'journal-opened',
+          artifactRefs: {
+            journal: filePath,
+            remote: remoteArtifactPath,
+          },
+          fsync: { requested: true },
+        },
+      ],
+    };
+    mutateInspection(inspected);
+
+    const report = productionRecoverySupportReport({
+      kind: 'production-recovery-journal',
+      productionAdapter: true,
+      supportedSurface: 'production-recovery-journal-adapter',
+      restartReadable: true,
+      ownsJournal: true,
+      ownsRemoteArtifact: true,
+      acceptedOnCheckedBoundary: true,
+      scope: 'packaged production journal scope',
+      claimHash,
+      writerLease: { id: claimId, epoch: 3 },
+      leaseFence: { id: claimId, epoch: 3 },
+      journalPath: filePath,
+      artifactRefs: {
+        journal: filePath,
+        remote: remoteArtifactPath,
+      },
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      appendEvent() {
+        return null;
+      },
+      flush() {},
+      close() {},
+      inspect() {
+        return inspected;
+      },
+      assertCurrentClaim() {},
+    });
+
+    assert.equal(report.supported, false, label);
+    assert.equal(report.checkedBoundarySatisfied, false, label);
+    assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false, label);
+    assert.ok(report.missingDependency.includes('restart-readable remote recovery artifact ownership'), label);
+    assert.deepEqual(report.checkedBoundaryProof.artifactRefs, expectedArtifactRefs, label);
+  }
+});
+
 test('production recovery support report fails closed when inspected remote artifact refs collapse to the journal path', () => {
   const filePath = '/var/lib/reprint/recovery.jsonl';
   const remoteArtifactPath = '/var/lib/reprint/remote.json';
