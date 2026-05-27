@@ -1,39 +1,28 @@
 # Critic Verdict
 
-Current reliable head: `044b7e0e88ce9caf8efa95f59bee8bf6649204f6`
-(`Prove explicit live journal claim contract`).
+Current reliable head: `45ea450613d972f4901371cbd38b11c53ba5c0b0`
+(`Use auth session source CLI in generated commands`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is still verifier-boundary hardening. The diff threads explicit
-  live topology URLs through `resolveCheckedLiveBoundaryEnv()` and
-  `resolveLiveApplyRevalidationEnv()`, and the top-level live release verify
-  path now fails closed when the explicit verifier run does not return
-  `ok === true`.
-- It also centralizes the checked journal claim contract across
-  `scripts/playground/push-db-journal-lib.php` and
-  `scripts/playground/push-remote-rest-plugin.php`, which is useful because
-  the release proof can now carry explicit live claim evidence instead of a
-  synthesized local fallback.
-- The retained evidence is still the checked wrapper path: retained
-  `node --check`, focused verifier unit coverage, and the bounded live-wrapper
-  run. That is material support evidence, but it is not yet one
-  production-owned, non-lab-backed checked release command on the real Reprint
-  endpoint.
-- The patch does not yet prove live auth/session issuance and readback on the
+- This head threads the auth-session source CLI into generated release-path
+  commands via `scripts/playground/auth-session-source-command.js` and updates
+  the proof fixtures in `test/production-shaped-proof.test.js` and
+  `test/protocol-fixtures.test.js`, but it still only improves helper
+  selection for the checked verifier path.
+- The diff does not yet prove live auth/session issuance and readback on the
   real endpoint, restart-readable durable journal storage with lease-fenced
-  ownership, preserved rejected remote evidence on the live boundary, and
+  ownership, preserved rejected remote evidence on the live boundary, or
   apply-time revalidation before the first mutation on the same production
   boundary.
-- So the verdict remains `0/4`: `044b7e0e` is a narrow but useful explicit
-  live-claim-contract and topology plumbing commit, not a gate-closing release
-  proof.
+- So the verdict remains `0/4`: `45ea4506` is useful release-path plumbing,
+  not a gate-closing production-boundary proof.
 
 Next owner / command:
 
-- `main:reliable-exec` should use this explicit live path to prove the next
+- `main:reliable-exec` should use the now-hardened live path to prove the next
   exact primitive: one production-owned, non-lab-backed checked release
   command on the real Reprint endpoint, with the same executable command and
   same live `REPRINT_PUSH_SOURCE_URL` visibly minting and rereading a live
