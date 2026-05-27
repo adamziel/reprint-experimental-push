@@ -133,7 +133,18 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.routes.labBacked, false);
-  assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
+  assert.deepEqual(summary.receiptGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    planBinding: 'AUTH_RECEIPT_MISMATCH',
+    identity: 'AUTH_RECEIPT_MISMATCH',
+    expiry: 'AUTH_RECEIPT_EXPIRED',
+    rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
+    revokedCredential: 'reprint_push_lab_auth_required',
+    requestedStatus: null,
+  });
   assert.equal(summary.mutationProof.deleteRejected, true);
   assert.deepEqual(summary.bundles, {
     driverVerifierGuards: 'passed',
@@ -587,6 +598,61 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
     deleteStatus: 'passed',
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+  });
+});
+
+test('plugin-driver proof summary reports requested receipt guard verdicts directly', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+    },
+    {
+      requestedScenarios: ['driver-receipt-guards'],
+      selectedScenarios: new Set(['driver-receipt-guards']),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-receipt-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.receiptGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    planBinding: 'AUTH_RECEIPT_MISMATCH',
+    identity: 'AUTH_RECEIPT_MISMATCH',
+    expiry: 'AUTH_RECEIPT_EXPIRED',
+    rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
+    revokedCredential: 'reprint_push_lab_auth_required',
+    requestedStatus: 'passed',
   });
 });
 
@@ -1870,5 +1936,35 @@ test('plugin-driver proof summary marks incomplete requested verifier bundle as 
     duplicateTableStatus: 'skipped',
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
+  });
+});
+
+test('plugin-driver proof summary marks incomplete requested receipt guard scenario as missing', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {},
+    {
+      requestedScenarios: ['driver-receipt-guards'],
+      selectedScenarios: new Set(),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, false);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-receipt-guards': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.receiptGuards, {
+    requested: true,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    planBinding: null,
+    identity: null,
+    expiry: null,
+    rotatedCredential: null,
+    revokedCredential: null,
+    requestedStatus: 'missing',
   });
 });

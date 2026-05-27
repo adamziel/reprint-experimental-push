@@ -355,11 +355,19 @@ export function buildProductionPluginPackageProofSummary(
       authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
     },
     receiptGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-receipt-guards'),
+      selected: selectedScenarios === null
+        || selectedScenarios.has('driver-receipt-guards'),
+      ok: scenarioResults.driverReceiptGuards === 'passed',
+      status: scenarioResults.driverReceiptGuards,
       planBinding: summary?.driverReceiptPlanBindingGuard?.applyRejectedCode ?? null,
       identity: summary?.driverReceiptIdentityGuard?.applyRejectedCode ?? null,
       expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
       rotatedCredential: summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode ?? null,
       revokedCredential: summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode ?? null,
+      requestedStatus: requestedScenarioStatuses['driver-receipt-guards'] ?? null,
     },
     mutationProof: {
       updateApplied: summary?.driverUpdateApply?.applied ?? 0,
