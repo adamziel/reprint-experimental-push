@@ -25043,7 +25043,9 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
     assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-login');
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Auser-login-invalid$/,
@@ -25222,7 +25224,9 @@ test('production-shaped authenticated push fails closed on journal-only malforme
       },
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-login');
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Auser-login-invalid$/,
@@ -25393,7 +25397,9 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
     assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-id');
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Auser-id-invalid$/,
@@ -25572,7 +25578,9 @@ test('production-shaped authenticated push fails closed on journal-only malforme
       },
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-id');
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Auser-id-invalid$/,
