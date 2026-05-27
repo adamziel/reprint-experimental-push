@@ -6619,11 +6619,14 @@ test('production auth/session lifecycle summary fails closed when a preserved re
     },
   ]);
 
+  assert.equal(summary.cleanedUp?.cleanup, true);
+  assert.equal(summary.read?.cleanup, true);
+  assert.equal(summary.observations[1]?.cleanup, true);
   assert.deepEqual(
     evaluateProductionAuthSessionLifecycleSummary(summary),
     {
       ok: false,
-      field: 'auth.session.cleanedUp',
+      field: 'auth.session.cleanup',
       required: 'unrevoked',
       observed: 'cleaned-up',
     },
