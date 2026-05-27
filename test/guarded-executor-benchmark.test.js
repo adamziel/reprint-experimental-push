@@ -16470,23 +16470,147 @@ test('guarded benchmark surfaces release-bundle blockers at runtime', () => {
     .filter((entry) => entry.id.includes('release-bundle'))
     .sort((left, right) => left.id.localeCompare(right.id));
 
-  assert.deepEqual(releaseBundleRejectedFastPaths.map(({ id }) => id), [
-    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
-    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
-    'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
-    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
-    'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
-  ]);
+  assert.deepEqual(
+    releaseBundleRejectedFastPaths.map(({ id, rejectedGate, blockerRefs }) => ({
+      id,
+      rejectedGate,
+      blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
+        blockerRefs: [
+          'production-capability-measurement-not-aligned',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+        rejectedGate: 'skip',
+        blockerRefs: [
+          'production-capability-measurement-not-aligned',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+    ],
+  );
 
   assert.deepEqual(summarizeRejectedGates(releaseBundleRejectedFastPaths), [
     { rejectedGate: 'group', count: 10 },
