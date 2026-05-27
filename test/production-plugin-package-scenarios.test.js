@@ -239,6 +239,28 @@ test('scenario resolver prefers explicit mode arguments over environment mode al
   );
 });
 
+test('scenario resolver rejects explicit mode arguments combined with explicit scenario input', () => {
+  assert.throws(
+    () => resolveProductionPluginPackageScenarios(
+      ['--mode=driverVerifierGuards', '--scenario=driver-delete-apply'],
+      undefined,
+      undefined,
+    ),
+    /Production plugin package smoke mode cannot be combined with explicit scenario input/,
+  );
+});
+
+test('scenario resolver rejects explicit mode arguments combined with scenario environment input', () => {
+  assert.throws(
+    () => resolveProductionPluginPackageScenarios(
+      ['--mode=driverVerifierGuards'],
+      'driver-delete-apply',
+      undefined,
+    ),
+    /Production plugin package smoke mode cannot be combined with explicit scenario input/,
+  );
+});
+
 test('scenario resolver rejects blank explicit plugin-driver smoke modes', () => {
   assert.throws(
     () => resolveProductionPluginPackageScenarios(

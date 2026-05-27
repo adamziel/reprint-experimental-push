@@ -217,6 +217,11 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
   if (explicitModeArg !== undefined && explicitModeValue === '') {
     throw new Error('Production plugin package smoke mode cannot be blank');
   }
+  if (explicitModeArg !== undefined && (explicitArg !== undefined || envValue !== undefined)) {
+    throw new Error(
+      'Production plugin package smoke mode cannot be combined with explicit scenario input',
+    );
+  }
   const resolvedModeValue = explicitModeValue ?? modeValue;
   const modeScenario = resolveScenarioMode(resolvedModeValue);
   const resolvedFromMode = !explicitArg && !envValue && Boolean(modeScenario);
