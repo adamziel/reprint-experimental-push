@@ -13053,6 +13053,149 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
   ]);
 });
 
+test('guarded benchmark surfaces plugin-update group blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const pluginUpdateGroupRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+  ].includes(entry.id));
+
+  assert.deepEqual(
+    pluginUpdateGroupRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+    ],
+  );
+
+  assert.deepEqual(summarizeRejectedGates(pluginUpdateGroupRejectedFastPaths), [
+    { rejectedGate: 'group', count: 12 },
+  ]);
+});
+
 test('guarded benchmark carries direct aligned queue-slack proof blockers into row-receipt and release-cursor release-bundle pause summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
