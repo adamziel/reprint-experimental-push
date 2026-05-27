@@ -203,9 +203,7 @@ function buildReceiptGuardProofMap(summary) {
   return {
     deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
     updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
-    ...(summary?.driverReceiptBlankRowIdGuard !== undefined
-      ? { blankRowId: buildBlankRowIdGuardProof(summary?.driverReceiptBlankRowIdGuard) }
-      : {}),
+    blankRowId: buildBlankRowIdGuardProof(summary?.driverReceiptBlankRowIdGuard),
     planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
     expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
     identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
@@ -254,14 +252,11 @@ function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
   }
 
   const guardScenarioMap = (
-    summary?.driverReceiptBlankRowIdGuard !== undefined
-    && (
-      canonicalMode === 'driver-proof'
-      || canonicalMode === 'driver-release-proof'
-      || canonicalMode === 'driver-verifier-guards'
-      || canonicalMode === 'driver-receipt-registration-guards'
-      || canonicalMode === 'driver-receipt-guards'
-    )
+    canonicalMode === 'driver-proof'
+    || canonicalMode === 'driver-release-proof'
+    || canonicalMode === 'driver-verifier-guards'
+    || canonicalMode === 'driver-receipt-registration-guards'
+    || canonicalMode === 'driver-receipt-guards'
   )
     ? Object.fromEntries(
       Object.entries(baseGuardScenarioMap).flatMap(([proofKey, scenarioName]) => (

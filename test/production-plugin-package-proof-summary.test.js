@@ -258,7 +258,7 @@ test('plugin-driver proof summary resolves runtime mode aliases directly to proo
   assert.equal(releaseModeProof?.legacyProof, summary.driverMutationProof);
   assert.deepEqual(releaseModeProof?.requestedBundles, ['driverReleaseProof']);
   assert.equal(releaseModeProof?.requestedBundleStatus, 'passed');
-  assert.equal(releaseModeProof?.guardProof?.guardCount, 7);
+  assert.equal(releaseModeProof?.guardProof?.guardCount, 8);
 
   const verifierModeProof = resolveProductionPluginPackageModeProof(summary, 'driverVerifierGuardsOnly');
   assert.equal(verifierModeProof?.mode, 'driverVerifierGuardsOnly');
@@ -271,7 +271,7 @@ test('plugin-driver proof summary resolves runtime mode aliases directly to proo
   assert.equal(verifierModeProof?.proof?.receiptStatus, 'missing');
   assert.equal(verifierModeProof?.proof?.planBinding, null);
   assert.equal(verifierModeProof?.requestedBundleStatus, null);
-  assert.equal(verifierModeProof?.guardProof?.guardCount, 15);
+  assert.equal(verifierModeProof?.guardProof?.guardCount, 16);
   assert.equal(resolveProductionPluginPackageModeProof(summary, null), null);
 });
 
@@ -337,14 +337,15 @@ test('plugin-driver mode proof resolver infers the full bounded modeProof view f
     driverMutationProof: 'passed',
   });
   assert.deepEqual(modeProof?.guardProof, {
-    ok: true,
-    status: 'passed',
-    guardCount: 7,
+    ok: false,
+    status: 'missing',
+    guardCount: 8,
     passedGuardCount: 7,
-    failedGuardCount: 0,
+    failedGuardCount: 1,
     guardStatuses: {
       deleteGuard: 'passed',
       updateValidationGuard: 'passed',
+      blankRowId: 'missing',
       planBinding: 'passed',
       expiry: 'passed',
       identity: 'passed',
@@ -360,7 +361,7 @@ test('plugin-driver mode proof resolver infers the full bounded modeProof view f
       'rotatedCredential',
       'revokedCredential',
     ],
-    failedGuards: [],
+    failedGuards: ['blankRowId'],
     deleteGuard: {
       status: 'passed',
       rejectedCode: 'INVALID_PLAN',
@@ -371,6 +372,15 @@ test('plugin-driver mode proof resolver infers the full bounded modeProof view f
     updateValidationGuard: {
       status: 'passed',
       rejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: null,
+      payloadModeAfterReject: null,
+      updatedMarkerAfterReject: null,
+    },
+    blankRowId: {
+      status: 'missing',
+      rejectedCode: null,
+      blankRejectedCode: null,
+      whitespaceRejectedCode: null,
       rowRetainedAfterReject: null,
       payloadModeAfterReject: null,
       updatedMarkerAfterReject: null,
@@ -501,9 +511,9 @@ test('plugin-driver mode proof resolver rebuilds a mismatched attached pluginDri
   assert.deepEqual(modeProof?.requestedBundleStatuses, {
     driverVerifierGuards: 'missing',
   });
-  assert.equal(modeProof?.guardProof?.guardCount, 15);
+  assert.equal(modeProof?.guardProof?.guardCount, 16);
   assert.equal(modeProof?.guardProof?.passedGuardCount, 15);
-  assert.equal(modeProof?.guardProof?.failedGuardCount, 0);
+  assert.equal(modeProof?.guardProof?.failedGuardCount, 1);
   assert.equal(rawSummary.pluginDriverProof.mode, 'driverMutationProof');
   assert.equal(rawSummary.pluginDriverProof.canonicalMode, 'driver-release-proof');
 });
@@ -8429,11 +8439,13 @@ test('plugin-driver proof summary marks failing selected verifier guards directl
 
   assert.equal(summary.modeProof?.guardProof?.ok, false);
   assert.equal(summary.modeProof?.guardProof?.status, 'missing');
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 16);
   assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 14);
-  assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 1);
+  assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 2);
   assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
     deleteGuard: 'passed',
     updateValidationGuard: 'missing',
+    blankRowId: 'missing',
     planBinding: 'passed',
     expiry: 'passed',
     identity: 'passed',
@@ -8450,12 +8462,103 @@ test('plugin-driver proof summary marks failing selected verifier guards directl
   });
   assert.deepEqual(summary.modeProof?.guardProof?.failedGuards, [
     'updateValidationGuard',
+    'blankRowId',
   ]);
+  assert.deepEqual(summary.modeProof?.guardProof?.blankRowId, {
+    status: 'missing',
+    rejectedCode: null,
+    blankRejectedCode: null,
+    whitespaceRejectedCode: null,
+    rowRetainedAfterReject: null,
+    payloadModeAfterReject: null,
+    updatedMarkerAfterReject: null,
+  });
   assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.status, 'missing');
   assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.payloadModeAfterReject, 'local-delete');
   assert.deepEqual(summary.modeProof?.guardProof?.missingValidate, {
     status: 'passed',
     observed: true,
+  });
+});
+
+test('plugin-driver proof summary marks missing blank row id proof on release modeProof guard coverage', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set([
+        'driver-release-proof',
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+      resolvedMode: 'driverMutationProofOnly',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.equal(summary.modeProof?.guardProof?.ok, false);
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 8);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 7);
+  assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 1);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'passed',
+    blankRowId: 'missing',
+    planBinding: 'passed',
+    expiry: 'passed',
+    identity: 'passed',
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.failedGuards, ['blankRowId']);
+  assert.deepEqual(summary.modeProof?.guardProof?.blankRowId, {
+    status: 'missing',
+    rejectedCode: null,
+    blankRejectedCode: null,
+    whitespaceRejectedCode: null,
+    rowRetainedAfterReject: null,
+    payloadModeAfterReject: null,
+    updatedMarkerAfterReject: null,
   });
 });
 
