@@ -23163,10 +23163,13 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(relationshipBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(relationshipBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(
+    relationshipBlocker.reason,
+    `WordPress graph mutation ${resourceKey} references graph identities without proven identity mapping or reference rewriting.`,
+  );
   assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
   assert.equal(taxBlocker.unsupportedState, 'same-plan-reference');
@@ -23267,6 +23270,187 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(reference.targetChange.remote.state, 'absent');
   assert.equal(reference.targetRemoteHash.length, 64);
   assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local taxonomy'), false);
+  assert.equal(planJson.includes('local relationship note'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
+test('blocks local term-relationship references to a same-plan created term-taxonomy identity while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base relationship post',
+    post_status: 'publish',
+  };
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  local.files['about.php'] = '<?php echo "shared restore";';
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'local taxonomy',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = {};
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const relationshipBlocker = plan.blockers.find((entry) =>
+    entry.resourceKey === resourceKey);
+  const taxBlocker = plan.blockers.find((entry) =>
+    entry.resourceKey === targetResourceKey);
+  const reference = taxBlocker.references[0];
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.resourceKey, resourceKey);
+  assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(
+    relationshipBlocker.reason,
+    `WordPress graph mutation ${resourceKey} references graph identities without proven identity mapping or reference rewriting.`,
+  );
+  assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxBlocker.resourceKey, targetResourceKey);
+  assert.equal(taxBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(planJson.includes('local taxonomy'), false);
+  assert.equal(planJson.includes('local relationship note'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
+test('blocks local term-relationship references to a same-plan created term-taxonomy identity while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const matchingDeleteResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_posts['ID:7'] = {
+    ID: 7,
+    post_title: 'Base relationship post',
+    post_status: 'publish',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base shared post title';
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  delete local.db.wp_posts['ID:1'];
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'local taxonomy',
+      parent: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:7,term_taxonomy_id:5': {
+      object_id: 7,
+      term_taxonomy_id: 5,
+      term_order: 0,
+      note: 'local relationship note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts['ID:7'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:7']));
+  delete remote.db.wp_posts['ID:1'];
+  remote.db.wp_term_taxonomy = {};
+  remote.db.wp_term_relationships = {};
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const relationshipBlocker = plan.blockers.find((entry) =>
+    entry.resourceKey === resourceKey);
+  const taxBlocker = plan.blockers.find((entry) =>
+    entry.resourceKey === targetResourceKey);
+  const reference = taxBlocker.references[0];
+  const matchingDelete = decisionFor(plan, matchingDeleteResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(relationshipBlocker.resourceKey, resourceKey);
+  assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(relationshipBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxBlocker.resourceKey, targetResourceKey);
+  assert.equal(taxBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(taxBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a term relationship taxonomy target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
+  assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('local taxonomy'), false);
