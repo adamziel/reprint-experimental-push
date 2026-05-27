@@ -2015,6 +2015,72 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
   }
 });
 
+test('packaged server readiness fails closed for broken top-level auth envelopes', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const brokenAuthEnvelopes = [
+    {
+      label: 'missing top-level auth',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'missing top-level auth session',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {},
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+  ];
+
+  for (const { label, body } of brokenAuthEnvelopes) {
+    const preflight = {
+      status: 200,
+      body,
+    };
+
+    assert.equal(packagedProductionPluginPreflightReady(preflight), false, `${label} should not be ready`);
+    assert.equal(packagedProductionPluginPreflightRetryable(preflight), false, `${label} should fail closed`);
+    assert.equal(packagedProductionPluginPreflightTerminal(preflight), true, `${label} should be terminal`);
+    assert.equal(
+      packagedProductionPluginServerReady({
+        snapshot: readySnapshot,
+        preflight,
+      }),
+      false,
+      `${label} should keep the packaged server unready`,
+    );
+  }
+});
+
 test('packaged server readiness fails closed for broken signed preflight auth identities', () => {
   const readySnapshot = {
     status: 200,
