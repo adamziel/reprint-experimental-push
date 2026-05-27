@@ -167,6 +167,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
+    requestedBundleStatus: null,
   });
   assert.deepEqual(summary.deleteApplyProof, {
     requested: true,
@@ -870,6 +871,7 @@ test('plugin-driver proof summary reports requested receipt guard verdicts direc
     rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
   });
 });
 
@@ -1067,6 +1069,7 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
+    requestedBundleStatus: null,
   });
   assert.deepEqual(summary.deleteApplyProof, {
     requested: true,
@@ -2552,6 +2555,7 @@ test('plugin-driver proof summary marks incomplete requested verifier bundle as 
     rotatedCredential: 'AUTH_RECEIPT_MISMATCH',
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
+    requestedBundleStatus: null,
   });
 });
 
@@ -2586,5 +2590,6 @@ test('plugin-driver proof summary marks incomplete requested receipt guard scena
     rotatedCredential: null,
     revokedCredential: null,
     requestedStatus: 'missing',
+    requestedBundleStatus: 'missing',
   });
 });

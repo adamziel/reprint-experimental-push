@@ -611,6 +611,7 @@ export function buildProductionPluginPackageProofSummary(
           scenarioPasses.get('driver-receipt-guards') === true,
         )
         : null,
+      requestedBundleStatus: requestedBundleStatuses.driverReceiptGuards ?? null,
     },
     deleteApplyProof: {
       requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
