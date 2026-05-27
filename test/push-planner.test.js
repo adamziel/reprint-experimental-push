@@ -39063,6 +39063,130 @@ test('blocks same-plan created serialized block references while preserving a ma
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks same-plan created serialized block references while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:62"]';
+  const matchingRestoreResourceKey = 'file:wp-content/uploads/same-plan-serialized-block-restore-change.txt';
+  const base = baseSite();
+  base.db.wp_posts['ID:62'] = {
+    ID: 62,
+    post_title: 'Base same-plan restore change block post',
+    post_content: 'Base same-plan plain content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  delete base.files[matchingRestoreResourceKey.slice('file:'.length)];
+
+  const local = baseSite();
+  local.db.wp_posts['ID:62'] = {
+    ID: 62,
+    post_title: 'Local same-plan restore change block post',
+    post_content: '<!-- wp:paragraph -->Local same-plan restore change block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.files[matchingRestoreResourceKey.slice('file:'.length)] =
+    'shared same-plan serialized block restore change bytes';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:62'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:62']));
+  remote.files[matchingRestoreResourceKey.slice('file:'.length)] =
+    'shared same-plan serialized block restore change bytes';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingRestoreDecision = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingRestoreDecision.decision, 'already-in-sync');
+  assert.equal(matchingRestoreDecision.change.localChange, 'create');
+  assert.equal(matchingRestoreDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan restore change block content'), false);
+  assert.equal(planJson.includes('Base same-plan plain content'), false);
+  assert.equal(planJson.includes('shared same-plan serialized block restore change bytes'), false);
+  assert.equal(
+    remote.files[matchingRestoreResourceKey.slice('file:'.length)],
+    'shared same-plan serialized block restore change bytes',
+  );
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
+test('blocks same-plan created serialized block references while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:63"]';
+  const matchingRestoreResourceKey = 'file:wp-content/uploads/same-plan-serialized-block-restore-removal.txt';
+  const base = baseSite();
+  base.db.wp_posts['ID:63'] = {
+    ID: 63,
+    post_title: 'Base same-plan restore removal block post',
+    post_content: 'Base same-plan removal plain content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  delete base.files[matchingRestoreResourceKey.slice('file:'.length)];
+
+  const local = baseSite();
+  local.db.wp_posts['ID:63'] = {
+    ID: 63,
+    post_title: 'Local same-plan restore removal block post',
+    post_content: '<!-- wp:paragraph -->Local same-plan restore removal block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.files[matchingRestoreResourceKey.slice('file:'.length)] =
+    'shared same-plan serialized block restore removal bytes';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:63'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:63']));
+  remote.files[matchingRestoreResourceKey.slice('file:'.length)] =
+    'shared same-plan serialized block restore removal bytes';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingRestoreDecision = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingRestoreDecision.decision, 'already-in-sync');
+  assert.equal(matchingRestoreDecision.change.localChange, 'create');
+  assert.equal(matchingRestoreDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan restore removal block content'), false);
+  assert.equal(planJson.includes('Base same-plan removal plain content'), false);
+  assert.equal(planJson.includes('shared same-plan serialized block restore removal bytes'), false);
+  assert.equal(
+    remote.files[matchingRestoreResourceKey.slice('file:'.length)],
+    'shared same-plan serialized block restore removal bytes',
+  );
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local serialized block references while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:58"]';
   const base = baseSite();
