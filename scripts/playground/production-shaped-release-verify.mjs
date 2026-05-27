@@ -49,6 +49,7 @@ import {
   packagedProductionPluginReadinessProbeTimedOut,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotProbeContext,
   packagedProductionPluginSnapshotRetryable,
 } from './packaged-production-plugin-readiness.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
@@ -1990,10 +1991,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             },
             {
               packagedStartup: true,
-              snapshotProbe: {
-                status: activeSnapshotProbe?.status,
-                body: activeSnapshotProbe?.body || '',
-              },
+              snapshotProbe: packagedProductionPluginSnapshotProbeContext(activeSnapshotProbe),
               indexProbe,
             },
           );

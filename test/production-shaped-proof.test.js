@@ -54,6 +54,7 @@ import {
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
   packagedProductionPluginRouteRetryableWhileWordPressStarting,
   packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotProbeContext,
   packagedProductionPluginSnapshotReady,
   packagedProductionPluginSnapshotTerminal,
   packagedProductionPluginSnapshotRetryable,
@@ -3364,17 +3365,41 @@ test('packaged readiness helpers recompute parsed signed preflight retryability 
       'expected packaged signed preflight parsed-body path to recompute retryability with the current index probe',
     );
     assert.ok(
-      source.includes('snapshotProbe: {')
-      && source.includes('status: activeSnapshotProbe?.status')
-      && source.includes("body: activeSnapshotProbe?.body || ''")
+      source.includes('snapshotProbe: packagedProductionPluginSnapshotProbeContext(activeSnapshotProbe)')
       && source.includes('indexProbe,'),
-      'expected packaged signed preflight parsed-body path to recheck against the current index probe while preserving snapshot startup context',
+      'expected packaged signed preflight parsed-body path to recheck against the current index probe while preserving snapshot timeout context',
     );
     assert.ok(
       source.includes('if (!preflightRetryableWithIndex) {'),
       'expected packaged signed preflight parsed-body path to fail closed when the recomputed retryability turns terminal',
     );
   }
+});
+
+test('packaged snapshot probe context preserves timed-out fallback probes', () => {
+  assert.deepEqual(
+    packagedProductionPluginSnapshotProbeContext({
+      timedOut: true,
+      status: undefined,
+      body: '',
+    }),
+    {
+      status: undefined,
+      body: '',
+      timedOut: true,
+    },
+  );
+  assert.deepEqual(
+    packagedProductionPluginSnapshotProbeContext({
+      status: 404,
+      body: 'No route was found matching the URL and request method.',
+    }),
+    {
+      status: 404,
+      body: 'No route was found matching the URL and request method.',
+    },
+  );
+  assert.equal(packagedProductionPluginSnapshotProbeContext(null), null);
 });
 
 test('packaged readiness helpers keep packaged-route startup on the tighter post-global-startup budget', () => {

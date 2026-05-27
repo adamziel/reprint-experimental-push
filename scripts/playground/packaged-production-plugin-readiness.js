@@ -198,6 +198,18 @@ export function packagedProductionPluginSnapshotRetryable(snapshot) {
   );
 }
 
+export function packagedProductionPluginSnapshotProbeContext(snapshotProbe) {
+  if (!snapshotProbe || typeof snapshotProbe !== 'object') {
+    return null;
+  }
+
+  return {
+    status: snapshotProbe.status,
+    body: snapshotProbe.body || '',
+    ...(snapshotProbe.timedOut === true ? { timedOut: true } : {}),
+  };
+}
+
 export function packagedProductionPluginSnapshotTerminal(snapshot) {
   return !packagedProductionPluginSnapshotReady(snapshot)
     && !packagedProductionPluginSnapshotRetryable(snapshot);
