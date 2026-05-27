@@ -11975,6 +11975,51 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into r
   );
 });
 
+test('guarded benchmark keeps release-bundle post-pause planning summaries pending until a full pause footprint is proven', () => {
+  const report = smallBenchmark();
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'pending',
+    measured: false,
+    visible: false,
+    blockerRefs: [],
+  });
+});
+
+test('guarded benchmark blocks release-bundle post-pause planning summaries when queue-headroom visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('queue-budget-visible-without-queue-headroom-visible'));
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-queue-headroom-visibility'));
+  assert.ok(blockers.includes('memory-ceiling-visible-without-queue-headroom-visible'));
+  assert.ok(blockers.includes('queue-headroom-not-visible'));
+  assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-headroom-visibility'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'queue-budget-visible-without-queue-headroom-visible',
+      'memory-ceiling-match-visible-without-queue-headroom-visibility',
+      'memory-ceiling-visible-without-queue-headroom-visible',
+      'queue-headroom-not-visible',
+      'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+    ],
+  });
+});
+
 test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling bytes drift under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);

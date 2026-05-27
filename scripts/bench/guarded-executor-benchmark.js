@@ -3566,6 +3566,20 @@ export function productionThroughputDetails(report) {
     productionRowBatchExecutorVisible,
     productionAtomicGroupMetadataVisibleAndMeasured,
   });
+  const releaseBundlePlanningSummary = summarizeReleaseBundlePlanning({
+    blockers,
+    queueBudgetVisible,
+    queueHeadroomVisible,
+    queueHeadroomMeasured,
+    queueHeadroomWithinResourceCeiling,
+    receiptCursorPauseFootprintComplete,
+    receiptCursorQueueSlackVisible,
+    receiptCursorMemoryHeadroomVisible,
+    queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+    stagingDiskHeadroomVisible,
+    stagingDiskHeadroomMeasured,
+    stagingDiskHeadroomWithinPlanReserve,
+  });
   const wordpressGraphIdentityPostmetaReferencesMatch =
     Number.isFinite(report.evidence.wordpressGraphIdentity?.postmetaReferences)
     && Number.isFinite(report.shape?.rowCount)
@@ -3863,6 +3877,7 @@ export function productionThroughputDetails(report) {
     rejectedFastPaths,
     rejectedFastPathGateSummary,
     productionCapabilityRolloutSummary,
+    releaseBundlePlanningSummary,
   };
 }
 
@@ -4228,6 +4243,67 @@ function summarizeProductionCapabilityRollout({
       ],
     ),
   ];
+}
+
+function summarizeReleaseBundlePlanning({
+  blockers,
+  queueBudgetVisible,
+  queueHeadroomVisible,
+  queueHeadroomMeasured,
+  queueHeadroomWithinResourceCeiling,
+  receiptCursorPauseFootprintComplete,
+  receiptCursorQueueSlackVisible,
+  receiptCursorMemoryHeadroomVisible,
+  queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack,
+  stagingDiskHeadroomVisible,
+  stagingDiskHeadroomMeasured,
+  stagingDiskHeadroomWithinPlanReserve,
+}) {
+  const blockerSet = new Set(blockers);
+  const blockerRefs = [
+    ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
+    ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+    ...POST_PAUSE_HIDDEN_QUEUE_BUDGET_RESOURCE_VISIBILITY_BLOCKER_REFS,
+    ...POST_PAUSE_HIDDEN_QUEUE_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+    ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
+    'staging-disk-headroom-visible-without-measurement',
+    'staging-disk-headroom-outside-plan-reserve',
+    'queue-budget-visible-without-queue-headroom-measurement',
+    'memory-ceiling-visible-without-queue-headroom-measurement',
+    'queue-headroom-visible-without-measurement',
+  ];
+  const presentBlockers = [...new Set(blockerRefs)].filter((blocker) => blockerSet.has(blocker));
+
+  return {
+    surface: 'release-bundle-post-pause-planning',
+    status:
+      presentBlockers.length > 0
+        ? 'blocked'
+        : (
+          receiptCursorPauseFootprintComplete
+          && queueHeadroomWithinResourceCeiling
+          && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack
+          && stagingDiskHeadroomMeasured
+          && stagingDiskHeadroomWithinPlanReserve
+        )
+          ? 'ready'
+          : 'pending',
+    measured:
+      receiptCursorPauseFootprintComplete
+      && queueHeadroomMeasured
+      && queueHeadroomWithinResourceCeiling
+      && queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack
+      && stagingDiskHeadroomMeasured
+      && stagingDiskHeadroomWithinPlanReserve,
+    visible:
+      receiptCursorPauseFootprintComplete
+      && queueBudgetVisible
+      && queueHeadroomVisible
+      && receiptCursorQueueSlackVisible
+      && receiptCursorMemoryHeadroomVisible
+      && stagingDiskHeadroomVisible,
+    blockerRefs: presentBlockers,
+  };
 }
 
 function hasCompleteBackpressureEvidence(report) {
