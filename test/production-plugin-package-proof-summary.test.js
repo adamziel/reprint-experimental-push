@@ -6067,6 +6067,60 @@ test('plugin-driver proof summary canonicalizes direct mode-only aliases before 
   assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
 });
 
+test('plugin-driver proof summary canonicalizes driverGuardOnly before deriving bounded receipt guard requests', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+    },
+    {
+      requestedScenarios: ['driverGuardOnly'],
+      selectedScenarios: new Set([
+        'driver-receipt-guards',
+        ...scenarioGroups['driver-receipt-guards'],
+      ]),
+      resolvedMode: 'driverGuardOnly',
+      canonicalMode: 'driver-receipt-guards',
+    },
+  );
+
+  assert.deepEqual(summary.requestedScenarios, ['driverGuardOnly']);
+  assert.equal(summary.modeProof?.mode, 'driverGuardOnly');
+  assert.equal(summary.modeProof?.canonicalMode, 'driver-receipt-guards');
+  assert.equal(summary.modeProof?.proofKey, 'driverReceiptGuards');
+  assert.deepEqual(summary.modeProof?.requestedScenarios, ['driverGuardOnly']);
+  assert.deepEqual(summary.modeProof?.requestedBundles, ['driverReceiptGuards']);
+  assert.deepEqual(summary.modeProof?.requestedBundleStatuses, {
+    driverReceiptGuards: 'passed',
+  });
+  assert.equal(summary.modeProof?.requestedBundleStatus, 'passed');
+  assert.equal(summary.modeProof?.requestedSatisfied, true);
+  assert.equal(summary.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
+});
+
 test('plugin-driver proof summary keeps modeProof satisfaction scoped to the selected canonical mode', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
