@@ -10181,6 +10181,132 @@ test('checked release auth/session lifecycle summary fails closed when direct re
   );
 });
 
+test('checked release auth/session lifecycle summary fails closed when direct cleaned-up summary carries stale lifecycle fields', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    cleanedUp: {
+      step: 'cleanup',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2098-01-01T00:00:00Z',
+      cleanedUp: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'apply',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-cleaned-up-summary',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct cleaned-up summary has no matching cleanup observation', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    cleanedUp: {
+      step: 'cleanup',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleanedUp: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-cleaned-up-summary',
+    },
+  );
+});
+
 test('checked release auth/session lifecycle summary fails closed when direct expired summary has no matching expired observation', () => {
   const summary = {
     issued: {
