@@ -636,6 +636,20 @@ function requestedListsMatch(left, right) {
   return JSON.stringify(left.slice().sort()) === JSON.stringify(right.slice().sort());
 }
 
+function requestedScenarioListsMatch(left, right) {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  if (left === null || right === null) {
+    return left === right;
+  }
+  return JSON.stringify(
+    Array.from(new Set(left.map(canonicalizeScenarioName))).sort(),
+  ) === JSON.stringify(
+    Array.from(new Set(right.map(canonicalizeScenarioName))).sort(),
+  );
+}
+
 function selectedScenariosMatch(left, right) {
   const normalizedLeft = normalizeSelectedScenarios(left);
   const normalizedRight = normalizeSelectedScenarios(right);
@@ -649,7 +663,7 @@ function selectedScenariosMatch(left, right) {
 }
 
 function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
-  return requestedListsMatch(
+  return requestedScenarioListsMatch(
     modeProof?.requestedScenarios,
     resolvedOptions.requestedScenarios,
   )
@@ -782,7 +796,7 @@ export function resolveProductionPluginPackagePluginDriverProof(
     const resolvedOptions = resolveProductionPluginPackageProofSummaryOptions(summary, options);
     const requestedScenariosMatch = (
       resolvedOptions.requestedScenarios === undefined
-      || requestedListsMatch(
+      || requestedScenarioListsMatch(
         attachedPluginDriverProof?.requestedScenarios ?? [],
         resolvedOptions.requestedScenarios,
       )

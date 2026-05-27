@@ -972,6 +972,70 @@ test('plugin-driver proof summary rebuilds an attached pluginDriverProof when on
   assert.deepEqual(rebuiltProof.modeProof?.requestedBundles, ['driverVerifierGuards']);
 });
 
+test('plugin-driver proof summary reuses attached pluginDriverProof across alias-equivalent requested scenarios', () => {
+  const rawSummary = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const originalProof = resolveProductionPluginPackagePluginDriverProof(rawSummary);
+  const reusedProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set([
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ]),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(reusedProof, originalProof);
+  assert.equal(reusedProof, rawSummary.pluginDriverProof);
+  assert.deepEqual(reusedProof.requestedScenarios, ['driver-release-proof']);
+});
+
 test('plugin-driver mode proof resolver rebuilds a stale attached top-level modeProof when the selected scenario scope changes', () => {
   const rawSummary = {
     mode: 'driverVerifierGuards',
