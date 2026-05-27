@@ -11,6 +11,13 @@ test('package scripts pin the bounded plugin-driver verifier bundle entrypoint',
   );
 });
 
+test('package scripts pin the bounded plugin-driver receipt guard scenario entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver registration guard bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-registration-guards'],
