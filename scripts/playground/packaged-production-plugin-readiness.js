@@ -154,7 +154,7 @@ function packagedProductionPluginRouteProfileReady(routeProfile) {
     && routeProfile?.labBacked === false;
 }
 
-function packagedProductionPluginRestIndexReady(status, bodyText = '') {
+export function packagedProductionPluginRestIndexReady(status, bodyText = '') {
   if (status !== 200) {
     return false;
   }
@@ -181,6 +181,12 @@ function packagedProductionPluginInvalidRestIndexBody(status, bodyText = '') {
 
 function packagedProductionPluginRouteNotReady(response) {
   return packagedProductionPluginRouteNotReadyBody(response);
+}
+
+export function packagedProductionPluginRestIndexRetryable(index) {
+  return packagedProductionPluginWordPressNotReadyResponse(index)
+    || packagedProductionPluginRouteNotReady(index)
+    || packagedProductionPluginInvalidRestIndexBody(index?.status, index?.body || '');
 }
 
 export function packagedProductionPluginSnapshotReady(snapshot) {

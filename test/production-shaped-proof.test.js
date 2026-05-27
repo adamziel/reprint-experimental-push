@@ -50,6 +50,8 @@ import {
   packagedProductionPluginReadinessWordPressNotReady,
   packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
+  packagedProductionPluginRestIndexReady,
+  packagedProductionPluginRestIndexRetryable,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRetryableRouteProbeWhileIndexProbeTimedOut,
   packagedProductionPluginRouteRetryableWhilePackagedRouteStarting,
@@ -7413,6 +7415,75 @@ test('packaged production plugin smoke readiness helper preserves bounded readin
   assert.match(helperSource, /formatPackagedReadinessFailure\(/);
   assert.match(helperSource, /function describePackagedReadinessProbes\(lastProbes\)/);
   assert.match(helperSource, /Readiness probe \$\{index \+ 1\} route:/);
+});
+
+test('packaged readiness helper only treats the production namespace index as ready', () => {
+  const productionOnlyIndex = JSON.stringify({
+    namespaces: ['reprint/v1'],
+    routes: {
+      '/reprint/v1/push/snapshot': {},
+    },
+  });
+  const labOnlyIndex = JSON.stringify({
+    namespaces: ['reprint-push-lab/v1'],
+    routes: {
+      '/reprint-push-lab/v1/snapshot': {},
+    },
+  });
+  const mixedIndex = JSON.stringify({
+    namespaces: ['reprint/v1', 'reprint-push-lab/v1'],
+    routes: {
+      '/reprint/v1/push/snapshot': {},
+      '/reprint-push-lab/v1/snapshot': {},
+    },
+  });
+
+  assert.equal(packagedProductionPluginRestIndexReady(200, productionOnlyIndex), true);
+  assert.equal(packagedProductionPluginRestIndexReady(200, labOnlyIndex), true);
+  assert.equal(packagedProductionPluginRestIndexReady(200, mixedIndex), true);
+  assert.equal(packagedProductionPluginRestIndexReady(200, '{"routes":[]}'), false);
+  assert.equal(packagedProductionPluginRestIndexReady(502, productionOnlyIndex), false);
+});
+
+test('packaged readiness helper treats startup and malformed rest-index probes as retryable only while startup-shaped', () => {
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 502,
+      body: { code: 'wordpress_not_ready', message: 'WordPress is not ready yet' },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 404,
+      body: { code: 'rest_no_route', message: 'No route was found matching the URL and request method.' },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 200,
+      body: '{"routes":[]}',
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 200,
+      body: JSON.stringify({
+        namespaces: ['reprint/v1'],
+        routes: { '/reprint/v1/push/snapshot': {} },
+      }),
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 401,
+      body: { code: 'rest_forbidden', message: 'Sorry, you are not allowed to do that.' },
+    }),
+    false,
+  );
 });
 
 test('packaged readiness fetch helpers abort probe fetches when the Playground child exits mid-probe', () => {
