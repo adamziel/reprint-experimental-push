@@ -150,6 +150,9 @@ export function buildProductionPluginPackageProofSummary(
   const requestedBundleStatuses = {};
   const requestedConcreteScenarioStatuses = {};
   const requestedScenarioStatuses = {};
+  let requestedBundleCount = 0;
+  let passedRequestedBundleCount = 0;
+  let failedRequestedBundleCount = 0;
   let checkedBundleCount = 0;
   let passedBundleCount = 0;
   let failedBundleCount = 0;
@@ -211,6 +214,8 @@ export function buildProductionPluginPackageProofSummary(
     if (selected && passed) {
       passedBundles.push(bundleKey);
       if (requestedBundleSet?.has(bundleKey)) {
+        requestedBundleCount += 1;
+        passedRequestedBundleCount += 1;
         passedRequestedBundles.push(bundleKey);
         passedRequestedScenarios.push(bundleName);
         requestedBundleStatuses[bundleKey] = 'passed';
@@ -220,6 +225,8 @@ export function buildProductionPluginPackageProofSummary(
       failedBundles.push(bundleKey);
       failedBundleCount += 1;
       if (requestedBundleSet?.has(bundleKey)) {
+        requestedBundleCount += 1;
+        failedRequestedBundleCount += 1;
         failedRequestedBundles.push(bundleKey);
         failedRequestedScenarios.push(bundleName);
         requestedBundleStatuses[bundleKey] = 'missing';
@@ -305,7 +312,11 @@ export function buildProductionPluginPackageProofSummary(
       ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
       : (
         (hasRequestedBundles
-          ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
+          ? (
+            requestedBundles === 'all'
+              ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
+              : requestedBundleCount > 0 && failedRequestedBundleCount === 0
+          )
           : true)
         && (
           requestedConcreteScenarios === 'all'
@@ -314,7 +325,11 @@ export function buildProductionPluginPackageProofSummary(
         )
       ),
     requestedBundlesSatisfied: hasRequestedBundles
-      ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
+      ? (
+        requestedBundles === 'all'
+          ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
+          : requestedBundleCount > 0 && failedRequestedBundleCount === 0
+      )
       : true,
     requestedConcreteScenariosSatisfied: requestedConcreteScenarios === 'all'
       ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
