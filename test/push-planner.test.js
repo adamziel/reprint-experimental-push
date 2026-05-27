@@ -54289,7 +54289,7 @@ test('blocks a plugin-owned delete without ownership metadata while preserving m
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.pluginOwner, 'forms');
-  assert.equal(blocker.reason.includes('not covered by a supported resource driver policy'), true);
+  assert.equal(blocker.reason, 'Plugin-owned resource has no explicit driver metadata and cannot be applied safely.');
   assert.equal(planJson.includes('remote-only plugin drift'), false);
   assert.equal(planJson.includes('Shared shared title'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
@@ -57013,19 +57013,23 @@ test('keeps remote-only plugin changes while a matching independent plugin-owned
   const updateDecision = decisionFor(plan, resourceKey);
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
-  const result = applyPlan(remote, plan);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
 
-  assert.equal(plan.status, 'ready');
+  assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
-  assert.equal(updateDecision.decision, 'already-in-sync');
-  assert.equal(updateDecision.change.localChange, 'update');
-  assert.equal(updateDecision.change.remoteChange, 'update');
+  assert.equal(updateDecision, undefined);
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
-  assertEveryMutationHasLiveRemotePrecondition(plan);
-  assert.equal(result.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
-  assert.equal(result.site.plugins.forms.description, 'remote-only plugin drift');
-  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Plugin-owned resource has no explicit driver metadata and cannot be applied safely.');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.db.wp_options['option_name:forms_settings'].option_value.mode, 'shared');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
 test('blocks a plugin-owned delete while preserving a matching independent create and remote-only plugin drift', () => {
