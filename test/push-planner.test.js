@@ -39910,6 +39910,7 @@ test('closes an owned production recovery journal writer after replaying a compl
   };
   const completedPlan = planFor(baseSite(), baseSite(), baseSite());
   const completedJournal = {
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
     status: 'completed',
     id: `journal-${completedPlan.id}`,
     planId: completedPlan.id,
@@ -39929,9 +39930,13 @@ test('closes an owned production recovery journal writer after replaying a compl
     durableJournal: writer,
   }));
 
-  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
-  assert.equal(error.details.supportedSurface, 'production-recovery-journal-adapter');
-  assert.equal(error.details.requiresDurableJournal, true);
+  assert.equal(error.code, 'JOURNAL_WRITE_FAILED');
+  assert.equal(error.details.boundary, 'journal-replayed');
+  assert.equal(
+    error.details.causeMessage,
+    'Production durable journal recovery is not available in this worktree.',
+  );
+  assert.equal(error.details.recovery.status, 'fully-updated-remote');
   assert.equal(closed, 1);
   assert.equal(events.some((event) => event.type === 'journal-replayed'), false);
 });
