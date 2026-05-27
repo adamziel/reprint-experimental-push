@@ -16457,6 +16457,16 @@ test('checked db journal boundary contract fails closed when a stale-claim rejec
   assert.equal(JSON.parse(result.stdout), false);
 });
 
+test('checked db journal boundary contract fails closed when a stale-claim rejected latest row drifts from the active claim event', { skip: !hasPhp }, () => {
+  const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
+  baseJournal.claim.activeClaimEvent = 'stale-claim-retry-started';
+
+  const result = runCheckedBoundaryContractMatches(baseJournal);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+});
+
 test('checked db journal boundary contract fails closed when a stale-claim abandoned latest row omits a distinct previous claim id', { skip: !hasPhp }, () => {
   const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
   baseJournal.claim.activeClaimId = 'authoritative-claim-id-02';
@@ -16469,6 +16479,40 @@ test('checked db journal boundary contract fails closed when a stale-claim aband
   baseJournal.latestRows.push({
     sequence: 24,
     event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    resourceHashEvidence: {
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  });
+  baseJournal.eventSummaries = [
+    {
+      event: 'stale-claim-rejected',
+      count: 1,
+      latestId: 33,
+    },
+    {
+      event: 'stale-claim-abandoned',
+      count: 1,
+      latestId: 24,
+    },
+  ];
+
+  const result = runCheckedBoundaryContractMatches(baseJournal);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(JSON.parse(result.stdout), false);
+});
+
+test('checked db journal boundary contract fails closed when a stale-claim abandoned latest row drifts from the abandoned claim event', { skip: !hasPhp }, () => {
+  const baseJournal = structuredClone(buildAcceptedInlineDbJournal());
+  baseJournal.claim.abandonedEvent = 'stale-claim-retry-started';
+  baseJournal.latestRows.push({
+    sequence: 24,
+    event: 'stale-claim-abandoned',
+    claimId: 'retry-claim-id-01',
     claimKeyHash: 'retry-claim-hash-01',
     idempotencyKeyHash: 'idem-hash-01',
     requestHash: 'request-hash-01',
