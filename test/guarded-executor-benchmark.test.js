@@ -1494,13 +1494,16 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
@@ -1581,6 +1584,11 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         blockerRefs: ['production-capability-measurement-not-aligned'],
       },
       {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
+        rejectedGate: 'live',
+        blockerRefs: ['production-capability-measurement-not-aligned'],
+      },
+      {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
         rejectedGate: 'group',
         blockerRefs: [
@@ -1622,6 +1630,19 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         ],
       },
       {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
         rejectedGate: 'group',
         blockerRefs: [
@@ -1632,6 +1653,15 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
       },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
         rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
