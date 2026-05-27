@@ -4920,9 +4920,13 @@ test('production recovery journal consumption fails closed when the compatibilit
 });
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
+  const claimId = 'checked-boundary-claim';
   const baseContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    claim: {
+      activeClaimId: claimId,
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -4936,6 +4940,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
+      claimId,
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -4952,6 +4957,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: false,
+        claimId,
       },
     },
   };
@@ -5032,12 +5038,35 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     }),
     false,
   );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+          claimId: 'unexpected-claim-id',
+        },
+      },
+    }),
+    false,
+  );
 });
 
 test('checked durable journal boundary accepts the packaged production journal scope', () => {
+  const claimId = 'packaged-boundary-claim';
   const packagedContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production journal scope',
+    claim: {
+      activeClaimId: claimId,
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -5051,6 +5080,7 @@ test('checked durable journal boundary accepts the packaged production journal s
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: true,
+      claimId,
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5067,6 +5097,7 @@ test('checked durable journal boundary accepts the packaged production journal s
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: true,
+        claimId,
       },
     },
   };
@@ -5092,9 +5123,13 @@ test('checked durable journal boundary accepts the packaged production journal s
 });
 
 test('checked durable journal boundary accepts the explicit packaged recovery journal scope', () => {
+  const claimId = 'packaged-recovery-claim';
   const packagedContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production plugin recovery journal surface',
+    claim: {
+      activeClaimId: claimId,
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -5108,6 +5143,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: true,
+      claimId,
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5124,6 +5160,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: true,
+        claimId,
       },
     },
   };
@@ -5132,9 +5169,13 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
 });
 
 test('checked durable journal boundary accepts the explicit live recovery journal scope', () => {
+  const claimId = 'live-recovery-claim';
   const liveContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'checked live production-shaped recovery journal surface',
+    claim: {
+      activeClaimId: claimId,
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -5148,6 +5189,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: true,
+      claimId,
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5164,6 +5206,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: true,
+        claimId,
       },
     },
   };
@@ -5172,9 +5215,13 @@ test('checked durable journal boundary accepts the explicit live recovery journa
 });
 
 test('checked durable journal boundary rejects nearby stale scope wording', () => {
+  const claimId = 'stale-scope-claim';
   const staleScopeContract = {
     acceptedOnCheckedBoundary: true,
     scope: 'packaged production plugin journal surface',
+    claim: {
+      activeClaimId: claimId,
+    },
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -5188,6 +5235,7 @@ test('checked durable journal boundary rejects nearby stale scope wording', () =
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: true,
+      claimId,
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -5204,6 +5252,7 @@ test('checked durable journal boundary rejects nearby stale scope wording', () =
         monotonicSequence: true,
         restartReadable: true,
         staleClaimRejected: true,
+        claimId,
       },
     },
   };

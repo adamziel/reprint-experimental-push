@@ -114,7 +114,12 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
-    && dbJournal?.leaseFence?.staleClaimRejected === true;
+    && dbJournal?.leaseFence?.staleClaimRejected === true
+    && checkedBoundaryClaimIdentityMatches(
+      dbJournal?.claim?.activeClaimId,
+      writerLease?.claimId,
+      nestedWriterLease?.claimId,
+    );
 }
 
 function writerLeaseContractMatches(candidate) {
@@ -145,6 +150,18 @@ function writerLeaseContractsAgree(writerLease, nestedWriterLease) {
   }
 
   return true;
+}
+
+function checkedBoundaryClaimIdentityMatches(...claimIds) {
+  const surfacedClaimIds = claimIds.filter((claimId) =>
+    typeof claimId === 'string' && claimId.trim().length > 0 && claimId.trim() === claimId,
+  );
+
+  if (surfacedClaimIds.length === 0) {
+    return true;
+  }
+
+  return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0]);
 }
 
 export function createUnsupportedProductionRecoveryJournal(reason = 'Production recovery journal support is not available in this worktree.') {
