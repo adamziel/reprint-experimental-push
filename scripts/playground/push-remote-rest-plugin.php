@@ -1893,6 +1893,26 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
     return false;
 }
 
+function reprint_push_lab_rest_checked_recovery_journal_claim_identity_conflicts(
+    array $journal
+): bool {
+    if (!array_key_exists('claimId', $journal)) {
+        return false;
+    }
+
+    $claim_id = $journal['claimId'] ?? null;
+    if (!reprint_push_lab_db_journal_non_empty_string($claim_id)) {
+        return true;
+    }
+
+    $active_claim_id = isset($journal['claim']) && is_array($journal['claim'])
+        ? ($journal['claim']['activeClaimId'] ?? null)
+        : null;
+
+    return !reprint_push_lab_db_journal_non_empty_string($active_claim_id)
+        || (string) $claim_id !== (string) $active_claim_id;
+}
+
 function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
     array $journal,
     ?array $checked_summary = null,
@@ -2062,6 +2082,11 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
     }
 
     if (!reprint_push_lab_rest_checked_recovery_journal_restart_artifact_contract_matches($journal)) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        return $journal;
+    }
+
+    if (reprint_push_lab_rest_checked_recovery_journal_claim_identity_conflicts($journal)) {
         $journal['acceptedOnCheckedBoundary'] = false;
         return $journal;
     }
