@@ -22949,6 +22949,127 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   );
 });
 
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden top-level ownsRemoteArtifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Remote Ownership Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-top-level-owned-remote.jsonl`;
+  const claimId = 'claim-consumed-hidden-top-level-owned-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const reopenOptions = {
+    claimId,
+    writerLease,
+    remoteArtifactPath,
+  };
+  Object.defineProperty(reopenOptions, 'ownsRemoteArtifact', {
+    value: true,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, reopenOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires enumerable top-level options.',
+  );
+});
+
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a prototype ownsRemoteArtifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Remote Ownership Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-top-level-owned-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-top-level-owned-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const reopenOptions = {
+    claimId,
+    writerLease,
+    remoteArtifactPath,
+  };
+  Object.setPrototypeOf(reopenOptions, {
+    ownsRemoteArtifact: true,
+  });
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, reopenOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires a strict plain options object.',
+  );
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden top-level claimId', () => {
   const base = baseSite();
   const local = structuredClone(base);
