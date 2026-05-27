@@ -76,6 +76,16 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
     ]),
   }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+    blockerRefs: Object.freeze([
+      'staging-disk-headroom-not-visible',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+      'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+      'queue-pause-without-consistent-receipt-cursor-slack',
+      'queue-pause-without-memory-safe-receipt-cursor-slack',
+    ]),
+  }),
 ]);
 
 export class BenchmarkClaimError extends Error {

@@ -8779,4 +8779,27 @@ test('guarded benchmark carries hidden staging-disk visibility blockers into rol
   ]);
   assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'staging-disk-headroom-not-visible',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
 });
