@@ -7048,6 +7048,30 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   });
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline nested lease-fence writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.leaseFence.writerLease.strategy;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -12743,6 +12767,28 @@ test('checked db journal attachment fails closed on missing accepted inline nest
     strategy: 'claim-fenced-single-writer',
     claimKeyUnique: true,
     fsyncEvidence: true,
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline nested lease-fence writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.leaseFence.writerLease.strategy;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: true,
