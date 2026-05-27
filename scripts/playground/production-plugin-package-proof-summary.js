@@ -814,8 +814,29 @@ export function resolveProductionPluginPackagePluginDriverProof(
       const resolvedSelectedScenarioNames = Array.from(resolvedSelectedScenarios).sort();
       return JSON.stringify(attachedSelectedScenarioNames) === JSON.stringify(resolvedSelectedScenarioNames);
     })();
+    const expectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
+      ? null
+      : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
+    const nestedModeProofMatches = expectedModeProof === null
+      || (
+        attachedPluginDriverProof?.modeProof?.mode === expectedModeProof.mode
+        && attachedPluginDriverProof?.modeProof?.canonicalMode === expectedModeProof.canonicalMode
+        && attachedPluginDriverProof?.modeProof?.proofKey === expectedModeProof.proofKey
+        && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.legacyProofKey
+        && modeProofMatchesResolvedContext(
+          attachedPluginDriverProof,
+          attachedPluginDriverProof?.modeProof,
+          resolvedOptions,
+        )
+      );
 
-    if (requestedScenariosMatch && modeMatches && canonicalModeMatches && selectedScenariosMatch) {
+    if (
+      requestedScenariosMatch
+      && modeMatches
+      && canonicalModeMatches
+      && selectedScenariosMatch
+      && nestedModeProofMatches
+    ) {
       return attachedPluginDriverProof;
     }
   }
