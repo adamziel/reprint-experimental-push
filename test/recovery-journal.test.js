@@ -513,6 +513,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       previousClaimKeyHash,
       previousClaimSequence: 11,
       previousClaimEvent: 'idempotency-opened',
+      previousStartedSequence: null,
       abandonedSequence: 18,
       abandonedEvent: 'stale-claim-abandoned',
     },
@@ -624,6 +625,30 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         staleClaimRejected: true,
       },
     }),
+    false,
+  );
+  const inheritedClaimMarkers = {
+    ...baseContract,
+    claim: Object.assign(
+      Object.create({
+        activeClaimId: baseContract.claim.activeClaimId,
+        activeClaimKeyHash: baseContract.claim.activeClaimKeyHash,
+        activeClaimSequence: baseContract.claim.activeClaimSequence,
+        activeClaimEvent: baseContract.claim.activeClaimEvent,
+      }),
+      baseContract.claim,
+    ),
+    leaseFence: {
+      ...baseContract.leaseFence,
+      staleClaimRejected: true,
+    },
+  };
+  delete inheritedClaimMarkers.claim.activeClaimId;
+  delete inheritedClaimMarkers.claim.activeClaimKeyHash;
+  delete inheritedClaimMarkers.claim.activeClaimSequence;
+  delete inheritedClaimMarkers.claim.activeClaimEvent;
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedClaimMarkers),
     false,
   );
   assert.equal(

@@ -123,7 +123,23 @@ function durableJournalWriterLeaseMatchesBoundary(writerLease, boundary, claim) 
 }
 
 function durableJournalClaimContractMatches(claim) {
-  if (!claim || typeof claim !== 'object') {
+  if (!hasOwnProperties(claim, [
+    'status',
+    'activeClaimId',
+    'activeClaimKeyHash',
+    'activeClaimSequence',
+    'activeClaimEvent',
+    'idempotencyKeyHash',
+    'requestHash',
+    'staleClaimRejected',
+    'previousClaimId',
+    'previousClaimKeyHash',
+    'previousClaimSequence',
+    'previousClaimEvent',
+    'previousStartedSequence',
+    'abandonedSequence',
+    'abandonedEvent',
+  ])) {
     return false;
   }
 
@@ -764,6 +780,14 @@ function hasNonEmptyString(value) {
 
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
+}
+
+function hasOwnProperties(candidate, keys) {
+  if (!candidate || typeof candidate !== 'object') {
+    return false;
+  }
+
+  return keys.every((key) => Object.hasOwn(candidate, key));
 }
 
 function visitRecord(value, pathParts) {
