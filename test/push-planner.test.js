@@ -35757,6 +35757,82 @@ test('production durable journal apply ignores inherited caller artifact refs on
   });
 });
 
+test('production durable journal retries an old-remote failure append-only without duplicating targets', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-production-old-remote-retry-append-only';
+
+  const firstWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(firstWriter, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: firstWriter,
+      requireProductionDurableJournal: true,
+      failBeforeMutation: true,
+    }));
+  firstWriter.close();
+
+  assert.equal(firstError.code, 'INJECTED_FAILURE_BEFORE_MUTATION');
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+
+  const retryWriter = openProductionRecoveryJournal(durableJournalPath, {
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  const retry = applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    requireProductionDurableJournal: true,
+    mutateRemote: true,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+
+  assert.equal(retry.appliedMutations, 1);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(remote.db.wp_options['option_name:blogname'].option_value, 'Local Site');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-retry-opened').length,
+    1,
+  );
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: 1, blockedUnknown: 0 });
+});
+
 test('production durable journal support fails closed when restart inspection reports blocked journal integrity', () => {
   const plan = planFor(baseSite(), baseSite(), baseSite());
   const durableJournalPath = tempRecoveryJournalPath();
