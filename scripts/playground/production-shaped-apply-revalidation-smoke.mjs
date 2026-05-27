@@ -6,10 +6,15 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { createPushPlan } from '../../src/planner.js';
+import { checkedDurableJournalBoundarySatisfied } from '../../src/recovery-journal.js';
 import {
   loadAuthSessionSource,
   resolveAuthSessionRequestState,
 } from './auth-session-source.js';
+import {
+  evaluateProductionAuthSessionLifecycleSummary,
+  summarizeProductionAuthSessionLifecycleTrace,
+} from './production-auth-session-lifecycle.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -104,12 +109,14 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
     routeProfile: 'production-shaped',
     requestTimeoutMs,
   });
+  const authSessionLifecycleTrace = [];
 
   const preflight = await client.signedGet('/preflight');
   assert.equal(preflight.status, 200, `production-shaped apply revalidation preflight HTTP ${preflight.status}`);
   assert.equal(preflight.body.ok, true);
   assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
   assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
+  recordAuthSessionLifecycle(authSessionLifecycleTrace, 'preflight', preflight.body?.auth);
 
   const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
   const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
@@ -130,6 +137,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.equal(dryRun.body.ok, true);
   assert.equal(dryRun.body.mode, 'dry-run');
   assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
+  recordAuthSessionLifecycle(authSessionLifecycleTrace, 'dry-run', dryRun.body?.auth);
 
   process.stderr.write('apply-revalidation: apply /apply\n');
   const apply = await client.signedPost('/apply', {
@@ -150,6 +158,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.equal(apply.body.preconditionCheck, 'just-in-time');
   assert.equal(apply.body.recovery?.required, true);
   assert.equal(apply.body.recovery?.state, 'blocked-recovery');
+  recordAuthSessionLifecycle(authSessionLifecycleTrace, 'apply', apply.body?.auth);
 
   process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
   const recoveryInspect = await client.signedPost('/recovery/inspect', {
@@ -159,6 +168,16 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.equal(recoveryInspect.status, 200);
   assert.equal(recoveryInspect.body.ok, true);
   assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
+  recordAuthSessionLifecycle(authSessionLifecycleTrace, 'recovery-inspect', recoveryInspect.body?.auth);
+
+  const authSessionLifecycleSummary = summarizeProductionAuthSessionLifecycleTrace(authSessionLifecycleTrace);
+  const authSessionLifecycle = evaluateProductionAuthSessionLifecycleSummary(authSessionLifecycleSummary);
+  const recoveryJournal = recoveryInspect.body?.recovery?.journal || null;
+  const checkedDurableJournalAccepted = checkedDurableJournalBoundarySatisfied(recoveryJournal);
+  const boundary = buildApplyRevalidationBoundary({
+    authSessionLifecycle,
+    checkedDurableJournalAccepted,
+  });
 
   process.stdout.write(JSON.stringify({
     ok: true,
@@ -194,13 +213,16 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
       status: recoveryInspect.status,
       recovery: recoveryInspect.body.recovery,
     },
-    boundary: {
-      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-      durableJournal: {
-        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-      },
+    authSessionLifecycle: {
+      summary: authSessionLifecycleSummary,
+      trace: authSessionLifecycleTrace,
+      evaluation: authSessionLifecycle,
     },
+    durableJournal: {
+      journal: recoveryJournal,
+      checkedAccepted: checkedDurableJournalAccepted,
+    },
+    boundary,
   }, null, 2));
   process.stdout.write('\n');
 }
@@ -246,6 +268,78 @@ function emitInvalidAuthSessionSourceProof() {
     },
   }, null, 2));
   process.stdout.write('\n');
+}
+
+function buildApplyRevalidationBoundary({ authSessionLifecycle, checkedDurableJournalAccepted }) {
+  if (!authSessionLifecycle?.ok) {
+    return {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        required: authSessionLifecycle?.required || 'production-auth-session lifecycle',
+        observed: authSessionLifecycle?.observed || 'missing',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+      durableJournal: {
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      },
+    };
+  }
+
+  if (!checkedDurableJournalAccepted) {
+    return {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      authSession: {
+        required: authSessionLifecycle.required,
+        observed: authSessionLifecycle.observed,
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+      },
+      durableJournal: {
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      },
+    };
+  }
+
+  return {
+    firstRemainingProductionBoundary: 'replay and preserved-remote retry on the checked release path',
+    verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    authSession: {
+      required: authSessionLifecycle.required,
+      observed: authSessionLifecycle.observed,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+    },
+    durableJournal: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+    },
+    replayAndRetry: {
+      required: '/snapshot',
+      observed: 'missing-transient-retry',
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    },
+  };
+}
+
+function recordAuthSessionLifecycle(trace, step, auth) {
+  const session = auth?.session;
+  if (!session || typeof session !== 'object') {
+    return;
+  }
+
+  const previous = trace.at(-1) || null;
+  trace.push({
+    step,
+    id: session.id ?? null,
+    type: session.type ?? null,
+    status: session.status ?? null,
+    expiresAt: session.expiresAt ?? null,
+    authUser: auth?.identity?.userLogin ?? null,
+    expired: session.expired === true || session.status === 'expired',
+    revoked: session.revoked === true || session.status === 'revoked',
+    cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
+    rotated: Boolean(previous?.id && session.id && previous.id !== session.id),
+    preserved: Boolean(previous?.id && session.id && previous.id === session.id),
+  });
 }
 
 async function exportSnapshot(name, baseUrl) {

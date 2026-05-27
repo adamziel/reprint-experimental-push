@@ -3869,7 +3869,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     );
     assert.match(
       proof.stdout,
-      /"applyRevalidation": \{[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": "auth\/session lifecycle and durable journal semantics",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/,
+      /"applyRevalidation": \{[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": "replay and preserved-remote retry on the checked release path",\s*"verdict": "PRESERVED_REMOTE_RETRY_REQUIRED"[\s\S]*"authSession": \{\s*"required": "production-auth-session lifecycle",\s*"observed": "active-unexpired-preserved",\s*"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN"\s*\}[\s\S]*"durableJournal": \{\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "missing-transient-retry",\s*"verdict": "PRESERVED_REMOTE_RETRY_REQUIRED"\s*\}/,
     );
     assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
   });
