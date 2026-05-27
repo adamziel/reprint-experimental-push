@@ -25,6 +25,7 @@ import {
   createUnsupportedProductionRecoveryJournal,
   openRecoveryJournal,
   openProductionRecoveryJournal,
+  recoveryClaimHash,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
@@ -22884,6 +22885,87 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
     remote: null,
   });
   assert.deepEqual(error.details.persistedArtifactRefs, artifactRefs);
+});
+
+test('openProductionRecoveryJournal fails closed when a consumed claim is reopened after a later stale claim advance', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Superseded Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-claim-superseded-remote.jsonl`;
+  const claimId = 'claim-consumed-superseded';
+  const nextClaimId = 'claim-consumed-superseded-next';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: persisted.records.length + 1,
+    type: 'stale-claim-advanced',
+    timestamp: fixedNow.toISOString(),
+    planId: plan.id,
+    state: 'advanced',
+    previousClaimHash: recoveryClaimHash(claimId),
+    claimHash: recoveryClaimHash(nextClaimId),
+    claimLease: { id: nextClaimId, epoch: 4 },
+    observedHash: digest(remote),
+    staleThresholdMs: 5_000,
+    previousClaimAgeMs: 5_001,
+    reason: 'Previous recovery claim exceeded the stale threshold.',
+    artifactRefs,
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires reopening with the persisted consumed claim identity.',
+  );
+  assert.deepEqual(error.details.writerLease, writerLease);
+  assert.deepEqual(error.details.consumedClaim.claimLease, writerLease);
 });
 
 test('openProductionRecoveryJournal fails closed when a reopen introduces remote ownership state absent from persisted artifacts', () => {
