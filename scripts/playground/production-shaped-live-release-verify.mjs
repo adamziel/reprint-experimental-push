@@ -5,11 +5,14 @@ import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
-import { applyRevalidationRetryable } from './production-shaped-live-release-verify-lib.js';
+import {
+  applyRevalidationRetryable,
+  hasExplicitCheckedBoundaryRequest,
+  resolveCheckedLiveBoundaryEnv,
+  resolveLiveApplyRevalidationEnv,
+} from './production-shaped-live-release-verify-lib.js';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
 import {
-  resolvePackagedProductionPluginSourceCommand,
   shouldRequestPackagedProductionPluginAuthSession,
 } from './packaged-production-plugin-source-command.js';
 
@@ -24,12 +27,23 @@ const credentials = {
   username: releaseVerifyFixtureCredentials.username,
   applicationPassword: releaseVerifyFixtureCredentials.applicationPassword,
 };
+const explicitLiveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitLiveUsername = process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '';
+const explicitLiveApplicationPassword =
+  process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '';
+const explicitAuthSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const explicitCheckedBoundaryRequested = hasExplicitCheckedBoundaryRequest({
+  liveSourceUrl: explicitLiveSourceUrl,
+  username: explicitLiveUsername,
+  applicationPassword: explicitLiveApplicationPassword,
+  authSessionSourceCommand: explicitAuthSessionSourceCommand,
+});
 const packagedBoundaryRequested = shouldRequestPackagedProductionPluginAuthSession({
   requireProductionAuthSession: process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1',
-  authSessionSourceCommand: process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '',
-  liveSourceUrl: process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '',
-  username: process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '',
-  applicationPassword: process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '',
+  authSessionSourceCommand: explicitAuthSessionSourceCommand,
+  liveSourceUrl: explicitLiveSourceUrl,
+  username: explicitLiveUsername,
+  applicationPassword: explicitLiveApplicationPassword,
   fixtureUsername: credentials.username,
   fixtureApplicationPassword: credentials.applicationPassword,
 });
@@ -51,6 +65,24 @@ if (packagedBoundaryRequested) {
       emitCombinedReleaseProof(verify, applyRevalidation);
     });
   });
+} else if (explicitCheckedBoundaryRequested) {
+  const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
+    sourceUrl: explicitLiveSourceUrl,
+    username: explicitLiveUsername,
+    applicationPassword: explicitLiveApplicationPassword,
+    authSessionSourceCommand: explicitAuthSessionSourceCommand,
+    fallbackUsername: credentials.username,
+    fallbackApplicationPassword: credentials.applicationPassword,
+  });
+  const verify = runCheckedReleaseVerify(liveBoundaryEnv);
+  const applyRevalidation = runApplyRevalidationProof(resolveApplyRevalidationAuthEnv({
+    sourceUrl: explicitLiveSourceUrl,
+    packagedBoundaryRequested: false,
+    username: explicitLiveUsername,
+    applicationPassword: explicitLiveApplicationPassword,
+    authSessionSourceCommand: explicitAuthSessionSourceCommand,
+  }));
+  emitCombinedReleaseProof(verify, applyRevalidation);
 } else {
   await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
     const verify = runCheckedReleaseVerify({
@@ -72,32 +104,23 @@ if (packagedBoundaryRequested) {
 }
 
 function resolveApplyRevalidationAuthEnv({
-  sourceUrl,
+  sourceUrl = '',
   localUrl = '',
   packagedBoundaryRequested = false,
+  username = credentials.username,
+  applicationPassword = credentials.applicationPassword,
+  authSessionSourceCommand = '',
 }) {
-  const authSessionSourceCommand = packagedBoundaryRequested
-    ? resolvePackagedProductionPluginSourceCommand({
-        sourceUrl,
-        username: credentials.username,
-        applicationPassword: credentials.applicationPassword,
-      })
-    : buildAuthSessionSourceCommand({
-        sourceUrl,
-        username: credentials.username,
-        applicationPassword: credentials.applicationPassword,
-      });
-
-  return {
-    REPRINT_PUSH_SOURCE_URL: sourceUrl,
-    REPRINT_PUSH_REMOTE_URL: sourceUrl,
-    ...(localUrl ? { REPRINT_PUSH_LOCAL_URL: localUrl } : {}),
-    REPRINT_PUSH_USERNAME: credentials.username,
-    REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
-    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
-    REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
-  };
+  return resolveLiveApplyRevalidationEnv({
+    sourceUrl: sourceUrl || explicitLiveSourceUrl,
+    localUrl,
+    packagedBoundaryRequested,
+    username,
+    applicationPassword,
+    authSessionSourceCommand,
+    fallbackUsername: credentials.username,
+    fallbackApplicationPassword: credentials.applicationPassword,
+  });
 }
 
 function runCheckedReleaseVerify(envOverrides = {}) {

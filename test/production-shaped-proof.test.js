@@ -43,7 +43,12 @@ import {
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginSnapshotReady,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
-import { applyRevalidationRetryable } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
+import {
+  applyRevalidationRetryable,
+  hasExplicitCheckedBoundaryRequest,
+  resolveCheckedLiveBoundaryEnv,
+  resolveLiveApplyRevalidationEnv,
+} from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
@@ -3689,6 +3694,58 @@ maybeTest('production-shaped release verify reports trusted recovery journal sta
   assert.match(
     proof.stdout,
     /"liveLeaseFence": \{\s*"boundary": "wpdb-single-statement-cas",\s*"claimKeyUnique": true,\s*"monotonicSequence": true,\s*"restartReadable": true,\s*"staleClaimRejected": true\s*\}/,
+  );
+});
+
+test('production-shaped live release verify preserves explicit checked-boundary env instead of synthesizing a local source', () => {
+  const explicitSourceCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:49152',
+    username: 'live-user',
+    applicationPassword: 'live-app-password',
+  });
+
+  assert.equal(
+    hasExplicitCheckedBoundaryRequest({
+      liveSourceUrl: 'http://127.0.0.1:49152',
+      authSessionSourceCommand: explicitSourceCommand,
+    }),
+    true,
+  );
+
+  assert.deepEqual(
+    resolveCheckedLiveBoundaryEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSourceCommand: explicitSourceCommand,
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+    }),
+    {
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_USERNAME: liveCredentials.username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
+    },
+  );
+
+  assert.deepEqual(
+    resolveLiveApplyRevalidationEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSourceCommand: explicitSourceCommand,
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+    }),
+    {
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_USERNAME: liveCredentials.username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
+    },
   );
 });
 
