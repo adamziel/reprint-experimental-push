@@ -614,6 +614,9 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
     $checked_db_journal = is_array($checked_db_journal)
         ? $checked_db_journal
         : reprint_push_lab_db_journal_checked_boundary_contract($checked_surface);
+    $premerge_checked_journal = isset($result['recovery']['journal']) && is_array($result['recovery']['journal'])
+        ? $result['recovery']['journal']
+        : null;
     $premerge_checked_claim = isset($result['recovery']['journal']['claim']) && is_array($result['recovery']['journal']['claim'])
         ? $result['recovery']['journal']['claim']
         : null;
@@ -624,7 +627,8 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
     $result['recovery']['journal'] = reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
         $result['recovery']['journal'],
         $checked_db_journal,
-        $premerge_checked_claim
+        $premerge_checked_claim,
+        $premerge_checked_journal
     );
     return $result;
 }
@@ -876,6 +880,21 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
                     unset($db_journal[$key]);
                 }
             }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_storage_guard_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal) && array_key_exists('storageGuard', $premerge_db_journal)) {
+            $db_journal['storageGuard'] = $premerge_db_journal['storageGuard'];
+        } else {
+            unset($db_journal['storageGuard']);
         }
     }
 
@@ -1518,6 +1537,57 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
     );
 }
 
+function reprint_push_lab_rest_checked_storage_guard_conflicts(
+    ?array $premerge_db_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_db_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_db_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    $premerge_storage_guard = isset($premerge_db_journal['storageGuard']) && is_array($premerge_db_journal['storageGuard'])
+        ? $premerge_db_journal['storageGuard']
+        : null;
+    $checked_storage_guard = reprint_push_lab_rest_db_journal_storage_guard($checked_summary);
+
+    if (!is_array($checked_storage_guard)) {
+        return false;
+    }
+
+    if (!is_array($premerge_storage_guard)) {
+        return true;
+    }
+
+    return reprint_push_lab_rest_checked_contract_anchor_conflicts(
+        $premerge_storage_guard,
+        $checked_storage_guard,
+        ['boundary']
+    )
+        || reprint_push_lab_rest_checked_contract_anchor_omissions(
+            $premerge_storage_guard,
+            $checked_storage_guard,
+            ['boundary']
+        )
+        || reprint_push_lab_rest_checked_contract_field_conflicts(
+            $premerge_storage_guard,
+            $checked_storage_guard,
+            ['operation', 'outcome'],
+            ['boundary']
+        )
+        || reprint_push_lab_rest_checked_contract_field_omissions(
+            $premerge_storage_guard,
+            $checked_storage_guard,
+            ['operation', 'outcome']
+        );
+}
+
 function reprint_push_lab_rest_checked_contract_field_conflicts(
     ?array $existing_fields,
     ?array $checked_fields,
@@ -1542,6 +1612,33 @@ function reprint_push_lab_rest_checked_contract_field_conflicts(
             && array_key_exists($key, $checked_fields)
             && $existing_fields[$key] !== $checked_fields[$key]
         ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_contract_field_omissions(
+    ?array $existing_fields,
+    ?array $checked_fields,
+    array $keys
+): bool {
+    if (!is_array($existing_fields) || !is_array($checked_fields)) {
+        return false;
+    }
+
+    foreach ($keys as $key) {
+        if (!array_key_exists($key, $checked_fields)) {
+            continue;
+        }
+
+        if (!array_key_exists($key, $existing_fields)) {
+            return true;
+        }
+
+        $existing_value = $existing_fields[$key];
+        if ($existing_value === null || $existing_value === '') {
             return true;
         }
     }
@@ -1604,11 +1701,27 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
 function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
     array $journal,
     ?array $checked_summary = null,
-    ?array $premerge_claim = null
+    ?array $premerge_claim = null,
+    ?array $premerge_journal = null
 ): array
 {
     if (($journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
         return $journal;
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_storage_guard_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal) && array_key_exists('storageGuard', $premerge_journal)) {
+            $journal['storageGuard'] = $premerge_journal['storageGuard'];
+        } else {
+            unset($journal['storageGuard']);
+        }
     }
 
     if (!reprint_push_lab_db_journal_checked_boundary_contract_matches($journal)) {

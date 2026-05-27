@@ -5740,7 +5740,7 @@ test('checked recovery inspect evidence fails closed on unsupported accepted inl
   });
 });
 
-test('checked recovery inspect evidence backfills the required top-level storage guard summary from checked journal evidence', { skip: !hasPhp }, () => {
+test('checked recovery inspect evidence fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
       recovery: {
@@ -5877,12 +5877,8 @@ test('checked recovery inspect evidence backfills the required top-level storage
 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
-  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, true);
-  assert.deepEqual(parsed.recovery.journal.storageGuard, {
-    boundary: 'wpdb-single-statement-cas',
-    operation: 'update',
-    outcome: 'applied',
-  });
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.storageGuard, undefined);
 });
 
 test('checked db journal attachment fails closed on conflicting accepted inline storage-guard evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
@@ -6159,7 +6155,7 @@ test('checked db journal attachment fails closed on unsupported accepted inline 
   assert.equal(parsed.storageGuard, undefined);
 });
 
-test('checked db journal attachment backfills the required top-level storage guard summary from checked journal evidence', { skip: !hasPhp }, () => {
+test('checked db journal attachment fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
       ok: true,
@@ -6288,12 +6284,8 @@ test('checked db journal attachment backfills the required top-level storage gua
 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
-  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, true);
-  assert.deepEqual(parsed.dbJournal.storageGuard, {
-    boundary: 'wpdb-single-statement-cas',
-    operation: 'update',
-    outcome: 'applied',
-  });
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.storageGuard, undefined);
   assert.deepEqual(parsed.storageGuard, {
     boundary: 'wpdb-single-statement-cas',
     operation: 'update',
