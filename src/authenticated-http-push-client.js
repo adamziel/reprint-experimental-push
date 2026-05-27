@@ -272,6 +272,9 @@ export async function runAuthenticatedHttpPush({
   const dryRunObservedLifecycleDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthSessionLifecycleDrift(dryRun)
     : null;
+  const dryRunObservedProductionAuthIdentityDrift = requireProductionAuthSession
+    ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, dryRun)
+    : null;
   const dryRunLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
   const dryRunAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
@@ -298,6 +301,15 @@ export async function runAuthenticatedHttpPush({
   if (dryRunLifecycleTerminationDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = dryRunLifecycleTerminationDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (dryRunObservedProductionAuthIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...dryRunObservedProductionAuthIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -375,6 +387,9 @@ export async function runAuthenticatedHttpPush({
   const applyObservedLifecycleDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthSessionLifecycleDrift(apply)
     : null;
+  const applyObservedProductionAuthIdentityDrift = requireProductionAuthSession
+    ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, apply)
+    : null;
   const applyLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
@@ -395,6 +410,15 @@ export async function runAuthenticatedHttpPush({
   if (applyLifecycleTerminationDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = applyLifecycleTerminationDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (applyObservedProductionAuthIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...applyObservedProductionAuthIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -451,6 +475,9 @@ export async function runAuthenticatedHttpPush({
   const recoveryInspectObservedLifecycleDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthSessionLifecycleDrift(recoveryInspect)
     : null;
+  const recoveryInspectObservedProductionAuthIdentityDrift = requireProductionAuthSession
+    ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, recoveryInspect)
+    : null;
   const recoveryInspectLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(recoveryInspect)
@@ -477,6 +504,15 @@ export async function runAuthenticatedHttpPush({
   if (recoveryInspectLifecycleTerminationDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = recoveryInspectLifecycleTerminationDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (recoveryInspectObservedProductionAuthIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...recoveryInspectObservedProductionAuthIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -552,6 +588,9 @@ export async function runAuthenticatedHttpPush({
   const replayObservedLifecycleDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthSessionLifecycleDrift(replay)
     : null;
+  const replayObservedProductionAuthIdentityDrift = requireProductionAuthSession
+    ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, replay)
+    : null;
   const replayAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(replay)
     || hasProductionAuthSessionStatusDrift(replay)
@@ -572,6 +611,15 @@ export async function runAuthenticatedHttpPush({
   if (replayLifecycleTerminationDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = replayLifecycleTerminationDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (replayObservedProductionAuthIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...replayObservedProductionAuthIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -631,6 +679,9 @@ export async function runAuthenticatedHttpPush({
   const dbJournalObservedLifecycleDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthSessionLifecycleDrift(dbJournal)
     : null;
+  const dbJournalObservedProductionAuthIdentityDrift = requireProductionAuthSession
+    ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, dbJournal)
+    : null;
   const dbJournalLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
@@ -657,6 +708,15 @@ export async function runAuthenticatedHttpPush({
   if (dbJournalLifecycleTerminationDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = dbJournalLifecycleTerminationDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (dbJournalObservedProductionAuthIdentityDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...dbJournalObservedProductionAuthIdentityDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -1677,6 +1737,34 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
       field: 'auth.session.expiresAt',
       required: 'unexpired',
       observed: session?.expiresAt || 'missing',
+    };
+  }
+
+  return null;
+}
+
+function resolveObservedProductionAuthIdentityDrift(expected, response) {
+  const body = response?.body || {};
+  const invalidObservedIdentityField = resolveInvalidObservedAuthEnvelopeIdentityField(body.auth?.identity);
+  if (invalidObservedIdentityField) {
+    return {
+      field: `auth.identity.${invalidObservedIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${invalidObservedIdentityField.label}`,
+    };
+  }
+
+  const expectedUserLogin = expected?.userLogin;
+  if (!expectedUserLogin) {
+    return null;
+  }
+
+  const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
+  if (observedUserLogin !== expectedUserLogin) {
+    return {
+      field: 'auth.identity.userLogin',
+      required: expectedUserLogin,
+      observed: observedUserLogin,
     };
   }
 
