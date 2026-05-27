@@ -3074,7 +3074,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   }
   assert.match(
     smokeSource,
-    /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,
@@ -3082,7 +3082,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
-    /preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,
@@ -3094,7 +3094,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     verifierSource,
@@ -3102,7 +3102,7 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     verifierSource,
-    /preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     verifierSource,
