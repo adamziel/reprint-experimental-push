@@ -2260,6 +2260,7 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
     legacyProof: summary.driverPositiveProof,
     requestedScenarios: ['driver-positive-proof'],
     requestedBundles: ['driverPositiveProof'],
+    legacyRequestedBundles: ['driverPositiveProof'],
     requestedConcreteScenarios: [],
     requested: true,
     selected: true,
@@ -2293,6 +2294,10 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
     requestedConcreteScenariosSatisfied: true,
     requestedBundleStatus: 'passed',
     requestedBundleStatuses: {
+      driverPositiveProof: 'passed',
+    },
+    legacyRequestedBundleStatus: 'passed',
+    legacyRequestedBundleStatuses: {
       driverPositiveProof: 'passed',
     },
   });
@@ -2332,6 +2337,7 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     legacyProof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
     requestedBundles: [],
+    legacyRequestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
     requested: true,
     selected: true,
@@ -2360,6 +2366,8 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     requestedConcreteScenariosSatisfied: true,
     requestedBundleStatus: null,
     requestedBundleStatuses: null,
+    legacyRequestedBundleStatus: null,
+    legacyRequestedBundleStatuses: null,
   });
 });
 
@@ -2383,6 +2391,7 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     legacyProof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
     requestedBundles: [],
+    legacyRequestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
     requested: true,
     selected: true,
@@ -2411,6 +2420,8 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     requestedConcreteScenariosSatisfied: false,
     requestedBundleStatus: null,
     requestedBundleStatuses: null,
+    legacyRequestedBundleStatus: null,
+    legacyRequestedBundleStatuses: null,
   });
 });
 
@@ -2473,6 +2484,16 @@ test('plugin-driver proof summary distinguishes canonical and legacy proof objec
   assert.equal(summary.modeProof?.proof, summary.driverReleaseProof);
   assert.equal(summary.modeProof?.legacyProofKey, 'driverMutationProof');
   assert.equal(summary.modeProof?.legacyProof, summary.driverMutationProof);
+  assert.deepEqual(summary.modeProof?.requestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(summary.modeProof?.legacyRequestedBundles, ['driverMutationProof']);
+  assert.equal(summary.modeProof?.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.modeProof?.requestedBundleStatuses, {
+    driverReleaseProof: 'passed',
+  });
+  assert.equal(summary.modeProof?.legacyRequestedBundleStatus, 'passed');
+  assert.deepEqual(summary.modeProof?.legacyRequestedBundleStatuses, {
+    driverMutationProof: 'passed',
+  });
   assert.notEqual(summary.modeProof?.proof, summary.modeProof?.legacyProof);
 });
 

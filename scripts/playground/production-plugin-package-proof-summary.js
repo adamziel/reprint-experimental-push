@@ -685,6 +685,24 @@ function filterRequestedStatusMapForMode(statusMap, allowedValues) {
   );
 }
 
+function aliasRequestedBundleStatusMap(canonicalStatusMap, canonicalKey, legacyKey) {
+  if (canonicalStatusMap === null || canonicalStatusMap === 'all') {
+    return canonicalStatusMap;
+  }
+  if (!canonicalKey || !legacyKey || canonicalKey === legacyKey) {
+    return canonicalStatusMap;
+  }
+
+  const canonicalStatus = canonicalStatusMap[canonicalKey];
+  if (canonicalStatus === undefined) {
+    return canonicalStatusMap;
+  }
+
+  return {
+    [legacyKey]: canonicalStatus,
+  };
+}
+
 function requestedStatusesSatisfied(statusMap) {
   if (statusMap === null || statusMap === 'all') {
     return true;
@@ -1471,6 +1489,7 @@ export function buildProductionPluginPackageProofSummary(
   const canonicalProofKey = canonicalMode === null
     ? null
     : proofKeyByCanonicalMode[canonicalMode] ?? null;
+  const legacyModeProofKey = legacyProofKeyForResolvedMode(resolvedMode, canonicalProofKey);
   const canonicalProof = canonicalProofKey === null
     ? null
     : proofSummary[canonicalProofKey] ?? null;
@@ -1533,6 +1552,25 @@ export function buildProductionPluginPackageProofSummary(
   const modeRequestedBundleStatus = canonicalMode === null
     ? null
     : collapseRequestedBundleStatus(modeRequestedBundleStatuses);
+  const modeLegacyRequestedBundles = canonicalMode === null
+    ? []
+    : modeRequestedBundles === 'all'
+      ? 'all'
+      : canonicalProofKey === null
+        ? modeRequestedBundles
+        : modeRequestedBundles.map((bundleKey) => (
+          bundleKey === canonicalProofKey ? legacyModeProofKey : bundleKey
+        ));
+  const modeLegacyRequestedBundleStatuses = canonicalMode === null
+    ? null
+    : aliasRequestedBundleStatusMap(
+      modeRequestedBundleStatuses,
+      canonicalProofKey,
+      legacyModeProofKey,
+    );
+  const modeLegacyRequestedBundleStatus = canonicalMode === null
+    ? null
+    : collapseRequestedBundleStatus(modeLegacyRequestedBundleStatuses);
   const modeGuardProof = canonicalMode === null
     ? null
     : buildModeGuardProof(canonicalMode, summary, scenarioPasses);
@@ -1543,10 +1581,11 @@ export function buildProductionPluginPackageProofSummary(
       canonicalMode,
       proofKey: canonicalProofKey,
       proof: canonicalProof,
-      legacyProofKey: legacyProofKeyForResolvedMode(resolvedMode, canonicalProofKey),
-      legacyProof: proofSummary?.[legacyProofKeyForResolvedMode(resolvedMode, canonicalProofKey)] ?? null,
+      legacyProofKey: legacyModeProofKey,
+      legacyProof: proofSummary?.[legacyModeProofKey] ?? null,
       requestedScenarios: modeRequestedScenarios,
       requestedBundles: modeRequestedBundles,
+      legacyRequestedBundles: modeLegacyRequestedBundles,
       requestedConcreteScenarios: modeRequestedConcreteScenarios,
       requested: canonicalProof.requested,
       selected: canonicalProof.selected,
@@ -1576,6 +1615,8 @@ export function buildProductionPluginPackageProofSummary(
       requestedConcreteScenariosSatisfied: requestedStatusesSatisfied(modeRequestedConcreteScenarioStatuses),
       requestedBundleStatus: modeRequestedBundleStatus,
       requestedBundleStatuses: modeRequestedBundleStatuses,
+      legacyRequestedBundleStatus: modeLegacyRequestedBundleStatus,
+      legacyRequestedBundleStatuses: modeLegacyRequestedBundleStatuses,
     };
 
   return proofSummary;
