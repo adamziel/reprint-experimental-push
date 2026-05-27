@@ -14377,10 +14377,83 @@ test('production-shaped authenticated push fails closed on journal-only revoked 
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.revoked, true);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'recovery-inspect',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'replay',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'journal',
+          id: 'psh_01j00000000000000000000000',
+          revoked: true,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 6);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycle.read?.revoked, true);
+    assert.equal(summary.authSessionLifecycle.read?.preserved, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.revoked, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.preserved, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
     assert.equal(summary.authSessionLifecycleSummary.read?.revoked, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.preserved, true);
+    assert.equal(summary.authSessionLifecycleSummary.revoked?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.revoked?.revoked, true);
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.preserved, true);
     assert.ok(!seen.some(({ url }) => url.includes('/snapshot') && url.includes('/after')));
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
@@ -15287,10 +15360,67 @@ test('production-shaped authenticated push fails closed on journal-only cleaned-
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.cleanedUp, true);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'journal',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: true,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 4);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycle.read?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycle.read?.preserved, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.preserved, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
     assert.equal(summary.authSessionLifecycleSummary.read?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.preserved, true);
+    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.preserved, true);
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Acleaned-up$/,
@@ -16012,10 +16142,67 @@ test('production-shaped authenticated push fails closed on journal-only expired 
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.expired, true);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'journal',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 4);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycle.read?.expired, true);
+    assert.equal(summary.authSessionLifecycle.read?.preserved, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.expired, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.preserved, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
     assert.equal(summary.authSessionLifecycleSummary.read?.expired, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.preserved, true);
+    assert.equal(summary.authSessionLifecycleSummary.expired?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.expired?.expired, true);
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.preserved, true);
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Aexpired$/,
@@ -16556,12 +16743,67 @@ test('production-shaped authenticated push fails closed on journal-only rotated 
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.rotated, true);
-    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.preserved, false);
+    assert.deepEqual(
+      summary.authSessionLifecycleTrace.map(({
+        step, id, revoked, cleanedUp, rotated, preserved,
+      }) => ({
+        step,
+        id,
+        revoked,
+        cleanedUp,
+        rotated,
+        preserved,
+      })),
+      [
+        {
+          step: 'preflight',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: false,
+        },
+        {
+          step: 'dry-run',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'apply',
+          id: 'psh_01j00000000000000000000000',
+          revoked: false,
+          cleanedUp: false,
+          rotated: false,
+          preserved: true,
+        },
+        {
+          step: 'journal',
+          id: 'psh_01j00000000000000000000000-rotated',
+          revoked: false,
+          cleanedUp: false,
+          rotated: true,
+          preserved: false,
+        },
+      ],
+    );
+    assert.equal(summary.authSessionLifecycle.minted?.id, 'psh_01j00000000000000000000000');
+    assert.equal(summary.authSessionLifecycle.history?.length, 4);
+    assert.equal(summary.authSessionLifecycle.read?.step, 'journal');
+    assert.equal(summary.authSessionLifecycle.read?.rotated, true);
+    assert.equal(summary.authSessionLifecycle.read?.preserved, false);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.rotated, true);
+    assert.equal(summary.authSessionLifecycle.history?.at(-1)?.preserved, false);
+    assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
     assert.equal(summary.authSessionLifecycleSummary.read?.rotated, true);
     assert.equal(summary.authSessionLifecycleSummary.read?.preserved, false);
+    assert.equal(summary.authSessionLifecycleSummary.rotated?.step, 'journal');
+    assert.equal(summary.authSessionLifecycleSummary.rotated?.rotated, true);
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.preserved?.preserved, true);
     assert.match(
       seen.find(({ url }) => url.includes('/db-journal'))?.url || '',
       /\/db-journal\?limit=80&reprint_push_lab_auth_session_drift=journal%3Arotated$/,
