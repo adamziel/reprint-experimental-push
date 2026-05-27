@@ -1265,6 +1265,54 @@ test('production recovery journal consumption fails closed when explicit remote 
   });
 });
 
+test('production recovery journal consumption fails closed when the owned remote artifact path diverges from the persisted path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-remote-path-drift';
+  const remoteArtifactPath = `${filePath}.remote`;
+  const driftedRemoteArtifactPath = `${filePath}.drifted-remote`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease: { id: claimId, epoch: 5 },
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      writerLease: { id: claimId, epoch: 5 },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: driftedRemoteArtifactPath,
+      artifactRefs: {
+        journal: filePath,
+        remote: driftedRemoteArtifactPath,
+      },
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal consumption requires the persisted owned remote artifact path.',
+  });
+});
+
 test('production recovery journal compatibility overload supports reliable release consumer shape', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
