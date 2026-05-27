@@ -25628,10 +25628,13 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(relationshipBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(relationshipBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(
+    relationshipBlocker.reason,
+    `WordPress graph mutation ${resourceKey} references graph identities without proven identity mapping or reference rewriting.`,
+  );
   assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
   assert.equal(taxBlocker.unsupportedState, 'same-plan-reference');
