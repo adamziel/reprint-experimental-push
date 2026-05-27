@@ -74,6 +74,13 @@ test('package scripts pin the bounded plugin-driver delete apply scenario entryp
   );
 });
 
+test('package scripts pin the canonical plugin-driver delete-apply proof mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-delete-apply-proof'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteApplyProof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver positive proof scenario entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-positive-proof'],
