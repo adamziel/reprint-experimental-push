@@ -467,13 +467,19 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
-  if (recoveryInspectClaimsProductionRecoveryJournalSurface(recoveryInspect.body?.recovery)
-    && !productionRecoveryJournalInspectionSurfaceIsPresent(
-      recoveryInspectProductionJournalInspection(recoveryInspect.body?.recovery),
-    )) {
+  const recoveryInspectProductionJournal = recoveryInspectClaimsProductionRecoveryJournalSurface(
+    recoveryInspect.body?.recovery,
+  )
+    ? recoveryInspectProductionJournalInspection(recoveryInspect.body?.recovery)
+    : null;
+  if (recoveryInspectProductionJournal
+    && !productionRecoveryJournalInspectionSurfaceIsPresent(recoveryInspectProductionJournal)) {
     summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
     setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
+  }
+  if (recoveryInspectProductionJournal) {
+    summary.recoveryInspect.recovery.productionJournal = recoveryInspectProductionJournal;
   }
   if ((summary.recoveryInspect.recovery.counts?.blockedUnknown || 0) > 0) {
     summary.code = 'RECOVERY_INSPECT_JOURNAL_UNTRUSTED';
