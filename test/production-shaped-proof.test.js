@@ -7607,6 +7607,38 @@ test('packaged preflight retryability turns terminal once the live index probe s
   );
 });
 
+test('packaged preflight retryability turns terminal once snapshot readiness has already succeeded', () => {
+  const preflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+  const readySnapshotProbe = {
+    status: 200,
+    body: JSON.stringify({
+      ok: true,
+      snapshot: {},
+    }),
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      snapshotProbe: readySnapshotProbe,
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, {
+      packagedStartup: true,
+      snapshotProbe: readySnapshotProbe,
+    }),
+    true,
+  );
+});
+
 test('packaged preflight retryability ignores timed-out index overrides and falls back to startup context', () => {
   const preflight = {
     status: 401,
@@ -7710,6 +7742,24 @@ test('packaged preflight retryability lets a live index probe override stale pac
     }),
     true,
   );
+});
+
+test('packaged readiness helpers pass the active snapshot probe into the first signed-preflight retryability check', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /const packagedPreflightReadinessContext = \{\s*packagedStartup: true,\s*snapshotProbe: packagedProductionPluginSnapshotProbeContext\(activeSnapshotProbe\),\s*\};/,
+    );
+  }
 });
 
 test('packaged preflight retryability keeps packaged-route startup retryable after global WordPress readiness', () => {

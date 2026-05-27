@@ -1232,7 +1232,10 @@ async function waitForServer(child, baseUrl, logs) {
       }
 
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
-      const packagedPreflightReadinessContext = { packagedStartup: true };
+      const packagedPreflightReadinessContext = {
+        packagedStartup: true,
+        snapshotProbe: packagedProductionPluginSnapshotProbeContext(activeSnapshotProbe),
+      };
       if (packagedProductionPluginPreflightRetryable(
         { status: preflightResponse.status, body: preflightBody },
         packagedPreflightReadinessContext,

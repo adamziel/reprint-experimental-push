@@ -2030,7 +2030,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         );
       }
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflight.status}`);
-      const packagedPreflightReadinessContext = { packagedStartup: true };
+      const packagedPreflightReadinessContext = {
+        packagedStartup: true,
+        snapshotProbe: packagedProductionPluginSnapshotProbeContext(activeSnapshotProbe),
+      };
       if (packagedProductionPluginPreflightRetryable(
         {
           status: preflight.status,
