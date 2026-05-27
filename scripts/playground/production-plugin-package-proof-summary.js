@@ -781,7 +781,10 @@ export function resolveProductionPluginPackagePluginDriverProof(
     const resolvedOptions = resolveProductionPluginPackageProofSummaryOptions(summary, options);
     const requestedScenariosMatch = (
       resolvedOptions.requestedScenarios === undefined
-      || JSON.stringify(attachedPluginDriverProof?.requestedScenarios ?? []) === JSON.stringify(resolvedOptions.requestedScenarios)
+      || requestedListsMatch(
+        attachedPluginDriverProof?.requestedScenarios ?? [],
+        resolvedOptions.requestedScenarios,
+      )
     );
     const modeMatches = (
       resolvedOptions.resolvedMode === undefined
@@ -817,6 +820,25 @@ export function resolveProductionPluginPackagePluginDriverProof(
     const expectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
       ? null
       : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
+    const resolvedModeProofOptions = expectedModeProof === null
+      ? null
+      : (() => {
+        const allowedRequestedScenarioNames = new Set([
+          expectedModeProof.canonicalMode,
+          ...(modeAliasesByCanonicalMode[expectedModeProof.canonicalMode] ?? []),
+          ...(scenarioGroups[expectedModeProof.canonicalMode] ?? []),
+        ]);
+        return {
+        ...resolvedOptions,
+        canonicalMode: expectedModeProof.canonicalMode,
+        requestedScenarios: resolvedOptions.requestedScenarios === undefined
+          || resolvedOptions.requestedScenarios === null
+          ? resolvedOptions.requestedScenarios
+          : resolvedOptions.requestedScenarios.filter(
+            (scenarioName) => allowedRequestedScenarioNames.has(scenarioName),
+          ),
+      };
+      })();
     const nestedModeProofMatches = expectedModeProof === null
       || (
         attachedPluginDriverProof?.modeProof?.mode === expectedModeProof.mode
@@ -826,7 +848,7 @@ export function resolveProductionPluginPackagePluginDriverProof(
         && modeProofMatchesResolvedContext(
           attachedPluginDriverProof,
           attachedPluginDriverProof?.modeProof,
-          resolvedOptions,
+          resolvedModeProofOptions,
         )
       );
 
