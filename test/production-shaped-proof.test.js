@@ -2824,7 +2824,7 @@ test('packaged production plugin runtime source binding preserves the prior comm
       sourceUrl: 'http://127.0.0.1:49152',
       authSessionSource: {
         ok: true,
-        sourceUrl: 'http://127.0.0.1:49152',
+        sourceUrl: 'http://127.0.0.1:8080',
         username: ' reprint_push_admin ',
         applicationPassword: '\treprint-push-admin-app-password',
       },
@@ -2856,7 +2856,7 @@ test('packaged production plugin runtime source binding preserves the prior comm
       sourceUrl: 'http://127.0.0.1:49152',
       authSessionSource: {
         ok: true,
-        sourceUrl: 'http://127.0.0.1:49152',
+        sourceUrl: ' http://127.0.0.1:8080 ',
         username: 'reprint_push_admin',
         applicationPassword: 'reprint-push-admin-app-password',
       },
@@ -2888,13 +2888,37 @@ test('packaged production plugin runtime source binding preserves the prior comm
       sourceUrl: 'http://127.0.0.1:49152',
       authSessionSource: {
         ok: true,
-        sourceUrl: 'http://127.0.0.1:49152',
+        sourceUrl: 'http://127.0.0.1:8080',
         username: ['reprint_push_admin'],
         applicationPassword: { secret: 'reprint-push-admin-app-password' },
       },
       authSessionSourceCommand: staleCommand,
     },
   );
+});
+
+test('packaged production plugin runtime source binding preserves malformed auth/session metadata when it cannot mint a safe runtime command', () => {
+  const staleCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+  const malformedSource = {
+    ok: true,
+    sourceUrl: ' http://127.0.0.1:8080 ',
+    username: ' reprint_push_admin ',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  const bound = bindPackagedProductionPluginRuntimeSource({
+    sourceUrl: 'http://127.0.0.1:8080',
+    authSessionSource: malformedSource,
+    authSessionSourceCommand: staleCommand,
+    runtimeSourceUrl: 'http://127.0.0.1:49152',
+  });
+
+  assert.equal(bound.authSessionSource, malformedSource);
+  assert.equal(bound.authSessionSourceCommand, staleCommand);
 });
 
 test('packaged production plugin runtime source binding drops malformed prior commands', () => {

@@ -90,17 +90,20 @@ export function bindPackagedProductionPluginRuntimeSource({
     authSessionSource,
     authSessionSourceCommand: normalizedAuthSessionSourceCommand,
   });
-
-  return {
-    sourceUrl: normalizedRuntimeSourceUrl,
-    authSessionSource: authSessionSource?.ok
+  const runtimeAuthSessionSource = runtimeAuthSessionSourceCommand.rebound
+    ? authSessionSource?.ok
       ? {
           ...authSessionSource,
           sourceUrl: normalizedRuntimeSourceUrl,
         }
-      : authSessionSource,
-    ...(runtimeAuthSessionSourceCommand
-      ? { authSessionSourceCommand: runtimeAuthSessionSourceCommand }
+      : authSessionSource
+    : authSessionSource;
+
+  return {
+    sourceUrl: normalizedRuntimeSourceUrl,
+    authSessionSource: runtimeAuthSessionSource,
+    ...(runtimeAuthSessionSourceCommand.command
+      ? { authSessionSourceCommand: runtimeAuthSessionSourceCommand.command }
       : normalizedAuthSessionSourceCommand
         ? { authSessionSourceCommand: normalizedAuthSessionSourceCommand }
         : {}),
@@ -124,17 +127,26 @@ function buildRuntimePackagedProductionPluginSourceCommand({
     ? authSessionSource.applicationPassword
     : '';
   if (!runtimeSourceUrl || !sourceUrl || !username || !applicationPassword) {
-    return authSessionSourceCommand || '';
+    return {
+      command: authSessionSourceCommand || '',
+      rebound: false,
+    };
   }
 
   try {
-    return resolvePackagedProductionPluginSourceCommand({
-      sourceUrl: runtimeSourceUrl,
-      username,
-      applicationPassword,
-    });
+    return {
+      command: resolvePackagedProductionPluginSourceCommand({
+        sourceUrl: runtimeSourceUrl,
+        username,
+        applicationPassword,
+      }),
+      rebound: true,
+    };
   } catch {
-    return authSessionSourceCommand || '';
+    return {
+      command: authSessionSourceCommand || '',
+      rebound: false,
+    };
   }
 }
 
