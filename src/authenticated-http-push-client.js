@@ -193,7 +193,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       field: `auth.identity.${preflightInvalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: preflightInvalidIdentityField.required,
       observed: `invalid-${preflightInvalidIdentityField.label}`,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
@@ -460,7 +460,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       field: `auth.identity.${dryRunInvalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: dryRunInvalidIdentityField.required,
       observed: `invalid-${dryRunInvalidIdentityField.label}`,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
@@ -681,7 +681,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       field: `auth.identity.${applyInvalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: applyInvalidIdentityField.required,
       observed: `invalid-${applyInvalidIdentityField.label}`,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
@@ -878,7 +878,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       field: `auth.identity.${recoveryInspectInvalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: recoveryInspectInvalidIdentityField.required,
       observed: `invalid-${recoveryInspectInvalidIdentityField.label}`,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
@@ -1101,7 +1101,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       field: `auth.identity.${replayInvalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: replayInvalidIdentityField.required,
       observed: `invalid-${replayInvalidIdentityField.label}`,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
@@ -1306,7 +1306,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       field: `auth.identity.${dbJournalInvalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: dbJournalInvalidIdentityField.required,
       observed: `invalid-${dbJournalInvalidIdentityField.label}`,
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
@@ -2388,7 +2388,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   if (invalidObservedIdentityField) {
     return {
       field: `auth.identity.${invalidObservedIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: invalidObservedIdentityField.required,
       observed: `invalid-${invalidObservedIdentityField.label}`,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
@@ -2517,6 +2517,19 @@ function resolveInvalidObservedAuthEnvelopeIdentityField(identity) {
     return null;
   }
 
+  const observedUserId = identity.userId;
+  if (
+    observedUserId !== undefined
+    && observedUserId !== null
+    && !normalizeObservedAuthIdentityUserId(observedUserId)
+  ) {
+    return {
+      field: 'userId',
+      label: 'user-id',
+      required: 'integer auth identity fields',
+    };
+  }
+
   const observedUserLogin = identity.userLogin;
   if (
     observedUserLogin !== undefined
@@ -2526,10 +2539,15 @@ function resolveInvalidObservedAuthEnvelopeIdentityField(identity) {
     return {
       field: 'userLogin',
       label: 'user-login',
+      required: 'string auth identity fields',
     };
   }
 
   return null;
+}
+
+function normalizeObservedAuthIdentityUserId(userId) {
+  return Number.isInteger(userId) && userId > 0 ? userId : null;
 }
 
 function resolveInvalidObservedAuthEnvelopeSessionField(session) {
@@ -2786,7 +2804,7 @@ function resolveUncheckedObservedAuthSessionMetadataDrift(expected, response) {
   if (invalidIdentityField) {
     return {
       field: `auth.identity.${invalidIdentityField.field}`,
-      required: 'string auth identity fields',
+      required: invalidIdentityField.required,
       observed: `invalid-${invalidIdentityField.label}`,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
