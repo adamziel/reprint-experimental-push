@@ -731,6 +731,38 @@ test('production-shaped release verify command fails closed when production dura
   assert.match(proof.stdout, /"code": "PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED"/);
 });
 
+test('production-shaped release verify fails fast with the live-source gate before packaged fallback when checked production auth and journal boundaries are required', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: '',
+      REPRINT_PUSH_REMOTE_URL: '',
+      REPRINT_PUSH_USERNAME: '',
+      REPRINT_PUSH_APPLICATION_PASSWORD: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: '',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: '',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'missing live-source checked release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'missing live-source checked release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/);
+  assert.match(proof.stdout, /"observed": "missing-live-source"/);
+  assert.equal(
+    proof.stderr.trim(),
+    'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.',
+  );
+  assert.doesNotMatch(proof.stdout, /Starting Playground server/);
+  assert.doesNotMatch(proof.stderr, /Starting Playground server/);
+});
+
 test('production-shaped release verify request state marks synthesized packaged production auth/session sources as packaged requests', () => {
   const request = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: 'http://127.0.0.1:8080',

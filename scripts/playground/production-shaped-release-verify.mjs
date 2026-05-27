@@ -96,6 +96,10 @@ let authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMM
 let authSessionSource = authSessionSourceCommand ? loadAuthSessionSource(authSessionSourceCommand) : null;
 let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
+const requireExplicitLiveCheckedBoundary =
+  requireProductionAuthSession
+  && requireProductionDurableJournal
+  && !explicitReleaseVerifySourceUrl;
 const fixtureCredentials = {
   username: releaseVerifyFixtureCredentials.username,
   password: releaseVerifyFixtureCredentials.applicationPassword,
@@ -113,7 +117,9 @@ liveSourceUrl = resolvedAuthSessionRequest.liveSourceUrl;
 username = resolvedAuthSessionRequest.username;
 applicationPassword = resolvedAuthSessionRequest.applicationPassword;
 
-if (shouldRequestPackagedProductionPluginAuthSession({
+if (
+  !requireExplicitLiveCheckedBoundary
+  && shouldRequestPackagedProductionPluginAuthSession({
   requireProductionAuthSession,
   authSessionSourceCommand,
   liveSourceUrl: explicitReleaseVerifySourceUrl,
@@ -214,6 +220,65 @@ const protocolExtension = {
     remoteTunnels: 'disallowed',
   },
 };
+
+if (requireExplicitLiveCheckedBoundary) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: '',
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+          authSession: {
+            required: 'production-auth-session',
+            observed: 'missing-live-source',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            observed: 'missing-live-source',
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 1,
+          authSessionType: 'missing-live-source',
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: 'missing-live-source',
+          },
+        },
+        authSessionLifecycle: null,
+        authSessionLifecycleTrace: [],
+        releaseProof: {
+          ok: false,
+          status: 1,
+          code: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+        },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  process.stderr.write(
+    'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires a live source URL; provide REPRINT_PUSH_SOURCE_URL before running preflight, dry-run, or apply.\n',
+  );
+  throw new ProofFailure();
+}
 
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
