@@ -2525,6 +2525,35 @@ test('guarded benchmark surfaces row-batch-receipts plugin-install blockers at r
   ]);
 });
 
+test('guarded benchmark surfaces row-batch-receipts blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const rowBatchReceiptsRejectedFastPaths = details.rejectedFastPaths
+    .filter((entry) => entry.id.includes('row-batch-receipts'))
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  assert.deepEqual(rowBatchReceiptsRejectedFastPaths.map(({ id }) => id), [
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+  ]);
+
+  assert.deepEqual(summarizeRejectedGates(rowBatchReceiptsRejectedFastPaths), [
+    { rejectedGate: 'group', count: 10 },
+    { rejectedGate: 'recovery', count: 3 },
+  ]);
+});
+
 test('guarded benchmark surfaces plugin-install backpressure blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
