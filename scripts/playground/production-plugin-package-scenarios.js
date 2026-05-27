@@ -97,10 +97,14 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
   const modeScenario = resolveScenarioMode(modeValue);
   const resolvedFromMode = !explicitArg && !envValue && Boolean(modeScenario);
+  const providedScenarioInput = explicitArg !== undefined || envValue !== undefined;
   const rawValue = explicitArg
     ? explicitArg.slice('--scenario='.length)
     : envValue ?? modeScenario;
   if (!rawValue) {
+    if (providedScenarioInput) {
+      throw new Error('Production plugin package smoke scenarios cannot be blank');
+    }
     return {
       resolvedMode: null,
       requestedScenarios: null,
@@ -112,11 +116,7 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
     .map((name) => name.trim())
     .filter(Boolean);
   if (requestedNames.length === 0) {
-    return {
-      resolvedMode: null,
-      requestedScenarios: null,
-      selectedScenarios: null,
-    };
+    throw new Error('Production plugin package smoke scenarios cannot be blank');
   }
 
   const unknownNames = requestedNames.filter((name) => !knownScenarioNames.has(name));

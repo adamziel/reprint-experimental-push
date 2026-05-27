@@ -95,6 +95,26 @@ test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {
   );
 });
 
+test('scenario parser rejects blank explicit plugin-driver smoke scenarios', () => {
+  assert.throws(
+    () => parseProductionPluginPackageSelectedScenarios(
+      ['--scenario= , '],
+      undefined,
+    ),
+    /Production plugin package smoke scenarios cannot be blank/,
+  );
+});
+
+test('scenario parser rejects blank plugin-driver smoke scenario environment input', () => {
+  assert.throws(
+    () => parseProductionPluginPackageSelectedScenarios(
+      [],
+      '   ',
+    ),
+    /Production plugin package smoke scenarios cannot be blank/,
+  );
+});
+
 test('scenario resolver maps driver-guard-only mode to the bounded receipt guard scenario', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     [],
