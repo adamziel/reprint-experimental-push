@@ -2955,6 +2955,37 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   );
 });
 
+test('packaged release verifier readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.doesNotMatch(helperSource, /if \(packagedProductionPluginSnapshotTerminal/);
+  assert.doesNotMatch(helperSource, /if \(packagedProductionPluginPreflightTerminal/);
+  assert.match(
+    helperSource,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged Playground snapshot returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged Playground signed preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /snapshot stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive response[\s\S]*?await throwPlaygroundReadinessFailure\(\s*child,/s,
+  );
+  assert.match(
+    helperSource,
+    /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response[\s\S]*?await throwPlaygroundReadinessFailure\(\s*child,/s,
+  );
+});
+
 test('packaged snapshot readiness helper enforces the bounded classifier before retryable preflight loops continue', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
