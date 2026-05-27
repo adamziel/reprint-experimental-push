@@ -1,21 +1,21 @@
 # Critic Verdict
 
-Current reliable head: `e4486374ac0c4de784e103bfbdff6d6054933873`
-(`Mirror validated recovery journal surface`).
+Current reliable head: `35dc26ec1d3536ef1aabfa57c31f1ed1e02c6317`
+(`Honor matching runtime auth request state`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head mirrors a validated recovery journal surface into the checked
-  authenticated client summary. In `src/authenticated-http-push-client.js` it
-  recognizes `production-recovery-journal` recovery-inspect data, carries the
-  validated `journal`, `claim`, and `leaseFence` surface into the summary, and
-  rejects untrusted recovery-inspect journal data with
-  `RECOVERY_INSPECT_JOURNAL_UNTRUSTED`.
-- In `src/recovery-journal.js` it adds the production recovery journal
-  inspection contract and extends stale-claim metadata handling so the checked
-  release path can recognize a richer validated journal surface.
+- This head widens the checked release verifier's auth-session request-state
+  resolution so matching runtime auth sources can come from either the remote
+  or local runtime candidates, and the focused proof adds coverage for that
+  matching override behavior.
+- In `scripts/playground/production-shaped-release-verify.mjs` the checked
+  release path now passes explicit `remoteUrl` and `localUrl` candidates into
+  auth-session request-state resolution, and the new test proves a matching
+  source can override explicit runtime credentials when it matches one of
+  those candidates.
 - That is still release-path support evidence, not a supervised gate closure.
   The checked path remains verifier/scaffold-driven, and this head still does
   not prove a production-owned, non-lab-backed source mutation boundary on the
@@ -26,8 +26,8 @@ Reason:
 
 Next owner / command:
 
-- `main:reliable-exec` should land the next exact primitive beyond recovery
-  journal surface mirroring: a production-owned, non-lab-backed
+- `main:reliable-exec` should land the next exact primitive beyond matching
+  runtime auth request-state resolution: a production-owned, non-lab-backed
   source-mutation/auth-session boundary on the real Reprint endpoint that
   issues a live session on the endpoint, reads it back after restart from
   durable journal storage, enforces lease-fenced ownership of those journal
