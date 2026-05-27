@@ -1021,8 +1021,9 @@ export function openProductionRecoveryJournal(options) {
     const persistedClaimId = claim?.activeClaimId || claimId;
     const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
-    const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
-    const consumed = persisted.records.some((record) => record.type === 'recovery-journal-consumed');
+    const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
+    const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
+    const consumed = consumedRecord !== null;
     const consumedClaimId = consumed ? claim?.activeClaimId || null : null;
     const consumedClaimHash = consumed ? claim?.activeClaimHash || null : null;
     const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
@@ -1104,9 +1105,12 @@ export function consumeProductionRecoveryJournal(options) {
   });
 
   try {
+    const activeClaimHash = recoveryClaimHash(claimId);
     journal.appendEvent('recovery-journal-consumed', {
       planId: plan.id,
       state: 'consumed',
+      claimId,
+      claimHash: activeClaimHash,
       observedHash: digest(current),
       artifactRefs,
     });

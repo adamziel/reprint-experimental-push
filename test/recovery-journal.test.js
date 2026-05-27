@@ -498,6 +498,8 @@ test('checked release path consumes the production recovery journal inspection s
 
   const consumedRecord = readRecoveryJournal(filePath).records.at(-1);
   assert.equal(consumedRecord.type, 'recovery-journal-consumed');
+  assert.equal(consumedRecord.claimId, activeClaimId);
+  assert.equal(consumedRecord.claimHash, recoveryClaimHash(activeClaimId));
 });
 
 test('production recovery journal inspection surface helper fails closed when lease-fence evidence diverges from the claimed durable adapter', () => {
