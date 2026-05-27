@@ -35404,7 +35404,7 @@ test('blocks local post-parent references to a same-plan created wp navigation w
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
 });
 
-test('blocks local post-parent references to a same-plan created wp navigation while preserving remote-only plugin removals', () => {
+test('blocks local post-parent wp navigation references when the wp navigation is created in the same plan while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:48"]';
   const targetResourceKey = 'row:["wp_posts","ID:12"]';
   const base = baseSite();
