@@ -1853,6 +1853,9 @@ export function buildProductionPluginPackageProofSummary(
   );
   const canonicalModeRequestedScenarioNames = new Set([
     canonicalMode,
+    ...(canonicalMode === null
+      ? []
+      : modeAliasesByCanonicalMode[canonicalMode] ?? []),
     ...canonicalModeScenarios,
   ]);
   const canonicalModeRequestedBundleNames = canonicalMode === null
