@@ -229,6 +229,10 @@ const scenarioDefinitions = [
   },
 ];
 
+const scenarioDefinitionNames = scenarioDefinitions.map((definition) => definition.scenario);
+
+export { scenarioDefinitionNames };
+
 function isScenarioSelected(selectedScenarios, name) {
   if (selectedScenarios === null) {
     return true;

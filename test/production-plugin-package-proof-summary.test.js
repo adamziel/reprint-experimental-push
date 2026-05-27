@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {
   buildProductionPluginPackageProofSummary,
   bundleSummaryGroups,
+  scenarioDefinitionNames,
 } from '../scripts/playground/production-plugin-package-proof-summary.js';
-import { scenarioGroups } from '../scripts/playground/production-plugin-package-scenarios.js';
+import { scenarioGroups, scenarioNames } from '../scripts/playground/production-plugin-package-scenarios.js';
 
 test('plugin-driver proof summary bundle groups stay aligned with shared scenario groups', () => {
   assert.deepEqual(
@@ -37,6 +38,19 @@ test('plugin-driver proof summary bundle groups stay aligned with shared scenari
       'driver-receipt-guards',
       'driver-delete-apply',
     ],
+  );
+});
+
+test('plugin-driver proof summary tracks every shared plugin-driver scenario exactly once', () => {
+  assert.deepEqual(
+    scenarioDefinitionNames.slice().sort(),
+    scenarioNames.slice().sort(),
+  );
+  assert.deepEqual(
+    Object.keys(bundleSummaryGroups)
+      .concat('driver-receipt-guards')
+      .sort(),
+    Object.keys(scenarioGroups).sort(),
   );
 });
 
