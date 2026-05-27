@@ -285,6 +285,16 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       ],
     },
     {
+      id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+      rejectedGate: 'skip',
+      blockerRefs: ['production-capability-measurement-not-aligned'],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: ['production-capability-measurement-not-aligned'],
+    },
+    {
       id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
       rejectedGate: 'recovery',
       blockerRefs: [
@@ -421,6 +431,7 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       { rejectedGate: 'group', count: 7 },
       { rejectedGate: 'live', count: 1 },
       { rejectedGate: 'recovery', count: 6 },
+      { rejectedGate: 'skip', count: 2 },
     ],
   );
   assert.deepEqual(
@@ -10044,6 +10055,36 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
           'production-storage-receipts-not-measured',
           'production-row-batch-executor-not-measured',
         ],
+      },
+    ],
+  );
+});
+
+test('guarded benchmark surfaces release-bundle planning blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+        rejectedGate: 'skip',
+        blockerRefs: ['production-capability-measurement-not-aligned'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
+        blockerRefs: ['production-capability-measurement-not-aligned'],
       },
     ],
   );
