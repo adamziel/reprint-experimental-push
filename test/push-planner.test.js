@@ -18363,8 +18363,8 @@ test('orders same-plan revision term-relationship references deterministically w
       ['term-relationship-object', lateRelationshipResourceKey],
     ],
   );
-  assert.equal(earlyRelationshipBlocker.class, 'stale-wordpress-graph-identity');
-  assert.equal(lateRelationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(earlyRelationshipBlocker.class, 'unsupported-revision-resource');
+  assert.equal(lateRelationshipBlocker.class, 'unsupported-revision-resource');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(pluginFileDecision.decision, 'keep-remote');
@@ -18990,15 +18990,20 @@ test('blocks local term-relationship references when the live remote taxonomy id
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const reference = blocker.references[0];
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
-  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(targetBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(targetBlocker.resourceKey, targetResourceKey);
+  assert.equal(targetBlocker.unsupportedState, 'remote-only-drift');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
   assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -19117,7 +19122,8 @@ test('blocks local term-relationship references when the live remote taxonomy id
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin drift */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const targetBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const reference = blocker.references[0];
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
@@ -19126,10 +19132,13 @@ test('blocks local term-relationship references when the live remote taxonomy id
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
-  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(targetBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(targetBlocker.resourceKey, targetResourceKey);
+  assert.equal(targetBlocker.unsupportedState, 'remote-only-drift');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.term_taxonomy_id');
   assert.equal(reference.relationshipType, 'term-relationship-taxonomy');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -19736,7 +19745,7 @@ test('blocks local term-taxonomy parent references to a same-plan created term i
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(blocker.resourceKind, 'term-taxonomy');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'same-plan-reference');
