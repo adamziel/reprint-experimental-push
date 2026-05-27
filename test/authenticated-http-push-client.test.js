@@ -5467,6 +5467,10 @@ test('production-shaped authenticated push preserves consumed claim identity fro
         recovery: {
           state: 'available',
           counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: {
+            integrity: { status: 'ok' },
+            scope: 'lab-only inspect evidence; not durable process-kill recovery',
+          },
           productionJournal: {
             journal: {
               kind: 'production-recovery-journal',

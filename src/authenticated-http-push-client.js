@@ -1433,19 +1433,30 @@ function recoveryInspectClaimsProductionRecoveryJournalSurface(recovery) {
     || hasNonEmptyString(productionJournal?.leaseFence?.writerLease?.claimHash);
 }
 
+function recoveryInspectJournalClaimsProductionRecoveryJournalSurface(journal) {
+  return journal?.kind === 'production-recovery-journal'
+    || journal?.productionAdapter === 'openProductionRecoveryJournal'
+    || hasNonEmptyString(journal?.claimHash);
+}
+
 function recoveryInspectProductionJournalInspection(recovery) {
   const productionJournal = recovery?.productionJournal;
+  const topLevelJournal = recovery?.journal;
+  const nestedJournal = productionJournal?.journal;
+  const journal = recoveryInspectJournalClaimsProductionRecoveryJournalSurface(topLevelJournal)
+    ? topLevelJournal
+    : nestedJournal ?? topLevelJournal;
 
   return {
-    journal: recovery?.journal ?? productionJournal?.journal,
+    journal,
     claim: recovery?.claim
-      ?? recovery?.journal?.claim
+      ?? journal?.claim
       ?? productionJournal?.claim
-      ?? productionJournal?.journal?.claim,
+      ?? nestedJournal?.claim,
     leaseFence: recovery?.leaseFence
-      ?? recovery?.journal?.leaseFence
+      ?? journal?.leaseFence
       ?? productionJournal?.leaseFence
-      ?? productionJournal?.journal?.leaseFence,
+      ?? nestedJournal?.leaseFence,
   };
 }
 
