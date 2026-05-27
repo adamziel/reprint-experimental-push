@@ -1012,6 +1012,119 @@ test('plugin-driver proof summary rebuilds a reused proof when its top-level bun
   assert.deepEqual(rebuiltProof.modeProof?.requestedBundles, ['driverReleaseProof']);
 });
 
+test('plugin-driver proof summary rebuilds a reused proof when legacy requested scenarios hide a stale top-level bundle cache', () => {
+  const staleAttachedProof = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driverMutationProof'],
+    requestedBundles: ['driverReleaseProof'],
+    requestedBundleStatus: 'missing',
+    requestedBundleStatuses: {
+      driverReleaseProof: 'missing',
+    },
+    requestedBundlesSatisfied: false,
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    modeProof: {
+      mode: 'driverReleaseProof',
+      canonicalMode: 'driver-release-proof',
+      proofKey: 'driverReleaseProof',
+      legacyProofKey: 'driverMutationProof',
+      requestedScenarios: ['driverReleaseProof'],
+      requestedBundles: ['driverReleaseProof'],
+      requestedBundleStatus: 'passed',
+      requestedBundleStatuses: {
+        driverReleaseProof: 'passed',
+      },
+      requestedBundlesSatisfied: true,
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    },
+    ok: true,
+  };
+
+  const rawSummary = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    pluginDriverProof: staleAttachedProof,
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const rebuiltProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-release-proof']),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.notEqual(rebuiltProof, staleAttachedProof);
+  assert.equal(rawSummary.pluginDriverProof, rebuiltProof);
+  assert.deepEqual(rebuiltProof.requestedScenarios, ['driverReleaseProof']);
+  assert.deepEqual(rebuiltProof.requestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(rebuiltProof.requestedBundleStatuses, {
+    driverReleaseProof: 'missing',
+  });
+  assert.equal(rebuiltProof.requestedBundlesSatisfied, false);
+  assert.equal(rebuiltProof.modeProof?.requestedBundleStatus, 'missing');
+});
+
 test('plugin-driver mode proof resolver repairs an alias-stale top-level modeProof cache when the nested proof is reused', () => {
   const pluginDriverProof = {
     mode: 'driverReleaseProof',

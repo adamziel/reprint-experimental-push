@@ -725,6 +725,16 @@ function filterRequestedBundleListForModeComparison(requestedValues, allowedValu
   ).sort();
 }
 
+function requestedScenariosStayWithinCanonicalMode(requestedScenarios, canonicalMode) {
+  if (requestedScenarios === undefined || requestedScenarios === null) {
+    return true;
+  }
+  return requestedScenarios.every((requestedScenario) => requestedScenarioAppliesToCanonicalMode(
+    requestedScenario,
+    canonicalMode,
+  ));
+}
+
 function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverProof) {
   const nestedModeProof = pluginDriverProof?.modeProof;
   if (nestedModeProof === undefined || nestedModeProof === null) {
@@ -740,9 +750,9 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   }
 
   if (
-    !requestedScenarioListsMatch(
+    !requestedScenariosStayWithinCanonicalMode(
       pluginDriverProof?.requestedScenarios,
-      nestedModeProof?.requestedScenarios,
+      nestedModeProof?.canonicalMode,
     )
   ) {
     return true;
