@@ -10500,6 +10500,348 @@ test('production-shaped authenticated push fails closed on replay-only auth-sess
   }
 });
 
+test('production-shaped authenticated push fails closed on replay-only auth-session revocation drift even without the stricter production-session gate', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify(applyCount === 1 ? {
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        idempotency: {
+          replayed: false,
+          freshMutationWork: true,
+        },
+      } : {
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: 'BATCH_ALREADY_COMMITTED',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            revoked: true,
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-replay-revoked-unrequired',
+      routeProfile: 'production-shaped',
+      labAuthSessionDrift: 'replay:revoked',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.revoked',
+        required: 'unrevoked',
+        observed: 'revoked',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.revoked',
+      required: 'unrevoked',
+      observed: 'revoked',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.revoked, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleSummary.read?.revoked, true);
+    const applyUrls = seen
+      .map(({ url }) => url)
+      .filter((url) => url.includes('/apply'));
+    assert.equal(applyUrls.length, 2);
+    assert.match(applyUrls[0], /\/apply\?reprint_push_lab_auth_session_drift=replay%3Arevoked$/);
+    assert.match(applyUrls[1], /\/apply\?reprint_push_lab_auth_session_drift=replay%3Arevoked$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed on replay-only cleanup alias drift even without the stricter production-session gate', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let applyCount = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify(applyCount === 1 ? {
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        idempotency: {
+          replayed: false,
+          freshMutationWork: true,
+        },
+      } : {
+        ok: true,
+        mode: 'apply',
+        applied: 1,
+        code: 'BATCH_ALREADY_COMMITTED',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            cleanup: true,
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-replay-cleanup-alias-unrequired',
+      routeProfile: 'production-shaped',
+      labAuthSessionDrift: 'replay:cleanup',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.cleanup',
+        required: 'unrevoked',
+        observed: 'cleaned-up',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.cleanup',
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
+    assert.equal(summary.authSessionLifecycleSummary.read?.cleanup, true);
+    const applyUrls = seen
+      .map(({ url }) => url)
+      .filter((url) => url.includes('/apply'));
+    assert.equal(applyUrls.length, 2);
+    assert.match(applyUrls[0], /\/apply\?reprint_push_lab_auth_session_drift=replay%3Acleanup$/);
+    assert.match(applyUrls[1], /\/apply\?reprint_push_lab_auth_session_drift=replay%3Acleanup$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed on replay-only malformed auth-session warning drift', async () => {
   const originalFetch = global.fetch;
   const seen = [];
