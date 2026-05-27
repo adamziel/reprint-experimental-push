@@ -155,6 +155,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -165,6 +166,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -175,6 +177,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -383,6 +386,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -393,6 +397,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-measured-not-proven',
       ...HIDDEN_MEMORY_CEILING_VISIBILITY_BLOCKER_REFS,
       ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -964,6 +969,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
       'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1022,6 +1028,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
       'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1184,6 +1191,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
       'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ...HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({

@@ -15432,6 +15432,207 @@ test('guarded benchmark carries incomplete pause-footprint blockers into rejecte
   ]);
 });
 
+test('guarded benchmark carries hidden staging-disk visibility blockers into plugin-update and plugin-install post-pause summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = false;
+  mutated.claims.productionThroughputDetails.stagingDiskHeadroomVisibleAndMeasured = false;
+  mutated.claims.productionThroughputDetails.stagingDiskHeadroomVisibleAndMeasuredAfterPause = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const pluginUpdateRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+  ].includes(entry.id));
+  const pluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+  ].includes(entry.id));
+
+  assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
+  assert.deepEqual(
+    pluginUpdateRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(
+    pluginInstallRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+    ],
+  );
+});
+
 test('guarded benchmark carries hidden memory-ceiling-match blockers into rejected fast-path summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
