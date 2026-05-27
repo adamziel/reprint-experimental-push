@@ -1429,18 +1429,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             );
             await throwPlaygroundReadinessFailure(
               child,
-              malformedSnapshotFallbackPreflightBody
-                ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
-                : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
-              lastError,
-              lastProbes,
-              getOutput(),
-              packagedProductionPluginPreflightTerminalContext(
-                { childPid: child.pid ?? null },
-                { snapshotStartupFallback: true },
-              ),
-            );
-          }
+                malformedSnapshotFallbackPreflightBody
+                  ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                  : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                packagedProductionPluginPreflightTerminalContext(
+                  {
+                    childPid: child.pid ?? null,
+                    ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                  },
+                  { snapshotStartupFallback: true },
+                ),
+              );
+            }
           if (
             packagedProductionPluginRouteStartupClassificationReady(
               snapshotNotReadyProbeCount,
@@ -1715,18 +1718,21 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             );
             await throwPlaygroundReadinessFailure(
               child,
-              malformedSnapshotFallbackPreflightBody
-                ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
-                : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
-              lastError,
-              lastProbes,
-              getOutput(),
-              packagedProductionPluginPreflightTerminalContext(
-                { childPid: child.pid ?? null },
-                { snapshotStartupFallback: true },
-              ),
-            );
-          }
+                malformedSnapshotFallbackPreflightBody
+                  ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
+                  : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                packagedProductionPluginPreflightTerminalContext(
+                  {
+                    childPid: child.pid ?? null,
+                    ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                  },
+                  { snapshotStartupFallback: true },
+                ),
+              );
+            }
           if (
             packagedProductionPluginRouteStartupClassificationReady(
               snapshotNotReadyProbeCount,
