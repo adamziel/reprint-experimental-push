@@ -5227,6 +5227,52 @@ test('shared lab waitForServer fails with bounded timeout diagnostics after cons
   }
 });
 
+test('shared lab waitForServer fails closed when the Playground child exits before readiness probing completes', async () => {
+  await assert.rejects(
+    waitForServer(
+      {
+        exitCode: 23,
+        signalCode: null,
+        pid: null,
+        kill() {
+          return true;
+        },
+      },
+      'http://127.0.0.1:65535',
+      () => 'server boot log',
+    ),
+    (error) => {
+      assert.match(error.message, /Playground server exited early with 23/);
+      assert.match(error.message, /server boot log/);
+      assert.equal(error.context?.childPid ?? null, null);
+      return true;
+    },
+  );
+});
+
+test('shared lab waitForServer fails closed when the Playground child is signaled before readiness probing completes', async () => {
+  await assert.rejects(
+    waitForServer(
+      {
+        exitCode: null,
+        signalCode: 'SIGTERM',
+        pid: null,
+        kill() {
+          return true;
+        },
+      },
+      'http://127.0.0.1:65535',
+      () => 'server boot log',
+    ),
+    (error) => {
+      assert.match(error.message, /Playground server terminated by SIGTERM/);
+      assert.match(error.message, /server boot log/);
+      assert.equal(error.context?.childPid ?? null, null);
+      return true;
+    },
+  );
+});
+
 test('shared lab waitForServer resets timeout diagnostics after a successful readiness probe', async () => {
   let indexCalls = 0;
   let snapshotCalls = 0;
