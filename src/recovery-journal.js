@@ -285,12 +285,35 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
     }
   }
 
-  return (!hasNonEmptyString(claim.idempotencyKeyHash)
-      || !hasNonEmptyString(row.idempotencyKeyHash)
-      || row.idempotencyKeyHash === claim.idempotencyKeyHash)
-    && (!hasNonEmptyString(claim.requestHash)
-      || !hasNonEmptyString(row.requestHash)
-      || row.requestHash === claim.requestHash);
+  if (
+    hasNonEmptyString(claim?.idempotencyKeyHash)
+    && !hasNonEmptyString(row.idempotencyKeyHash)
+  ) {
+    return false;
+  }
+
+  if (
+    hasNonEmptyString(claim?.idempotencyKeyHash)
+    && row.idempotencyKeyHash !== claim.idempotencyKeyHash
+  ) {
+    return false;
+  }
+
+  if (
+    hasNonEmptyString(claim?.requestHash)
+    && !hasNonEmptyString(row.requestHash)
+  ) {
+    return false;
+  }
+
+  if (
+    hasNonEmptyString(claim?.requestHash)
+    && row.requestHash !== claim.requestHash
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function checkedBoundaryStaleClaimEvidenceFloor(claim) {

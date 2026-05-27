@@ -626,6 +626,9 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       {
         event: 'stale-claim-rejected',
         id: 20,
+        claimKeyHash: 'retry-claim-hash-02',
+        idempotencyKeyHash: 'idempotency-hash-01',
+        requestHash: 'request-hash-01',
       },
     ],
     eventSummaries: [
@@ -743,6 +746,8 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
           event: 'stale-claim-rejected',
           sequence: 20,
           claimKeyHash: 'retry-claim-hash-02',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
         },
       ],
       storageGuard: {
@@ -764,6 +769,37 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       },
     }),
     true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      latestRows: [
+        {
+          event: 'stale-claim-rejected',
+          sequence: 20,
+          claimKeyHash: 'retry-claim-hash-02',
+          idempotencyKeyHash: 'idempotency-hash-01',
+        },
+      ],
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
   );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
@@ -1346,6 +1382,9 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         {
           event: 'stale-claim-rejected',
           sequence: 20,
+          claimKeyHash: 'retry-claim-hash-02',
+          idempotencyKeyHash: 'idempotency-hash-01',
+          requestHash: 'request-hash-01',
         },
       ],
       storageGuard: {
