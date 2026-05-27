@@ -35059,6 +35059,83 @@ test('blocks local same-plan created comment post identity while preserving a ma
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks local same-plan created comment post identity while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:24"]';
+  const targetResourceKey = 'row:["wp_posts","ID:29"]';
+  const restoreFileKey = 'file:restore-me-comment-post-removals.php';
+  const base = baseSite();
+  delete base.files[restoreFileKey.slice('file:'.length)];
+  base.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 29,
+      comment_content: 'Base restore removals comment content',
+    },
+  };
+
+  const local = baseSite();
+  local.files[restoreFileKey.slice('file:'.length)] = 'Shared restore comment-post removals fixture';
+  local.db.wp_posts['ID:29'] = {
+    ID: 29,
+    post_title: 'Local restore removals same-plan post',
+    post_content: 'Local restore removals same-plan post content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_comments = {
+    'comment_ID:24': {
+      comment_ID: 24,
+      comment_post_ID: 29,
+      comment_content: 'Local restore removals comment content',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[restoreFileKey.slice('file:'.length)] = 'Shared restore comment-post removals fixture';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const commentBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const restoreDecision = decisionFor(plan, restoreFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(commentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(commentBlocker.resourceKey, resourceKey);
+  assert.equal(commentBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(commentBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:24"] is created in the same plan as a comment post identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(commentBlocker.references[0].relationshipKey, 'wp_comments.comment_post_ID');
+  assert.equal(commentBlocker.references[0].relationshipType, 'comment-post');
+  assert.equal(commentBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:29"] is created in the same plan as a comment post target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.references[0].relationshipKey, 'wp_comments.comment_post_ID');
+  assert.equal(blocker.references[0].relationshipType, 'comment-post');
+  assert.equal(blocker.references[0].sourceResourceKey, resourceKey);
+  assert.equal(blocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(restoreDecision.decision, 'already-in-sync');
+  assert.equal(restoreDecision.change.localChange, 'create');
+  assert.equal(restoreDecision.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Shared restore comment-post removals fixture'), false);
+  assert.equal(planJson.includes('Local restore removals comment content'), false);
+  assert.equal(planJson.includes('Base restore removals comment content'), false);
+  assert.equal(planJson.includes('Local restore removals same-plan post'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created comment post identity while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:16"]';
   const targetResourceKey = 'row:["wp_posts","ID:19"]';
