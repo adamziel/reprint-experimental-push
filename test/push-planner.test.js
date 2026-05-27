@@ -43920,6 +43920,75 @@ test('blocks an existing termmeta row when it retargets to a same-plan term alre
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing termmeta row when it retargets to a same-plan term already used by a remote nav menu taxonomy and unrelated remote wp_navigation noise exists', () => {
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:14"]';
+  const termResourceKey = 'row:["wp_terms","term_id:5"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  base.db.wp_termmeta = {
+    'meta_id:14': {
+      meta_id: 14,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+  remote.db.wp_termmeta = {
+    'meta_id:14': {
+      ...base.db.wp_termmeta['meta_id:14'],
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:5': {
+      term_id: 5,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:14': {
+      meta_id: 14,
+      term_id: 5,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-shared-term-note',
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 5,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  remote.db.wp_posts['ID:77'] = {
+    ID: 77,
+    post_type: 'wp_navigation',
+    post_status: 'publish',
+    post_parent: 0,
+    post_title: 'Remote wp_navigation noise',
+    post_content: 'remote-wp-navigation-body',
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(blocker).includes('local-private-existing-shared-term-note'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-shared-term'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-wp-navigation-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local term taxonomy reference to a same-plan term when a remote nav menu taxonomy already uses the term', () => {
   const termResourceKey = 'row:["wp_terms","term_id:5"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
