@@ -182,6 +182,17 @@ function buildGuardRejectionProof(summary, codeField) {
   };
 }
 
+function buildBlankRowIdGuardProof(summary) {
+  return {
+    rejectedCode: summary?.blankRejectedCode ?? null,
+    blankRejectedCode: summary?.blankRejectedCode ?? null,
+    whitespaceRejectedCode: summary?.whitespaceRejectedCode ?? null,
+    rowRetainedAfterReject: summary?.rowRetainedAfterReject ?? null,
+    payloadModeAfterReject: summary?.payloadModeAfterReject ?? null,
+    updatedMarkerAfterReject: summary?.updatedMarkerAfterReject ?? null,
+  };
+}
+
 function buildBooleanGuardProof(summary, fieldName) {
   return {
     observed: summary?.[fieldName] ?? false,
@@ -192,6 +203,9 @@ function buildReceiptGuardProofMap(summary) {
   return {
     deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
     updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
+    ...(summary?.driverReceiptBlankRowIdGuard !== undefined
+      ? { blankRowId: buildBlankRowIdGuardProof(summary?.driverReceiptBlankRowIdGuard) }
+      : {}),
     planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
     expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
     identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
@@ -234,10 +248,32 @@ function buildRegistrationShapeGuardProofMap(summary) {
 }
 
 function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
-  const guardScenarioMap = guardProofScenarioMaps[canonicalMode];
-  if (!guardScenarioMap) {
+  const baseGuardScenarioMap = guardProofScenarioMaps[canonicalMode];
+  if (!baseGuardScenarioMap) {
     return null;
   }
+
+  const guardScenarioMap = (
+    summary?.driverReceiptBlankRowIdGuard !== undefined
+    && (
+      canonicalMode === 'driver-proof'
+      || canonicalMode === 'driver-release-proof'
+      || canonicalMode === 'driver-verifier-guards'
+      || canonicalMode === 'driver-receipt-registration-guards'
+      || canonicalMode === 'driver-receipt-guards'
+    )
+  )
+    ? Object.fromEntries(
+      Object.entries(baseGuardScenarioMap).flatMap(([proofKey, scenarioName]) => (
+        proofKey === 'updateValidationGuard'
+          ? [
+            [proofKey, scenarioName],
+            ['blankRowId', 'driver-receipt-blank-row-id-guard'],
+          ]
+          : [[proofKey, scenarioName]]
+      )),
+    )
+    : baseGuardScenarioMap;
 
   let guardProof;
   switch (canonicalMode) {

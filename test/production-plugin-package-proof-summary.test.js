@@ -8133,6 +8133,13 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
       driverUpdateValidationGuard: {
         dryRunRejectedCode: 'INVALID_PLAN',
       },
+      driverReceiptBlankRowIdGuard: {
+        blankRejectedCode: 'INVALID_PLAN',
+        whitespaceRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        payloadModeAfterReject: 'local-update',
+        updatedMarkerAfterReject: 'local-update',
+      },
       driverReceiptPlanBindingGuard: {
         applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
         rowRetainedAfterReject: true,
@@ -8201,18 +8208,20 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
 
   assert.equal(summary.modeProof?.proof, summary.driverVerifierGuards);
   assert.equal(summary.modeProof?.proof.receiptStatus, 'passed');
+  assert.equal(summary.modeProof?.proof.blankRowId, 'INVALID_PLAN');
   assert.equal(summary.modeProof?.proof.revokedCredential, 'reprint_push_lab_auth_required');
   assert.equal(summary.modeProof?.proof.missingExportRowsCallback, true);
   assert.equal(summary.modeProof?.proof.missingPluginOwner, true);
   assert.deepEqual(summary.modeProof?.guardProof, {
     ok: true,
     status: 'passed',
-    guardCount: 15,
-    passedGuardCount: 15,
+    guardCount: 16,
+    passedGuardCount: 16,
     failedGuardCount: 0,
     guardStatuses: {
       deleteGuard: 'passed',
       updateValidationGuard: 'passed',
+      blankRowId: 'passed',
       planBinding: 'passed',
       expiry: 'passed',
       identity: 'passed',
@@ -8230,6 +8239,7 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
     passedGuards: [
       'deleteGuard',
       'updateValidationGuard',
+      'blankRowId',
       'planBinding',
       'expiry',
       'identity',
@@ -8258,6 +8268,15 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
       rowRetainedAfterReject: null,
       payloadModeAfterReject: null,
       updatedMarkerAfterReject: null,
+    },
+    blankRowId: {
+      status: 'passed',
+      rejectedCode: 'INVALID_PLAN',
+      blankRejectedCode: 'INVALID_PLAN',
+      whitespaceRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
     },
     planBinding: {
       status: 'passed',
