@@ -2483,6 +2483,9 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-login');
     assert.ok(!seen.some(({ url }) => url.includes('/apply')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.length, 3);
@@ -2565,6 +2568,9 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'user-id');
     assert.ok(!seen.some(({ url }) => url.includes('/apply')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.length, 3);
@@ -2753,6 +2759,8 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'dry-run');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'type');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'type');
     assert.ok(!seen.some(({ url }) => url.includes('/apply')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.length, 3);
@@ -2836,6 +2844,8 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
     });
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'dry-run');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'dry-run');
+    assert.equal(summary.authSessionLifecycleSummary.read?.invalidIdentityField, 'status');
     assert.ok(!seen.some(({ url }) => url.includes('/apply')));
     assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
     assert.equal(seen.length, 3);
