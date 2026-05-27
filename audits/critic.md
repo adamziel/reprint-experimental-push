@@ -1,25 +1,24 @@
 # Critic Verdict
 
-Current reliable head: `bffca69c73a7cbf02a2f99b4018521a5006a3641`
-(`Require checked journal lease coherence`).
+Current reliable head: `dc3b07b9f1e2d91b08f8c081ba57df0d086b0823`
+(`Preserve checked journal fsync evidence`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head is material durable-journal boundary hardening because checked
-  acceptance now requires coherent claim-fenced writer leases, fsync evidence,
-  and `wpdb-single-statement-cas` storage-guard evidence.
-- It is still checked verifier evidence rather than proof of a releasable
-  production-owned durable-journal primitive, so the supervised release gate
-  remains closed at `0/4`.
+- This head preserves `leaseFence.fsyncEvidence` in the authenticated HTTP push
+  client summary and keeps `durableJournal.checkedAccepted: true` on the live
+  release boundary, so the checked evidence path is now intact.
+- It still only proves a lab-backed route profile and a verifier-side summary
+  for `LIVE_RELEASE_BOUNDARY_OK`; it does not add a releasable production
+  source-boundary primitive, so the supervised release gates remain closed at
+  `0/4`.
 
 Next owner / command:
 
-- `main:reliable-exec` should prove the durable-journal primitive outside
-  verifier scaffolding on a releasable production source boundary, or prove
-  production-backed auth/session lifecycle ownership if the durable primitive
-  is now sufficient, using
+- `main:reliable-exec` should prove a releasable production source-boundary
+  primitive outside verifier scaffolding, using
   `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`,
   `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
