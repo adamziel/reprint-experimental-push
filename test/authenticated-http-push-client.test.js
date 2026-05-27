@@ -4,6 +4,7 @@ import {
   authenticatedHttpClient,
   dbJournalProofIsAcceptable,
   inferTrustedDbJournalStorageGuard,
+  resolveUncheckedObservedAuthSessionMetadataDrift,
   resolveAuthenticatedHttpPushSource,
   runAuthenticatedHttpPush,
 } from '../src/authenticated-http-push-client.js';
@@ -85,6 +86,54 @@ test('authenticated push client requires an explicit session and idempotency key
       idempotencyKey: '   ',
     }),
     /Invalid push idempotencyKey for mutating request: \/wp-json\/reprint\/v1\/push\/apply/,
+  );
+});
+
+test('unchecked auth-session metadata drift fails closed on hidden revoked or cleaned-up production sessions', () => {
+  assert.deepEqual(
+    resolveUncheckedObservedAuthSessionMetadataDrift(
+      { sessionType: 'production-auth-session' },
+      {
+        body: {
+          auth: {
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              revoked: true,
+            },
+          },
+        },
+      },
+    ),
+    {
+      field: 'auth.session.status',
+      required: 'unrevoked',
+      observed: 'revoked',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    },
+  );
+
+  assert.deepEqual(
+    resolveUncheckedObservedAuthSessionMetadataDrift(
+      { sessionType: 'production-auth-session' },
+      {
+        body: {
+          auth: {
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              cleanedUp: true,
+            },
+          },
+        },
+      },
+    ),
+    {
+      field: 'auth.session.cleanedUp',
+      required: 'unrevoked',
+      observed: 'cleaned-up',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    },
   );
 });
 

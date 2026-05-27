@@ -3288,7 +3288,7 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
   return null;
 }
 
-function resolveUncheckedObservedAuthSessionMetadataDrift(expected, response) {
+export function resolveUncheckedObservedAuthSessionMetadataDrift(expected, response) {
   const expectedSessionType = typeof expected?.sessionType === 'string'
     ? expected.sessionType.trim()
     : '';
@@ -3328,6 +3328,17 @@ function resolveUncheckedObservedAuthSessionMetadataDrift(expected, response) {
       field: `auth.identity.${invalidIdentityField.field}`,
       required: invalidIdentityField.required,
       observed: `invalid-${invalidIdentityField.label}`,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  if (hasProductionAuthSessionRevocationDrift(response)) {
+    return {
+      field: resolveProductionAuthSessionUnrevokedField(response?.body?.auth?.session),
+      required: 'unrevoked',
+      observed: response?.body?.auth?.session?.revoked === true || response?.body?.auth?.session?.status === 'revoked'
+        ? 'revoked'
+        : 'cleaned-up',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
   }
