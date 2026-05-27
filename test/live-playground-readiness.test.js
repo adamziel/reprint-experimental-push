@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import {
+  packagedProductionPluginClassifyBoundedStartup,
+  packagedProductionPluginClassifyTimeoutFallbackStartup,
+  packagedProductionPluginPreflightTerminalContext,
+  packagedProductionPluginRestIndexReady,
+  packagedProductionPluginRestIndexRetryable,
+} from '../scripts/playground/packaged-production-plugin-readiness.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 
@@ -49,3 +56,111 @@ for (const scriptName of [
     assert.match(source, /child\.kill\('SIGTERM'\);/);
   });
 }
+
+test('packaged rest-index helpers distinguish ready, retryable, and invalid terminal bodies', () => {
+  const readyIndex = JSON.stringify({
+    namespaces: ['reprint/v1'],
+    routes: {
+      '/reprint/v1/push/preflight': {},
+    },
+  });
+
+  assert.equal(packagedProductionPluginRestIndexReady(200, readyIndex), true);
+  assert.equal(packagedProductionPluginRestIndexRetryable({ status: 200, body: readyIndex }), false);
+
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 502,
+      body: JSON.stringify({ code: 'wordpress_not_ready', message: 'WordPress is not ready yet' }),
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 404,
+      body: JSON.stringify({ code: 'rest_no_route', message: 'No route was found matching the URL and request method.' }),
+    }),
+    true,
+  );
+
+  assert.equal(packagedProductionPluginRestIndexReady(200, '{"routes":[]}'), false);
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 200,
+      body: '{"routes":[]}',
+    }),
+    true,
+  );
+
+  assert.equal(
+    packagedProductionPluginRestIndexRetryable({
+      status: 500,
+      body: 'Internal Server Error',
+    }),
+    false,
+  );
+});
+
+test('packaged startup classifiers preserve terminal /wp-json/ failures for signed preflight probes', () => {
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      {
+        retryable: true,
+        status: 503,
+        body: 'WordPress is not ready yet',
+      },
+      {
+        status: 500,
+        body: 'Internal Server Error',
+      },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyTimeoutFallbackStartup(
+      {
+        retryable: true,
+        status: 503,
+        body: 'WordPress is not ready yet',
+      },
+      {
+        status: 500,
+        body: 'Internal Server Error',
+      },
+    ),
+    {
+      kind: 'retryable-route-index-terminal',
+      indexTerminal: true,
+    },
+  );
+});
+
+test('packaged preflight terminal context carries index-terminal readiness evidence', () => {
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      {
+        childPid: 321,
+        indexTerminal: true,
+        invalidReadinessBody: true,
+        preflightNotReadyProbeCount: 4,
+      },
+      {
+        timeoutFallback: true,
+      },
+    ),
+    {
+      childPid: 321,
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      indexTerminal: true,
+      invalidReadinessBody: true,
+      preflightNotReadyProbeCount: 4,
+      timeoutFallback: true,
+    },
+  );
+});
