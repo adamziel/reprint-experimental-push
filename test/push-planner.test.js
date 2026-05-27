@@ -40595,6 +40595,59 @@ test('blocks steady unsupported post GUID rows before they can be treated as alr
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported post GUID rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:60"]';
+  const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-guid-delete.txt';
+  const base = baseSite();
+  base.db.wp_posts['ID:60'] = {
+    ID: 60,
+    guid: 'https://example.test/?p=60&steady=1',
+    post_title: 'Steady unsupported GUID delete post',
+    post_content: 'Steady unsupported GUID delete content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.files[matchingDeleteKey.slice('file:'.length)] = 'base steady unsupported GUID delete bytes';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:60'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:60']));
+  delete local.files[matchingDeleteKey.slice('file:'.length)];
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:60'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:60']));
+  delete remote.files[matchingDeleteKey.slice('file:'.length)];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, matchingDeleteKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKind, 'post-guid');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported GUID delete content'), false);
+  assert.equal(planJson.includes('base steady unsupported GUID delete bytes'), false);
+  assert.equal(Object.hasOwn(remote.files, matchingDeleteKey.slice('file:'.length)), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks remote-only created post GUIDs while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:55"]';
   const base = baseSite();
