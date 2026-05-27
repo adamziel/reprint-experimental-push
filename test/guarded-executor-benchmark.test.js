@@ -240,6 +240,55 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       blockerRefs: ['production-capability-measurement-not-aligned'],
     },
     {
+      id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+      rejectedGate: 'recovery',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+      rejectedGate: 'recovery',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-parallelism-limits-not-visible',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+    {
       id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
       rejectedGate: 'group',
       blockerRefs: [
@@ -389,7 +438,47 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       ],
     },
     {
+      id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-parallelism-limits-not-visible',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-parallelism-limits-not-visible',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
       id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-parallelism-limits-not-visible',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-parallelism-limits-not-visible',
+        'production-row-batch-executor-not-measured',
+        'production-row-batch-executor-measured-not-proven',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
       rejectedGate: 'group',
       blockerRefs: [
         'production-atomic-group-commit-not-measured',
@@ -846,9 +935,9 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.deepEqual(
     report.claims.productionThroughputDetails.rejectedFastPathGateSummary,
     [
-      { rejectedGate: 'group', count: 43 },
+      { rejectedGate: 'group', count: 49 },
       { rejectedGate: 'live', count: 1 },
-      { rejectedGate: 'recovery', count: 10 },
+      { rejectedGate: 'recovery', count: 12 },
       { rejectedGate: 'skip', count: 2 },
     ],
   );
@@ -1310,6 +1399,8 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
   assert.deepEqual(
     details.rejectedFastPaths
       .filter((entry) => [
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
         'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
         'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
@@ -1321,6 +1412,28 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
       }))
       .sort((left, right) => left.id.localeCompare(right.id)),
     [
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+        ],
+      },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
         rejectedGate: 'recovery',
@@ -1362,7 +1475,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
-    5,
+    7,
   );
 });
 
