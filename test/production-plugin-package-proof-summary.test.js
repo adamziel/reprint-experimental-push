@@ -8777,6 +8777,142 @@ test('plugin-driver proof summary carries blank row id guard proof on release mo
   });
 });
 
+test('plugin-driver proof summary attach helper repairs stale release mode guard proof when blank row id proof is present', () => {
+  const rawSummary = {
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverUpdateApply: {
+      applied: 1,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptBlankRowIdGuard: {
+      blankRejectedCode: 'INVALID_PLAN',
+      whitespaceRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+  const builtProof = buildProductionPluginPackageProofSummary(
+    rawSummary,
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set(rawSummary.selectedScenarios),
+      resolvedMode: 'driverMutationProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+  const summary = structuredClone(rawSummary);
+  summary.pluginDriverProof = structuredClone(builtProof);
+  summary.modeProof = structuredClone(builtProof.modeProof);
+  summary.pluginDriverProof.modeProof.guardProof.guardCount = 7;
+  summary.pluginDriverProof.modeProof.guardProof.passedGuardCount = 7;
+  summary.pluginDriverProof.modeProof.guardProof.failedGuardCount = 0;
+  summary.pluginDriverProof.modeProof.guardProof.passedGuards =
+    summary.pluginDriverProof.modeProof.guardProof.passedGuards.filter(
+      (guardName) => guardName !== 'blankRowId',
+    );
+  summary.pluginDriverProof.modeProof.guardProof.failedGuards = [];
+  summary.pluginDriverProof.modeProof.guardProof.guardStatuses = {
+    ...summary.pluginDriverProof.modeProof.guardProof.guardStatuses,
+  };
+  delete summary.pluginDriverProof.modeProof.guardProof.guardStatuses.blankRowId;
+  delete summary.pluginDriverProof.modeProof.guardProof.blankRowId;
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(
+    summary,
+    {
+      requestedScenarios: ['driver-release-proof'],
+      selectedScenarios: new Set(rawSummary.selectedScenarios),
+      resolvedMode: 'driverMutationProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.equal(repairedProof.modeProof?.guardProof?.guardCount, 8);
+  assert.equal(repairedProof.modeProof?.guardProof?.passedGuardCount, 8);
+  assert.equal(repairedProof.modeProof?.guardProof?.failedGuardCount, 0);
+  assert.deepEqual(repairedProof.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'passed',
+    blankRowId: 'passed',
+    planBinding: 'passed',
+    expiry: 'passed',
+    identity: 'passed',
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+  });
+  assert.deepEqual(repairedProof.modeProof?.guardProof?.passedGuards, [
+    'deleteGuard',
+    'updateValidationGuard',
+    'blankRowId',
+    'planBinding',
+    'expiry',
+    'identity',
+    'rotatedCredential',
+    'revokedCredential',
+  ]);
+  assert.deepEqual(repairedProof.modeProof?.guardProof?.blankRowId, {
+    status: 'passed',
+    rejectedCode: 'INVALID_PLAN',
+    blankRejectedCode: 'INVALID_PLAN',
+    whitespaceRejectedCode: 'INVALID_PLAN',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 8);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'passed',
+    blankRowId: 'passed',
+    planBinding: 'passed',
+    expiry: 'passed',
+    identity: 'passed',
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+  });
+});
+
 test('plugin-driver proof summary carries bounded registration guard proof on modeProof', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

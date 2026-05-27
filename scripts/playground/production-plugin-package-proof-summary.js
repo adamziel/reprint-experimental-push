@@ -1096,6 +1096,13 @@ function modeProofTopLevelViewMatchesExpectedModeProof(modeProof, expectedModePr
   }
 
   if (
+    (modeProof?.guardProof !== undefined || expectedModeProof?.guardProof !== undefined)
+    && !guardProofsMatch(modeProof?.guardProof, expectedModeProof?.guardProof)
+  ) {
+    return false;
+  }
+
+  if (
     modeProof?.requestedBundles !== undefined
     && !requestedBundleListsMatch(
       modeProof?.requestedBundles,
@@ -1217,6 +1224,43 @@ function modeProofTopLevelViewMatchesExpectedModeProof(modeProof, expectedModePr
   return true;
 }
 
+function normalizeGuardProofForComparison(guardProof) {
+  if (guardProof === undefined) {
+    return undefined;
+  }
+  if (guardProof === null) {
+    return null;
+  }
+
+  const guardProofKeys = Object.keys(guardProof).sort();
+  const normalized = {};
+
+  for (const key of guardProofKeys) {
+    const value = guardProof[key];
+    if (Array.isArray(value)) {
+      normalized[key] = value.slice().sort();
+      continue;
+    }
+    if (value && typeof value === 'object') {
+      normalized[key] = Object.fromEntries(
+        Object.entries(value).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey)),
+      );
+      continue;
+    }
+    normalized[key] = value;
+  }
+
+  return normalized;
+}
+
+function guardProofsMatch(leftGuardProof, rightGuardProof) {
+  return JSON.stringify(
+    normalizeGuardProofForComparison(leftGuardProof),
+  ) === JSON.stringify(
+    normalizeGuardProofForComparison(rightGuardProof),
+  );
+}
+
 function proofSummaryHasRequestedViewFields(summary) {
   return summary?.requestedStatus !== undefined
     || summary?.requestedBundleStatus !== undefined
@@ -1229,6 +1273,30 @@ function proofSummaryHasRequestedViewFields(summary) {
     || summary?.requestedConcreteScenarioStatuses !== undefined
     || summary?.requestedScenariosSatisfied !== undefined
     || summary?.requestedConcreteScenariosSatisfied !== undefined;
+}
+
+function summaryHasDirectPluginDriverEvidence(summary) {
+  return summary?.routes !== undefined
+    || summary?.cli !== undefined
+    || summary?.final !== undefined
+    || summary?.driverUpdateApply !== undefined
+    || summary?.driverDeleteApply !== undefined
+    || summary?.driverDeleteGuard !== undefined
+    || summary?.driverUpdateValidationGuard !== undefined
+    || summary?.driverReceiptBlankRowIdGuard !== undefined
+    || summary?.driverReceiptPlanBindingGuard !== undefined
+    || summary?.driverReceiptExpiryGuard !== undefined
+    || summary?.driverReceiptIdentityGuard !== undefined
+    || summary?.driverReceiptRotatedCredentialGuard !== undefined
+    || summary?.driverReceiptRevokedCredentialGuard !== undefined
+    || summary?.driverExportGuard !== undefined
+    || summary?.driverApplyGuard !== undefined
+    || summary?.driverValidateGuard !== undefined
+    || summary?.driverMissingNameGuard !== undefined
+    || summary?.driverPluginOwnerGuard !== undefined
+    || summary?.driverMissingTableGuard !== undefined
+    || summary?.driverDuplicateNameGuard !== undefined
+    || summary?.driverDuplicateTableGuard !== undefined;
 }
 
 function modeProofMatchesResolvedKey(modeProof, resolved) {
@@ -1397,7 +1465,8 @@ export function resolveProductionPluginPackagePluginDriverProof(
   const attachedPluginDriverProof = summary?.pluginDriverProof;
   if (attachedPluginDriverProof !== undefined) {
     const resolvedOptions = resolveProductionPluginPackageProofSummaryOptions(summary, options);
-    const expectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
+    let expectedModeProof;
+    const resolvedExpectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
       ? null
       : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
     const attachedModeKey = attachedPluginDriverProof?.mode === undefined || attachedPluginDriverProof?.mode === null
@@ -1413,16 +1482,16 @@ export function resolveProductionPluginPackagePluginDriverProof(
     const modeMatches = (
       resolvedOptions.resolvedMode === undefined
       || (
-        expectedModeProof === null
+        resolvedExpectedModeProof === null
           ? attachedPluginDriverProof?.mode === resolvedOptions.resolvedMode
-          : attachedModeKey?.canonicalMode === expectedModeProof.canonicalMode
-            && attachedPluginDriverProof?.canonicalMode === expectedModeProof.canonicalMode
-            && attachedModeKey?.proofKey === expectedModeProof.proofKey
+          : attachedModeKey?.canonicalMode === resolvedExpectedModeProof.canonicalMode
+            && attachedPluginDriverProof?.canonicalMode === resolvedExpectedModeProof.canonicalMode
+            && attachedModeKey?.proofKey === resolvedExpectedModeProof.proofKey
             && (
-              attachedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
+              attachedModeKey?.legacyProofKey === resolvedExpectedModeProof.legacyProofKey
               || (
-                attachedPluginDriverProof?.mode === expectedModeProof.proofKey
-                && attachedModeKey?.legacyProofKey === expectedModeProof.proofKey
+                attachedPluginDriverProof?.mode === resolvedExpectedModeProof.proofKey
+                && attachedModeKey?.legacyProofKey === resolvedExpectedModeProof.proofKey
               )
             )
       )
@@ -1436,42 +1505,66 @@ export function resolveProductionPluginPackagePluginDriverProof(
         attachedPluginDriverProof?.selectedScenarios,
         resolvedOptions.selectedScenarios,
       );
-    const resolvedModeProofOptions = expectedModeProof === null
+    const resolvedModeProofOptions = resolvedExpectedModeProof === null
       ? null
       : (() => {
         return {
         ...resolvedOptions,
-        canonicalMode: expectedModeProof.canonicalMode,
+        canonicalMode: resolvedExpectedModeProof.canonicalMode,
         requestedScenarios: resolvedOptions.requestedScenarios === undefined
           || resolvedOptions.requestedScenarios === null
           ? resolvedOptions.requestedScenarios
           : resolvedOptions.requestedScenarios.filter(
             (scenarioName) => requestedScenarioAppliesToCanonicalMode(
               scenarioName,
-              expectedModeProof.canonicalMode,
+              resolvedExpectedModeProof.canonicalMode,
             ),
           ),
       };
       })();
+    const attachedNestedModeProofMatchesExpectedView = (() => {
+      if (resolvedModeProofOptions === null) {
+        return true;
+      }
+      if (
+        !proofSummaryHasRequestedViewFields(attachedPluginDriverProof?.modeProof)
+        && attachedPluginDriverProof?.modeProof?.guardProof === undefined
+      ) {
+        return true;
+      }
+      if (!summaryHasDirectPluginDriverEvidence(summary)) {
+        return true;
+      }
+      if (expectedModeProof === undefined) {
+        expectedModeProof = buildProductionPluginPackageProofSummary(
+          summary,
+          resolvedModeProofOptions,
+        )?.modeProof ?? null;
+      }
+      return modeProofTopLevelViewMatchesExpectedModeProof(
+        attachedPluginDriverProof?.modeProof,
+        expectedModeProof,
+      );
+    })();
     const attachedNestedModeKey = attachedPluginDriverProof?.modeProof?.mode === undefined
       || attachedPluginDriverProof?.modeProof?.mode === null
       ? null
       : resolveProductionPluginPackageModeProofKey(attachedPluginDriverProof.modeProof.mode);
-    const nestedModeProofMatches = expectedModeProof === null
+    const nestedModeProofMatches = resolvedExpectedModeProof === null
       || (
-        attachedNestedModeKey?.canonicalMode === expectedModeProof.canonicalMode
-        && attachedPluginDriverProof?.modeProof?.canonicalMode === expectedModeProof.canonicalMode
-        && attachedNestedModeKey?.proofKey === expectedModeProof.proofKey
-        && attachedPluginDriverProof?.modeProof?.proofKey === expectedModeProof.proofKey
+        attachedNestedModeKey?.canonicalMode === resolvedExpectedModeProof.canonicalMode
+        && attachedPluginDriverProof?.modeProof?.canonicalMode === resolvedExpectedModeProof.canonicalMode
+        && attachedNestedModeKey?.proofKey === resolvedExpectedModeProof.proofKey
+        && attachedPluginDriverProof?.modeProof?.proofKey === resolvedExpectedModeProof.proofKey
         && (
           (
-            attachedNestedModeKey?.legacyProofKey === expectedModeProof.legacyProofKey
-            && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.legacyProofKey
+            attachedNestedModeKey?.legacyProofKey === resolvedExpectedModeProof.legacyProofKey
+            && attachedPluginDriverProof?.modeProof?.legacyProofKey === resolvedExpectedModeProof.legacyProofKey
           )
           || (
-            attachedPluginDriverProof?.modeProof?.mode === expectedModeProof.proofKey
-            && attachedNestedModeKey?.legacyProofKey === expectedModeProof.proofKey
-            && attachedPluginDriverProof?.modeProof?.legacyProofKey === expectedModeProof.proofKey
+            attachedPluginDriverProof?.modeProof?.mode === resolvedExpectedModeProof.proofKey
+            && attachedNestedModeKey?.legacyProofKey === resolvedExpectedModeProof.proofKey
+            && attachedPluginDriverProof?.modeProof?.legacyProofKey === resolvedExpectedModeProof.proofKey
           )
         )
         && modeProofMatchesResolvedContext(
@@ -1479,8 +1572,9 @@ export function resolveProductionPluginPackagePluginDriverProof(
           attachedPluginDriverProof?.modeProof,
           resolvedModeProofOptions,
         )
+        && attachedNestedModeProofMatchesExpectedView
       );
-    const topLevelBundleViewMatches = expectedModeProof === null
+    const topLevelBundleViewMatches = resolvedExpectedModeProof === null
       || pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(attachedPluginDriverProof);
 
     if (
