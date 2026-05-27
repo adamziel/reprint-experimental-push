@@ -7128,6 +7128,56 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   });
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline top-level storage-guard operation instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.storageGuard.operation = 'compare-and-swap';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: inlineJournal,
+      },
+    },
+    true,
+    false,
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
+  });
+});
+
+test('checked recovery inspect evidence fails closed on conflicting accepted inline top-level storage-guard outcome instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.storageGuard.outcome = 'precondition-failed';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: inlineJournal,
+      },
+    },
+    true,
+    false,
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
+  });
+});
+
 test('checked recovery inspect evidence fails closed on conflicting accepted inline nested contract anchors instead of silently normalizing them', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -14847,6 +14897,44 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
     boundary: 'custom-inline-adapter',
     operation: 'update',
     outcome: 'applied',
+  });
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline top-level storage-guard operation instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.storageGuard.operation = 'compare-and-swap';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'applied',
+  });
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline top-level storage-guard outcome instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.storageGuard.outcome = 'precondition-failed';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'precondition-failed',
   });
 });
 
