@@ -3759,6 +3759,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
   assert.deepEqual(
     resolveLiveApplyRevalidationEnv({
       sourceUrl: 'http://127.0.0.1:49152',
+      remoteChangedUrl: 'http://127.0.0.1:49154',
+      localUrl: 'http://127.0.0.1:49153',
       authSessionSourceCommand: explicitSourceCommand,
       fallbackUsername: liveCredentials.username,
       fallbackApplicationPassword: liveCredentials.password,
@@ -3766,6 +3768,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
     {
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
+      REPRINT_PUSH_LOCAL_URL: 'http://127.0.0.1:49153',
       REPRINT_PUSH_USERNAME: liveCredentials.username,
       REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
@@ -3928,6 +3932,10 @@ maybeTest('production-shaped release verify command runs the live protocol branc
           /"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}/,
         );
         assert.match(proof.stdout, /"applyRevalidation": \{\s*"ok": true,/);
+        assert.match(
+          proof.stdout,
+          new RegExp(`"applyRevalidation": \\{[\\s\\S]*"topology": \\{\\s*"sourceUrl": ${JSON.stringify(remoteServer.baseUrl)},\\s*"remoteBase": ${JSON.stringify(remoteServer.baseUrl)},\\s*"remoteChanged": ${JSON.stringify(remoteChangedServer.baseUrl)},\\s*"localEdited": ${JSON.stringify(localServer.baseUrl)},\\s*"externalTopology": true`),
+        );
         assert.match(
           proof.stdout,
           /"applyRevalidation": \{[\s\S]*"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,

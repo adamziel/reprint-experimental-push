@@ -60,6 +60,7 @@ export function resolveCheckedLiveBoundaryEnv({
 
 export function resolveLiveApplyRevalidationEnv({
   sourceUrl = '',
+  remoteChangedUrl = '',
   localUrl = '',
   packagedBoundaryRequested = false,
   username = '',
@@ -92,6 +93,7 @@ export function resolveLiveApplyRevalidationEnv({
           REPRINT_PUSH_REMOTE_URL: sourceUrl,
         }
       : {}),
+    ...(remoteChangedUrl ? { REPRINT_PUSH_REMOTE_CHANGED_URL: remoteChangedUrl } : {}),
     ...(localUrl ? { REPRINT_PUSH_LOCAL_URL: localUrl } : {}),
     REPRINT_PUSH_USERNAME: resolvedUsername,
     REPRINT_PUSH_APPLICATION_PASSWORD: resolvedApplicationPassword,

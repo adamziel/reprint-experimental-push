@@ -36,6 +36,7 @@ const credentials = {
 const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
 const externalRemoteBaseUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const externalRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const externalLocalEditedUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
 const authSessionSource = authSessionSourceCommand
@@ -195,8 +196,9 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
     ok: true,
     topology: {
       sourceUrl: remoteServer.baseUrl,
-      remoteBase: 'remote-base',
-      localEdited: 'local-edited',
+      remoteBase: remoteServer.baseUrl,
+      remoteChanged: externalRemoteChangedUrl || null,
+      localEdited: localServer.baseUrl,
       externalTopology,
       proxyPolicy: 'local-only',
       ingressPort: 8080,
