@@ -1703,7 +1703,7 @@ test('auth-session source command builder emits a shell-safe node snippet', () =
 
   assert.equal(
     command,
-    "REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='http://127.0.0.1:8080/path?label=owner'\\''s' REPRINT_PUSH_SOURCE_COMMAND_USERNAME='reprint_push_owner'\\''oops' REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD='p@ss'\\''word' '/opt/node/bin/node' -e 'process.stdout.write(JSON.stringify({sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}))'",
+    "REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='http://127.0.0.1:8080/path?label=owner'\\''s' REPRINT_PUSH_SOURCE_COMMAND_USERNAME='reprint_push_owner'\\''oops' REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD='p@ss'\\''word' '/opt/node/bin/node' -e 'const source = {sourceUrl: process.env.REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL, username: process.env.REPRINT_PUSH_SOURCE_COMMAND_USERNAME, applicationPassword: process.env.REPRINT_PUSH_SOURCE_COMMAND_APPLICATION_PASSWORD}; if (Object.prototype.hasOwnProperty.call(process.env, '\\''REPRINT_PUSH_SOURCE_COMMAND_WARNING_JSON'\\'')) { source.warning = JSON.parse(process.env.REPRINT_PUSH_SOURCE_COMMAND_WARNING_JSON); } if (Object.prototype.hasOwnProperty.call(process.env, '\\''REPRINT_PUSH_SOURCE_COMMAND_PLAYGROUND_FALLBACK_JSON'\\'')) { source.playgroundFallback = JSON.parse(process.env.REPRINT_PUSH_SOURCE_COMMAND_PLAYGROUND_FALLBACK_JSON); } process.stdout.write(JSON.stringify(source));'",
   );
 });
 
@@ -3119,6 +3119,92 @@ test('packaged production plugin auth/session request helper marks an explicit l
     username: liveCredentials.username,
     applicationPassword: liveCredentials.password,
   });
+});
+
+test('packaged production plugin auth/session request helper accepts an explicit remote runtime candidate when the direct live source URL is empty', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const request = resolvePackagedProductionPluginAuthSessionRequest({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/remote/?session=1#preserved',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+        allowedSourceUrl: 'https://example.test/remote',
+      }),
+    });
+
+    assert.equal(request.requested, true);
+    assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+    assert.deepEqual(request.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/remote',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
+});
+
+test('packaged production plugin auth/session request helper accepts an explicit local runtime candidate when the direct live source URL is empty', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const request = resolvePackagedProductionPluginAuthSessionRequest({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/local/?session=1#preserved',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+        allowedSourceUrl: 'https://example.test/local',
+      }),
+    });
+
+    assert.equal(request.requested, true);
+    assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+    assert.deepEqual(request.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/local',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
 });
 
 test('packaged production plugin readiness helper accepts a stable snapshot before signed preflight is ready', () => {
