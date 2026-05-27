@@ -12129,6 +12129,84 @@ test('blocks conflicting plugin-owned driver metadata on deletes while preservin
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks conflicting plugin-owned driver metadata while preserving matching independent delete, edit, type swap, and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.files['index.php'] = '<?php echo "base index";';
+  base.files['wp-content/uploads/cover.txt'] = 'base cover';
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Base post title',
+    post_status: 'publish',
+  };
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+
+  const local = baseSite();
+  delete local.files['index.php'];
+  local.files['wp-content/uploads/cover.txt'] = { type: 'directory' };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+          allowedPluginOwnedResource(resourceKey, 'forms', 'wp-postmeta'),
+        ],
+      },
+    },
+  };
+
+  const remote = baseSite();
+  delete remote.files['index.php'];
+  remote.files['wp-content/uploads/cover.txt'] = { type: 'directory' };
+  remote.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Matched post title',
+    post_status: 'publish',
+  };
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+  const deleteDecision = decisionFor(plan, 'file:index.php');
+  const typeSwapDecision = decisionFor(plan, 'file:wp-content/uploads/cover.txt');
+  const editDecision = decisionFor(plan, 'row:["wp_posts","ID:2"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Plugin-owned resource has conflicting driver metadata and cannot be applied safely.');
+  assert.equal(deleteDecision.decision, 'already-in-sync');
+  assert.equal(typeSwapDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(blockerJson.includes('local-private-entry'), false);
+  assert.equal(blockerJson.includes('base cover'), false);
+  assert.equal(blockerJson.includes('Matched post title'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks unknown plugin-owned custom table rows while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
