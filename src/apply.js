@@ -1356,6 +1356,7 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
       'production recovery journal adapter marker',
       'explicit production recovery adapter marker',
       'supported production recovery journal adapter surface',
+      'restart-readable recovery inspection',
       'owned restart-readable recovery journal path',
       'absolute restart-readable recovery journal path',
       'restart-readable recovery journal schema',
