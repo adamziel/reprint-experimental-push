@@ -18103,6 +18103,108 @@ test('blocks an existing term-taxonomy row when its same-plan parent term still 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks an existing term-taxonomy row when its same-plan parent term still belongs to a blocked nav menu taxonomy while preserving a matching independent restore and remote-only plugin removals', () => {
+  const parentResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_terms = {
+    'term_id:2': {
+      term_id: 2,
+      name: 'Base existing term',
+      slug: 'base-existing-term',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.files['about.php'] = '<?php echo "shared restore";';
+  local.db.wp_terms = {
+    ...JSON.parse(JSON.stringify(base.db.wp_terms)),
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local parent-linked taxonomy description',
+    },
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: 'local nav menu taxonomy description',
+      parent: 0,
+      count: 0,
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const parentBlocker = plan.blockers.find((entry) => entry.resourceKey === parentResourceKey);
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, parentResourceKey), undefined);
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(parentBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(parentBlocker.reason, 'WordPress graph mutation row:["wp_terms","term_id:9"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(taxonomyBlocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(taxonomyBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(taxonomyBlocker.reason, 'WordPress graph mutation row:["wp_term_taxonomy","term_taxonomy_id:5"] is created in the same plan as a parent term identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan parent term'), false);
+  assert.equal(planJson.includes('local parent-linked taxonomy description'), false);
+  assert.equal(planJson.includes('local nav menu taxonomy description'), false);
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('allows an existing term-relationship row to reference a term taxonomy created by the same plan', () => {
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const relationshipResourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
