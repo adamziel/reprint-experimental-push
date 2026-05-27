@@ -7,13 +7,13 @@
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 04:56:07 CEST (+0200)
+- Audit time: 2026-05-27 04:57:11 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `867a0ca0b0043918fbf9e148bd6931b3d665dcc8` (`Synthesize live auth session source command`)
-  - `origin/lane/critic` -> `94867f7fdce6664efcafd76257ebb0ee447cccec`
-  - `origin/lane/independent-auditor` -> `4dcb036b15c968ab69bbe2827b21c3049f98ff27`
-  - `origin/lane/progress-publisher` -> `af698011d95a45c1c972b49d9e21dad6b9312741`
-  - `origin/main` -> `534d3d2fef0cfe3f1415fd197e193b52892af8f2`
+  - `origin/lane/critic` -> `15c25db0d7a462f6cbc5fc883cb755eb76848375`
+  - `origin/lane/independent-auditor` -> `28ee96d0cbc48981cbe3c4235435810a7bd37834`
+  - `origin/lane/progress-publisher` -> `7cbe475b68a4e0a0b8a1d4d817f08ddf256e6077`
+  - `origin/main` -> `ef97fd8824a2bc56748fa632301acbeb4781512d`
 
 ## Evidence Table
 
