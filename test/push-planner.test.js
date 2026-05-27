@@ -44572,6 +44572,70 @@ test('blocks local same-plan created user identity while preserving a matching i
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local same-plan created user identity while preserving a matching independent edit and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_users","ID:35"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base user dependency drift post';
+  base.db.wp_usermeta = {
+    'umeta_id:35': {
+      umeta_id: 35,
+      user_id: 35,
+      meta_key: 'nickname',
+      meta_value: 'Base dependent drift nickname',
+    },
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Shared user dependency drift post';
+  local.db.wp_users = {
+    'ID:35': {
+      ID: 35,
+      user_login: 'local-dependent-drift-user',
+      user_email: 'local-dependent-drift@example.test',
+    },
+  };
+  local.db.wp_usermeta = {
+    'umeta_id:35': {
+      umeta_id: 35,
+      user_id: 35,
+      meta_key: 'nickname',
+      meta_value: 'Local dependent drift nickname',
+    },
+  };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:1'].post_title = 'Shared user dependency drift post';
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:35"] is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.');
+  const reference = blocker.references[0];
+  assert.equal(reference.relationshipKey, 'wp_usermeta.user_id');
+  assert.equal(reference.relationshipType, 'usermeta-user');
+  assert.equal(reference.sourceResourceKey, 'row:["wp_usermeta","umeta_id:35"]');
+  assert.equal(reference.targetResourceKey, resourceKey);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local dependent drift nickname'), false);
+  assert.equal(planJson.includes('Base dependent drift nickname'), false);
+  assert.equal(planJson.includes('local-dependent-drift-user'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks local same-plan created user identity while preserving a matching independent file type swap and remote-only plugin drift', () => {
   const resourceKey = 'row:["wp_users","ID:18"]';
   const swapFileKey = 'file:wp-content/uploads/user-dependency-cover';
