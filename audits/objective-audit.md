@@ -2,14 +2,14 @@
 
 ## Verdict
 
-- Audited commit: `d9ec5130979968098ac7b16b93220bd0d3fdbe38` (`Preserve live source in release wrapper`)
-- Previous audited reliable head: `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
+- Audited commit: `1e0a553b731b6b3a09619547f2be4beed7a547c2` (`Honor explicit live drift topology`)
+- Previous audited reliable head: `a1ca1eff94781e79d000e27ddcdac68c3c4a1cb0`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 04:37:21 CEST (+0200)
+- Audit time: 2026-05-27 04:44:39 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `d9ec5130979968098ac7b16b93220bd0d3fdbe38` (`Preserve live source in release wrapper`)
+  - `origin/lane/reliable-executor` -> `1e0a553b731b6b3a09619547f2be4beed7a547c2` (`Honor explicit live drift topology`)
   - `origin/lane/critic` -> `e0cc1f6ea5aeb044e30187f9f7f879f45a6c4bbd`
   - `origin/lane/independent-auditor` -> `f1bd3499aa288a4e6cd6c242f2adef897ebbbc0a` (`Audit reliable head 051fe7f4`)
   - `origin/lane/progress-publisher` -> `1a18dbc72e660f75cbb501a992660f5a98d10546`
@@ -19,8 +19,8 @@
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Live mutation boundary | `d9ec5130` preserves caller-provided `REPRINT_PUSH_SOURCE_URL`, credentials, and `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` through the checked verifier and apply-revalidation helper instead of silently substituting the local `remote-base` source. That is wrapper plumbing, not the production boundary itself. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
-| Production auth/session lifecycle | The wrapper can now carry explicit live-source auth/session inputs into the checked boundary path, and the new deterministic test proves the wrapper preserves those env values. It still does not show the same executable command minting and then reading back a live auth session on the exact real `REPRINT_PUSH_SOURCE_URL`. | One checked real-endpoint command proving issuance and readback on the same production-owned source boundary. | Blocked |
+| Live mutation boundary | `1e0a553b` makes the checked verifier honor explicit live drift topology by wiring `REPRINT_PUSH_REMOTE_CHANGED_URL` and `REPRINT_PUSH_LOCAL_URL` into the live apply-revalidation path, and the helper now resolves explicit remote/local topology instead of hard-coding the bundled `remote-changed` / `local-edited` fallback. That is wrapper topology plumbing, not the production boundary itself. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
+| Production auth/session lifecycle | The wrapper can now carry explicit live-source auth/session inputs and live drift topology into the checked boundary path. It still does not show the same executable command minting and then reading back a live auth session on the exact real `REPRINT_PUSH_SOURCE_URL`. | One checked real-endpoint command proving issuance and readback on the same production-owned source boundary. | Blocked |
 | Durable restart-readable journal ownership | No new journal primitive was added. The commit only preserves inputs for a later checked run; it does not add an isolated production-owned release boundary with lease-fenced ownership and restart-readable recovery. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
 | Apply-time revalidation before first mutation | `d9ec5130` keeps the explicit checked-boundary env available to the apply-revalidation helper, but it does not add a new execution path that proves revalidation runs before the first mutation on the real source boundary. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
 | Preserved-remote retry | The patch does not introduce or consume a preserved-remote retry proof on the real release path. It only preserves the wrapper inputs so later executions can target the explicit live source. | Release-path preserved-remote retry evidence consumed by the checked release command. | Blocked |
@@ -36,7 +36,7 @@
 
 ## Conclusion
 
-`d9ec5130` is useful release-wrapper plumbing, but it closes no supervised release gate. It ensures the checked verifier and apply-revalidation proof preserve caller-provided live-source inputs instead of silently swapping in the local `remote-base` source, yet it still leaves the real production boundary unproven. The verdict remains `0/4`.
+`1e0a553b` is useful explicit-live-topology plumbing, but it closes no supervised release gate. It ensures the checked verifier and apply-revalidation proof preserve caller-provided live-source inputs and explicit live drift topology instead of silently swapping in bundled `remote-changed` / `local-edited` fallbacks, yet it still leaves the real production boundary unproven. The verdict remains `0/4`.
 
 The next exact production primitive that should use this preserved wrapper path is:
 
