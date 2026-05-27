@@ -203,6 +203,52 @@ test('scenario resolver maps driver-guard-only mode to the bounded receipt guard
   );
 });
 
+test('scenario resolver accepts explicit mode arguments on the smoke CLI', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--mode=driverVerifierGuards'],
+    undefined,
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-verifier-guards']);
+  assert.equal(resolved.canonicalMode, 'driver-verifier-guards');
+  assert.equal(resolved.resolvedMode, 'driverVerifierGuards');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ].sort(),
+  );
+});
+
+test('scenario resolver prefers explicit mode arguments over environment mode aliases', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--mode=driverRouteProof'],
+    undefined,
+    'driverVerifierGuards',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['core-package-routes']);
+  assert.equal(resolved.canonicalMode, 'core-package-routes');
+  assert.equal(resolved.resolvedMode, 'driverRouteProof');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    ['core-package-routes'].sort(),
+  );
+});
+
+test('scenario resolver rejects blank explicit plugin-driver smoke modes', () => {
+  assert.throws(
+    () => resolveProductionPluginPackageScenarios(
+      ['--mode=   '],
+      undefined,
+      undefined,
+    ),
+    /Production plugin package smoke mode cannot be blank/,
+  );
+});
+
 test('scenario resolver maps driver-receipt-only mode to the bounded receipt guard scenario', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     [],

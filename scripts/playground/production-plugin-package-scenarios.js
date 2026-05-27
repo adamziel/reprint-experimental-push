@@ -186,7 +186,15 @@ function resolveScenarioMode(modeValue) {
 
 export function resolveProductionPluginPackageScenarios(argv, envValue, modeValue) {
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
-  const modeScenario = resolveScenarioMode(modeValue);
+  const explicitModeArg = argv.find((arg) => arg.startsWith('--mode='));
+  const explicitModeValue = explicitModeArg === undefined
+    ? null
+    : explicitModeArg.slice('--mode='.length).trim();
+  if (explicitModeArg !== undefined && explicitModeValue === '') {
+    throw new Error('Production plugin package smoke mode cannot be blank');
+  }
+  const resolvedModeValue = explicitModeValue ?? modeValue;
+  const modeScenario = resolveScenarioMode(resolvedModeValue);
   const resolvedFromMode = !explicitArg && !envValue && Boolean(modeScenario);
   const providedScenarioInput = explicitArg !== undefined || envValue !== undefined;
   const rawValue = explicitArg
@@ -223,7 +231,7 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
   const expandedNames = uniqueRequestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
   return {
     canonicalMode: modeScenario,
-    resolvedMode: resolvedFromMode ? modeValue : null,
+    resolvedMode: resolvedFromMode ? resolvedModeValue : null,
     requestedScenarios: uniqueRequestedNames,
     selectedScenarios: new Set([
       ...uniqueRequestedNames,
