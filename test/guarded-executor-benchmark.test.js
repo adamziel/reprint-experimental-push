@@ -7993,7 +7993,13 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rol
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
         rejectedGate: 'recovery',
         blockerRefs: [
+          'queue-budget-not-visible',
+          'memory-ceiling-match-visible-without-queue-budget-visibility',
+          'memory-ceiling-visible-without-queue-budget-visibility',
+          'queue-headroom-visible-without-queue-budget-visibility',
           'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
@@ -8012,10 +8018,147 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rol
           'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
         ],
       },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-not-visible',
+          'memory-ceiling-match-visible-without-queue-budget-visibility',
+          'memory-ceiling-visible-without-queue-budget-visibility',
+          'queue-headroom-visible-without-queue-budget-visibility',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+          'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
     ],
   );
   assert.deepEqual(details.rejectedFastPathGateSummary, [
-    { rejectedGate: 'recovery', count: 2 },
+    { rejectedGate: 'recovery', count: 3 },
+  ]);
+});
+
+test('guarded benchmark carries hidden queue-headroom visibility blockers into rejected release-bundle summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const releaseBundleBackpressure = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+  );
+  const stagingDiskReplay = details.rejectedFastPaths.find(
+    (entry) => entry.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+
+  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
+    'queue-budget-visible-without-queue-headroom-visible',
+    'memory-ceiling-match-visible-without-queue-headroom-visibility',
+    'memory-ceiling-visible-without-queue-headroom-visible',
+    'queue-headroom-not-visible',
+    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+    'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
+    'queue-budget-visible-without-queue-headroom-visible',
+    'memory-ceiling-match-visible-without-queue-headroom-visibility',
+    'memory-ceiling-visible-without-queue-headroom-visible',
+    'queue-headroom-not-visible',
+    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    'receipt-cursor-memory-headroom-visible-without-queue-headroom-visibility',
+    'receipt-cursor-queue-slack-visible-without-queue-headroom-visibility',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+});
+
+test('guarded benchmark carries hidden raw memory-ceiling visibility blockers into rejected release-bundle summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const releaseBundleBackpressure = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+  );
+  const stagingDiskReplay = details.rejectedFastPaths.find(
+    (entry) => entry.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+
+  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
+    'queue-budget-visible-without-memory-ceiling-visibility',
+    'queue-pause-without-visible-memory-ceiling',
+    'memory-ceiling-match-visible-without-memory-ceiling-visibility',
+    'queue-headroom-visible-without-memory-ceiling-visibility',
+    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
+    'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
+    'queue-budget-visible-without-memory-ceiling-visibility',
+    'queue-pause-without-visible-memory-ceiling',
+    'memory-ceiling-match-visible-without-memory-ceiling-visibility',
+    'queue-headroom-visible-without-memory-ceiling-visibility',
+    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    'receipt-cursor-memory-headroom-visible-without-memory-ceiling-visibility',
+    'receipt-cursor-queue-slack-visible-without-memory-ceiling-visibility',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
   ]);
 });
 
