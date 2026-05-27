@@ -638,6 +638,20 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue) {
   };
 }
 
+export function resolveProductionPluginPackagePluginDriverProof(
+  summary,
+  options = {},
+) {
+  if (summary?.pluginDriverProof !== undefined) {
+    return summary.pluginDriverProof;
+  }
+  const pluginDriverProof = buildProductionPluginPackageProofSummary(summary, options);
+  if (summary && typeof summary === 'object') {
+    summary.pluginDriverProof = pluginDriverProof;
+  }
+  return pluginDriverProof;
+}
+
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
   if (!includeCoverageDetails) {
