@@ -927,8 +927,16 @@ async function waitForServer(child, baseUrl, logs) {
           'snapshot',
         );
         throw new Error(
-          `Packaged production plugin snapshot returned a terminal readiness failure at ${baseUrl}\n`
-          + `${snapshotText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+          formatPackagedReadinessFailure(
+            `Packaged production plugin snapshot returned a terminal readiness failure at ${baseUrl}`,
+            lastError,
+            lastProbes,
+            logs,
+            {
+              packagedProductionPlugin: true,
+            },
+            lastTimeoutFallbackProbes,
+          ),
         );
       }
 
@@ -1098,8 +1106,14 @@ async function waitForServer(child, baseUrl, logs) {
               'preflight',
             );
             throw new Error(
-              `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}\n`
-              + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+              formatPackagedReadinessFailure(
+                `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                logs,
+                packagedProductionPluginPreflightTerminalContext({}),
+                lastTimeoutFallbackProbes,
+              ),
             );
           }
           const startupBranch = packagedProductionPluginClassifyBoundedStartup(
@@ -1196,8 +1210,14 @@ async function waitForServer(child, baseUrl, logs) {
         'preflight',
       );
       throw new Error(
-        `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}\n`
-        + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+        formatPackagedReadinessFailure(
+          `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}`,
+          lastError,
+          lastProbes,
+          logs,
+          packagedProductionPluginPreflightTerminalContext({}),
+          lastTimeoutFallbackProbes,
+        ),
       );
     } catch (error) {
       if (!packagedProductionPluginReadinessErrorRetryable(error)) {

@@ -3233,11 +3233,11 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   assert.doesNotMatch(helperSource, /if \(packagedProductionPluginPreflightTerminal/);
   assert.match(
     helperSource,
-    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*throw new Error\(\s*`Packaged production plugin snapshot returned a terminal readiness failure at \$\{baseUrl\}/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*throw new Error\(\s*formatPackagedReadinessFailure\(\s*`Packaged production plugin snapshot returned a terminal readiness failure at \$\{baseUrl\}`/s,
   );
   assert.match(
     helperSource,
-    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*throw new Error\(\s*`Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\);\s*throw new Error\(\s*formatPackagedReadinessFailure\(\s*`Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}`/s,
   );
   assert.match(
     helperSource,
@@ -3246,6 +3246,10 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
   assert.match(
     helperSource,
     /preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin preflight returned a terminal readiness failure at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
   );
 });
 
