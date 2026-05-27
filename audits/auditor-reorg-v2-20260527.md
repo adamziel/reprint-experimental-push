@@ -493,10 +493,54 @@ apply-time revalidation before first mutation on the same live boundary.
 These are support, audit-refresh, or test-hardening facts only. They do not
 move release gates.
 
+## Follow-Up Artifact-Only Check 18:34
+
+Commands:
+
+```bash
+git fetch --all --prune
+git worktree add --detach /tmp/reprint-audit-consolidated-1834 \
+  origin/supervisor/release-boundary-consolidated-20260527
+cd /tmp/reprint-audit-consolidated-1834
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `8c6b9afb8` | Advanced to refresh auditor apply/topology heads |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `ff23bd33e` | Advanced remote v2 support branch |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `08e6b1c3d` | Advanced remote v2 support branch |
+| `origin/lane/topology-verifier-v2-20260527` | `0de2e08a6` | Advanced remote v2 support branch |
+
+The clean detached consolidated verifier run from `8c6b9afb8` exited `1` with
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `packagedFallbackAllowed: false`,
+source/local/drift ports as `null`, and release movement `allowed: false`.
+
+Topology v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/topology-verifier-v2-20260527`
+shows topology verifier support and proof-test changes, but this audit has no
+real live command proving a source/local/changed production topology.
+
+Plugin v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/plugin-driver-boundary-v2-20260527`
+shows plugin-driver proof test changes, but this audit has no real live command
+proving plugin-driver ownership on the release boundary.
+
+Apply v2 artifact note: comparing
+`origin/supervisor/release-boundary-consolidated-20260527..origin/lane/apply-revalidation-boundary-v2-20260527`
+shows the focused apply-revalidation test and package script changes, but this
+audit has no real live command proving preserved rejected-remote evidence or
+apply-time revalidation before first mutation on the same live boundary.
+
+These are support, audit-refresh, or test-hardening facts only. They do not
+move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
-`6f4c96294c75d5acfe2605f70b03349b5f3f08a7` and has a coherent fail-closed
+`8c6b9afb8913ffc8f064eb85ba836e2a638c32a1` and has a coherent fail-closed
 `verify:release` command, but it correctly does not move any release gate
 without a real live `REPRINT_PUSH_SOURCE_URL`.
 
