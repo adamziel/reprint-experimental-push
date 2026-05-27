@@ -165,6 +165,13 @@ export async function runAuthenticatedHttpPush({
     sessionStatus: preflight.body.auth?.session?.status,
     sessionExpiresAt: preflight.body.auth?.session?.expiresAt,
   };
+  const preflightAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, preflight);
+  if (preflightAuthEnvelopeDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = preflightAuthEnvelopeDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
   if (preflight.body.auth?.session?.id && preflight.body.auth.session.id !== session) {
     summary.code = 'PREFLIGHT_SESSION_MISMATCH';
     summary.authSession = {
