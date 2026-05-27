@@ -26939,6 +26939,68 @@ test('blocks steady unsupported term taxonomy rows before they can be treated as
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks steady unsupported term taxonomy rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:88"]';
+  const swapFileKey = 'file:wp-content/uploads/steady-term-taxonomy-cover';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:22': {
+      term_id: 22,
+      name: 'Steady unsupported taxonomy term removals',
+      slug: 'steady-unsupported-taxonomy-term-removals',
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:88': {
+      term_taxonomy_id: 88,
+      term_id: 22,
+      taxonomy: 'category',
+      description: 'Steady unsupported term taxonomy removals',
+      parent: 0,
+      count: 1,
+    },
+  };
+  base.files['wp-content/uploads/steady-term-taxonomy-cover'] = 'steady term taxonomy cover bytes';
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.files['wp-content/uploads/steady-term-taxonomy-cover'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.files['wp-content/uploads/steady-term-taxonomy-cover'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-term-taxonomy-resource');
+  assert.equal(blocker.resourceKind, 'term-taxonomy');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Term taxonomy graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported term taxonomy removals'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local same-plan created user meta identity while preserving a matching independent file type swap and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_usermeta","umeta_id:79"]';
   const targetFileKey = 'file:wp-content/uploads/cover';
