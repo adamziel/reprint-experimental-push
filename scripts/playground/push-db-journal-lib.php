@@ -1043,7 +1043,7 @@ function reprint_push_lab_db_journal_compact_result(array $result): array
     $compact = [
         'ok' => (bool) ($result['ok'] ?? false),
     ];
-    foreach (['mode', 'code', 'message', 'applied', 'verifiedKeys', 'verifiedPreconditions', 'recovery', 'storageGuard'] as $key) {
+    foreach (['mode', 'code', 'message', 'applied', 'verifiedKeys', 'verifiedPreconditions', 'applyRevalidation', 'recovery', 'storageGuard'] as $key) {
         if (array_key_exists($key, $result)) {
             $compact[$key] = $result[$key];
         }
@@ -1119,7 +1119,7 @@ function reprint_push_lab_db_journal_replay_rejected_result(array $rejected_row)
 function reprint_push_lab_db_journal_resource_hash_evidence(array $result): array
 {
     $evidence = [];
-    foreach (['verifiedKeys', 'verifiedPreconditions', 'recovery'] as $key) {
+    foreach (['verifiedKeys', 'verifiedPreconditions', 'applyRevalidation', 'recovery'] as $key) {
         if (isset($result[$key])) {
             $evidence[$key] = $result[$key];
         }

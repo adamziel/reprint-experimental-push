@@ -923,6 +923,25 @@ try {
       assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
       assert.equal(proof.dryRun.status, 200);
       assert.equal(proof.apply.status, 200);
+      assert.equal(
+        proof.apply.applyRevalidation?.required,
+        'fresh-live-hashes-before-first-mutation',
+        'apply must prove fresh live hashes before the first mutation',
+      );
+      assert.equal(proof.apply.applyRevalidation?.phase, 'before-first-mutation');
+      assert.equal(proof.apply.applyRevalidation?.checkedAgainst, 'live-remote');
+      assert.equal(proof.apply.applyRevalidation?.planHash, digest(proof.planObject));
+      assert.equal(proof.apply.applyRevalidation?.receiptHash, proof.dryRun.receiptHash);
+      assert.equal(proof.apply.applyRevalidation?.verifiedCount, proof.planObject.mutations.length);
+      assert.deepEqual(
+        proof.apply.applyRevalidation?.verifiedResourceKeys,
+        proof.planObject.mutations.map((mutation) => mutation.resourceKey),
+      );
+      assert.ok(
+        Number.isInteger(proof.apply.applyRevalidation?.claim?.activeClaimSequence)
+          && proof.apply.applyRevalidation.claim.activeClaimSequence > 0,
+        'apply revalidation must bind to an active durable claim before mutation',
+      );
       assert.equal(proof.recoveryInspect.status, 200);
       assert.equal(proof.replay.status, 200);
       assert.equal(proof.replay.ok, true);

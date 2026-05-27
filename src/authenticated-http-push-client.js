@@ -778,6 +778,16 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
+  const applyRevalidationDrift = requireProductionAuthSession
+    ? resolveApplyRevalidationDrift(summary.apply?.applyRevalidation, plan, dryRun.body.receipt)
+    : null;
+  if (applyRevalidationDrift) {
+    summary.code = 'APPLY_REVALIDATION_REQUIRED';
+    summary.applyRevalidation = applyRevalidationDrift;
+    setApplyRevalidationBoundary(summary);
+    return summary;
+  }
+  summary.applyRevalidation = summary.apply?.applyRevalidation;
 
   let recoveryInspect;
   try {
@@ -1693,6 +1703,7 @@ function summarizeResponse(response) {
       status: body.idempotency.status,
       conflict: body.idempotency.conflict === true,
     } : undefined,
+    applyRevalidation: summarizeApplyRevalidation(body),
     storageGuard: body.storageGuard ? {
       boundary: body.storageGuard.boundary,
       operation: body.storageGuard.operation,
@@ -1704,6 +1715,123 @@ function summarizeResponse(response) {
       retryable: response.request.retryable === true,
     } : undefined,
   };
+}
+
+function summarizeApplyRevalidation(body) {
+  if (!body || typeof body !== 'object') {
+    return undefined;
+  }
+
+  const hasExplicitApplyRevalidation = body.applyRevalidation && typeof body.applyRevalidation === 'object';
+  const applyRevalidation = hasExplicitApplyRevalidation ? body.applyRevalidation : {};
+  const verifiedPreconditions = Array.isArray(body.verifiedPreconditions)
+    ? body.verifiedPreconditions
+    : Array.isArray(body.receipt?.preconditionHashes)
+      ? body.receipt.preconditionHashes
+      : [];
+  if (!hasExplicitApplyRevalidation && !body.receipt && verifiedPreconditions.length === 0) {
+    return undefined;
+  }
+  const verifiedResourceKeys = Array.isArray(applyRevalidation.verifiedResourceKeys)
+    ? applyRevalidation.verifiedResourceKeys.map((resourceKey) => String(resourceKey))
+    : Array.isArray(body.receipt?.verifiedResourceKeys)
+      ? body.receipt.verifiedResourceKeys.map((resourceKey) => String(resourceKey))
+      : verifiedPreconditions.map((entry) => String(entry?.resourceKey || ''));
+  const claim = applyRevalidation.claim && typeof applyRevalidation.claim === 'object'
+    ? {
+        activeClaimId: applyRevalidation.claim.activeClaimId || null,
+        activeClaimKeyHash: applyRevalidation.claim.activeClaimKeyHash || null,
+        activeClaimSequence: Number.isInteger(applyRevalidation.claim.activeClaimSequence)
+          ? applyRevalidation.claim.activeClaimSequence
+          : null,
+        staleClaimRetry: applyRevalidation.claim.staleClaimRetry === true,
+      }
+    : undefined;
+
+  return {
+    schemaVersion: applyRevalidation.schemaVersion ?? 1,
+    required: applyRevalidation.required || 'fresh-live-hashes-before-first-mutation',
+    phase: applyRevalidation.phase || 'before-first-mutation',
+    checkedAgainst: applyRevalidation.checkedAgainst || 'live-remote',
+    planHash: applyRevalidation.planHash || body.receipt?.planHash || null,
+    receiptHash: applyRevalidation.receiptHash || body.receipt?.receiptHash || null,
+    preconditionSetHash: applyRevalidation.preconditionSetHash || body.receipt?.preconditionSetHash || null,
+    mutationSetHash: applyRevalidation.mutationSetHash || body.receipt?.mutationSetHash || null,
+    mutationCount: Number.isInteger(applyRevalidation.mutationCount)
+      ? applyRevalidation.mutationCount
+      : Number.isInteger(body.receipt?.mutationCount)
+        ? body.receipt.mutationCount
+        : verifiedResourceKeys.length,
+    verifiedCount: Number.isInteger(applyRevalidation.verifiedCount)
+      ? applyRevalidation.verifiedCount
+      : verifiedResourceKeys.length,
+    verifiedResourceKeys,
+    claim,
+  };
+}
+
+function resolveApplyRevalidationDrift(applyRevalidation, plan, receipt) {
+  const expectedResourceKeys = Array.isArray(plan?.mutations)
+    ? plan.mutations.map((mutation) => mutation.resourceKey)
+    : [];
+  const expectedChecks = [
+    ['schemaVersion', 1],
+    ['required', 'fresh-live-hashes-before-first-mutation'],
+    ['phase', 'before-first-mutation'],
+    ['checkedAgainst', 'live-remote'],
+    ['planHash', receipt?.planHash || digest(plan)],
+    ['receiptHash', receipt?.receiptHash || null],
+    ['preconditionSetHash', receipt?.preconditionSetHash || null],
+    ['mutationSetHash', receipt?.mutationSetHash || null],
+    ['mutationCount', expectedResourceKeys.length],
+    ['verifiedCount', expectedResourceKeys.length],
+  ];
+
+  if (!applyRevalidation || typeof applyRevalidation !== 'object') {
+    return {
+      required: 'fresh-live-hashes-before-first-mutation',
+      observed: 'missing-apply-revalidation-evidence',
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+    };
+  }
+
+  for (const [field, expected] of expectedChecks) {
+    const observed = applyRevalidation[field];
+    if (observed !== expected) {
+      return {
+        field,
+        required: expected,
+        observed,
+        verdict: 'APPLY_REVALIDATION_REQUIRED',
+      };
+    }
+  }
+
+  const observedResourceKeys = Array.isArray(applyRevalidation.verifiedResourceKeys)
+    ? applyRevalidation.verifiedResourceKeys.map((resourceKey) => String(resourceKey))
+    : [];
+  if (digest(observedResourceKeys) !== digest(expectedResourceKeys)) {
+    return {
+      field: 'verifiedResourceKeys',
+      required: expectedResourceKeys,
+      observed: observedResourceKeys,
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+    };
+  }
+
+  if (
+    applyRevalidation?.claim
+    && (!Number.isInteger(applyRevalidation.claim.activeClaimSequence) || applyRevalidation.claim.activeClaimSequence < 1)
+  ) {
+    return {
+      field: 'claim.activeClaimSequence',
+      required: 'positive-integer',
+      observed: applyRevalidation?.claim?.activeClaimSequence ?? 'missing',
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
+    };
+  }
+
+  return null;
 }
 
 function summarizeTransportFailure(error) {
@@ -2910,6 +3038,23 @@ function setProductionAuthSessionBoundary(summary) {
       required: 'production-auth-session',
       observed: 'missing',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    },
+  };
+}
+
+function setApplyRevalidationBoundary(summary) {
+  if (summary.boundary) {
+    return;
+  }
+
+  summary.boundary = {
+    firstRemainingProductionBoundary: 'apply-time revalidation before first mutation on the checked release path',
+    status: 'unimplemented',
+    verdict: 'APPLY_REVALIDATION_REQUIRED',
+    applyRevalidation: summary.applyRevalidation || {
+      required: 'fresh-live-hashes-before-first-mutation',
+      observed: 'missing-apply-revalidation-evidence',
+      verdict: 'APPLY_REVALIDATION_REQUIRED',
     },
   };
 }

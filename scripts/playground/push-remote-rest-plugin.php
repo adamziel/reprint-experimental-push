@@ -955,6 +955,43 @@ function reprint_push_lab_rest_validate_apply_for_db_journal(array $plan, ?array
     ];
 }
 
+function reprint_push_lab_rest_apply_revalidation_evidence(
+    array $accepted,
+    array $claim_entry,
+    ?array $stale_claim_retry = null
+): array {
+    $verified_preconditions = isset($accepted['verifiedPreconditions']) && is_array($accepted['verifiedPreconditions'])
+        ? $accepted['verifiedPreconditions']
+        : [];
+    $mutations = isset($accepted['mutations']) && is_array($accepted['mutations'])
+        ? $accepted['mutations']
+        : [];
+    $verified_resource_keys = array_values(array_map(
+        static fn (array $entry): string => (string) ($entry['resourceKey'] ?? ''),
+        $verified_preconditions
+    ));
+
+    return [
+        'schemaVersion' => 1,
+        'required' => 'fresh-live-hashes-before-first-mutation',
+        'phase' => 'before-first-mutation',
+        'checkedAgainst' => 'live-remote',
+        'planHash' => (string) ($accepted['planEvidence']['planHash'] ?? ''),
+        'receiptHash' => (string) ($accepted['receipt']['receiptHash'] ?? ''),
+        'preconditionSetHash' => (string) ($accepted['planEvidence']['preconditionSetHash'] ?? ''),
+        'mutationSetHash' => (string) ($accepted['planEvidence']['mutationSetHash'] ?? ''),
+        'mutationCount' => count($mutations),
+        'verifiedCount' => count($verified_preconditions),
+        'verifiedResourceKeys' => $verified_resource_keys,
+        'claim' => [
+            'activeClaimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($claim_entry['claimKeyHash'] ?? null),
+            'activeClaimKeyHash' => isset($claim_entry['claimKeyHash']) ? (string) $claim_entry['claimKeyHash'] : '',
+            'activeClaimSequence' => (int) ($claim_entry['sequence'] ?? 0),
+            'staleClaimRetry' => is_array($stale_claim_retry),
+        ],
+    ];
+}
+
 function reprint_push_lab_rest_run_db_journal_apply(
     array $payload,
     array $context,
@@ -1087,6 +1124,11 @@ function reprint_push_lab_rest_run_db_journal_apply(
         'requestHash' => $context['requestHash'],
         'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
     ], $options);
+    $result['applyRevalidation'] = reprint_push_lab_rest_apply_revalidation_evidence(
+        $accepted,
+        $claim_entry,
+        $stale_claim_retry
+    );
 
     $result['idempotency'] = [
         'replayed' => false,
