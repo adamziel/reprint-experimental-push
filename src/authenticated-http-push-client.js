@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { createPushPlan } from './planner.js';
 import { digest } from './stable-json.js';
+import { describeAuthSessionSourceMetadataDrift } from '../scripts/playground/auth-session-source.js';
 import { evaluateProductionAuthSessionLifecycleSummary } from '../scripts/playground/production-auth-session-lifecycle.js';
 
 const routeProfiles = {
@@ -54,6 +55,9 @@ export async function runAuthenticatedHttpPush({
   now = new Date(),
 }) {
   const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource, sourceUrl);
+  const authSessionSourceMetadataDrift = normalizedAuthSessionSource
+    ? describeAuthSessionSourceMetadataDrift(authSessionSource)
+    : null;
   const resolvedSource = normalizedAuthSessionSource
     ? {
       sourceUrl: normalizedAuthSessionSource.sourceUrl,
@@ -112,6 +116,19 @@ export async function runAuthenticatedHttpPush({
     authSessionLifecycleTrace: [],
     retryAttempts: 1,
   };
+  if (authSessionSourceMetadataDrift) {
+    summary.code = requireProductionAuthSession
+      ? 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED'
+      : 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = {
+      field: authSessionSourceMetadataDrift.field,
+      required: authSessionSourceMetadataDrift.required,
+      observed: authSessionSourceMetadataDrift.observed,
+      verdict: summary.code,
+    };
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
 
   const preflight = await client.signedGet('/preflight', { retryable: true });
   summary.preflight = summarizeResponse(preflight);

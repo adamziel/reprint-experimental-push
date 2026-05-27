@@ -569,6 +569,123 @@ test('production-shaped authenticated push marks the source non-lab-backed when 
   }
 });
 
+test('production-shaped authenticated push fails closed before preflight when a required auth/session source reports source warnings', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:9090',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      idempotencyKey: 'idem-01-source-warning-required',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        warning: 'lab-only-warning',
+      },
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.source, {
+      url: 'http://127.0.0.1:8080/',
+      namespace: 'reprint/v1',
+      routePrefix: '/push',
+      routeProfile: 'production-shaped',
+      labBacked: false,
+    });
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'lab-only-warning',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.warning',
+        required: 'production-backed auth',
+        observed: 'lab-only-warning',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      },
+    });
+    assert.equal(seen.length, 0);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed before preflight on malformed selected auth/session source metadata even without the stricter production-session gate', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:9090',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      idempotencyKey: 'idem-01-source-invalid-playground-fallback',
+      routeProfile: 'production-shaped',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        playgroundFallback: ['lab-fallback'],
+      },
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.source, {
+      url: 'http://127.0.0.1:8080/',
+      namespace: 'reprint/v1',
+      routePrefix: '/push',
+      routeProfile: 'production-shaped',
+      labBacked: false,
+    });
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.playgroundFallback',
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-playgroundFallback',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      authSession: {
+        field: 'auth.session.playgroundFallback',
+        required: 'boolean lifecycle flags',
+        observed: 'invalid-playgroundFallback',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      },
+    });
+    assert.equal(seen.length, 0);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push keeps the normalized auth/session source boundary through replay and journal reads', async () => {
   const originalFetch = global.fetch;
   const seen = [];
