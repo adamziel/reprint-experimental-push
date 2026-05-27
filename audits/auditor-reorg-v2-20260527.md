@@ -309,6 +309,57 @@ Plugin v2 artifact note: the newest plugin-driver v2 head is local-only in this
 workspace. It cannot move GATE-4 without a checked live release command proving
 plugin-driver ownership on the same real source boundary.
 
+## Follow-Up Artifact-Only Check 18:27
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=-committerdate --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/heads/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/heads/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/heads/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/heads/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/critic-reorg-v2-20260527 \
+  refs/remotes/origin/lane/auditor-reorg-20260527 \
+  refs/heads/lane/auditor-reorg-20260527
+timeout 300s npm run verify:release
+```
+
+New artifact facts since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/lane/auth-session-boundary-v2-20260527` | `07d9dae7c` | Newly present remote v2 support branch |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `f2446f241` | Advanced remote v2 support branch |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `afa1becac` | Newly present remote v2 support branch |
+| `origin/lane/critic-reorg-v2-20260527` | `2d4b4a780` | Critic update still keeps verdict at `0/4` |
+
+The repeat consolidated verifier run in `/tmp/reprint-reorg-integrator-20260527`
+again exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+`packagedFallbackAllowed: false`, source/local/drift ports as `null`, and
+release movement `allowed: false`.
+
+Diff notes:
+
+- `origin/lane/auth-session-boundary-v2-20260527` changes release verifier,
+  auth-session source, client, and proof tests relative to the consolidated
+  branch, but this audit has no real live command proving same-boundary
+  auth/session issuance and readback.
+- `origin/lane/durable-journal-boundary-v2-20260527` differs from the
+  consolidated branch only in `src/authenticated-http-push-client.js` and
+  `test/authenticated-http-push-client.test.js`, but this audit has no real
+  live command proving restart-readable lease-fenced durable journal ownership.
+- `origin/lane/plugin-driver-boundary-v2-20260527` changes
+  `test/production-shaped-proof.test.js`, but this audit has no real live
+  command proving plugin-driver ownership on the release boundary.
+
+These are support or test-hardening facts only. They do not move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
