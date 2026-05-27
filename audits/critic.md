@@ -1,23 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `927733fd00f96d28d1794d2dad6663feb8f3e557`
-(`Require stale-claim proof in recovery fallback`).
+Current reliable head: `bf495d928e18a1021ff2401b44b503ffbc97cd01`
+(`Prove retry boundary after journal fallback`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This commit adds stale-claim proof gating in the recovery fallback path by
-  threading `requireStaleClaimRejected` through
-  `productionRecoveryJournalProofIsAcceptable()` and adding a focused test that
-  simulates a stale-claim retry, but the checked release path still returns
-  `DURABLE_JOURNAL_NOT_PROVEN` when the recovery journal proof does not prove
-  the production boundary.
-- The fallback remains a support-side recovery proof: it exposes the
-  `staleClaimRejected` branch and preserves journal evidence, yet it still only
-  exercises the client/test surface inside the Playground-backed verifier
-  path.
-- The diff still does not show a production-owned, non-lab-backed checked
+- This commit adds a focused retry-boundary regression test around the
+  existing recovery-journal fallback path. It proves the verifier still reports
+  `PRESERVED_REMOTE_RETRY_REQUIRED` when the replay-and-retry requirement is
+  not met after validated recovery-journal proof.
+- The diff remains on the client/test surface inside the Playground-backed
+  verifier path. It does not show a production-owned, non-lab-backed checked
   release command on the real Reprint endpoint that mints and rereads a live
   auth session, persists durable restart-readable lease-fenced journal state,
   preserves rejected remote evidence, and performs apply-time revalidation
