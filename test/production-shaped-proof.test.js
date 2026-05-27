@@ -3735,6 +3735,10 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
+    /notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*await throwPlaygroundReadinessFailure\(\s*child,\s*`Packaged production plugin snapshot returned an invalid readiness body at \$\{baseUrl\}`/s,
+  );
+  assert.match(
+    helperSource,
     /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}/s,
   );
   assert.match(
@@ -3768,7 +3772,7 @@ test('packaged smoke readiness helper formats malformed snapshot and preflight b
 
   assert.match(
     helperSource,
-    /Packaged production plugin snapshot returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?formatPackagedReadinessFailure\(/s,
+    /packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'snapshot',\s*\);\s*throw new Error\(\s*formatPackagedReadinessFailure\(\s*`Packaged production plugin snapshot returned an invalid readiness body at \$\{baseUrl\}`/s,
   );
   assert.match(
     helperSource,

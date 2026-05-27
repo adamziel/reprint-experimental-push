@@ -1525,6 +1525,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           continue;
         }
         lastError = error;
+        notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+          notReadyProbeCounts,
+          'snapshot',
+        );
         await throwPlaygroundReadinessFailure(
           child,
           `Packaged production plugin snapshot returned an invalid readiness body at ${baseUrl}`,
