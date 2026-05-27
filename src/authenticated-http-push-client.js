@@ -146,9 +146,17 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
-  if (isExpiredSession(preflight.body.auth?.session)) {
+  const uncheckedPreflightAuthSessionTermination = requireProductionAuthSession
+    ? null
+    : resolveUncheckedPreflightAuthSessionTermination(preflight);
+  if (uncheckedPreflightAuthSessionTermination) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = describeRequiredProductionAuthSession(preflight);
+    summary.authSession = {
+      field: uncheckedPreflightAuthSessionTermination.field,
+      required: uncheckedPreflightAuthSessionTermination.required,
+      observed: uncheckedPreflightAuthSessionTermination.observed,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
     summary.boundary = {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
@@ -2181,6 +2189,37 @@ function resolveProductionAuthSessionExpiredObservation(session) {
     return {
       field: 'auth.session.expiresAt',
       observed: session?.expiresAt || 'missing',
+    };
+  }
+
+  return null;
+}
+
+function resolveUncheckedPreflightAuthSessionTermination(response) {
+  const session = response?.body?.auth?.session;
+  const unrevokedObservation = resolveProductionAuthSessionUnrevokedObservation(session);
+  if (unrevokedObservation) {
+    return {
+      field: unrevokedObservation.field,
+      required: 'unrevoked',
+      observed: unrevokedObservation.observed,
+    };
+  }
+
+  if (session?.rotated === true || session?.status === 'rotated') {
+    return {
+      field: session?.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    };
+  }
+
+  const expiredObservation = resolveProductionAuthSessionExpiredObservation(session);
+  if (expiredObservation) {
+    return {
+      field: expiredObservation.field,
+      required: 'unexpired',
+      observed: expiredObservation.observed,
     };
   }
 

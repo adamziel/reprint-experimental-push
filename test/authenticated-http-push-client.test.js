@@ -4604,6 +4604,101 @@ test('production-shaped authenticated push fails closed on a preflight session w
   }
 });
 
+for (const {
+  label,
+  idempotencyKey,
+  sessionPatch,
+  expectedField,
+  expectedRequired,
+  expectedObserved,
+} of [
+  {
+    label: 'revoked boolean flag',
+    idempotencyKey: 'idem-01-preflight-revoked-flag',
+    sessionPatch: { revoked: true },
+    expectedField: 'auth.session.revoked',
+    expectedRequired: 'unrevoked',
+    expectedObserved: 'revoked',
+  },
+  {
+    label: 'cleaned-up status',
+    idempotencyKey: 'idem-01-preflight-cleaned-up-status',
+    sessionPatch: { status: 'cleaned-up' },
+    expectedField: 'auth.session.status',
+    expectedRequired: 'unrevoked',
+    expectedObserved: 'cleaned-up',
+  },
+  {
+    label: 'rotated boolean flag',
+    idempotencyKey: 'idem-01-preflight-rotated-flag',
+    sessionPatch: { rotated: true },
+    expectedField: 'auth.session.rotated',
+    expectedRequired: 'preserved read',
+    expectedObserved: 'rotated',
+  },
+]) {
+  test(`production-shaped authenticated push fails closed on a preflight session with a ${label} even without the stricter production-session gate`, async () => {
+    const originalFetch = global.fetch;
+    const seen = [];
+    global.fetch = async (url, options) => {
+      seen.push({ url: String(url), options });
+      if (String(url).includes('/preflight')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: {
+            identity: { userLogin: 'reprint_push_admin' },
+            session: {
+              type: 'production-auth-session',
+              status: 'active',
+              id: 'psh_01j00000000000000000000000',
+              expiresAt: '2030-01-01T00:00:00Z',
+              ...sessionPatch,
+            },
+          },
+          session: { id: 'psh_01j00000000000000000000000' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected fetch to ${url}`);
+    };
+
+    try {
+      const summary = await runAuthenticatedHttpPush({
+        sourceUrl: 'http://127.0.0.1:8080',
+        base: { resources: [] },
+        local: { resources: [] },
+        username: credential.username,
+        applicationPassword: credential.password,
+        idempotencyKey,
+        routeProfile: 'production-shaped',
+      });
+
+      assert.equal(summary.ok, false);
+      assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+      assert.deepEqual(summary.boundary, {
+        firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+        status: 'unimplemented',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        authSession: {
+          field: expectedField,
+          required: expectedRequired,
+          observed: expectedObserved,
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+      });
+      assert.equal(summary.authSessionLifecycleTrace.length, 1);
+      assert.equal(summary.authSessionLifecycleTrace[0].step, 'preflight');
+      assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
+      assert.equal(seen.length, 1);
+      assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+}
+
 test('production-shaped authenticated push fails closed when a required production auth session reports rotation without changing id', async () => {
   const originalFetch = global.fetch;
   const seen = [];
