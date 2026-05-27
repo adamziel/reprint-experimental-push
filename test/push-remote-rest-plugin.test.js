@@ -14760,6 +14760,30 @@ test('checked db journal attachment fails closed when stale-claim rejected lates
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked db journal attachment fails closed when stale-claim rejected latest row omits a distinct accepted active claim identity', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.claim.activeClaimId = 'authoritative-claim-id-02';
+  inlineJournal.claimEvidence.activeRow.claimId = 'authoritative-claim-id-02';
+  inlineJournal.writerLease.claimId = 'authoritative-claim-id-02';
+  inlineJournal.leaseFence.writerLease.claimId = 'authoritative-claim-id-02';
+  inlineJournal.latestRows[0] = {
+    ...inlineJournal.latestRows[0],
+  };
+  delete inlineJournal.latestRows[0].claimId;
+
+  const checkedSummary = structuredClone(inlineJournal);
+  checkedSummary.latestRows[0].claimId = 'authoritative-claim-id-02';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked db journal attachment fails closed when accepted inline stale-claim latest row is omitted instead of backfilled from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineDbJournal();
   inlineJournal.latestRows = [];
@@ -14798,6 +14822,40 @@ test('checked db journal attachment fails closed when stale-claim abandoned late
 
   const checkedSummary = structuredClone(inlineJournal);
   checkedSummary.latestRows[1].claimId = 'retry-claim-hash-01';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when stale-claim abandoned latest row omits a distinct accepted previous claim identity', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.claim.previousClaimId = 'retry-claim-id-01';
+  inlineJournal.claimEvidence.abandonedRow.claimId = 'retry-claim-id-01';
+  inlineJournal.claimEvidence.previousRow.claimId = 'retry-claim-id-01';
+  inlineJournal.latestRows.push({
+    id: 34,
+    event: 'stale-claim-abandoned',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    resourceHashEvidence: {
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  });
+  inlineJournal.eventSummaries = [
+    { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+    { event: 'stale-claim-abandoned', count: 1, latestId: 34 },
+  ];
+
+  const checkedSummary = structuredClone(inlineJournal);
+  checkedSummary.latestRows[1].claimId = 'retry-claim-id-01';
 
   const result = runAttachCheckedDbJournalContract(
     { ok: true, dbJournal: inlineJournal },
