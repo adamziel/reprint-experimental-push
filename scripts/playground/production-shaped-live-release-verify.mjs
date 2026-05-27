@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import {
   applyRevalidationRetryable,
   hasExplicitCheckedBoundaryRequest,
+  resolveCheckedReleaseRequirementEnv,
   resolveCheckedLiveBoundaryEnv,
   resolveLiveApplyRevalidationEnv,
 } from './production-shaped-live-release-verify-lib.js';
@@ -138,6 +139,7 @@ function runCheckedReleaseVerify(envOverrides = {}) {
     maxBuffer: 1024 * 1024 * 20,
     env: {
       ...process.env,
+      ...resolveCheckedReleaseRequirementEnv(),
       ...envOverrides,
       NODE_NO_WARNINGS: '1',
     },
@@ -196,6 +198,7 @@ function spawnApplyRevalidationProof(envOverrides = {}) {
     maxBuffer: 1024 * 1024 * 20,
     env: {
       ...process.env,
+      ...resolveCheckedReleaseRequirementEnv(),
       ...envOverrides,
       NODE_NO_WARNINGS: '1',
     },

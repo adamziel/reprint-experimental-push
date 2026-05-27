@@ -46,6 +46,7 @@ import {
 import {
   applyRevalidationRetryable,
   hasExplicitCheckedBoundaryRequest,
+  resolveCheckedReleaseRequirementEnv,
   resolveCheckedReleaseTopology,
   resolveCheckedLiveBoundaryEnv,
   resolveLiveApplyRevalidationEnv,
@@ -3746,6 +3747,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       fallbackApplicationPassword: liveCredentials.password,
     }),
     {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_USERNAME: liveCredentials.username,
@@ -3766,6 +3769,8 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       fallbackApplicationPassword: liveCredentials.password,
     }),
     {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
       REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
       REPRINT_PUSH_REMOTE_CHANGED_URL: 'http://127.0.0.1:49154',
@@ -3777,6 +3782,11 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
     },
   );
+
+  assert.deepEqual(resolveCheckedReleaseRequirementEnv(), {
+    REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+    REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+  });
 
   assert.deepEqual(
     resolveCheckedReleaseTopology({
@@ -3806,6 +3816,16 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       localEdited: 'local-edited',
     },
   );
+});
+
+test('production-shaped live release verify forces checked release requirements into child proofs', () => {
+  const source = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-live-release-verify.mjs'),
+    'utf8',
+  );
+
+  assert.match(source, /resolveCheckedReleaseRequirementEnv/);
+  assert.match(source, /\.\.\.resolveCheckedReleaseRequirementEnv\(\),\s*\.\.\.envOverrides,/);
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {

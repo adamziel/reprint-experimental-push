@@ -1,6 +1,13 @@
 import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 
+export function resolveCheckedReleaseRequirementEnv() {
+  return {
+    REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+    REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+  };
+}
+
 export function applyRevalidationRetryable(proof) {
   const combinedOutput = `${proof.stdout ?? ''}\n${proof.stderr ?? ''}`;
   return proof.status !== 0
@@ -42,6 +49,7 @@ export function resolveCheckedLiveBoundaryEnv({
   const resolvedApplicationPassword = applicationPassword || fallbackApplicationPassword;
 
   return {
+    ...resolveCheckedReleaseRequirementEnv(),
     ...(sourceUrl
       ? {
           REPRINT_PUSH_SOURCE_URL: sourceUrl,
@@ -87,6 +95,7 @@ export function resolveLiveApplyRevalidationEnv({
       : '');
 
   return {
+    ...resolveCheckedReleaseRequirementEnv(),
     ...(sourceUrl
       ? {
           REPRINT_PUSH_SOURCE_URL: sourceUrl,
