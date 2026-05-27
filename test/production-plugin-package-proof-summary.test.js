@@ -1856,6 +1856,7 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
     mode: 'driverPositiveProof',
     canonicalMode: 'driver-positive-proof',
     proofKey: 'driverPositiveProof',
+    proof: summary.driverPositiveProof,
     requestedScenarios: ['driver-positive-proof'],
     requestedBundles: ['driverPositiveProof'],
     requestedConcreteScenarios: [],
@@ -1924,6 +1925,7 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     mode: 'driverRouteProof',
     canonicalMode: 'core-package-routes',
     proofKey: 'driverRouteProof',
+    proof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
     requestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
@@ -1971,6 +1973,7 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     mode: 'driverRouteProof',
     canonicalMode: 'core-package-routes',
     proofKey: 'driverRouteProof',
+    proof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
     requestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
@@ -2014,6 +2017,91 @@ test('plugin-driver proof summary leaves mode proof null without a canonical mod
 
   assert.equal(summary.canonicalMode, null);
   assert.equal(summary.modeProof, null);
+});
+
+test('plugin-driver proof summary carries the full selected verifier guard proof on modeProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-verifier-guards'],
+      selectedScenarios: new Set([
+        'driver-verifier-guards',
+        ...scenarioGroups['driver-verifier-guards'],
+      ]),
+      resolvedMode: 'driverVerifierGuards',
+      canonicalMode: 'driver-verifier-guards',
+    },
+  );
+
+  assert.equal(summary.modeProof?.proof, summary.driverVerifierGuards);
+  assert.equal(summary.modeProof?.proof.receiptStatus, 'passed');
+  assert.equal(summary.modeProof?.proof.revokedCredential, 'reprint_push_lab_auth_required');
+  assert.equal(summary.modeProof?.proof.missingExportRowsCallback, true);
+  assert.equal(summary.modeProof?.proof.missingPluginOwner, true);
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {

@@ -1175,6 +1175,7 @@ export function buildProductionPluginPackageProofSummary(
       mode: resolvedMode,
       canonicalMode,
       proofKey: canonicalProofKey,
+      proof: canonicalProof,
       requestedScenarios: proofSummary.requestedScenarios,
       requestedBundles: proofSummary.requestedBundles,
       requestedConcreteScenarios: proofSummary.requestedConcreteScenarios,
