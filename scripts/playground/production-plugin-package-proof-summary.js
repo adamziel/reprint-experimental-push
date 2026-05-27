@@ -769,6 +769,16 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   }
 
   if (
+    pluginDriverProof?.legacyRequestedBundles !== undefined
+    && !requestedBundleListsMatch(
+      pluginDriverProof?.legacyRequestedBundles,
+      nestedModeProof?.legacyRequestedBundles,
+    )
+  ) {
+    return false;
+  }
+
+  if (
     pluginDriverProof?.requestedBundleStatus !== undefined
     && pluginDriverProof?.requestedBundleStatus !== nestedModeProof?.requestedBundleStatus
   ) {
