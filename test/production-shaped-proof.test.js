@@ -11426,6 +11426,86 @@ test('packaged production plugin smoke readiness helper fails closed when packag
   assert.equal(fetchCalls.length, 8);
 });
 
+test('packaged production plugin smoke readiness helper fails closed when the snapshot route and /wp-json/ stay global-startup-shaped', async () => {
+  const snapshotStartupBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const sleepCalls = [];
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    fetchTextWithTimeout: async (url) => {
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 404,
+            ok: false,
+          },
+          bodyText: snapshotStartupBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => ({
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 404,
+      ok: false,
+      body: snapshotStartupBody,
+      parsedBody: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+      ready: false,
+      retryable: true,
+      terminal: false,
+    }),
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 503,
+      ok: false,
+      body: 'WordPress is not ready yet',
+      parsedBody: null,
+      ready: false,
+      retryable: true,
+      terminal: false,
+    }),
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback fetch in packaged smoke global-startup limit runtime proof');
+    },
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9464,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP 503 for 4 consecutive responses \(limit 4\)/,
+      );
+      assert.match(error.message, /"globalWordPressStartup": true/);
+      assert.match(error.message, /"snapshotNotReadyProbeCount": 4/);
+      return true;
+    },
+  );
+
+  assert.equal(sleepCalls.length, 3);
+  assert.deepEqual(
+    sleepCalls.map(({ ms, child: sleptChild }) => ({ ms, child: sleptChild })),
+    [
+      { ms: 1, child },
+      { ms: 1, child },
+      { ms: 1, child },
+    ],
+  );
+});
+
 test('packaged production plugin smoke readiness helper preserves timeout fallback probes when signed preflight and /wp-json/ both time out', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
   timeoutError.name = 'TimeoutError';
