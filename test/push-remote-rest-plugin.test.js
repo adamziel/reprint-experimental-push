@@ -3987,6 +3987,106 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease claim-key uniqueness', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.claimKeyUnique;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease fsync evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.fsyncEvidence;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease monotonic sequencing', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.monotonicSequence;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease restart readability', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.restartReadable;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease stale-claim rejection flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.writerLease.staleClaimRejected;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested writer-lease claim identity', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.claimId;
@@ -4226,6 +4326,106 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease strategy', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.strategy;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease claim-key uniqueness', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.claimKeyUnique;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease fsync evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.fsyncEvidence;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease monotonic sequencing', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.monotonicSequence;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease restart readability', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.restartReadable;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease stale-claim rejection flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.staleClaimRejected;
 
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -5356,6 +5556,81 @@ test('checked db journal attachment fails closed when authoritative checked summ
   const inlineJournal = buildAcceptedInlineDbJournal();
   const checkedSummary = buildCheckedDbJournalSummary();
   delete checkedSummary.writerLease.strategy;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease claim-key uniqueness', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.claimKeyUnique;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease fsync evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.fsyncEvidence;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease monotonic sequencing', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.monotonicSequence;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease restart readability', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.restartReadable;
+
+  const result = runAttachCheckedDbJournalContract(
+    { dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease stale-claim rejection flag', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = buildCheckedDbJournalSummary();
+  delete checkedSummary.writerLease.staleClaimRejected;
 
   const result = runAttachCheckedDbJournalContract(
     { dbJournal: inlineJournal },
@@ -11213,6 +11488,91 @@ test('checked db journal attachment fails closed when authoritative checked summ
 test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease strategy', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.strategy;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease claim-key uniqueness', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.claimKeyUnique;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease fsync evidence', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.fsyncEvidence;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease monotonic sequencing', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.monotonicSequence;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease restart readability', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.restartReadable;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease stale-claim rejection flag', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.writerLease.staleClaimRejected;
 
   const result = runAttachCheckedDbJournalContract(
     {
