@@ -12627,6 +12627,38 @@ test('guarded benchmark surfaces receipt-flush blockers at runtime', async () =>
   ]);
 });
 
+test('guarded benchmark surfaces release-bundle blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const releaseBundleRejectedFastPaths = details.rejectedFastPaths
+    .filter((entry) => entry.id.includes('release-bundle'))
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  assert.deepEqual(releaseBundleRejectedFastPaths.map(({ id }) => id), [
+    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+    'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-planning',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
+  ]);
+
+  assert.deepEqual(summarizeRejectedGates(releaseBundleRejectedFastPaths), [
+    { rejectedGate: 'group', count: 10 },
+    { rejectedGate: 'recovery', count: 3 },
+    { rejectedGate: 'skip', count: 2 },
+  ]);
+});
+
 test('guarded benchmark surfaces plugin-install blockers at runtime', () => {
   const report = largeBenchmark();
   const details = productionThroughputDetails(report);
