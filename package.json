@@ -21,6 +21,7 @@
     "test:playground:production-shaped-push": "node ./scripts/playground/production-shaped-route-smoke.mjs",
     "test:playground:production-plugin-package": "node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-core-package-routes": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=core-package-routes node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-route-proof": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRouteProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-guard-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptGuards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-receipt-guards": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptGuards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-verifier-guards": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverVerifierGuards node ./scripts/playground/production-plugin-package-smoke.mjs",
