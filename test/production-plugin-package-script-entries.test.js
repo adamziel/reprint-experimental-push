@@ -450,6 +450,39 @@ test('package scripts keep every plugin-driver smoke entrypoint resolvable by th
   }
 });
 
+test('package scripts keep every plugin-driver mode entrypoint aligned with the proof-key resolver contract', () => {
+  const driverModeScripts = Object.keys(packageJson.scripts)
+    .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'))
+    .map((scriptName) => [scriptName, packageSmokeMode(scriptName)])
+    .filter(([, mode]) => mode !== null);
+
+  for (const [scriptName, mode] of driverModeScripts) {
+    const resolvedScenarioSelection = resolveProductionPluginPackageScenarios([], undefined, mode);
+    const resolvedModeProofKey = resolveProductionPluginPackageModeProofKey(mode);
+
+    assert.notEqual(
+      resolvedModeProofKey,
+      null,
+      `${scriptName} should resolve to one downstream plugin-driver proof key`,
+    );
+    assert.equal(
+      resolvedModeProofKey?.mode,
+      mode,
+      `${scriptName} should preserve its exact runtime mode alias in the proof resolver`,
+    );
+    assert.equal(
+      resolvedModeProofKey?.canonicalMode,
+      resolvedScenarioSelection.canonicalMode,
+      `${scriptName} should resolve to the same canonical bundle in the scenario parser and proof resolver`,
+    );
+    assert.match(
+      resolvedModeProofKey?.proofKey ?? '',
+      /^driver[A-Z]/,
+      `${scriptName} should expose a canonical downstream plugin-driver proof key`,
+    );
+  }
+});
+
 test('package scripts keep every guard-proof canonical mode reachable through runtime smoke aliases', () => {
   const driverModeScripts = Object.keys(packageJson.scripts)
     .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'))
