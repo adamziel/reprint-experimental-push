@@ -1,8 +1,8 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-27 04:20:29 CEST (+0200)
-- Branch head at inspection: `802a5fb79f34673426220bb5a97f6db59a4534a0`
-- I added two more lane-owned reopen regressions on the production recovery adapter boundary. The new tests prove a consumed claim fails closed when `ownsRemoteArtifact` is supplied only through a hidden top-level property or through the prototype chain, so reopen options cannot inherit or smuggle remote-ownership state past the explicit own-property gate.
+- Timestamp: 2026-05-27 04:26:16 CEST (+0200)
+- Branch head at inspection: `aec543e40fc72382915cf3742f4468ad0ee7e514`
+- I added two more lane-owned reopen regressions on the production recovery adapter boundary. The new tests prove a consumed claim still fails closed when the legacy compatibility-overload entrypoint `openProductionRecoveryJournal({ filePath, ... })` tries to smuggle `remoteArtifactPath` through a hidden top-level property or `ownsRemoteArtifact` through the prototype chain.
 
 Changed files:
 
@@ -15,16 +15,16 @@ Commands:
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,240p' supervision/README.md`
 - `sed -n '1,220p' supervision/lanes/no-data-loss-recovery.md`
-- `sed -n ...` on recent `.lane-output/final*.md`, `src/recovery-journal.js`, `src/apply.js`, `test/push-planner.test.js`, and `test/recovery-journal.test.js`
-- `grep -n ...` on `openProductionRecoveryJournal`, reopen coverage, `remoteArtifactPath`, `ownsRemoteArtifact`, `claimId`, and `writerLease`
-- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+- `sed -n ...` on recent `.lane-output/final*.md`, `src/recovery-journal.js`, `src/apply.js`, and `test/push-planner.test.js`
+- `grep -RniE ...` / `grep -n ...` on reopen, compatibility-overload, `remoteArtifactPath`, `ownsRemoteArtifact`, `artifactRefs`, and `writerLease` coverage
 - `node --check test/push-planner.test.js`
-- `timeout 120s node --test --test-name-pattern='openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden top-level ownsRemoteArtifact|openProductionRecoveryJournal fails closed when a consumed claim is reopened with a prototype ownsRemoteArtifact' test/push-planner.test.js`
+- `timeout 120s node --test --test-name-pattern='openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with a hidden top-level remoteArtifactPath|openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with prototype ownsRemoteArtifact' test/push-planner.test.js`
 - `git diff --check`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 
-- Pending commit/push for the new lane-owned planner regressions.
+- Pending commit/push for the new compatibility-overload reopen regressions.
 
 Worktree status:
 
@@ -32,4 +32,4 @@ Worktree status:
 
 Next supervisor nudge:
 
-- Recovery closed the remaining explicit remote-ownership reopen loophole on the production adapter surface. This lane can stay parked again unless reliable exposes a recovery-owned mismatch around checked release-path consumption of `openProductionRecoveryJournal()`, persisted remote artifact ownership across restart, or deeper production durable-storage semantics beyond the existing reopen/consume fence coverage.
+- Recovery now fences both direct and compatibility-overload reopen smuggling for persisted remote ownership. Keep this lane parked unless reliable exposes a recovery-owned mismatch in checked release-path consumption of `openProductionRecoveryJournal()`, persisted artifact ownership across restart, or deeper production durable-storage semantics beyond the existing reopen/consume fence coverage.

@@ -22945,8 +22945,79 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
   assert.equal(
     error.message,
-    'Production recovery journal support requires a strict plain options object.',
+    'Production recovery journal compatibility overload requires a strict plain options object.',
   );
+});
+
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with a hidden top-level remoteArtifactPath', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Compatibility Remote Artifact Path Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-compatibility-top-level-remote.jsonl`;
+  const claimId = 'claim-consumed-hidden-compatibility-top-level-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const reopenOptions = {
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    artifactRefs: {
+      journal: filePath,
+    },
+  };
+  Object.defineProperty(reopenOptions, 'remoteArtifactPath', {
+    value: remoteArtifactPath,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => openProductionRecoveryJournal(reopenOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires enumerable top-level options.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: null,
+    remote: null,
+  });
 });
 
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden top-level ownsRemoteArtifact', () => {
@@ -23066,7 +23137,72 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
   assert.equal(
     error.message,
-    'Production recovery journal support requires a strict plain options object.',
+    'Production recovery journal compatibility overload requires a strict plain options object.',
+  );
+});
+
+test('openProductionRecoveryJournal fails closed when the compatibility overload reopens a consumed claim with prototype ownsRemoteArtifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Prototype Compatibility Remote Ownership Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-prototype-compatibility-top-level-owned-remote.jsonl`;
+  const claimId = 'claim-consumed-prototype-compatibility-top-level-owned-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const reopenOptions = {
+    filePath,
+    plan,
+    current: remote,
+    claimId,
+    writerLease,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  };
+  Object.setPrototypeOf(reopenOptions, {
+    ownsRemoteArtifact: true,
+  });
+
+  const error = captureError(() => openProductionRecoveryJournal(reopenOptions));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal compatibility overload requires a strict plain options object.',
   );
 });
 
