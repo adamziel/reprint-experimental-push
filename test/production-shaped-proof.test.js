@@ -3100,6 +3100,46 @@ test('packaged production plugin auth/session source helper falls back to runtim
   }
 });
 
+test('packaged production plugin auth/session source helper synthesizes a packaged source command from an explicit remote runtime candidate', () => {
+  const packaged = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl: '',
+    remoteUrl: 'https://example.test/remote',
+    localUrl: '',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(packaged.source?.ok, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(packaged.command), true);
+  assert.match(packaged.command, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.test\/remote'/);
+  assert.deepEqual(packaged.source, {
+    ok: true,
+    sourceUrl: 'https://example.test/remote',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+});
+
+test('packaged production plugin auth/session source helper synthesizes a packaged source command from an explicit local runtime candidate', () => {
+  const packaged = resolvePackagedProductionPluginAuthSessionSource({
+    sourceUrl: '',
+    remoteUrl: '',
+    localUrl: 'https://example.test/local',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(packaged.source?.ok, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(packaged.command), true);
+  assert.match(packaged.command, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.test\/local'/);
+  assert.deepEqual(packaged.source, {
+    ok: true,
+    sourceUrl: 'https://example.test/local',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+});
+
 test('packaged production plugin auth/session source helper falls back past invalid explicit sourceUrl values to runtime env', () => {
   const explicitLiveSourceUrl = 'https://example.com/push';
   const previousSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL;
@@ -3320,6 +3360,46 @@ test('packaged production plugin auth/session request helper accepts an explicit
       process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
     }
   }
+});
+
+test('packaged production plugin auth/session request helper synthesizes a packaged source command from an explicit remote runtime candidate', () => {
+  const request = resolvePackagedProductionPluginAuthSessionRequest({
+    sourceUrl: '',
+    remoteUrl: 'https://example.test/remote',
+    localUrl: '',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(request.requested, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+  assert.match(request.command, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.test\/remote'/);
+  assert.deepEqual(request.source, {
+    ok: true,
+    sourceUrl: 'https://example.test/remote',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+});
+
+test('packaged production plugin auth/session request helper synthesizes a packaged source command from an explicit local runtime candidate', () => {
+  const request = resolvePackagedProductionPluginAuthSessionRequest({
+    sourceUrl: '',
+    remoteUrl: '',
+    localUrl: 'https://example.test/local',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(request.requested, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+  assert.match(request.command, /REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='https:\/\/example\.test\/local'/);
+  assert.deepEqual(request.source, {
+    ok: true,
+    sourceUrl: 'https://example.test/local',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
 });
 
 test('packaged production plugin readiness helper accepts a stable snapshot before signed preflight is ready', () => {
