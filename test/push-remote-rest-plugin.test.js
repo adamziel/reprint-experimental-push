@@ -6616,6 +6616,150 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   });
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.strategy;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, {
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.claimKeyUnique;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.fsyncEvidence;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.monotonicSequence;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.restartReadable;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.writerLease.staleClaimRejected;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+  });
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.leaseFence.writerLease.fsyncEvidence;
@@ -12202,6 +12346,138 @@ test('checked db journal attachment fails closed on missing accepted inline writ
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.strategy;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, {
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.claimKeyUnique;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.fsyncEvidence;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.monotonicSequence;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    restartReadable: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.restartReadable;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    staleClaimRejected: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.writerLease.staleClaimRejected;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
   });
 });
 
