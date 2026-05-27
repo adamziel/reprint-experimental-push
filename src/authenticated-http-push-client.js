@@ -1708,7 +1708,16 @@ function summarizeAuthSessionLifecycle(auth) {
     type: session.type || null,
     status: session.status || null,
     expiresAt: session.expiresAt || null,
-    expired: session.status === 'expired' || isExpiredSession(session),
+    ...(invalidLifecycleFlag ? { invalidLifecycleFlag } : {}),
+    ...(invalidIdentityField?.label ? { invalidIdentityField: invalidIdentityField.label } : {}),
+    ...(unrevokedObservation?.field ? { unrevokedField: unrevokedObservation.field } : {}),
+    ...(expiredObservation?.field ? { expiredField: expiredObservation.field } : {}),
+    ...(session.rotated === true || session.status === 'rotated'
+      ? {
+        rotatedField: session.rotated === true ? 'auth.session.rotated' : 'auth.session.status',
+      }
+      : {}),
+    expired: session.expired === true || session.status === 'expired' || isExpiredSession(session),
     revoked: session.revoked === true || session.status === 'revoked',
     cleanedUp: session.cleanedUp === true || session.cleanup === true || session.status === 'cleaned-up',
     rotated: session.rotated === true ? true : session.rotated === false ? false : null,

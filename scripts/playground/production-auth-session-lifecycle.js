@@ -71,8 +71,10 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   if (expired) {
     return {
       ok: false,
+      field: normalizeAuthSessionObservationField(session?.expiredField)
+        || (session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expired'),
       required: 'unexpired',
-      observed: observedStatus === 'expired' ? 'expired' : observedExpiresAt,
+      observed: session?.status === 'expired' ? 'expired' : 'expired',
     };
   }
   if (observedStatus !== 'active') {
@@ -274,8 +276,10 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
   if (summary.expired) {
     return {
       ok: false,
+      field: normalizeAuthSessionObservationField(summary.expired.expiredField)
+        || (summary.expired.status === 'expired' ? 'auth.session.status' : 'auth.session.expired'),
       required: 'unexpired',
-      observed: summary.expired.expiresAt || 'expired',
+      observed: summary.expired.status === 'expired' ? 'expired' : (summary.expired.expiresAt || 'expired'),
     };
   }
 
@@ -431,7 +435,8 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
         ...(invalidLifecycleFlag
           ? { invalidLifecycleFlag }
           : {}),
-        expired: entry.expired === true || entry.status === 'expired',
+        ...(typeof entry.expiredField === 'string' ? { expiredField: entry.expiredField } : {}),
+        expired: entry.expired === true || entry.status === 'expired' || isExpiredAuthSession(entry),
         revoked: entry.revoked === true || entry.status === 'revoked',
         cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
         rotated: entry.rotated === true || entry.status === 'rotated',
