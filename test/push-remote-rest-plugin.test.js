@@ -12301,6 +12301,24 @@ test('checked db journal attachment fails closed on missing accepted inline top-
   });
 });
 
+test('checked db journal attachment fails closed on missing accepted inline top-level storage-guard outcome instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.storageGuard.outcome;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+  });
+});
+
 test('checked db journal attachment fails closed when accepted checked summaries claim stale-claim rejection without persisted stale-claim evidence', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
