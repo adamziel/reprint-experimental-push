@@ -1,21 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `35dc26ec1d3536ef1aabfa57c31f1ed1e02c6317`
-(`Honor matching runtime auth request state`).
+Current reliable head: `d64eda1d4da2531f6c8f3049edbaa1459140765b`
+(`Fence reopened recovery plan ids`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head widens the checked release verifier's auth-session request-state
-  resolution so matching runtime auth sources can come from either the remote
-  or local runtime candidates, and the focused proof adds coverage for that
-  matching override behavior.
-- In `scripts/playground/production-shaped-release-verify.mjs` the checked
-  release path now passes explicit `remoteUrl` and `localUrl` candidates into
-  auth-session request-state resolution, and the new test proves a matching
-  source can override explicit runtime credentials when it matches one of
-  those candidates.
+- This head tightens the recovery-journal reopen path so a reopened
+  claim-fenced journal must match the persisted active-claim `plan.id` and the
+  persisted artifact evidence before the wrapper will accept it.
+- In `src/recovery-journal.js` the production recovery wrapper now rejects a
+  reopened claim when the active claim evidence drifts, and the focused tests
+  add coverage for plan-id drift and missing persisted plan IDs on restart.
 - That is still release-path support evidence, not a supervised gate closure.
   The checked path remains verifier/scaffold-driven, and this head still does
   not prove a production-owned, non-lab-backed source mutation boundary on the
@@ -26,14 +23,14 @@ Reason:
 
 Next owner / command:
 
-- `main:reliable-exec` should land the next exact primitive beyond matching
-  runtime auth request-state resolution: a production-owned, non-lab-backed
-  source-mutation/auth-session boundary on the real Reprint endpoint that
-  issues a live session on the endpoint, reads it back after restart from
-  durable journal storage, enforces lease-fenced ownership of those journal
-  rows, and revalidates the session at apply time before mutation without
-  falling back to Playground package-mode scaffolding. The proof should come
-  through `scripts/playground/production-shaped-release-verify.mjs`,
-  `scripts/playground/push-remote-rest-plugin.php`,
-  `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
-  `timeout 300s npm run verify:release`.
+- `main:reliable-exec` should land the next exact primitive beyond recovery
+  plan-id fencing: a production-owned, non-lab-backed source-mutation/auth-
+  session boundary on the real Reprint endpoint that issues a live session on
+  the endpoint, reads it back after restart from durable journal storage,
+  enforces lease-fenced ownership of those journal rows, and revalidates the
+  session at apply time before mutation without falling back to Playground
+  package-mode scaffolding. The proof should come through
+  `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
+  and `src/authenticated-http-push-client.js` with `timeout 300s npm run
+  verify:release`.
