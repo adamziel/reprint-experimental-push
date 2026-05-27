@@ -6560,7 +6560,7 @@ test('checked release auth/session lifecycle summary fails closed when a replay 
     evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
     {
       ok: false,
-      field: 'auth.session.rotated',
+      field: 'auth.session.status',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -6640,7 +6640,7 @@ test('checked release auth/session lifecycle summary fails closed when a journal
     evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
     {
       ok: false,
-      field: 'auth.session.rotated',
+      field: 'auth.session.status',
       required: 'preserved read',
       observed: 'rotated',
     },
@@ -9766,6 +9766,101 @@ test('checked release auth/session lifecycle summary fails closed when direct re
     {
       ok: false,
       field: 'auth.session.rotated',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct read summary omits the session id', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.rotated',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+});
+
+test('checked release auth/session lifecycle summary fails closed when direct read summary reports rotated status on a different session id', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-02',
+      type: 'production-auth-session',
+      status: 'rotated',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateCheckedReleaseAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      field: 'auth.session.status',
       required: 'preserved read',
       observed: 'rotated',
     },
