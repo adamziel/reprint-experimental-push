@@ -2026,17 +2026,32 @@ function resolveObservedAuthSessionLifecycleFlagDrift(response) {
 }
 
 function resolveObservedAuthSessionSourceMetadataDrift(response) {
+  const session = response?.body?.auth?.session;
   const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(
-    response?.body?.auth?.session,
+    session,
   );
-  if (!invalidIdentityField || invalidIdentityField.field !== 'warning') {
+  if (invalidIdentityField) {
+    if (invalidIdentityField.field !== 'warning') {
+      return null;
+    }
+
+    return {
+      field: 'auth.session.warning',
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidIdentityField.label}`,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const sourceObservation = resolveProductionAuthSessionSourceObservation(session);
+  if (!sourceObservation) {
     return null;
   }
 
   return {
-    field: 'auth.session.warning',
-    required: 'string lifecycle fields',
-    observed: `invalid-${invalidIdentityField.label}`,
+    field: sourceObservation.field,
+    required: sourceObservation.required,
+    observed: sourceObservation.observed,
     verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
   };
 }
