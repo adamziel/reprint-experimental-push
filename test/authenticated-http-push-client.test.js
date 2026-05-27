@@ -242,6 +242,100 @@ test('authenticated push source accepts ipv6 loopback auth/session source URLs',
   );
 });
 
+test('production-shaped authenticated push keeps the source lab-backed when a malformed auth/session source falls back to direct credentials', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    return new Response(JSON.stringify({
+      ok: false,
+      code: 'PREFLIGHT_FAILED',
+    }), {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:9090',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      idempotencyKey: 'idem-01-source-fallback-summary',
+      routeProfile: 'production-shaped',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: '',
+      },
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PREFLIGHT_FAILED');
+    assert.deepEqual(summary.source, {
+      url: 'http://127.0.0.1:9090/',
+      namespace: 'reprint/v1',
+      routePrefix: '/push',
+      routeProfile: 'production-shaped',
+      labBacked: true,
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /^http:\/\/127\.0\.0\.1:9090\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push marks the source non-lab-backed when a complete auth/session source overrides direct credentials', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    return new Response(JSON.stringify({
+      ok: false,
+      code: 'PREFLIGHT_FAILED',
+    }), {
+      status: 503,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:9090',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      idempotencyKey: 'idem-01-source-override-summary',
+      routeProfile: 'production-shaped',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PREFLIGHT_FAILED');
+    assert.deepEqual(summary.source, {
+      url: 'http://127.0.0.1:8080/',
+      namespace: 'reprint/v1',
+      routePrefix: '/push',
+      routeProfile: 'production-shaped',
+      labBacked: false,
+    });
+    assert.equal(seen.length, 1);
+    assert.match(seen[0].url, /^http:\/\/127\.0\.0\.1:8080\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('authenticated push client signs mutating requests when session and idempotency are present', async () => {
   const originalFetch = global.fetch;
   const seen = [];

@@ -53,12 +53,18 @@ export async function runAuthenticatedHttpPush({
   authSessionSource = null,
   now = new Date(),
 }) {
-  const resolvedSource = resolveAuthenticatedHttpPushSource({
-    sourceUrl,
-    username,
-    applicationPassword,
-    authSessionSource,
-  });
+  const normalizedAuthSessionSource = normalizeAuthenticatedHttpPushSource(authSessionSource);
+  const resolvedSource = normalizedAuthSessionSource
+    ? {
+      sourceUrl: normalizedAuthSessionSource.sourceUrl,
+      username: normalizedAuthSessionSource.username,
+      applicationPassword: normalizedAuthSessionSource.applicationPassword,
+    }
+    : {
+      sourceUrl,
+      username,
+      applicationPassword,
+    };
   if (!resolvedSource.sourceUrl) {
     throw new Error('Missing sourceUrl');
   }
@@ -91,7 +97,7 @@ export async function runAuthenticatedHttpPush({
       namespace: profile.namespace,
       routePrefix: profile.routePrefix,
       routeProfile: profile.name,
-      labBacked: !authSessionSource?.ok,
+      labBacked: !normalizedAuthSessionSource,
     },
     idempotencyKeyHash: digest(idempotencyKey),
     preflight: null,
