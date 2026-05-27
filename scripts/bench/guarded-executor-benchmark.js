@@ -68,6 +68,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-capability-measurement-not-aligned',
     ]),
   }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+    ]),
+  }),
 ]);
 
 export class BenchmarkClaimError extends Error {

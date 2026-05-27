@@ -5959,6 +5959,25 @@ test('production throughput claim maps rollout blockers to the matching rejected
   assert.ok(
     rowBatchRejectedById.get('compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks')?.violates.includes('plugin-preconditions'),
   );
+
+  assert.deepEqual(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.blockerRefs,
+    [
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+    ],
+  );
+  assert.equal(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.rejectedGate,
+    'group',
+  );
+  assert.ok(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('database-row-batching'),
+  );
+  assert.ok(
+    rowBatchRejectedById.get('compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause')?.violates.includes('atomic-groups'),
+  );
 });
 
 test('rollout rejected fast-path specs stay wired to modeled rejected shortcuts', () => {
@@ -5970,7 +5989,7 @@ test('rollout rejected fast-path specs stay wired to modeled rejected shortcuts'
 
   assert.deepEqual(details.rejectedFastPaths, claim.rejectedFastPaths);
   assert.deepEqual(details.rejectedFastPathGateSummary, [
-    { rejectedGate: 'group', count: 1 },
+    { rejectedGate: 'group', count: 2 },
     { rejectedGate: 'live', count: 1 },
     { rejectedGate: 'recovery', count: 1 },
   ]);
