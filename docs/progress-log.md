@@ -4,6 +4,58 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Journal Window Complex-Site Evidence
+
+- Last update: 2026-05-28 00:16 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:journal-window`
+  passed in tmux window `main:journal-window-proof`.
+- Code change: the authenticated release client now sizes the
+  `/db-journal` readback window from the planned mutation count instead of
+  always requesting `limit=80`. The local WordPress journal endpoint already
+  accepted up to 500 rows; the verifier now requests enough rows for the
+  checked mutation set.
+- Dense-shape verifier change: the complex local production proof can now be
+  expanded with `REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT`. The journal
+  window command uses 25 complex posts, yielding a 35-mutation ready plan.
+- Planner evidence: 27 exported posts per site, 25 complex posts, 5 complex
+  form-schema postmeta rows, 3 complex upload files, 4 forms-lab rows,
+  1 release-state row, and 12 plugin-owned allowlist entries. The ready plan
+  had 35 mutations and 35 live-remote preconditions. The remote-drift plan
+  still failed closed with 9 `preserve-remote-and-stop` conflicts.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `449044f7c65c27d27679eaee7c1ecf4b270b484444c1a2550dc1cc034f11d15f`,
+  reported 115 durable DB journal rows, `mutationApplied: 35`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 35`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session and durable journal, replay
+  equivalence, and `releaseMovement.gates: candidate-for-review`.
+- Recovery evidence now includes same-key/body replay with 35 mutation events,
+  same-key/different-body conflict before mutation, stale-owner fencing,
+  35/35 fully updated recovery inspect, and blocked apply-time revalidation
+  state with `old: 34`, `new: 0`, `blockedUnknown: 1`.
+- Focused checks passed:
+  `node --check src/authenticated-http-push-client.js`,
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `node --test --test-name-pattern "db journal readback window scales" test/authenticated-http-push-client.test.js`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:journal-window`.
+- Broad-suite caveat: the large
+  `node --test test/authenticated-http-push-client.test.js` run still reports
+  existing release-boundary expectation failures outside the journal-window
+  regression; the focused regression added here passes.
+- Caveat: this is still local Playground loopback WordPress evidence. It does
+  not prove Docker/external restart behavior, external crash durability,
+  rollback, broader WordPress graph surfaces, or general plugin-driver proof.
+- Percent movement: merge invariants move from 55% to 57%; recovery boundaries
+  move from 46% to 50%; reliable executor/protocol moves from 61% to 64%;
+  fast path and chunking moves from 24% to 30% because the previously rejected
+  35-mutation journal-window run is now accepted; independent evidence moves
+  from 53% to 56%.
+
 ## 2026-05-28 - Complex Local Production Evidence
 
 - Last update: 2026-05-28 00:03 CEST.

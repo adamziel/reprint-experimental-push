@@ -1,9 +1,37 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 00:03 CEST
+Last updated: 2026-05-28 00:16 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 00:16 CEST - Journal Window Evidence
+
+- Going well: `npm run verify:release:local-production:complex-site:journal-window`
+  passed in `main:journal-window-proof`. The proof expanded the complex local
+  topology to 25 complex posts and a 35-mutation ready plan.
+- Also going well: the release verifier now reads a mutation-sized DB-journal
+  window. The accepted run reported 115 durable journal rows,
+  `mutationApplied: 35`, `applyRevalidationVerifiedCount: 35`, a dry-run
+  receipt, auth/session continuity, durable-journal acceptance, same-key/body
+  replay, same-key/different-body conflict, and replay equivalence.
+- Not going well: this is still local Playground loopback evidence. Docker or
+  external WordPress, external crash durability, rollback, broader WordPress
+  graph surfaces, and general plugin-driver proof remain blockers.
+- Progress change: the previous 35-mutation journal-window blocker is closed
+  for the local proof. This moves recovery, reliable executor, fast-path, and
+  independent evidence up modestly without making the release ready.
+- Next nudge: push the same release verifier path to Docker/external WordPress,
+  or add the next chunk/window benchmark that proves bounded cursors and
+  recovery across more than one journal window.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep the 35-mutation remote-drift conflicts preserve-remote while broadening graph surfaces. |
+| Recovery | Move the 35-mutation DB-journal proof to Docker/external restart/crash durability. |
+| Reliable executor | Preserve the dynamic journal readback, receipt, auth/session, and lease-fence gates on the external release path. |
+| Fast paths | Convert the single larger window into multi-window chunk/cursor evidence. |
+| Audit and critic | Re-audit the integrated branch at the new journal-window commit and keep final readiness held. |
 
 ## 2026-05-28 00:03 CEST - Complex Local Production Evidence
 

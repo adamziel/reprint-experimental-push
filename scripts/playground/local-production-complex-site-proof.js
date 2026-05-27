@@ -14,6 +14,17 @@ export const complexSiteFixtureShape = Object.freeze({
 const proofNow = new Date('2026-05-27T21:45:00.000Z');
 const formsFixtureOption = 'reprint_push_forms_fixture';
 
+export function complexSiteFixtureShapeFromEnv(env = process.env) {
+  return Object.freeze({
+    postCount: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT, complexSiteFixtureShape.postCount),
+    schemaMetaCount: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SCHEMA_META_COUNT, complexSiteFixtureShape.schemaMetaCount),
+    fileCount: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_FILE_COUNT, complexSiteFixtureShape.fileCount),
+    formsLabRows: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_FORMS_ROWS, complexSiteFixtureShape.formsLabRows),
+    remoteDriftPosts: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_POSTS, complexSiteFixtureShape.remoteDriftPosts),
+    remoteDriftFiles: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_FILES, complexSiteFixtureShape.remoteDriftFiles),
+  });
+}
+
 export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape) {
   const variantKey = String(variant.key || 'source');
   return [
@@ -384,6 +395,13 @@ function positiveInt(value) {
   const number = Number.parseInt(String(value), 10);
   assert.ok(Number.isInteger(number) && number > 0, `Expected positive integer, got ${value}`);
   return number;
+}
+
+function positiveEnvInt(value, fallback) {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return fallback;
+  }
+  return positiveInt(value);
 }
 
 function phpString(value) {

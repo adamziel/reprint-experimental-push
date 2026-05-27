@@ -30,6 +30,8 @@ const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
+const minimumDbJournalReadbackLimit = 80;
+const maximumDbJournalReadbackLimit = 500;
 const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
   `${profile.namespacePath}/preflight`,
   `${profile.namespacePath}/snapshot`,
@@ -1376,8 +1378,9 @@ export async function runAuthenticatedHttpPush({
   }
 
   let dbJournal;
+  const dbJournalReadbackLimit = dbJournalReadbackLimitForPlan(plan);
   try {
-    dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
+    dbJournal = await client.signedGet(withAuthSessionDrift(`/db-journal?limit=${dbJournalReadbackLimit}`), {
       session,
       idempotencyKey,
       retryable: true,
@@ -2459,6 +2462,7 @@ function summarizeDbJournal(response) {
     status: response.status,
     ok: true,
     retryAttempts: response.retryAttempts || 1,
+    requestedLimit: dbJournalLimitFromRequestPath(response.request?.pathname),
     scope: response.body?.dbJournal?.scope,
     rows: rows.length,
     rowCount: Number.isInteger(response.body?.dbJournal?.rowCount)
@@ -2497,6 +2501,28 @@ function summarizeDbJournal(response) {
     sessionStatus: response.body?.auth?.session?.status,
     sessionExpiresAt: response.body?.auth?.session?.expiresAt,
   };
+}
+
+export function dbJournalReadbackLimitForPlan(plan) {
+  const mutationCount = Array.isArray(plan?.mutations) ? plan.mutations.length : 0;
+  const scaledLimit = mutationCount * 4 + 40;
+  return Math.min(
+    maximumDbJournalReadbackLimit,
+    Math.max(minimumDbJournalReadbackLimit, scaledLimit),
+  );
+}
+
+function dbJournalLimitFromRequestPath(pathname) {
+  if (typeof pathname !== 'string' || pathname.length === 0) {
+    return null;
+  }
+  try {
+    const url = new URL(pathname, 'http://reprint.local');
+    const value = Number.parseInt(url.searchParams.get('limit') || '', 10);
+    return Number.isInteger(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 export function dbJournalProofIsAcceptable(dbJournal, options = {}) {

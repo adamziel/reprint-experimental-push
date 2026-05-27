@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   authenticatedHttpClient,
+  dbJournalReadbackLimitForPlan,
   dbJournalProofIsAcceptable,
   inferTrustedDbJournalStorageGuard,
   resolveUncheckedObservedAuthSessionMetadataDrift,
@@ -17,6 +18,13 @@ const credential = {
 };
 
 const trustedDbJournalScope = 'checked live production-shaped journal surface; not local Playground fixture only';
+
+test('db journal readback window scales with mutation count', () => {
+  assert.equal(dbJournalReadbackLimitForPlan({ mutations: [] }), 80);
+  assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 9 }, () => ({})) }), 80);
+  assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 35 }, () => ({})) }), 180);
+  assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 300 }, () => ({})) }), 500);
+});
 
 function buildApplyRevalidationEvidence(plan, receipt, claimId, claimHash) {
   const mutations = Array.isArray(plan?.mutations) ? plan.mutations : [];

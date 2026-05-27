@@ -12,6 +12,7 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
+  complexSiteFixtureShapeFromEnv,
 } from './local-production-complex-site-proof.js';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
 
@@ -25,6 +26,7 @@ const credentials = releaseVerifyFixtureCredentials;
 const fullBrewcommerceImport = process.env.REPRINT_PUSH_LOCAL_PRODUCTION_FULL_BREWCOMMERCE === '1';
 const installWooCommerce = fullBrewcommerceImport || process.env.REPRINT_PUSH_LOCAL_PRODUCTION_INSTALL_WOOCOMMERCE === '1';
 const complexSiteProofEnabled = process.env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SITE_PROOF === '1';
+const complexSiteShape = complexSiteFixtureShapeFromEnv();
 
 const siteVariants = Object.freeze([
   {
@@ -74,6 +76,7 @@ try {
     fullBrewcommerceImport,
     installWooCommerce,
     complexSiteProofEnabled,
+    complexSiteShape: complexSiteProofEnabled ? complexSiteShape : null,
     brewcommerceBlueprintDir: brewcommerceDir,
     tempDir,
     sites: blueprints.map(({ variant, blueprintPath }) => ({
@@ -280,7 +283,7 @@ function buildSiteSeedPhp(variant) {
     "$wpdb->query('CREATE TABLE IF NOT EXISTS ' . $release_table . ' (state_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (state_id)) ' . $wpdb->get_charset_collate());",
     "$release_payload = wp_json_encode(array('owner'=>'reprint-push','mode'=>" + phpString(variant.releaseStateMode) + ",'version'=>" + String(variant.releaseStateVersion) + ",'releaseBoundaryProof'=>'plugin-driver-boundary'));",
     "$wpdb->replace($release_table, array('state_id'=>1,'payload_json'=>$release_payload,'updated_marker'=>" + phpString(variant.releaseStateMarker) + "), array('%d','%s','%s'));",
-    complexSiteProofEnabled ? buildComplexSiteSeedPhp(variant) : '',
+    complexSiteProofEnabled ? buildComplexSiteSeedPhp(variant, complexSiteShape) : '',
   ].join(' ');
 }
 
@@ -297,6 +300,7 @@ async function buildAndPrintComplexSitePlannerProof(urls) {
     fullBrewcommerceImport,
     installWooCommerce,
     brewcommerceBlueprintDir: brewcommerceDir,
+    shape: complexSiteShape,
   });
   process.stdout.write(JSON.stringify({
     event: 'local-production-complex-site-planner-proof',

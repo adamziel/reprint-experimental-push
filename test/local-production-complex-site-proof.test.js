@@ -5,6 +5,7 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
+  complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
   findReleaseVerifierSummary,
 } from '../scripts/playground/local-production-complex-site-proof.js';
@@ -25,6 +26,16 @@ test('complex-site seed PHP is bounded and variant-aware', () => {
   assert.match(php, /local-edited/);
   assert.match(php, /complex-checkout-/);
   assert.match(php, /brewcommerce-complex-/);
+});
+
+test('complex-site fixture shape can be expanded for journal-window evidence', () => {
+  const shape = complexSiteFixtureShapeFromEnv({
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
+  });
+
+  assert.equal(shape.postCount, 25);
+  assert.equal(shape.schemaMetaCount, 5);
+  assert.equal(shape.fileCount, 3);
 });
 
 test('complex-site planner proof reports dense counts, receipts prerequisites, and no-data-loss invariants', () => {

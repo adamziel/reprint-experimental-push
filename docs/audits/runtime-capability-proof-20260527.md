@@ -29,6 +29,12 @@ Current sandbox result:
   adds a bounded Brewcommerce-derived site with 22 checked mutations, a dry-run
   receipt, auth/session readback, durable DB-journal gates, and remote-drift
   no-data-loss conflicts.
+- Journal-window local substitute:
+  `npm run verify:release:local-production:complex-site:journal-window` passed
+  on 2026-05-28 00:16 CEST. It expands the same local Playground topology to a
+  35-mutation ready plan and verifies 115 durable DB-journal rows with
+  `mutationApplied: 35`, `applyRevalidationVerifiedCount: 35`, checked
+  auth/session and durable-journal gates, and replay equivalence.
 - Full Brewcommerce/WooCommerce import was attempted with
   `REPRINT_PUSH_LOCAL_PRODUCTION_FULL_BREWCOMMERCE=1`; all four sites booted,
   but the checked release verifier failed closed with
