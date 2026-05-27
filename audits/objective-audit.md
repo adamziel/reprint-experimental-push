@@ -4,7 +4,6 @@
 
 - Audited commit: `3a9e010e368d3d24a00171e7e5a98b6ff65bc289` (`Require explicit lease-fence storage guard`)
 - Previous audited reliable head: `f89370f41d4cc0519c980f89e038c9fff6dbcbb1`
-- Critic reference: `8fe9fa046ac1bf879f6cb980852a666eafa2c248` (`critic classified that reliable head as 0/4`)
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
@@ -18,7 +17,7 @@
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Packaged/live-wrapper boundary | `3a9e010e` hardens support-only durable-journal checks by requiring `leaseFence.storageGuard` to match the `wpdb-single-statement-cas` boundary and by adding regressions for missing nested storage-guard evidence. | A production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` using a real `/wp-json/reprint/v1/push/*` endpoint on the release boundary. | Support-only |
+| Lease-fence storage guard | `3a9e010e` requires `leaseFence.storageGuard` to match the `wpdb-single-statement-cas` boundary and adds regressions for missing nested storage-guard evidence. | A production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` using a real `/wp-json/reprint/v1/push/*` endpoint on the release boundary. | Support-only |
 | Production source boundary | The commit improves support-side journal contract strictness, but it still does not prove that the audited release path owns a real production `/wp-json/reprint/v1/push/*` endpoint rather than a lab wrapper. | One checked command on the real production-owned endpoint proving the source is not a lab wrapper and is owned by the release path being audited. | Blocked |
 | Auth/session issuance and readback | The authenticated push regression now includes session-shaped response fields, but only inside test fixtures; it is not production endpoint evidence. | Real endpoint proof of auth/session issuance plus readback on the same production-owned `/wp-json/reprint/v1/push/*` path. | Blocked |
 | Durable journal ownership | The reliable head makes the journal contract stricter by enforcing explicit lease-fence storage-guard matching and rejecting missing nested guard evidence. It still does not prove restart-readable journal ownership with lease/fencing on the real boundary. | Durable restart-readable journal ownership with lease/fencing, demonstrated by the release path that owns the real endpoint. | Blocked |
@@ -28,20 +27,10 @@
 ## Change Assessment
 
 1. `3a9e010e` is durable-journal support hardening, not release-boundary proof.
-2. Its concrete effect is to require `leaseFence.storageGuard` to match the `wpdb-single-statement-cas` lease-fence boundary and to add regressions that fail when nested storage-guard evidence is missing.
+2. Its concrete effect is to require `leaseFence.storageGuard` to match `wpdb-single-statement-cas` and to add regressions that fail when nested storage-guard evidence is missing.
 3. That is useful, but it still does not prove a production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` endpoint boundary.
 4. No release gate moved. The project remains `0/4`, matching critic ref `8fe9fa046`.
 
 ## Conclusion
 
 `3a9e010e368d3d24a00171e7e5a98b6ff65bc289` is durable-journal support hardening. It requires `leaseFence.storageGuard` to match `wpdb-single-statement-cas` and adds regressions for missing nested storage-guard evidence. That is useful, but it still does not prove the production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` endpoint boundary, so it does not close any release gate.
-
-The missing proof remains a production-owned, non-lab `REPRINT_PUSH_SOURCE_URL` on a real `/wp-json/reprint/v1/push/*` endpoint that proves:
-
-- auth/session issuance and readback
-- durable restart-readable journal ownership with lease/fencing
-- plugin-driver ownership on the release boundary
-- preserved rejected remote evidence
-- apply-time revalidation before the first mutation
-
-Until that exact proof exists on the release boundary, the release-gate verdict remains `0/4`.
