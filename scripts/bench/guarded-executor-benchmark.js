@@ -35,6 +35,11 @@ const POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS = Object.freeze([
   'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
   'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
 ]);
+const INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS = Object.freeze([
+  'queue-pause-footprint-not-proven',
+  'queue-pause-without-complete-receipt-cursor-pause-footprint',
+  'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+]);
 const HIDDEN_STAGING_DISK_VISIBILITY_BLOCKER_REFS = Object.freeze([
   'staging-disk-headroom-not-visible',
 ]);
@@ -929,6 +934,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
@@ -984,6 +990,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
@@ -1143,6 +1150,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
@@ -1172,6 +1180,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+      ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
@@ -1185,6 +1194,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
+      ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
@@ -1207,6 +1217,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
       'queue-pause-without-consistent-receipt-cursor-slack',
