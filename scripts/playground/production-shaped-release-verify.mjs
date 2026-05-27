@@ -2018,10 +2018,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         lastError,
         lastProbes,
         getOutput(),
-        {
+        packagedProductionPluginPreflightTerminalContext({
           childPid: child.pid ?? null,
-          packagedProductionPlugin: true,
-        },
+        }),
       );
     } catch (error) {
       if (!packagedProductionPluginReadinessErrorRetryable(error)) {

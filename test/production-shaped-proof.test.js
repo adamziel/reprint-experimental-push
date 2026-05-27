@@ -3276,6 +3276,10 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
+    /Packaged Playground signed preflight returned a terminal readiness failure at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\s*childPid:\s*child\.pid\s*\?\?\s*null,\s*\}\)/s,
+  );
+  assert.match(
+    helperSource,
     /snapshot stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{snapshotNotReadyProbeCount\} consecutive response[\s\S]*?await throwPlaygroundReadinessFailure\(\s*child,/s,
   );
   assert.match(
