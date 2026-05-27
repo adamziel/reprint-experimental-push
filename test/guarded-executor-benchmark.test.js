@@ -9206,3 +9206,80 @@ test('guarded benchmark carries hidden staging-disk visibility blockers into rol
     { rejectedGate: 'recovery', count: 1 },
   ]);
 });
+
+test('guarded benchmark carries incomplete pause-footprint blockers into rejected fast-path summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorPauseFootprintComplete = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const releaseBundleBackpressure = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+  );
+  const stagingDiskReplay = details.rejectedFastPaths.find(
+    (entry) => entry.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+
+  assert.ok(blockers.includes('queue-pause-footprint-not-proven'));
+  assert.ok(blockers.includes('queue-pause-without-complete-receipt-cursor-pause-footprint'));
+  assert.ok(
+    blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
+  );
+  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
+    'queue-pause-footprint-not-proven',
+    'queue-pause-without-complete-receipt-cursor-pause-footprint',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
+    'queue-pause-footprint-not-proven',
+    'queue-pause-without-complete-receipt-cursor-pause-footprint',
+    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+});
+
+test('guarded benchmark carries non-terminal receipt-cursor blockers into rejected fast-path summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePausedBeforeOverflow = true;
+  mutated.evidence.chunkReceipts.cursorConsistency.canResumeFromCursor = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const releaseBundleBackpressure = details.rejectedFastPaths.find(
+    (entry) =>
+      entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+  );
+  const stagingDiskReplay = details.rejectedFastPaths.find(
+    (entry) => entry.id === 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+  );
+
+  assert.ok(blockers.includes('queue-pause-without-terminal-receipt-cursor'));
+  assert.ok(blockers.includes('receipt-cursor-not-terminal'));
+  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
+    'queue-pause-without-terminal-receipt-cursor',
+    'receipt-cursor-not-terminal',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
+    'queue-pause-without-terminal-receipt-cursor',
+    'receipt-cursor-not-terminal',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+    'queue-pause-without-consistent-receipt-cursor-slack',
+    'queue-pause-without-memory-safe-receipt-cursor-slack',
+  ]);
+});
