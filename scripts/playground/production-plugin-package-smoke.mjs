@@ -892,6 +892,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           applyRejectedCode: expiredReceiptApply.body?.code,
           applyRejectedMessage: expiredReceiptApply.body?.message,
           rowRetainedAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
           updatedMarkerAfterReject: afterExpiredReceiptReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
         };
       });
@@ -950,6 +951,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           applyRejectedCode: identityMismatchApply.body?.code,
           applyRejectedMessage: identityMismatchApply.body?.message,
           rowRetainedAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
           updatedMarkerAfterReject: afterIdentityMismatchReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
         };
       });
@@ -1016,6 +1018,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           originalApplicationPasswordUuid: preflight.body?.auth?.session?.applicationPasswordUuid,
           rotatedApplicationPasswordUuid: rotatedPreflight.body?.auth?.session?.applicationPasswordUuid,
           rowRetainedAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
           updatedMarkerAfterReject: afterRotatedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
         };
       });
@@ -1077,6 +1080,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
           applyRejectedCode: revokedCredentialApply.body?.code,
           applyRejectedMessage: revokedCredentialApply.body?.message,
           rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1'] !== undefined,
+          payloadModeAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.payload?.mode,
           updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixture.table]?.['entry_id:1']?.updated_marker,
         };
       });

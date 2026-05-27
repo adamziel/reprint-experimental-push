@@ -92,15 +92,19 @@ const scenarioDefinitions = [
         && summary?.driverReceiptExpiryGuard?.applyRejectedCode === 'AUTH_RECEIPT_EXPIRED'
         && rowRetainedAfterReject(summary?.driverReceiptExpiryGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptExpiryGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptExpiryGuard)
         && summary?.driverReceiptIdentityGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptIdentityGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptIdentityGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptIdentityGuard)
         && summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
         && summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode === 'reprint_push_lab_auth_required'
         && rowRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard)
-        && updatedMarkerRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard);
+        && updatedMarkerRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard);
     },
   },
   {
@@ -140,6 +144,7 @@ const scenarioDefinitions = [
     evaluate(summary) {
       return summary?.driverReceiptExpiryGuard?.applyRejectedCode === 'AUTH_RECEIPT_EXPIRED'
         && rowRetainedAfterReject(summary?.driverReceiptExpiryGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptExpiryGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptExpiryGuard);
     },
   },
@@ -150,6 +155,7 @@ const scenarioDefinitions = [
     evaluate(summary) {
       return summary?.driverReceiptIdentityGuard?.applyRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptIdentityGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptIdentityGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptIdentityGuard);
     },
   },
@@ -160,6 +166,7 @@ const scenarioDefinitions = [
     evaluate(summary) {
       return summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode === 'AUTH_RECEIPT_MISMATCH'
         && rowRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptRotatedCredentialGuard);
     },
   },
@@ -170,6 +177,7 @@ const scenarioDefinitions = [
     evaluate(summary) {
       return summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode === 'reprint_push_lab_auth_required'
         && rowRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard)
+        && payloadModeRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard)
         && updatedMarkerRetainedAfterReject(summary?.driverReceiptRevokedCredentialGuard);
     },
   },
