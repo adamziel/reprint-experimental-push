@@ -746,6 +746,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     latestRows: [
       {
+        claimId: 'retry-claim-id-02',
         event: 'stale-claim-rejected',
         id: 20,
         claimKeyHash: 'retry-claim-hash-02',
@@ -770,6 +771,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     ],
     claim: {
       status: 'stale-claim-rejected',
+      activeClaimId: 'retry-claim-id-02',
       activeClaimKeyHash: 'retry-claim-hash-02',
       activeClaimSequence: 20,
       activeClaimEvent: 'stale-claim-retry-started',
@@ -779,12 +781,14 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       abandonedSequence: 18,
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 12,
+      previousClaimId: 'retry-claim-id-01',
       previousClaimSequence: 11,
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimEvent: 'idempotency-opened',
     },
     claimEvidence: {
       activeRow: {
+        claimId: 'retry-claim-id-02',
         sequence: 20,
         event: 'stale-claim-retry-started',
         claimKeyHash: 'retry-claim-hash-02',
@@ -792,6 +796,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         requestHash: 'request-hash-01',
       },
       abandonedRow: {
+        claimId: 'retry-claim-id-01',
         sequence: 18,
         event: 'stale-claim-abandoned',
         claimKeyHash: 'retry-claim-hash-01',
@@ -801,6 +806,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         claimCursor: 'db-journal:11',
       },
       previousRow: {
+        claimId: 'retry-claim-id-01',
         sequence: 11,
         event: 'idempotency-opened',
         claimKeyHash: 'retry-claim-hash-01',
@@ -815,6 +821,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
+      claimId: 'retry-claim-id-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -831,6 +838,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       staleClaimRejected: false,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
+        claimId: 'retry-claim-id-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -846,6 +854,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          claimId: 'retry-claim-id-01',
           sequence: 18,
           event: 'stale-claim-abandoned',
           claimKeyHash: 'retry-claim-hash-01',
@@ -901,6 +910,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          claimId: 'retry-claim-id-02',
           event: 'stale-claim-rejected',
           sequence: 20,
           claimKeyHash: 'retry-claim-hash-02',
@@ -933,6 +943,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          claimId: 'retry-claim-id-02',
           event: 'stale-claim-rejected',
           sequence: 20,
           claimKeyHash: 'retry-claim-hash-02',
@@ -1006,6 +1017,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          claimId: 'retry-claim-id-02',
           event: 'stale-claim-rejected',
           sequence: 20,
           claimKeyHash: 'retry-claim-hash-02',
@@ -1600,6 +1612,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ...baseContract,
       latestRows: [
         {
+          claimId: 'retry-claim-id-02',
           event: 'stale-claim-rejected',
           sequence: 20,
           claimKeyHash: 'retry-claim-hash-02',
@@ -1848,6 +1861,47 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,
+      claim: {
+        ...baseContract.claim,
+        activeClaimId: '',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        claimId: null,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
       writerLease: {
         ...baseContract.writerLease,
         staleClaimRejected: true,
@@ -1990,6 +2044,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       },
       claimEvidence: {
         activeRow: {
+          claimId: 'retry-claim-id-02',
           sequence: 20,
           event: 'idempotency-opened',
           claimKeyHash: 'retry-claim-hash-02',

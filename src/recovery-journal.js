@@ -116,14 +116,15 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
+  const claim = dbJournal?.claim;
   return dbJournal?.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
     && /(packaged production plugin|checked live production-shaped) journal surface/i.test(dbJournal?.scope || '')
     && dbJournal?.acceptedOnCheckedBoundary === true
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
-    && writerLeaseContractMatches(writerLease)
-    && writerLeaseContractMatches(nestedWriterLease)
+    && writerLeaseContractMatches(writerLease, claim)
+    && writerLeaseContractMatches(nestedWriterLease, claim)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)
     && checkedBoundaryPersistedEvidenceMatches(dbJournal)
     && checkedBoundaryStorageGuardMatches(dbJournal, productionAdapter, writerLease, nestedWriterLease, leaseFenceBoundary)
@@ -131,8 +132,8 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
     && productionAdapter === leaseFenceBoundary
-    && durableJournalClaimContractMatches(dbJournal?.claim)
-    && durableJournalClaimEvidenceContractMatches(dbJournal?.claim, dbJournal?.claimEvidence)
+    && durableJournalClaimContractMatches(claim)
+    && durableJournalClaimEvidenceContractMatches(claim, dbJournal?.claimEvidence)
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
@@ -283,6 +284,13 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
 
   if (row.event === 'stale-claim-rejected') {
     if (
+      hasNonEmptyString(claim?.activeClaimId)
+      && row.claimId !== claim.activeClaimId
+    ) {
+      return false;
+    }
+
+    if (
       isPositiveInteger(claim?.activeClaimSequence)
       && checkedBoundaryLatestRowSequence(row) !== claim.activeClaimSequence
     ) {
@@ -305,6 +313,13 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
   }
 
   if (row.event === 'stale-claim-abandoned') {
+    if (
+      hasNonEmptyString(claim?.previousClaimId)
+      && row.claimId !== claim.previousClaimId
+    ) {
+      return false;
+    }
+
     if (
       isPositiveInteger(claim?.abandonedSequence)
       && checkedBoundaryLatestRowSequence(row) !== claim.abandonedSequence
@@ -545,6 +560,7 @@ function durableJournalClaimContractMatches(claim) {
     || hasNonEmptyString(claim.abandonedEvent);
 
   return hasNonEmptyString(claim.status)
+    && hasNonEmptyString(claim.activeClaimId)
     && hasNonEmptyString(claim.activeClaimKeyHash)
     && isPositiveInteger(claim.activeClaimSequence)
     && hasNonEmptyString(claim.activeClaimEvent)
@@ -554,7 +570,8 @@ function durableJournalClaimContractMatches(claim) {
     && statusMatchesStaleClaim
     && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
-      hasNonEmptyString(claim.previousClaimKeyHash)
+      hasNonEmptyString(claim.previousClaimId)
+      && hasNonEmptyString(claim.previousClaimKeyHash)
       && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ))
@@ -584,6 +601,7 @@ function durableJournalClaimEvidenceContractMatches(claim, claimEvidence) {
 
   const activeRow = claimEvidence.activeRow;
   if (!durableJournalClaimEvidenceRowMatches(activeRow, {
+    claimId: claim.activeClaimId,
     sequence: claim.activeClaimSequence,
     event: claim.activeClaimEvent,
     claimKeyHash: claim.activeClaimKeyHash,
@@ -599,8 +617,10 @@ function durableJournalClaimEvidenceContractMatches(claim, claimEvidence) {
     || isPositiveInteger(claim.previousClaimSequence);
   if (needsAbandonedRow) {
     if (!durableJournalClaimEvidenceRowMatches(claimEvidence.abandonedRow, {
+      claimId: claim.previousClaimId,
       sequence: claim.abandonedSequence,
       event: claim.abandonedEvent,
+      claimKeyHash: claim.previousClaimKeyHash,
       idempotencyKeyHash: claim.idempotencyKeyHash,
       requestHash: claim.requestHash,
     })) {
@@ -620,6 +640,7 @@ function durableJournalClaimEvidenceContractMatches(claim, claimEvidence) {
     || hasNonEmptyString(claim.previousClaimEvent);
   if (needsPreviousRow) {
     if (!durableJournalClaimEvidenceRowMatches(claimEvidence.previousRow, {
+      claimId: claim.previousClaimId,
       sequence: claim.previousClaimSequence,
       event: claim.previousClaimEvent,
       claimKeyHash: claim.previousClaimKeyHash,
@@ -644,7 +665,8 @@ function durableJournalClaimEvidenceRowMatches(row, expected) {
   if (!row || typeof row !== 'object') {
     return false;
   }
-  return (!isPositiveInteger(expected.sequence) || row.sequence === expected.sequence)
+  return (!hasNonEmptyString(expected.claimId) || row.claimId === expected.claimId)
+    && (!isPositiveInteger(expected.sequence) || row.sequence === expected.sequence)
     && (!hasNonEmptyString(expected.event) || row.event === expected.event)
     && (!hasNonEmptyString(expected.claimKeyHash) || row.claimKeyHash === expected.claimKeyHash)
     && (!hasNonEmptyString(expected.idempotencyKeyHash) || row.idempotencyKeyHash === expected.idempotencyKeyHash)
@@ -671,9 +693,10 @@ function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
 }
 
-function writerLeaseContractMatches(candidate) {
+function writerLeaseContractMatches(candidate, claim) {
   return typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
+    && candidate?.claimId === claim?.activeClaimId
     && candidate?.claimKeyUnique === true
     && candidate?.fsyncEvidence === true
     && typeof candidate?.storageGuard === 'string'
