@@ -1417,6 +1417,35 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             return;
           }
           if (preflightProbe.terminal) {
+            const invalidSnapshotStartupFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
+              );
+            if (invalidSnapshotStartupFallbackPreflightBody) {
+              notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+                notReadyProbeCounts,
+                'preflight',
+              );
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                packagedProductionPluginPreflightTerminalContext(
+                  {
+                    childPid: child.pid ?? null,
+                    snapshotNotReadyProbeCount,
+                    invalidReadinessBody: true,
+                  },
+                  { snapshotStartupFallback: true },
+                ),
+              );
+            }
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
               buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
             );
@@ -1499,12 +1528,6 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 },
               );
             }
-            const malformedSnapshotFallbackPreflightBody =
-              preflightProbe.parsedBody === null
-              && !packagedProductionPluginReadinessBodyRetryable(
-                preflightProbe.status,
-                preflightProbe.body || '',
-              );
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
               notReadyProbeCounts,
               'preflight',
@@ -1789,6 +1812,35 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             continue;
           }
           if (preflightProbe.terminal) {
+            const invalidSnapshotStartupFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
+              );
+            if (invalidSnapshotStartupFallbackPreflightBody) {
+              notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+                notReadyProbeCounts,
+                'preflight',
+              );
+              await throwPlaygroundReadinessFailure(
+                child,
+                `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                lastError,
+                lastProbes,
+                getOutput(),
+                packagedProductionPluginPreflightTerminalContext(
+                  {
+                    childPid: child.pid ?? null,
+                    snapshotNotReadyProbeCount,
+                    invalidReadinessBody: true,
+                  },
+                  { snapshotStartupFallback: true },
+                ),
+              );
+            }
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
               buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
             );
@@ -1871,11 +1923,13 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 },
               );
             }
-            const malformedSnapshotFallbackPreflightBody =
-              preflightProbe.parsedBody === null
-              && !packagedProductionPluginReadinessBodyRetryable(
-                preflightProbe.status,
-                preflightProbe.body || '',
+            const terminalSnapshotFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
               );
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
               notReadyProbeCounts,
@@ -1883,7 +1937,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             );
             await throwPlaygroundReadinessFailure(
               child,
-                malformedSnapshotFallbackPreflightBody
+                terminalSnapshotFallbackPreflightBody
                   ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
                   : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
                 lastError,
@@ -1893,7 +1947,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   {
                     childPid: child.pid ?? null,
                     snapshotNotReadyProbeCount,
-                    ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                    ...(terminalSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
                   },
                   { snapshotStartupFallback: true },
                 ),
@@ -2861,6 +2915,7 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessConte
     ready: false,
     retryable: false,
     terminal: false,
+    invalidReadinessBody: false,
   };
 
   if (body !== null) {
@@ -2871,11 +2926,13 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessConte
       readinessContext,
     );
     probe.terminal = !probe.ready && !probe.retryable;
+    probe.invalidReadinessBody = probe.terminal && response.status === 200 && body?.ok === true;
     return probe;
   }
 
   probe.retryable = packagedProductionPluginReadinessBodyRetryable(response.status, bodyText);
   probe.terminal = !probe.retryable;
+  probe.invalidReadinessBody = probe.terminal;
   return probe;
 }
 

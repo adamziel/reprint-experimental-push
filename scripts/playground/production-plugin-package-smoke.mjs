@@ -599,6 +599,36 @@ async function waitForServer(child, baseUrl, logs) {
             return;
           }
           if (preflightProbe.terminal) {
+            const invalidSnapshotFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
+              );
+            if (invalidSnapshotFallbackPreflightBody) {
+              notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+                notReadyProbeCounts,
+                'preflight',
+              );
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                  lastError,
+                  lastProbes,
+                  logs,
+                  packagedProductionPluginPreflightTerminalContext(
+                    {
+                      invalidReadinessBody: true,
+                      snapshotNotReadyProbeCount,
+                    },
+                    { snapshotStartupFallback: true },
+                  ),
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
               buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
             );
@@ -685,11 +715,13 @@ async function waitForServer(child, baseUrl, logs) {
                 ),
               );
             }
-            const malformedSnapshotFallbackPreflightBody =
-              preflightProbe.parsedBody === null
-              && !packagedProductionPluginReadinessBodyRetryable(
-                preflightProbe.status,
-                preflightProbe.body || '',
+            const terminalSnapshotFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
               );
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
               notReadyProbeCounts,
@@ -697,7 +729,7 @@ async function waitForServer(child, baseUrl, logs) {
             );
             throw new Error(
               formatPackagedReadinessFailure(
-                malformedSnapshotFallbackPreflightBody
+                terminalSnapshotFallbackPreflightBody
                   ? `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`
                   : `Packaged production plugin signed preflight became terminal while snapshot still reported startup-shaped readiness at ${baseUrl}`,
                 lastError,
@@ -706,7 +738,7 @@ async function waitForServer(child, baseUrl, logs) {
                 packagedProductionPluginPreflightTerminalContext(
                   {
                     snapshotNotReadyProbeCount,
-                    ...(malformedSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                    ...(terminalSnapshotFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
                   },
                   { snapshotStartupFallback: true },
                 ),
@@ -979,6 +1011,36 @@ async function waitForServer(child, baseUrl, logs) {
             continue;
           }
           if (preflightProbe.terminal) {
+            const invalidSnapshotStartupFallbackPreflightBody = preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
+              );
+            if (invalidSnapshotStartupFallbackPreflightBody) {
+              notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+                notReadyProbeCounts,
+                'preflight',
+              );
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  `Packaged production plugin signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at ${baseUrl}`,
+                  lastError,
+                  lastProbes,
+                  logs,
+                  packagedProductionPluginPreflightTerminalContext(
+                    {
+                      invalidReadinessBody: true,
+                      snapshotNotReadyProbeCount,
+                    },
+                    { snapshotStartupFallback: true },
+                  ),
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
             const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child).catch((indexError) =>
               buildPackagedTimeoutFallbackProbe('/wp-json/', indexError),
             );
@@ -2149,6 +2211,7 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessConte
     ready: false,
     retryable: false,
     terminal: false,
+    invalidReadinessBody: false,
   };
 
   if (body !== null) {
@@ -2159,11 +2222,13 @@ async function fetchPackagedPreflightProbe(baseUrl, child = null, readinessConte
       readinessContext,
     );
     probe.terminal = !probe.ready && !probe.retryable;
+    probe.invalidReadinessBody = probe.terminal && response.status === 200 && body?.ok === true;
     return probe;
   }
 
   probe.retryable = packagedProductionPluginReadinessBodyRetryable(response.status, bodyText);
   probe.terminal = !probe.retryable;
+  probe.invalidReadinessBody = probe.terminal;
   return probe;
 }
 
