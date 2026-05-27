@@ -54,6 +54,7 @@
     "test:playground:production-plugin-driver-registration-shape-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRegistrationShapeGuards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-receipt-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReceiptGuards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-delete-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverDeleteApplyProof node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-route-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverRouteProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-positive-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverPositiveProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-release-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReleaseProof node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverProof node ./scripts/playground/production-plugin-package-smoke.mjs",
