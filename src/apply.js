@@ -738,6 +738,7 @@ export function productionRecoverySupportReport(writer) {
   const inspectedClaimState = (openedInspectionRecords || claimInspectionRecords)
     ? classifyRecoveryJournalClaims(inspected.records)
     : null;
+  const inspectedClaimIdentity = surfaceProductionClaimIdentity(inspected, inspectedClaimState);
   const persistedArtifactRefs = durableJournalPersistedArtifactRefs(inspected);
   const artifactRefs = productionRecoveryArtifactRefs(writer, inspected);
   const writerClaimIdHidden = hasHiddenOwnStringProperty(writer, 'claimId');
@@ -1332,32 +1333,29 @@ export function productionRecoverySupportReport(writer) {
   if (
     (openedInspectionRecords || claimInspectionRecords)
     && (
-      !Object.hasOwn(inspected ?? {}, 'claimId')
-      || hasHiddenOwnStringProperty(inspected, 'claimId')
-      || typeof inspected.claimId !== 'string'
-      || inspected.claimId.trim().length === 0
-      || inspected.claimId.trim() !== inspected.claimId
+      !inspectedClaimIdentity.valid
+      || inspectedClaimIdentity.claimId === null
       || (
         Object.hasOwn(inspected ?? {}, 'writerLease')
         && hasValidProductionLeaseIdentity(inspected.writerLease)
-        && inspected.claimId !== inspected.writerLease.id
+        && inspectedClaimIdentity.claimId !== inspected.writerLease.id
       )
       || (
         Object.hasOwn(inspected ?? {}, 'leaseFence')
         && hasValidProductionLeaseIdentity(inspected.leaseFence)
-        && inspected.claimId !== inspected.leaseFence.id
+        && inspectedClaimIdentity.claimId !== inspected.leaseFence.id
       )
       || (
         typeof inspected?.claimHash === 'string'
         && /^[a-f0-9]{64}$/.test(inspected.claimHash)
-        && inspected.claimHash !== digest({ recoveryJournalClaim: inspected.claimId })
+        && inspected.claimHash !== digest({ recoveryJournalClaim: inspectedClaimIdentity.claimId })
       )
       || (
         inspectedClaimState
         && inspectedClaimState.status !== 'none'
         && (
           !hasValidProductionLeaseIdentity(inspectedClaimState.activeClaimLease)
-          || inspected.claimId !== inspectedClaimState.activeClaimLease.id
+          || inspectedClaimIdentity.claimId !== inspectedClaimState.activeClaimLease.id
         )
       )
     )
@@ -1444,6 +1442,8 @@ export function productionRecoverySupportReport(writer) {
   const checkedBoundaryProof = checkedDurableJournalBoundaryProof(
     writer,
     inspected,
+    inspectedClaimIdentity,
+    inspectedClaimState,
     missingDependency,
   );
 
@@ -1458,7 +1458,60 @@ export function productionRecoverySupportReport(writer) {
   };
 }
 
-function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency = []) {
+function surfaceProductionClaimIdentity(inspected, inspectedClaimState) {
+  if (Object.hasOwn(inspected ?? {}, 'claimId')) {
+    if (hasHiddenOwnStringProperty(inspected, 'claimId')) {
+      return { valid: false, claimId: null };
+    }
+    if (
+      typeof inspected.claimId !== 'string'
+      || inspected.claimId.trim().length === 0
+      || inspected.claimId.trim() !== inspected.claimId
+    ) {
+      return { valid: false, claimId: null };
+    }
+    return { valid: true, claimId: inspected.claimId };
+  }
+
+  if (
+    inspected !== null
+    && typeof inspected === 'object'
+    && !Object.hasOwn(inspected, 'claimId')
+    && 'claimId' in inspected
+  ) {
+    return { valid: false, claimId: null };
+  }
+
+  const surfacedClaimIds = [
+    hasValidProductionLeaseIdentity(inspectedClaimState?.activeClaimLease)
+      ? inspectedClaimState.activeClaimLease.id
+      : null,
+    hasValidProductionLeaseIdentity(inspected?.writerLease)
+      ? inspected.writerLease.id
+      : null,
+    hasValidProductionLeaseIdentity(inspected?.leaseFence)
+      ? inspected.leaseFence.id
+      : null,
+  ].filter((claimId) => typeof claimId === 'string' && claimId.length > 0);
+
+  if (surfacedClaimIds.length === 0) {
+    return { valid: true, claimId: null };
+  }
+
+  if (!surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0])) {
+    return { valid: false, claimId: null };
+  }
+
+  return { valid: true, claimId: surfacedClaimIds[0] };
+}
+
+function checkedDurableJournalBoundaryProof(
+  writer,
+  inspected,
+  inspectedClaimIdentity,
+  inspectedClaimState,
+  missingDependency = [],
+) {
   const staleClaimLineageProven = hasStaleClaimRejectionEvidence(inspected?.records);
   const checkedBoundaryStaleClaimRejected = hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
     && inspected.writerLeaseContract.staleClaimRejected === true
@@ -1482,7 +1535,7 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     && !hasHiddenOwnStringProperty(inspected, 'journalPath')
     && isCanonicalAbsolutePath(inspected.journalPath)
       ? inspected.journalPath
-      : null;
+      : durableJournalInspectPath(inspected);
   const inspectedArtifactRefs = durableJournalInspectArtifactRefs(inspected)
     && inspectedJournalPath !== null
     && inspected.artifactRefs.journal === inspectedJournalPath
@@ -1493,6 +1546,15 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
           : null,
       })
       : null;
+  const checkedBoundaryActiveClaimId = inspectedClaimIdentity?.valid === true
+    ? inspectedClaimIdentity.claimId
+    : null;
+  const checkedBoundaryWriterClaimId = hasValidProductionLeaseIdentity(inspected?.writerLease)
+    ? inspected.writerLease.id
+    : null;
+  const checkedBoundaryLeaseFenceClaimId = hasValidProductionLeaseIdentity(inspected?.leaseFence)
+    ? inspected.leaseFence.id
+    : null;
   const scope = Object.hasOwn(writer ?? {}, 'scope')
     && !hasHiddenOwnStringProperty(writer, 'scope')
     && typeof writer.scope === 'string'
@@ -1545,6 +1607,11 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
   return {
     scope,
     acceptedOnCheckedBoundary,
+    claim: checkedBoundaryActiveClaimId === null
+      ? null
+      : {
+        activeClaimId: checkedBoundaryActiveClaimId,
+      },
     journalPath: inspectedJournalPath,
     artifactRefs: inspectedArtifactRefs,
     ownership: {
@@ -1555,6 +1622,7 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
       ? {
         ...inspected.writerLeaseContract,
+        claimId: checkedBoundaryWriterClaimId,
         staleClaimRejected: inspected.writerLeaseContract.staleClaimRejected === true
           && staleClaimLineageProven,
       }
@@ -1562,6 +1630,10 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     leaseFence: hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
       ? {
         ...inspected.leaseFenceContract,
+        writerLease: {
+          ...inspected.leaseFenceContract.writerLease,
+          claimId: checkedBoundaryLeaseFenceClaimId,
+        },
         staleClaimRejected: inspected.leaseFenceContract.staleClaimRejected === true
           && staleClaimLineageProven,
       }

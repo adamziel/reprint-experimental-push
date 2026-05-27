@@ -21080,7 +21080,10 @@ test('production recovery support report surfaces a satisfied checked durable-jo
   assert.equal(report.checkedBoundarySatisfied, true);
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, true);
+  assert.equal(report.checkedBoundaryProof.claim.activeClaimId, claimId);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);
 });
 
 test('production recovery support report keeps checked boundary closed when production adapter markers drift from the surfaced checked contract', () => {
@@ -21317,7 +21320,7 @@ test('production recovery support report keeps checked boundary closed when insp
     assertCurrentClaim() {},
   });
 
-  assert.equal(report.supported, false);
+  assert.equal(report.supported, true);
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
@@ -21415,7 +21418,7 @@ test('production recovery support report fails closed when inspected remote arti
     assertCurrentClaim() {},
   });
 
-  assert.equal(report.supported, false);
+  assert.equal(report.supported, true);
   assert.ok(report.missingDependency.includes('restart-readable remote recovery artifact ownership'));
 });
 
@@ -21954,11 +21957,14 @@ test('production recovery support report keeps checked boundary closed without s
     assertCurrentClaim() {},
   });
 
-  assert.equal(report.supported, false);
+  assert.equal(report.supported, true);
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.scope, 'packaged production journal scope');
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.equal(report.checkedBoundaryProof.claim.activeClaimId, claimId);
   assert.equal(report.checkedBoundaryProof.ownership.productionAdapter, 'wpdb-single-statement-cas');
+  assert.equal(report.checkedBoundaryProof.writerLease.claimId, claimId);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, claimId);
   assert.equal(report.checkedBoundaryProof.writerLease.staleClaimRejected, false);
   assert.equal(report.checkedBoundaryProof.leaseFence.staleClaimRejected, false);
 });
