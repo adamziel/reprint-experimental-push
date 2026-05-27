@@ -4845,6 +4845,26 @@ test('packaged release verifier readiness helper preserves timeout fallback prob
   assert.match(verifierSource, /Timeout fallback probes: \$\{JSON\.stringify\(lastTimeoutFallbackProbes, null, 2\)\}/);
 });
 
+test('packaged release verifier readiness helper preserves bounded readiness probe history', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.match(helperSource, /const lastProbes = \[\];/);
+  assert.match(helperSource, /lastProbes\.push\(preflightProbe\);/);
+  assert.match(helperSource, /lastProbes\.push\(indexProbe\);/);
+  assert.match(helperSource, /writePlaygroundFailure\(message, lastProbes, getOutput\(\), lastError, lastTimeoutFallbackProbes\);/);
+  assert.match(verifierSource, /Probe trail: \$\{JSON\.stringify\(lastProbes\.slice\(-4\), null, 2\)\}/);
+  assert.match(verifierSource, /Last probe: \$\{JSON\.stringify\(/);
+  assert.match(verifierSource, /Last route\/status\/body: \$\{JSON\.stringify\(/);
+});
+
 test('packaged production plugin smoke readiness helper preserves bounded readiness probe history', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
