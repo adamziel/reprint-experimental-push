@@ -1,32 +1,38 @@
 # Critic Verdict
 
-Current reliable head: `2692699d0c7e8a9aa0b36ed769830d3f0124cc52`
-(`Refresh blueprint graph plan assertion`).
+Current reliable head: `62b3d28edc31bd13776bbe110fda4f5721027aef`
+(`Accept validated recovery journal proof`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head only adjusts a Playground blueprint plan assertion in
-  `scripts/playground/plan-from-blueprints.mjs`, changing one postmeta
-  resource from a blocker expectation to a create mutation.
-- That is still support evidence, not a supervised gate closure. It stays
-  entirely inside the Playground snapshot/planner surface and does not prove a
-  production-owned, non-lab-backed source mutation boundary on the real
-  Reprint endpoint with live auth/session issuance and readback,
-  restart-readable durable journal storage with lease fencing, and apply-time
-  revalidation before mutation.
+- This commit is still verifier-side release-path hardening. It adds a
+  recovery-journal acceptance path in `src/authenticated-http-push-client.js`
+  so a validated `productionRecoveryJournalProofIsAcceptable()` result can
+  satisfy the checked durable-journal boundary, and it expands the focused
+  client test to assert the new recovery proof fields.
+- The new acceptance is narrower than the missing production boundary. The
+  checked path still reports `APPLY_REVALIDATION_REQUIRED`, and the test
+  explicitly expects `summary.ok` to remain `false` with
+  `summary.boundary?.status === 'unimplemented'`. That is a useful proof
+  surface, but it does not close a supervised release gate.
+- The diff does not prove one production-owned, non-lab-backed checked
+  release command on the real Reprint endpoint. It still does not show live
+  auth/session issuance and readback on the endpoint, restart-readable
+  durable journal ownership under lease fencing on the live boundary, or
+  apply-time revalidation before the first mutation on that same boundary.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
 
-- `main:reliable-exec` should move past Playground plan-assertion support
-  evidence and land the next exact primitive on the real Reprint endpoint: a
-  production-owned, non-lab-backed source-mutation/auth-session boundary that
-  issues a live session on the endpoint, reads it back after restart from
-  durable journal storage, enforces lease-fenced ownership of those journal
-  rows, and revalidates the session at apply time before mutation without
-  falling back to Playground package-mode scaffolding. The proof should come
+- `main:reliable-exec` should use this recovery-journal acceptance only as a
+  stepping stone and finish the exact missing primitive on the real Reprint
+  endpoint: a production-owned, non-lab-backed checked release command that,
+  on the same live `REPRINT_PUSH_SOURCE_URL`, mints and rereads a live auth
+  session, persists it in durable restart-readable lease-fenced journal
+  storage, preserves rejected remote evidence for audit, and performs
+  apply-time revalidation before the first mutation. The proof should come
   through `scripts/playground/production-shaped-release-verify.mjs`,
   `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
   and `src/authenticated-http-push-client.js` with `timeout 300s npm run
