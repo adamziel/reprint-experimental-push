@@ -8,12 +8,18 @@ import {
   packagedProductionPluginNextRouteNotReadyProbeCounts,
   packagedProductionPluginPackagedRouteStartupLimitReached,
   packagedProductionPluginPackagedRouteStartupStillWithinBudget,
+  packagedProductionPluginPreflightReady,
   packagedProductionPluginPreflightRetryable,
-  packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginPreflightTerminal,
+  packagedProductionPluginPreflightTerminalContext,
   packagedProductionPluginResetRouteNotReadyProbeCounts,
   packagedProductionPluginRestIndexReady,
   packagedProductionPluginRestIndexRetryable,
+  packagedProductionPluginServerReady,
+  packagedProductionPluginSnapshotProbeContext,
+  packagedProductionPluginSnapshotReady,
+  packagedProductionPluginSnapshotRetryable,
+  packagedProductionPluginSnapshotTerminal,
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
@@ -416,5 +422,128 @@ test('packaged preflight retryability keeps packaged-route startup retryable aft
       kind: 'retryable-route-packaged-route-starting',
       packagedRouteStartup: true,
     },
+  );
+});
+
+test('packaged snapshot helpers distinguish ready, retryable, terminal, and probe-context branches', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const retryableSnapshot = {
+    status: 503,
+    body: {
+      code: 'wordpress_not_ready',
+      message: 'WordPress is not ready yet',
+    },
+  };
+  const terminalSnapshot = {
+    status: 500,
+    body: 'Internal Server Error',
+  };
+
+  assert.equal(packagedProductionPluginSnapshotReady(readySnapshot), true);
+  assert.equal(packagedProductionPluginSnapshotRetryable(readySnapshot), false);
+  assert.equal(packagedProductionPluginSnapshotTerminal(readySnapshot), false);
+
+  assert.equal(packagedProductionPluginSnapshotReady(retryableSnapshot), false);
+  assert.equal(packagedProductionPluginSnapshotRetryable(retryableSnapshot), true);
+  assert.equal(packagedProductionPluginSnapshotTerminal(retryableSnapshot), false);
+
+  assert.equal(packagedProductionPluginSnapshotReady(terminalSnapshot), false);
+  assert.equal(packagedProductionPluginSnapshotRetryable(terminalSnapshot), false);
+  assert.equal(packagedProductionPluginSnapshotTerminal(terminalSnapshot), true);
+
+  assert.deepEqual(
+    packagedProductionPluginSnapshotProbeContext({
+      status: 503,
+      body: 'WordPress is not ready yet',
+      timedOut: true,
+    }),
+    {
+      status: 503,
+      body: 'WordPress is not ready yet',
+      timedOut: true,
+    },
+  );
+  assert.equal(packagedProductionPluginSnapshotProbeContext(null), null);
+});
+
+test('packaged server readiness requires a production-shaped preflight when present', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const readyPreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+          expired: false,
+        },
+      },
+    },
+  };
+  const terminalPreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: true,
+      },
+      auth: {
+        session: {
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+          expired: false,
+        },
+      },
+    },
+  };
+
+  assert.equal(packagedProductionPluginPreflightReady(readyPreflight), true);
+  assert.equal(packagedProductionPluginPreflightTerminal(readyPreflight), false);
+  assert.equal(packagedProductionPluginServerReady({ snapshot: readySnapshot }), true);
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: readySnapshot,
+      preflight: readyPreflight,
+    }),
+    true,
+  );
+
+  assert.equal(packagedProductionPluginPreflightReady(terminalPreflight), false);
+  assert.equal(packagedProductionPluginPreflightRetryable(terminalPreflight), false);
+  assert.equal(packagedProductionPluginPreflightTerminal(terminalPreflight), true);
+  assert.equal(
+    packagedProductionPluginServerReady({
+      snapshot: readySnapshot,
+      preflight: terminalPreflight,
+    }),
+    false,
   );
 });
