@@ -847,6 +847,25 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
             $premerge_checked_claim ?? null,
             $premerge_checked_db_journal ?? null
         );
+        if (
+            is_array($premerge_checked_db_journal ?? null)
+            && reprint_push_lab_rest_checked_writer_lease_claim_identity_conflicts(
+                $premerge_checked_db_journal,
+                $db_journal
+            )
+        ) {
+            if (array_key_exists('writerLease', $premerge_checked_db_journal)) {
+                $result['dbJournal']['writerLease'] = $premerge_checked_db_journal['writerLease'];
+            } else {
+                unset($result['dbJournal']['writerLease']);
+            }
+
+            if (array_key_exists('leaseFence', $premerge_checked_db_journal)) {
+                $result['dbJournal']['leaseFence'] = $premerge_checked_db_journal['leaseFence'];
+            } else {
+                unset($result['dbJournal']['leaseFence']);
+            }
+        }
     }
     if (is_array($storage_guard)) {
         $prefer_checked_storage_guard = $upgrade_checked_storage_guard
@@ -907,6 +926,29 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
                 } else {
                     unset($db_journal[$key]);
                 }
+            }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_writer_lease_claim_identity_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal)) {
+            if (array_key_exists('writerLease', $premerge_db_journal)) {
+                $db_journal['writerLease'] = $premerge_db_journal['writerLease'];
+            } else {
+                unset($db_journal['writerLease']);
+            }
+
+            if (array_key_exists('leaseFence', $premerge_db_journal)) {
+                $db_journal['leaseFence'] = $premerge_db_journal['leaseFence'];
+            } else {
+                unset($db_journal['leaseFence']);
             }
         }
     }
@@ -1118,6 +1160,66 @@ function reprint_push_lab_rest_checked_latest_row_conflicts(
         }
 
         if (reprint_push_lab_rest_checked_latest_row_field_conflicts($premerge_row, $checked_row, $keys)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_writer_lease_claim_identity_conflicts(
+    ?array $premerge_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    return reprint_push_lab_rest_checked_contract_claim_identity_conflicts(
+        isset($premerge_journal['writerLease']) && is_array($premerge_journal['writerLease'])
+            ? $premerge_journal['writerLease']
+            : null,
+        isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
+            ? $checked_summary['writerLease']
+            : null
+    ) || reprint_push_lab_rest_checked_contract_claim_identity_conflicts(
+        isset($premerge_journal['leaseFence']['writerLease']) && is_array($premerge_journal['leaseFence']['writerLease'])
+            ? $premerge_journal['leaseFence']['writerLease']
+            : null,
+        isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
+            ? $checked_summary['leaseFence']['writerLease']
+            : null
+    );
+}
+
+function reprint_push_lab_rest_checked_contract_claim_identity_conflicts(
+    ?array $existing_fields,
+    ?array $checked_fields
+): bool {
+    if (!is_array($existing_fields) || !is_array($checked_fields)) {
+        return false;
+    }
+
+    foreach (['claimId', 'claimKeyHash'] as $key) {
+        $existing_value = isset($existing_fields[$key]) && is_string($existing_fields[$key])
+            ? $existing_fields[$key]
+            : '';
+        $checked_value = isset($checked_fields[$key]) && is_string($checked_fields[$key])
+            ? $checked_fields[$key]
+            : '';
+
+        if ($existing_value === '' && $checked_value === '') {
+            continue;
+        }
+
+        if ($existing_value === '' || $checked_value === '' || $existing_value !== $checked_value) {
             return true;
         }
     }
@@ -2044,6 +2146,29 @@ function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
                 } else {
                     unset($journal[$key]);
                 }
+            }
+        }
+    }
+
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_writer_lease_claim_identity_conflicts(
+            $premerge_journal,
+            $checked_summary
+        )
+    ) {
+        $journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_journal)) {
+            if (array_key_exists('writerLease', $premerge_journal)) {
+                $journal['writerLease'] = $premerge_journal['writerLease'];
+            } else {
+                unset($journal['writerLease']);
+            }
+
+            if (array_key_exists('leaseFence', $premerge_journal)) {
+                $journal['leaseFence'] = $premerge_journal['leaseFence'];
+            } else {
+                unset($journal['leaseFence']);
             }
         }
     }
