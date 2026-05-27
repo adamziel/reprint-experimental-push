@@ -39381,6 +39381,63 @@ test('blocks local serialized block references while preserving a matching indep
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks local serialized block references while preserving a matching independent edit and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:70"]';
+  const matchingEditResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.db.wp_posts['ID:70'] = {
+    ID: 70,
+    post_title: 'Base edit removal block post',
+    post_content: '<!-- wp:paragraph -->Base edit removal block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:70'] = {
+    ID: 70,
+    post_title: 'Local edit removal block post',
+    post_content: '<!-- wp:paragraph -->Local edit removal block content<!-- /wp:paragraph -->',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.files['about.php'] = '<?php echo "shared about";';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:70'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:70']));
+  remote.files['about.php'] = '<?php echo "shared about";';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-serialized-blocks-resource');
+  assert.equal(blocker.resourceKind, 'serialized-blocks');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
+  assert.equal(blocker.reason, 'Serialized block references are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local edit removal block content'), false);
+  assert.equal(planJson.includes('Base edit removal block content'), false);
+  assert.equal(planJson.includes('shared about'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks steady unsupported serialized block rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:67"]';
   const base = baseSite();
