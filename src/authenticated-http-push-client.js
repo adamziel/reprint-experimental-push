@@ -1049,6 +1049,20 @@ function dbJournalClaimContractIsPresent(claim) {
     return false;
   }
 
+  const statusMatchesStaleClaim = (
+    (claim.status === 'active' && claim.staleClaimRejected === false)
+    || (claim.status === 'stale-claim-rejected' && claim.staleClaimRejected === true)
+  );
+  const eventMatchesStaleClaim = hasNonEmptyString(claim.activeClaimEvent)
+    && dbJournalCheckedClaimEventMatches(claim.activeClaimEvent)
+    && !(claim.staleClaimRejected === false && claim.activeClaimEvent === 'stale-claim-rejected')
+    && !(claim.staleClaimRejected === true && claim.activeClaimEvent === 'idempotency-opened');
+  const requiresConsumedRetryLineage = claim.staleClaimRejected === true
+    && (
+      claim.activeClaimEvent === 'stale-claim-retry-started'
+      || claim.activeClaimEvent === 'stale-claim-retry-in-progress'
+      || claim.activeClaimEvent === 'stale-claim-rejected'
+    );
   const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimKeyHash)
     || Number.isInteger(claim.previousClaimSequence)
     || hasNonEmptyString(claim.previousClaimEvent);
@@ -1063,6 +1077,8 @@ function dbJournalClaimContractIsPresent(claim) {
     && hasNonEmptyString(claim.idempotencyKeyHash)
     && hasNonEmptyString(claim.requestHash)
     && typeof claim.staleClaimRejected === 'boolean'
+    && statusMatchesStaleClaim
+    && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
       && hasNonEmptyString(claim.previousClaimKeyHash)
@@ -1074,7 +1090,22 @@ function dbJournalClaimContractIsPresent(claim) {
       && hasNonEmptyString(claim.abandonedEvent)
     ))
     && (!Number.isInteger(claim.previousStartedSequence) || hasPreviousClaimIdentity)
-    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity);
+    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity)
+    && (!requiresConsumedRetryLineage || (
+      Number.isInteger(claim.previousStartedSequence)
+      && Number.isInteger(claim.abandonedSequence)
+      && hasNonEmptyString(claim.abandonedEvent)
+      && hasNonEmptyString(claim.previousClaimKeyHash)
+      && Number.isInteger(claim.previousClaimSequence)
+      && hasNonEmptyString(claim.previousClaimEvent)
+    ));
+}
+
+function dbJournalCheckedClaimEventMatches(event) {
+  return event === 'idempotency-opened'
+    || event === 'stale-claim-retry-started'
+    || event === 'stale-claim-retry-in-progress'
+    || event === 'stale-claim-rejected';
 }
 
 function dbJournalWriterLeaseContractsArePresent(dbJournal) {
