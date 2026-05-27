@@ -18767,6 +18767,86 @@ test('allows an existing term-taxonomy row to reference a same-plan created pare
   assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
 });
 
+test('allows an existing term-taxonomy row to reference a same-plan created parent term while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_terms","term_id:9"]';
+  const sourceResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  delete base.files[matchingRestoreResourceKey.slice('file:'.length)];
+  base.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'base term taxonomy description',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingRestoreResourceKey.slice('file:'.length)] = '<?php echo "shared restore";';
+  local.db.wp_terms = {
+    'term_id:4': { term_id: 4, name: 'Base shared term', slug: 'base-shared-term' },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan parent term',
+      slug: 'local-same-plan-parent-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 4,
+      taxonomy: 'category',
+      parent: 9,
+      description: 'local term taxonomy description',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingRestoreResourceKey.slice('file:'.length)] = '<?php echo "shared restore";';
+  remote.db.wp_terms = {
+    'term_id:4': JSON.parse(JSON.stringify(base.db.wp_terms['term_id:4'])),
+  };
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, resourceKey);
+  const taxonomyMutation = mutationFor(plan, sourceResourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(
+    plan.graphDependencies.map((dependency) => [dependency.relationshipType, dependency.targetResourceKey]),
+    [['term-taxonomy-parent', resourceKey]],
+  );
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files[matchingRestoreResourceKey.slice('file:'.length)], '<?php echo "shared restore";');
+  assert.equal(result.site.db.wp_terms['term_id:9'].name, 'Local same-plan parent term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].parent, 9);
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
+  assert.equal(result.site.plugins.forms, undefined);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks local term-taxonomy parent references to a same-plan created term identity while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_terms","term_id:9"]';
