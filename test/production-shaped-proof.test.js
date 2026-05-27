@@ -3218,14 +3218,41 @@ test('packaged readiness helpers recompute parsed signed preflight retryability 
       'expected packaged signed preflight parsed-body path to recompute retryability with the current index probe',
     );
     assert.ok(
-      source.includes('{ ...packagedPreflightReadinessContext, indexProbe }'),
-      'expected packaged signed preflight parsed-body path to merge the current index probe into the readiness context',
+      source.includes('{ indexProbe }'),
+      'expected packaged signed preflight parsed-body path to recheck against the current index probe without the broad packaged-startup hint',
     );
     assert.ok(
       source.includes('if (!preflightRetryableWithIndex) {'),
       'expected packaged signed preflight parsed-body path to fail closed when the recomputed retryability turns terminal',
     );
   }
+});
+
+test('packaged preflight retryability turns terminal once the live index probe shows startup is over', () => {
+  const preflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+  const terminalIndexProbe = {
+    status: 500,
+    body: 'Internal Server Error',
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, { packagedStartup: true }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, { indexProbe: terminalIndexProbe }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, { indexProbe: terminalIndexProbe }),
+    true,
+  );
 });
 
 test('packaged timeout fallback helpers preserve packaged startup context for signed preflight probes', () => {

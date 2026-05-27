@@ -1155,9 +1155,11 @@ async function waitForServer(child, baseUrl, logs) {
           const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
           lastProbe = indexProbe;
           lastProbes.push(indexProbe);
+          // Once /wp-json/ is available, re-evaluate retryability against the
+          // current startup signal instead of the broad packaged-startup hint.
           const preflightRetryableWithIndex = packagedProductionPluginPreflightRetryable(
             { status: preflightResponse.status, body: preflightBody },
-            { ...packagedPreflightReadinessContext, indexProbe },
+            { indexProbe },
           );
           if (!preflightRetryableWithIndex) {
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
