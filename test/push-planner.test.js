@@ -40140,6 +40140,66 @@ test('production durable journal claims fail closed when restart readability is 
   assert.equal(events.some((event) => event.type === 'journal-completed'), false);
 });
 
+test('production durable journal claims fail closed when restart readability is hidden instead of enumerable', () => {
+  const events = [];
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/remote.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+          remote: '/var/lib/reprint/remote.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  Object.defineProperty(writer, 'restartReadable', {
+    value: true,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery journal adapter'));
+  assert.equal(events.some((event) => event.type === 'journal-completed'), false);
+});
+
 test('production durable journal claims fail closed when journal ownership is inherited through the prototype', () => {
   const events = [];
   const writer = {
@@ -40172,6 +40232,68 @@ test('production durable journal claims fail closed when journal ownership is in
   Object.setPrototypeOf(writer, {
     ownsJournal: true,
     journalPath: '/var/lib/reprint/recovery.jsonl',
+  });
+  const plan = planFor(baseSite(), baseSite(), {
+    ...baseSite(),
+    db: {
+      ...baseSite().db,
+      wp_options: {
+        ...baseSite().db.wp_options,
+        'option_name:blogname': { option_name: 'blogname', option_value: 'New Site' },
+      },
+    },
+  });
+
+  const error = captureError(() => applyPlan(baseSite(), plan, {
+    requireProductionDurableJournal: true,
+    durableJournal: writer,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('explicit journal ownership fencing'));
+  assert.equal(events.some((event) => event.type === 'journal-completed'), false);
+});
+
+test('production durable journal claims fail closed when journal ownership is hidden instead of enumerable', () => {
+  const events = [];
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, payload };
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath: '/var/lib/reprint/recovery.jsonl',
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        artifactRefs: {
+          journal: '/var/lib/reprint/recovery.jsonl',
+        },
+        records: [{ sequence: 1, type: 'journal-opened' }],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+  Object.defineProperty(writer, 'ownsJournal', {
+    value: true,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  Object.defineProperty(writer, 'journalPath', {
+    value: '/var/lib/reprint/recovery.jsonl',
+    enumerable: false,
+    configurable: true,
+    writable: true,
   });
   const plan = planFor(baseSite(), baseSite(), {
     ...baseSite(),
