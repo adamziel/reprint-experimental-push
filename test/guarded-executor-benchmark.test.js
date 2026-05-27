@@ -12003,6 +12003,38 @@ test('guarded benchmark surfaces replay blockers at runtime', () => {
   ]);
 });
 
+test('guarded benchmark surfaces large-upload backpressure blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const largeUploadRejectedFastPaths = details.rejectedFastPaths
+    .filter(
+      (entry) =>
+        entry.id === 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+    );
+
+  assert.deepEqual(
+    largeUploadRejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-parallelism-limits-not-visible',
+          'production-storage-receipts-not-measured',
+        ],
+      },
+    ],
+  );
+
+  assert.deepEqual(summarizeRejectedGates(largeUploadRejectedFastPaths), [
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
+});
+
 test('guarded benchmark carries direct measured queue-headroom proof blockers into rejected retry summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
