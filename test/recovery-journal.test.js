@@ -613,6 +613,73 @@ test('production recovery journal inspection preserves advanced previous-claim i
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentPreviousClaimHash), false);
 });
 
+test('production recovery journal inspection scopes consumed evidence to the active claim after takeover', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const previousClaimId = 'production-claim-consumed-previous-01';
+  const activeClaimId = 'production-claim-consumed-active-02';
+
+  const previousJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-claim-scope',
+    },
+    now: fixedNow,
+    claimId: previousClaimId,
+  });
+  previousJournal.close();
+
+  const previousConsumption = consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-claim-scope',
+    },
+    claimId: previousClaimId,
+  });
+  assert.equal(previousConsumption.journal.consumed, true);
+
+  const takeoverJournal = openRecoveryJournal(filePath, {
+    now: fixedNow,
+    claimId: previousClaimId,
+  });
+  appendStaleClaimAdvanced(takeoverJournal, {
+    plan,
+    current: remote,
+    previousClaimId,
+    claimId: activeClaimId,
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 45_000,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-claim-scope',
+    },
+  });
+  takeoverJournal.close();
+
+  const advancedJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-consumed-claim-scope',
+    },
+    now: fixedNow,
+    truncate: false,
+    claimId: activeClaimId,
+  });
+  const advancedInspection = advancedJournal.inspect();
+  advancedJournal.close();
+
+  assert.equal(advancedInspection.claim.activeClaimId, activeClaimId);
+  assert.equal(advancedInspection.journal.claimHash, recoveryClaimHash(activeClaimId));
+  assert.equal(advancedInspection.journal.consumed, false);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(advancedInspection), true);
+});
+
 test('production recovery journal wrapper rejects hidden open options', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

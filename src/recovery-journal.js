@@ -64,6 +64,17 @@ function claimScopedStaleClaimRejectionEvidence(records, claim) {
   );
 }
 
+function claimScopedConsumedEvidence(records, claim) {
+  if (!CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')) {
+    return false;
+  }
+
+  return (Array.isArray(records) ? records : []).some(
+    (record) => record.type === 'recovery-journal-consumed'
+      && record.claimHash === claim.activeClaimHash,
+  );
+}
+
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   const providedOptions = options && typeof options === 'object' ? options : {};
   const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
@@ -867,7 +878,7 @@ export function openProductionRecoveryJournal(options) {
         claimId: persistedClaimId,
         ownsJournal: true,
         claimHash,
-        consumed: persisted.records.some((record) => record.type === 'recovery-journal-consumed'),
+        consumed: claimScopedConsumedEvidence(persisted.records, claim),
         restartReadable,
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
