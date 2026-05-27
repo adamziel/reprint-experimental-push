@@ -3751,6 +3751,29 @@ test('production recovery journal support fails closed when direct artifact refs
   });
 });
 
+test('production recovery journal support fails closed when direct artifact refs add symbol keys', () => {
+  const filePath = tempJournalPath();
+  const symbolKey = Symbol('artifact-ref-extra');
+  const artifactRefs = {
+    journal: filePath,
+  };
+  artifactRefs[symbolKey] = `${filePath}.extra`;
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'claim-symbol-direct-artifact-ref',
+      writerLease: { id: 'claim-symbol-direct-artifact-ref' },
+      artifactRefs,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal support allows only artifactRefs.journal and artifactRefs.remote.',
+  });
+});
+
 test('production recovery journal consumption fails closed without an explicit claimId or writerLease', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -4156,6 +4179,53 @@ test('production recovery journal consumption fails closed when compatibility ov
     name: 'UnsupportedProductionRecoveryJournalError',
     code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
     message: 'Production recovery journal support requires enumerable artifactRefs keys.',
+  });
+});
+
+test('production recovery journal consumption fails closed when compatibility overload artifact refs add symbol keys', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-consume-symbol-artifact-refs';
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const symbolKey = Symbol('artifact-ref-extra');
+  const consumeArtifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  consumeArtifactRefs[symbolKey] = `${filePath}.extra`;
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      artifactRefs: consumeArtifactRefs,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal compatibility overload allows only artifactRefs.journal and artifactRefs.remote.',
   });
 });
 
