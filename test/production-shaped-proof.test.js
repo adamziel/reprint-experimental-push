@@ -3742,6 +3742,29 @@ test('production-shaped live release verify preserves explicit checked-boundary 
   assert.deepEqual(
     resolveCheckedLiveBoundaryEnv({
       sourceUrl: 'http://127.0.0.1:49152',
+      fallbackUsername: liveCredentials.username,
+      fallbackApplicationPassword: liveCredentials.password,
+    }),
+    {
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL: '1',
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:49152',
+      REPRINT_PUSH_USERNAME: liveCredentials.username,
+      REPRINT_PUSH_APPLICATION_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+      }),
+    },
+  );
+
+  assert.deepEqual(
+    resolveCheckedLiveBoundaryEnv({
+      sourceUrl: 'http://127.0.0.1:49152',
       authSessionSourceCommand: explicitSourceCommand,
       fallbackUsername: liveCredentials.username,
       fallbackApplicationPassword: liveCredentials.password,
@@ -3826,6 +3849,10 @@ test('production-shaped live release verify forces checked release requirements 
 
   assert.match(source, /resolveCheckedReleaseRequirementEnv/);
   assert.match(source, /\.\.\.resolveCheckedReleaseRequirementEnv\(\),\s*\.\.\.envOverrides,/);
+  assert.match(
+    source,
+    /runCheckedReleaseVerify\(\s*resolveCheckedLiveBoundaryEnv\(\{\s*sourceUrl: remoteServer\.baseUrl,/,
+  );
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {

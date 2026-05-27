@@ -90,14 +90,13 @@ if (packagedBoundaryRequested) {
   emitCombinedReleaseProof(verify, applyRevalidation);
 } else {
   await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
-    const verify = runCheckedReleaseVerify({
-      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_USERNAME: credentials.username,
-      REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
-    });
+    const verify = runCheckedReleaseVerify(
+      resolveCheckedLiveBoundaryEnv({
+        sourceUrl: remoteServer.baseUrl,
+        fallbackUsername: credentials.username,
+        fallbackApplicationPassword: credentials.applicationPassword,
+      }),
+    );
     const applyRevalidation = runApplyRevalidationProof(
       resolveApplyRevalidationAuthEnv({
         sourceUrl: remoteServer.baseUrl,

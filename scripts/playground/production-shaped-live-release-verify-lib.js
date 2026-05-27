@@ -47,6 +47,14 @@ export function resolveCheckedLiveBoundaryEnv({
 } = {}) {
   const resolvedUsername = username || fallbackUsername;
   const resolvedApplicationPassword = applicationPassword || fallbackApplicationPassword;
+  const resolvedAuthSessionSourceCommand = authSessionSourceCommand
+    || (sourceUrl
+      ? buildAuthSessionSourceCommand({
+          sourceUrl,
+          username: resolvedUsername,
+          applicationPassword: resolvedApplicationPassword,
+        })
+      : '');
 
   return {
     ...resolveCheckedReleaseRequirementEnv(),
@@ -60,8 +68,8 @@ export function resolveCheckedLiveBoundaryEnv({
     REPRINT_PUSH_APPLICATION_PASSWORD: resolvedApplicationPassword,
     REPRINT_PUSH_LAB_AUTH_ADMIN_USER: resolvedUsername,
     REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: resolvedApplicationPassword,
-    ...(authSessionSourceCommand
-      ? { REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand }
+    ...(resolvedAuthSessionSourceCommand
+      ? { REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: resolvedAuthSessionSourceCommand }
       : {}),
   };
 }
