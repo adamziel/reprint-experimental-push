@@ -2353,6 +2353,118 @@ test('packaged preflight startup context still fails closed for broken top-level
   }
 });
 
+test('packaged server readiness fails closed for broken production route profiles', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+  const terminalRouteProfiles = [
+    {
+      label: 'lab-backed route profile',
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: true,
+      },
+    },
+    {
+      label: 'wrong route profile name',
+      routeProfile: {
+        profile: 'lab-authenticated',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+    },
+    {
+      label: 'wrong route namespace',
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint-push-lab/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+    },
+    {
+      label: 'wrong route prefix',
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/authenticated',
+        labBacked: false,
+      },
+    },
+  ];
+
+  for (const { label, routeProfile } of terminalRouteProfiles) {
+    const preflight = {
+      ...basePreflight,
+      body: {
+        ...basePreflight.body,
+        routeProfile,
+      },
+    };
+
+    assert.equal(
+      packagedProductionPluginPreflightReady(preflight),
+      false,
+      `${label} should not be considered ready`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(preflight),
+      false,
+      `${label} should fail closed instead of retrying`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(preflight),
+      true,
+      `${label} should be terminal`,
+    );
+    assert.equal(
+      packagedProductionPluginServerReady({
+        snapshot: readySnapshot,
+        preflight,
+      }),
+      false,
+      `${label} should keep the packaged server unready`,
+    );
+  }
+});
+
 test('packaged preflight startup context still fails closed for broken production route profiles', () => {
   const basePreflight = {
     status: 200,
