@@ -44922,6 +44922,73 @@ test('blocks local same-plan created user identity while preserving a matching i
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks local same-plan created user identity while preserving a matching independent delete and remote-only plugin drift', () => {
+  const resourceKey = 'row:["wp_users","ID:34"]';
+  const deleteFileKey = 'file:wp-content/uploads/user-dependency-delete-drift.txt';
+  const base = baseSite();
+  base.files[deleteFileKey.slice('file:'.length)] = 'base user dependency delete drift bytes';
+  base.db.wp_usermeta = {
+    'umeta_id:34': {
+      umeta_id: 34,
+      user_id: 34,
+      meta_key: 'nickname',
+      meta_value: 'Base delete drift dependent nickname',
+    },
+  };
+
+  const local = baseSite();
+  delete local.files[deleteFileKey.slice('file:'.length)];
+  local.db.wp_users = {
+    'ID:34': {
+      ID: 34,
+      user_login: 'local-dependent-delete-drift-user',
+      user_email: 'local-dependent-delete-drift@example.test',
+    },
+  };
+  local.db.wp_usermeta = {
+    'umeta_id:34': {
+      umeta_id: 34,
+      user_id: 34,
+      meta_key: 'nickname',
+      meta_value: 'Local delete drift dependent nickname',
+    },
+  };
+
+  const remote = baseSite();
+  delete remote.files[deleteFileKey.slice('file:'.length)];
+  remote.db.wp_usermeta = JSON.parse(JSON.stringify(base.db.wp_usermeta));
+  remote.plugins.forms.description = 'remote-only plugin drift';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, deleteFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:34"] is created in the same plan as a user meta identity that depends on it, and identity rewriting is not yet supported.');
+  const reference = blocker.references[0];
+  assert.equal(reference.relationshipKey, 'wp_usermeta.user_id');
+  assert.equal(reference.relationshipType, 'usermeta-user');
+  assert.equal(reference.sourceResourceKey, 'row:["wp_usermeta","umeta_id:34"]');
+  assert.equal(reference.targetResourceKey, resourceKey);
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local delete drift dependent nickname'), false);
+  assert.equal(planJson.includes('Base delete drift dependent nickname'), false);
+  assert.equal(planJson.includes('local-dependent-delete-drift-user'), false);
+  assert.equal(planJson.includes('base user dependency delete drift bytes'), false);
+  assert.equal(Object.hasOwn(remote.files, deleteFileKey.slice('file:'.length)), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
+});
+
 test('blocks local same-plan created user identity while preserving a matching independent restore and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_users","ID:30"]';
   const restoreFileKey = 'file:wp-content/uploads/user-dependency-restore.txt';
