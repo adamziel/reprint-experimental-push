@@ -622,6 +622,15 @@ export function buildProductionPluginPackageProofSummary(
       passed,
     );
   }
+  function buildNestedBundleStatus(bundleName) {
+    const passed = bundleSummaryGroups[bundleName].every(
+      (scenario) => scenarioPasses.get(scenario) === true,
+    );
+    return summarizeScenario(
+      isBundleSelected(selectedScenarios, bundleName),
+      passed,
+    );
+  }
 
   return {
     kind: 'production-plugin-package-driver-proof',
@@ -857,7 +866,7 @@ export function buildProductionPluginPackageProofSummary(
       selected: buildObjectBundleSelected('driver-proof'),
       ok: buildObjectBundleStatus('driver-proof') === 'passed',
       status: buildObjectBundleStatus('driver-proof'),
-      verifierStatus: scenarioResults.driverReceiptGuards,
+      verifierStatus: buildNestedBundleStatus('driver-verifier-guards'),
       exportStatus: scenarioResults.driverMissingExportGuard,
       applyStatus: scenarioResults.driverMissingApplyGuard,
       validateStatus: scenarioResults.driverMissingValidateGuard,

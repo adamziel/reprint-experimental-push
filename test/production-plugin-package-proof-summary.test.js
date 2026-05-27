@@ -863,6 +863,84 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.deepEqual(summary.failedRequestedConcreteScenarios, []);
 });
 
+test('plugin-driver proof summary reports verifier bundle status inside driver-proof coverage', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-proof'],
+      selectedScenarios: new Set([
+        'driver-proof',
+        ...scenarioGroups['driver-proof'],
+        ...scenarioGroups['driver-verifier-guards'],
+      ]),
+    },
+  );
+
+  assert.equal(summary.driverProof.status, 'missing');
+  assert.equal(summary.driverProof.verifierStatus, 'missing');
+  assert.equal(summary.driverProof.exportStatus, 'passed');
+  assert.equal(summary.driverProof.applyStatus, 'passed');
+  assert.equal(summary.driverProof.validateStatus, 'missing');
+  assert.equal(summary.receiptGuards.status, 'passed');
+  assert.equal(summary.verifierGuards.status, 'skipped');
+  assert.deepEqual(summary.failedScenarios, ['driver-missing-validate-guard']);
+  assert.equal(summary.bundles.driverProof, 'missing');
+  assert.equal(summary.bundles.driverVerifierGuards, 'skipped');
+});
+
 test('plugin-driver proof summary scopes requested bundle verdicts to requested bundles only', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
