@@ -3912,6 +3912,15 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'revoked status auth session',
+      session: {
+        id: 'session_123',
+        status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'explicitly revoked auth session',
       session: {
         id: 'session_123',
@@ -10613,6 +10622,15 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       label: 'missing auth session status',
       session: {
         id: 'session_123',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'revoked status auth session',
+      session: {
+        id: 'session_123',
+        status: 'revoked',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
