@@ -1237,6 +1237,13 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($r
 
     if (($row['event'] ?? null) === 'stale-claim-rejected') {
         if (
+            reprint_push_lab_db_journal_non_empty_string($claim['activeClaimId'] ?? null)
+            && (string) ($row['claimId'] ?? '') !== (string) ($claim['activeClaimId'] ?? '')
+        ) {
+            return false;
+        }
+
+        if (
             reprint_push_lab_db_journal_is_positive_int($claim['activeClaimSequence'] ?? null)
             && reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row)
                 !== (int) ($claim['activeClaimSequence'] ?? 0)
@@ -1260,6 +1267,13 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($r
     }
 
     if (($row['event'] ?? null) === 'stale-claim-abandoned') {
+        if (
+            reprint_push_lab_db_journal_non_empty_string($claim['previousClaimId'] ?? null)
+            && (string) ($row['claimId'] ?? '') !== (string) ($claim['previousClaimId'] ?? '')
+        ) {
+            return false;
+        }
+
         if (
             reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
             && reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row)

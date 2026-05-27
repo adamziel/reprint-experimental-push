@@ -12866,6 +12866,58 @@ test('checked db journal attachment fails closed when stale-claim row omits requ
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked db journal attachment fails closed when stale-claim rejected latest row omits accepted claim identity', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.latestRows[0] = {
+    ...inlineJournal.latestRows[0],
+  };
+  delete inlineJournal.latestRows[0].claimId;
+
+  const checkedSummary = structuredClone(inlineJournal);
+  checkedSummary.latestRows[0].claimId = 'authoritative-claim-hash-02';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked db journal attachment fails closed when stale-claim abandoned latest row diverges from accepted previous claim identity', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.latestRows.push({
+    id: 34,
+    event: 'stale-claim-abandoned',
+    claimId: 'wrong-previous-claim-id',
+    claimKeyHash: 'retry-claim-hash-01',
+    idempotencyKeyHash: 'idem-hash-01',
+    requestHash: 'request-hash-01',
+    resourceHashEvidence: {
+      startedCursor: 'db-journal:19',
+      claimCursor: 'db-journal:18',
+    },
+  });
+  inlineJournal.eventSummaries = [
+    { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+    { event: 'stale-claim-abandoned', count: 1, latestId: 34 },
+  ];
+
+  const checkedSummary = structuredClone(inlineJournal);
+  checkedSummary.latestRows[1].claimId = 'retry-claim-hash-01';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked db journal attachment fails closed when stale-claim row omits idempotency hash', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {

@@ -1044,24 +1044,29 @@ function reprint_push_lab_rest_checked_latest_row_conflicts(
         return false;
     }
 
-    $premerge_rejected_row = reprint_push_lab_rest_latest_checked_row_for_event(
-        $premerge_db_journal['latestRows'] ?? null,
-        'stale-claim-rejected'
-    );
-    $checked_rejected_row = reprint_push_lab_rest_latest_checked_row_for_event(
-        $checked_summary['latestRows'] ?? null,
-        'stale-claim-rejected'
-    );
+    foreach ([
+        'stale-claim-rejected' => ['claimId', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
+        'stale-claim-abandoned' => ['claimId', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash', 'startedCursor', 'claimCursor'],
+    ] as $event => $keys) {
+        $premerge_row = reprint_push_lab_rest_latest_checked_row_for_event(
+            $premerge_db_journal['latestRows'] ?? null,
+            $event
+        );
+        $checked_row = reprint_push_lab_rest_latest_checked_row_for_event(
+            $checked_summary['latestRows'] ?? null,
+            $event
+        );
 
-    if (!is_array($premerge_rejected_row) || !is_array($checked_rejected_row)) {
-        return false;
+        if (!is_array($premerge_row) || !is_array($checked_row)) {
+            continue;
+        }
+
+        if (reprint_push_lab_rest_checked_latest_row_field_conflicts($premerge_row, $checked_row, $keys)) {
+            return true;
+        }
     }
 
-    return reprint_push_lab_rest_checked_latest_row_field_conflicts(
-        $premerge_rejected_row,
-        $checked_rejected_row,
-        ['claimId', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash']
-    );
+    return false;
 }
 
 function reprint_push_lab_rest_latest_checked_row_for_event($rows, string $event): ?array
@@ -1109,6 +1114,10 @@ function reprint_push_lab_rest_checked_latest_row_field_conflicts(
     foreach ($keys as $key) {
         $existing_value = isset($existing_row[$key]) ? (string) $existing_row[$key] : '';
         $checked_value = isset($checked_row[$key]) ? (string) $checked_row[$key] : '';
+        if ($existing_value === '' && $checked_value !== '') {
+            return true;
+        }
+
         if ($existing_value !== '' && $checked_value !== '' && $existing_value !== $checked_value) {
             return true;
         }
