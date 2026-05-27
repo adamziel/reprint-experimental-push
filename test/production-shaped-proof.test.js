@@ -3762,6 +3762,14 @@ test('packaged smoke readiness helper formats malformed snapshot and preflight b
     helperSource,
     /returned an invalid readiness body after the snapshot probe timed out at \$\{baseUrl\}[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?indexTerminal:\s*true/s,
   );
+  assert.match(
+    helperSource,
+    /snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);/s,
+  );
+  assert.match(
+    helperSource,
+    /const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);[\s\S]*?preflight stayed startup-shaped while \/wp-json\/ kept reporting global WordPress startup HTTP/s,
+  );
   assert.doesNotMatch(
     helperSource,
     /Expected JSON from GET \/wp-json\/reprint\/v1\/push\/snapshot/,
@@ -3799,6 +3807,14 @@ test('packaged snapshot readiness helper enforces the bounded classifier before 
   assert.match(
     verifierBranch,
     /if \(\s*preflightProbe\.retryable\s*&&\s*packagedProductionPluginRouteStartupClassificationReady\(\s*snapshotNotReadyProbeCount,\s*\)\s*\)\s*\{[\s\S]*?fetchPackagedWordPressIndexProbe\(baseUrl, child\)[\s\S]*?packagedProductionPluginGlobalStartupStillWithinBudget\(snapshotNotReadyProbeCount\)[\s\S]*?globalWordPressStartup:\s*true[\s\S]*?packagedRouteStartup:\s*true[\s\S]*?indexTerminal:\s*true[\s\S]*?maxNotReadyProbeCount:\s*maxPackagedStartupNotReadyProbeCount/s,
+  );
+  assert.match(
+    verifierBranch,
+    /snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);/s,
+  );
+  assert.match(
+    verifierBranch,
+    /packagedProductionPluginRouteStartupClassificationReady\(\s*snapshotNotReadyProbeCount,\s*\)[\s\S]*?const indexProbe = await fetchPackagedWordPressIndexProbe\(baseUrl, child\)\.catch\(\(indexError\) =>[\s\S]*?buildPackagedTimeoutFallbackProbe\('\/wp-json\/', indexError\),[\s\S]*?\);/s,
   );
   assert.match(
     smokeSource,
