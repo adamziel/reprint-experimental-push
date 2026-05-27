@@ -2004,10 +2004,55 @@ test('packaged preflight startup context still fails closed for terminal product
 
   const terminalSessions = [
     {
+      label: 'missing expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+      },
+    },
+    {
+      label: 'past expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2000-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'invalid expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: 'not-a-timestamp',
+      },
+    },
+    {
       label: 'expired status',
       session: {
         id: 'session_123',
         status: 'expired',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly expired',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
+      label: 'revoked status',
+      session: {
+        id: 'session_123',
+        status: 'revoked',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
@@ -2032,6 +2077,15 @@ test('packaged preflight startup context still fails closed for terminal product
       },
     },
     {
+      label: 'cleanup alias status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned_up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
       label: 'cleaned-up marker',
       session: {
         id: 'session_123',
@@ -2049,6 +2103,42 @@ test('packaged preflight startup context still fails closed for terminal product
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         cleanup: true,
+      },
+    },
+    {
+      label: 'rotated status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly rotated',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+      },
+    },
+    {
+      label: 'wrong auth session type',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'lab-signed-push-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'missing auth session status',
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
     },
   ];
