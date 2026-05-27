@@ -35833,6 +35833,87 @@ test('production durable journal retries an old-remote failure append-only witho
   assert.deepEqual(inspection.counts, { old: 0, new: 1, blockedUnknown: 0 });
 });
 
+test('production durable journal retries a staged old-remote failure append-only without duplicating targets', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'claim-production-staged-retry-append-only';
+
+  const firstWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  appendRecoveryClaimOpened(firstWriter, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const firstError = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal: firstWriter,
+      requireProductionDurableJournal: true,
+      failAfterStaging: true,
+    }));
+  firstWriter.close();
+
+  assert.equal(firstError.code, 'INJECTED_FAILURE_AFTER_STAGING');
+  assert.equal(firstError.details.recovery.status, 'old-remote');
+  assert.equal(firstError.details.recovery.artifacts.journal.status, 'staged');
+
+  const retryWriter = openProductionRecoveryJournal(durableJournalPath, {
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  const retry = applyPlan(remote, plan, {
+    journal: firstError.details.recovery.artifacts.journal,
+    durableJournal: retryWriter,
+    requireProductionDurableJournal: true,
+    mutateRemote: true,
+  });
+  retryWriter.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+  const inspection = inspectRecoveryJournal({ journal: persisted, plan, current: remote });
+
+  assert.equal(retry.appliedMutations, 1);
+  assert.equal(retry.recoveryState.status, 'fully-updated-remote');
+  assert.equal(remote.db.wp_options['option_name:blogname'].option_value, 'Local Site');
+  assert.equal(persisted.integrity.status, 'ok');
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.equal(
+    persisted.records.filter((record) => record.type === 'journal-retry-opened').length,
+    1,
+  );
+  assert.ok(
+    persisted.records.some((record) => record.type === 'apply-staged'),
+    'append-only retry must preserve the staged durable boundary',
+  );
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: 1, blockedUnknown: 0 });
+});
+
 test('production durable journal retries a dependency-validation failure append-only without duplicating targets', () => {
   const base = baseSite();
   const local = structuredClone(base);
