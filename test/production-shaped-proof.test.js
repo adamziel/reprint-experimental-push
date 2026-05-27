@@ -213,25 +213,25 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
     packagedProductionPluginResetRouteNotReadyProbeCounts,
     packagedProductionPluginReadinessBodyRetryable,
     packagedProductionPluginPreflightTerminalContext,
-    unexpectedSyncDependency,
-    unexpectedAsyncDependency,
-    unexpectedSyncDependency,
+    overrides.packagedProductionPluginRouteStartupClassificationReady ?? unexpectedSyncDependency,
+    overrides.fetchPackagedWordPressIndexProbe ?? unexpectedAsyncDependency,
+    overrides.buildPackagedTimeoutFallbackProbe ?? unexpectedSyncDependency,
     packagedProductionPluginClassifyBoundedStartup,
-    unexpectedSyncDependency,
-    unexpectedAsyncDependency,
-    unexpectedAsyncDependency,
+    overrides.packagedProductionPluginGlobalStartupStillWithinBudget ?? unexpectedSyncDependency,
+    overrides.sleepUnlessChildExit ?? unexpectedAsyncDependency,
+    overrides.throwPlaygroundReadinessFailure ?? unexpectedAsyncDependency,
     packagedProductionPluginPackagedRouteStartupLimitReached,
     packagedProductionPluginPackagedRouteStartupStillWithinBudget,
     packagedProductionPluginMalformedTerminalIndexProbe,
     packagedProductionPluginServerReady,
     packagedProductionPluginSnapshotRetryable,
-    unexpectedAsyncDependency,
+    overrides.fetchPackagedPreflightProbe ?? unexpectedAsyncDependency,
     packagedProductionPluginReadinessErrorRetryable,
     packagedProductionPluginReadinessProbeTimedOut,
-    unexpectedAsyncDependency,
-    packagedProductionPluginClassifyTimeoutFallbackStartup,
-    packagedProductionPluginNotReadyProbeLimitReached,
-    packagedProductionPluginNextTimeoutProbeCount,
+    overrides.fetchPackagedTimeoutFallbackProbes ?? unexpectedAsyncDependency,
+    overrides.packagedProductionPluginClassifyTimeoutFallbackStartup ?? packagedProductionPluginClassifyTimeoutFallbackStartup,
+    overrides.packagedProductionPluginNotReadyProbeLimitReached ?? packagedProductionPluginNotReadyProbeLimitReached,
+    overrides.packagedProductionPluginNextTimeoutProbeCount ?? packagedProductionPluginNextTimeoutProbeCount,
     packagedProductionPluginMaxConsecutiveNotReadyProbes,
     1,
     packagedProductionPluginMaxConsecutiveNotReadyProbes,
@@ -2793,6 +2793,92 @@ test('packaged release verifier readiness helper fails closed when the Playgroun
   );
 
   assert.equal(stoppedChild, child);
+});
+
+test('packaged release verifier readiness helper preserves timeout fallback probes when the snapshot probe times out and /wp-json/ becomes terminal', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
+  timeoutError.name = 'TimeoutError';
+  const timeoutFallbackProbes = {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 404,
+      ok: false,
+      body: '{"code":"rest_no_route","message":"No route was found matching the URL and request method."}',
+      parsedBody: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+      ready: false,
+      retryable: true,
+      terminal: false,
+    },
+    indexProbe: {
+      route: '/wp-json/',
+      status: 401,
+      ok: false,
+      body: '{"code":"rest_forbidden","message":"forbidden"}',
+      parsedBody: {
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      },
+      ready: false,
+      retryable: false,
+      terminal: true,
+    },
+  };
+  const captured = {
+    prefix: null,
+    logs: null,
+    context: null,
+    lastError: null,
+    lastProbes: null,
+    lastTimeoutFallbackProbes: null,
+  };
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    fetchTextWithTimeout: async () => {
+      throw timeoutError;
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => timeoutFallbackProbes,
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => ({
+      kind: 'retryable-route-index-terminal',
+    }),
+    throwPlaygroundReadinessFailure: async (child, prefix, lastError, lastProbes, logs, context, lastTimeoutFallbackProbes) => {
+      captured.prefix = prefix;
+      captured.logs = logs;
+      captured.context = context;
+      captured.lastError = lastError;
+      captured.lastProbes = lastProbes;
+      captured.lastTimeoutFallbackProbes = lastTimeoutFallbackProbes;
+      throw new Error(prefix);
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9452,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP 401 after the snapshot probe timed out/,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(captured.prefix, 'Packaged production plugin signed preflight stayed startup-shaped while /wp-json/ returned a terminal readiness failure HTTP 401 after the snapshot probe timed out at http://127.0.0.1:65535');
+  assert.equal(captured.logs, 'packaged server boot log');
+  assert.equal(captured.lastError, timeoutError);
+  assert.deepEqual(captured.lastTimeoutFallbackProbes, timeoutFallbackProbes);
+  assert.deepEqual(captured.lastProbes, [timeoutFallbackProbes.preflightProbe]);
+  assert.deepEqual(captured.context, {
+    childPid: 9452,
+    packagedProductionPlugin: true,
+    indexTerminal: true,
+  });
 });
 
 test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
