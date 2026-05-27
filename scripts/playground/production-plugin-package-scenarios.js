@@ -83,8 +83,10 @@ const knownScenarioNames = new Set([
 
 const scenarioNameAliases = new Map([
   ['driverRouteProof', 'core-package-routes'],
+  ['driver-route-proof', 'core-package-routes'],
   ['driverReceiptGuards', 'driver-receipt-guards'],
   ['driverDeleteApplyProof', 'driver-delete-apply'],
+  ['driver-delete-apply-proof', 'driver-delete-apply'],
   ['driverPositiveProof', 'driver-positive-proof'],
   ['driverProof', 'driver-proof'],
   ['driverReleaseProof', 'driver-release-proof'],
@@ -137,6 +139,7 @@ const modeNameMappings = new Map([
   ['driver-delete-only', 'driver-delete-apply'],
   ['driverDeleteOnly', 'driver-delete-apply'],
   ['driver-delete-apply', 'driver-delete-apply'],
+  ['driver-delete-apply-proof', 'driver-delete-apply'],
   ['driverDeleteApplyProof', 'driver-delete-apply'],
   ['driver-delete-apply-only', 'driver-delete-apply'],
   ['driverDeleteApplyOnly', 'driver-delete-apply'],
@@ -144,6 +147,7 @@ const modeNameMappings = new Map([
   ['driver-route-only', 'core-package-routes'],
   ['driverRouteOnly', 'core-package-routes'],
   ['core-package-routes', 'core-package-routes'],
+  ['driver-route-proof', 'core-package-routes'],
   ['driverRouteProof', 'core-package-routes'],
   ['driver-route-proof-only', 'core-package-routes'],
   ['driverRouteProofOnly', 'core-package-routes'],

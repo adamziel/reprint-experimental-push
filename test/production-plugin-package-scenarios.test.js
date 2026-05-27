@@ -100,6 +100,26 @@ test('scenario resolver accepts bundle-aligned driver proof aliases from the sum
   );
 });
 
+test('scenario resolver accepts direct kebab-case route and delete proof aliases', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driver-route-proof,driver-delete-apply-proof'],
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'core-package-routes',
+    'driver-delete-apply',
+  ]);
+  assert.equal(resolved.resolvedMode, null);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      'core-package-routes',
+      'driver-delete-apply',
+    ].sort(),
+  );
+});
+
 test('scenario resolver dedupes repeated aliases before returning requested scenarios', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-verifier-guards,driver-verifier-guards,driver-delete-apply'],
@@ -495,6 +515,34 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
 
   assert.deepEqual(routeProof.requestedScenarios, ['core-package-routes']);
   assert.equal(routeProof.resolvedMode, 'driverRouteProof');
+  assert.deepEqual(
+    Array.from(routeProof.selectedScenarios).sort(),
+    ['core-package-routes'],
+  );
+});
+
+test('scenario resolver accepts direct kebab-case route and delete proof modes', () => {
+  const deleteApply = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-delete-apply-proof',
+  );
+
+  assert.deepEqual(deleteApply.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(deleteApply.resolvedMode, 'driver-delete-apply-proof');
+  assert.deepEqual(
+    Array.from(deleteApply.selectedScenarios).sort(),
+    ['driver-delete-apply'],
+  );
+
+  const routeProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-route-proof',
+  );
+
+  assert.deepEqual(routeProof.requestedScenarios, ['core-package-routes']);
+  assert.equal(routeProof.resolvedMode, 'driver-route-proof');
   assert.deepEqual(
     Array.from(routeProof.selectedScenarios).sort(),
     ['core-package-routes'],
