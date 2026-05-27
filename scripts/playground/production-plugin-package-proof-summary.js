@@ -699,6 +699,10 @@ export function buildProductionPluginPackageProofSummary(
       ),
       requestedStatus: requestedScenarioStatuses['driver-positive-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverPositiveProof ?? null,
+      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
+        requestedScenarioAliases(normalizedRequestedScenarios, 'driver-positive-proof'),
+        requestedBundleStatuses,
+      ),
     },
     releaseProof: {
       requested: normalizedRequestedScenarios === null

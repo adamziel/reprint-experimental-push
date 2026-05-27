@@ -439,6 +439,7 @@ test('plugin-driver proof summary exposes direct requested route-proof state', (
     failedScenarioCount: 0,
     passedScenarios: [],
     failedScenarios: [],
+    requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.releaseProof, {
     ...summary.releaseProof,
@@ -794,6 +795,9 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
     failedScenarios: [],
     requestedStatus: 'passed',
     requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverPositiveProof: 'passed',
+    },
   });
   assert.deepEqual(summary.routeProof, {
     requested: true,
@@ -2452,6 +2456,7 @@ test('plugin-driver proof summary exposes missing requested release bundle state
     failedScenarios: [],
     requestedStatus: null,
     requestedBundleStatus: null,
+    requestedBundleStatuses: null,
   });
 });
 
