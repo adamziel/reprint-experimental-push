@@ -74,6 +74,32 @@ test('scenario resolver preserves requested aliases alongside expanded scenarios
   );
 });
 
+test('scenario resolver accepts bundle-aligned driver proof aliases from the summary contract', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driverReleaseProof,driverVerifierGuards,driverRouteProof,driverDeleteApplyProof'],
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'driver-release-proof',
+    'driver-verifier-guards',
+    'core-package-routes',
+    'driver-delete-apply',
+  ]);
+  assert.equal(resolved.resolvedMode, null);
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    Array.from(new Set([
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+      'core-package-routes',
+      'driver-delete-apply',
+    ])).sort(),
+  );
+});
+
 test('scenario resolver dedupes repeated aliases before returning requested scenarios', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-verifier-guards,driver-verifier-guards,driver-delete-apply'],
@@ -93,6 +119,19 @@ test('scenario resolver dedupes repeated aliases before returning requested scen
       'driver-delete-apply',
     ].sort(),
   );
+});
+
+test('scenario resolver dedupes bundle-aligned aliases against their canonical scenario names', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    ['--scenario=driverReleaseProof,driver-release-proof,driverVerifierGuards,driver-verifier-guards'],
+    undefined,
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'driver-release-proof',
+    'driver-verifier-guards',
+  ]);
+  assert.equal(resolved.resolvedMode, null);
 });
 
 test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {

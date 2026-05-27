@@ -81,6 +81,24 @@ const knownScenarioNames = new Set([
   ...Object.keys(scenarioGroups),
 ]);
 
+const scenarioNameAliases = new Map([
+  ['driverRouteProof', 'core-package-routes'],
+  ['driverReceiptGuards', 'driver-receipt-guards'],
+  ['driverDeleteApplyProof', 'driver-delete-apply'],
+  ['driverPositiveProof', 'driver-positive-proof'],
+  ['driverProof', 'driver-proof'],
+  ['driverReleaseProof', 'driver-release-proof'],
+  ['driverVerifierGuards', 'driver-verifier-guards'],
+  ['driverReceiptRegistrationGuards', 'driver-receipt-registration-guards'],
+  ['driverRegistrationGuards', 'driver-registration-guards'],
+  ['driverCallbackGuards', 'driver-callback-guards'],
+  ['driverRegistrationShapeGuards', 'driver-registration-shape-guards'],
+]);
+
+function canonicalizeScenarioName(name) {
+  return scenarioNameAliases.get(name) ?? name;
+}
+
 function resolveScenarioMode(modeValue) {
   if (!modeValue) {
     return null;
@@ -149,14 +167,15 @@ export function resolveProductionPluginPackageScenarios(argv, envValue, modeValu
     throw new Error('Production plugin package smoke scenarios cannot be blank');
   }
 
-  const unknownNames = requestedNames.filter((name) => !knownScenarioNames.has(name));
+  const canonicalRequestedNames = requestedNames.map(canonicalizeScenarioName);
+  const unknownNames = canonicalRequestedNames.filter((name) => !knownScenarioNames.has(name));
   if (unknownNames.length > 0) {
     throw new Error(
       `Unknown production plugin package smoke scenario: ${unknownNames.sort().join(', ')}`,
     );
   }
 
-  const uniqueRequestedNames = Array.from(new Set(requestedNames));
+  const uniqueRequestedNames = Array.from(new Set(canonicalRequestedNames));
   const expandedNames = uniqueRequestedNames.flatMap((name) => scenarioGroups[name] ?? [name]);
   return {
     resolvedMode: resolvedFromMode ? modeValue : null,
