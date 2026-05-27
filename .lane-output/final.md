@@ -18,14 +18,14 @@ Commands:
 - `sed -n '206,218p' docs/scenario-matrix.md`
 - `sed -n '36660,37060p' test/push-planner.test.js`
 - `git diff --check -- docs/scenario-matrix.md`
-- `git add docs/scenario-matrix.md .lane-output/final.md && git commit -m "Sync plain user scenario matrix coverage" && git push origin HEAD:lane/no-data-loss-invariants`
+- `git add docs/scenario-matrix.md && git add -f .lane-output/final.md && git commit -m "Sync plain user scenario matrix coverage" && git push origin HEAD:lane/no-data-loss-invariants`
 - `git status --short --branch`
 
 Push result:
-- Pending.
+- Pushed `59bf3ac99b2d5c2aa3158ef507f778b580348fb1` (`Sync plain user scenario matrix coverage`) to `origin/lane/no-data-loss-invariants`.
 
 Worktree status:
-- Dirty tracked state is limited to the matrix sync plus this handoff refresh.
+- Clean after this handoff refresh is committed and pushed.
 
 Next supervisor nudge:
 - Treat the next invariants head as a documentation sync for the already-landed plain unsupported `wp_users` plugin-change parity coverage.
