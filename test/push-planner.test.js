@@ -11749,6 +11749,94 @@ test('blocks _menu_item_object_id metadata owned by an existing wp_navigation po
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks _menu_item_object_id metadata owned by an existing wp_navigation post when the same-plan post target is itself blocked by a nav_menu_item parent even when unrelated remote revision noise exists', () => {
+  const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
+  const blockedTargetResourceKey = 'row:["wp_posts","ID:5"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:497402"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_type: 'wp_navigation',
+    post_title: 'Existing navigation owner',
+    post_content: 'base-private-existing-navigation-owner-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+  remote.db.wp_posts['ID:2'] = {
+    ...base.db.wp_posts['ID:2'],
+  };
+
+  base.db.wp_postmeta = {
+    'meta_id:497402': {
+      meta_id: 497402,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 1,
+    },
+  };
+  local.db.wp_postmeta = {
+    'meta_id:497402': {
+      meta_id: 497402,
+      post_id: 2,
+      meta_key: '_menu_item_object_id',
+      meta_value: 5,
+    },
+  };
+  remote.db.wp_postmeta = {
+    'meta_id:497402': {
+      ...base.db.wp_postmeta['meta_id:497402'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_type: 'nav_menu_item',
+    post_title: 'Local nav menu item parent',
+    post_content: 'local-private-nav-menu-item-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:5'] = {
+    ID: 5,
+    post_title: 'Blocked same-plan menu object target',
+    post_content: 'local-private-blocked-menu-object-target-body',
+    post_status: 'publish',
+    post_parent: 4,
+  };
+  remote.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'Remote revision noise',
+    post_content: 'remote-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 7,
+  };
+
+  const plan = planFor(base, local, remote);
+  const blockedPostMutation = mutationFor(plan, blockedTargetResourceKey);
+  const postmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === postmetaResourceKey);
+  const blockedPostBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTargetResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, 'row:["wp_posts","ID:2"]'), undefined);
+  assert.equal(mutationFor(plan, blockedParentResourceKey), undefined);
+  assert.equal(blockedPostMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(blockedPostBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedPostBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedPostBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(postmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(postmetaBlocker.surface, 'wp_navigation');
+  assert.equal(JSON.stringify(postmetaBlocker).includes('base-private-existing-navigation-owner-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-nav-menu-item-parent-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('local-private-blocked-menu-object-target-body'), false);
+  assert.equal(JSON.stringify(postmetaBlocker).includes('remote-revision-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks _menu_item_object_id metadata owned by an existing nav_menu_item post when the same-plan post target is itself blocked by a wp_navigation parent', () => {
   const blockedParentResourceKey = 'row:["wp_posts","ID:4"]';
   const blockedTargetResourceKey = 'row:["wp_posts","ID:5"]';
