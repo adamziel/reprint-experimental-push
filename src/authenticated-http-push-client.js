@@ -291,6 +291,12 @@ export async function runAuthenticatedHttpPush({
     ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, dryRun)
     : null;
   const dryRunLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
+  const dryRunObservedAuthLifecycleFlagDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionLifecycleFlagDrift(dryRun);
+  const dryRunObservedAuthSourceMetadataDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionSourceMetadataDrift(dryRun);
   const dryRunAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dryRun);
   if (dryRun.status !== 200 || dryRun.body?.ok !== true || !dryRun.body?.receipt) {
     summary.code = dryRun.body?.code || 'DRY_RUN_FAILED';
@@ -326,6 +332,18 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (dryRunObservedAuthLifecycleFlagDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = dryRunObservedAuthLifecycleFlagDrift;
+    setDurableJournalBoundary(summary, 'dry-run');
+    return summary;
+  }
+  if (dryRunObservedAuthSourceMetadataDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = dryRunObservedAuthSourceMetadataDrift;
+    setDurableJournalBoundary(summary, 'dry-run');
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dryRun)) {
