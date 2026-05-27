@@ -874,9 +874,13 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
   const rejectedById = new Map(model.rejectedFastPaths.map((fastPath) => [fastPath.id, fastPath]));
   const rejectedAreas = new Set(model.rejectedFastPaths.map((fastPath) => fastPath.violates).flat());
   const safeAreas = new Set(model.safeFastPaths.map((fastPath) => fastPath.area));
+  const duplicateRejectedIds = model.rejectedFastPaths
+    .map((fastPath) => fastPath.id)
+    .filter((id, index, ids) => ids.indexOf(id) !== index);
 
   assert.ok(model.safeFastPaths.length > 0);
   assert.ok(model.rejectedFastPaths.length > 0);
+  assert.deepEqual(duplicateRejectedIds, []);
   for (const area of [
     'file-hashing',
     'chunk-upload',

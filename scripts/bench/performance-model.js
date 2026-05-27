@@ -3832,7 +3832,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
     proposal: 'treat a compressed remote index plus cached row-batch receipts as enough proof to skip plugin update finalize',
     rejectedBecause: 'planning evidence and cached row receipts can trim replay work, but they cannot prove the live row compares, dependency checks, or the atomic-group finalize survived failure',
     rejectedGate: 'group',
@@ -3972,7 +3972,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback',
+    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-writeback-variant-b',
     proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip plugin-install writeback',
     rejectedBecause: 'planning evidence and cached file hashes can reduce lookup work, but they cannot prove plugin metadata writes, per-row compares, or the atomic-group writeback survived failure',
     rejectedGate: 'group',
@@ -4070,14 +4070,14 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'plugin-preconditions', 'row-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish',
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-publish-variant-b',
     proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip the guarded publish step for a large upload',
     rejectedBecause: 'planning evidence and cached chunk receipts can reduce replay work, but they cannot prove the live compare, the guarded publish barrier, or which chunk acknowledgements survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize',
+    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-variant-b',
     proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip plugin install finalize',
     rejectedBecause: 'planning evidence and cached file hashes can trim lookup and rehash work, but they cannot prove dependency checks, staged files, or the atomic-group finalize survived failure',
     rejectedGate: 'group',
@@ -4168,7 +4168,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause',
+    id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-variant-b',
     proposal: 'treat a compressed remote index plus a cached package hash as enough proof to skip plugin install finalize after a pause',
     rejectedBecause: 'planning evidence and cached package hashes can trim replay work, but they cannot prove dependency checks, staged rows, or the atomic-group finalize survived the pause',
     rejectedGate: 'group',
@@ -4182,14 +4182,14 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-publish',
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-publish-variant-b',
     proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip the guarded publish step for a large upload',
     rejectedBecause: 'planning evidence and cached hashes can reduce lookup and hashing work, but they cannot prove chunk receipts, the live compare, or the guarded publish survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize',
+    id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-variant-c',
     proposal: 'treat a compressed remote index plus a cached file hash as enough proof to skip plugin install finalize',
     rejectedBecause: 'planning evidence and cached hashes can reduce lookup work, but they cannot prove dependency checks, staged metadata, or the atomic-group finalize survived failure',
     rejectedGate: 'group',
@@ -4231,7 +4231,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause',
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause-variant-b',
     proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip large-upload resume after a pause',
     rejectedBecause: 'planning evidence and cached receipts can reduce replay work, but they cannot prove the bounded queue order, the surviving acknowledgements, or the guarded publish barrier after a pause or crash',
     rejectedGate: 'recovery',
@@ -4245,7 +4245,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure',
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-variant-b',
     proposal: 'treat a compressed remote index plus cached chunk receipts as enough proof to skip backpressure for a large upload',
     rejectedBecause: 'planning evidence and cached chunk receipts can reduce lookup work, but they cannot prove the queue stayed bounded or that the durable receipts survived a pause or crash',
     rejectedGate: 'recovery',
@@ -4287,14 +4287,14 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-publish',
+    id: 'compressed-remote-index-and-cached-manifest-hash-skips-large-upload-publish-variant-b',
     proposal: 'treat a compressed remote index plus a cached manifest hash as enough proof to skip the guarded publish step for a large upload',
     rejectedBecause: 'planning evidence and manifest hashing can reduce lookup work, but they cannot prove the live compare, every chunk acknowledgement, or the guarded publish barrier survived failure',
     rejectedGate: 'recovery',
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'live-preconditions', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-file-digest-skips-large-upload-publish',
+    id: 'compressed-remote-index-and-cached-file-digest-skips-large-upload-publish-variant-b',
     proposal: 'treat a compressed remote index plus a cached file digest as enough proof to skip the guarded publish step for a large upload',
     rejectedBecause: 'planning evidence and cached file digests can trim lookup work, but they cannot prove the live compare, every chunk acknowledgement, or the guarded publish barrier survived failure',
     rejectedGate: 'recovery',
@@ -4315,7 +4315,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'chunk-receipts', 'backpressure', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload-after-pause',
+    id: 'compressed-remote-index-and-cached-file-hash-skips-large-upload-chunk-upload-after-pause-variant-b',
     proposal: 'use a compressed remote index plus a cached file hash to skip chunk upload after a pause',
     rejectedBecause: 'planning evidence and cached file hashes can trim duplicate hashing, but they cannot prove which chunk acknowledgements survived the pause or restore the guarded publish barrier',
     rejectedGate: 'recovery',
@@ -4483,7 +4483,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure',
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-variant-c',
     proposal: 'use a compressed remote index plus cached chunk receipts to skip backpressure pauses during large-upload resume',
     rejectedBecause: 'planning evidence and cached receipts can trim replay work, but they cannot prove the sender still has the bounded queue order and journal evidence needed to recover after pause or crash',
     rejectedGate: 'recovery',
@@ -4511,7 +4511,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'chunk-receipts', 'durable-progress', 'atomic-file-publish'],
   },
   {
-    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause',
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-resume-after-pause-variant-c',
     proposal: 'use a compressed remote index plus cached chunk receipts to skip large-upload resume work after a pause',
     rejectedBecause: 'planning evidence and cached chunk receipts can trim duplicate replay, but they cannot prove which buffered chunks survived the pause, whether backpressure stayed bounded, or that the guarded publish barrier is still intact',
     rejectedGate: 'recovery',
@@ -4609,7 +4609,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'parallelism-limits', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions',
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-row-preconditions-variant-c',
     proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-install row preconditions',
     rejectedBecause: 'planning evidence and cached batch receipts can trim duplicate lookup work, but they cannot prove the live row compares or the plugin-install barrier survived a pause, retry, or partial failure',
     rejectedGate: 'group',
@@ -4672,7 +4672,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause',
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause-variant-c',
     proposal: 'use a compressed remote index plus a cached dependency graph to skip plugin-install finalize after a pause',
     rejectedBecause: 'planning evidence and dependency shape can reduce duplicate lookup work, but they cannot prove the live row compares, staged metadata writes, or the atomic-group finalize survived failure',
     rejectedGate: 'group',
@@ -4840,7 +4840,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause',
+    id: 'compressed-remote-index-and-cached-chunk-receipts-skips-large-upload-backpressure-after-pause-variant-b',
     proposal: 'use a compressed remote index plus cached chunk receipts to skip large-upload backpressure after a pause',
     rejectedBecause: 'planning evidence and cached chunk receipts can reduce duplicate upload work, but they cannot prove the queue stayed bounded or that the paused sender still has enough journaled evidence to resume or abort without ambiguity',
     rejectedGate: 'recovery',
@@ -4924,7 +4924,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'atomic-file-publish', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause-variant-b',
     proposal: 'use a compressed remote index plus cached row receipts to skip plugin-update finalize after a pause',
     rejectedBecause: 'planning evidence and cached row receipts can trim replay, but they cannot prove the live row compares, dependency checks, or atomic-group finalize survived failure',
     rejectedGate: 'group',
@@ -4959,14 +4959,14 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'backpressure', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause',
+    id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-variant-c',
     proposal: 'use a compressed remote index plus a cached package hash to skip plugin-install finalize after a pause',
     rejectedBecause: 'planning evidence and cached package hashes can reduce duplicate inspection, but they cannot prove the install rows, activation checks, or atomic-group barrier survived the pause',
     rejectedGate: 'group',
     violates: ['remote-index-planning-only', 'compression', 'file-hashing', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause',
+    id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-finalize-after-pause-variant-d',
     proposal: 'use a compressed remote index plus a cached dependency graph to skip plugin-install finalize after a pause',
     rejectedBecause: 'planning evidence and dependency shape can reduce replay work, but they cannot prove the dependency checks, staged rows, or atomic-group finalize survived the pause',
     rejectedGate: 'recovery',
@@ -5008,7 +5008,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'backpressure', 'row-preconditions', 'plugin-preconditions', 'atomic-groups', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
     proposal: 'use a compressed remote index plus cached row-batch receipts to skip plugin-update commit after a pause',
     rejectedBecause: 'planning evidence and cached row-batch receipts can trim replay, but they cannot prove the live dependency checks, the per-row compares, or the atomic-group commit barrier survived the pause',
     rejectedGate: 'group',
