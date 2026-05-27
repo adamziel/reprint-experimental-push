@@ -70,6 +70,7 @@
     "test:playground:production-plugin-driver-positive-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverPositiveProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-release-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReleaseOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-release-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverReleaseProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-mutation-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverMutationProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-proof-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:plugin-atomic-install": "node ./scripts/playground/plugin-atomic-install-smoke.mjs",
     "test:playground:db-journal-idempotency": "node ./scripts/playground/db-journal-idempotency-smoke.mjs",

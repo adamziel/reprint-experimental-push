@@ -510,6 +510,42 @@ test('scenario resolver accepts bundle-aligned driver mode aliases without kebab
   );
 });
 
+test('scenario resolver accepts exact kebab-case mutation proof aliases', () => {
+  const mutationProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-mutation-proof',
+  );
+
+  assert.deepEqual(mutationProof.requestedScenarios, ['driver-release-proof']);
+  assert.equal(mutationProof.canonicalMode, 'driver-release-proof');
+  assert.equal(mutationProof.resolvedMode, 'driver-mutation-proof');
+  assert.deepEqual(
+    Array.from(mutationProof.selectedScenarios).sort(),
+    [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ].sort(),
+  );
+
+  const mutationProofOnly = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-mutation-proof-only',
+  );
+
+  assert.deepEqual(mutationProofOnly.requestedScenarios, ['driver-release-proof']);
+  assert.equal(mutationProofOnly.canonicalMode, 'driver-release-proof');
+  assert.equal(mutationProofOnly.resolvedMode, 'driver-mutation-proof-only');
+  assert.deepEqual(
+    Array.from(mutationProofOnly.selectedScenarios).sort(),
+    [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ].sort(),
+  );
+});
+
 test('scenario resolver accepts bundle-aligned driver mode names without only-suffix translation', () => {
   const releaseProof = resolveProductionPluginPackageScenarios(
     [],
@@ -611,10 +647,13 @@ test('scenario resolver exports the shared runtime mode aliases for each canonic
     'driverVerifierOnly',
   ]);
   assert.deepEqual(modeAliasesByCanonicalMode['driver-release-proof'], [
+    'driver-mutation-proof',
+    'driver-mutation-proof-only',
     'driver-release-only',
     'driver-release-proof',
     'driver-release-proof-only',
     'driverMutationProof',
+    'driverMutationProofOnly',
     'driverReleaseOnly',
     'driverReleaseProof',
     'driverReleaseProofOnly',

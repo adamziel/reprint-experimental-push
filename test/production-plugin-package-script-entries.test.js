@@ -372,6 +372,13 @@ test('package scripts pin the bounded plugin-driver release-proof-only mode entr
   );
 });
 
+test('package scripts pin the bounded plugin-driver mutation-proof-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-mutation-proof-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverMutationProofOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver proof-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-proof-only'],
