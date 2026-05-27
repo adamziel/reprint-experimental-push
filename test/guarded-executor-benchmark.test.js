@@ -1923,18 +1923,20 @@ test('guarded benchmark surfaces plugin-install finalize and commit-after-pause 
 test('guarded benchmark surfaces package-hash plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const packageHashPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-dependency-checks',
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize',
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
+      'compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause-and-backpressure',
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-dependency-checks',
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize',
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-finalize-after-pause-and-backpressure',
-        'compressed-remote-index-and-cached-package-hash-skips-plugin-install-writeback',
-      ].includes(entry.id))
+    packageHashPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2022,6 +2024,10 @@ test('guarded benchmark surfaces package-hash plugin-install blockers at runtime
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(packageHashPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 7 },
+  ]);
 });
 
 test('guarded benchmark surfaces package-cache plugin-install blockers at runtime', () => {
@@ -2266,16 +2272,18 @@ test('guarded benchmark surfaces dependency-graph plugin-install blockers at run
 test('guarded benchmark surfaces chunk-receipts plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const chunkReceiptsPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize',
+      'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback',
+      'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize',
-        'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
-        'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback',
-        'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
-      ].includes(entry.id))
+    chunkReceiptsPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2335,6 +2343,10 @@ test('guarded benchmark surfaces chunk-receipts plugin-install blockers at runti
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(chunkReceiptsPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 5 },
+  ]);
 });
 
 test('guarded benchmark surfaces row-receipts plugin-install blockers at runtime', () => {
