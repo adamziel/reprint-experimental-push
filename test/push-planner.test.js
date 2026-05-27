@@ -53774,8 +53774,8 @@ test('blocks a file delete that would hide a live remote special-file descendant
   assert.equal(decisionFor(plan, 'file:about.php').decision, 'already-in-sync');
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
   assert.equal(decisionFor(plan, 'file:wp-content/plugins/forms/forms.php').decision, 'keep-remote');
-  assert.equal(evidence.class, 'file-conflict');
-  assert.equal(evidence.resourceKey, 'file:wp-content/uploads/archive/socket');
+  assert.equal(evidence.class, 'file-topology-conflict');
+  assert.equal(evidence.resourceKey, 'file:wp-content/uploads/archive');
   assert.equal(evidenceJson.includes('/tmp/archive-socket'), false);
   assert.equal(evidenceJson.includes('/tmp/live-archive-socket'), false);
   assert.equal(evidenceJson.includes('remote-only plugin drift'), false);
