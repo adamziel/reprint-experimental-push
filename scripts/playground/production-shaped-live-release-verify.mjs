@@ -28,7 +28,9 @@ const credentials = {
   username: releaseVerifyFixtureCredentials.username,
   applicationPassword: releaseVerifyFixtureCredentials.applicationPassword,
 };
-const explicitLiveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const configuredLiveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || '';
+const configuredRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitLiveSourceUrl = configuredLiveSourceUrl;
 const explicitApplyRevalidationSourceUrl = process.env.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL || '';
 const explicitLiveRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const explicitLiveLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
@@ -54,90 +56,130 @@ const innerVerifyTimeoutMs = packagedBoundaryRequested ? 180_000 : 90_000;
 const applyRevalidationTimeoutMs = packagedBoundaryRequested ? 90_000 : 75_000;
 const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
-if (packagedBoundaryRequested) {
-  const failedVerify = await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
-    return withPlaygroundServer('local-edited', localEditedFixturePath, async (localServer) => {
-      const verify = runCheckedReleaseVerify();
-      if (verify.status !== 0) {
-        return verify;
-      }
-      const applyRevalidation = runApplyRevalidationProof({
-        ...resolveApplyRevalidationAuthEnv({
-          sourceUrl: remoteServer.baseUrl,
-          localUrl: localServer.baseUrl,
-          packagedBoundaryRequested: true,
-        }),
-      }, { packagedBoundaryRequested: true });
-      emitCombinedReleaseProof(verify.proof, applyRevalidation, { packagedBoundaryRequested: true });
-      return null;
-    });
-  });
-  if (failedVerify) {
-    emitReleaseFailureAndExit(failedVerify);
-  }
-} else if (explicitCheckedBoundaryRequested) {
-  if (
-    explicitLiveSourceUrl
-    && !explicitAuthSessionSourceCommand
-    && (!explicitLiveUsername || !explicitLiveApplicationPassword)
-  ) {
-    emitMissingExplicitCredentialGateAndExit();
+const topologyBlocker = resolveReleaseTopologyBlocker();
+if (topologyBlocker) {
+  emitTopologyGateFailureAndExit(topologyBlocker);
+}
+
+if (
+  explicitLiveSourceUrl
+  && !explicitAuthSessionSourceCommand
+  && (!explicitLiveUsername || !explicitLiveApplicationPassword)
+) {
+  emitMissingExplicitCredentialGateAndExit();
+}
+
+const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
+  sourceUrl: explicitLiveSourceUrl,
+  remoteChangedUrl: explicitLiveRemoteChangedUrl,
+  localUrl: explicitLiveLocalUrl,
+  username: explicitLiveUsername,
+  applicationPassword: explicitLiveApplicationPassword,
+  authSessionSourceCommand: explicitAuthSessionSourceCommand,
+  fallbackUsername: credentials.username,
+  fallbackApplicationPassword: credentials.applicationPassword,
+  allowCredentialFallback: false,
+});
+const verify = runCheckedReleaseVerify(liveBoundaryEnv);
+if (verify.status !== 0 || verify.proof?.ok !== true) {
+  emitReleaseFailureAndExit(verify);
+}
+const applyRevalidation = runApplyRevalidationProof(resolveApplyRevalidationAuthEnv({
+  // Keep apply-time revalidation on an independently preserved base when the
+  // explicit wrapper provides one. The checked release verify leg can advance
+  // its source remote, which would otherwise collapse the follow-up
+  // apply-revalidation plan to zero mutations.
+  sourceUrl: explicitApplyRevalidationSourceUrl || explicitLiveSourceUrl,
+  remoteChangedUrl: explicitLiveRemoteChangedUrl,
+  localUrl: explicitLiveLocalUrl,
+  packagedBoundaryRequested: false,
+  username: explicitLiveUsername,
+  applicationPassword: explicitLiveApplicationPassword,
+  authSessionSourceCommand: explicitAuthSessionSourceCommand,
+}));
+emitCombinedReleaseProof(verify.proof, applyRevalidation);
+
+function resolveReleaseTopologyBlocker() {
+  if (!configuredLiveSourceUrl) {
+    return {
+      code: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      observed: 'missing-live-source',
+      reason: 'REPRINT_PUSH_SOURCE_URL is required before the release verifier can run preflight, dry-run, apply, or recovery.',
+      boundary: {
+        firstRemainingProductionBoundary: 'explicit live production-owned release boundary',
+        status: 'blocked',
+        verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+        liveSource: {
+          required: 'REPRINT_PUSH_SOURCE_URL',
+          observed: 'missing-live-source',
+          verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+        },
+      },
+    };
   }
 
-  const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
-    sourceUrl: explicitLiveSourceUrl,
-    remoteChangedUrl: explicitLiveRemoteChangedUrl,
-    localUrl: explicitLiveLocalUrl,
-    username: explicitLiveUsername,
-    applicationPassword: explicitLiveApplicationPassword,
-    authSessionSourceCommand: explicitAuthSessionSourceCommand,
-    fallbackUsername: credentials.username,
-    fallbackApplicationPassword: credentials.applicationPassword,
-    allowCredentialFallback: false,
-  });
-  const verify = runCheckedReleaseVerify(liveBoundaryEnv);
-  if (verify.status !== 0 || verify.proof?.ok !== true) {
-    emitReleaseFailureAndExit(verify);
+  if (configuredRemoteUrl && !sameReleaseTopologyUrl(configuredLiveSourceUrl, configuredRemoteUrl)) {
+    return {
+      code: 'REPRINT_PUSH_SOURCE_URL_MISMATCH',
+      observed: 'wrong-source-url',
+      reason: 'REPRINT_PUSH_REMOTE_URL must match REPRINT_PUSH_SOURCE_URL on the checked release path.',
+      boundary: {
+        firstRemainingProductionBoundary: 'source/local/changed production topology',
+        status: 'blocked',
+        verdict: 'REPRINT_PUSH_SOURCE_URL_MISMATCH',
+        liveSource: {
+          required: configuredLiveSourceUrl,
+          observed: configuredRemoteUrl,
+          verdict: 'REPRINT_PUSH_SOURCE_URL_MISMATCH',
+        },
+      },
+    };
   }
-  const applyRevalidation = runApplyRevalidationProof(resolveApplyRevalidationAuthEnv({
-    // Keep apply-time revalidation on an independently preserved base when the
-    // explicit wrapper provides one. The checked release verify leg can advance
-    // its source remote, which would otherwise collapse the follow-up
-    // apply-revalidation plan to zero mutations.
-    sourceUrl: explicitApplyRevalidationSourceUrl || explicitLiveSourceUrl,
-    remoteChangedUrl: explicitLiveRemoteChangedUrl,
-    localUrl: explicitLiveLocalUrl,
-    packagedBoundaryRequested: false,
-    username: explicitLiveUsername,
-    applicationPassword: explicitLiveApplicationPassword,
-    authSessionSourceCommand: explicitAuthSessionSourceCommand,
-  }));
-  emitCombinedReleaseProof(verify.proof, applyRevalidation);
-} else {
-  const failedVerify = await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
-    const verify = runCheckedReleaseVerify(
-      resolveCheckedLiveBoundaryEnv({
-        sourceUrl: remoteServer.baseUrl,
-        fallbackUsername: credentials.username,
-        fallbackApplicationPassword: credentials.applicationPassword,
-        allowCredentialFallback: true,
-      }),
-    );
-    if (verify.status !== 0) {
-      return verify;
-    }
-    const applyRevalidation = runApplyRevalidationProof(
-      resolveApplyRevalidationAuthEnv({
-        sourceUrl: remoteServer.baseUrl,
-        packagedBoundaryRequested: false,
-      }),
-    );
-    emitCombinedReleaseProof(verify.proof, applyRevalidation);
-    return null;
-  });
-  if (failedVerify) {
-    emitReleaseFailureAndExit(failedVerify);
+
+  if (packagedBoundaryRequested) {
+    return {
+      code: 'REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED',
+      observed: 'packaged-production-plugin-fallback',
+      reason: 'Packaged production-plugin fallback is support evidence only and cannot move release gates.',
+      boundary: {
+        firstRemainingProductionBoundary: 'explicit live production-owned release boundary',
+        status: 'blocked',
+        verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+        liveSource: {
+          required: 'non-packaged REPRINT_PUSH_SOURCE_URL',
+          observed: 'packaged-production-plugin-fallback',
+          verdict: 'REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED',
+        },
+      },
+    };
   }
+
+  if (!explicitLiveRemoteChangedUrl || !explicitLiveLocalUrl) {
+    return {
+      code: 'REPRINT_PUSH_TOPOLOGY_REQUIRED',
+      observed: !explicitLiveRemoteChangedUrl ? 'missing-remote-changed-source' : 'missing-local-edited-site',
+      reason: 'The release verifier requires explicit source, remote changed, and local edited URLs for GATE-3 topology proof.',
+      boundary: {
+        firstRemainingProductionBoundary: 'source/local/changed production topology',
+        status: 'blocked',
+        verdict: 'REPRINT_PUSH_TOPOLOGY_REQUIRED',
+        topology: {
+          required: [
+            'REPRINT_PUSH_SOURCE_URL',
+            'REPRINT_PUSH_REMOTE_CHANGED_URL',
+            'REPRINT_PUSH_LOCAL_URL',
+          ],
+          observed: {
+            sourceUrl: configuredLiveSourceUrl,
+            remoteChangedUrl: explicitLiveRemoteChangedUrl || '',
+            localUrl: explicitLiveLocalUrl || '',
+          },
+        },
+      },
+    };
+  }
+
+  return null;
 }
 
 function resolveApplyRevalidationAuthEnv({
@@ -255,11 +297,20 @@ function spawnApplyRevalidationProof(envOverrides = {}) {
 }
 
 function emitCombinedReleaseProof(verify, applyRevalidation, options = {}) {
+  const normalizedApplyRevalidation = normalizeApplyRevalidationProof(applyRevalidation, options);
+  const releaseMovement = resolveReleaseMovement(verify, normalizedApplyRevalidation, options);
   process.stdout.write(
     JSON.stringify(
       {
         ...verify,
-        applyRevalidation: normalizeApplyRevalidationProof(applyRevalidation, options),
+        applyRevalidation: normalizedApplyRevalidation,
+        topologyEvidence: buildReleaseTopologyEvidence({
+          verify,
+          applyRevalidation: normalizedApplyRevalidation,
+          options,
+          releaseMovement,
+        }),
+        releaseMovement,
       },
       null,
       2,
@@ -320,13 +371,258 @@ export function normalizeApplyRevalidationBoundary(boundary, { packagedBoundaryR
   return nextBoundary;
 }
 
+function resolveReleaseMovement(verify, applyRevalidation, { packagedBoundaryRequested = false } = {}) {
+  if (packagedBoundaryRequested) {
+    return {
+      allowed: false,
+      gates: '0/4',
+      reason: 'packaged production-plugin fallback is support evidence only',
+    };
+  }
+
+  const liveBoundaryOk = verify?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+    && verify?.boundary?.firstRemainingProductionBoundary === null;
+  const applyBoundaryOk = applyRevalidation?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+    && applyRevalidation?.boundary?.firstRemainingProductionBoundary === null;
+  const topologyComplete = Boolean(
+    configuredLiveSourceUrl
+    && explicitLiveRemoteChangedUrl
+    && explicitLiveLocalUrl,
+  );
+  const allowed = verify?.ok === true
+    && applyRevalidation?.ok === true
+    && liveBoundaryOk
+    && applyBoundaryOk
+    && topologyComplete;
+
+  return {
+    allowed,
+    gates: allowed ? 'candidate-for-review' : '0/4',
+    reason: allowed
+      ? 'checked live source/local/changed topology passed without packaged fallback'
+      : 'release movement requires live source/local/changed topology and LIVE_RELEASE_BOUNDARY_OK on verify and apply revalidation',
+  };
+}
+
+function buildReleaseTopologyEvidence({
+  verify = null,
+  applyRevalidation = null,
+  options = {},
+  releaseMovement = null,
+  blocker = null,
+} = {}) {
+  const sourceUrl = configuredLiveSourceUrl || verify?.topology?.sourceUrl || '';
+  const remoteChangedUrl = explicitLiveRemoteChangedUrl || verify?.topology?.remoteChanged || '';
+  const localEditedUrl = explicitLiveLocalUrl || verify?.topology?.localEdited || '';
+  const applySourceUrl = explicitApplyRevalidationSourceUrl || applyRevalidation?.topology?.sourceUrl || sourceUrl;
+  const packagedFallbackSource = Boolean(sourceUrl && (options.packagedBoundaryRequested || packagedBoundaryRequested));
+  const sourceKind = packagedFallbackSource
+    ? 'packaged plugin fallback'
+    : classifyServiceKind(sourceUrl);
+
+  return {
+    gate: 'GATE-3',
+    checkedCommand: 'timeout 300s npm run verify:release',
+    runner: {
+      script: 'scripts/playground/production-shaped-live-release-verify.mjs',
+      process: 'node',
+      routeProfile: 'production-shaped',
+      packagedFallbackAllowed: false,
+    },
+    ports: {
+      sandboxIngress: 8080,
+      source: urlPort(sourceUrl),
+      remoteChanged: urlPort(remoteChangedUrl),
+      localEdited: urlPort(localEditedUrl),
+      applyRevalidationSource: urlPort(applySourceUrl),
+    },
+    services: {
+      source: serviceEvidence('source', sourceUrl, sourceKind),
+      remoteChanged: serviceEvidence('remote changed/drift source', remoteChangedUrl, classifyServiceKind(remoteChangedUrl)),
+      localEdited: serviceEvidence('local edited site', localEditedUrl, classifyServiceKind(localEditedUrl)),
+      applyRevalidationSource: serviceEvidence(
+        'apply revalidation source',
+        applySourceUrl,
+        classifyServiceKind(applySourceUrl),
+      ),
+    },
+    topology: {
+      sourceUrl,
+      localEditedSite: localEditedUrl,
+      remoteChangedDriftSource: remoteChangedUrl,
+      sameRemoteIdentity: verify?.remoteSnapshotHashes?.sameRemoteIdentity ?? null,
+      sourceCommand: verify?.authSessionSource?.command || explicitAuthSessionSourceCommand || '',
+      sourceCommandReadbackUrl: verify?.authSessionSource?.sourceUrl || '',
+      packagedFallbackSource,
+      blocker: blocker?.code || null,
+    },
+    releaseMovement: releaseMovement || {
+      allowed: false,
+      gates: '0/4',
+      reason: 'release movement has not been evaluated',
+    },
+  };
+}
+
+function serviceEvidence(role, url, kind) {
+  return {
+    role,
+    url: url || null,
+    kind,
+    port: urlPort(url),
+    isPlayground: kind === 'Playground/local loopback WordPress',
+    isDocker: kind === 'Docker/local loopback WordPress',
+    isRealWp: kind === 'real WP over https',
+    isPackagedPlugin: kind === 'packaged plugin fallback',
+    isLiveSource: Boolean(url) && kind !== 'missing' && kind !== 'packaged plugin fallback',
+  };
+}
+
+function classifyServiceKind(url) {
+  if (!url) {
+    return 'missing';
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return 'invalid URL';
+  }
+
+  if (parsed.protocol === 'https:') {
+    return 'real WP over https';
+  }
+
+  if (isLoopbackHost(parsed.hostname)) {
+    return parsed.port === '8080'
+      ? 'Docker/local loopback WordPress'
+      : 'Playground/local loopback WordPress';
+  }
+
+  return 'real WP over http';
+}
+
+function urlPort(url) {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.port) {
+      return Number(parsed.port);
+    }
+    return parsed.protocol === 'https:' ? 443 : parsed.protocol === 'http:' ? 80 : null;
+  } catch {
+    return null;
+  }
+}
+
+function sameReleaseTopologyUrl(left, right) {
+  const normalizedLeft = normalizeReleaseTopologyUrl(left);
+  const normalizedRight = normalizeReleaseTopologyUrl(right);
+  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
+}
+
+function normalizeReleaseTopologyUrl(value) {
+  if (!value) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(value);
+    parsed.hash = '';
+    parsed.search = '';
+    if (!parsed.pathname.endsWith('/')) {
+      parsed.pathname += '/';
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+}
+
+function isLoopbackHost(hostname) {
+  return hostname === 'localhost'
+    || hostname === '127.0.0.1'
+    || hostname === '::1'
+    || hostname === '[::1]'
+    || hostname.startsWith('127.');
+}
+
 function emitReleaseFailureAndExit(verify) {
-  process.stdout.write(JSON.stringify(verify.proof, null, 2));
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason: verify.proof?.releaseProof?.code
+      || verify.proof?.boundary?.verdict
+      || 'checked release verifier failed closed',
+  };
+  process.stdout.write(JSON.stringify({
+    ...(verify.proof || {}),
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: verify.proof || null,
+      applyRevalidation: null,
+      options: {},
+      releaseMovement,
+    }),
+    releaseMovement,
+  }, null, 2));
   process.stdout.write('\n');
   process.exit(verify.status || 1);
 }
 
+function emitTopologyGateFailureAndExit(blocker) {
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason: blocker.reason,
+  };
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: configuredLiveSourceUrl,
+          remoteBase: configuredLiveSourceUrl || null,
+          remoteChanged: explicitLiveRemoteChangedUrl || null,
+          localEdited: explicitLiveLocalUrl || null,
+        },
+        boundary: blocker.boundary,
+        releaseProof: {
+          ok: false,
+          status: 1,
+          code: blocker.code,
+        },
+        topologyEvidence: buildReleaseTopologyEvidence({
+          verify: null,
+          applyRevalidation: null,
+          options: { packagedBoundaryRequested },
+          releaseMovement,
+          blocker,
+        }),
+        releaseMovement,
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  if (blocker.code === 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED') {
+    process.stderr.write(
+      'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires REPRINT_PUSH_SOURCE_URL; gates remain 0/4 and packaged fallback is not allowed for release movement.\n',
+    );
+  }
+  process.exit(1);
+}
+
 function emitMissingExplicitCredentialGateAndExit() {
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason: 'explicit live source URL is present but production credentials are missing',
+  };
   process.stdout.write(
     JSON.stringify(
       {
@@ -371,6 +667,12 @@ function emitMissingExplicitCredentialGateAndExit() {
           code: 'REPRINT_PUSH_SECRET_REQUIRED',
         },
         authSessionSource: null,
+        topologyEvidence: buildReleaseTopologyEvidence({
+          verify: null,
+          applyRevalidation: null,
+          releaseMovement,
+        }),
+        releaseMovement,
       },
       null,
       2,

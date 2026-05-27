@@ -105,6 +105,8 @@ let authSessionSource = loadAuthSessionSourceFromRuntimeEnvironment(
     sourceUrl: explicitReleaseVerifySourceUrl,
     remoteUrl: explicitReleaseVerifyRemoteChangedUrl,
     localUrl: explicitReleaseVerifyLocalUrl,
+    requireExactSourceUrl: requireProductionAuthSession && Boolean(explicitReleaseVerifySourceUrl),
+    checkedSourceUrl: explicitReleaseVerifySourceUrl,
   },
 );
 let packagedProductionPluginAuthSessionSource = null;

@@ -1714,6 +1714,12 @@ export function resolveAuthenticatedHttpPushSource({
       applicationPassword,
     };
   }
+  if (
+    sourceUrl
+    && !authenticatedHttpPushSourceUrlsMatch(sourceUrl, normalizedAuthSessionSource.sourceUrl)
+  ) {
+    throw new Error('Auth session source URL does not match checked sourceUrl');
+  }
 
   return {
     sourceUrl: normalizedAuthSessionSource.sourceUrl,
@@ -1778,6 +1784,31 @@ function isSupportedAuthenticatedHttpPushSourceUrl(sourceUrl) {
   }
 
   return parsed.protocol === 'http:' && isLoopbackHost(parsed.hostname);
+}
+
+function authenticatedHttpPushSourceUrlsMatch(expectedSourceUrl, observedSourceUrl) {
+  const expected = normalizeComparableAuthenticatedHttpPushSourceUrl(expectedSourceUrl);
+  const observed = normalizeComparableAuthenticatedHttpPushSourceUrl(observedSourceUrl);
+  return Boolean(expected && observed && expected === observed);
+}
+
+function normalizeComparableAuthenticatedHttpPushSourceUrl(sourceUrl) {
+  const normalized = normalizeAuthenticatedHttpPushSourceField(sourceUrl);
+  if (!normalized) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    parsed.hash = '';
+    parsed.search = '';
+    if (!parsed.pathname.endsWith('/')) {
+      parsed.pathname += '/';
+    }
+    return parsed.toString();
+  } catch {
+    return '';
+  }
 }
 
 export function authenticatedHttpClient({
