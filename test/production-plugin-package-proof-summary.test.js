@@ -5052,6 +5052,75 @@ test('plugin-driver proof summary narrows modeProof requests to the selected can
   assert.equal(summary.modeProof?.requestedConcreteScenariosSatisfied, true);
 });
 
+test('plugin-driver proof summary canonicalizes direct mode-only aliases before deriving modeProof requests', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driverReleaseProofOnly'],
+      selectedScenarios: new Set([
+        'driver-release-proof',
+        ...scenarioGroups['driver-release-proof'],
+      ]),
+      resolvedMode: 'driverReleaseProofOnly',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.deepEqual(summary.requestedScenarios, ['driverReleaseProofOnly']);
+  assert.equal(summary.modeProof?.mode, 'driverReleaseProofOnly');
+  assert.deepEqual(summary.modeProof?.requestedScenarios, ['driverReleaseProofOnly']);
+  assert.deepEqual(summary.modeProof?.requestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(summary.modeProof?.legacyRequestedBundles, ['driverReleaseProof']);
+  assert.deepEqual(summary.modeProof?.requestedBundleStatuses, {
+    driverReleaseProof: 'passed',
+  });
+  assert.equal(summary.modeProof?.requestedBundleStatus, 'passed');
+  assert.equal(summary.modeProof?.requestedSatisfied, true);
+  assert.equal(summary.modeProof?.requestedScenariosSatisfied, true);
+  assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
+});
+
 test('plugin-driver proof summary keeps modeProof satisfaction scoped to the selected canonical mode', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

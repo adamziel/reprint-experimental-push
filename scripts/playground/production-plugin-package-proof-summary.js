@@ -644,10 +644,28 @@ function requestedScenarioListsMatch(left, right) {
     return left === right;
   }
   return JSON.stringify(
-    Array.from(new Set(left.map(canonicalizeScenarioName))).sort(),
+    Array.from(new Set(left.map(normalizeRequestedScenarioName))).sort(),
   ) === JSON.stringify(
-    Array.from(new Set(right.map(canonicalizeScenarioName))).sort(),
+    Array.from(new Set(right.map(normalizeRequestedScenarioName))).sort(),
   );
+}
+
+function normalizeRequestedScenarioName(name) {
+  const canonicalScenarioName = canonicalizeScenarioName(name);
+  if (canonicalScenarioName !== name) {
+    return canonicalScenarioName;
+  }
+
+  try {
+    const resolved = resolveProductionPluginPackageScenarios([], undefined, name);
+    if (Array.isArray(resolved?.requestedScenarios) && resolved.requestedScenarios.length === 1) {
+      return resolved.requestedScenarios[0];
+    }
+  } catch {
+    // Ignore unknown mode aliases here and keep the original scenario name.
+  }
+
+  return canonicalScenarioName;
 }
 
 function selectedScenariosMatch(left, right) {
@@ -682,7 +700,7 @@ function normalizeSelectedScenarioNamesForComparison(selectedScenarios) {
 }
 
 function requestedScenarioAppliesToCanonicalMode(requestedScenario, canonicalMode) {
-  const canonicalRequestedScenario = canonicalizeScenarioName(requestedScenario);
+  const canonicalRequestedScenario = normalizeRequestedScenarioName(requestedScenario);
 
   if (canonicalRequestedScenario === canonicalMode) {
     return true;
@@ -1089,7 +1107,7 @@ export function buildProductionPluginPackageProofSummary(
     : new Set(normalizeSelectedScenarioNamesForComparison(normalizedSelectedScenarios));
   const canonicalRequestedScenarios = normalizedRequestedScenarios === null
     ? null
-    : Array.from(new Set(normalizedRequestedScenarios.map(canonicalizeScenarioName)));
+    : Array.from(new Set(normalizedRequestedScenarios.map(normalizeRequestedScenarioName)));
   const requestedBundleAliases = canonicalRequestedScenarios === null
     ? 'all'
     : canonicalRequestedScenarios.filter((scenario) => isBundleAliasScenario(scenario));
