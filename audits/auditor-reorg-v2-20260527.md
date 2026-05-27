@@ -693,10 +693,55 @@ consolidated head `8d9a53f88`; it exited `1` with
 `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and release movement `0/4`. This support
 branch refresh does not provide a real live `REPRINT_PUSH_SOURCE_URL` command.
 
+## Follow-Up Artifact-Only Check 18:43
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=refname --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/topology-verifier-v2-20260527
+git worktree add --detach /tmp/reprint-audit-consolidated-184324 \
+  origin/supervisor/release-boundary-consolidated-20260527
+cd /tmp/reprint-audit-consolidated-184324
+timeout 300s npm run verify:release
+```
+
+New artifact fact since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `9a5ce75a7` | Advanced to refresh auditor release boundary heads |
+| `origin/lane/auth-session-boundary-v2-20260527` | `cfca3e0ff` | Unchanged since the previous auditor update |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `d47e9f9bc` | Unchanged since the previous auditor update |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `83e07628d` | Unchanged since the previous auditor update |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `5b152e409` | Unchanged since the previous auditor update |
+| `origin/lane/topology-verifier-v2-20260527` | `605881b87` | Unchanged since the previous auditor update |
+
+The consolidated diff from `8d9a53f88` to `9a5ce75a7` is limited to
+`audits/auditor-reorg-v2-20260527.md` with 14 insertions and 11 deletions.
+
+The clean detached verifier run from `9a5ce75a7` exited `1` with
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `packagedFallbackAllowed: false`,
+source/local/drift/apply-revalidation ports as `null`, and release movement
+`allowed: false`, `gates: 0/4`.
+
+Package/critic/progress artifact evidence remains consistent: `verify:release`
+chains the topology proof, required live-release verifier, plugin-driver
+guards, and file-journal smoke; `audits/critic.md`, `progress.html`, and
+`docs/progress-log.md` still block production release claims.
+
+This is audit-refresh evidence only. It does not move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
-`8d9a53f88617ce613d739d1e111639c639ed8ca6` and has a coherent fail-closed
+`9a5ce75a728cb6db0c14ef6f84db0ec496921d7a` and has a coherent fail-closed
 `verify:release` command, but it correctly does not move any release gate
 without a real live `REPRINT_PUSH_SOURCE_URL`.
 
