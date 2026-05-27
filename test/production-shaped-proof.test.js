@@ -9523,6 +9523,33 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'missing auth identity userLogin',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userId: 7,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
       label: 'blank auth identity userLogin',
       body: {
         ok: true,
@@ -9535,6 +9562,89 @@ test('packaged release verifier readiness helper fails closed when signed prefli
         auth: {
           identity: {
             userLogin: '   ',
+            userId: 7,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'missing auth identity userId',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 'reprint_push_admin',
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'non-positive auth identity userId',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 'reprint_push_admin',
+            userId: 0,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'non-string auth identity userLogin',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 7,
             userId: 7,
           },
           session: {
@@ -14963,6 +15073,33 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'missing auth identity userLogin',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userId: 7,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
       label: 'blank auth identity userLogin',
       body: {
         ok: true,
@@ -14975,6 +15112,89 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         auth: {
           identity: {
             userLogin: '   ',
+            userId: 7,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'missing auth identity userId',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 'reprint_push_admin',
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'non-positive auth identity userId',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 'reprint_push_admin',
+            userId: 0,
+          },
+          session: {
+            id: 'session_123',
+            status: 'active',
+            type: 'production-auth-session',
+            expiresAt: '2099-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'session_123',
+          type: 'production-auth-session',
+        },
+      },
+    },
+    {
+      label: 'non-string auth identity userLogin',
+      body: {
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+        auth: {
+          identity: {
+            userLogin: 7,
             userId: 7,
           },
           session: {
