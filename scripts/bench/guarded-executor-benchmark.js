@@ -95,12 +95,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
     blockerRefs: Object.freeze([
+      'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
       'queue-pause-footprint-not-proven',
       'queue-pause-without-complete-receipt-cursor-pause-footprint',
       'queue-pause-without-terminal-receipt-cursor',
       'receipt-cursor-not-terminal',
       'staging-disk-headroom-not-visible',
       'staging-disk-headroom-visible-without-measurement',
+      'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -148,11 +150,13 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
     blockerRefs: Object.freeze([
+      'queue-pause-with-complete-footprint-without-memory-ceiling-match-visibility',
       'queue-pause-footprint-not-proven',
       'queue-pause-without-complete-receipt-cursor-pause-footprint',
       'queue-pause-without-terminal-receipt-cursor',
       'receipt-cursor-not-terminal',
       'staging-disk-headroom-visible-without-measurement',
+      'staging-disk-headroom-visible-without-memory-ceiling-match-visibility',
       'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
       'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
