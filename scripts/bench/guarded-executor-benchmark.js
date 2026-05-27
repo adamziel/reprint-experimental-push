@@ -33,7 +33,7 @@ const BENCHMARK_GRAPH_ROW_IDS = Object.freeze({
   termRelationship: 'object_id:10000|term_taxonomy_id:20001',
   termmeta: 'meta_id:20002',
 });
-const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
+export const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'postsParents',
     label: 'posts/parents',
