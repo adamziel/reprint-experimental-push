@@ -18083,22 +18083,42 @@ test('guarded benchmark carries non-terminal receipt-cursor blockers into reject
 
   assert.ok(blockers.includes('queue-pause-without-terminal-receipt-cursor'));
   assert.ok(blockers.includes('receipt-cursor-not-terminal'));
-  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
-    'queue-pause-without-terminal-receipt-cursor',
-    'receipt-cursor-not-terminal',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
-  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
-    'queue-pause-without-terminal-receipt-cursor',
-    'receipt-cursor-not-terminal',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
+  assert.deepEqual(
+    [releaseBundleBackpressure, stagingDiskReplay]
+      .filter(Boolean)
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-terminal-receipt-cursor',
+          'receipt-cursor-not-terminal',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-terminal-receipt-cursor',
+          'receipt-cursor-not-terminal',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+    ],
+  );
   assert.deepEqual(
     summarizeRejectedGates(
       [releaseBundleBackpressure, stagingDiskReplay].filter(Boolean),
