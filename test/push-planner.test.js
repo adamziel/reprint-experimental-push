@@ -48057,6 +48057,74 @@ test('allows local termmeta references to a term created by the same plan even w
   );
 });
 
+test('allows local termmeta references to a term created by the same plan even when a navigation menu taxonomy is blocked elsewhere and an unrelated remote attachment exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local tagged term',
+      slug: 'local-tagged-term',
+    },
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 9,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'Local term note',
+    },
+  };
+  const remote = baseSite();
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote attachment noise',
+    post_content: 'remote-private-local-termmeta-attachment-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomy = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const reference = termmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomy.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomy.surface, 'nav_menu');
+  assert.equal(termmetaMutation.changeKind, 'create');
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(reference.relationshipType, 'termmeta-term');
+  assert.equal(reference.targetResourceKey, termResourceKey);
+  assert.equal(
+    JSON.stringify(reference).includes('remote-private-local-termmeta-attachment-body'),
+    false,
+  );
+});
+
 test('allows an existing termmeta row to reference a term created by the same plan even when a navigation menu taxonomy is blocked elsewhere', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
