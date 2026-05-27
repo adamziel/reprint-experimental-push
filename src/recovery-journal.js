@@ -1046,8 +1046,13 @@ export function openProductionRecoveryJournal(options) {
   const existingClaim = hasExistingPlanEnvelope
     ? classifyRecoveryJournalClaims(existingJournal.records)
     : { status: 'none', activeClaimHash: null };
+  if (existingClaim.status === 'blocked') {
+    throw new Error(
+      `openProductionRecoveryJournal() refuses to reopen a claim-fenced production recovery journal with blocked persisted claim evidence: ${existingClaim.reason || 'unknown claim-state integrity failure'}.`,
+    );
+  }
   const reusingActiveClaim =
-    existingClaim.status !== 'blocked' && existingClaim.activeClaimHash === nextClaimHash;
+    existingClaim.activeClaimHash === nextClaimHash;
   const persistedArtifactRefs = reusingActiveClaim
     ? claimScopedArtifactRefs(existingJournal.records, existingClaim)
     : null;
