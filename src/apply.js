@@ -1733,6 +1733,9 @@ function checkedDurableJournalBoundaryProof(
     && inspectedRestartReadable
     && checkedBoundaryContractAligned
     && checkedBoundaryStaleClaimRejected;
+  const checkedBoundaryFencingBlocked = missingDependency.includes(
+    'fencing or lease ownership for the journal writer',
+  );
 
   return {
     scope,
@@ -1753,7 +1756,8 @@ function checkedDurableJournalBoundaryProof(
         : null,
       supportedSurface: inspectedSupportedSurface,
     },
-    writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+    writerLease: !checkedBoundaryFencingBlocked
+      && hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
       ? {
         ...inspected.writerLeaseContract,
         claimId: checkedBoundaryWriterClaimId,
@@ -1762,7 +1766,8 @@ function checkedDurableJournalBoundaryProof(
           && staleClaimLineageProven,
       }
       : null,
-    leaseFence: hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+    leaseFence: !checkedBoundaryFencingBlocked
+      && hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
       ? {
         ...inspected.leaseFenceContract,
         writerLease: {
