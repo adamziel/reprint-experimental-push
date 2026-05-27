@@ -1828,6 +1828,48 @@ test('plugin-driver proof summary reuses attached pluginDriverProof for direct s
   assert.ok(reusedProof.selectedScenarios.includes('core-package-routes'));
 });
 
+test('plugin-driver proof summary reuses attached pluginDriverProof for positive-proof aliases under the same canonical mode', () => {
+  const rawSummary = {
+    mode: 'driverPositiveProof',
+    canonicalMode: 'driver-positive-proof',
+    requestedScenarios: ['driver-positive-proof'],
+    selectedScenarios: [
+      'driver-positive-proof',
+      ...scenarioGroups['driver-positive-proof'],
+    ],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const originalProof = resolveProductionPluginPackagePluginDriverProof(rawSummary);
+  const reusedProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverPositiveProofOnly'],
+    selectedScenarios: ['driver-positive-proof-only'],
+    resolvedMode: 'driver-positive-proof-only',
+    canonicalMode: 'driver-positive-proof',
+  });
+
+  assert.equal(reusedProof, originalProof);
+  assert.equal(reusedProof, rawSummary.pluginDriverProof);
+  assert.equal(reusedProof.mode, 'driverPositiveProof');
+  assert.deepEqual(reusedProof.requestedScenarios, ['driver-positive-proof']);
+  assert.deepEqual(reusedProof.modeProof?.requestedBundles, ['driverPositiveProof']);
+});
+
 test('plugin-driver mode proof resolver rebuilds a stale attached top-level modeProof when the selected scenario scope changes', () => {
   const rawSummary = {
     mode: 'driverVerifierGuards',
