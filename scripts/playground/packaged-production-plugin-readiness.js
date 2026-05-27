@@ -233,7 +233,7 @@ export function packagedProductionPluginPreflightRetryable(preflight, context = 
       );
     }
 
-    if (context.snapshotProbe) {
+    if (context.snapshotProbe?.timedOut !== true && context.snapshotProbe) {
       return packagedProductionPluginReadinessBodyRetryable(
         context.snapshotProbe?.status,
         context.snapshotProbe?.body || '',

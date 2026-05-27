@@ -3453,6 +3453,33 @@ test('packaged preflight retryability ignores timed-out index overrides and fall
   );
 });
 
+test('packaged preflight retryability ignores timed-out snapshot overrides and falls back to startup context', () => {
+  const preflight = {
+    status: 401,
+    body: {
+      code: 'reprint_push_lab_auth_required',
+      message: 'Authenticated push routes require WordPress Application Password basic auth.',
+    },
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      snapshotProbe: { timedOut: true },
+      indexProbe: { timedOut: true },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, {
+      packagedStartup: true,
+      snapshotProbe: { timedOut: true },
+      indexProbe: { timedOut: true },
+    }),
+    false,
+  );
+});
+
 test('packaged preflight retryability lets a live index probe override stale packaged-startup hints', () => {
   const preflight = {
     status: 401,
