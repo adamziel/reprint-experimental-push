@@ -45618,6 +45618,48 @@ test('blocks unsupported special file entries even when the live remote already 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('blocks steady unsupported special file entries before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'file:wp-content/uploads/same-content-junction';
+  const base = baseSite();
+  base.files['wp-content/uploads/same-content-junction'] = { type: 'junction', target: '../shared/target' };
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.files['wp-content/uploads/same-content-junction'] = { type: 'junction', target: '../shared/target' };
+  local.files['about.php'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/same-content-junction'] = JSON.parse(JSON.stringify(base.files['wp-content/uploads/same-content-junction']));
+  remote.files['about.php'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.ok(plan.summary.decisions >= 2);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-special-file-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Special file entries are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(remote.files['about.php'].type, 'directory');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks converged unsupported special file entries while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'file:wp-content/uploads/converged-symlink';
   const base = baseSite();
