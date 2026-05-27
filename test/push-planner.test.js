@@ -19935,9 +19935,10 @@ test('blocks local term-relationship references to a same-plan created term-taxo
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.class, 'unsupported-attachment-resource');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(relationshipBlocker.unsupportedState, 'same-plan-reference');
   assert.equal(taxBlocker.class, 'unsupported-term-taxonomy-resource');
   assert.equal(taxBlocker.resourceKey, targetResourceKey);
   assert.equal(taxBlocker.unsupportedState, 'same-plan-reference');
@@ -25345,7 +25346,7 @@ test('blocks local term-relationship object references to a same-plan created at
     attachmentBlocker.reason,
     'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a term relationship attachment target that depends on it, and identity rewriting is not yet supported.',
   );
-  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.class, 'unsupported-attachment-resource');
   assert.equal(relationshipBlocker.resourceKey, resourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
@@ -25362,6 +25363,97 @@ test('blocks local term-relationship object references to a same-plan created at
   assert.equal(planJson.includes('local attachment relationship note'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
+test('blocks local term-relationship object references to a same-plan created attachment identity while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_term_relationships","object_id:8,term_taxonomy_id:5"]';
+  const targetResourceKey = 'row:["wp_posts","ID:8"]';
+  const base = baseSite();
+  base.db.wp_terms = {
+    'term_id:2': { term_id: 2, name: 'Base term', slug: 'base-term' },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 2,
+      taxonomy: 'category',
+      description: 'base taxonomy',
+      parent: 0,
+    },
+  };
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_term_relationships = {};
+
+  const local = baseSite();
+  local.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  local.db.wp_posts['ID:8'] = {
+    ID: 8,
+    post_title: 'local-created attachment relationship target restore',
+    post_content: 'local-created attachment relationship body restore',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  local.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  local.db.wp_term_relationships = {
+    'object_id:8,term_taxonomy_id:5': {
+      object_id: 8,
+      term_taxonomy_id: 5,
+      term_order: 1,
+      note: 'local attachment relationship restore note',
+    },
+  };
+  local.files['about.php'] = '<?php echo "shared restore";';
+
+  const remote = baseSite();
+  remote.db.wp_terms = JSON.parse(JSON.stringify(base.db.wp_terms));
+  remote.db.wp_posts = JSON.parse(JSON.stringify(base.db.wp_posts));
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_term_relationships = {};
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = relationshipBlocker.references[0];
+  const matchingRestore = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(attachmentBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(attachmentBlocker.resourceKey, targetResourceKey);
+  assert.equal(
+    attachmentBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a term relationship attachment target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(relationshipBlocker.class, 'unsupported-attachment-resource');
+  assert.equal(relationshipBlocker.resourceKey, resourceKey);
+  assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(reference.relationshipType, 'term-relationship-object');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetRemoteHash.length, 64);
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('local-created attachment relationship target restore'), false);
+  assert.equal(planJson.includes('local-created attachment relationship body restore'), false);
+  assert.equal(planJson.includes('local attachment relationship restore note'), false);
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(planJson.includes('remote-only plugin changes'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
 test('blocks local featured image references to a same-plan created attachment identity while preserving a matching independent edit and remote-only plugin changes', () => {
