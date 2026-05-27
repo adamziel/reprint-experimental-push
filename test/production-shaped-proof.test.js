@@ -2360,6 +2360,31 @@ test('production auth/session lifecycle summary helper requires a preserved acti
       },
       read: {
         step: 'apply',
+        type: 'production-auth-session',
+        status: 'rotated',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'apply',
         id: 'session-02',
         type: 'production-auth-session',
         status: 'active',
