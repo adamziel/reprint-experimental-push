@@ -1678,6 +1678,93 @@ test('plugin-driver proof summary attach helper does not null an unrelated top-l
   assert.equal(pluginDriverProof?.modeProof, null);
 });
 
+test('plugin-driver proof summary attach helper repairs selected-scenario drift on an attached verifier proof', () => {
+  const fullVerifierSelection = new Set(bundleSummaryGroups['driver-verifier-guards']);
+  const staleSelection = ['driver-delete-guard'];
+  const rawSummary = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: Array.from(fullVerifierSelection).sort(),
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    pluginDriverProof: {
+      mode: 'driverVerifierGuards',
+      canonicalMode: 'driver-verifier-guards',
+      requestedScenarios: ['driver-verifier-guards'],
+      requestedBundles: ['driverVerifierGuards'],
+      selectedScenarios: staleSelection,
+      modeProof: {
+        mode: 'driverVerifierGuards',
+        canonicalMode: 'driver-verifier-guards',
+        proofKey: 'driverVerifierGuards',
+        legacyProofKey: 'driverVerifierGuards',
+        requestedScenarios: ['driver-verifier-guards'],
+        requestedBundles: ['driverVerifierGuards'],
+        selectedScenarios: staleSelection,
+      },
+      ok: true,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: fullVerifierSelection,
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.deepEqual(
+    repairedProof.selectedScenarios,
+    Array.from(fullVerifierSelection).sort(),
+  );
+  assert.deepEqual(
+    repairedProof.modeProof?.selectedScenarios,
+    Array.from(fullVerifierSelection).sort(),
+  );
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',
