@@ -547,6 +547,86 @@ test('packaged preflight fails closed on broken session identity and envelope re
   }
 });
 
+test('packaged preflight fails closed on broken top-level auth envelopes even while startup hints stay retryable', () => {
+  const startupContext = {
+    packagedStartup: true,
+    indexProbe: {
+      status: 503,
+      body: JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }),
+    },
+    snapshotProbe: {
+      status: 404,
+      body: JSON.stringify({
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      }),
+    },
+  };
+
+  const terminalPreflights = [
+    {
+      label: 'missing top-level auth',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          session: {
+            id: 'session_123',
+            type: 'production-auth-session',
+          },
+        },
+      },
+    },
+    {
+      label: 'missing top-level auth session',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          auth: {},
+          session: {
+            id: 'session_123',
+            type: 'production-auth-session',
+          },
+        },
+      },
+    },
+  ];
+
+  for (const { label, preflight } of terminalPreflights) {
+    assert.equal(
+      packagedProductionPluginPreflightReady(preflight),
+      false,
+      `${label} should not be considered ready`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(preflight, startupContext),
+      false,
+      `${label} should fail closed instead of inheriting packaged startup hints`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(preflight, startupContext),
+      true,
+      `${label} should stay terminal even while startup hints remain retryable elsewhere`,
+    );
+  }
+});
+
 test('packaged startup runtimes preserve signed-preflight terminal context across index-terminal branches', () => {
   for (const scriptName of [
     'production-plugin-package-smoke.mjs',
