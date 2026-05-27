@@ -25,6 +25,20 @@ test('package scripts pin the bounded plugin-driver registration guard bundle en
   );
 });
 
+test('package scripts pin the bounded plugin-driver callback guard bundle entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-callback-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-callback-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver registration-shape guard bundle entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-shape-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-registration-shape-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver release proof entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-release-proof'],
@@ -85,5 +99,19 @@ test('package scripts pin the bounded plugin-driver positive-only mode entrypoin
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-positive-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-positive-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver release-proof-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-release-proof-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-release-proof-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver proof-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-proof-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-proof-only node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
