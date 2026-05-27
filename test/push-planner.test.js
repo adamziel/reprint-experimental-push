@@ -35861,10 +35861,17 @@ test('production durable journal adapter preserves remote artifact ownership on 
   const persistedRecoveryState = persisted.records.find(
     (record) => record.type === 'recovery-state' && record.state === 'blocked-recovery',
   );
+  const mutationObservedRecord = persisted.records.find(
+    (record) => record.type === 'mutation-observed',
+  );
 
   assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
   assert.equal(error.details.recovery.status, 'blocked-recovery');
   assert.ok(error.details.recovery.artifacts.remote, 'partial commit must keep remote artifacts');
+  assert.deepEqual(mutationObservedRecord.artifactRefs, {
+    journal: durableJournalPath,
+    remote: remoteArtifactPath,
+  });
   assert.equal(persistedRecoveryState.artifactRefs.remote, remoteArtifactPath);
   assert.equal(persistedRecoveryState.state, 'blocked-recovery');
 });

@@ -2220,6 +2220,7 @@ function recordDurableTargets(writer, remote, plan, journal = null) {
   const entryByMutationId = new Map(
     (journal?.entries || []).map((entry) => [entry.mutationId, entry]),
   );
+  const artifactRefs = durableOpenedArtifactRefs(writer);
 
   for (const mutation of plan.mutations || []) {
     const entry = entryByMutationId.get(mutation.id);
@@ -2233,7 +2234,7 @@ function recordDurableTargets(writer, remote, plan, journal = null) {
       beforeHash: entry?.beforeHash || mutation.remoteBeforeHash || resourceHash(remote, mutation.resource),
       afterHash: entry?.afterHash || digest(deserializeResourceValue(mutation.value)),
       state: 'planned',
-      artifactRefs: {},
+      artifactRefs,
     });
   }
 }
@@ -2266,10 +2267,12 @@ function recordDurableBoundary(writer, type, current, plan, payload = {}) {
   if (!writer) {
     return;
   }
+  const artifactRefs = durableOpenedArtifactRefs(writer, payload.artifactRefs);
   appendDurableEvent(writer, type, {
     planId: plan.id,
     observedHash: digest(current),
     ...payload,
+    artifactRefs,
   });
 }
 
@@ -2277,6 +2280,7 @@ function recordDurableMutationObserved(writer, plan, mutation, current, state) {
   if (!writer) {
     return;
   }
+  const artifactRefs = durableOpenedArtifactRefs(writer);
   appendDurableEvent(writer, 'mutation-observed', {
     planId: plan.id,
     mutationId: mutation.id,
@@ -2285,7 +2289,7 @@ function recordDurableMutationObserved(writer, plan, mutation, current, state) {
     afterHash: digest(deserializeResourceValue(mutation.value)),
     state,
     observedHash: resourceHash(current, mutation.resource),
-    artifactRefs: {},
+    artifactRefs,
   });
 }
 
@@ -2352,9 +2356,7 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     )
   );
   const missingJournalArtifactSurface = missingDependency.includes('restart-readable recovery artifact references')
-    || missingDependency.includes('restart-readable recovery artifact location')
-    || missingDependency.includes('journal-readable inspection records with sequence and type')
-    || missingDependency.includes('explicit journal ownership fencing');
+    || missingDependency.includes('restart-readable recovery artifact location');
   const missingRemoteArtifactOwnership = missingDependency.includes('restart-readable remote recovery artifact ownership');
   const missingRemoteArtifactRefs = missingDependency.includes('restart-readable recovery remote artifact references');
   const blockedRemoteArtifactHistoryInvalid = [
