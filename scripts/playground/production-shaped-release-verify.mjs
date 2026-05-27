@@ -15,6 +15,7 @@ import {
 } from '../../src/authenticated-http-push-client.js';
 import { digest } from '../../src/stable-json.js';
 import {
+  describeAuthSessionSourceMetadataDrift,
   loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestState,
 } from './auth-session-source.js';
@@ -405,6 +406,67 @@ if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSour
         releaseProof: {
           ok: false,
           status: 501,
+          code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+        authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+      },
+      null,
+      2,
+    ),
+  );
+  process.stdout.write('\n');
+  throw new ProofFailure();
+}
+
+const authSessionSourceMetadataDrift =
+  requireProductionAuthSession && authSessionSource?.ok
+    ? describeAuthSessionSourceMetadataDrift(authSessionSource)
+    : null;
+
+if (authSessionSourceMetadataDrift) {
+  process.stdout.write(
+    JSON.stringify(
+      {
+        ok: false,
+        topology: {
+          sourceUrl: liveSourceUrl,
+          remoteBase: null,
+          remoteChanged: null,
+          localEdited: null,
+        },
+        boundary: {
+          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          status: 'unimplemented',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          durableJournal: {
+            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+          },
+          authSession: {
+            field: authSessionSourceMetadataDrift.field,
+            required: authSessionSourceMetadataDrift.required,
+            observed: authSessionSourceMetadataDrift.observed,
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+          liveAuthSessionSource: {
+            ...liveAuthSessionSourceBlocker,
+            field: authSessionSourceMetadataDrift.field,
+            observed: authSessionSourceMetadataDrift.observed,
+          },
+        },
+        protocolExtension,
+        preflight: {
+          status: 0,
+          authSessionType: authSessionSourceMetadataDrift.observed,
+          routeProfile: 'production-shaped',
+          session: {
+            id: '',
+            type: authSessionSourceMetadataDrift.observed,
+          },
+        },
+        releaseProof: {
+          ok: false,
+          status: 409,
           code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
         },
         authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
