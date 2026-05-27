@@ -367,6 +367,19 @@ export function buildProductionPluginPackageProofSummary(
       deleteApplied: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? false,
     },
+    positiveProof: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-positive-proof'),
+      selected: selectedScenarios === null
+        || scenarioGroups['driver-positive-proof'].every((scenario) => selectedScenarios.has(scenario)),
+      ok: bundleResults.driverPositiveProof === 'passed',
+      status: bundleResults.driverPositiveProof,
+      routeStatus: scenarioResults.corePackageRoutes,
+      deleteStatus: scenarioResults.driverDeleteApply,
+      requestedStatus: requestedScenarioStatuses['driver-positive-proof'] ?? null,
+      requestedBundleStatus: requestedBundleStatuses.driverPositiveProof ?? null,
+    },
     releaseProof: {
       requested: normalizedRequestedScenarios === null
         ? true
@@ -400,6 +413,25 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       requestedStatus: requestedScenarioStatuses['driver-verifier-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverVerifierGuards ?? null,
+    },
+    registrationGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-registration-guards'),
+      selected: selectedScenarios === null
+        || scenarioGroups['driver-registration-guards'].every((scenario) => selectedScenarios.has(scenario)),
+      ok: bundleResults.driverRegistrationGuards === 'passed',
+      status: bundleResults.driverRegistrationGuards,
+      exportStatus: scenarioResults.driverMissingExportGuard,
+      applyStatus: scenarioResults.driverMissingApplyGuard,
+      validateStatus: scenarioResults.driverMissingValidateGuard,
+      missingNameStatus: scenarioResults.driverMissingNameGuard,
+      missingPluginOwnerStatus: scenarioResults.driverMissingPluginOwnerGuard,
+      missingTableStatus: scenarioResults.driverMissingTableGuard,
+      duplicateNameStatus: scenarioResults.driverDuplicateNameGuard,
+      duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
+      requestedStatus: requestedScenarioStatuses['driver-registration-guards'] ?? null,
+      requestedBundleStatus: requestedBundleStatuses.driverRegistrationGuards ?? null,
     },
     bundles: bundleResults,
     scenarios: scenarioResults,

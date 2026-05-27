@@ -578,6 +578,16 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
   assert.equal(summary.bundles.driverPositiveProof, 'passed');
   assert.equal(summary.bundles.driverVerifierGuards, 'skipped');
   assert.equal(summary.scenarios.driverMissingValidateGuard, 'missing');
+  assert.deepEqual(summary.positiveProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    routeStatus: 'passed',
+    deleteStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+  });
 });
 
 test('plugin-driver proof summary exposes bounded release-proof bundle status', () => {
@@ -1431,6 +1441,22 @@ test('plugin-driver proof summary exposes failed requested bundles directly', ()
     driverVerifierGuards: 'missing',
   });
   assert.deepEqual(summary.requestedConcreteScenarioStatuses, {});
+  assert.deepEqual(summary.registrationGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'passed',
+    duplicateTableStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+  });
 });
 
 test('plugin-driver proof summary fails requested bundles when the selected proof set omits bundle scenarios', () => {
@@ -1543,6 +1569,22 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
     requestedStatus: null,
     requestedBundleStatus: null,
   });
+  assert.deepEqual(summary.registrationGuards, {
+    requested: false,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'passed',
+    duplicateTableStatus: 'skipped',
+    requestedStatus: null,
+    requestedBundleStatus: null,
+  });
 });
 
 test('plugin-driver proof summary exposes missing requested release bundle state directly', () => {
@@ -1617,6 +1659,16 @@ test('plugin-driver proof summary exposes missing requested release bundle state
     deleteStatus: 'skipped',
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
+  });
+  assert.deepEqual(summary.positiveProof, {
+    requested: false,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    routeStatus: 'passed',
+    deleteStatus: 'skipped',
+    requestedStatus: null,
+    requestedBundleStatus: null,
   });
 });
 
