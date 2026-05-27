@@ -78,6 +78,51 @@ function buildBooleanGuardProof(summary, fieldName) {
   };
 }
 
+function buildReceiptGuardProofMap(summary) {
+  return {
+    deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
+    updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
+    planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
+    expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
+    identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
+    rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
+    revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
+  };
+}
+
+function buildRegistrationGuardProofMap(summary) {
+  return {
+    missingExport: buildBooleanGuardProof(summary?.driverExportGuard, 'missingExportRowsCallback'),
+    missingApply: buildBooleanGuardProof(summary?.driverApplyGuard, 'missingApplyRowCallback'),
+    missingValidate: buildBooleanGuardProof(summary?.driverValidateGuard, 'missingValidateMutationCallback'),
+    missingName: buildBooleanGuardProof(summary?.driverMissingNameGuard, 'missingDriverName'),
+    missingPluginOwner: buildBooleanGuardProof(summary?.driverPluginOwnerGuard, 'missingPluginOwner'),
+    missingTable: buildBooleanGuardProof(summary?.driverMissingTableGuard, 'missingTable'),
+    duplicateName: buildBooleanGuardProof(summary?.driverDuplicateNameGuard, 'duplicateDriverName'),
+    duplicateTable: buildBooleanGuardProof(summary?.driverDuplicateTableGuard, 'duplicateTable'),
+  };
+}
+
+function buildRegistrationCallbackGuardProofMap(summary) {
+  const registrationGuardProof = buildRegistrationGuardProofMap(summary);
+  return {
+    missingExport: registrationGuardProof.missingExport,
+    missingApply: registrationGuardProof.missingApply,
+    missingValidate: registrationGuardProof.missingValidate,
+  };
+}
+
+function buildRegistrationShapeGuardProofMap(summary) {
+  const registrationGuardProof = buildRegistrationGuardProofMap(summary);
+  return {
+    missingName: registrationGuardProof.missingName,
+    missingPluginOwner: registrationGuardProof.missingPluginOwner,
+    missingTable: registrationGuardProof.missingTable,
+    duplicateName: registrationGuardProof.duplicateName,
+    duplicateTable: registrationGuardProof.duplicateTable,
+  };
+}
+
 function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
   const receiptGuardScenarioMap = {
     deleteGuard: 'driver-delete-guard',
@@ -112,95 +157,54 @@ function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
   };
   const guardConfigs = {
     'driver-proof': {
-      scenarioMap: receiptGuardScenarioMap,
+      scenarioMap: {
+        ...receiptGuardScenarioMap,
+        ...registrationGuardScenarioMap,
+      },
       proofMap: {
-        deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
-        updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
-        planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
-        expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
-        identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
-        rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
-        revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
+        ...buildReceiptGuardProofMap(summary),
+        ...buildRegistrationGuardProofMap(summary),
       },
     },
     'driver-release-proof': {
       scenarioMap: receiptGuardScenarioMap,
-      proofMap: {
-        deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
-        updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
-        planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
-        expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
-        identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
-        rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
-        revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
-      },
+      proofMap: buildReceiptGuardProofMap(summary),
     },
     'driver-verifier-guards': {
-      scenarioMap: receiptGuardScenarioMap,
+      scenarioMap: {
+        ...receiptGuardScenarioMap,
+        ...registrationGuardScenarioMap,
+      },
       proofMap: {
-        deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
-        updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
-        planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
-        expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
-        identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
-        rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
-        revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
+        ...buildReceiptGuardProofMap(summary),
+        ...buildRegistrationGuardProofMap(summary),
       },
     },
     'driver-receipt-registration-guards': {
-      scenarioMap: receiptGuardScenarioMap,
+      scenarioMap: {
+        ...receiptGuardScenarioMap,
+        ...registrationGuardScenarioMap,
+      },
       proofMap: {
-        deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
-        updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
-        planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
-        expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
-        identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
-        rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
-        revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
+        ...buildReceiptGuardProofMap(summary),
+        ...buildRegistrationGuardProofMap(summary),
       },
     },
     'driver-receipt-guards': {
       scenarioMap: receiptGuardScenarioMap,
-      proofMap: {
-        deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
-        updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
-        planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
-        expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
-        identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
-        rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
-        revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
-      },
+      proofMap: buildReceiptGuardProofMap(summary),
     },
     'driver-registration-guards': {
       scenarioMap: registrationGuardScenarioMap,
-      proofMap: {
-        missingExport: buildBooleanGuardProof(summary?.driverExportGuard, 'missingExportRowsCallback'),
-        missingApply: buildBooleanGuardProof(summary?.driverApplyGuard, 'missingApplyRowCallback'),
-        missingValidate: buildBooleanGuardProof(summary?.driverValidateGuard, 'missingValidateMutationCallback'),
-        missingName: buildBooleanGuardProof(summary?.driverMissingNameGuard, 'missingDriverName'),
-        missingPluginOwner: buildBooleanGuardProof(summary?.driverPluginOwnerGuard, 'missingPluginOwner'),
-        missingTable: buildBooleanGuardProof(summary?.driverMissingTableGuard, 'missingTable'),
-        duplicateName: buildBooleanGuardProof(summary?.driverDuplicateNameGuard, 'duplicateDriverName'),
-        duplicateTable: buildBooleanGuardProof(summary?.driverDuplicateTableGuard, 'duplicateTable'),
-      },
+      proofMap: buildRegistrationGuardProofMap(summary),
     },
     'driver-callback-guards': {
       scenarioMap: registrationCallbackScenarioMap,
-      proofMap: {
-        missingExport: buildBooleanGuardProof(summary?.driverExportGuard, 'missingExportRowsCallback'),
-        missingApply: buildBooleanGuardProof(summary?.driverApplyGuard, 'missingApplyRowCallback'),
-        missingValidate: buildBooleanGuardProof(summary?.driverValidateGuard, 'missingValidateMutationCallback'),
-      },
+      proofMap: buildRegistrationCallbackGuardProofMap(summary),
     },
     'driver-registration-shape-guards': {
       scenarioMap: registrationShapeScenarioMap,
-      proofMap: {
-        missingName: buildBooleanGuardProof(summary?.driverMissingNameGuard, 'missingDriverName'),
-        missingPluginOwner: buildBooleanGuardProof(summary?.driverPluginOwnerGuard, 'missingPluginOwner'),
-        missingTable: buildBooleanGuardProof(summary?.driverMissingTableGuard, 'missingTable'),
-        duplicateName: buildBooleanGuardProof(summary?.driverDuplicateNameGuard, 'duplicateDriverName'),
-        duplicateTable: buildBooleanGuardProof(summary?.driverDuplicateTableGuard, 'duplicateTable'),
-      },
+      proofMap: buildRegistrationShapeGuardProofMap(summary),
     },
   };
 

@@ -2306,8 +2306,8 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
   assert.deepEqual(summary.modeProof?.guardProof, {
     ok: true,
     status: 'passed',
-    guardCount: 7,
-    passedGuardCount: 7,
+    guardCount: 15,
+    passedGuardCount: 15,
     failedGuardCount: 0,
     guardStatuses: {
       deleteGuard: 'passed',
@@ -2317,6 +2317,14 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
       identity: 'passed',
       rotatedCredential: 'passed',
       revokedCredential: 'passed',
+      missingExport: 'passed',
+      missingApply: 'passed',
+      missingValidate: 'passed',
+      missingName: 'passed',
+      missingPluginOwner: 'passed',
+      missingTable: 'passed',
+      duplicateName: 'passed',
+      duplicateTable: 'passed',
     },
     passedGuards: [
       'deleteGuard',
@@ -2326,6 +2334,14 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
       'identity',
       'rotatedCredential',
       'revokedCredential',
+      'missingExport',
+      'missingApply',
+      'missingValidate',
+      'missingName',
+      'missingPluginOwner',
+      'missingTable',
+      'duplicateName',
+      'duplicateTable',
     ],
     failedGuards: [],
     deleteGuard: {
@@ -2376,6 +2392,38 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
       rowRetainedAfterReject: true,
       payloadModeAfterReject: 'local-update',
       updatedMarkerAfterReject: 'local-update',
+    },
+    missingExport: {
+      status: 'passed',
+      observed: true,
+    },
+    missingApply: {
+      status: 'passed',
+      observed: true,
+    },
+    missingValidate: {
+      status: 'passed',
+      observed: true,
+    },
+    missingName: {
+      status: 'passed',
+      observed: true,
+    },
+    missingPluginOwner: {
+      status: 'passed',
+      observed: true,
+    },
+    missingTable: {
+      status: 'passed',
+      observed: true,
+    },
+    duplicateName: {
+      status: 'passed',
+      observed: true,
+    },
+    duplicateTable: {
+      status: 'passed',
+      observed: true,
     },
   });
 });
@@ -2461,7 +2509,7 @@ test('plugin-driver proof summary marks failing selected verifier guards directl
 
   assert.equal(summary.modeProof?.guardProof?.ok, false);
   assert.equal(summary.modeProof?.guardProof?.status, 'missing');
-  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 6);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 14);
   assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 1);
   assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
     deleteGuard: 'passed',
@@ -2471,12 +2519,136 @@ test('plugin-driver proof summary marks failing selected verifier guards directl
     identity: 'passed',
     rotatedCredential: 'passed',
     revokedCredential: 'passed',
+    missingExport: 'passed',
+    missingApply: 'passed',
+    missingValidate: 'passed',
+    missingName: 'passed',
+    missingPluginOwner: 'passed',
+    missingTable: 'passed',
+    duplicateName: 'passed',
+    duplicateTable: 'passed',
   });
   assert.deepEqual(summary.modeProof?.guardProof?.failedGuards, [
     'updateValidationGuard',
   ]);
   assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.status, 'missing');
   assert.equal(summary.modeProof?.guardProof?.updateValidationGuard.payloadModeAfterReject, 'local-delete');
+  assert.deepEqual(summary.modeProof?.guardProof?.missingValidate, {
+    status: 'passed',
+    observed: true,
+  });
+});
+
+test('plugin-driver proof summary carries combined receipt and registration guards on mixed modeProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-receipt-registration-guards'],
+      selectedScenarios: new Set([
+        'driver-receipt-registration-guards',
+        ...scenarioGroups['driver-receipt-registration-guards'],
+      ]),
+      resolvedMode: 'driverReceiptRegistrationOnly',
+      canonicalMode: 'driver-receipt-registration-guards',
+    },
+  );
+
+  assert.equal(summary.modeProof?.guardProof?.ok, true);
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 15);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 15);
+  assert.equal(summary.modeProof?.guardProof?.failedGuardCount, 0);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'passed',
+    planBinding: 'passed',
+    expiry: 'passed',
+    identity: 'passed',
+    rotatedCredential: 'passed',
+    revokedCredential: 'passed',
+    missingExport: 'passed',
+    missingApply: 'passed',
+    missingValidate: 'passed',
+    missingName: 'passed',
+    missingPluginOwner: 'passed',
+    missingTable: 'passed',
+    duplicateName: 'passed',
+    duplicateTable: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.missingApply, {
+    status: 'passed',
+    observed: true,
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.planBinding, {
+    status: 'passed',
+    rejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
 });
 
 test('plugin-driver proof summary carries bounded registration guard proof on modeProof', () => {
