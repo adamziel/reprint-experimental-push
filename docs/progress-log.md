@@ -3,15 +3,15 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 10:00:27
+# 2026-05-27 - Public Status Audit 10:08:43
 
-<a id="2026-05-27-public-status-audit-100027"></a>
+<a id="2026-05-27-public-status-audit-100843"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `8823b710de44ebdba3bf2e3a1c786f21f0d9a86e` visible on the public
+  head `da1e1233341d0a4b3d6440839cefd948eb7d11a9` visible on the public
   status surface for the active supervision cycle.
-- Release gates remain `0/4`. The latest reliable head accepts matching
-  runtime auth session sources in the checked live release verifier, but it
+- Release gates remain `0/4`. The latest reliable head keeps the checked live
+  release verifier aligned with matching runtime auth session sources, but it
   still stops short of the missing production-owned source mutation boundary
   on the real Reprint endpoint.
 - Critic `1087b9e7` and independent auditor `dba83193` still keep the release
