@@ -27295,6 +27295,70 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local post-parent references to a same-plan created nav menu item while preserving a matching independent file type swap and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:47"]';
+  const targetResourceKey = 'row:["wp_posts","ID:11"]';
+  const base = baseSite();
+  base.files['wp-content/uploads/banner'] = 'base banner bytes';
+  base.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Base child post',
+    post_content: 'Base child post content',
+    post_status: 'publish',
+    post_parent: 0,
+    post_type: 'post',
+  };
+
+  const local = baseSite();
+  local.files['wp-content/uploads/banner'] = { type: 'directory' };
+  local.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Local child post',
+    post_content: 'Local child post content',
+    post_status: 'publish',
+    post_parent: 11,
+    post_type: 'post',
+  };
+  local.db.wp_posts['ID:11'] = {
+    ID: 11,
+    post_title: 'Local same-plan nav menu item',
+    post_content: 'Local same-plan nav menu item body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+
+  const remote = baseSite();
+  remote.files['wp-content/uploads/banner'] = { type: 'directory' };
+  remote.db.wp_posts['ID:47'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:47']));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === targetResourceKey);
+  const matchingSwap = decisionFor(plan, 'file:wp-content/uploads/banner');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:11"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingSwap.decision, 'already-in-sync');
+  assert.equal(matchingSwap.change.localChange, 'type-change');
+  assert.equal(matchingSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan nav menu item'), false);
+  assert.equal(planJson.includes('Local child post content'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks local term-relationship object references to a same-plan created post identity while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"]';
   const targetResourceKey = 'row:["wp_posts","ID:7"]';
