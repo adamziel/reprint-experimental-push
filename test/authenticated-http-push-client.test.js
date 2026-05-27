@@ -5637,6 +5637,12 @@ test('production-shaped authenticated push preserves consumed claim identity fro
     });
 
     assert.equal(summary.ok, false);
+    assert.equal(summary.recoveryInspect.recovery.journal.kind, 'production-recovery-journal');
+    assert.equal(summary.recoveryInspect.recovery.journal.consumed, true);
+    assert.equal(summary.recoveryInspect.recovery.journal.consumedClaimId, claimId);
+    assert.equal(summary.recoveryInspect.recovery.journal.consumedClaimHash, claimHash);
+    assert.equal(summary.recoveryInspect.recovery.claim.activeClaimId, claimId);
+    assert.equal(summary.recoveryInspect.recovery.leaseFence.writerLease.claimId, claimId);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumed, true);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumedClaimId, claimId);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumedClaimHash, claimHash);

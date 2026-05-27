@@ -479,6 +479,9 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   if (recoveryInspectProductionJournal) {
+    summary.recoveryInspect.recovery.journal = recoveryInspectProductionJournal.journal;
+    summary.recoveryInspect.recovery.claim = recoveryInspectProductionJournal.claim;
+    summary.recoveryInspect.recovery.leaseFence = recoveryInspectProductionJournal.leaseFence;
     summary.recoveryInspect.recovery.productionJournal = recoveryInspectProductionJournal;
   }
   if ((summary.recoveryInspect.recovery.counts?.blockedUnknown || 0) > 0) {
