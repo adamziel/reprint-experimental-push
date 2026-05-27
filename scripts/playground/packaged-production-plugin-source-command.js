@@ -111,13 +111,14 @@ function buildRuntimePackagedProductionPluginSourceCommand({
   authSessionSource,
   authSessionSourceCommand,
 }) {
+  const sourceUrl = normalizeSupportedAuthSessionSourceUrl(authSessionSource?.sourceUrl);
   const username = typeof authSessionSource?.username === 'string'
     ? authSessionSource.username
     : '';
   const applicationPassword = typeof authSessionSource?.applicationPassword === 'string'
     ? authSessionSource.applicationPassword
     : '';
-  if (!runtimeSourceUrl || !username || !applicationPassword) {
+  if (!runtimeSourceUrl || !sourceUrl || !username || !applicationPassword) {
     return authSessionSourceCommand || '';
   }
 

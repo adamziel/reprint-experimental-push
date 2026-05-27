@@ -2833,6 +2833,38 @@ test('packaged production plugin runtime source binding preserves the prior comm
   );
 });
 
+test('packaged production plugin runtime source binding preserves the prior command when auth/session source URLs are malformed strings', () => {
+  const staleCommand = resolvePackagedProductionPluginSourceCommand({
+    sourceUrl: 'http://127.0.0.1:8080',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+
+  assert.deepEqual(
+    bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: ' http://127.0.0.1:8080 ',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+      authSessionSourceCommand: staleCommand,
+      runtimeSourceUrl: 'http://127.0.0.1:49152',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSource: {
+        ok: true,
+        sourceUrl: 'http://127.0.0.1:49152',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+      },
+      authSessionSourceCommand: staleCommand,
+    },
+  );
+});
+
 test('packaged production plugin runtime source binding preserves the prior command when auth/session credentials are non-strings', () => {
   const staleCommand = resolvePackagedProductionPluginSourceCommand({
     sourceUrl: 'http://127.0.0.1:8080',
