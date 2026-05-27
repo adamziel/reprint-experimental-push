@@ -1482,6 +1482,13 @@ function surfaceProductionClaimIdentity(inspected, inspectedClaimState) {
     return { valid: false, claimId: null };
   }
 
+  if (
+    inspectedClaimState
+    && inspectedClaimState.status !== 'none'
+  ) {
+    return { valid: false, claimId: null };
+  }
+
   const surfacedClaimIds = [
     hasValidProductionLeaseIdentity(inspectedClaimState?.activeClaimLease)
       ? inspectedClaimState.activeClaimLease.id

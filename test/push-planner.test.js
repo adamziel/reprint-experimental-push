@@ -27214,6 +27214,56 @@ test('production recovery support report fails closed when inspected claimId div
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report fails closed when inspected claim records omit a surfaced top-level claimId', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const claimId = 'inspected-omitted-claim-id';
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId, epoch: 3 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-inspected-omitted-claim-id' },
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-inspected-omitted-claim-id',
+    state: 'opened',
+    observedHash: 'hash-inspected-omitted-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const writerWithoutSurfacedInspectedClaimId = {
+    ...journal,
+    claimId,
+    inspect() {
+      const inspected = {
+        ...journal.inspect(),
+      };
+      delete inspected.claimId;
+      return inspected;
+    },
+  };
+
+  const report = productionRecoverySupportReport(writerWithoutSurfacedInspectedClaimId);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report fails closed when the persisted claim omits its lease identity', () => {
   const claimId = 'lease-without-persisted-claim-lease';
   const claimHash = digest({ recoveryJournalClaim: claimId });
