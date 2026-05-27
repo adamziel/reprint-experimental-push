@@ -17206,13 +17206,18 @@ test('guarded benchmark carries hidden memory-headroom visibility blockers into 
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
   const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
-    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
-    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+    'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
   ].includes(entry.id));
   const releaseBundleBackpressure = details.rejectedFastPaths.find(
     (entry) =>
@@ -17235,6 +17240,16 @@ test('guarded benchmark carries hidden memory-headroom visibility blockers into 
       }))
       .sort((left, right) => left.id.localeCompare(right.id)),
     [
+      {
+        id: 'cached-receipt-cursor-and-staging-disk-headroom-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
       {
         id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
@@ -17266,7 +17281,22 @@ test('guarded benchmark carries hidden memory-headroom visibility blockers into 
         blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
       {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
+        blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
         id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
         blockerRefs: POST_PAUSE_HIDDEN_MEMORY_HEADROOM_RESOURCE_VISIBILITY_BLOCKER_REFS,
       },
