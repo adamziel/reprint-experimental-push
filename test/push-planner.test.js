@@ -50242,7 +50242,7 @@ test('blocks converged comments graph drift while preserving a matching independ
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:19"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:18"]';
   const base = baseSite();
   base.db.wp_comments = {
     'comment_ID:18': {
@@ -50291,7 +50291,7 @@ test('blocks steady unsupported comments graph rows before they can be treated a
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent edit and remote-only plugin removals', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:19"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:18"]';
   const base = baseSite();
   base.db.wp_comments = {
     'comment_ID:18': {
@@ -50340,7 +50340,7 @@ test('blocks steady unsupported comments graph rows before they can be treated a
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:20"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:19"]';
   const swapFileKey = 'file:wp-content/uploads/steady-unsupported-comment-cover';
   const base = baseSite();
   base.db.wp_comments = {
@@ -50391,7 +50391,7 @@ test('blocks steady unsupported comments graph rows before they can be treated a
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin changes', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:20"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:19"]';
   const swapFileKey = 'file:wp-content/uploads/steady-unsupported-comment-cover-drift';
   const base = baseSite();
   base.db.wp_comments = {
@@ -50442,7 +50442,7 @@ test('blocks steady unsupported comments graph rows before they can be treated a
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent restore and remote-only plugin removals', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:21"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:20"]';
   const matchingRestoreKey = 'file:wp-content/uploads/steady-unsupported-comment-restore.txt';
   const base = baseSite();
   delete base.files[matchingRestoreKey.slice('file:'.length)];
@@ -50494,7 +50494,7 @@ test('blocks steady unsupported comments graph rows before they can be treated a
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent restore and remote-only plugin changes', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:21"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:20"]';
   const matchingRestoreKey = 'file:wp-content/uploads/steady-unsupported-comment-restore-drift.txt';
   const base = baseSite();
   delete base.files[matchingRestoreKey.slice('file:'.length)];
@@ -50546,7 +50546,7 @@ test('blocks steady unsupported comments graph rows before they can be treated a
 });
 
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
-  const resourceKey = 'row:["wp_comments","comment_ID:22"]';
+  const resourceKey = 'row:["wp_comments","comment_ID:21"]';
   const matchingDeleteKey = 'file:wp-content/uploads/steady-unsupported-comment-delete.txt';
   const base = baseSite();
   base.files[matchingDeleteKey.slice('file:'.length)] = 'base steady unsupported comment delete bytes';
