@@ -15447,6 +15447,96 @@ test('allows an existing post row to reference a post created by the same plan w
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('allows an existing post row to reference a post created by the same plan while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:10"]';
+  const targetResourceKey = 'row:["wp_posts","ID:99"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  delete base.files[matchingRestoreResourceKey.slice('file:'.length)];
+  base.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'base-private-child-post',
+    post_content: 'base-private-child-body',
+    post_status: 'publish',
+    post_parent: 0,
+  };
+
+  const local = baseSite();
+  local.files[matchingRestoreResourceKey.slice('file:'.length)] = '<?php echo "shared restore";';
+  local.db.wp_posts['ID:10'] = {
+    ID: 10,
+    post_title: 'local-private-child-post',
+    post_content: 'local-private-child-body',
+    post_status: 'publish',
+    post_parent: 99,
+  };
+  local.db.wp_posts['ID:99'] = {
+    ID: 99,
+    post_title: 'local-private-parent-post',
+    post_content: 'local-private-parent-body',
+    post_status: 'publish',
+  };
+
+  const remote = baseSite();
+  remote.files[matchingRestoreResourceKey.slice('file:'.length)] = '<?php echo "shared restore";';
+  remote.db.wp_posts['ID:10'] = {
+    ...base.db.wp_posts['ID:10'],
+  };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const parentMutation = mutationFor(plan, targetResourceKey);
+  const childMutation = mutationFor(plan, resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = childMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(parentMutation.changeKind, 'create');
+  assert.equal(childMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(parentMutation) < plan.mutations.indexOf(childMutation),
+    'parent create must be ordered before dependent child update',
+  );
+  assert.deepEqual(childMutation.dependsOnMutationIds, [parentMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(childMutation.wordpressGraphReferences.length, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: childMutation.id,
+      sourceResourceKey: resourceKey,
+      relationshipKey: 'wp_posts.post_parent',
+      relationshipType: 'post-parent',
+      targetMutationId: parentMutation.id,
+      targetResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: parentMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.relationshipKey, 'wp_posts.post_parent');
+  assert.equal(reference.relationshipType, 'post-parent');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files[matchingRestoreResourceKey.slice('file:'.length)], '<?php echo "shared restore";');
+  assert.equal(result.site.db.wp_posts['ID:99'].post_title, 'local-private-parent-post');
+  assert.equal(result.site.db.wp_posts['ID:10'].post_parent, 99);
+  assert.equal(result.site.db.wp_posts['ID:10'].post_title, 'local-private-child-post');
+  assert.equal(Object.hasOwn(result.site.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(result.site.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('allows existing post and postmeta rows to reference the same post created by the plan while preserving remote-only plugin drift', () => {
   const parentResourceKey = 'row:["wp_posts","ID:99"]';
   const childResourceKey = 'row:["wp_posts","ID:10"]';
