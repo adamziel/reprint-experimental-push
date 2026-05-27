@@ -1389,6 +1389,7 @@ function summarizeRecoveryInspect(response) {
   }
 
   const journalState = recovery.journal?.integrity?.status
+    || recovery.productionJournal?.journal?.integrity?.status
     || (recovery.journalEvidence && typeof recovery.journalEvidence === 'object' ? 'ok' : undefined);
   const dbJournal = summarizeDbJournalBody(response.body, {
     status: response.status,
@@ -1418,18 +1419,33 @@ function recoveryInspectClaimsProductionRecoveryJournalSurface(recovery) {
     return false;
   }
 
+  const productionJournal = recovery?.productionJournal;
+
   return recovery?.journal?.kind === 'production-recovery-journal'
     || recovery?.journal?.productionAdapter === 'openProductionRecoveryJournal'
     || hasNonEmptyString(recovery?.journal?.claimHash)
     || hasNonEmptyString(recovery?.claim?.activeClaimHash)
-    || hasNonEmptyString(recovery?.leaseFence?.writerLease?.claimHash);
+    || hasNonEmptyString(recovery?.leaseFence?.writerLease?.claimHash)
+    || productionJournal?.journal?.kind === 'production-recovery-journal'
+    || productionJournal?.journal?.productionAdapter === 'openProductionRecoveryJournal'
+    || hasNonEmptyString(productionJournal?.journal?.claimHash)
+    || hasNonEmptyString(productionJournal?.claim?.activeClaimHash)
+    || hasNonEmptyString(productionJournal?.leaseFence?.writerLease?.claimHash);
 }
 
 function recoveryInspectProductionJournalInspection(recovery) {
+  const productionJournal = recovery?.productionJournal;
+
   return {
-    journal: recovery?.journal,
-    claim: recovery?.claim ?? recovery?.journal?.claim,
-    leaseFence: recovery?.leaseFence ?? recovery?.journal?.leaseFence,
+    journal: recovery?.journal ?? productionJournal?.journal,
+    claim: recovery?.claim
+      ?? recovery?.journal?.claim
+      ?? productionJournal?.claim
+      ?? productionJournal?.journal?.claim,
+    leaseFence: recovery?.leaseFence
+      ?? recovery?.journal?.leaseFence
+      ?? productionJournal?.leaseFence
+      ?? productionJournal?.journal?.leaseFence,
   };
 }
 
