@@ -473,6 +473,32 @@ test('packaged preflight fails closed on broken session identity and envelope re
       },
     },
     {
+      label: 'missing top-level session id',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          auth: {
+            session: {
+              id: 'session_123',
+              status: 'active',
+              type: 'production-auth-session',
+              expiresAt: '2099-01-01T00:00:00Z',
+            },
+          },
+          session: {
+            type: 'production-auth-session',
+          },
+        },
+      },
+    },
+    {
       label: 'mismatched auth and top-level session ids',
       preflight: {
         status: 200,
