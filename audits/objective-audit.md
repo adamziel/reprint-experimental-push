@@ -4,12 +4,13 @@
 
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 01:47:05 CEST (+0200)
+- Audit time: 2026-05-27 02:12:14 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
   - `origin/lane/reliable-executor` -> `dc3b07b9f1e2d91b08f8c081ba57df0d086b0823` (`Preserve checked journal fsync evidence`)
-  - `origin/lane/critic` -> `a89ea32575c0e2f17c9dd80e6037e284e871574d`
-  - `origin/lane/independent-auditor` -> `a84f5f5069d98b3c9eaa05dcf9b9c6c7330f001b`
-  - `origin/lane/progress-publisher` -> `2af2e2ba64c24c86a04cc7130bb73713b78bde71`
+  - `origin/lane/critic` -> `035e43d6f4d97a4f6c0364fc29c61a3ed9201730`
+  - `origin/lane/independent-auditor` -> `21806a71bddbe2ea28e82ad516d574247c1819f5`
+  - `origin/lane/progress-publisher` -> `6798f4267e61e779a1d8eeb0c1b99c056955ef73`
+  - `origin/main` -> `5dbc0b966e68d70d5d0d287d4f4458b40a8d2ae3`
 
 ## Evidence Table
 
