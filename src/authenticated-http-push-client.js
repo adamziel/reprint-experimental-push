@@ -184,6 +184,20 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const preflightInvalidIdentityField = requireProductionAuthSession
+    ? resolveInvalidObservedProductionAuthIdentityField(preflight)
+    : null;
+  if (preflightInvalidIdentityField) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      field: `auth.identity.${preflightInvalidIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${preflightInvalidIdentityField.label}`,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionEnvelopeId(preflight)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -433,6 +447,20 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(dryRun);
+  const dryRunInvalidIdentityField = requireProductionAuthSession
+    ? resolveInvalidObservedProductionAuthIdentityField(dryRun)
+    : null;
+  if (dryRunInvalidIdentityField) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      field: `auth.identity.${dryRunInvalidIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${dryRunInvalidIdentityField.label}`,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dryRun)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -624,6 +652,20 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(apply);
+  const applyInvalidIdentityField = requireProductionAuthSession
+    ? resolveInvalidObservedProductionAuthIdentityField(apply)
+    : null;
+  if (applyInvalidIdentityField) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      field: `auth.identity.${applyInvalidIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${applyInvalidIdentityField.label}`,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(apply)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -797,6 +839,20 @@ export async function runAuthenticatedHttpPush({
   }
   requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity
     || hasValidProductionAuthSessionCleanupEvidence(recoveryInspect);
+  const recoveryInspectInvalidIdentityField = requireProductionAuthSession
+    ? resolveInvalidObservedProductionAuthIdentityField(recoveryInspect)
+    : null;
+  if (recoveryInspectInvalidIdentityField) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      field: `auth.identity.${recoveryInspectInvalidIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${recoveryInspectInvalidIdentityField.label}`,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(recoveryInspect)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -996,6 +1052,20 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(replay);
+  const replayInvalidIdentityField = requireProductionAuthSession
+    ? resolveInvalidObservedProductionAuthIdentityField(replay)
+    : null;
+  if (replayInvalidIdentityField) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      field: `auth.identity.${replayInvalidIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${replayInvalidIdentityField.label}`,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(replay)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -1177,6 +1247,20 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(dbJournal);
+  const dbJournalInvalidIdentityField = requireProductionAuthSession
+    ? resolveInvalidObservedProductionAuthIdentityField(dbJournal)
+    : null;
+  if (dbJournalInvalidIdentityField) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      field: `auth.identity.${dbJournalInvalidIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${dbJournalInvalidIdentityField.label}`,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dbJournal)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -2047,8 +2131,29 @@ function describeAuthEnvelopeDrift(expected, response) {
   const body = response?.body || {};
   if (!body.auth) {
     return {
+      field: 'auth',
       required: expected.sessionType || 'auth-session',
       observed: 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const invalidObservedSessionField = resolveInvalidObservedAuthEnvelopeSessionField(body.auth?.session);
+  if (invalidObservedSessionField) {
+    return {
+      field: `auth.session.${invalidObservedSessionField.field}`,
+      required: 'string lifecycle fields',
+      observed: `invalid-${invalidObservedSessionField.label}`,
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    };
+  }
+
+  const invalidObservedIdentityField = resolveInvalidObservedAuthEnvelopeIdentityField(body.auth?.identity);
+  if (invalidObservedIdentityField) {
+    return {
+      field: `auth.identity.${invalidObservedIdentityField.field}`,
+      required: 'string auth identity fields',
+      observed: `invalid-${invalidObservedIdentityField.label}`,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     };
   }
@@ -2057,6 +2162,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedUserLogin = body.auth?.identity?.userLogin || 'missing';
   if (observedUserLogin !== expectedUserLogin) {
     return {
+      field: 'auth.identity.userLogin',
       required: expectedUserLogin,
       observed: observedUserLogin,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -2067,6 +2173,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionId = body.auth?.session?.id || 'missing';
   if (observedSessionId !== expectedSessionId) {
     return {
+      field: 'auth.session.id',
       required: expectedSessionId,
       observed: observedSessionId,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -2077,6 +2184,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionType = body.auth?.session?.type || 'missing';
   if (observedSessionType !== expectedSessionType) {
     return {
+      field: 'auth.session.type',
       required: expectedSessionType,
       observed: observedSessionType,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -2087,6 +2195,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionStatus = body.auth?.session?.status || 'missing';
   if (observedSessionStatus !== expectedSessionStatus) {
     return {
+      field: 'auth.session.status',
       required: expectedSessionStatus,
       observed: observedSessionStatus,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -2097,6 +2206,7 @@ function describeAuthEnvelopeDrift(expected, response) {
   const observedSessionExpiresAt = body.auth?.session?.expiresAt || 'missing';
   if (observedSessionExpiresAt !== expectedSessionExpiresAt) {
     return {
+      field: 'auth.session.expiresAt',
       required: expectedSessionExpiresAt,
       observed: observedSessionExpiresAt,
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -2155,6 +2265,60 @@ function hasMissingProductionAuthSessionEnvelopeId(response) {
   }
 
   return !(typeof session.id === 'string' && session.id.trim());
+}
+
+function resolveInvalidObservedProductionAuthIdentityField(response) {
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return null;
+  }
+
+  return resolveInvalidObservedAuthEnvelopeIdentityField(response?.body?.auth?.identity);
+}
+
+function resolveInvalidObservedAuthEnvelopeIdentityField(identity) {
+  if (!identity || typeof identity !== 'object') {
+    return null;
+  }
+
+  const observedUserLogin = identity.userLogin;
+  if (
+    observedUserLogin !== undefined
+    && observedUserLogin !== null
+    && !normalizeProductionAuthSessionLifecycleField(observedUserLogin)
+  ) {
+    return {
+      field: 'userLogin',
+      label: 'user-login',
+    };
+  }
+
+  return null;
+}
+
+function resolveInvalidObservedAuthEnvelopeSessionField(session) {
+  if (!session || typeof session !== 'object') {
+    return null;
+  }
+
+  const fieldChecks = [
+    ['id', 'id', normalizeProductionAuthSessionLifecycleId(session.id)],
+    ['type', 'type', normalizeProductionAuthSessionLifecycleField(session.type)],
+    ['status', 'status', normalizeProductionAuthSessionLifecycleField(session.status)],
+    ['expiresAt', 'expires-at', normalizeProductionAuthSessionLifecycleField(session.expiresAt)],
+  ];
+
+  for (const [field, label, normalized] of fieldChecks) {
+    const value = session[field];
+    if (value !== undefined && value !== null && !normalized) {
+      return {
+        field,
+        label,
+      };
+    }
+  }
+
+  return null;
 }
 
 function resolveProductionAuthSessionIdentityMismatch(expectedUserLogin, response) {
@@ -2284,8 +2448,9 @@ function resolveObservedProductionAuthSessionLifecycleDrift(response) {
   const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
   if (invalidIdentityField) {
     return {
+      field: `auth.session.${invalidIdentityField.field}`,
       required: 'string lifecycle fields',
-      observed: `invalid-${invalidIdentityField}`,
+      observed: `invalid-${invalidIdentityField.label}`,
     };
   }
 
@@ -2375,7 +2540,10 @@ function resolveInvalidProductionAuthSessionIdentityField(session) {
   }
 
   if (session.id !== undefined && session.id !== null && !normalizeProductionAuthSessionLifecycleId(session.id)) {
-    return 'id';
+    return {
+      field: 'id',
+      label: 'id',
+    };
   }
 
   const identityFields = [
@@ -2387,7 +2555,10 @@ function resolveInvalidProductionAuthSessionIdentityField(session) {
   for (const [field, label] of identityFields) {
     const value = session[field];
     if (value !== undefined && value !== null && !normalizeProductionAuthSessionLifecycleField(value)) {
-      return label;
+      return {
+        field,
+        label,
+      };
     }
   }
 
