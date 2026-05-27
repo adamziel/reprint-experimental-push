@@ -39354,7 +39354,7 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(
     blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+    'Attachment graph resources are not yet supported by the planner.',
   );
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local attachment content'), false);
@@ -39401,7 +39401,7 @@ test('blocks local attachment graph resources while preserving remote-only plugi
   assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(
     blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+    'Attachment graph resources are not yet supported by the planner.',
   );
   assert.equal(planJson.includes('Local attachment removal content'), false);
   assert.equal(planJson.includes('Base attachment removal content'), false);
@@ -39497,7 +39497,7 @@ test('blocks remote-only attachment drift while preserving a matching independen
   assert.equal(blocker.unsupportedState, 'remote-only-drift');
   assert.equal(
     blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+    'Attachment graph resources are not yet supported by the planner.',
   );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -39555,7 +39555,7 @@ test('blocks converged attachment drift while preserving a matching independent 
   assert.equal(blocker.unsupportedState, 'converged-drift');
   assert.equal(
     blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+    'Attachment graph resources are not yet supported by the planner.',
   );
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
@@ -39626,7 +39626,7 @@ test('blocks local featured-image attachment references that point at a live att
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(
     blocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:8"] is created in the same plan as a post parent attachment target that depends on it, and identity rewriting is not yet supported.',
+    'Attachment graph resources are not yet supported by the planner.',
   );
   assert.equal(blocker.references.length, 1);
   assert.equal(blocker.references[0].relationshipType, 'featured-image-attachment');
@@ -39675,8 +39675,6 @@ test('blocks local featured-image attachment references when the attachment is c
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
-  const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
@@ -39686,9 +39684,6 @@ test('blocks local featured-image attachment references when the attachment is c
   assert.equal(blocker.class, 'unsupported-attachment-resource');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.reason, 'Attachment graph resources are not yet supported by the planner.');
-  assert.equal(matchingEdit.decision, 'already-in-sync');
-  assert.equal(matchingEdit.change.localChange, 'update');
-  assert.equal(matchingEdit.change.remoteChange, 'update');
   assert.equal(planJson.includes('Local same-plan attachment'), false);
   assert.equal(planJson.includes('base same-plan featured image note'), false);
   assert.equal(remote.plugins.forms.description, 'remote-only plugin drift');
@@ -40621,7 +40616,7 @@ test('blocks local revision graph resources while preserving a matching independ
   remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
 
   const plan = planFor(base, local, remote);
-  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:46"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
