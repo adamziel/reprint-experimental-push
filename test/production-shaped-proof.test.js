@@ -889,6 +889,46 @@ test('production auth/session source loader fails closed when sourceUrl is not l
   });
 });
 
+test('production auth/session source loader accepts a non-local sourceUrl when it matches the explicit live sourceUrl', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+    {
+      allowedSourceUrl: 'https://example.com/push/',
+    },
+  );
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl: 'https://example.com/push',
+    username: 'reprint_push_admin',
+    applicationPassword: 'secret-value',
+  });
+});
+
+test('production auth/session source loader fails closed when a non-local sourceUrl does not match the explicit live sourceUrl', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+    {
+      allowedSourceUrl: 'https://example.com/other',
+    },
+  );
+
+  assert.deepEqual(source, {
+    ok: false,
+    error: 'Auth session source command must return a supported local sourceUrl or match the explicit live sourceUrl',
+  });
+});
+
 test('production auth/session source loader accepts local https and ipv6 loopback sourceUrl values', () => {
   const httpsLoopbackSource = loadAuthSessionSource(
     `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://127.0.0.1:8443/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,

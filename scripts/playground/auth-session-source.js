@@ -54,10 +54,10 @@ export function loadAuthSessionSource(
       error: 'Auth session source command must return sourceUrl',
     };
   }
-  if (!isSupportedAuthSessionSourceUrl(sourceUrl)) {
+  if (!isPermittedAuthSessionSourceUrl(sourceUrl, options.allowedSourceUrl)) {
     return {
       ok: false,
-      error: 'Auth session source command must return a supported local sourceUrl',
+      error: describeUnsupportedAuthSessionSourceUrl(options.allowedSourceUrl),
     };
   }
 
@@ -257,6 +257,48 @@ function normalizeAuthSessionSourceTimeout(timeout) {
   }
 
   return Math.max(1, Math.trunc(timeout));
+}
+
+function describeUnsupportedAuthSessionSourceUrl(allowedSourceUrl) {
+  return normalizeExplicitAllowedAuthSessionSourceUrl(allowedSourceUrl)
+    ? 'Auth session source command must return a supported local sourceUrl or match the explicit live sourceUrl'
+    : 'Auth session source command must return a supported local sourceUrl';
+}
+
+function isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrl) {
+  if (isSupportedAuthSessionSourceUrl(sourceUrl)) {
+    return true;
+  }
+
+  const normalizedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(sourceUrl);
+  const normalizedAllowedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(allowedSourceUrl);
+  return Boolean(
+    normalizedSourceUrl
+    && normalizedAllowedSourceUrl
+    && normalizedSourceUrl === normalizedAllowedSourceUrl,
+  );
+}
+
+function normalizeExplicitAllowedAuthSessionSourceUrl(value) {
+  const normalizedValue = normalizeAuthSessionSourceField(value);
+  if (!normalizedValue) {
+    return '';
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(normalizedValue);
+  } catch {
+    return '';
+  }
+
+  parsed.hash = '';
+  parsed.search = '';
+  if (!parsed.pathname.endsWith('/')) {
+    parsed.pathname += '/';
+  }
+
+  return parsed.toString();
 }
 
 function isSupportedAuthSessionSourceUrl(sourceUrl) {
