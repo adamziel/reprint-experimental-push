@@ -37696,6 +37696,56 @@ test('blocks steady unsupported revision rows before they can be treated as alre
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks steady unsupported revision rows before they can be treated as already in sync while preserving a matching independent delete and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:43"]';
+  const deleteFileKey = 'file:wp-content/uploads/steady-unsupported-revision-delete.txt';
+  const base = baseSite();
+  base.files[deleteFileKey.slice('file:'.length)] = 'base steady unsupported revision delete bytes';
+  base.db.wp_posts['ID:43'] = {
+    ID: 43,
+    post_title: 'Steady unsupported revision delete',
+    post_content: 'Steady unsupported revision delete content',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+
+  const local = baseSite();
+  local.db.wp_posts['ID:43'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:43']));
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:43'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:43']));
+  delete remote.files[deleteFileKey.slice('file:'.length)];
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingDelete = decisionFor(plan, deleteFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'unsupported-revision-resource');
+  assert.equal(blocker.resourceKind, 'revision');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported revision delete content'), false);
+  assert.equal(planJson.includes('base steady unsupported revision delete bytes'), false);
+  assert.equal(Object.hasOwn(remote.files, deleteFileKey.slice('file:'.length)), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks local revision graph resources while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:44"]';
   const base = baseSite();
