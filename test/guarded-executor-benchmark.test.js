@@ -17049,6 +17049,12 @@ test('guarded benchmark carries hidden memory-ceiling-match blockers into reject
     'queue-pause-without-consistent-receipt-cursor-slack',
     'queue-pause-without-memory-safe-receipt-cursor-slack',
   ]);
+  assert.deepEqual(
+    summarizeRejectedGates(
+      [releaseBundleBackpressure, stagingDiskReplay].filter(Boolean),
+    ),
+    [{ rejectedGate: 'recovery', count: 2 }],
+  );
 });
 
 test('guarded benchmark carries non-terminal receipt-cursor blockers into rejected fast-path summaries', () => {
@@ -17086,4 +17092,10 @@ test('guarded benchmark carries non-terminal receipt-cursor blockers into reject
     'queue-pause-without-consistent-receipt-cursor-slack',
     'queue-pause-without-memory-safe-receipt-cursor-slack',
   ]);
+  assert.deepEqual(
+    summarizeRejectedGates(
+      [releaseBundleBackpressure, stagingDiskReplay].filter(Boolean),
+    ),
+    [{ rejectedGate: 'recovery', count: 2 }],
+  );
 });
