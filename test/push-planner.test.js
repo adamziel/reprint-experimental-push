@@ -55922,6 +55922,106 @@ test('blocks an existing termmeta row when its same-plan term belongs to a nav m
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing termmeta row when its same-plan term belongs to a nav menu taxonomy while preserving a matching independent edit and remote-only plugin changes', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const matchingEditResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.db.wp_termmeta = {
+    'meta_id:12': {
+      ...base.db.wp_termmeta['meta_id:12'],
+    },
+  };
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+  const local = baseSite();
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local navigation term',
+      slug: 'local-navigation-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-navigation-term-note',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const taxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const termBlocker = plan.blockers.find((entry) => entry.resourceKey === termResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+  const blockerJson = JSON.stringify(blocker);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(termMutation, undefined);
+  assert.equal(taxonomyMutation, undefined);
+  assert.equal(termmetaMutation, undefined);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(taxonomyBlocker.class, 'unsupported-navigation-resource');
+  assert.equal(termBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(
+    blocker.reason,
+    `WordPress graph mutation ${termmetaResourceKey} references a same-plan target without a matching supported target create mutation.`,
+  );
+  assert.equal(blockerJson.includes('local-private-existing-navigation-term-note'), false);
+  assert.equal(blockerJson.includes('local-navigation-term'), false);
+  assert.equal(planJson.includes('shared about'), false);
+  assert.equal(planJson.includes('remote-only plugin change'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks local post GUID changes while preserving a matching independent file type swap and remote-only plugin changes', () => {
   const base = baseSite();
   base.db.wp_posts['ID:1'].guid = 'https://example.test/?p=1';
