@@ -2200,6 +2200,131 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
   }
 });
 
+test('packaged preflight startup context still fails closed for mismatched or incomplete signed preflight session identities', () => {
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+  const startupContext = {
+    packagedStartup: true,
+    indexProbe: {
+      status: 503,
+      body: JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }),
+    },
+    snapshotProbe: {
+      status: 404,
+      body: JSON.stringify({
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      }),
+    },
+  };
+  const identityCases = [
+    {
+      label: 'mismatched ids',
+      preflight: {
+        ...basePreflight,
+        body: {
+          ...basePreflight.body,
+          auth: {
+            ...basePreflight.body.auth,
+            session: {
+              ...basePreflight.body.auth.session,
+              id: 'session_456',
+            },
+          },
+        },
+      },
+    },
+    {
+      label: 'missing auth session id',
+      preflight: {
+        ...basePreflight,
+        body: {
+          ...basePreflight.body,
+          auth: {
+            ...basePreflight.body.auth,
+            session: {
+              status: 'active',
+              type: 'production-auth-session',
+              expiresAt: '2099-01-01T00:00:00Z',
+            },
+          },
+        },
+      },
+    },
+    {
+      label: 'non-string auth session id',
+      preflight: {
+        ...basePreflight,
+        body: {
+          ...basePreflight.body,
+          auth: {
+            ...basePreflight.body.auth,
+            session: {
+              ...basePreflight.body.auth.session,
+              id: 123,
+            },
+          },
+        },
+      },
+    },
+    {
+      label: 'non-string top-level session id',
+      preflight: {
+        ...basePreflight,
+        body: {
+          ...basePreflight.body,
+          session: {
+            id: 123,
+            type: 'production-auth-session',
+          },
+        },
+      },
+    },
+  ];
+
+  for (const { label, preflight } of identityCases) {
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(preflight, startupContext),
+      false,
+      `${label} should fail closed instead of inheriting packaged startup retryability`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(preflight, startupContext),
+      true,
+      `${label} should remain terminal even with packaged startup context`,
+    );
+  }
+});
+
 test('packaged server readiness fails closed for broken top-level auth envelopes', () => {
   const readySnapshot = {
     status: 200,
