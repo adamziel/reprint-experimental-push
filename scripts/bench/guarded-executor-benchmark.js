@@ -24,6 +24,10 @@ const PAYMENTS_PLUGIN = 'payments';
 const COMMERCE_MAIN_FILE = `wp-content/plugins/${COMMERCE_PLUGIN}/${COMMERCE_PLUGIN}.php`;
 const PAYMENTS_MAIN_FILE = `wp-content/plugins/${PAYMENTS_PLUGIN}/${PAYMENTS_PLUGIN}.php`;
 const ATOMIC_GROUP_ID = 'install-commerce-stack';
+const RECEIPT_LEDGER_BLOCKER_REFS = Object.freeze([
+  'receipt-ledger-kind-summary-not-proven',
+  'receipt-ledger-kind-summary-mismatch',
+]);
 
 export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
   unit: Object.freeze({
@@ -2746,7 +2750,16 @@ function rolloutRejectedFastPaths(blockers) {
 
   return ROLLOUT_REJECTED_FAST_PATH_SPECS.flatMap((spec) => {
     const matchedBlockers = spec.blockerRefs.filter((blocker) => blockerSet.has(blocker));
-    if (matchedBlockers.length === 0) {
+    const receiptLedgerBlockers = (
+      spec.id.includes('receipt-flush')
+      || spec.id.includes('row-receipts')
+      || spec.id.includes('row-batch-receipts')
+      || spec.id.includes('chunk-receipts')
+    )
+      ? RECEIPT_LEDGER_BLOCKER_REFS.filter((blocker) => blockerSet.has(blocker))
+      : [];
+    const matchedWithReceiptLedger = [...matchedBlockers, ...receiptLedgerBlockers];
+    if (matchedWithReceiptLedger.length === 0) {
       return [];
     }
 
@@ -2755,7 +2768,7 @@ function rolloutRejectedFastPaths(blockers) {
     return [{
       id: rejected.id,
       rejectedGate: rejected.rejectedGate,
-      blockerRefs: matchedBlockers,
+      blockerRefs: matchedWithReceiptLedger,
       proposal: rejected.proposal,
       violates: [...rejected.violates],
     }];

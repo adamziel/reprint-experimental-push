@@ -6954,6 +6954,45 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
 });
 
+test('guarded benchmark carries receipt-ledger blockers into receipt-driven rejected summaries', () => {
+  const report = smallBenchmark();
+  const tamperedLedger = clone(report);
+  tamperedLedger.evidence.journal.successReceiptKindLedgerComplete = false;
+
+  const tamperedLedgerDetails = productionThroughputDetails(tamperedLedger);
+  const tamperedLedgerReceiptFamilies = tamperedLedgerDetails.rejectedFastPaths.filter((entry) =>
+    entry.id.includes('receipt-flush')
+    || entry.id.includes('row-receipts')
+    || entry.id.includes('row-batch-receipts')
+    || entry.id.includes('chunk-receipts'),
+  );
+
+  assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('receipt-flush')));
+  assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('row-receipts')));
+  assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('row-batch-receipts')));
+  assert.ok(tamperedLedgerReceiptFamilies.some((entry) => entry.id.includes('chunk-receipts')));
+  assert.ok(
+    tamperedLedgerReceiptFamilies.every((entry) =>
+      entry.blockerRefs.includes('receipt-ledger-kind-summary-not-proven')),
+  );
+
+  const mismatchedLedger = clone(report);
+  mismatchedLedger.evidence.journal.successReceiptKindLedger.pop();
+
+  const mismatchedLedgerDetails = productionThroughputDetails(mismatchedLedger);
+  const mismatchedLedgerReceiptFamilies = mismatchedLedgerDetails.rejectedFastPaths.filter((entry) =>
+    entry.id.includes('receipt-flush')
+    || entry.id.includes('row-receipts')
+    || entry.id.includes('row-batch-receipts')
+    || entry.id.includes('chunk-receipts'),
+  );
+
+  assert.ok(
+    mismatchedLedgerReceiptFamilies.every((entry) =>
+      entry.blockerRefs.includes('receipt-ledger-kind-summary-mismatch')),
+  );
+});
+
 test('guarded benchmark carries non-kind-scoped receipt flush blockers into receipt-flush rollout summaries', () => {
   const report = smallBenchmark();
   const interleavedJournalKinds = clone(report);
