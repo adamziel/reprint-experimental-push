@@ -6006,6 +6006,49 @@ test('benchmark model rejects release-bundle and plugin-install shortcuts that t
   assert.match(pluginInstallShortcut.rejectedBecause, /cannot prove the dependency checks, row receipts, or atomic-group commit survived failure/);
 });
 
+test('benchmark model rejects queue, compression, and parallelism shortcuts that bypass durable recovery evidence', () => {
+  const model = buildBenchmarkModel();
+  const queueShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'queue-empty-means-complete',
+  );
+  const compressedBufferShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-buffer-acknowledges-chunks',
+  );
+  const compressedReceiptShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'compressed-chunk-receipts-complete-large-upload',
+  );
+  const unboundedParallelismShortcut = model.rejectedFastPaths.find(
+    (fastPath) => fastPath.id === 'unbounded-parallelism',
+  );
+
+  assert.ok(queueShortcut);
+  assert.equal(queueShortcut.rejectedGate, 'recovery');
+  assert.ok(queueShortcut.violates.includes('backpressure'));
+  assert.ok(queueShortcut.violates.includes('durable-progress'));
+  assert.match(queueShortcut.rejectedBecause, /empty queue is not proof/i);
+
+  assert.ok(compressedBufferShortcut);
+  assert.equal(compressedBufferShortcut.rejectedGate, 'recovery');
+  assert.ok(compressedBufferShortcut.violates.includes('compression'));
+  assert.ok(compressedBufferShortcut.violates.includes('chunk-receipts'));
+  assert.ok(compressedBufferShortcut.violates.includes('durable-progress'));
+  assert.match(compressedBufferShortcut.rejectedBecause, /does not replace per-chunk receipts/i);
+
+  assert.ok(compressedReceiptShortcut);
+  assert.equal(compressedReceiptShortcut.rejectedGate, 'recovery');
+  assert.ok(compressedReceiptShortcut.violates.includes('compression'));
+  assert.ok(compressedReceiptShortcut.violates.includes('chunk-receipts'));
+  assert.ok(compressedReceiptShortcut.violates.includes('live-preconditions'));
+  assert.ok(compressedReceiptShortcut.violates.includes('durable-progress'));
+  assert.match(compressedReceiptShortcut.rejectedBecause, /cannot prove the live compare, guarded publish/i);
+
+  assert.ok(unboundedParallelismShortcut);
+  assert.equal(unboundedParallelismShortcut.rejectedGate, 'recovery');
+  assert.ok(unboundedParallelismShortcut.violates.includes('backpressure'));
+  assert.ok(unboundedParallelismShortcut.violates.includes('durable-progress'));
+  assert.match(unboundedParallelismShortcut.rejectedBecause, /lose the evidence needed to resume or classify failure/i);
+});
+
 test('benchmark shape stays bounded for the current large fixtures', () => {
   const model = buildBenchmarkModel();
   const totalActions = model.schedules.reduce((sum, schedule) => sum + schedule.actions.length, 0);
