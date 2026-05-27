@@ -13006,6 +13006,7 @@ test('guarded benchmark keeps plugin-update backpressure shortcuts blocked when 
     'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
     'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
     'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
     'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
     'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
     'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
@@ -13055,6 +13056,11 @@ test('guarded benchmark keeps plugin-update backpressure shortcuts blocked when 
           'queue-pause-without-consistent-receipt-cursor-slack',
           'queue-pause-without-memory-safe-receipt-cursor-slack',
         ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
       },
       {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
@@ -13108,16 +13114,9 @@ test('guarded benchmark keeps plugin-update backpressure shortcuts blocked when 
       },
     ],
   );
-  assert.ok(
-    !pluginUpdateBackpressureRejectedFastPaths.some(
-      (entry) =>
-        entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
-    ),
-    'production-only row-batch plugin-update pause shortcut drops out once visible production capability evidence is present',
-  );
   assert.deepEqual(summarizeRejectedGates(pluginUpdateBackpressureRejectedFastPaths), [
     { rejectedGate: 'group', count: 3 },
-    { rejectedGate: 'recovery', count: 5 },
+    { rejectedGate: 'recovery', count: 6 },
   ]);
 });
 
