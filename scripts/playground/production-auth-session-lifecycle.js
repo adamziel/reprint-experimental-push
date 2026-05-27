@@ -820,7 +820,9 @@ function resolveMismatchedSummaryObservationSession(summary, issuedSessionId) {
     if (observationSessionId && observationSessionId !== issuedSessionId) {
       return {
         ok: false,
-        field: 'auth.session.rotated',
+        field: field === 'rotated' && observation.status === 'rotated'
+          ? 'auth.session.status'
+          : 'auth.session.rotated',
         required: 'preserved read',
         observed: 'rotated',
       };

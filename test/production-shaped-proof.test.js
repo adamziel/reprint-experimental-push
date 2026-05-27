@@ -5234,6 +5234,41 @@ test('production auth/session lifecycle summary fails closed when top-level summ
         expiresAt: '2099-01-01T00:00:00Z',
         preserved: true,
       },
+      rotated: {
+        step: 'journal',
+        id: 'session-02',
+        type: 'production-auth-session',
+        status: 'rotated',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+        preserved: true,
+      },
+    }),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary({
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
       cleanedUp: {
         step: 'cleanup',
         id: 'session-02',
