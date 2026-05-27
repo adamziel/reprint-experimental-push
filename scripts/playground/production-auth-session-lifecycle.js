@@ -572,6 +572,7 @@ function resolveInvalidAuthSessionIdentityField(observation) {
     ['type', 'type'],
     ['status', 'status'],
     ['expiresAt', 'expires-at'],
+    ['warning', 'warning'],
   ];
 
   for (const [field, label] of identityFields) {
@@ -625,6 +626,7 @@ function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
     ['expired', session.expired],
     ['rotated', session.rotated],
     ['preserved', session.preserved],
+    ['playgroundFallback', session.playgroundFallback],
   ];
 
   for (const [name, value] of lifecycleFlags) {
