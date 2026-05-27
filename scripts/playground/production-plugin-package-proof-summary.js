@@ -1179,6 +1179,9 @@ export function buildProductionPluginPackageProofSummary(
       failedScenarios: canonicalProof.failedScenarios ?? canonicalModeFailedScenarios,
       requestedStatus: canonicalProof.requestedStatus ?? null,
       requestedSatisfied: (canonicalProof.requestedStatus ?? null) === 'passed',
+      requestedScenariosSatisfied: proofSummary.requestedScenariosSatisfied,
+      requestedBundlesSatisfied: proofSummary.requestedBundlesSatisfied,
+      requestedConcreteScenariosSatisfied: proofSummary.requestedConcreteScenariosSatisfied,
       requestedBundleStatus: canonicalProof.requestedBundleStatus ?? null,
       requestedBundleStatuses: canonicalProof.requestedBundleStatuses ?? null,
     };
