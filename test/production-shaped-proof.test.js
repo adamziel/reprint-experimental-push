@@ -1267,6 +1267,34 @@ test('production-shaped release verify falls back past a malformed explicit live
   );
 });
 
+test('production-shaped release verify lets a required auth/session source override a malformed explicit live source URL when it matches a runtime candidate', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: ' https://invalid.example.test/push ',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('auth-session source metadata drift fails closed on production-source warnings', () => {
   assert.deepEqual(
     describeAuthSessionSourceMetadataDrift({
@@ -1636,6 +1664,40 @@ test('production-shaped release verify request state falls back past a malformed
       credentials: {
         username: 'trusted-runtime-username',
         password: 'trusted-runtime-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify request state lets a required auth/session source override a malformed explicit live source URL when it matches a runtime candidate', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: ' https://invalid.example.test/push ',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      credentials: {
+        username: 'reprint_push_admin',
+        password: 'reprint-push-admin-app-password',
       },
     },
   );
