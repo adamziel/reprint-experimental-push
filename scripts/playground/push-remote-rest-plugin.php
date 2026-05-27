@@ -25,6 +25,7 @@ require_once $reprint_push_lab_dir . '/push-db-journal-lib.php';
 
 const REPRINT_PUSH_LAB_REST_NAMESPACE = 'reprint-push-lab/v1';
 const REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE = 'reprint/v1';
+const REPRINT_PUSH_CHECKED_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 const REPRINT_PUSH_LAB_AUTH_SCOPE = 'reprint-push-lab:authenticated-http-push';
 const REPRINT_PUSH_LAB_AUTH_REQUEST_ATTRIBUTE = 'reprint_push_lab_auth';
 const REPRINT_PUSH_LAB_SIGNATURE_REQUEST_ATTRIBUTE = 'reprint_push_lab_signature';
@@ -562,6 +563,7 @@ function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $reques
             'ownsJournal' => true,
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
+            'supportedSurface' => REPRINT_PUSH_CHECKED_JOURNAL_SUPPORTED_SURFACE,
         ];
         $journal['writerLease'] = $writer_lease;
         $journal['leaseFence'] = [
@@ -3405,6 +3407,7 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
             'ownsJournal' => true,
             'restartReadable' => true,
             'productionAdapter' => 'wpdb-single-statement-cas',
+            'supportedSurface' => REPRINT_PUSH_CHECKED_JOURNAL_SUPPORTED_SURFACE,
         ];
         $db_journal['writerLease'] = $writer_lease;
         $db_journal['leaseFence'] = [

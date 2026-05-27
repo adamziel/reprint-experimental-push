@@ -4,6 +4,7 @@ import { digest } from './stable-json.js';
 import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
+const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
@@ -90,6 +91,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
+    && dbJournal?.ownership?.supportedSurface === checkedDbJournalSupportedSurface
     && durableJournalWriterLeaseMatchesBoundary(writerLease, productionAdapter, claim)
     && durableJournalWriterLeaseMatchesBoundary(nestedWriterLease, productionAdapter, claim)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'

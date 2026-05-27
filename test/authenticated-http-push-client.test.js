@@ -112,6 +112,7 @@ test('db journal proof requires stale claim rejection when explicitly requested'
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -149,6 +150,7 @@ test('db journal proof fails closed for fixture-scoped checked contracts', () =>
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
@@ -2498,6 +2500,7 @@ test('production-shaped authenticated push can prove packaged stale-claim retry 
             ownsJournal: true,
             restartReadable: true,
             productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
           },
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
@@ -4848,6 +4851,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
             ownsJournal: true,
             restartReadable: true,
             productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
           },
           writerLease: {
             strategy: 'claim-fenced-single-writer',
@@ -4921,6 +4925,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     });
     assert.deepEqual(summary.dbJournal?.writerLease, {
       strategy: 'claim-fenced-single-writer',

@@ -3732,7 +3732,7 @@ maybeTest('production-shaped release verify reports trusted recovery journal sta
   assertSpawnCompletedWithoutSpawnError(proof, 'packaged recovery journal release verify', packagedReleaseVerifyInnerTimeoutMs);
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journalState": "ok"/);
-  assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"/);
+  assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"[\s\S]*"supportedSurface": "claim-fenced-restart-readable"/);
   assert.match(proof.stdout, /"durableJournal": \{[\s\S]*"staleClaimRejected": true/);
   assert.match(
     proof.stdout,
@@ -4110,7 +4110,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         );
         assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
         assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
-        assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"/);
+        assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"[\s\S]*"supportedSurface": "claim-fenced-restart-readable"/);
         assert.match(proof.stdout, /"ownsJournal": true/);
         assert.match(proof.stdout, /"restartReadable": true/);
         assert.match(proof.stdout, /"staleClaimRejected": true/);

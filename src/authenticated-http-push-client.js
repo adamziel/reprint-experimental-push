@@ -25,6 +25,7 @@ const authSignatureHeader = 'X-Auth-Signature';
 const pushSignatureHeader = 'X-Reprint-Push-Signature';
 const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
+const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
 const retryableReadOnlyGetPaths = new Set(Object.values(routeProfiles).flatMap((profile) => [
   `${profile.namespacePath}/preflight`,
   `${profile.namespacePath}/snapshot`,
@@ -1892,7 +1893,8 @@ function dbJournalOwnershipIsTrusted(ownership) {
   return ownership?.ownsJournal === true
     && ownership?.restartReadable === true
     && typeof ownership?.productionAdapter === 'string'
-    && ownership.productionAdapter.trim().length > 0;
+    && ownership.productionAdapter.trim().length > 0
+    && ownership?.supportedSurface === checkedDbJournalSupportedSurface;
 }
 
 function dbJournalLeaseFenceIsTrusted(leaseFence, options = {}) {
@@ -1940,6 +1942,7 @@ function summarizeDbJournalOwnership(dbJournal) {
     ownsJournal: ownership.ownsJournal === true,
     restartReadable: ownership.restartReadable === true,
     productionAdapter: ownership.productionAdapter || null,
+    supportedSurface: ownership.supportedSurface || null,
   };
 }
 
