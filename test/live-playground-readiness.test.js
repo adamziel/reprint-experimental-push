@@ -2006,6 +2006,60 @@ test('packaged server readiness fails closed for mismatched or incomplete signed
         },
       },
     },
+    {
+      label: 'non-string auth session id',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          auth: {
+            session: {
+              id: 123,
+              status: 'active',
+              type: 'production-auth-session',
+              expiresAt: '2099-01-01T00:00:00Z',
+            },
+          },
+          session: {
+            id: 'session_123',
+            type: 'production-auth-session',
+          },
+        },
+      },
+    },
+    {
+      label: 'non-string top-level session id',
+      preflight: {
+        status: 200,
+        body: {
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+          auth: {
+            session: {
+              id: 'session_123',
+              status: 'active',
+              type: 'production-auth-session',
+              expiresAt: '2099-01-01T00:00:00Z',
+            },
+          },
+          session: {
+            id: 123,
+            type: 'production-auth-session',
+          },
+        },
+      },
+    },
   ];
 
   for (const { label, preflight } of identityCases) {
