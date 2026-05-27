@@ -112,6 +112,13 @@ test('package scripts pin the bounded plugin-driver release proof entrypoint', (
   );
 });
 
+test('package scripts pin the bounded plugin-driver mutation proof entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-mutation-proof'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverMutationProof node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver delete guard entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-delete-guard'],

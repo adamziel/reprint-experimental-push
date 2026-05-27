@@ -77,7 +77,7 @@ test('scenario resolver preserves requested aliases alongside expanded scenarios
 
 test('scenario resolver accepts bundle-aligned driver proof aliases from the summary contract', () => {
   const resolved = resolveProductionPluginPackageScenarios(
-    ['--scenario=driverReleaseProof,driverVerifierGuards,driverRouteProof,driverDeleteApplyProof'],
+    ['--scenario=driverReleaseProof,driverMutationProof,driverVerifierGuards,driverRouteProof,driverDeleteApplyProof'],
     undefined,
   );
 
@@ -144,7 +144,7 @@ test('scenario resolver dedupes repeated aliases before returning requested scen
 
 test('scenario resolver dedupes bundle-aligned aliases against their canonical scenario names', () => {
   const resolved = resolveProductionPluginPackageScenarios(
-    ['--scenario=driverReleaseProof,driver-release-proof,driverVerifierGuards,driver-verifier-guards'],
+    ['--scenario=driverReleaseProof,driverMutationProof,driver-release-proof,driverVerifierGuards,driver-verifier-guards'],
     undefined,
   );
 
@@ -528,6 +528,23 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
     ].sort(),
   );
 
+  const mutationProof = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driverMutationProof',
+  );
+
+  assert.deepEqual(mutationProof.requestedScenarios, ['driver-release-proof']);
+  assert.equal(mutationProof.canonicalMode, 'driver-release-proof');
+  assert.equal(mutationProof.resolvedMode, 'driverMutationProof');
+  assert.deepEqual(
+    Array.from(mutationProof.selectedScenarios).sort(),
+    [
+      'driver-release-proof',
+      ...scenarioGroups['driver-release-proof'],
+    ].sort(),
+  );
+
   const verifierGuards = resolveProductionPluginPackageScenarios(
     [],
     undefined,
@@ -592,6 +609,15 @@ test('scenario resolver exports the shared runtime mode aliases for each canonic
     'driverVerifierGuards',
     'driverVerifierGuardsOnly',
     'driverVerifierOnly',
+  ]);
+  assert.deepEqual(modeAliasesByCanonicalMode['driver-release-proof'], [
+    'driver-release-only',
+    'driver-release-proof',
+    'driver-release-proof-only',
+    'driverMutationProof',
+    'driverReleaseOnly',
+    'driverReleaseProof',
+    'driverReleaseProofOnly',
   ]);
   assert.deepEqual(modeAliasesByCanonicalMode['driver-registration-guards'], [
     'driver-registration-guards',
