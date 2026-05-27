@@ -11,6 +11,7 @@ import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-pro
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const remoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
+const localEditedFixturePath = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
 const serverStartupTimeoutMs = 30_000;
 const readinessProbeIntervalMs = 500;
 
@@ -33,8 +34,20 @@ const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
 if (packagedBoundaryRequested) {
   const verify = runCheckedReleaseVerify();
-  const applyRevalidation = runApplyRevalidationProof();
-  emitCombinedReleaseProof(verify, applyRevalidation);
+  await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
+    await withPlaygroundServer('local-edited', localEditedFixturePath, async (localServer) => {
+      const applyRevalidation = runApplyRevalidationProof({
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_LOCAL_URL: localServer.baseUrl,
+        REPRINT_PUSH_USERNAME: credentials.username,
+        REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
+      });
+      emitCombinedReleaseProof(verify, applyRevalidation);
+    });
+  });
 } else {
   await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
     const verify = runCheckedReleaseVerify({
@@ -71,11 +84,11 @@ function runCheckedReleaseVerify(envOverrides = {}) {
   return parseJsonOutput(verify.stdout, 'checked live release verify');
 }
 
-function runApplyRevalidationProof() {
-  let proof = spawnApplyRevalidationProof();
+function runApplyRevalidationProof(envOverrides = {}) {
+  let proof = spawnApplyRevalidationProof(envOverrides);
 
   for (let attempt = 0; attempt < applyRevalidationRetries && applyRevalidationStartupRetryable(proof); attempt += 1) {
-    proof = spawnApplyRevalidationProof();
+    proof = spawnApplyRevalidationProof(envOverrides);
   }
 
   process.stderr.write(proof.stderr || '');
@@ -107,7 +120,7 @@ function runApplyRevalidationProof() {
   };
 }
 
-function spawnApplyRevalidationProof() {
+function spawnApplyRevalidationProof(envOverrides = {}) {
   return spawnSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -116,6 +129,7 @@ function spawnApplyRevalidationProof() {
     maxBuffer: 1024 * 1024 * 20,
     env: {
       ...process.env,
+      ...envOverrides,
       NODE_NO_WARNINGS: '1',
     },
   });

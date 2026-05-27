@@ -9,16 +9,23 @@ import { createPushPlan } from '../../src/planner.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 20_000;
-const serverFetchTimeoutMs = 2_000;
-const playgroundServerTimeoutMs = 45;
+// Match the checked release verifier's bounded readiness window so the inline
+// apply-revalidation proof does not fail earlier than the wrapper it now runs
+// inside.
+const serverStartupTimeoutMs = 30_000;
+const serverFetchTimeoutMs = 1_000;
 const requestTimeoutMs = 2_000;
 const readinessProbeIntervalMs = 500;
 const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const credentials = {
-  username: 'reprint_push_admin',
-  password: 'reprint-push-admin-app-password',
+  username: process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || 'reprint_push_admin',
+  password:
+    process.env.REPRINT_PUSH_APPLICATION_PASSWORD
+    || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD
+    || 'reprint-push-admin-app-password',
 };
+const externalRemoteBaseUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const externalLocalEditedUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 
 const remoteBlueprint = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
 const localBlueprint = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
@@ -48,116 +55,129 @@ process.on('unhandledRejection', (reason) => {
 });
 
 try {
-  await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
-    await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
-      const client = authenticatedHttpClient({
-        sourceUrl: remoteServer.baseUrl,
-        credential: credentials,
-        routeProfile: 'production-shaped',
-        requestTimeoutMs,
-      });
-
-      const preflight = await client.signedGet('/preflight');
-      assert.equal(preflight.status, 200, `production-shaped apply revalidation preflight HTTP ${preflight.status}`);
-      assert.equal(preflight.body.ok, true);
-      assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
-      assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
-
-      const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
-      const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
-      const plan = createPushPlan({ base, local, remote: base });
-      assert.equal(plan.status, 'ready');
-      assert.ok(plan.mutations.length > 0, 'apply revalidation proof needs at least one mutation');
-
-      const driftTarget = plan.mutations.find((mutation) => mutation.resourceKey === driftMutation.resourceKey)
-        || plan.mutations.find((mutation) => mutation.resourceKey.startsWith('file:'))
-        || plan.mutations[0];
-      assert.ok(driftTarget, 'apply revalidation proof needs a prepared mutation target');
-      const session = preflight.body.session.id;
-      const idempotencyKey = 'production-shaped-apply-revalidation-smoke-001';
-
-      process.stderr.write('apply-revalidation: dry-run /dry-run\n');
-      const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });
-      assert.equal(dryRun.status, 200);
-      assert.equal(dryRun.body.ok, true);
-      assert.equal(dryRun.body.mode, 'dry-run');
-      assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
-
-      process.stderr.write('apply-revalidation: apply /apply\n');
-      const apply = await client.signedPost('/apply', {
-        plan,
-        receipt: dryRun.body.receipt,
-        labDriftAfterPrepared: {
-          mutationId: driftTarget.id,
-          resourceKey: driftTarget.resourceKey,
-          value: {
-            type: 'file',
-            content: 'production-shaped apply revalidation drift',
-          },
-        },
-      }, { session, idempotencyKey });
-      assert.equal(apply.status, 412);
-      assert.equal(apply.body.ok, false);
-      assert.equal(apply.body.code, 'PRECONDITION_FAILED');
-      assert.equal(apply.body.preconditionCheck, 'just-in-time');
-      assert.equal(apply.body.recovery?.required, true);
-      assert.equal(apply.body.recovery?.state, 'blocked-recovery');
-
-      process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
-      const recoveryInspect = await client.signedPost('/recovery/inspect', {
-        plan,
-        receipt: dryRun.body.receipt,
-      }, { session, idempotencyKey });
-      assert.equal(recoveryInspect.status, 200);
-      assert.equal(recoveryInspect.body.ok, true);
-      assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
-
-      process.stdout.write(JSON.stringify({
-        ok: true,
-        topology: {
-          sourceUrl: remoteServer.baseUrl,
-          remoteBase: 'remote-base',
-          localEdited: 'local-edited',
-          proxyPolicy: 'local-only',
-          ingressPort: 8080,
-        },
-        preflight: {
-          status: preflight.status,
-          routeProfile: preflight.body.routeProfile,
-          session: {
-            id: preflight.body.session.id,
-            type: preflight.body.session.type,
-          },
-        },
-        dryRun: {
-          status: dryRun.status,
-          mode: dryRun.body.mode,
-          receiptHash: dryRun.body.receipt.receiptHash,
-        },
-        apply: {
-          status: apply.status,
-          code: apply.body.code,
-          preconditionCheck: apply.body.preconditionCheck,
-          recovery: apply.body.recovery,
-        },
-        recoveryInspect: {
-          status: recoveryInspect.status,
-          recovery: recoveryInspect.body.recovery,
-        },
-        boundary: {
-          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          durableJournal: {
-            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-          },
-        },
-      }, null, 2));
-      process.stdout.write('\n');
+  if (externalRemoteBaseUrl && externalLocalEditedUrl) {
+    await runApplyRevalidationProof({
+      remoteServer: { name: 'remote-base', baseUrl: externalRemoteBaseUrl },
+      localServer: { name: 'local-edited', baseUrl: externalLocalEditedUrl },
+      externalTopology: true,
     });
-  });
+  } else {
+    await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
+      await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
+        await runApplyRevalidationProof({ remoteServer, localServer, externalTopology: false });
+      });
+    });
+  }
 } catch (error) {
   stopAllPlaygroundChildrenSync();
   throw error;
+}
+
+async function runApplyRevalidationProof({ remoteServer, localServer, externalTopology }) {
+  const client = authenticatedHttpClient({
+    sourceUrl: remoteServer.baseUrl,
+    credential: credentials,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs,
+  });
+
+  const preflight = await client.signedGet('/preflight');
+  assert.equal(preflight.status, 200, `production-shaped apply revalidation preflight HTTP ${preflight.status}`);
+  assert.equal(preflight.body.ok, true);
+  assert.equal(preflight.body.routeProfile.profile, 'production-shaped');
+  assert.match(preflight.body.session.id, /^[A-Za-z0-9_-]{32,160}$/);
+
+  const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
+  const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
+  const plan = createPushPlan({ base, local, remote: base });
+  assert.equal(plan.status, 'ready');
+  assert.ok(plan.mutations.length > 0, 'apply revalidation proof needs at least one mutation');
+
+  const driftTarget = plan.mutations.find((mutation) => mutation.resourceKey === driftMutation.resourceKey)
+    || plan.mutations.find((mutation) => mutation.resourceKey.startsWith('file:'))
+    || plan.mutations[0];
+  assert.ok(driftTarget, 'apply revalidation proof needs a prepared mutation target');
+  const session = preflight.body.session.id;
+  const idempotencyKey = 'production-shaped-apply-revalidation-smoke-001';
+
+  process.stderr.write('apply-revalidation: dry-run /dry-run\n');
+  const dryRun = await client.signedPost('/dry-run', { plan }, { session, idempotencyKey });
+  assert.equal(dryRun.status, 200);
+  assert.equal(dryRun.body.ok, true);
+  assert.equal(dryRun.body.mode, 'dry-run');
+  assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
+
+  process.stderr.write('apply-revalidation: apply /apply\n');
+  const apply = await client.signedPost('/apply', {
+    plan,
+    receipt: dryRun.body.receipt,
+    labDriftAfterPrepared: {
+      mutationId: driftTarget.id,
+      resourceKey: driftTarget.resourceKey,
+      value: {
+        type: 'file',
+        content: 'production-shaped apply revalidation drift',
+      },
+    },
+  }, { session, idempotencyKey });
+  assert.equal(apply.status, 412);
+  assert.equal(apply.body.ok, false);
+  assert.equal(apply.body.code, 'PRECONDITION_FAILED');
+  assert.equal(apply.body.preconditionCheck, 'just-in-time');
+  assert.equal(apply.body.recovery?.required, true);
+  assert.equal(apply.body.recovery?.state, 'blocked-recovery');
+
+  process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
+  const recoveryInspect = await client.signedPost('/recovery/inspect', {
+    plan,
+    receipt: dryRun.body.receipt,
+  }, { session, idempotencyKey });
+  assert.equal(recoveryInspect.status, 200);
+  assert.equal(recoveryInspect.body.ok, true);
+  assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
+
+  process.stdout.write(JSON.stringify({
+    ok: true,
+    topology: {
+      sourceUrl: remoteServer.baseUrl,
+      remoteBase: 'remote-base',
+      localEdited: 'local-edited',
+      externalTopology,
+      proxyPolicy: 'local-only',
+      ingressPort: 8080,
+    },
+    preflight: {
+      status: preflight.status,
+      routeProfile: preflight.body.routeProfile,
+      session: {
+        id: preflight.body.session.id,
+        type: preflight.body.session.type,
+      },
+    },
+    dryRun: {
+      status: dryRun.status,
+      mode: dryRun.body.mode,
+      receiptHash: dryRun.body.receipt.receiptHash,
+    },
+    apply: {
+      status: apply.status,
+      code: apply.body.code,
+      preconditionCheck: apply.body.preconditionCheck,
+      recovery: apply.body.recovery,
+    },
+    recoveryInspect: {
+      status: recoveryInspect.status,
+      recovery: recoveryInspect.body.recovery,
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      durableJournal: {
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      },
+    },
+  }, null, 2));
+  process.stdout.write('\n');
 }
 
 async function exportSnapshot(name, baseUrl) {
@@ -213,22 +233,17 @@ async function startPlaygroundServer(name, blueprintPath) {
     'quiet',
   ];
 
-  const child = spawn(
-    'timeout',
-    ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
-    {
-      cwd: repoRoot,
-      env: {
-        ...process.env,
-        REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
-        NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
-      },
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
+  const child = spawn('npx', args, {
+    cwd: repoRoot,
+    env: {
+      ...process.env,
+      REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+      NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
     },
-  );
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
   activePlaygroundChildren.add(child);
 
   let output = '';
