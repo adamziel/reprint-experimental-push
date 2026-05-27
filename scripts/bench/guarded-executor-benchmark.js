@@ -2891,7 +2891,7 @@ function rolloutRejectedFastPaths(blockers) {
     )
       ? RECEIPT_LEDGER_BLOCKER_REFS.filter((blocker) => blockerSet.has(blocker))
       : [];
-    const matchedWithReceiptLedger = [...matchedBlockers, ...receiptLedgerBlockers];
+    const matchedWithReceiptLedger = [...new Set([...matchedBlockers, ...receiptLedgerBlockers])];
     if (matchedWithReceiptLedger.length === 0) {
       return [];
     }
