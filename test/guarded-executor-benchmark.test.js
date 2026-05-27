@@ -47,6 +47,15 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function summarizeRejectedGates(entries) {
+  return [...entries.reduce((map, entry) => {
+    map.set(entry.rejectedGate, (map.get(entry.rejectedGate) || 0) + 1);
+    return map;
+  }, new Map()).entries()]
+    .map(([rejectedGate, count]) => ({ rejectedGate, count }))
+    .sort((left, right) => left.rejectedGate.localeCompare(right.rejectedGate));
+}
+
 test('guarded executor benchmark moves buffers and row payloads through durable evidence', () => {
   const report = smallBenchmark();
 
@@ -1484,37 +1493,37 @@ test('guarded benchmark carries direct plugin-update commit-after-pause blockers
 test('guarded benchmark surfaces plugin-update recovery blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const pluginUpdateRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+    'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
+  ].includes(entry.id));
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'cached-dependency-graph-and-remote-index-cursor-skips-plugin-update-row-batch-revalidation-after-pause',
-        'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
-        'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
-        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-writeback',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-activation',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause-variant-b',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-dependency-checks',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-finalize-variant-b',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-row-preconditions',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-activation',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-backpressure',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
-        'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
-        'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
-        'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
-      ].includes(entry.id))
+    pluginUpdateRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -11372,6 +11381,12 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
       },
     ],
   );
+
+  assert.deepEqual(summarizeRejectedGates(pluginUpdateRejectedFastPaths), [
+    { rejectedGate: 'group', count: 16 },
+    { rejectedGate: 'live', count: 3 },
+    { rejectedGate: 'recovery', count: 7 },
+  ]);
 });
 
 test('guarded benchmark carries direct aligned queue-slack proof blockers into rejected commit-after-pause summaries', () => {
@@ -12106,20 +12121,20 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
 test('guarded benchmark surfaces release-manifest release-bundle commit blockers at runtime', () => {
   const report = largeBenchmark();
   const details = productionThroughputDetails(report);
+  const releaseBundleCommitRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
+  ].includes(entry.id));
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
-        'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
-        'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
-        'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
-      ].includes(entry.id))
+    releaseBundleCommitRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -12209,6 +12224,11 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
       },
     ],
   );
+
+  assert.deepEqual(summarizeRejectedGates(releaseBundleCommitRejectedFastPaths), [
+    { rejectedGate: 'group', count: 7 },
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
 });
 
 test('guarded benchmark surfaces release-bundle planning blockers at runtime', () => {
