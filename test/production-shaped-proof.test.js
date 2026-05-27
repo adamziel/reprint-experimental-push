@@ -2994,6 +2994,24 @@ test('packaged readiness timeout fallback classifier distinguishes terminal inde
   );
 });
 
+test('packaged readiness helpers clear stale timeout fallback probes once the snapshot probe recovers', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /timeoutProbeCount = 0;\s*\/\/ A successful snapshot fetch supersedes any older timeout-fallback[\s\S]*?lastTimeoutFallbackProbes = null;/,
+    );
+  }
+});
+
 test('packaged bounded startup classifier distinguishes global WordPress versus packaged-route startup', () => {
   assert.deepEqual(
     packagedProductionPluginClassifyBoundedStartup(

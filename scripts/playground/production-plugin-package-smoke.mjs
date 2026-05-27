@@ -542,6 +542,9 @@ async function waitForServer(child, baseUrl, logs) {
         },
       }, readinessProbeFetchTimeoutMs, child);
       timeoutProbeCount = 0;
+      // A successful snapshot fetch supersedes any older timeout-fallback
+      // probes; later failures should describe the current readiness branch.
+      lastTimeoutFallbackProbes = null;
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
         notReadyProbeCounts,
         'snapshot',

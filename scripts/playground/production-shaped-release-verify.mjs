@@ -1343,6 +1343,9 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
         },
       }, packagedServerFetchTimeoutMs, child);
       timeoutProbeCount = 0;
+      // A successful snapshot fetch supersedes any older timeout-fallback
+      // probes; later failures should describe the current readiness branch.
+      lastTimeoutFallbackProbes = null;
       const snapshotPreview = snapshotText.slice(0, readinessFailureBodyLimit);
       notReadyProbeCounts = packagedProductionPluginNextRouteNotReadyProbeCounts(
         notReadyProbeCounts,
