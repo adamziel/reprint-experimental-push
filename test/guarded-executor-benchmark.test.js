@@ -1512,6 +1512,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
         'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
         'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-backpressure-after-pause',
+        'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
         'reuse-canonical-per-kind-budgets-to-skip-plugin-update-row-batch-revalidation-after-pause',
       ].includes(entry.id))
       .map((entry) => ({
@@ -1756,6 +1757,16 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
           'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-parallelism-limits-not-visible',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
         ],
       },
       {
