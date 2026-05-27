@@ -430,9 +430,19 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     assert.equal(allowedEntry.pluginOwner, fixture.pluginOwner);
     assert.equal(allowedEntry.supportsDelete, true);
 
+    const deleteBaseSnapshot = driverDeleteBaseSnapshot
+      ? deepClone(driverDeleteBaseSnapshot)
+      : deepClone(remoteSnapshot.body.snapshot);
+    const deleteLocalSnapshot = driverLocalDeleteSnapshot
+      ? deepClone(driverLocalDeleteSnapshot)
+      : deepClone(deleteBaseSnapshot);
+    if (!driverLocalDeleteSnapshot) {
+      delete deleteLocalSnapshot.db?.[fixture.table]?.['entry_id:1'];
+    }
+
     const deletePlan = createPushPlan({
-      base: driverDeleteBaseSnapshot,
-      local: driverLocalDeleteSnapshot,
+      base: deleteBaseSnapshot,
+      local: deleteLocalSnapshot,
       remote: remoteSnapshot.body.snapshot,
       now: new Date('2026-05-26T18:12:00.000Z'),
     });
