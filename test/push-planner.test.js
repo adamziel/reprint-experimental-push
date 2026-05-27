@@ -27306,6 +27306,7 @@ test('production recovery support report keeps checked boundary closed when asse
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
   assert.equal(report.checkedBoundarySatisfied, false);
   assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.equal(report.checkedBoundaryProof.claim, null);
   assert.equal(report.checkedBoundaryProof.writerLease, null);
   assert.equal(inheritedAssertCurrentClaimCalls, 0);
 });

@@ -1740,7 +1740,7 @@ function checkedDurableJournalBoundaryProof(
   return {
     scope,
     acceptedOnCheckedBoundary,
-    claim: !checkedBoundaryActiveClaimIdentityComplete
+    claim: checkedBoundaryFencingBlocked || !checkedBoundaryActiveClaimIdentityComplete
       ? null
       : {
         activeClaimId: checkedBoundaryActiveClaimId,
