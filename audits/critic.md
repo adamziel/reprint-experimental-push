@@ -1,23 +1,23 @@
 # Critic Verdict
 
-Current reliable head: `368b7e74834ddf2e7289fa73a944d569e636e11f`
-(`Fail closed on fallback auth session sources`).
+Current reliable head: `cb09dc2765a8e7463bdb1e2f218ebc180be5ddab`
+(`Support safe taxonomy closure references`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds a fail-closed guard in `scripts/playground/production-shaped-release-verify.mjs`
-  and `test/production-shaped-proof.test.js` so a required production auth
-  session source command cannot silently fall back to Playground metadata.
-- That is useful checked-release hardening, but it still only constrains the
-  verifier path. It does not prove a live production-owned Reprint endpoint
+- This head is planner-side support work in `src/planner.js` plus coverage in
+  `test/push-planner.test.js`. It adds safe same-plan handling for taxonomy
+  closure references and an explicit unsupported `nav_menu` taxonomy surface,
+  along with recursive reference support for WordPress graph identities.
+- That is useful invariants hardening, but it still only constrains planner
+  behavior. It does not prove a live production-owned Reprint endpoint
   boundary that mints a session, reads it back from durable lease-fenced
   journal storage after restart, preserves rejected-remote evidence, and
   revalidates at apply time before the first mutation.
 - No supervised release gate closes here. The remaining primitive is still the
-  real endpoint proof rather than another checked release-verifier fallback
-  check.
+  real endpoint proof rather than another planner/support-side graph check.
 
 Next owner / command:
 
