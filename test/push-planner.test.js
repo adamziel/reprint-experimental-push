@@ -29693,6 +29693,114 @@ test('production recovery support report fails closed when a later claim reopen 
   assert.ok(report.missingDependency.includes('restart-readable recovery journal adapter'));
 });
 
+test('production recovery support report fails closed when a later claim reopen rewrites the owned remote artifact ref', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-reopened-artifact-remote-rewritten-remote.jsonl`;
+  const rewrittenRemoteArtifactPath = `${path.dirname(filePath)}/consumed-reopened-artifact-remote-rewritten-drifted.jsonl`;
+  const claimId = 'claim-consumed-reopened-artifact-remote-rewritten';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  };
+  const laterReopen = {
+    sequence: 3,
+    type: 'recovery-claim-opened',
+    claimHash,
+    claimLease: { id: claimId, epoch: 3 },
+    artifactRefs: {
+      journal: filePath,
+      remote: rewrittenRemoteArtifactPath,
+    },
+    fsync: { requested: true },
+  };
+
+  const report = productionRecoverySupportReport({
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash,
+    writerLease: { id: claimId, epoch: 3 },
+    leaseFence: { id: claimId, epoch: 3 },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId, epoch: 3 },
+        leaseFence: { id: claimId, epoch: 3 },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'filesystem-compare-rename',
+          claimKeyUnique: true,
+          storageGuard: 'filesystem-compare-rename',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'recovery-journal-consumed',
+            claimHash,
+            claimLease: { id: claimId, epoch: 3 },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          laterReopen,
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  });
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.ok(report.missingDependency.includes('journal-readable inspection records with sequence and type'));
+  assert.ok(report.missingDependency.includes('restart-readable recovery journal adapter'));
+});
+
 test('production recovery support report fails closed when a later claim reopen lease is inherited instead of owned', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/consumed-reopened-lease-inherited-remote.jsonl`;
@@ -30555,6 +30663,123 @@ test('production durable journal support fails closed when a later claim reopens
   assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
   assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
   reopened.close();
+});
+
+test('production durable journal support fails closed when a later claim reopen rewrites the owned remote artifact ref', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Local Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/rewritten-claim-remote-ownership.jsonl`;
+  const rewrittenRemoteArtifactPath = `${path.dirname(filePath)}/rewritten-claim-remote-ownership-drifted.jsonl`;
+  const claimId = 'claim-rewritten-remote-ownership';
+  const claimHash = digest({ recoveryJournalClaim: claimId });
+  const writerLeaseContract = {
+    strategy: 'claim-fenced-single-writer',
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'filesystem-compare-rename',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: false,
+  };
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimHash,
+    writerLease: { id: claimId },
+    leaseFence: { id: claimId },
+    journalPath: filePath,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    appendEvent() {
+      return null;
+    },
+    flush() {},
+    close() {},
+    inspect() {
+      return {
+        filePath,
+        schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+        claimHash,
+        artifactRefs: {
+          journal: filePath,
+          remote: remoteArtifactPath,
+        },
+        writerLease: { id: claimId },
+        leaseFence: { id: claimId },
+        writerLeaseContract,
+        leaseFenceContract: {
+          boundary: 'filesystem-compare-rename',
+          claimKeyUnique: true,
+          storageGuard: 'filesystem-compare-rename',
+          fsyncEvidence: true,
+          monotonicSequence: true,
+          restartReadable: true,
+          staleClaimRejected: false,
+          writerLease: writerLeaseContract,
+        },
+        integrity: { status: 'ok' },
+        records: [
+          {
+            sequence: 1,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 2,
+            type: 'recovery-journal-consumed',
+            claimHash,
+            claimLease: { id: claimId },
+            artifactRefs: {
+              journal: filePath,
+              remote: remoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+          {
+            sequence: 3,
+            type: 'recovery-claim-opened',
+            claimHash,
+            claimLease: { id: claimId },
+            artifactRefs: {
+              journal: filePath,
+              remote: rewrittenRemoteArtifactPath,
+            },
+            fsync: { requested: true },
+          },
+        ],
+      };
+    },
+    assertCurrentClaim() {},
+  };
+
+  const error = captureError(() => applyPlan(remote, plan, {
+    durableJournal: writer,
+    requireProductionDurableJournal: true,
+  }));
+
+  assert.equal(error.code, 'PRODUCTION_DURABLE_JOURNAL_UNSUPPORTED');
+  assert.ok(error.details.missingDependency.includes('restart-readable recovery remote artifact references'));
+  assert.ok(error.details.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
 test('production durable journal claims fail closed when artifactRefs are inherited through the prototype', () => {
