@@ -301,6 +301,8 @@ test('production recovery journal descriptor normalizes lease and artifact evide
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: true,
+    claimId: 'claim-describe',
+    claimHash: recoveryClaimHash('claim-describe'),
     leaseFence: { id: 'claim-describe', epoch: 11 },
     writerLease: { id: 'claim-describe', epoch: 11 },
     journalPath: filePath,
@@ -343,6 +345,8 @@ test('production recovery journal descriptor fails closed on prototype-inherited
     restartReadable: false,
     ownsJournal: false,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: null,
     writerLease: null,
     journalPath: null,
@@ -410,6 +414,8 @@ test('production recovery journal descriptor fails closed on non-enumerable top-
     restartReadable: false,
     ownsJournal: false,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: null,
     writerLease: null,
     journalPath: null,
@@ -468,6 +474,8 @@ test('production recovery journal descriptor fails closed on non-enumerable nest
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: { id: 'lease-shared', epoch: 3 },
     writerLease: { id: 'lease-shared', epoch: 3 },
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -507,6 +515,8 @@ test('production recovery journal descriptor fails closed on unsupported nested 
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: { id: 'lease-shared', epoch: 3 },
     writerLease: { id: 'lease-shared', epoch: 3 },
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -545,6 +555,8 @@ test('production recovery journal descriptor fails closed when artifact refs use
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: { id: 'lease-shared', epoch: 3 },
     writerLease: { id: 'lease-shared', epoch: 3 },
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -583,6 +595,8 @@ test('production recovery journal descriptor fails closed on non-canonical owner
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: null,
     writerLease: { id: 'lease-writer' },
     journalPath: null,
@@ -621,6 +635,8 @@ test('production recovery journal descriptor fails closed when remote ownership 
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: false,
+    claimId: null,
+    claimHash: null,
     leaseFence: { id: 'lease-shared' },
     writerLease: { id: 'lease-shared' },
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -659,6 +675,8 @@ test('production recovery journal descriptor fails closed on divergent lease epo
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: true,
+    claimId: null,
+    claimHash: null,
     leaseFence: null,
     writerLease: { id: 'lease-shared', epoch: 3 },
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -697,6 +715,8 @@ test('production recovery journal descriptor fails closed on unsupported schema 
     restartReadable: true,
     ownsJournal: true,
     ownsRemoteArtifact: true,
+    claimId: null,
+    claimHash: null,
     leaseFence: { id: 'lease-shared', epoch: 3 },
     writerLease: { id: 'lease-shared', epoch: 3 },
     journalPath: '/var/lib/reprint/recovery.jsonl',
@@ -710,6 +730,48 @@ test('production recovery journal descriptor fails closed on unsupported schema 
   writer.schemaVersion = '1';
 
   assert.equal(describeProductionRecoveryJournal(writer).schemaVersion, null);
+});
+
+test('production recovery journal descriptor fails closed on divergent claim identity fields', () => {
+  const writer = {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimId: 'claim-wrong',
+    claimHash: recoveryClaimHash('claim-shared'),
+    leaseFence: { id: 'claim-shared', epoch: 3 },
+    writerLease: { id: 'claim-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: 1,
+  };
+
+  const descriptor = describeProductionRecoveryJournal(writer);
+
+  assert.deepEqual(descriptor, {
+    kind: 'production-recovery-journal',
+    productionAdapter: true,
+    supportedSurface: 'production-recovery-journal-adapter',
+    restartReadable: true,
+    ownsJournal: true,
+    ownsRemoteArtifact: true,
+    claimId: null,
+    claimHash: null,
+    leaseFence: { id: 'claim-shared', epoch: 3 },
+    writerLease: { id: 'claim-shared', epoch: 3 },
+    journalPath: '/var/lib/reprint/recovery.jsonl',
+    artifactRefs: {
+      journal: '/var/lib/reprint/recovery.jsonl',
+      remote: '/var/lib/reprint/recovery-remote.jsonl',
+    },
+    schemaVersion: 1,
+  });
 });
 
 test('production recovery journal adapter reopens with a new claim and rejects stale fenced writers', () => {

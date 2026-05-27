@@ -824,6 +824,23 @@ export function describeProductionRecoveryJournal(writer) {
     && isValidProductionWriterLease(writer.writerLease)
     ? Object.freeze({ ...writer.writerLease })
     : null;
+  const claimId = Object.hasOwn(writer, 'claimId')
+    && !hasHiddenOwnStringProperty(writer, 'claimId')
+    && typeof writer.claimId === 'string'
+    && writer.claimId.trim().length > 0
+    && writer.claimId.trim() === writer.claimId
+    && writerLease
+    && writer.claimId === writerLease.id
+      ? writer.claimId
+      : null;
+  const claimHash = claimId
+    && Object.hasOwn(writer, 'claimHash')
+    && !hasHiddenOwnStringProperty(writer, 'claimHash')
+    && typeof writer.claimHash === 'string'
+    && CLAIM_HASH_PATTERN.test(writer.claimHash)
+    && writer.claimHash === recoveryClaimHash(claimId)
+      ? writer.claimHash
+      : null;
   const rawLeaseFence = Object.hasOwn(writer, 'leaseFence')
     && !hasHiddenOwnStringProperty(writer, 'leaseFence')
     && isValidProductionWriterLease(writer.leaseFence)
@@ -865,6 +882,8 @@ export function describeProductionRecoveryJournal(writer) {
     restartReadable,
     ownsJournal,
     ownsRemoteArtifact,
+    claimId,
+    claimHash,
     leaseFence,
     writerLease,
     journalPath,
