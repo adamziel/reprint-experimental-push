@@ -106,6 +106,85 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Apply And Plugin Base Refresh Heads
+
+Commit:
+
+- Reviewed current pushed heads after `git fetch origin --prune`:
+  - `8d9a53f88617ce613d739d1e111639c639ed8ca6`
+    `origin/supervisor/release-boundary-consolidated-20260527`
+  - `cfca3e0ff18bec3d48aa698b445fce31851544b8`
+    `origin/lane/auth-session-boundary-v2-20260527`
+  - `d47e9f9bc4939056fe24c131f2e6a19a5861797c`
+    `origin/lane/durable-journal-boundary-v2-20260527`
+  - `83e07628d338992c3045e29fc5de7a364944a4bb`
+    `origin/lane/apply-revalidation-boundary-v2-20260527`
+  - `5b152e4093835d843fa984986cba7cf8ac2771e5`
+    `origin/lane/plugin-driver-boundary-v2-20260527`
+  - `605881b8716aa092a4274cd10151128fe8611f5e`
+    `origin/lane/topology-verifier-v2-20260527`
+  - `14034c47c3032b7d9b644de7687f4d037bb5d08a`
+    `origin/lane/auditor-reorg-20260527`
+
+Claim:
+
+- New fact: apply v2 advanced from `72cdb2e92` to `83e07628d`.
+- New fact: plugin v2 advanced from `0473cebc8` to `5b152e409`.
+- Net diff from the previously reviewed apply/plugin heads is only
+  `audits/auditor-reorg-v2-20260527.md`; no new live release command evidence
+  was added.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git show --stat --oneline origin/lane/apply-revalidation-boundary-v2-20260527 -1`
+  shows a merge from the consolidated branch with only
+  `audits/auditor-reorg-v2-20260527.md` changed.
+- `git diff --stat 72cdb2e9238a3a2610cd2d4a6349b040da1569ba..origin/lane/apply-revalidation-boundary-v2-20260527`
+  shows only the auditor artifact.
+- `git diff --stat 0473cebc82f569bac9ecb8ea9ea9231c0ecac1a1..origin/lane/plugin-driver-boundary-v2-20260527`
+  shows only the auditor artifact.
+- `git -C /tmp/reprint-reorg-integrator-20260527 status --short --branch`
+  shows the consolidated worktree at `8d9a53f88`, matching origin, with an
+  unstaged auditor artifact refresh and untracked `.agents/` files.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --check` completed
+  cleanly.
+- The latest retained canonical release evidence remains the missing-source
+  run on `8d9a53f88`: exit `1`, `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, and `releaseMovement.gates: 0/4`.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. The changed heads do not add live same-source
+  auth/session issuance and readback evidence.
+- GATE-2: no movement. The changed heads do not add live durable
+  restart-readable lease-fenced journal evidence.
+- GATE-3: no movement. The changed heads do not add a real source/local/changed
+  topology run using `REPRINT_PUSH_SOURCE_URL`.
+- GATE-4: no movement. The plugin head still represents support/test hardening
+  plus base refresh, not live plugin-driver mutation proof.
+
+First missing production primitive:
+
+- A retained checked release run using a real live
+  `REPRINT_PUSH_SOURCE_URL` that proves same-boundary auth/session readback,
+  durable journal ownership, preserved rejected-remote evidence, apply-time
+  revalidation before the first mutation, and plugin-driver ownership.
+
+Next exact command:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> \
+REPRINT_PUSH_REMOTE_CHANGED_URL=<real-live-changed-url> \
+REPRINT_PUSH_LOCAL_URL=<real-live-local-edited-url> \
+REPRINT_PUSH_USERNAME=<production-user> \
+REPRINT_PUSH_APPLICATION_PASSWORD=<production-application-password> \
+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND=<same-live-source-readback-command> \
+timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Base Merge Heads Still Fail Closed
 
 Commit:
