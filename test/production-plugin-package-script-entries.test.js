@@ -67,6 +67,62 @@ test('package scripts pin the bounded plugin-driver release proof entrypoint', (
   );
 });
 
+test('package scripts pin the bounded plugin-driver missing-export guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-missing-export-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-export-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver missing-apply guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-missing-apply-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-apply-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver missing-validate guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-missing-validate-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-validate-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver missing-name guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-missing-name-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-name-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver missing-plugin-owner guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-missing-plugin-owner-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-plugin-owner-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver missing-table guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-missing-table-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-table-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver duplicate-name guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-duplicate-name-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-duplicate-name-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver duplicate-table guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-duplicate-table-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-duplicate-table-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver proof bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-proof'],
