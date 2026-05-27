@@ -4890,7 +4890,7 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   );
   assert.match(
     sharedWaitSource,
-    /const \{ response: snapshot, bodyText: snapshotBody \} = await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\);/,
+    /\(\{\s*response:\s*snapshot,\s*bodyText:\s*snapshotBody\s*\}\s*=\s*await fetchTextWithTimeout\([\s\S]*serverFetchTimeoutMs,\s*child\)\);/,
   );
   assert.match(sharedWaitSource, /let timeoutProbeCount = 0;/);
   assert.match(sharedWaitSource, /let snapshotNotReadyProbeCount = 0;/);
@@ -4936,6 +4936,24 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   assert.doesNotMatch(sharedWaitSource, /await response\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await snapshot\.arrayBuffer\(\)/);
   assert.doesNotMatch(sharedWaitSource, /await new Promise\(\(resolve\) => setTimeout\(resolve, readinessProbeIntervalMs\)\)/);
+});
+
+test('shared lab waitForServer runtime helper keeps the readiness-exhaustion guard aligned', () => {
+  const proofSource = readFileSync(
+    path.join(repoRoot, 'test/production-shaped-proof.test.js'),
+    'utf8',
+  );
+
+  const sharedWaitStart = proofSource.indexOf('async function waitForServer(child, baseUrl, getLogs) {');
+  assert.notEqual(sharedWaitStart, -1, 'expected shared waitForServer helper in proof test source');
+  const sharedWaitEnd = proofSource.indexOf('\nfunction describeLastProbe(', sharedWaitStart);
+  assert.notEqual(sharedWaitEnd, -1, 'expected shared waitForServer helper boundary in proof test source');
+  const sharedWaitSource = proofSource.slice(sharedWaitStart, sharedWaitEnd);
+
+  assert.match(
+    sharedWaitSource,
+    /if \(response\.status !== 200 && readinessProbeCount >= maxReadinessProbes\) \{/,
+  );
 });
 
 test('release verifier keeps the extended shared Playground startup budget for remote-changed and local-edited', () => {
@@ -7210,7 +7228,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         }
         snapshotTimeoutProbeCount = 0;
         lastSnapshotTimeoutContext = null;
-        if (readinessProbeCount >= maxReadinessProbes) {
+        if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
           await throwPlaygroundReadinessFailure(
             child,
             `Playground server stayed in readiness response ${response.status} after ${readinessProbeCount} /wp-json/ probes`,
