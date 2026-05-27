@@ -16,6 +16,11 @@ const driverName = 'fixture-arbitrary-plugin-table';
 const driverTable = 'wp_reprint_push_driver_fixture';
 const pluginOwner = 'driver-fixture';
 const resourceKey = `row:["${driverTable}","entry_id:1"]`;
+const smokeScope = process.env.REPRINT_PUSH_PLUGIN_DRIVER_REGISTRY_SMOKE_SCOPE?.trim() || 'full';
+
+if (!['full', 'registry-guards'].includes(smokeScope)) {
+  throw new Error(`Unknown plugin-owned driver registry smoke scope: ${smokeScope}`);
+}
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-plugin-driver-registry-'));
 const baseBlueprintPath = path.join(tmpDir, 'base.blueprint.json');
@@ -24,8 +29,11 @@ const missingExportBlueprintPath = path.join(tmpDir, 'missing-export.blueprint.j
 const missingApplyBlueprintPath = path.join(tmpDir, 'missing-apply.blueprint.json');
 const malformedValidateBlueprintPath = path.join(tmpDir, 'missing-validate.blueprint.json');
 const missingDriverNameBlueprintPath = path.join(tmpDir, 'missing-driver-name.blueprint.json');
+const whitespaceDriverNameBlueprintPath = path.join(tmpDir, 'whitespace-driver-name.blueprint.json');
 const missingPluginOwnerBlueprintPath = path.join(tmpDir, 'missing-plugin-owner.blueprint.json');
+const whitespacePluginOwnerBlueprintPath = path.join(tmpDir, 'whitespace-plugin-owner.blueprint.json');
 const missingTableBlueprintPath = path.join(tmpDir, 'missing-table.blueprint.json');
+const whitespaceTableBlueprintPath = path.join(tmpDir, 'whitespace-table.blueprint.json');
 const duplicateDriverNameBlueprintPath = path.join(tmpDir, 'duplicate-driver-name.blueprint.json');
 const duplicateTableBlueprintPath = path.join(tmpDir, 'duplicate-driver-table.blueprint.json');
 const repoTmpDir = path.join(repoRoot, '.tmp');
@@ -62,15 +70,30 @@ try {
     updatedMarker: 'base',
     blankDriverName: true,
   });
+  writeBlueprint(whitespaceDriverNameBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    whitespaceDriverName: true,
+  });
   writeBlueprint(missingPluginOwnerBlueprintPath, {
     payloadMode: 'base',
     updatedMarker: 'base',
     omitPluginOwner: true,
   });
+  writeBlueprint(whitespacePluginOwnerBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    whitespacePluginOwner: true,
+  });
   writeBlueprint(missingTableBlueprintPath, {
     payloadMode: 'base',
     updatedMarker: 'base',
     omitTable: true,
+  });
+  writeBlueprint(whitespaceTableBlueprintPath, {
+    payloadMode: 'base',
+    updatedMarker: 'base',
+    whitespaceTable: true,
   });
   writeBlueprint(duplicateDriverNameBlueprintPath, {
     payloadMode: 'base',
@@ -86,30 +109,70 @@ try {
   const base = exportSnapshot('base', baseBlueprintPath);
   const local = exportSnapshot('local', localBlueprintPath);
   const remote = JSON.parse(JSON.stringify(base));
+  let planStatus = 'skipped';
+  let updateVerified = [];
+  let deleteVerified = [];
+  let appliedMutations = 0;
 
-  const plan = createPushPlan({
-    base,
-    local,
-    remote,
-    now: fixedNow,
-  });
+  if (smokeScope === 'full') {
+    const plan = createPushPlan({
+      base,
+      local,
+      remote,
+      now: fixedNow,
+    });
 
-  assert.equal(plan.status, 'ready');
-  assert.deepEqual(plan.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
-  assert.equal(plan.mutations[0].pluginOwnedResource.driver, driverName);
-  assert.equal(plan.mutations[0].pluginOwnedResource.table, driverTable);
-  assert.equal(plan.mutations[0].pluginOwnedResource.pluginOwner, pluginOwner);
+    assert.equal(plan.status, 'ready');
+    assert.deepEqual(plan.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
+    assert.equal(plan.mutations[0].pluginOwnedResource.driver, driverName);
+    assert.equal(plan.mutations[0].pluginOwnedResource.table, driverTable);
+    assert.equal(plan.mutations[0].pluginOwnedResource.pluginOwner, pluginOwner);
 
-  const modelApply = applyPlan(JSON.parse(JSON.stringify(base)), plan);
-  assert.equal(modelApply.appliedMutations, 1);
-  assert.equal(modelApply.site.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
+    const modelApply = applyPlan(JSON.parse(JSON.stringify(base)), plan);
+    assert.equal(modelApply.appliedMutations, 1);
+    assert.equal(modelApply.site.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
 
-  fs.writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`);
-  const protocolApply = applyPlanToBase(baseBlueprintPath, planPath);
-  assert.equal(protocolApply.ok, true);
-  assert.equal(protocolApply.applied, 1);
-  assert.deepEqual(protocolApply.verified, [resourceKey]);
-  assert.equal(protocolApply.after.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
+    fs.writeFileSync(planPath, `${JSON.stringify(plan, null, 2)}\n`);
+    const protocolApply = applyPlanToBase(baseBlueprintPath, planPath);
+    assert.equal(protocolApply.ok, true);
+    assert.equal(protocolApply.applied, 1);
+    assert.deepEqual(protocolApply.verified, [resourceKey]);
+    assert.equal(protocolApply.after.db[driverTable]['entry_id:1'].payload.mode, 'local-edited');
+    planStatus = plan.status;
+    updateVerified = protocolApply.verified;
+    appliedMutations += protocolApply.applied;
+
+    const deleteBase = protocolApply.after;
+    const deleteLocal = JSON.parse(JSON.stringify(deleteBase));
+    delete deleteLocal.db[driverTable]['entry_id:1'];
+    const deleteRemote = JSON.parse(JSON.stringify(deleteBase));
+    const deletePlan = createPushPlan({
+      base: deleteBase,
+      local: deleteLocal,
+      remote: deleteRemote,
+      now: new Date('2026-05-26T18:05:00.000Z'),
+    });
+
+    assert.equal(deletePlan.status, 'ready');
+    assert.deepEqual(deletePlan.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
+    assert.equal(deletePlan.mutations[0].action, 'delete');
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource.driver, driverName);
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource.table, driverTable);
+    assert.equal(deletePlan.mutations[0].pluginOwnedResource.supportsDelete, true);
+
+    const modelDelete = applyPlan(JSON.parse(JSON.stringify(deleteRemote)), deletePlan);
+    assert.equal(modelDelete.appliedMutations, 1);
+    assert.equal(modelDelete.site.db[driverTable]['entry_id:1'], undefined);
+
+    fs.writeFileSync(deletePlanPath, `${JSON.stringify(deletePlan, null, 2)}\n`);
+    const protocolDelete = applyPlanToBase(localBlueprintPath, deletePlanPath);
+    assert.equal(protocolDelete.ok, true);
+    assert.equal(protocolDelete.applied, 1);
+    assert.deepEqual(protocolDelete.verified, [resourceKey]);
+    assert.equal(protocolDelete.after.db[driverTable]['entry_id:1'], undefined);
+    deleteVerified = protocolDelete.verified;
+    appliedMutations += protocolDelete.applied;
+  }
 
   const missingExportRowsExport = exportSnapshotFailure('missing-export', missingExportBlueprintPath);
   assert.equal(missingExportRowsExport.ok, false);
@@ -167,6 +230,14 @@ try {
     /missing driver name for table: wp_reprint_push_driver_fixture/i,
   );
 
+  const whitespaceDriverNameExport = exportSnapshotFailure('whitespace-driver-name', whitespaceDriverNameBlueprintPath);
+  assert.equal(whitespaceDriverNameExport.ok, false);
+  assert.equal(whitespaceDriverNameExport.error?.class, 'RuntimeException');
+  assert.match(
+    whitespaceDriverNameExport.error?.message || '',
+    /missing driver name for table: wp_reprint_push_driver_fixture/i,
+  );
+
   const missingTableExport = exportSnapshotFailure('missing-table', missingTableBlueprintPath);
   assert.equal(missingTableExport.ok, false);
   assert.equal(missingTableExport.error?.class, 'RuntimeException');
@@ -175,48 +246,39 @@ try {
     /missing table for driver: fixture-arbitrary-plugin-table/i,
   );
 
-  const deleteBase = protocolApply.after;
-  const deleteLocal = JSON.parse(JSON.stringify(deleteBase));
-  delete deleteLocal.db[driverTable]['entry_id:1'];
-  const deleteRemote = JSON.parse(JSON.stringify(deleteBase));
-  const deletePlan = createPushPlan({
-    base: deleteBase,
-    local: deleteLocal,
-    remote: deleteRemote,
-    now: new Date('2026-05-26T18:05:00.000Z'),
-  });
+  const whitespaceTableExport = exportSnapshotFailure('whitespace-table', whitespaceTableBlueprintPath);
+  assert.equal(whitespaceTableExport.ok, false);
+  assert.equal(whitespaceTableExport.error?.class, 'RuntimeException');
+  assert.match(
+    whitespaceTableExport.error?.message || '',
+    /missing table for driver: fixture-arbitrary-plugin-table/i,
+  );
 
-  assert.equal(deletePlan.status, 'ready');
-  assert.deepEqual(deletePlan.mutations.map((mutation) => mutation.resourceKey), [resourceKey]);
-  assert.equal(deletePlan.mutations[0].action, 'delete');
-  assert.equal(deletePlan.mutations[0].pluginOwnedResource.driver, driverName);
-  assert.equal(deletePlan.mutations[0].pluginOwnedResource.table, driverTable);
-  assert.equal(deletePlan.mutations[0].pluginOwnedResource.supportsDelete, true);
-
-  const modelDelete = applyPlan(JSON.parse(JSON.stringify(deleteRemote)), deletePlan);
-  assert.equal(modelDelete.appliedMutations, 1);
-  assert.equal(modelDelete.site.db[driverTable]['entry_id:1'], undefined);
-
-  fs.writeFileSync(deletePlanPath, `${JSON.stringify(deletePlan, null, 2)}\n`);
-  const protocolDelete = applyPlanToBase(localBlueprintPath, deletePlanPath);
-  assert.equal(protocolDelete.ok, true);
-  assert.equal(protocolDelete.applied, 1);
-  assert.deepEqual(protocolDelete.verified, [resourceKey]);
-  assert.equal(protocolDelete.after.db[driverTable]['entry_id:1'], undefined);
+  const whitespacePluginOwnerExport = exportSnapshotFailure('whitespace-plugin-owner', whitespacePluginOwnerBlueprintPath);
+  assert.equal(whitespacePluginOwnerExport.ok, false);
+  assert.equal(whitespacePluginOwnerExport.error?.class, 'RuntimeException');
+  assert.match(
+    whitespacePluginOwnerExport.error?.message || '',
+    /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
+  );
 
   console.log(JSON.stringify({
-    status: plan.status,
-    driver: plan.mutations[0].pluginOwnedResource.driver,
-    table: plan.mutations[0].pluginOwnedResource.table,
-    applied: protocolApply.applied + protocolDelete.applied,
-    updateVerified: protocolApply.verified,
-    deleteVerified: protocolDelete.verified,
+    scope: smokeScope,
+    status: planStatus,
+    driver: driverName,
+    table: driverTable,
+    applied: appliedMutations,
+    updateVerified,
+    deleteVerified,
     missingExportRowsGuard: missingExportRowsExport.error?.class,
     missingApplyRowGuard: missingApplyRowExport.error?.class,
     malformedValidateGuard: malformedValidateExport.error?.class,
     missingDriverNameGuard: missingDriverNameExport.error?.class,
+    whitespaceDriverNameGuard: whitespaceDriverNameExport.error?.class,
     missingPluginOwnerGuard: missingPluginOwnerExport.error?.class,
+    whitespacePluginOwnerGuard: whitespacePluginOwnerExport.error?.class,
     missingTableGuard: missingTableExport.error?.class,
+    whitespaceTableGuard: whitespaceTableExport.error?.class,
     duplicateDriverNameGuard: duplicateDriverNameExport.error?.class,
     duplicateTableGuard: duplicateTableExport.error?.class,
   }, null, 2));
@@ -237,11 +299,23 @@ function writeBlueprint(
     blankDriverName = false,
     omitPluginOwner = false,
     omitTable = false,
+    whitespaceDriverName = false,
+    whitespacePluginOwner = false,
+    whitespaceTable = false,
     duplicateDriverName = false,
     duplicateTable = false,
   },
 ) {
   const blueprint = JSON.parse(fs.readFileSync(path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), 'utf8'));
+  const configuredDriverName = blankDriverName
+    ? ''
+    : (whitespaceDriverName ? '   ' : driverName);
+  const configuredTable = omitTable
+    ? null
+    : (whitespaceTable ? '   ' : driverTable);
+  const configuredPluginOwner = omitPluginOwner
+    ? null
+    : (whitespacePluginOwner ? '   ' : pluginOwner);
   const pluginCode = `<?php
 /*
 Plugin Name: Reprint Push Driver Fixture
@@ -251,9 +325,9 @@ Version: 0.0.1
 
 add_filter('reprint_push_plugin_owned_row_drivers', static function (array $drivers): array {
     $drivers['${driverName}'] = [
-        'driver' => '${blankDriverName ? '' : driverName}',
-${omitTable ? '' : `        'table' => '${driverTable}',`}
-${omitPluginOwner ? '' : `        'pluginOwner' => '${pluginOwner}',`}
+        'driver' => '${configuredDriverName}',
+${configuredTable === null ? '' : `        'table' => '${configuredTable}',`}
+${configuredPluginOwner === null ? '' : `        'pluginOwner' => '${configuredPluginOwner}',`}
         'supportsDelete' => true,
 ${omitExportRowsCallback ? '' : "        'exportRowsCallback' => 'reprint_push_driver_fixture_export_rows',"}
 ${omitApplyRowCallback ? '' : "        'applyRowCallback' => 'reprint_push_driver_fixture_apply_row',"}
