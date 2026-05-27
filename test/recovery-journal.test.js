@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { digest } from '../src/stable-json.js';
 import {
   appendJournalCompleted,
   appendMutationObserved,
@@ -17,6 +18,7 @@ import {
   openPlanRecoveryJournal,
   openProductionRecoveryJournal,
   openRecoveryJournal,
+  RECOVERY_JOURNAL_SCHEMA_VERSION,
   recoveryClaimHash,
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
@@ -4210,6 +4212,155 @@ test('production recovery journal consumption fails closed when persisted remote
         remote: rewrittenRemoteArtifactPath,
       },
       claimId,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence rewrote the owned remote artifact path.',
+  });
+});
+
+test('production recovery journal reopen fails closed when a consumed claim is reopened after a later claim reopen rewrites the owned remote artifact path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const rewrittenRemoteArtifactPath = `${filePath}.rewritten-remote`;
+  const claimId = 'claim-consumed-reopened-drifted-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: persisted.records.length + 1,
+    type: 'recovery-claim-opened',
+    timestamp: fixedNow.toISOString(),
+    planId: plan.id,
+    state: 'active',
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+    observedHash: digest(remote),
+    artifactRefs: {
+      journal: filePath,
+      remote: rewrittenRemoteArtifactPath,
+    },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal(filePath, {
+      truncate: false,
+      now: fixedNow,
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
+    });
+  }, {
+    name: 'UnsupportedProductionRecoveryJournalError',
+    code: 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL',
+    message: 'Production recovery journal persistence rewrote the owned remote artifact path.',
+  });
+});
+
+test('production recovery journal compatibility overload fails closed when a consumed claim is reopened after a later claim reopen rewrites the owned remote artifact path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const remoteArtifactPath = `${filePath}.remote`;
+  const rewrittenRemoteArtifactPath = `${filePath}.rewritten-remote`;
+  const claimId = 'claim-consumed-reopened-compatibility-drifted-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    writerLease,
+  });
+
+  const persisted = readRecoveryJournal(filePath);
+  persisted.records.push({
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    sequence: persisted.records.length + 1,
+    type: 'recovery-claim-opened',
+    timestamp: fixedNow.toISOString(),
+    planId: plan.id,
+    state: 'active',
+    claimHash: recoveryClaimHash(claimId),
+    claimLease: writerLease,
+    observedHash: digest(remote),
+    artifactRefs: {
+      journal: filePath,
+      remote: rewrittenRemoteArtifactPath,
+    },
+    fsync: {
+      requested: true,
+      strategy: 'after-append',
+    },
+  });
+  fs.writeFileSync(filePath, `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`);
+
+  assert.throws(() => {
+    openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      writerLease,
+      ownsRemoteArtifact: true,
+      remoteArtifactPath,
     });
   }, {
     name: 'UnsupportedProductionRecoveryJournalError',
