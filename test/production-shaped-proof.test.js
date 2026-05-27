@@ -2510,6 +2510,22 @@ test('packaged release verifier readiness helper fails fast on signaled child te
   assert.match(helperSource, /writePlaygroundFailure\(message, lastProbes, getOutput\(\), lastError, lastTimeoutFallbackProbes\);/);
 });
 
+test('packaged release verifier readiness helper reports early child exit codes', () => {
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const start = verifierSource.indexOf('async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) {');
+  assert.notEqual(start, -1, 'expected packaged verifier readiness helper in verifier source');
+  const end = verifierSource.indexOf('async function fetchPackagedPreflightProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged verifier readiness helper boundary in verifier source');
+  const helperSource = verifierSource.slice(start, end);
+
+  assert.match(helperSource, /child\.exitCode !== null \?\s*`exited early with \$\{child\.exitCode\}`\s*:\s*`terminated by \$\{child\.signalCode\}`/);
+  assert.match(helperSource, /Packaged Playground server \$\{exitLabel\}/);
+  assert.match(helperSource, /writePlaygroundFailure\(message, lastProbes, getOutput\(\), lastError, lastTimeoutFallbackProbes\);/);
+});
+
 test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
@@ -2523,6 +2539,21 @@ test('packaged production plugin smoke readiness helper fails fast on signaled c
 
   assert.match(helperSource, /child\.exitCode !== null \|\| child\.signalCode !== null/);
   assert.match(helperSource, /terminated by \$\{child\.signalCode\}/);
+});
+
+test('packaged production plugin smoke readiness helper reports early child exit codes', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  assert.match(helperSource, /child\.exitCode !== null\s*\?\s*`exited early with \$\{child\.exitCode\}`\s*:\s*`terminated by \$\{child\.signalCode\}`/);
+  assert.match(helperSource, /Playground server \$\{exitLabel\}/);
 });
 
 test('packaged production plugin smoke readiness helper preserves timeout fallback probe details', () => {
