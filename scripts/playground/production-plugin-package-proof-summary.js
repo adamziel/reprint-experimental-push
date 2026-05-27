@@ -652,8 +652,10 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
 
   const attachedModeProof = summary?.modeProof;
   if (
-    attachedModeProof?.canonicalMode === resolved.canonicalMode
+    attachedModeProof?.mode === resolved.mode
+    && attachedModeProof?.canonicalMode === resolved.canonicalMode
     && attachedModeProof?.proofKey === resolved.proofKey
+    && attachedModeProof?.legacyProofKey === resolved.legacyProofKey
   ) {
     return {
       ...baseModeProof,
@@ -665,8 +667,10 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
 
   const attachedPluginDriverModeProof = summary?.pluginDriverProof?.modeProof;
   if (
-    attachedPluginDriverModeProof?.canonicalMode === resolved.canonicalMode
+    attachedPluginDriverModeProof?.mode === resolved.mode
+    && attachedPluginDriverModeProof?.canonicalMode === resolved.canonicalMode
     && attachedPluginDriverModeProof?.proofKey === resolved.proofKey
+    && attachedPluginDriverModeProof?.legacyProofKey === resolved.legacyProofKey
   ) {
     return {
       ...baseModeProof,
