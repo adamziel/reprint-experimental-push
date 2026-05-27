@@ -2633,6 +2633,7 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     : null;
   const writerHasOwnLeaseIdentity = Object.hasOwn(writer ?? {}, 'writerLease');
   const writerHasOwnLeaseFence = Object.hasOwn(writer ?? {}, 'leaseFence');
+  const writerHasOwnClaimId = Object.hasOwn(writer ?? {}, 'claimId');
   const writerHasOwnClaimHash = Object.hasOwn(writer ?? {}, 'claimHash');
   const writerHasValidLeaseIdentity = writerHasOwnLeaseIdentity
     && hasValidProductionLeaseIdentity(writer?.writerLease);
@@ -2640,6 +2641,14 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     && hasValidProductionLeaseIdentity(writer?.leaseFence)
     && writerHasValidLeaseIdentity
     && productionLeaseIdentitiesMatch(writer.leaseFence, writer.writerLease);
+  const writerHasValidClaimId = writerHasOwnClaimId
+    && typeof writer?.claimId === 'string'
+    && writer.claimId.trim().length > 0
+    && writer.claimId.trim() === writer.claimId
+    && !hasHiddenOwnStringProperty(writer, 'claimId');
+  const writerClaimIdMatchesLease = writerHasValidLeaseIdentity
+    && writerHasValidClaimId
+    && writer.claimId === writer.writerLease.id;
   const writerHasValidClaimHash = writerHasOwnClaimHash
     && typeof writer?.claimHash === 'string'
     && /^[a-f0-9]{64}$/.test(writer.claimHash)
@@ -2650,6 +2659,8 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
   const missingClaimFence = writer?.kind === 'production-recovery-journal' && (
     !writerHasValidLeaseIdentity
     || !writerHasValidLeaseFence
+    || !writerHasValidClaimId
+    || !writerClaimIdMatchesLease
     || !writerHasValidClaimHash
     || !writerClaimHashMatchesLease
     || blockedClaimState?.status === 'blocked'
