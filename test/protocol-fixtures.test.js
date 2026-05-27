@@ -4643,6 +4643,13 @@ test('verify:release keeps preserved-remote retry pinned at the checked entrypoi
   );
 });
 
+test('verify:release keeps the packaged driver verifier bundle in driver-guard-only mode', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-verifier-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-verifier-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('verify:release fails closed at the explicit missing-secret gate when a source URL is supplied', () => {
   const proof = runVerifyRelease({
     REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:65535',
