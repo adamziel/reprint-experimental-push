@@ -936,6 +936,7 @@ function buildCheckedRecoveryJournalSummary() {
     writerLease: {
       strategy: 'claim-fenced-single-writer',
       claimId: 'retry-claim-hash-02',
+      claimKeyHash: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -953,6 +954,7 @@ function buildCheckedRecoveryJournalSummary() {
       writerLease: {
         strategy: 'claim-fenced-single-writer',
         claimId: 'retry-claim-hash-02',
+        claimKeyHash: 'retry-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -960,6 +962,11 @@ function buildCheckedRecoveryJournalSummary() {
         restartReadable: true,
         staleClaimRejected: true,
       },
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'compare-and-swap',
+      outcome: 'precondition-failed',
     },
     latestRows: [
       {
@@ -4003,6 +4010,7 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.writerLease.claimKeyHash, 'retry-claim-hash-02');
 });
 
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease storage guard', { skip: !hasPhp }, () => {
@@ -4183,6 +4191,7 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.leaseFence.writerLease.claimKeyHash, 'retry-claim-hash-02');
 });
 
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted ownership supported surface', { skip: !hasPhp }, () => {
