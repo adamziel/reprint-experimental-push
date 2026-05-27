@@ -1106,8 +1106,14 @@ export function productionRecoverySupportReport(writer) {
     if (persistedArtifactRefs.invalidReason === 'invalid artifact ref keys') {
       addMissingDependency('restart-readable recovery artifact references');
     }
-    if (persistedArtifactRefs.invalidReason.includes('journal artifact ref')) {
+    if (
+      persistedArtifactRefs.invalidReason.includes('journal artifact ref')
+      || persistedArtifactRefs.invalidReason.includes('journal artifact path')
+    ) {
       addMissingDependency('restart-readable recovery artifact references');
+      if (persistedArtifactRefs.invalidReason.includes('journal artifact path')) {
+        addMissingDependency('restart-readable recovery artifact location');
+      }
       if (
         writerOwnsRemoteArtifact
         || writerRemoteArtifactRef
@@ -2383,6 +2389,11 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     || missingDependency.includes('restart-readable recovery artifact location');
   const missingRemoteArtifactOwnership = missingDependency.includes('restart-readable remote recovery artifact ownership');
   const missingRemoteArtifactRefs = missingDependency.includes('restart-readable recovery remote artifact references');
+  const blockedJournalArtifactHistoryInvalid = [
+    'invalid journal artifact ref',
+    'rewritten journal artifact ref',
+    'missing journal artifact ref',
+  ].includes(blockedPersistedArtifactRefs?.invalidReason);
   const blockedRemoteArtifactHistoryInvalid = [
     'invalid remote artifact ref',
     'rewritten remote artifact ref',
@@ -2417,6 +2428,27 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
     writer?.kind === 'production-recovery-journal'
     && recoveryState.status === 'blocked-recovery'
     && (
+      missingJournalArtifactSurface
+      || blockedJournalArtifactHistoryInvalid
+    )
+  ) {
+    throw new PushPlanError(
+      'JOURNAL_WRITER_INVALID',
+      'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
+      {
+        eventType: 'recovery-state',
+        causeMessage: 'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
+        missingDependency: missingDependency.includes('restart-readable recovery artifact location')
+          ? ['restart-readable recovery artifact references', 'restart-readable recovery artifact location']
+          : ['restart-readable recovery artifact references'],
+      },
+    );
+  }
+
+  if (
+    writer?.kind === 'production-recovery-journal'
+    && recoveryState.status === 'blocked-recovery'
+    && (
       !writerRemoteArtifactRef
       || missingRemoteArtifactOwnership
       || missingRemoteArtifactRefs
@@ -2437,23 +2469,6 @@ function recordDurableRecoveryState(writer, current, plan, recoveryState, suppor
         eventType: 'recovery-state',
         causeMessage,
         missingDependency: remoteMissingDependency,
-      },
-    );
-  }
-
-  if (
-    writer?.kind === 'production-recovery-journal'
-    && missingJournalArtifactSurface
-  ) {
-    throw new PushPlanError(
-      'JOURNAL_WRITER_INVALID',
-      'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
-      {
-        eventType: 'recovery-state',
-        causeMessage: 'Production durable journal lost its owned restart-readable journal artifact reference before recording recovery state.',
-        missingDependency: missingDependency.includes('restart-readable recovery artifact location')
-          ? ['restart-readable recovery artifact references', 'restart-readable recovery artifact location']
-          : ['restart-readable recovery artifact references'],
       },
     );
   }
@@ -2849,6 +2864,9 @@ function durableJournalFailureDetails(error) {
   return {
     eventType: error?.details?.eventType || null,
     causeMessage: error?.details?.causeMessage || error?.message || String(error),
+    missingDependency: Array.isArray(error?.details?.missingDependency)
+      ? [...error.details.missingDependency]
+      : undefined,
   };
 }
 

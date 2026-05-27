@@ -21760,6 +21760,47 @@ test('production recovery support report keeps checked boundary closed when pers
   assert.ok(report.missingDependency.includes('restart-readable recovery remote artifact references'));
 });
 
+test('production recovery support report keeps checked boundary closed when persisted journal artifact history rewrites the owned path', () => {
+  const filePath = tempRecoveryJournalPath();
+  const rewrittenJournalPath = `${filePath}.rewritten`;
+  const remoteArtifactPath = `${filePath}.remote`;
+  const claimId = 'claim-rewritten-persisted-journal-artifact-checked-boundary';
+  const reportWriter = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId, epoch: 3 },
+  });
+  appendRecoveryClaimOpened(reportWriter, {
+    plan: planFor(baseSite(), baseSite(), baseSite()),
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  reportWriter.appendEvent('journal-opened', {
+    planId: 'checked-boundary-journal-rewrite',
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: rewrittenJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const report = productionRecoverySupportReport(reportWriter);
+  reportWriter.close();
+
+  assert.equal(report.supported, false);
+  assert.equal(report.checkedBoundarySatisfied, false);
+  assert.equal(report.checkedBoundaryProof.acceptedOnCheckedBoundary, false);
+  assert.ok(report.missingDependency.includes('restart-readable recovery artifact references'));
+});
+
 test('production recovery support report keeps checked boundary closed without stale-claim lineage evidence', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/checked-boundary-no-lineage-remote.jsonl`;
@@ -38566,6 +38607,78 @@ test('production durable journal partial commits fail closed when persisted remo
   assert.equal(error.details.durableRecoveryStateWriteFailed, true);
   assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
   assert.match(error.details.durableJournalError.causeMessage, /restart-readable remote artifact reference/);
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state'),
+    false,
+  );
+});
+
+test('production durable journal partial commits fail closed when persisted journal artifact history rewrites to a different absolute path mid-run', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const rewrittenJournalPath = `${durableJournalPath}.rewritten`;
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-rewritten-persisted-journal-ref';
+  const baseWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId },
+  });
+  const durableJournal = {
+    ...baseWriter,
+    appendEvent(type, payload) {
+      const nextPayload = type === 'journal-opened'
+        ? {
+          ...payload,
+          artifactRefs: {
+            journal: rewrittenJournalPath,
+            remote: remoteArtifactPath,
+          },
+        }
+        : payload;
+      return baseWriter.appendEvent(type, nextPayload);
+    },
+    close() {
+      return baseWriter.close();
+    },
+  };
+  const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.durableRecoveryStateWriteFailed, true);
+  assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
+  assert.match(error.details.durableJournalError.causeMessage, /restart-readable journal artifact reference/);
+  assert.ok(error.details.durableJournalError.missingDependency.includes('restart-readable recovery artifact references'));
   assert.equal(
     persisted.records.some((record) => record.type === 'recovery-state'),
     false,
