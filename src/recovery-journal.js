@@ -207,6 +207,7 @@ function leaseFenceContractMatches(candidate) {
     && [
       'boundary',
       'claimKeyUnique',
+      'storageGuard',
       'fsyncEvidence',
       'monotonicSequence',
       'restartReadable',
@@ -215,6 +216,9 @@ function leaseFenceContractMatches(candidate) {
     ].every((key) => Object.hasOwn(candidate, key))
     && typeof candidate.boundary === 'string'
     && candidate.boundary.length > 0
+    && typeof candidate.storageGuard === 'string'
+    && candidate.storageGuard.length > 0
+    && candidate.storageGuard === candidate.boundary
     && candidate.claimKeyUnique === true
     && candidate.fsyncEvidence === true
     && candidate.monotonicSequence === true

@@ -5360,6 +5360,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
       fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
@@ -5396,6 +5397,44 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       },
     }),
     true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        storageGuard: undefined,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        storageGuard: 'filesystem-compare-rename',
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
   );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
@@ -5879,6 +5918,7 @@ test('checked durable journal boundary accepts the packaged production journal s
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
       fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
@@ -5952,6 +5992,7 @@ test('checked durable journal boundary accepts the explicit packaged recovery jo
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
       fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
@@ -6008,6 +6049,7 @@ test('checked durable journal boundary accepts the explicit live recovery journa
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
       fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
@@ -6063,6 +6105,7 @@ test('checked durable journal boundary rejects nearby stale scope wording', () =
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      storageGuard: 'wpdb-single-statement-cas',
       fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
