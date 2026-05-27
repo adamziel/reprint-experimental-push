@@ -2023,8 +2023,19 @@ function durableJournalInspectArtifactRefs(inspected) {
     && Object.hasOwn(inspected, 'artifactRefs')
     && isStrictPlainObject(inspected.artifactRefs)
     && !hasHiddenOwnStringKeys(inspected.artifactRefs)
+    && Reflect.ownKeys(inspected.artifactRefs).every((key) => key === 'journal' || key === 'remote')
     && Object.hasOwn(inspected.artifactRefs, 'journal')
     && typeof inspected.artifactRefs.journal === 'string'
+    && isCanonicalAbsolutePath(inspected.artifactRefs.journal)
+    && (
+      !Object.hasOwn(inspected.artifactRefs, 'remote')
+      || inspected.artifactRefs.remote === null
+      || (
+        typeof inspected.artifactRefs.remote === 'string'
+        && isCanonicalAbsolutePath(inspected.artifactRefs.remote)
+        && inspected.artifactRefs.remote !== inspected.artifactRefs.journal
+      )
+    )
   );
 }
 
