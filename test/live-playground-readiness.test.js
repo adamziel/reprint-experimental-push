@@ -1955,6 +1955,129 @@ test('packaged server readiness fails closed for terminal production auth sessio
   }
 });
 
+test('packaged preflight startup context still fails closed for terminal production auth session states', () => {
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+        identity: {
+          userLogin: 'admin',
+          userId: 1,
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+  const startupContext = {
+    packagedStartup: true,
+    indexProbe: {
+      status: 503,
+      body: JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }),
+    },
+    snapshotProbe: {
+      status: 404,
+      body: JSON.stringify({
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      }),
+    },
+  };
+
+  const terminalSessions = [
+    {
+      label: 'expired status',
+      session: {
+        id: 'session_123',
+        status: 'expired',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleaned-up marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+  ];
+
+  for (const { label, session } of terminalSessions) {
+    const terminalPreflight = {
+      ...basePreflight,
+      body: {
+        ...basePreflight.body,
+        auth: {
+          ...basePreflight.body.auth,
+          session,
+        },
+      },
+    };
+
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(terminalPreflight, startupContext),
+      false,
+      `${label} should fail closed instead of inheriting packaged startup retryability`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(terminalPreflight, startupContext),
+      true,
+      `${label} should remain terminal even with packaged startup context`,
+    );
+  }
+});
+
 
 test('packaged server readiness fails closed for mismatched or incomplete signed preflight session identities', () => {
   const readySnapshot = {
