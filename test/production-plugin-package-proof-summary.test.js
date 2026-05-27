@@ -1498,6 +1498,168 @@ test('plugin-driver proof summary treats fully requested concrete verifier guard
   });
 });
 
+test('plugin-driver proof summary treats fully requested concrete positive proof as a selected bundle on the object', () => {
+  const concretePositiveScenarios = scenarioGroups['driver-positive-proof'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverDeleteApply: {
+        resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
+        remoteSupportsDelete: true,
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: concretePositiveScenarios,
+      selectedScenarios: new Set(concretePositiveScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.positiveProof.requested, true);
+  assert.equal(summary.positiveProof.selected, true);
+  assert.equal(summary.positiveProof.ok, true);
+  assert.equal(summary.positiveProof.status, 'passed');
+  assert.equal(summary.positiveProof.requestedStatus, 'passed');
+  assert.equal(summary.positiveProof.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.positiveProof.requestedBundleStatuses, {
+    driverPositiveProof: 'passed',
+  });
+});
+
+test('plugin-driver proof summary treats fully requested concrete registration guards as a selected bundle on the object', () => {
+  const concreteRegistrationScenarios = scenarioGroups['driver-registration-guards'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: concreteRegistrationScenarios,
+      selectedScenarios: new Set(concreteRegistrationScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.registrationGuards.requested, true);
+  assert.equal(summary.registrationGuards.selected, true);
+  assert.equal(summary.registrationGuards.ok, true);
+  assert.equal(summary.registrationGuards.status, 'passed');
+  assert.equal(summary.registrationGuards.requestedStatus, 'passed');
+  assert.equal(summary.registrationGuards.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.registrationGuards.requestedBundleStatuses, {
+    driverRegistrationGuards: 'passed',
+  });
+});
+
+test('plugin-driver proof summary treats fully requested concrete callback guards as a selected bundle on the object', () => {
+  const concreteCallbackScenarios = scenarioGroups['driver-callback-guards'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+    },
+    {
+      requestedScenarios: concreteCallbackScenarios,
+      selectedScenarios: new Set(concreteCallbackScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.callbackGuards.requested, true);
+  assert.equal(summary.callbackGuards.selected, true);
+  assert.equal(summary.callbackGuards.ok, true);
+  assert.equal(summary.callbackGuards.status, 'passed');
+  assert.equal(summary.callbackGuards.requestedStatus, 'passed');
+  assert.equal(summary.callbackGuards.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.callbackGuards.requestedBundleStatuses, {
+    driverCallbackGuards: 'passed',
+  });
+});
+
+test('plugin-driver proof summary treats fully requested concrete registration-shape guards as a selected bundle on the object', () => {
+  const concreteRegistrationShapeScenarios = scenarioGroups['driver-registration-shape-guards'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: concreteRegistrationShapeScenarios,
+      selectedScenarios: new Set(concreteRegistrationShapeScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.registrationShapeGuards.requested, true);
+  assert.equal(summary.registrationShapeGuards.selected, true);
+  assert.equal(summary.registrationShapeGuards.ok, true);
+  assert.equal(summary.registrationShapeGuards.status, 'passed');
+  assert.equal(summary.registrationShapeGuards.requestedStatus, 'passed');
+  assert.equal(summary.registrationShapeGuards.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.registrationShapeGuards.requestedBundleStatuses, {
+    driverRegistrationShapeGuards: 'passed',
+  });
+});
+
 test('plugin-driver proof summary reports requested registration-shape bundle verdicts directly', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
@@ -2520,7 +2682,7 @@ test('plugin-driver proof summary fails requested bundles when the selected proo
   });
   assert.deepEqual(summary.callbackGuards, {
     requested: false,
-    selected: true,
+    selected: false,
     ok: false,
     status: 'skipped',
     exportStatus: 'passed',
