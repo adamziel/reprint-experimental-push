@@ -10748,6 +10748,92 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into r
   ]);
 });
 
+test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw receipt-cursor queue-slack visibility disappears', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+  ].includes(entry.id));
+
+  assert.deepEqual(
+    releaseBundlePauseRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+    ],
+  );
+
+  assert.deepEqual(summarizeRejectedGates(releaseBundlePauseRejectedFastPaths), [
+    { rejectedGate: 'group', count: 5 },
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
+});
+
 test('guarded benchmark carries hidden raw memory-ceiling visibility blockers into rejected release-bundle summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
