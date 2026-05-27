@@ -12235,7 +12235,7 @@ test('packaged production plugin smoke readiness helper fails closed when packag
   assert.equal(fetchCalls.length, 8);
 });
 
-test('packaged production plugin smoke readiness helper fails closed when the snapshot route and /wp-json/ stay global-startup-shaped', async () => {
+test('packaged production plugin smoke readiness helper fails closed when global WordPress startup exceeds the packaged snapshot budget', async () => {
   const snapshotStartupBody = JSON.stringify({
     code: 'rest_no_route',
     message: 'No route was found matching the URL and request method.',
@@ -14558,7 +14558,7 @@ test('packaged readiness helper inventories keep verifier and smoke runtime bran
   );
 });
 
-test('packaged smoke readiness helper formats malformed snapshot and preflight bodies as bounded readiness failures', () => {
+test('packaged production plugin smoke readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
     'utf8',
