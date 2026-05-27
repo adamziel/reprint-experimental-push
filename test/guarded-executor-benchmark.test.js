@@ -12598,6 +12598,41 @@ test('guarded benchmark surfaces receipt-flush blockers at runtime', async () =>
   ]);
 });
 
+test('guarded benchmark surfaces plugin-install blockers at runtime', () => {
+  const report = largeBenchmark();
+  const details = productionThroughputDetails(report);
+  const pluginInstallRejectedFastPaths = details.rejectedFastPaths
+    .filter((entry) => [
+      'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+      'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+    ].includes(entry.id))
+    .sort((left, right) => left.id.localeCompare(right.id));
+
+  assert.deepEqual(pluginInstallRejectedFastPaths.map(({ id }) => id), [
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+  ]);
+
+  assert.deepEqual(summarizeRejectedGates(pluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 5 },
+    { rejectedGate: 'recovery', count: 4 },
+  ]);
+});
+
 test('guarded benchmark carries hidden staging-disk visibility blockers into rollout summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
