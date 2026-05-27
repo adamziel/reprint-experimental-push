@@ -975,6 +975,20 @@ const SUPPORTED_CORE_POST_OBJECT_TAXONOMIES = new Set([
   'post_format',
 ]);
 
+const UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACES = new Set([
+  'nav_menu_item',
+  'revision',
+  'wp_navigation',
+]);
+
+const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set([
+  '_menu_item_object',
+  '_menu_item_object_id',
+  '_menu_item_menu_item_parent',
+  '_menu_item_type',
+  'menu_item_parent',
+]);
+
 function wordpressGraphIdentitySupport({
   resource,
   localValue,
@@ -1039,7 +1053,27 @@ function wordpressGraphSurfaceSupport(resource, value) {
     return { supported: true };
   }
 
-  if (wordpressGraphTableSuffix(resource.table) === 'term_taxonomy' && value.taxonomy === 'nav_menu') {
+  const suffix = wordpressGraphTableSuffix(resource.table);
+
+  if (suffix === 'posts' && UNSUPPORTED_WORDPRESS_POST_GRAPH_SURFACES.has(value.post_type)) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${resource.key} references unsupported post graph surface ${String(value.post_type)}.`,
+      references: [],
+    };
+  }
+
+  if (suffix === 'postmeta' && UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS.has(value.meta_key)) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${resource.key} references unsupported menu item metadata graph surface ${String(value.meta_key)}.`,
+      references: [],
+    };
+  }
+
+  if (suffix === 'term_taxonomy' && value.taxonomy === 'nav_menu') {
     return {
       supported: false,
       className: 'stale-wordpress-graph-identity',
@@ -1049,7 +1083,7 @@ function wordpressGraphSurfaceSupport(resource, value) {
   }
 
   if (
-    wordpressGraphTableSuffix(resource.table) === 'term_taxonomy'
+    suffix === 'term_taxonomy'
     && !SUPPORTED_CORE_POST_OBJECT_TAXONOMIES.has(value.taxonomy)
   ) {
     return {

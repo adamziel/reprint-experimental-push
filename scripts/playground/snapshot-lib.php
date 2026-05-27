@@ -3,8 +3,8 @@
  * Shared snapshot helpers for the Playground push lab.
  *
  * These helpers intentionally cover only the fixture surface used by the lab:
- * marked posts, allowlisted plugin-owned options/postmeta, fixture-scoped lab
- * plugin/table metadata, named lab plugin files, and upload files under
+ * marked posts, their author identities, allowlisted plugin-owned options/postmeta,
+ * fixture-scoped lab plugin/table metadata, named lab plugin files, and upload files under
  * wp-content/uploads/reprint-push.
  */
 
@@ -24,6 +24,7 @@ function reprint_push_export_snapshot(): array
         'plugins' => [],
         'db' => [
             'wp_posts' => [],
+            'wp_users' => [],
             'wp_options' => [],
             'wp_postmeta' => [],
             'wp_reprint_push_forms_lab' => [],
@@ -60,6 +61,7 @@ function reprint_push_export_snapshot(): array
         $snapshot['db']['wp_posts']['ID:' . $post['ID']] = $post;
     }
 
+    reprint_push_export_fixture_post_authors($snapshot);
     reprint_push_export_fixture_postmeta($snapshot);
     reprint_push_export_fixture_plugin_metadata($snapshot);
     reprint_push_export_fixture_custom_table($snapshot);
@@ -74,11 +76,45 @@ function reprint_push_export_snapshot(): array
     ksort($snapshot['files']);
     ksort($snapshot['plugins']);
     ksort($snapshot['db']['wp_posts']);
+    ksort($snapshot['db']['wp_users']);
     ksort($snapshot['db']['wp_options']);
     ksort($snapshot['db']['wp_postmeta']);
     ksort($snapshot['db']['wp_reprint_push_forms_lab']);
 
     return $snapshot;
+}
+
+function reprint_push_export_fixture_post_authors(array &$snapshot): void
+{
+    global $wpdb;
+
+    $author_ids = [];
+    foreach ($snapshot['db']['wp_posts'] as $post) {
+        $author_id = (int) ($post['post_author'] ?? 0);
+        if ($author_id > 0) {
+            $author_ids[$author_id] = $author_id;
+        }
+    }
+    if (count($author_ids) === 0) {
+        return;
+    }
+
+    $placeholders = implode(', ', array_fill(0, count($author_ids), '%d'));
+    $rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT ID
+             FROM {$wpdb->users}
+             WHERE ID IN ({$placeholders})
+             ORDER BY ID ASC",
+            ...array_values($author_ids)
+        ),
+        ARRAY_A
+    );
+
+    foreach ($rows as $row) {
+        $row['ID'] = (int) $row['ID'];
+        $snapshot['db']['wp_users']['ID:' . $row['ID']] = $row;
+    }
 }
 
 function reprint_push_export_fixture_postmeta(array &$snapshot): void
