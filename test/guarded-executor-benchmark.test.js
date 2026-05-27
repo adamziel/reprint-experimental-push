@@ -276,8 +276,35 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
       ],
     },
     {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+      rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+      rejectedGate: 'recovery',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
       id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
       rejectedGate: 'group',
+      blockerRefs: [
+        'production-atomic-group-commit-not-measured',
+        'production-storage-receipts-not-measured',
+        'production-row-batch-executor-not-measured',
+      ],
+    },
+    {
+      id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+      rejectedGate: 'recovery',
       blockerRefs: [
         'production-atomic-group-commit-not-measured',
         'production-storage-receipts-not-measured',
@@ -391,9 +418,9 @@ test('guarded executor benchmark keeps large-site rollout proof bounded and name
   assert.deepEqual(
     report.claims.productionThroughputDetails.rejectedFastPathGateSummary,
     [
-      { rejectedGate: 'group', count: 6 },
+      { rejectedGate: 'group', count: 7 },
       { rejectedGate: 'live', count: 1 },
-      { rejectedGate: 'recovery', count: 4 },
+      { rejectedGate: 'recovery', count: 6 },
     ],
   );
   assert.deepEqual(
@@ -9953,7 +9980,10 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
       .filter((entry) => [
         'compressed-remote-index-and-cached-release-manifest-skips-release-bundle-commit',
         'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
+        'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
       ].includes(entry.id))
       .map((entry) => ({
         id: entry.id,
@@ -9980,12 +10010,114 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
         ],
       },
       {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
         id: 'compressed-remote-index-and-batched-row-receipts-skips-release-bundle-commit',
         rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-storage-receipts-not-measured',
           'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+    ],
+  );
+});
+
+test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle pause blockers at runtime', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+
+  const details = productionThroughputDetails(mutated);
+
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         ],
       },
     ],
