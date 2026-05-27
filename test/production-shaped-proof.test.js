@@ -78,7 +78,7 @@ const playgroundServerTimeoutMs = 40;
 const serverFetchTimeoutMs = 3_000;
 const playgroundStopTimeoutMs = 3_000;
 const readinessProbeIntervalMs = 500;
-const readinessFailureBodyLimit = 500;
+const readinessFailureBodyLimit = 240;
 const runLivePlaygroundTopologyTests = process.env.REPRINT_RUN_PLAYGROUND_LIVE_TESTS === '1';
 const maybeTest = runLivePlaygroundTopologyTests ? test : test.skip;
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -9639,7 +9639,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           route: '/wp-json/reprint-push-lab/v1/snapshot',
           status: snapshot.status,
           ok: snapshot.ok,
-          body: snapshotBody.slice(0, 500),
+          body: snapshotBody.slice(0, readinessFailureBodyLimit),
         });
         process.stderr.write(
           `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
@@ -9783,7 +9783,7 @@ async function waitForServer(child, baseUrl, getLogs) {
             route: '/wp-json/reprint-push-lab/v1/snapshot',
             status: snapshot.status,
             ok: snapshot.ok,
-            body: snapshotBody.slice(0, 500),
+            body: snapshotBody.slice(0, readinessFailureBodyLimit),
           });
           process.stderr.write(
             `Playground probe ${baseUrl}/wp-json/reprint-push-lab/v1/snapshot -> ${snapshot.status} ${snapshotBody.slice(0, 160).replace(/\s+/g, ' ').trim()}\n`,
