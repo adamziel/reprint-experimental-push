@@ -7625,6 +7625,28 @@ test('packaged readiness helpers keep packaged-route startup on the tighter post
   }
 });
 
+test('packaged snapshot startup fallback keeps the packaged-route post-global-ready budget after signed preflight turns terminal', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.match(
+      source,
+      /signed preflight became terminal while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?startupBranch\?\.kind === 'retryable-route-packaged-route-starting'[\s\S]*?packagedProductionPluginPackagedRouteStartupStillWithinBudget\([\s\S]*?await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);[\s\S]*?continue;/s,
+    );
+    assert.match(
+      source,
+      /signed preflight returned an invalid readiness body while snapshot still reported startup-shaped readiness at \$\{baseUrl\}[\s\S]*?startupBranch\?\.kind === 'retryable-route-packaged-route-starting'[\s\S]*?packagedProductionPluginPackagedRouteStartupStillWithinBudget\([\s\S]*?await sleepUnlessChildExit\(readinessProbeIntervalMs, child\);[\s\S]*?continue;/s,
+    );
+  }
+});
+
 test('packaged preflight retryability turns terminal once the live index probe shows startup is over', () => {
   const preflight = {
     status: 401,

@@ -1792,6 +1792,15 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                   },
                 );
               }
+              if (
+                packagedProductionPluginPackagedRouteStartupStillWithinBudget(
+                  snapshotNotReadyProbeCount,
+                  maxPackagedRouteStartupAfterGlobalReadyProbes,
+                )
+              ) {
+                await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+                continue;
+              }
             }
             if (startupBranch?.kind === 'retryable-route-index-terminal') {
               const malformedIndexBody =
