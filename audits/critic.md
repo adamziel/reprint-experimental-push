@@ -1,18 +1,18 @@
 # Critic Verdict
 
-Current reliable head: `9333de8c20c82959b0acb1ec0ce3ba3173efad5a`
-(`Require auth identity user id continuity`).
+Current reliable head: `22e1eb7bb37846fb379e6ea7e71a73304235e3da`
+(`Carry auth identity user id through lifecycle`).
 
 Verdict: `0/4`
 
 Reason:
 
 - This head requires authenticated identity `userId` continuity across the
-  checked auth/session path, including dry-run, apply, recovery, replay, and
-  journal reads. That is useful fail-closed hardening of the verifier/client
+  checked auth/session lifecycle, including preserved reads and journaled
+  replay surfaces. That is useful fail-closed hardening of the verifier/client
   boundary.
-- The new tests prove `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` on user-id
-  drift or missing user-id evidence, but they still run inside the checked
+- The new tests prove the lifecycle summary fails closed when a preserved
+  read changes `auth.identity.userId`, but they still run inside the checked
   harness/client proof surface rather than a production-owned real Reprint
   endpoint.
 - This head therefore does not close any supervised release gate. The missing
