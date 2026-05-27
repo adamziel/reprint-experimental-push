@@ -813,6 +813,7 @@ export function consumeProductionRecoveryJournal(options) {
     journal.appendEvent('recovery-journal-consumed', {
       planId: plan?.id || null,
       state: 'consumed',
+      claimId,
       claimHash: journal.claimHash,
       claimLease: claimLeasePayloadForJournal(journal, claimId),
       observedHash: current ? digest(current) : null,
@@ -2617,6 +2618,7 @@ function summarizeConsumedClaimRecord(records) {
     !isStrictPlainObject(consumedRecord)
     || hasHiddenOwnStringKeys(consumedRecord)
     || !Object.hasOwn(consumedRecord, 'sequence')
+    || !Object.hasOwn(consumedRecord, 'claimId')
     || !Object.hasOwn(consumedRecord, 'claimHash')
     || !Object.hasOwn(consumedRecord, 'claimLease')
   ) {
@@ -2628,7 +2630,17 @@ function summarizeConsumedClaimRecord(records) {
   if (typeof consumedRecord.claimHash !== 'string' || !CLAIM_HASH_PATTERN.test(consumedRecord.claimHash)) {
     return null;
   }
+  if (
+    typeof consumedRecord.claimId !== 'string'
+    || consumedRecord.claimId.trim().length === 0
+    || consumedRecord.claimId.trim() !== consumedRecord.claimId
+  ) {
+    return null;
+  }
   if (!isValidProductionWriterLease(consumedRecord.claimLease)) {
+    return null;
+  }
+  if (consumedRecord.claimId !== consumedRecord.claimLease.id) {
     return null;
   }
   if (consumedRecord.claimHash !== recoveryClaimHash(consumedRecord.claimLease.id)) {
@@ -2637,7 +2649,7 @@ function summarizeConsumedClaimRecord(records) {
 
   return Object.freeze({
     sequence: consumedRecord.sequence,
-    claimId: consumedRecord.claimLease.id,
+    claimId: consumedRecord.claimId,
     claimHash: consumedRecord.claimHash,
     claimLease: freezeProductionWriterLease(consumedRecord.claimLease),
   });
