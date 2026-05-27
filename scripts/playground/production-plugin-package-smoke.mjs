@@ -77,6 +77,9 @@ const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver
 const basePath = path.join(tmpDir, 'base.json');
 const localPath = path.join(tmpDir, 'local.json');
 let packagedDriverRegistryGuardResults = null;
+const activePlaygroundChildren = new Set();
+let cleanupInFlight = null;
+let signalCleanupInstalled = false;
 const packagedDriverRegistryGuardScenarioNames = new Set([
   'driver-missing-export-guard',
   'driver-missing-apply-guard',
@@ -89,6 +92,7 @@ const packagedDriverRegistryGuardScenarioNames = new Set([
 ]);
 
 logSmokeStage('start', formatSelectedScenarioNames(selectedScenarios));
+installSignalCleanup();
 
 try {
   fs.writeFileSync(packagedDriverRegistryGuardScriptPath, `<?php
@@ -1215,7 +1219,7 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   });
   console.log(JSON.stringify(summary, null, 2));
 } finally {
-  fs.rmSync(tmpDir, { recursive: true, force: true });
+  await cleanupSmokeArtifacts();
 }
 
 function preparePackageSnapshots() {
@@ -1934,6 +1938,7 @@ async function startPlaygroundServer(
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  activePlaygroundChildren.add(child);
 
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
@@ -1993,6 +1998,7 @@ async function stopPlaygroundServer(server) {
 
 async function stopChildProcess(child) {
   if (child.exitCode !== null || child.killed) {
+    activePlaygroundChildren.delete(child);
     return;
   }
   child.kill('SIGTERM');
@@ -2001,7 +2007,41 @@ async function stopChildProcess(child) {
   } catch {
     child.kill('SIGKILL');
     await waitForExit(child, 12_000);
+  } finally {
+    activePlaygroundChildren.delete(child);
   }
+}
+
+function installSignalCleanup() {
+  if (signalCleanupInstalled) {
+    return;
+  }
+  signalCleanupInstalled = true;
+  process.on('exit', removeTmpDirSync);
+  for (const signal of ['SIGINT', 'SIGTERM']) {
+    process.once(signal, () => {
+      void cleanupSmokeArtifacts().finally(() => {
+        process.exit(1);
+      });
+    });
+  }
+}
+
+function removeTmpDirSync() {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
+async function cleanupSmokeArtifacts() {
+  if (cleanupInFlight) {
+    return cleanupInFlight;
+  }
+  cleanupInFlight = (async () => {
+    await Promise.allSettled(
+      Array.from(activePlaygroundChildren, (child) => stopChildProcess(child)),
+    );
+    removeTmpDirSync();
+  })();
+  return cleanupInFlight;
 }
 
 function waitForExit(child, timeoutMs) {
