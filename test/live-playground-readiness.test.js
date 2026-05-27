@@ -181,6 +181,27 @@ test('packaged startup classifiers preserve terminal /wp-json/ failures for sign
         body: 'WordPress is not ready yet',
       },
       {
+        status: 503,
+        body: JSON.stringify({
+          code: 'wordpress_not_ready',
+          message: 'WordPress is not ready yet',
+        }),
+      },
+    ),
+    {
+      kind: 'retryable-route-wordpress-starting',
+      globalWordPressStartup: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      {
+        retryable: true,
+        status: 503,
+        body: 'WordPress is not ready yet',
+      },
+      {
         status: 500,
         body: 'Internal Server Error',
       },
