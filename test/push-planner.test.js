@@ -12391,6 +12391,66 @@ test('blocks conflicting plugin-owned driver metadata while preserving a matchin
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks conflicting plugin-owned driver metadata while preserving a matching independent edit and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared edit";';
+  local.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+  };
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+          allowedPluginOwnedResource(resourceKey, 'forms', 'wp-postmeta'),
+        ],
+      },
+    },
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared edit";';
+  remote.db.wp_forms_entries = {
+    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+  };
+  remote.plugins.forms.description = 'remote-only plugin change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+  const planJson = JSON.stringify(plan);
+  const editDecision = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.reason, 'Plugin-owned resource has conflicting driver metadata and cannot be applied safely.');
+  assert.equal(editDecision.decision, 'already-in-sync');
+  assert.equal(editDecision.change.localChange, 'update');
+  assert.equal(editDecision.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(blockerJson.includes('base-private-entry'), false);
+  assert.equal(blockerJson.includes('local-private-entry'), false);
+  assert.equal(planJson.includes('shared edit'), false);
+  assert.equal(planJson.includes('remote-only plugin change'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared edit";');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
+});
+
 test('blocks unknown plugin-owned custom table rows while preserving a matching independent file type swap and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
