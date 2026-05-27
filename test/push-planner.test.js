@@ -49262,6 +49262,67 @@ test('blocks converged comments graph drift while preserving a matching independ
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
 });
 
+test('blocks converged comments graph drift while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:17"]';
+  const matchingTypeSwapKey = 'file:wp-content/uploads/converged-comment-drift';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:17': {
+      comment_ID: 17,
+      comment_post_ID: 1,
+      comment_author: 'Base converged swap commenter',
+      comment_content: 'Base converged swap comment content',
+      comment_approved: '1',
+    },
+  };
+  base.files[matchingTypeSwapKey.slice('file:'.length)] = 'base converged comment swap bytes';
+
+  const local = baseSite();
+  local.db.wp_comments = {
+    'comment_ID:17': {
+      comment_ID: 17,
+      comment_post_ID: 1,
+      comment_author: 'Converged swap commenter',
+      comment_content: 'Converged swap comment content',
+      comment_approved: '0',
+    },
+  };
+  local.files[matchingTypeSwapKey.slice('file:'.length)] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(local.db.wp_comments));
+  remote.files[matchingTypeSwapKey.slice('file:'.length)] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, matchingTypeSwapKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Converged swap comment content'), false);
+  assert.equal(planJson.includes('Base converged swap comment content'), false);
+  assert.equal(planJson.includes('base converged comment swap bytes'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks steady unsupported comments graph rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:18"]';
   const base = baseSite();
