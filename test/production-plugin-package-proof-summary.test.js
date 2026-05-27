@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   buildProductionPluginPackageProofSummary,
   bundleSummaryGroups,
+  proofKeyByCanonicalMode,
+  resolveProductionPluginPackageModeProofKey,
   scenarioDefinitionNames,
 } from '../scripts/playground/production-plugin-package-proof-summary.js';
 import { scenarioGroups, scenarioNames } from '../scripts/playground/production-plugin-package-scenarios.js';
@@ -67,6 +69,36 @@ test('plugin-driver proof summary tracks every shared plugin-driver scenario exa
       .sort(),
     Object.keys(scenarioGroups).sort(),
   );
+});
+
+test('plugin-driver proof summary exports canonical proof keys for downstream mode consumers', () => {
+  assert.deepEqual(proofKeyByCanonicalMode, {
+    'core-package-routes': 'driverRouteProof',
+    'driver-callback-guards': 'driverCallbackGuards',
+    'driver-delete-apply': 'driverDeleteApplyProof',
+    'driver-positive-proof': 'driverPositiveProof',
+    'driver-proof': 'driverProof',
+    'driver-receipt-guards': 'driverReceiptGuards',
+    'driver-receipt-registration-guards': 'driverReceiptRegistrationGuards',
+    'driver-registration-guards': 'driverRegistrationGuards',
+    'driver-registration-shape-guards': 'driverRegistrationShapeGuards',
+    'driver-release-proof': 'driverReleaseProof',
+    'driver-verifier-guards': 'driverVerifierGuards',
+  });
+});
+
+test('plugin-driver proof summary resolves runtime mode aliases to the canonical proof key contract', () => {
+  assert.deepEqual(resolveProductionPluginPackageModeProofKey('driverMutationProof'), {
+    mode: 'driverMutationProof',
+    canonicalMode: 'driver-release-proof',
+    proofKey: 'driverReleaseProof',
+  });
+  assert.deepEqual(resolveProductionPluginPackageModeProofKey('driverVerifierGuardsOnly'), {
+    mode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+    proofKey: 'driverVerifierGuards',
+  });
+  assert.equal(resolveProductionPluginPackageModeProofKey(null), null);
 });
 
 test('plugin-driver proof summary reports driver-proof as a first-class requested bundle', () => {

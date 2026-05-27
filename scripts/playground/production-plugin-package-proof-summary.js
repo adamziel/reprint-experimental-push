@@ -1,4 +1,8 @@
-import { modeAliasesByCanonicalMode, scenarioGroups } from './production-plugin-package-scenarios.js';
+import {
+  modeAliasesByCanonicalMode,
+  resolveProductionPluginPackageScenarios,
+  scenarioGroups,
+} from './production-plugin-package-scenarios.js';
 
 const registrationGuardScenarioNames = [
   ...scenarioGroups['driver-registration-guards'],
@@ -569,7 +573,7 @@ function collapseRequestedBundleStatus(requestedBundleStatusesForScenario) {
   return statuses.length === 1 ? statuses[0] : null;
 }
 
-const canonicalModeProofKeyMap = {
+export const proofKeyByCanonicalMode = Object.freeze({
   'core-package-routes': 'driverRouteProof',
   'driver-receipt-guards': 'driverReceiptGuards',
   'driver-delete-apply': 'driverDeleteApplyProof',
@@ -581,7 +585,24 @@ const canonicalModeProofKeyMap = {
   'driver-registration-guards': 'driverRegistrationGuards',
   'driver-callback-guards': 'driverCallbackGuards',
   'driver-registration-shape-guards': 'driverRegistrationShapeGuards',
-};
+});
+
+export function resolveProductionPluginPackageModeProofKey(modeValue) {
+  if (!modeValue) {
+    return null;
+  }
+
+  const resolved = resolveProductionPluginPackageScenarios([], undefined, modeValue);
+  if (resolved.canonicalMode === null || resolved.resolvedMode === null) {
+    return null;
+  }
+
+  return {
+    mode: resolved.resolvedMode,
+    canonicalMode: resolved.canonicalMode,
+    proofKey: proofKeyByCanonicalMode[resolved.canonicalMode] ?? null,
+  };
+}
 
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
@@ -1415,7 +1436,7 @@ export function buildProductionPluginPackageProofSummary(
   proofSummary.driverRegistrationShapeGuards = proofSummary.registrationShapeGuards;
   const canonicalProofKey = canonicalMode === null
     ? null
-    : canonicalModeProofKeyMap[canonicalMode] ?? null;
+    : proofKeyByCanonicalMode[canonicalMode] ?? null;
   const canonicalProof = canonicalProofKey === null
     ? null
     : proofSummary[canonicalProofKey] ?? null;

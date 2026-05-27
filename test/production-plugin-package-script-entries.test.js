@@ -5,6 +5,7 @@ import { resolveProductionPluginPackageScenarios } from '../scripts/playground/p
 import {
   guardProofModeAliases,
   guardProofModeNames,
+  resolveProductionPluginPackageModeProofKey,
 } from '../scripts/playground/production-plugin-package-proof-summary.js';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -487,6 +488,26 @@ test('package scripts keep every exported guard-proof mode alias reachable throu
       aliases.some((alias) => reachableModeAliases.has(alias)),
       true,
       `${canonicalMode} should stay reachable through at least one exported runtime alias`,
+    );
+  }
+});
+
+test('package scripts keep every exported guard-proof mode alias resolvable to a canonical proof key', () => {
+  const driverModeScripts = Object.keys(packageJson.scripts)
+    .filter((scriptName) => scriptName.startsWith('test:playground:production-plugin-driver-'))
+    .map((scriptName) => packageSmokeMode(scriptName))
+    .filter((mode) => mode !== null);
+
+  for (const mode of driverModeScripts) {
+    const resolved = resolveProductionPluginPackageModeProofKey(mode);
+    if (resolved === null || !guardProofModeNames.includes(resolved.canonicalMode)) {
+      continue;
+    }
+
+    assert.match(
+      resolved.proofKey ?? '',
+      /^driver[A-Z]/,
+      `${mode} should resolve to one canonical driver proof key`,
     );
   }
 });
