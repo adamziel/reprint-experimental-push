@@ -3,6 +3,28 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
+# 2026-05-27 - Public Status Audit 04:50:14
+
+<a id="2026-05-27-public-status-audit-045014"></a>
+
+- Refreshed [progress.html](../progress.html) to keep the current reliable
+  head `1403c6d19a6592278c55a39eb11bde68d048d3bd` visible on the public
+  status surface for the active supervision cycle.
+- Release gates remain `0/4`. The latest reliable head now carries explicit
+  live drift env threading through the apply proof wrapper, which is wrapper
+  integrity rather than a gate move, and still stops short of the missing
+  production-owned, non-lab-backed source mutation boundary on the real
+  Reprint endpoint: one primitive that owns auth/session issuance/readback,
+  durable restart-readable journal storage with lease fencing, and apply-time
+  revalidation before first mutation.
+- The public page keeps packaged plugin-driver guards pinned into
+  `verify:release` as support evidence, while the wrapper-integrity proof and
+  the production-owned source mutation boundary still block gate movement.
+  The stale percentage bars stay removed.
+- Evidence trail: [progress.html](../progress.html),
+  [objective audit](../audits/objective-audit.md),
+  [release-gate checklist](../progress.html#proof-gates).
+
 # 2026-05-27 - Public Status Audit 04:40:36
 
 <a id="2026-05-27-public-status-audit-044036"></a>
