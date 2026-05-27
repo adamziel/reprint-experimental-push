@@ -1309,6 +1309,63 @@ test('plugin-driver proof summary reports requested verifier bundle verdicts dir
   });
 });
 
+test('plugin-driver proof summary treats fully requested concrete receipt guards as a requested receipt bundle', () => {
+  const concreteReceiptScenarios = scenarioGroups['driver-receipt-guards'].slice();
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+    },
+    {
+      requestedScenarios: concreteReceiptScenarios,
+      selectedScenarios: new Set(concreteReceiptScenarios),
+    },
+  );
+
+  assert.deepEqual(summary.requestedBundles, []);
+  assert.deepEqual(summary.passedRequestedBundles, []);
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.equal(summary.receiptGuards.requested, true);
+  assert.equal(summary.receiptGuards.requestedStatus, 'passed');
+  assert.equal(summary.receiptGuards.requestedBundleStatus, 'passed');
+  assert.deepEqual(summary.receiptGuards.requestedBundleStatuses, {
+    driverReceiptGuards: 'passed',
+  });
+});
+
 test('plugin-driver proof summary reports requested registration-shape bundle verdicts directly', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

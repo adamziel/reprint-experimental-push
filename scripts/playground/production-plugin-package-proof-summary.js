@@ -229,6 +229,13 @@ function requestedScenarioAliases(normalizedRequestedScenarios, scenario) {
   );
 }
 
+function hasFullConcreteReceiptGuardRequest(normalizedRequestedScenarios) {
+  return normalizedRequestedScenarios !== null
+    && scenarioGroups['driver-receipt-guards'].every(
+      (scenario) => normalizedRequestedScenarios.includes(scenario),
+    );
+}
+
 function summarizeRequestedScenario(selected, passed) {
   return selected && passed ? 'passed' : 'missing';
 }
@@ -471,6 +478,32 @@ export function buildProductionPluginPackageProofSummary(
     failedRequestedScenarios.push(...failedRequestedConcreteScenarios);
   }
 
+  const receiptRequestedAliases = requestedScenarioAliasMap.get('driver-receipt-guards');
+  const hasConcreteReceiptGuardRequest = hasFullConcreteReceiptGuardRequest(normalizedRequestedScenarios);
+  const receiptRequested = receiptRequestedAliases === 'all'
+    || receiptRequestedAliases.length > 0
+    || hasConcreteReceiptGuardRequest;
+  const receiptRequestedStatus = receiptRequested
+    ? summarizeRequestedScenario(
+      isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
+      scenarioPasses.get('driver-receipt-guards') === true,
+    )
+    : null;
+  const receiptRequestedBundleStatuses = receiptRequestedAliases === 'all'
+    ? 'all'
+    : receiptRequestedAliases.length > 0
+      ? buildRequestedBundleStatusesForScenario(
+        receiptRequestedAliases,
+        requestedBundleStatuses,
+      )
+      : hasConcreteReceiptGuardRequest
+        ? {
+          driverReceiptGuards: receiptRequestedStatus,
+        }
+        : null;
+  const receiptRequestedBundleStatus = requestedBundleStatuses.driverReceiptGuards
+    ?? (hasConcreteReceiptGuardRequest ? receiptRequestedStatus : null);
+
   return {
     kind: 'production-plugin-package-driver-proof',
     ok: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
@@ -627,8 +660,7 @@ export function buildProductionPluginPackageProofSummary(
       ),
     },
     receiptGuards: {
-      requested: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
-        || requestedScenarioAliasMap.get('driver-receipt-guards').length > 0,
+      requested: receiptRequested,
       selected: isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
       ok: scenarioResults.driverReceiptGuards === 'passed',
       status: scenarioResults.driverReceiptGuards,
@@ -637,18 +669,9 @@ export function buildProductionPluginPackageProofSummary(
       expiry: summary?.driverReceiptExpiryGuard?.applyRejectedCode ?? null,
       rotatedCredential: summary?.driverReceiptRotatedCredentialGuard?.rotatedCredentialRejectedCode ?? null,
       revokedCredential: summary?.driverReceiptRevokedCredentialGuard?.applyRejectedCode ?? null,
-      requestedStatus: requestedScenarioAliasMap.get('driver-receipt-guards') === 'all'
-        || requestedScenarioAliasMap.get('driver-receipt-guards').length > 0
-        ? summarizeRequestedScenario(
-          isScenarioSelected(selectedScenarios, 'driver-receipt-guards'),
-          scenarioPasses.get('driver-receipt-guards') === true,
-        )
-        : null,
-      requestedBundleStatus: requestedBundleStatuses.driverReceiptGuards ?? null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliasMap.get('driver-receipt-guards'),
-        requestedBundleStatuses,
-      ),
+      requestedStatus: receiptRequestedStatus,
+      requestedBundleStatus: receiptRequestedBundleStatus,
+      requestedBundleStatuses: receiptRequestedBundleStatuses,
     },
     deleteApplyProof: {
       requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
