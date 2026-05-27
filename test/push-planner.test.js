@@ -50196,6 +50196,423 @@ test('blocks an existing term relationship taxonomy reference owned by an existi
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks an existing term relationship taxonomy reference owned by an existing nav_menu_item post when the same-plan term taxonomy target is itself blocked by a same-plan nav menu taxonomy and unrelated remote wp_navigation noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const existingTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const samePlanTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Existing nav menu item relationship owner',
+    post_content: 'base-private-existing-nav-menu-item-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:40'] = {
+    ID: 40,
+    post_title: 'Remote wp_navigation noise',
+    post_content: 'remote-nav-menu-item-wp-navigation-noise-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+  base.db.wp_terms = {
+    'term_id:6': {
+      term_id: 6,
+      name: 'Existing category term',
+      slug: 'existing-category-term',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local replacement nav menu item category term',
+      slug: 'local-replacement-nav-menu-item-category-term',
+    },
+  };
+  remote.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 6,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:8'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:8': {
+      object_id: 6,
+      term_taxonomy_id: 8,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:10': {
+      object_id: 6,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:8': {
+      ...base.db.wp_term_relationships['object_id:6|term_taxonomy_id:8'],
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const existingTaxonomyMutation = mutationFor(plan, existingTaxonomyResourceKey);
+  const samePlanTaxonomyMutation = mutationFor(plan, samePlanTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(existingTaxonomyMutation.changeKind, 'delete');
+  assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('base-private-existing-nav-menu-item-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-replacement-nav-menu-item-category-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-nav-menu-item-wp-navigation-noise-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks an existing term relationship taxonomy reference owned by an existing nav_menu_item post when the same-plan term taxonomy target is itself blocked by a same-plan nav menu taxonomy and unrelated remote nav_menu_item noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const existingTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const samePlanTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Existing nav menu item relationship owner',
+    post_content: 'base-private-existing-nav-menu-item-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:40'] = {
+    ID: 40,
+    post_title: 'Remote nav menu item noise',
+    post_content: 'remote-nav-menu-item-nav-menu-item-noise-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  base.db.wp_terms = {
+    'term_id:6': {
+      term_id: 6,
+      name: 'Existing category term',
+      slug: 'existing-category-term',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local replacement nav menu item category term',
+      slug: 'local-replacement-nav-menu-item-category-term',
+    },
+  };
+  remote.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 6,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:8'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:8': {
+      object_id: 6,
+      term_taxonomy_id: 8,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:10': {
+      object_id: 6,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:8': {
+      ...base.db.wp_term_relationships['object_id:6|term_taxonomy_id:8'],
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const existingTaxonomyMutation = mutationFor(plan, existingTaxonomyResourceKey);
+  const samePlanTaxonomyMutation = mutationFor(plan, samePlanTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(existingTaxonomyMutation.changeKind, 'delete');
+  assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('base-private-existing-nav-menu-item-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-replacement-nav-menu-item-category-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-nav-menu-item-nav-menu-item-noise-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks an existing term relationship taxonomy reference owned by an existing nav_menu_item post when the same-plan term taxonomy target is itself blocked by a same-plan nav menu taxonomy and unrelated remote revision noise exists', () => {
+  const navigationPostResourceKey = 'row:["wp_posts","ID:6"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const existingTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:8"]';
+  const blockedNavMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const samePlanTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:10"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:6|term_taxonomy_id:10"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:6'] = {
+    ID: 6,
+    post_title: 'Existing nav menu item relationship owner',
+    post_content: 'base-private-existing-nav-menu-item-relationship-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:6'] = {
+    ...base.db.wp_posts['ID:6'],
+  };
+  remote.db.wp_posts['ID:40'] = {
+    ID: 40,
+    post_title: 'Remote revision noise',
+    post_content: 'remote-nav-menu-item-revision-noise-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  base.db.wp_terms = {
+    'term_id:6': {
+      term_id: 6,
+      name: 'Existing category term',
+      slug: 'existing-category-term',
+    },
+  };
+  local.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local replacement nav menu item category term',
+      slug: 'local-replacement-nav-menu-item-category-term',
+    },
+  };
+  remote.db.wp_terms = {
+    'term_id:6': {
+      ...base.db.wp_terms['term_id:6'],
+    },
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      term_taxonomy_id: 8,
+      term_id: 6,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:10': {
+      term_taxonomy_id: 10,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:8': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:8'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:8': {
+      object_id: 6,
+      term_taxonomy_id: 8,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:10': {
+      object_id: 6,
+      term_taxonomy_id: 10,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:6|term_taxonomy_id:8': {
+      ...base.db.wp_term_relationships['object_id:6|term_taxonomy_id:8'],
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationMutation = mutationFor(plan, navigationPostResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const existingTaxonomyMutation = mutationFor(plan, existingTaxonomyResourceKey);
+  const samePlanTaxonomyMutation = mutationFor(plan, samePlanTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedNavMenuTaxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(navigationMutation, undefined);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(existingTaxonomyMutation.changeKind, 'delete');
+  assert.equal(samePlanTaxonomyMutation.changeKind, 'create');
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(relationshipBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(relationshipBlocker.surface, 'nav_menu_item');
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('base-private-existing-nav-menu-item-relationship-owner-body'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('local-replacement-nav-menu-item-category-term'),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(relationshipBlocker).includes('remote-nav-menu-item-revision-noise-body'),
+    false,
+  );
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an existing term relationship taxonomy reference owned by an existing attachment when the same-plan term taxonomy target is itself blocked by a same-plan nav menu taxonomy', () => {
   const attachmentPostResourceKey = 'row:["wp_posts","ID:6"]';
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
