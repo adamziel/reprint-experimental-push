@@ -14022,6 +14022,100 @@ test('allows an existing postmeta row to reference a post created by the same pl
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin drift */');
 });
 
+test('allows an existing postmeta row to reference a post created by the same plan while preserving a matching independent edit and remote-only plugin changes', () => {
+  const postResourceKey = 'row:["wp_posts","ID:87"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","meta_id:55"]';
+  const matchingEditResourceKey = 'file:readme.html';
+  const base = baseSite();
+  base.files[matchingEditResourceKey.slice('file:'.length)] = '<h1>Base shared edit</h1>';
+  base.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 0,
+      meta_key: '_local_graph_note',
+      meta_value: 'base-private-existing-post-note',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingEditResourceKey.slice('file:'.length)] = '<h1>Shared matching edit</h1>';
+  local.db.wp_posts['ID:87'] = {
+    ID: 87,
+    post_title: 'Local same-plan post target',
+    post_content: 'Local same-plan post target body',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:55': {
+      meta_id: 55,
+      post_id: 87,
+      meta_key: '_local_graph_note',
+      meta_value: 'local-private-existing-post-note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingEditResourceKey.slice('file:'.length)] = '<h1>Shared matching edit</h1>';
+  remote.db.wp_postmeta = {
+    'meta_id:55': {
+      ...base.db.wp_postmeta['meta_id:55'],
+    },
+  };
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const postMutation = mutationFor(plan, postResourceKey);
+  const postmetaMutation = mutationFor(plan, postmetaResourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const reference = postmetaMutation.wordpressGraphReferences[0];
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(postmetaMutation),
+    'post create must be ordered before dependent existing postmeta update',
+  );
+  assert.deepEqual(postmetaMutation.dependsOnMutationIds, [postMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 1);
+  assert.deepEqual(plan.graphDependencies, [
+    {
+      sourceMutationId: postmetaMutation.id,
+      sourceResourceKey: postmetaResourceKey,
+      relationshipKey: 'wp_postmeta.post_id',
+      relationshipType: 'postmeta-post',
+      targetMutationId: postMutation.id,
+      targetResourceKey: postResourceKey,
+      resolutionPolicy: 'same-plan-local-create',
+      source: 'same-plan-local-create',
+      targetLocalHash: postMutation.localHash,
+    },
+  ]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_postmeta.post_id');
+  assert.equal(reference.relationshipType, 'postmeta-post');
+  assert.equal(reference.targetResourceKey, postResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-existing-post-note'), false);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files[matchingEditResourceKey.slice('file:'.length)], '<h1>Shared matching edit</h1>');
+  assert.equal(result.site.db.wp_posts['ID:87'].post_title, 'Local same-plan post target');
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].post_id, 87);
+  assert.equal(result.site.db.wp_postmeta['meta_id:55'].meta_value, 'local-private-existing-post-note');
+  assert.equal(result.site.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks an existing postmeta row when its same-plan post belongs to an unsupported revision surface', () => {
   const postResourceKey = 'row:["wp_posts","ID:88"]';
   const postmetaResourceKey = 'row:["wp_postmeta","meta_id:56"]';
