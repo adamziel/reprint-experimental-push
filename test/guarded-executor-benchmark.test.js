@@ -13448,9 +13448,168 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
       {
         id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
         rejectedGate: 'recovery',
-        blockerRefs: ALIGNED_QUEUE_SLACK_PAUSE_BLOCKER_REFS,
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+  assert.deepEqual(summarizeRejectedGates(pluginInstallPauseRejectedFastPaths), [
+    { rejectedGate: 'group', count: 11 },
+    { rejectedGate: 'recovery', count: 4 },
+  ]);
+});
+
+test('guarded benchmark carries hidden staging-disk visibility blockers into plugin-install pause summaries under visible production capability evidence', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const pluginInstallPauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+    'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+    'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+  ].includes(entry.id));
+
+  assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
+  assert.deepEqual(
+    pluginInstallPauseRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-not-visible'],
+      },
+      {
+        id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+          'staging-disk-headroom-not-visible',
+        ],
+      },
+    ],
   );
   assert.deepEqual(summarizeRejectedGates(pluginInstallPauseRejectedFastPaths), [
     { rejectedGate: 'group', count: 11 },
