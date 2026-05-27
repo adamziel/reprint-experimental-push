@@ -30,6 +30,8 @@ const authSessionSource = authSessionSourceCommand
   : null;
 const resolvedCredentials = resolveAuthSessionRequestCredentials({
   liveSourceUrl: '',
+  remoteUrl: process.env.REPRINT_PUSH_REMOTE_URL || '',
+  localUrl: process.env.REPRINT_PUSH_LOCAL_URL || '',
   username: process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '',
   applicationPassword: process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '',
   fallbackUsername: credentials.username,

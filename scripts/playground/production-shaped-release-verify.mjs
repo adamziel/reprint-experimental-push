@@ -72,6 +72,8 @@ let packagedProductionPluginAuthSessionSource = null;
 let packagedProductionPluginRequested = isPackagedProductionPluginSourceCommand(authSessionSourceCommand);
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
   liveSourceUrl,
+  remoteUrl: process.env.REPRINT_PUSH_REMOTE_URL || '',
+  localUrl: process.env.REPRINT_PUSH_LOCAL_URL || '',
   username,
   applicationPassword,
   fallbackUsername: credentials.username,

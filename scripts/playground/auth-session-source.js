@@ -177,13 +177,21 @@ function normalizeAuthSessionSourceCommandFailureDetail(value) {
 
 export function resolveAuthSessionSourceCredentials({
   liveSourceUrl = '',
+  remoteUrl = '',
+  localUrl = '',
   username = '',
   applicationPassword = '',
 }, source, { preferSource = false } = {}) {
-  const normalizedAllowedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(liveSourceUrl);
+  const normalizedAllowedSourceUrls = resolveExplicitAllowedAuthSessionSourceUrls(
+    liveSourceUrl,
+    remoteUrl,
+    localUrl,
+  );
+  const normalizedAllowedSourceUrl = normalizedAllowedSourceUrls[0] || '';
   const normalizedLiveSourceUrl = normalizePermittedAuthSessionSourceUrl(
     liveSourceUrl,
     normalizedAllowedSourceUrl,
+    normalizedAllowedSourceUrls,
   );
   const hasExplicitSourceField = hasExplicitAuthSessionCredentialField(liveSourceUrl);
   if (!source?.ok) {
@@ -197,6 +205,7 @@ export function resolveAuthSessionSourceCredentials({
   const normalizedSourceUrl = normalizePermittedAuthSessionSourceUrl(
     source.sourceUrl,
     normalizedAllowedSourceUrl,
+    normalizedAllowedSourceUrls,
   );
   const normalizedUsername = normalizeAuthSessionSourceField(source.username);
   const normalizedApplicationPassword = normalizeAuthSessionSourceField(source.applicationPassword);
@@ -223,15 +232,23 @@ export function resolveAuthSessionSourceCredentials({
 
 export function resolveAuthSessionRequestCredentials({
   liveSourceUrl = '',
+  remoteUrl = '',
+  localUrl = '',
   username = '',
   applicationPassword = '',
   fallbackUsername = '',
   fallbackApplicationPassword = '',
 }, source, { preferSource = false } = {}) {
-  const normalizedAllowedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(liveSourceUrl);
+  const normalizedAllowedSourceUrls = resolveExplicitAllowedAuthSessionSourceUrls(
+    liveSourceUrl,
+    remoteUrl,
+    localUrl,
+  );
+  const normalizedAllowedSourceUrl = normalizedAllowedSourceUrls[0] || '';
   const normalizedLiveSourceUrl = normalizePermittedAuthSessionSourceUrl(
     liveSourceUrl,
     normalizedAllowedSourceUrl,
+    normalizedAllowedSourceUrls,
   );
   const hasExplicitSourceField = hasExplicitAuthSessionCredentialField(liveSourceUrl);
   const normalizedUsername = normalizeAuthSessionSourceField(username);
@@ -240,7 +257,11 @@ export function resolveAuthSessionRequestCredentials({
   const normalizedFallbackApplicationPassword = normalizeAuthSessionSourceField(fallbackApplicationPassword);
   const hasExplicitCredentialField = hasExplicitAuthSessionCredentialField(username)
     || hasExplicitAuthSessionCredentialField(applicationPassword);
-  const normalizedSourceUrl = normalizeSupportedAuthSessionSourceUrl(source?.sourceUrl);
+  const normalizedSourceUrl = normalizePermittedAuthSessionSourceUrl(
+    source?.sourceUrl,
+    normalizedAllowedSourceUrl,
+    normalizedAllowedSourceUrls,
+  );
   const resolvedUsername = hasExplicitCredentialField
     ? normalizedUsername
     : normalizedFallbackUsername;
@@ -260,6 +281,8 @@ export function resolveAuthSessionRequestCredentials({
   return resolveAuthSessionSourceCredentials(
     {
       liveSourceUrl,
+      remoteUrl,
+      localUrl,
       username: resolvedUsername,
       applicationPassword: resolvedApplicationPassword,
     },
@@ -270,6 +293,8 @@ export function resolveAuthSessionRequestCredentials({
 
 export function resolveAuthSessionRequestState({
   liveSourceUrl = '',
+  remoteUrl = '',
+  localUrl = '',
   username = '',
   applicationPassword = '',
   fallbackUsername = '',
@@ -277,6 +302,8 @@ export function resolveAuthSessionRequestState({
 }, source, { preferSource = false } = {}) {
   const resolved = resolveAuthSessionRequestCredentials({
     liveSourceUrl,
+    remoteUrl,
+    localUrl,
     username,
     applicationPassword,
     fallbackUsername,
@@ -298,13 +325,13 @@ export function normalizeSupportedAuthSessionSourceUrl(value) {
   return normalizePermittedAuthSessionSourceUrl(value);
 }
 
-function normalizePermittedAuthSessionSourceUrl(value, allowedSourceUrl = '') {
+function normalizePermittedAuthSessionSourceUrl(value, allowedSourceUrl = '', allowedSourceUrls = []) {
   const sourceUrl = normalizeAuthSessionSourceField(value);
   if (!sourceUrl) {
     return '';
   }
 
-  if (!isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrl)) {
+  if (!isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrl, allowedSourceUrls)) {
     return '';
   }
 

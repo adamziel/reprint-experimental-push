@@ -1475,6 +1475,36 @@ test('production-shaped release verify lets a required matching non-local produc
   );
 });
 
+test('production-shaped release verify lets a required auth/session source override explicit remote and local runtime candidates when it matches one of them', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestCredentials(
+      {
+        liveSourceUrl: '',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+      { preferSource: true },
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('production-shaped release verify keeps explicit direct credentials ahead of the source command before override is required', () => {
   const source = {
     ok: true,
@@ -1496,6 +1526,39 @@ test('production-shaped release verify keeps explicit direct credentials ahead o
     ),
     {
       liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify request state accepts a source command that matches an explicit local runtime candidate when no direct live source URL is present', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/local/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: '',
+        remoteUrl: 'https://example.test/remote',
+        localUrl: 'https://example.test/local',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'https://example.test/local/?session=1#preserved',
       username: 'trusted-runtime-username',
       applicationPassword: 'trusted-runtime-password',
       credentials: {

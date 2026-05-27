@@ -14,6 +14,8 @@ const authSessionSource = authSessionSourceCommand
 const resolvedAuthSessionRequest = resolveAuthSessionRequestState(
   {
     liveSourceUrl: process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '',
+    remoteUrl: process.env.REPRINT_PUSH_REMOTE_URL || '',
+    localUrl: process.env.REPRINT_PUSH_LOCAL_URL || '',
     username: process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '',
     applicationPassword: process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '',
   },
