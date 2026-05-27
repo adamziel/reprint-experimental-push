@@ -1,26 +1,27 @@
 # Critic Verdict
 
-Current reliable head: `c0c8d527c37365f44fd5dbef3ca5f7959ccb52cd`
-(`Benchmark supported WordPress graph families`).
+Current reliable head: `2692699d0c7e8a9aa0b36ed769830d3f0124cc52`
+(`Refresh blueprint graph plan assertion`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head expands the guarded WordPress graph-family benchmark in
-  `scripts/bench/guarded-executor-benchmark.js` and its focused test coverage
-  in `test/guarded-executor-benchmark.test.js`.
-- That is still support evidence, not a supervised gate closure. It does not
-  prove a production-owned, non-lab-backed source mutation boundary on the
-  real Reprint endpoint with live auth/session issuance and readback,
+- This head only adjusts a Playground blueprint plan assertion in
+  `scripts/playground/plan-from-blueprints.mjs`, changing one postmeta
+  resource from a blocker expectation to a create mutation.
+- That is still support evidence, not a supervised gate closure. It stays
+  entirely inside the Playground snapshot/planner surface and does not prove a
+  production-owned, non-lab-backed source mutation boundary on the real
+  Reprint endpoint with live auth/session issuance and readback,
   restart-readable durable journal storage with lease fencing, and apply-time
   revalidation before mutation.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
 
-- `main:reliable-exec` should move past benchmark-only support evidence and
-  land the next exact primitive on the real Reprint endpoint: a
+- `main:reliable-exec` should move past Playground plan-assertion support
+  evidence and land the next exact primitive on the real Reprint endpoint: a
   production-owned, non-lab-backed source-mutation/auth-session boundary that
   issues a live session on the endpoint, reads it back after restart from
   durable journal storage, enforces lease-fenced ownership of those journal
