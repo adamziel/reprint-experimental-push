@@ -1118,6 +1118,7 @@ function dbJournalWriterLeaseContractsArePresent(dbJournal) {
 
 function dbJournalWriterLeaseContractMatches(candidate) {
   return hasNonEmptyString(candidate?.claimId)
+    && hasNonEmptyString(candidate?.claimKeyHash)
     && typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
@@ -1130,6 +1131,9 @@ function dbJournalWriterLeaseContractMatches(candidate) {
 
 function dbJournalWriterLeaseContractsAgree(writerLease, nestedWriterLease) {
   if (writerLease?.claimId !== nestedWriterLease?.claimId) {
+    return false;
+  }
+  if (writerLease?.claimKeyHash !== nestedWriterLease?.claimKeyHash) {
     return false;
   }
   for (const key of [
@@ -1154,12 +1158,18 @@ function dbJournalClaimIdentityCoherenceIsPresent(dbJournal) {
     dbJournal?.writerLease?.claimId,
     dbJournal?.leaseFence?.writerLease?.claimId,
   ].filter(hasNonEmptyString);
+  const surfacedClaimKeyHashes = [
+    dbJournal?.claim?.activeClaimKeyHash,
+    dbJournal?.writerLease?.claimKeyHash,
+    dbJournal?.leaseFence?.writerLease?.claimKeyHash,
+  ].filter(hasNonEmptyString);
 
-  if (surfacedClaimIds.length === 0) {
+  if (surfacedClaimIds.length === 0 || surfacedClaimKeyHashes.length === 0) {
     return false;
   }
 
-  return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0]);
+  return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0])
+    && surfacedClaimKeyHashes.every((claimKeyHash) => claimKeyHash === surfacedClaimKeyHashes[0]);
 }
 
 function dbJournalStorageGuardIsTrusted(storageGuard) {
@@ -1313,7 +1323,7 @@ function summarizeDbJournalWriterLease(dbJournal) {
     return undefined;
   }
 
-  return {
+  const summary = {
     claimId: candidate.claimId || null,
     strategy: candidate.strategy || null,
     claimKeyUnique: candidate.claimKeyUnique === true,
@@ -1323,6 +1333,12 @@ function summarizeDbJournalWriterLease(dbJournal) {
     restartReadable: candidate.restartReadable === true,
     staleClaimRejected: candidate.staleClaimRejected === true,
   };
+
+  if (hasNonEmptyString(candidate.claimKeyHash)) {
+    summary.claimKeyHash = candidate.claimKeyHash;
+  }
+
+  return summary;
 }
 
 function sanitizeStorageGuard(storageGuard) {
