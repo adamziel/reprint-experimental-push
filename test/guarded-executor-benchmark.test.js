@@ -12828,6 +12828,34 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   });
 });
 
+test('guarded benchmark blocks release-bundle post-pause planning summaries when memory-headroom visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-headroom-visibility'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility'));
+  assert.ok(blockers.includes('queue-pause-without-visible-receipt-cursor-memory-headroom'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'memory-ceiling-match-visible-without-memory-headroom-visibility',
+      'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+      'queue-pause-without-visible-receipt-cursor-memory-headroom',
+      'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
+    ],
+  });
+});
+
 test('guarded benchmark blocks release-bundle post-pause planning summaries when queue-headroom measurement is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
