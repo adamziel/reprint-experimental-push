@@ -46,6 +46,84 @@ function hasStaleClaimRejectionEvidence(records) {
   );
 }
 
+function claimScopedStaleClaimRejectionEvidence(records, claim) {
+  if (!CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')) {
+    return false;
+  }
+
+  return (Array.isArray(records) ? records : []).some(
+    (record) => (record.type === 'stale-claim-advanced' || record.type === 'stale-claim-rejected')
+      && (record.claimHash === claim.activeClaimHash
+        || record.previousClaimHash === claim.activeClaimHash),
+  );
+}
+
+function claimScopedConsumedRecord(records, claim) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
+    return null;
+  }
+
+  return (Array.isArray(records) ? records : []).find(
+    (record) => record.type === 'recovery-journal-consumed'
+      && record.claimHash === claim.activeClaimHash
+      && record.claimId === claim.activeClaimId,
+  ) || null;
+}
+
+function artifactRefsEqual(left, right) {
+  const leftEntries = Object.entries(left ?? {}).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+  const rightEntries = Object.entries(right ?? {}).sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+  return leftEntries.length === rightEntries.length
+    && leftEntries.every(([leftKey, leftValue], index) => {
+      const [rightKey, rightValue] = rightEntries[index] || [];
+      return leftKey === rightKey && leftValue === rightValue;
+    });
+}
+
+function claimScopedArtifactRefs(records, claim) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
+    return null;
+  }
+
+  const scopedRecord = (Array.isArray(records) ? [...records] : [])
+    .reverse()
+    .find(
+      (record) => record.claimHash === claim.activeClaimHash
+        && record.claimId === claim.activeClaimId
+        && artifactRefsContractMatches(record.artifactRefs),
+    );
+
+  return scopedRecord ? { ...scopedRecord.artifactRefs } : null;
+}
+
+function claimScopedPlanId(records, claim) {
+  if (
+    !CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    || typeof claim?.activeClaimId !== 'string'
+    || claim.activeClaimId.length === 0
+  ) {
+    return null;
+  }
+
+  const scopedRecord = (Array.isArray(records) ? [...records] : [])
+    .reverse()
+    .find(
+      (record) => record.claimHash === claim.activeClaimHash
+        && record.claimId === claim.activeClaimId
+        && hasNonEmptyString(record.planId),
+    );
+
+  return scopedRecord?.planId || null;
+}
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   const providedOptions = options && typeof options === 'object' ? options : {};
   const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
@@ -411,6 +489,39 @@ export function openProductionRecoveryJournal(options) {
   });
 
   if (claimId) {
+    const nextClaimHash = recoveryClaimHash(claimId);
+    const existingJournal = truncate
+      ? { exists: false, records: [], integrity: { status: 'ok' } }
+      : readRecoveryJournal(filePath);
+    if (!truncate && existingJournal.integrity?.status !== 'ok') {
+      throw new Error(`Refusing to append to invalid recovery journal: ${existingJournal.integrity.reason}`);
+    }
+    const hasExistingPlanEnvelope = existingJournal.exists === true && existingJournal.records.length > 0;
+    const existingClaim = hasExistingPlanEnvelope
+      ? classifyRecoveryJournalClaims(existingJournal.records)
+      : { status: 'none', activeClaimHash: null };
+    const reusingActiveClaim =
+      existingClaim.status !== 'blocked' && existingClaim.activeClaimHash === nextClaimHash;
+    const persistedArtifactRefs = reusingActiveClaim
+      ? claimScopedArtifactRefs(existingJournal.records, existingClaim)
+      : null;
+    const persistedPlanId = reusingActiveClaim
+      ? claimScopedPlanId(existingJournal.records, existingClaim)
+      : null;
+
+    if (reusingActiveClaim && !artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
+      throw new Error(
+        'openProductionRecoveryJournal() requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
+      );
+    }
+
+    if (reusingActiveClaim && persistedPlanId !== plan.id) {
+      throw new Error(
+        'openProductionRecoveryJournal() requires plan.id to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
+      );
+    }
+
+    if (!reusingActiveClaim) {
     appendRecoveryClaimOpened(journal, {
       plan,
       current,
@@ -421,6 +532,7 @@ export function openProductionRecoveryJournal(options) {
     journal.claimId = claimId;
     journal.claimHash = recoveryClaimHash(claimId);
     journal.claimFenced = true;
+    }
   }
 
   journal.productionAdapter = 'openProductionRecoveryJournal';
