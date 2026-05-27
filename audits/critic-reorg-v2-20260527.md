@@ -106,6 +106,87 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Local Integration Auditor Refresh
+
+Commit:
+
+- Reviewed local integration branch
+  `supervisor/release-boundary-consolidated-20260527` at
+  `9a5ce75a728cb6db0c14ef6f84db0ec496921d7a`
+  (`Refresh auditor release boundary heads`).
+- Reviewed pushed consolidated head at
+  `8d9a53f88617ce613d739d1e111639c639ed8ca6`.
+- Reviewed pushed v2 heads:
+  - `cfca3e0ff18bec3d48aa698b445fce31851544b8`
+    `origin/lane/auth-session-boundary-v2-20260527`
+  - `d47e9f9bc4939056fe24c131f2e6a19a5861797c`
+    `origin/lane/durable-journal-boundary-v2-20260527`
+  - `83e07628d338992c3045e29fc5de7a364944a4bb`
+    `origin/lane/apply-revalidation-boundary-v2-20260527`
+  - `5b152e4093835d843fa984986cba7cf8ac2771e5`
+    `origin/lane/plugin-driver-boundary-v2-20260527`
+  - `605881b8716aa092a4274cd10151128fe8611f5e`
+    `origin/lane/topology-verifier-v2-20260527`
+
+Claim:
+
+- New fact: the local integration branch is one commit ahead of origin with an
+  auditor artifact refresh only.
+- New fact: the local integration head still fails closed when
+  `REPRINT_PUSH_SOURCE_URL` and `REPRINT_PUSH_REMOTE_URL` are absent.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git -C /tmp/reprint-reorg-integrator-20260527 log --oneline --decorate -5`
+  shows local head `9a5ce75a7` ahead of pushed consolidated `8d9a53f88`.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --stat
+  origin/supervisor/release-boundary-consolidated-20260527..HEAD` shows only
+  `audits/auditor-reorg-v2-20260527.md`.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --check` completed
+  cleanly.
+- I ran this on the local integration head:
+
+```bash
+env -u REPRINT_PUSH_SOURCE_URL -u REPRINT_PUSH_REMOTE_URL timeout 300s npm run verify:release
+```
+
+  It exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, `releaseMovement.gates: 0/4`, no source,
+  no remote-changed service, no local-edited service, no apply-revalidation
+  service, and `packagedFallbackAllowed: false`.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. Auditor artifact refresh plus missing-source failure
+  does not prove live auth/session issuance and readback.
+- GATE-2: no movement. No live durable journal ownership,
+  restart-readability, or lease-fenced readback is proven.
+- GATE-3: no movement. The checked command reports no accepted source,
+  remote-changed, local-edited, or apply-revalidation services.
+- GATE-4: no movement. No live plugin-driver mutation evidence exists.
+
+First missing production primitive:
+
+- A retained checked release run using a real live
+  `REPRINT_PUSH_SOURCE_URL` that proves same-boundary auth/session readback,
+  durable journal ownership, preserved rejected-remote evidence, apply-time
+  revalidation before first mutation, and plugin-driver ownership.
+
+Next exact command:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> \
+REPRINT_PUSH_REMOTE_CHANGED_URL=<real-live-changed-url> \
+REPRINT_PUSH_LOCAL_URL=<real-live-local-edited-url> \
+REPRINT_PUSH_USERNAME=<production-user> \
+REPRINT_PUSH_APPLICATION_PASSWORD=<production-application-password> \
+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND=<same-live-source-readback-command> \
+timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Apply And Plugin Base Refresh Heads
 
 Commit:
