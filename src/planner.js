@@ -950,7 +950,11 @@ function isPluginOwnedDataResource(resource, owner) {
 }
 
 const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
+  'registration_log',
+  'blog_versions',
   'commentmeta',
+  'sitemeta',
+  'blogmeta',
   'comments',
   'term_relationships',
   'term_taxonomy',
@@ -958,9 +962,18 @@ const WORDPRESS_GRAPH_TABLE_SUFFIXES = [
   'usermeta',
   'users',
   'termmeta',
+  'links',
+  'blogs',
+  'site',
   'posts',
   'terms',
 ];
+
+const SUPPORTED_CORE_POST_OBJECT_TAXONOMIES = new Set([
+  'category',
+  'post_tag',
+  'post_format',
+]);
 
 function wordpressGraphIdentitySupport({
   resource,
@@ -1035,6 +1048,18 @@ function wordpressGraphSurfaceSupport(resource, value) {
     };
   }
 
+  if (
+    wordpressGraphTableSuffix(resource.table) === 'term_taxonomy'
+    && !SUPPORTED_CORE_POST_OBJECT_TAXONOMIES.has(value.taxonomy)
+  ) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${resource.key} references unsupported taxonomy graph surface ${String(value.taxonomy || 'unknown')}.`,
+      references: [],
+    };
+  }
+
   return { supported: true };
 }
 
@@ -1048,6 +1073,13 @@ function isUnsafeWordPressGraphReference(reference) {
   }
 
   if (reference.targetChange.remote.state !== 'present') {
+    return true;
+  }
+
+  if (
+    reference.targetChange.local.state !== 'present'
+    && reference.targetLocalHash !== reference.targetRemoteHash
+  ) {
     return true;
   }
 
@@ -1082,7 +1114,14 @@ function isSafeSamePlanWordPressGraphReference(reference) {
 export const SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = Object.freeze([
   'comment-post',
   'comment-parent',
+  'comment-user',
   'commentmeta-comment',
+  'link-owner',
+  'blog-site',
+  'blogmeta-blog',
+  'blog-version-blog',
+  'sitemeta-site',
+  'registration-log-blog',
   'post-parent',
   'post-author',
   'postmeta-post',
@@ -1157,6 +1196,12 @@ function wordpressGraphReferences(resource, value) {
       targetTable: 'comments',
       targetId: value.comment_parent,
     });
+    addReference({
+      field: 'user_id',
+      relationshipType: 'comment-user',
+      targetTable: 'users',
+      targetId: value.user_id,
+    });
   }
 
   if (suffix === 'commentmeta') {
@@ -1230,6 +1275,60 @@ function wordpressGraphReferences(resource, value) {
       relationshipType: 'usermeta-user',
       targetTable: 'users',
       targetId: value.user_id,
+    });
+  }
+
+  if (suffix === 'links') {
+    addReference({
+      field: 'link_owner',
+      relationshipType: 'link-owner',
+      targetTable: 'users',
+      targetId: value.link_owner,
+    });
+  }
+
+  if (suffix === 'blogs') {
+    addReference({
+      field: 'site_id',
+      relationshipType: 'blog-site',
+      targetTable: 'site',
+      targetId: value.site_id,
+    });
+  }
+
+  if (suffix === 'blogmeta') {
+    addReference({
+      field: 'blog_id',
+      relationshipType: 'blogmeta-blog',
+      targetTable: 'blogs',
+      targetId: value.blog_id,
+    });
+  }
+
+  if (suffix === 'blog_versions') {
+    addReference({
+      field: 'blog_id',
+      relationshipType: 'blog-version-blog',
+      targetTable: 'blogs',
+      targetId: value.blog_id,
+    });
+  }
+
+  if (suffix === 'sitemeta') {
+    addReference({
+      field: 'site_id',
+      relationshipType: 'sitemeta-site',
+      targetTable: 'site',
+      targetId: value.site_id,
+    });
+  }
+
+  if (suffix === 'registration_log') {
+    addReference({
+      field: 'blog_id',
+      relationshipType: 'registration-log-blog',
+      targetTable: 'blogs',
+      targetId: value.blog_id,
     });
   }
 
@@ -1323,6 +1422,15 @@ function wordpressGraphPrimaryIdField(suffix) {
   }
   if (suffix === 'users') {
     return 'ID';
+  }
+  if (suffix === 'links') {
+    return 'link_id';
+  }
+  if (suffix === 'blogs') {
+    return 'blog_id';
+  }
+  if (suffix === 'site') {
+    return 'id';
   }
   if (suffix === 'terms') {
     return 'term_id';
