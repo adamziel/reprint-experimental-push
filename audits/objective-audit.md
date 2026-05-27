@@ -11,7 +11,7 @@
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 08:44:39 CEST (+0200)
+- Audit time: 2026-05-27 08:26:47 CEST (+0200)
 - Release-classification heads verified before write-up:
   - `origin/lane/reliable-executor` -> `83d0fe8507f2b0cfaf5e376ec2501fe3c2266371` (`Prove checked apply revalidation before mutation`)
   - `origin/lane/critic` -> `3ce65fcec7a0506fae9267205733c53e56cef89e` (`Classify reliable head 83d0fe85`)
