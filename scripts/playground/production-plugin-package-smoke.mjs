@@ -1929,10 +1929,13 @@ async function waitForServer(child, baseUrl, logs) {
           }
           if (preflightProbe.terminal) {
             const malformedTimeoutFallbackPreflightBody =
-              preflightProbe.parsedBody === null
-              && !packagedProductionPluginReadinessBodyRetryable(
-                preflightProbe.status,
-                preflightProbe.body || '',
+              preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
               );
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
               notReadyProbeCounts,

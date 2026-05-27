@@ -2708,10 +2708,13 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           if (preflightProbe.terminal) {
             lastError = error;
             const malformedTimeoutFallbackPreflightBody =
-              preflightProbe.parsedBody === null
-              && !packagedProductionPluginReadinessBodyRetryable(
-                preflightProbe.status,
-                preflightProbe.body || '',
+              preflightProbe.invalidReadinessBody === true
+              || (
+                preflightProbe.parsedBody === null
+                && !packagedProductionPluginReadinessBodyRetryable(
+                  preflightProbe.status,
+                  preflightProbe.body || '',
+                )
               );
             notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
               notReadyProbeCounts,
