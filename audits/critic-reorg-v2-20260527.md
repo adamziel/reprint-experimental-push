@@ -106,6 +106,95 @@ full boundary.
 
 Verdict: `0/4`
 
+## Follow-up - Base Merge Heads Still Fail Closed
+
+Commit:
+
+- Reviewed `origin/supervisor/release-boundary-consolidated-20260527` at
+  `8d9a53f88617ce613d739d1e111639c639ed8ca6`
+  (`Refresh auditor consolidated base merges`).
+- Reviewed current v2 lane heads:
+  - `cfca3e0ff18bec3d48aa698b445fce31851544b8`
+    `origin/lane/auth-session-boundary-v2-20260527`
+  - `d47e9f9bc4939056fe24c131f2e6a19a5861797c`
+    `origin/lane/durable-journal-boundary-v2-20260527`
+  - `72cdb2e9238a3a2610cd2d4a6349b040da1569ba`
+    `origin/lane/apply-revalidation-boundary-v2-20260527`
+  - `0473cebc82f569bac9ecb8ea9ea9231c0ecac1a1`
+    `origin/lane/plugin-driver-boundary-v2-20260527`
+  - `605881b8716aa092a4274cd10151128fe8611f5e`
+    `origin/lane/topology-verifier-v2-20260527`
+
+Claim:
+
+- New fact: auth, durable, apply, and topology v2 heads advanced again by
+  merging the consolidated base; plugin v2 advanced to a new pushed test
+  hardening head.
+- New fact: the current consolidated auditor artifact lags the newest lane
+  merge heads, but still records verdict `0/4`.
+- Release verdict remains `0/4`.
+
+Evidence:
+
+- `git fetch origin --prune` completed and returned the current heads above.
+- `git -C /tmp/reprint-reorg-integrator-20260527 status --short --branch`
+  reports the consolidated worktree tracking
+  `origin/supervisor/release-boundary-consolidated-20260527` with only
+  untracked `.agents/` files.
+- `git -C /tmp/reprint-reorg-integrator-20260527 diff --check` completed with
+  no output.
+- `origin/supervisor/release-boundary-consolidated-20260527` changes only
+  `audits/auditor-reorg-v2-20260527.md` at its current head.
+- The current auth, durable, apply, and topology v2 heads are merge commits
+  from the consolidated branch. Their visible head diffs are auditor-artifact
+  refreshes/base merges, not new live-boundary proof.
+- The current plugin v2 head changes only
+  `test/production-shaped-proof.test.js`.
+- I ran this in `/tmp/reprint-reorg-integrator-20260527`:
+
+```bash
+env -u REPRINT_PUSH_SOURCE_URL -u REPRINT_PUSH_REMOTE_URL timeout 300s npm run verify:release
+```
+
+  It exited `1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, `releaseMovement.gates: 0/4`, no source,
+  no remote-changed service, no local-edited service, and
+  `packagedFallbackAllowed: false`.
+
+gate-by-gate movement:
+
+- GATE-1: no movement. The auth lane merge contains source/readback support,
+  but the checked command stopped before live-source access; no real
+  same-boundary auth/session issuance and readback evidence exists.
+- GATE-2: no movement. The durable lane merge contains support plumbing, but
+  the checked command has no durable live journal, no `ownsJournal: true`, no
+  `restartReadable: true`, and no lease-fenced readback on a real boundary.
+- GATE-3: no movement. The command proves only missing-source refusal and
+  reports no accepted source/local/changed services.
+- GATE-4: no movement. Plugin v2 remains test hardening and apply v2 remains
+  support evidence; no live plugin-driver mutation is proven.
+
+First missing production primitive:
+
+- A retained checked release run against a real live
+  `REPRINT_PUSH_SOURCE_URL` that proves the same-boundary source, auth/session,
+  durable journal, preserved-remote, apply-revalidation, and plugin-driver
+  ownership path.
+
+Next exact command:
+
+```bash
+REPRINT_PUSH_SOURCE_URL=<real-live-reprint-source-url> \
+REPRINT_PUSH_REMOTE_CHANGED_URL=<real-live-changed-url> \
+REPRINT_PUSH_LOCAL_URL=<real-live-local-edited-url> \
+REPRINT_PUSH_USERNAME=<production-user> \
+REPRINT_PUSH_APPLICATION_PASSWORD=<production-application-password> \
+REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND=<same-live-source-readback-command> \
+timeout 300s npm run verify:release
+```
+
+Verdict: `0/4`
+
 ## Follow-up - Current V2 Heads And Consolidated Audit Refresh
 
 Commit:
