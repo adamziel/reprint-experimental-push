@@ -6076,10 +6076,39 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'explicitly expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
       label: 'revoked top-level session',
       session: {
         id: 'session_123',
         status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
@@ -6131,6 +6160,15 @@ test('packaged release verifier readiness helper fails closed when signed prefli
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         rotated: true,
+      },
+    },
+    {
+      label: 'rotated top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
     },
   ];
@@ -8477,10 +8515,39 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'explicitly expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
       label: 'revoked top-level session',
       session: {
         id: 'session_123',
         status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
@@ -8532,6 +8599,15 @@ test('packaged release verifier readiness helper fails closed when signed prefli
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         rotated: true,
+      },
+    },
+    {
+      label: 'rotated top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
     },
   ];
@@ -11640,10 +11716,39 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'explicitly expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
       label: 'revoked top-level session',
       session: {
         id: 'session_123',
         status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
@@ -11695,6 +11800,15 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         rotated: true,
+      },
+    },
+    {
+      label: 'rotated top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
     },
   ];
@@ -13901,10 +14015,39 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       },
     },
     {
+      label: 'explicitly expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
       label: 'revoked top-level session',
       session: {
         id: 'session_123',
         status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'cleaned-up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
@@ -13956,6 +14099,15 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
         rotated: true,
+      },
+    },
+    {
+      label: 'rotated top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
       },
     },
   ];
