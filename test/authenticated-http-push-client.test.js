@@ -4565,6 +4565,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
     assert.deepEqual(summary.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
+      fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable: true,
       staleClaimRejected: false,
