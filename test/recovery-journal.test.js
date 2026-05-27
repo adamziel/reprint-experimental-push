@@ -1319,6 +1319,65 @@ test('production recovery journal wrapper rejects restart when an advanced persi
   assert.equal(readRecoveryJournal(filePath).records.length, persisted.records.length);
 });
 
+test('production recovery journal wrapper rejects restart when an advanced persisted claim loses the previous claim id', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const previousClaimId = 'production-claim-previous-id-missing-01';
+  const activeClaimId = 'production-claim-active-id-missing-01';
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-previous-claim-id-missing',
+    },
+    now: fixedNow,
+    claimId: previousClaimId,
+  });
+  appendStaleClaimAdvanced(journal, {
+    plan,
+    current: remote,
+    previousClaimId,
+    claimId: activeClaimId,
+    staleThresholdMs: 30_000,
+    previousClaimAgeMs: 45_000,
+    artifactRefs: {
+      releaseProof: 'artifact://release-proof-previous-claim-id-missing',
+    },
+  });
+  journal.close();
+
+  const persisted = readRecoveryJournal(filePath);
+  const advancedRecord = persisted.records.find(
+    (record) => record.type === 'stale-claim-advanced' && record.claimId === activeClaimId,
+  );
+  assert.ok(advancedRecord);
+  delete advancedRecord.previousClaimId;
+  fs.writeFileSync(
+    filePath,
+    `${persisted.records.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs: {
+        releaseProof: 'artifact://release-proof-previous-claim-id-missing',
+      },
+      now: fixedNow,
+      truncate: false,
+      claimId: activeClaimId,
+    }),
+    /openProductionRecoveryJournal\(\) refuses to reopen a claim-fenced production recovery journal with blocked persisted claim evidence: Advanced stale-claim record is missing a valid previous claim id\./,
+  );
+
+  assert.equal(readRecoveryJournal(filePath).records.length, persisted.records.length);
+});
+
 test('production recovery journal wrapper rejects hidden open options', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

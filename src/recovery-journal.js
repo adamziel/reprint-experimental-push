@@ -1458,6 +1458,12 @@ export function classifyRecoveryJournalClaims(records) {
     }
     if (
       record.type === 'stale-claim-advanced'
+      && !hasNonEmptyString(record.previousClaimId)
+    ) {
+      return blockedClaimState(record, 'Advanced stale-claim record is missing a valid previous claim id.');
+    }
+    if (
+      record.type === 'stale-claim-advanced'
       && !CLAIM_HASH_PATTERN.test(record.previousClaimHash || '')
     ) {
       return blockedClaimState(record, 'Advanced stale-claim record is missing a valid previous claim hash.');
