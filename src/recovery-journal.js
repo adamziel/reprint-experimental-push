@@ -168,7 +168,28 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
       && journal?.consumedClaimHash === claim?.activeClaimHash
     : journal?.consumedClaimId == null && journal?.consumedClaimHash == null;
 
-  return journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
+  return hasOwnProperties(journal, [
+    'kind',
+    'path',
+    'journalPath',
+    'checked',
+    'artifactRefs',
+    'productionAdapter',
+    'supportedSurface',
+    'ownership',
+    'ownsJournal',
+    'consumed',
+    'staleClaimRejected',
+    'restartReadable',
+    'schemaVersion',
+    'integrity',
+    'records',
+    'claim',
+    'claimId',
+    'claimHash',
+    'writerLease',
+  ])
+    && journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
     && hasNonEmptyString(journal?.path)
     && journal.path === journal.journalPath
     && Array.isArray(journal?.checked)
@@ -504,7 +525,13 @@ function checkedBoundaryLeaseFenceContractMatches(leaseFence, boundary) {
 }
 
 function productionRecoveryJournalOwnershipContractMatches(ownership) {
-  return ownership?.ownsJournal === true
+  return hasOwnProperties(ownership, [
+    'ownsJournal',
+    'restartReadable',
+    'productionAdapter',
+    'supportedSurface',
+  ])
+    && ownership?.ownsJournal === true
     && ownership?.restartReadable === true
     && ownership?.productionAdapter === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
     && ownership?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE;

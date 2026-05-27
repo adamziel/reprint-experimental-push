@@ -549,6 +549,30 @@ test('production recovery journal inspection surface helper fails closed when le
   delete inheritedLeaseFenceMarker.leaseFence.staleClaimRejected;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedLeaseFenceMarker), false);
 
+  const inheritedOwnershipMarkers = clone(inspection);
+  inheritedOwnershipMarkers.journal.ownership = Object.assign(
+    Object.create({
+      ownsJournal: inheritedOwnershipMarkers.journal.ownership.ownsJournal,
+      restartReadable: inheritedOwnershipMarkers.journal.ownership.restartReadable,
+      productionAdapter: inheritedOwnershipMarkers.journal.ownership.productionAdapter,
+      supportedSurface: inheritedOwnershipMarkers.journal.ownership.supportedSurface,
+    }),
+    {},
+  );
+  delete inheritedOwnershipMarkers.journal.ownership.ownsJournal;
+  delete inheritedOwnershipMarkers.journal.ownership.restartReadable;
+  delete inheritedOwnershipMarkers.journal.ownership.productionAdapter;
+  delete inheritedOwnershipMarkers.journal.ownership.supportedSurface;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedOwnershipMarkers), false);
+
+  const inheritedJournalMarker = clone(inspection);
+  inheritedJournalMarker.journal = Object.assign(
+    Object.create({ staleClaimRejected: inheritedJournalMarker.journal.staleClaimRejected }),
+    inheritedJournalMarker.journal,
+  );
+  delete inheritedJournalMarker.journal.staleClaimRejected;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedJournalMarker), false);
+
   const missingArtifactRefs = clone(inspection);
   missingArtifactRefs.journal.artifactRefs = {};
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingArtifactRefs), false);
