@@ -5214,7 +5214,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         );
         assert.match(
           proof.stdout,
-          /"applyRevalidation": \{[\s\S]*"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
+          /"applyRevalidation": \{[\s\S]*"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "storage-boundary-cas"[\s\S]*"applyRevalidation": \{[\s\S]*"phase": "before-first-mutation"[\s\S]*"storageGuard": \{[\s\S]*"outcome": "stale-at-write"[\s\S]*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
         );
         assert.match(
           proof.stdout,
@@ -5397,7 +5397,7 @@ test('production-shaped live release verify retries transient apply revalidation
 test('production-shaped apply revalidation smoke fails closed on mid-apply drift with production routes', () => {
   const proof = spawnBoundedSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
     cwd: repoRoot,
-    timeout: proofSubprocessTimeoutMs,
+    timeout: liveWrapperSubprocessTimeoutMs,
     killSignal: 'SIGKILL',
     env: {
       ...process.env,
@@ -5409,6 +5409,15 @@ test('production-shaped apply revalidation smoke fails closed on mid-apply drift
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stderr, /apply-revalidation: waiting for Playground at http:\/\/127\.0\.0\.1:\d+/);
   assert.match(proof.stderr, /apply-revalidation: probe \/wp-json\//);
+  assert.match(proof.stdout, /"missingReceipt": \{\s*"status": 428,\s*"code": "MISSING_DRY_RUN_RECEIPT",\s*"readOnly": true\s*\}/);
+  assert.match(proof.stdout, /"dryRun": \{[\s\S]*"readOnly": \{[\s\S]*"targetSurfaceUnchanged": true/);
+  assert.match(proof.stdout, /"receiptBinding": \{[\s\S]*"planHash": "[a-f0-9]{64}"[\s\S]*"sourceHash": "[a-f0-9]{64}"[\s\S]*"sessionHash": "[a-f0-9]{64}"[\s\S]*"dryRunIdempotencyKeyHash": "[a-f0-9]{64}"[\s\S]*"dryRunBodyHash": "[a-f0-9]{64}"[\s\S]*"dryRunRawBodyHash": "[a-f0-9]{64}"/);
+  assert.match(proof.stdout, /"apply": \{[\s\S]*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "storage-boundary-cas",\s*"applied": 0/);
+  assert.match(proof.stdout, /"applyRevalidation": \{[\s\S]*"phase": "before-first-mutation"[\s\S]*"checkedAgainst": "live-remote"/);
+  assert.match(proof.stdout, /"storageGuard": \{[\s\S]*"outcome": "stale-at-write"/);
+  assert.match(proof.stdout, /"rejectedRemoteEvidence": \{[\s\S]*"preservedRemoteChange": true[\s\S]*"appliedBeforeFailure": 0/);
+  assert.match(proof.stdout, /"replay": \{\s*"status": 412,[\s\S]*"replayed": true,\s*"freshMutationWork": false,\s*"preservedRemoteUnchanged": true/);
+  assert.match(proof.stdout, /"dbJournal": \{[\s\S]*"ordering": \{[\s\S]*"ordered": true[\s\S]*"mutationAppliedBeforeFailure": 0[\s\S]*"applyCommitted": false/);
 });
 
 test('production-shaped release verify command reports the checked retained-source proof summary', () => {

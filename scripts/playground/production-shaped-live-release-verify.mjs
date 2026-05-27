@@ -51,7 +51,7 @@ const packagedBoundaryRequested = shouldRequestCheckedLivePackagedBoundary({
   fixtureApplicationPassword: credentials.applicationPassword,
 });
 const innerVerifyTimeoutMs = packagedBoundaryRequested ? 180_000 : 90_000;
-const applyRevalidationTimeoutMs = packagedBoundaryRequested ? 90_000 : 75_000;
+const applyRevalidationTimeoutMs = 240_000;
 const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
 if (packagedBoundaryRequested) {
@@ -231,9 +231,14 @@ function runApplyRevalidationProof(envOverrides = {}, options = {}) {
       status: summary.dryRun?.status ?? null,
       mode: summary.dryRun?.mode || null,
       receiptHash: summary.dryRun?.receiptHash || null,
+      readOnly: summary.dryRun?.readOnly || null,
+      receiptBinding: summary.dryRun?.receiptBinding || null,
     },
     apply: summary.apply || null,
+    replay: summary.replay || null,
     recoveryInspect: summary.recoveryInspect || null,
+    dbJournal: summary.dbJournal || null,
+    missingReceipt: summary.missingReceipt || null,
     boundary: normalizeApplyRevalidationBoundary(summary.boundary, options),
   };
 }
