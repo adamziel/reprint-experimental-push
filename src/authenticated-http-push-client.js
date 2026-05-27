@@ -172,6 +172,10 @@ export async function runAuthenticatedHttpPush({
   const preflightObservedAuthSourceMetadataDrift = requireProductionAuthSession
     ? null
     : resolveObservedAuthSessionSourceMetadataDrift(preflight);
+  const preflightObservedAuthIdentityDrift = resolveObservedPreflightAuthIdentityDrift(
+    resolvedSource.username,
+    preflight,
+  );
   if (uncheckedPreflightAuthSessionTermination) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
@@ -197,6 +201,18 @@ export async function runAuthenticatedHttpPush({
   if (preflightObservedAuthSourceMetadataDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = preflightObservedAuthSourceMetadataDrift;
+    setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (preflightObservedAuthIdentityDrift) {
+    summary.code = requireProductionAuthSession
+      ? 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED'
+      : 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = {
+      ...preflightObservedAuthIdentityDrift,
+      verdict: summary.code,
+    };
+    annotateAuthSessionLifecycleDrift(summary, summary.authSession);
     setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
@@ -2042,6 +2058,24 @@ function resolveObservedProductionAuthIdentityDrift(expected, response) {
   }
 
   return null;
+}
+
+function resolveObservedPreflightAuthIdentityDrift(expectedUserLogin, response) {
+  const normalizedExpectedUserLogin = normalizeProductionAuthSessionIdentityField(expectedUserLogin);
+  if (!normalizedExpectedUserLogin) {
+    return null;
+  }
+
+  const observedUserLogin = response?.body?.auth?.identity?.userLogin || 'missing';
+  if (observedUserLogin === normalizedExpectedUserLogin) {
+    return null;
+  }
+
+  return {
+    field: 'auth.identity.userLogin',
+    required: normalizedExpectedUserLogin,
+    observed: observedUserLogin,
+  };
 }
 
 function resolveObservedAuthSessionLifecycleFlagDrift(response) {
