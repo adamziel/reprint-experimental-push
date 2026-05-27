@@ -2194,6 +2194,25 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       writerLease: {
         ...baseContract.writerLease,
         staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        boundary: 'mysql-advisory-lock-lease',
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
         storageGuard: 'filesystem-compare-rename',
       },
       leaseFence: {
