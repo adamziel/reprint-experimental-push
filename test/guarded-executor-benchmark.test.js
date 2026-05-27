@@ -13121,6 +13121,70 @@ test('guarded benchmark keeps plugin-update backpressure shortcuts blocked when 
   ]);
 });
 
+test('guarded benchmark keeps plugin-update receipt-flush shortcuts blocked when visible production capability evidence loses kind-scoped receipts', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.journal.successRecordTypes = [
+    'apply-staged',
+    'chunk-receipt',
+    'journal-opened',
+    'target-planned',
+    'dependencies-validated',
+    'recovery-state',
+  ];
+
+  const blockers = productionThroughputBlockers(mutated);
+  const details = productionThroughputDetails(mutated);
+  const pluginUpdateReceiptFlushRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+  ].includes(entry.id));
+
+  assert.ok(blockers.includes('receipt-flushes-not-kind-scoped'));
+  assert.deepEqual(
+    pluginUpdateReceiptFlushRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+        rejectedGate: 'group',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+        rejectedGate: 'group',
+        blockerRefs: ['receipt-flushes-not-kind-scoped'],
+      },
+    ],
+  );
+  assert.deepEqual(summarizeRejectedGates(pluginUpdateReceiptFlushRejectedFastPaths), [
+    { rejectedGate: 'group', count: 2 },
+  ]);
+});
+
 test('guarded benchmark carries direct aligned queue-slack proof blockers into plugin-install pause summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
