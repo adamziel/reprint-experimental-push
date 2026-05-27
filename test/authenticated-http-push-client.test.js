@@ -5597,6 +5597,15 @@ test('production-shaped authenticated push accepts nested db journal storage gua
       return new Response(JSON.stringify({
         ok: true,
         receipt: { receiptHash: 'receipt-01' },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
       }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -5714,6 +5723,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
           },
           leaseFence: {
             boundary: 'wpdb-single-statement-cas',
+            storageGuard: 'wpdb-single-statement-cas',
             claimKeyUnique: true,
             monotonicSequence: true,
             restartReadable: true,
@@ -5809,6 +5819,7 @@ test('production-shaped authenticated push accepts nested db journal storage gua
     });
     assert.deepEqual(summary.dbJournal?.leaseFence, {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,

@@ -161,6 +161,7 @@ export function openRecoveryJournal(filePath, options = {}) {
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const trustedScope = /(packaged production plugin|checked live production-shaped)(?: recovery)? journal surface/i;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
+  const leaseFenceStorageGuard = dbJournal?.leaseFence?.storageGuard;
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
@@ -176,6 +177,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && durableJournalWriterLeaseMatchesBoundary(writerLease, productionAdapter, claim)
     && durableJournalWriterLeaseMatchesBoundary(nestedWriterLease, productionAdapter, claim)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'
+    && leaseFenceStorageGuard === leaseFenceBoundary
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
     && productionAdapter === leaseFenceBoundary

@@ -627,6 +627,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       fsyncEvidence: true,
       claimKeyUnique: true,
       monotonicSequence: true,
@@ -817,6 +818,18 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
           ...baseContract.leaseFence.writerLease,
           storageGuard: 'filesystem-compare-rename',
         },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      scope: 'checked live production-shaped recovery journal surface; not local Playground fixture only',
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        storageGuard: undefined,
       },
     }),
     false,
