@@ -217,6 +217,29 @@ test('scenario resolver maps driver-registration-only mode to the malformed regi
   );
 });
 
+test('scenario resolver maps driver-receipt-registration-only mode to the bounded combined receipt and registration proof set', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-receipt-registration-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, [
+    'driver-receipt-guards',
+    'driver-registration-guards',
+  ]);
+  assert.equal(resolved.resolvedMode, 'driver-receipt-registration-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    [
+      'driver-receipt-guards',
+      ...scenarioGroups['driver-receipt-guards'],
+      'driver-registration-guards',
+      ...scenarioGroups['driver-registration-guards'],
+    ].sort(),
+  );
+});
+
 test('scenario resolver maps driver-callback-only mode to the bounded callback guard bundle', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     [],

@@ -39,6 +39,13 @@ test('package scripts pin the bounded plugin-driver registration guard bundle en
   );
 });
 
+test('package scripts pin the bounded plugin-driver combined receipt and registration guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-registration-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-receipt-registration-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver callback guard bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-callback-guards'],
@@ -197,6 +204,13 @@ test('package scripts pin the bounded plugin-driver registration-only mode entry
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-registration-only'],
     'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-registration-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver receipt-registration-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-registration-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-receipt-registration-only node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
 

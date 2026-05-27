@@ -90,6 +90,9 @@ function resolveScenarioMode(modeValue) {
   if (modeValue === 'driver-registration-only') {
     return 'driver-registration-guards';
   }
+  if (modeValue === 'driver-receipt-registration-only') {
+    return 'driver-receipt-guards,driver-registration-guards';
+  }
   if (modeValue === 'driver-callback-only') {
     return 'driver-callback-guards';
   }
