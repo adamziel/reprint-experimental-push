@@ -286,6 +286,7 @@ function durableJournalClaimContractMatches(claim) {
     'requestHash',
     'staleClaimRejected',
     'previousClaimId',
+    'previousClaimHash',
     'previousClaimKeyHash',
     'previousClaimSequence',
     'previousClaimEvent',
@@ -302,6 +303,7 @@ function durableJournalClaimContractMatches(claim) {
     && !(claim.staleClaimRejected === false && claim.activeClaimEvent === 'stale-claim-rejected')
     && !(claim.staleClaimRejected === true && claim.activeClaimEvent === 'idempotency-opened');
   const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimId)
+    || CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '')
     || hasNonEmptyString(claim.previousClaimKeyHash)
     || isPositiveInteger(claim.previousClaimSequence)
     || hasNonEmptyString(claim.previousClaimEvent);
@@ -321,6 +323,8 @@ function durableJournalClaimContractMatches(claim) {
     && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
+      && CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '')
+      && claim.previousClaimHash === recoveryClaimHash(claim.previousClaimId)
       && hasNonEmptyString(claim.previousClaimKeyHash)
       && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)

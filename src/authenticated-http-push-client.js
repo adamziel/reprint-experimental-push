@@ -2588,6 +2588,9 @@ function summarizeDbJournalClaim(claim) {
     previousClaimId: typeof claim.previousClaimId === 'string' && claim.previousClaimId.trim().length > 0
       ? claim.previousClaimId.trim()
       : null,
+    previousClaimHash: typeof claim.previousClaimHash === 'string' && claim.previousClaimHash.trim().length > 0
+      ? claim.previousClaimHash.trim()
+      : null,
     previousClaimKeyHash: typeof claim.previousClaimKeyHash === 'string' && claim.previousClaimKeyHash.trim().length > 0
       ? claim.previousClaimKeyHash.trim()
       : null,
