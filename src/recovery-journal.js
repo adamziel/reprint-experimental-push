@@ -538,7 +538,18 @@ function productionRecoveryJournalOwnershipContractMatches(ownership) {
 }
 
 function productionRecoveryJournalClaimContractMatches(claim) {
-  if (!claim || typeof claim !== 'object') {
+  if (!hasOwnProperties(claim, [
+    'status',
+    'activeClaimId',
+    'activeClaimHash',
+    'previousClaimId',
+    'previousClaimHash',
+    'sequence',
+    'type',
+    'staleThresholdMs',
+    'previousClaimAgeMs',
+    'reason',
+  ])) {
     return false;
   }
 
@@ -647,7 +658,23 @@ function storageGuardContractMatches(candidate) {
 }
 
 function durableJournalClaimContractMatches(claim) {
-  if (!claim || typeof claim !== 'object') {
+  if (!hasOwnProperties(claim, [
+    'status',
+    'activeClaimId',
+    'activeClaimKeyHash',
+    'activeClaimSequence',
+    'activeClaimEvent',
+    'idempotencyKeyHash',
+    'requestHash',
+    'staleClaimRejected',
+    'previousClaimId',
+    'previousClaimKeyHash',
+    'previousClaimSequence',
+    'previousClaimEvent',
+    'previousStartedSequence',
+    'abandonedSequence',
+    'abandonedEvent',
+  ])) {
     return false;
   }
 

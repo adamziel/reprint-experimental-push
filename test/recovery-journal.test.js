@@ -658,6 +658,22 @@ test('production recovery journal inspection preserves advanced previous-claim i
   divergentPreviousClaimHash.journal.claim.previousClaimHash =
     divergentPreviousClaimHash.claim.previousClaimHash;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentPreviousClaimHash), false);
+
+  const inheritedInspectionClaimMarkers = clone(inspection);
+  inheritedInspectionClaimMarkers.claim = Object.assign(
+    Object.create({
+      activeClaimId: inheritedInspectionClaimMarkers.claim.activeClaimId,
+      activeClaimHash: inheritedInspectionClaimMarkers.claim.activeClaimHash,
+      status: inheritedInspectionClaimMarkers.claim.status,
+      type: inheritedInspectionClaimMarkers.claim.type,
+    }),
+    inheritedInspectionClaimMarkers.claim,
+  );
+  delete inheritedInspectionClaimMarkers.claim.activeClaimId;
+  delete inheritedInspectionClaimMarkers.claim.activeClaimHash;
+  delete inheritedInspectionClaimMarkers.claim.status;
+  delete inheritedInspectionClaimMarkers.claim.type;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedInspectionClaimMarkers), false);
 });
 
 test('production recovery journal inspection scopes consumed evidence to the active claim after takeover', () => {
@@ -1071,6 +1087,44 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         },
       },
     }),
+    false,
+  );
+  const inheritedClaimMarkers = {
+    ...baseContract,
+    claim: Object.assign(
+      Object.create({
+        activeClaimId: baseContract.claim.activeClaimId,
+        activeClaimKeyHash: baseContract.claim.activeClaimKeyHash,
+        activeClaimSequence: baseContract.claim.activeClaimSequence,
+        activeClaimEvent: baseContract.claim.activeClaimEvent,
+      }),
+      baseContract.claim,
+    ),
+    latestRows: matchedStaleClaimLatestRows,
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    writerLease: {
+      ...baseContract.writerLease,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      ...baseContract.leaseFence,
+      staleClaimRejected: true,
+      writerLease: {
+        ...baseContract.leaseFence.writerLease,
+        staleClaimRejected: true,
+      },
+    },
+  };
+  delete inheritedClaimMarkers.claim.activeClaimId;
+  delete inheritedClaimMarkers.claim.activeClaimKeyHash;
+  delete inheritedClaimMarkers.claim.activeClaimSequence;
+  delete inheritedClaimMarkers.claim.activeClaimEvent;
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedClaimMarkers),
     false,
   );
   assert.equal(
