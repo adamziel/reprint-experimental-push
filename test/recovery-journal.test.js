@@ -5363,6 +5363,62 @@ test('production recovery journal consumption fails closed when consume introduc
   });
 });
 
+test('production recovery journal consumption fails closed when consume drifts from the persisted owned remote artifact path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'claim-consume-drifted-remote-ref';
+  const persistedRemoteArtifactPath = `${filePath}.remote`;
+  const driftedRemoteArtifactPath = `${filePath}.remote-drifted`;
+  const artifactRefs = {
+    journal: filePath,
+    remote: persistedRemoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    claimId,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  assert.throws(() => {
+    consumeProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      claimId,
+      writerLease: { id: claimId },
+      ownsRemoteArtifact: true,
+      remoteArtifactPath: driftedRemoteArtifactPath,
+      artifactRefs: {
+        journal: filePath,
+        remote: driftedRemoteArtifactPath,
+      },
+    });
+  }, (error) => {
+    assert.equal(error.name, 'UnsupportedProductionRecoveryJournalError');
+    assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+    assert.equal(
+      error.message,
+      'Production recovery journal consumption requires the persisted owned remote artifact path.',
+    );
+    assert.deepEqual(error.details.artifactRefs, {
+      journal: filePath,
+      remote: driftedRemoteArtifactPath,
+    });
+    assert.deepEqual(error.details.persistedArtifactRefs, artifactRefs);
+    return true;
+  });
+});
+
 test('production recovery journal reopen fails closed when a later persisted record drops owned remote artifact refs', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
