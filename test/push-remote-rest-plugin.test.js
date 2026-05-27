@@ -6453,6 +6453,46 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   });
 });
 
+test('checked recovery inspect evidence fails closed on missing accepted inline ownership production adapter instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.ownership.productionAdapter;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline ownership journal-ownership flag instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.ownership.ownsJournal;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.ownership, {
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  });
+});
+
 test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
   const inlineJournal = buildAcceptedInlineRecoveryJournal();
   delete inlineJournal.leaseFence.writerLease.staleClaimRejected;
