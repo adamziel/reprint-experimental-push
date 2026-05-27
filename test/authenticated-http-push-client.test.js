@@ -5680,6 +5680,314 @@ test('production-shaped authenticated push preserves consumed claim identity fro
   }
 });
 
+test('production-shaped authenticated push prefers nested production recovery claim and lease-fence contracts over lab-style top-level wrappers', async () => {
+  const originalFetch = global.fetch;
+  const credential = {
+    username: 'reprint_push_admin',
+    password: 'app-password-01',
+  };
+  const claimId = 'production-claim-nested-01';
+  const claimHash = recoveryClaimHash(claimId);
+  global.fetch = async (url) => {
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: {
+          id: 'psh_01j00000000000000000000000',
+          expiresAt: '2030-01-01T00:00:00Z',
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        receipt: { receiptHash: 'receipt-01' },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: {
+            integrity: { status: 'ok' },
+            scope: 'lab-only inspect evidence; not durable process-kill recovery',
+          },
+          claim: {
+            status: 'active',
+            activeClaimId: 'lab-wrapper-claim-id',
+            activeClaimHash: 'lab-wrapper-claim-hash',
+            previousClaimId: null,
+            previousClaimHash: null,
+            sequence: 1,
+            type: 'lab-wrapper-claim-opened',
+          },
+          leaseFence: {
+            boundary: 'local-fixture-write',
+            storageGuard: 'local-fixture-write',
+            claimKeyUnique: false,
+            fsyncEvidence: false,
+            monotonicSequence: false,
+            restartReadable: false,
+            staleClaimRejected: false,
+            writerLease: {
+              strategy: 'fixture-writer',
+              claimId: 'lab-wrapper-claim-id',
+              claimHash: 'lab-wrapper-claim-hash',
+              claimKeyUnique: false,
+              storageGuard: 'local-fixture-write',
+              fsyncEvidence: false,
+              monotonicSequence: false,
+              restartReadable: false,
+              staleClaimRejected: false,
+            },
+          },
+          productionJournal: {
+            journal: {
+              kind: 'production-recovery-journal',
+              path: '/tmp/recovery.jsonl',
+              journalPath: '/tmp/recovery.jsonl',
+              checked: ['/tmp/recovery.jsonl'],
+              artifactRefs: { releaseProof: 'artifact://release-proof-1' },
+              productionAdapter: 'openProductionRecoveryJournal',
+              supportedSurface: 'claim-fenced-restart-readable',
+              ownership: {
+                ownsJournal: true,
+                restartReadable: true,
+                productionAdapter: 'filesystem-compare-rename',
+                supportedSurface: 'claim-fenced-restart-readable',
+              },
+              claim: {
+                status: 'active',
+                activeClaimId: claimId,
+                activeClaimHash: claimHash,
+                previousClaimId: null,
+                previousClaimHash: null,
+                sequence: 1,
+                type: 'recovery-claim-opened',
+              },
+              claimId,
+              claimHash,
+              consumed: true,
+              consumedClaimId: claimId,
+              consumedClaimHash: claimHash,
+              ownsJournal: true,
+              restartReadable: true,
+              schemaVersion: 1,
+              integrity: { status: 'ok' },
+              records: 4,
+              staleClaimRejected: false,
+              writerLease: {
+                strategy: 'claim-fenced-single-writer',
+                claimId,
+                claimHash,
+                claimKeyUnique: true,
+                storageGuard: 'filesystem-compare-rename',
+                fsyncEvidence: true,
+                monotonicSequence: true,
+                restartReadable: true,
+                staleClaimRejected: false,
+              },
+              leaseFence: {
+                boundary: 'filesystem-compare-rename',
+                storageGuard: 'filesystem-compare-rename',
+                claimKeyUnique: true,
+                fsyncEvidence: true,
+                monotonicSequence: true,
+                restartReadable: true,
+                staleClaimRejected: false,
+                writerLease: {
+                  strategy: 'claim-fenced-single-writer',
+                  claimId,
+                  claimHash,
+                  claimKeyUnique: true,
+                  storageGuard: 'filesystem-compare-rename',
+                  fsyncEvidence: true,
+                  monotonicSequence: true,
+                  restartReadable: true,
+                  staleClaimRejected: false,
+                },
+              },
+            },
+            claim: {
+              status: 'active',
+              activeClaimId: claimId,
+              activeClaimHash: claimHash,
+              previousClaimId: null,
+              previousClaimHash: null,
+              sequence: 1,
+              type: 'recovery-claim-opened',
+            },
+            leaseFence: {
+              boundary: 'filesystem-compare-rename',
+              storageGuard: 'filesystem-compare-rename',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: false,
+              writerLease: {
+                strategy: 'claim-fenced-single-writer',
+                claimId,
+                claimHash,
+                claimKeyUnique: true,
+                storageGuard: 'filesystem-compare-rename',
+                fsyncEvidence: true,
+                monotonicSequence: true,
+                restartReadable: true,
+                staleClaimRejected: false,
+              },
+            },
+          },
+        },
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          acceptedOnCheckedBoundary: true,
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          latestRows: [
+            { event: 'idempotency-opened' },
+            { event: 'mutation-applied' },
+            { event: 'apply-committed' },
+          ],
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: 0,
+        receipt: { receiptHash: 'receipt-01' },
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-hash-01',
+          sessionHash: 'session-hash-01',
+          signingKeyHash: 'signing-key-hash-01',
+          request: { method: 'POST', path: '/wp-json/reprint/v1/push/apply' },
+        },
+        idempotency: {
+          replayed: false,
+          freshMutationWork: true,
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          acceptedOnCheckedBoundary: true,
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          latestRows: [
+            { event: 'idempotency-opened' },
+            { event: 'mutation-applied' },
+            { event: 'apply-committed' },
+          ],
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-recovery-nested-claim-leasefence-01',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.recoveryInspect.recovery.claim.activeClaimId, claimId);
+    assert.equal(summary.recoveryInspect.recovery.claim.activeClaimHash, claimHash);
+    assert.equal(summary.recoveryInspect.recovery.leaseFence.boundary, 'filesystem-compare-rename');
+    assert.equal(summary.recoveryInspect.recovery.leaseFence.writerLease.claimId, claimId);
+    assert.equal(summary.recoveryInspect.recovery.productionJournal.claim.activeClaimId, claimId);
+    assert.equal(summary.recoveryInspect.recovery.productionJournal.leaseFence.writerLease.claimId, claimId);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production recovery journal consumed-claim identity drifts', async () => {
   const originalFetch = global.fetch;
   const seen = [];

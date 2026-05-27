@@ -1443,20 +1443,31 @@ function recoveryInspectProductionJournalInspection(recovery) {
   const productionJournal = recovery?.productionJournal;
   const topLevelJournal = recovery?.journal;
   const nestedJournal = productionJournal?.journal;
-  const journal = recoveryInspectJournalClaimsProductionRecoveryJournalSurface(topLevelJournal)
+  const useTopLevelJournal = recoveryInspectJournalClaimsProductionRecoveryJournalSurface(topLevelJournal);
+  const journal = useTopLevelJournal
     ? topLevelJournal
     : nestedJournal ?? topLevelJournal;
 
   return {
     journal,
-    claim: recovery?.claim
-      ?? journal?.claim
-      ?? productionJournal?.claim
-      ?? nestedJournal?.claim,
-    leaseFence: recovery?.leaseFence
-      ?? journal?.leaseFence
-      ?? productionJournal?.leaseFence
-      ?? nestedJournal?.leaseFence,
+    claim: useTopLevelJournal
+      ? recovery?.claim
+        ?? journal?.claim
+        ?? productionJournal?.claim
+        ?? nestedJournal?.claim
+      : productionJournal?.claim
+        ?? nestedJournal?.claim
+        ?? recovery?.claim
+        ?? journal?.claim,
+    leaseFence: useTopLevelJournal
+      ? recovery?.leaseFence
+        ?? journal?.leaseFence
+        ?? productionJournal?.leaseFence
+        ?? nestedJournal?.leaseFence
+      : productionJournal?.leaseFence
+        ?? nestedJournal?.leaseFence
+        ?? recovery?.leaseFence
+        ?? journal?.leaseFence,
   };
 }
 
