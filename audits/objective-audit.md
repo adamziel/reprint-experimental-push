@@ -3,7 +3,7 @@
 ## Verdict
 
 - Audited commit: `8823b710de44ebdba3bf2e3a1c786f21f0d9a86e` (`Accept matching runtime auth session sources`)
-- Previous audited reliable head: `6096a2f4c9a771016d12107da4a7a4d7486b5347`
+- Previous audited reliable head: `75f695689f065cf18cbb93325c481cd615d48cf4`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
