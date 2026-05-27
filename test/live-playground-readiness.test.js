@@ -2035,6 +2035,15 @@ test('packaged server readiness fails closed for broken signed preflight auth id
       },
     },
     {
+      label: 'missing auth identity userLogin',
+      auth: {
+        ...basePreflight.body.auth,
+        identity: {
+          userId: 1,
+        },
+      },
+    },
+    {
       label: 'blank auth identity userLogin',
       auth: {
         ...basePreflight.body.auth,
