@@ -211,6 +211,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
         'writerLease' => $writer_lease,
         'leaseFence' => [
             'boundary' => 'wpdb-single-statement-cas',
+            'storageGuard' => 'wpdb-single-statement-cas',
             'claimKeyUnique' => $claim_key_unique,
             'fsyncEvidence' => true,
             'monotonicSequence' => $monotonic_sequence,
@@ -1086,6 +1087,7 @@ function reprint_push_lab_db_journal_lease_fence_contract_matches($lease_fence):
 {
     return is_array($lease_fence)
         && reprint_push_lab_db_journal_non_empty_string($lease_fence['boundary'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($lease_fence['storageGuard'] ?? null)
         && ($lease_fence['claimKeyUnique'] ?? false) === true
         && ($lease_fence['fsyncEvidence'] ?? false) === true
         && ($lease_fence['monotonicSequence'] ?? false) === true
@@ -1468,6 +1470,7 @@ function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent(
     return ($storage_guard['boundary'] ?? null) === ($ownership['productionAdapter'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($lease_fence['boundary'] ?? null)
+        && ($storage_guard['boundary'] ?? null) === ($lease_fence['storageGuard'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null)
         && ($storage_guard['operation'] ?? null) === 'update'
         && ($storage_guard['outcome'] ?? null) === 'applied';
@@ -1516,6 +1519,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
 
     return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($ownership['productionAdapter'] ?? null) === ($lease_fence['boundary'] ?? null)
+        && ($ownership['productionAdapter'] ?? null) === ($lease_fence['storageGuard'] ?? null)
         && ($ownership['restartReadable'] ?? null) === ($writer_lease['restartReadable'] ?? null)
         && ($ownership['restartReadable'] ?? null) === ($lease_fence['restartReadable'] ?? null)
         && ($writer_lease['strategy'] ?? null) === ($lease_fence_writer_lease['strategy'] ?? null)
@@ -1523,6 +1527,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
         && ($writer_lease['claimKeyUnique'] ?? null) === ($lease_fence_writer_lease['claimKeyUnique'] ?? null)
         && ($writer_lease['fsyncEvidence'] ?? null) === ($lease_fence['fsyncEvidence'] ?? null)
         && ($writer_lease['fsyncEvidence'] ?? null) === ($lease_fence_writer_lease['fsyncEvidence'] ?? null)
+        && ($writer_lease['storageGuard'] ?? null) === ($lease_fence['storageGuard'] ?? null)
         && ($writer_lease['storageGuard'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null)
         && ($writer_lease['monotonicSequence'] ?? null) === ($lease_fence['monotonicSequence'] ?? null)
         && ($writer_lease['monotonicSequence'] ?? null) === ($lease_fence_writer_lease['monotonicSequence'] ?? null)

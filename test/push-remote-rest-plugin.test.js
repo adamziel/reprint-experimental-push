@@ -439,6 +439,7 @@ function runFinalizeAuthenticatedApplyResult(result, authEvidence, signedRequest
       },
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
+        storageGuard: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
         fsyncEvidence: true,
         monotonicSequence: true,
@@ -847,6 +848,7 @@ function buildAcceptedInlineRecoveryJournal() {
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,
@@ -974,6 +976,7 @@ function buildCheckedRecoveryJournalSummary() {
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,
@@ -1098,6 +1101,7 @@ function buildAcceptedInlineDbJournal() {
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,
@@ -1185,6 +1189,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       },
       leaseFence: {
         boundary: 'wpdb-single-statement-cas',
+        storageGuard: 'wpdb-single-statement-cas',
         claimKeyUnique: true,
         fsyncEvidence: true,
         monotonicSequence: true,
@@ -1205,7 +1210,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(JSON.parse(result.stdout), {
-    acceptedOnCheckedBoundary: true,
+    acceptedOnCheckedBoundary: false,
     ownership: {
       ownsJournal: true,
       restartReadable: true,
@@ -1223,6 +1228,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,
@@ -3817,6 +3823,7 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,
@@ -3944,6 +3951,7 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
     },
     leaseFence: {
       boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
       claimKeyUnique: true,
       fsyncEvidence: true,
       monotonicSequence: true,
@@ -4650,6 +4658,26 @@ test('checked recovery inspect evidence fails closed when authoritative checked 
 test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted lease-fence boundary', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.boundary;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    {
+      recovery: {
+        journal: buildAcceptedInlineRecoveryJournal(),
+      },
+    },
+    true,
+    false,
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+});
+
+test('checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted lease-fence storage guard', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.storageGuard;
 
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -8353,6 +8381,23 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
   assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence storage guard even when checked evidence includes it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.leaseFence.storageGuard;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.leaseFence.storageGuard, 'wpdb-single-statement-cas');
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested lease-fence writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12133,6 +12178,23 @@ test('checked db journal attachment fails closed when authoritative checked summ
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
 });
 
+test('checked db journal attachment fails closed when authoritative checked summaries omit accepted lease-fence storage guard', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedRecoveryJournalSummary();
+  delete checkedSummary.leaseFence.storageGuard;
+
+  const result = runAttachCheckedDbJournalContract(
+    {
+      ok: true,
+      dbJournal: buildAcceptedInlineRecoveryJournal(),
+    },
+    checkedSummary,
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+});
+
 test('checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease storage guard', { skip: !hasPhp }, () => {
   const checkedSummary = buildCheckedRecoveryJournalSummary();
   delete checkedSummary.leaseFence.writerLease.storageGuard;
@@ -14861,6 +14923,21 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
   assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
+});
+
+test('checked db journal attachment fails closed on missing accepted inline lease-fence storage guard even when checked evidence includes it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.leaseFence.storageGuard;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.dbJournal.leaseFence.storageGuard, 'wpdb-single-statement-cas');
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested lease-fence writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
