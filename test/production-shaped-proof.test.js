@@ -2881,6 +2881,86 @@ test('packaged release verifier readiness helper preserves timeout fallback prob
   });
 });
 
+test('packaged release verifier readiness helper preserves timeout fallback probes when both the snapshot probe and /wp-json/ time out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
+  timeoutError.name = 'TimeoutError';
+  const timeoutFallbackProbes = {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 0,
+      ok: false,
+      body: 'Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight after 100ms',
+      ready: false,
+      retryable: false,
+      terminal: false,
+      timedOut: true,
+    },
+    indexProbe: {
+      route: '/wp-json/',
+      status: 0,
+      ok: false,
+      body: 'Timed out fetching http://127.0.0.1:65535/wp-json/ after 100ms',
+      ready: false,
+      retryable: false,
+      terminal: false,
+      timedOut: true,
+    },
+  };
+  const captured = {
+    prefix: null,
+    logs: null,
+    context: null,
+    lastError: null,
+    lastProbes: null,
+    lastTimeoutFallbackProbes: null,
+  };
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    fetchTextWithTimeout: async () => {
+      throw timeoutError;
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => timeoutFallbackProbes,
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => ({
+      kind: 'timed-out-route-index-timeout',
+    }),
+    throwPlaygroundReadinessFailure: async (child, prefix, lastError, lastProbes, logs, context, lastTimeoutFallbackProbes) => {
+      captured.prefix = prefix;
+      captured.logs = logs;
+      captured.context = context;
+      captured.lastError = lastError;
+      captured.lastProbes = lastProbes;
+      captured.lastTimeoutFallbackProbes = lastTimeoutFallbackProbes;
+      throw new Error(prefix);
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9453,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight probe timed out while \/wp-json\/ also timed out after the snapshot probe timed out/,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(captured.prefix, 'Packaged production plugin signed preflight probe timed out while /wp-json/ also timed out after the snapshot probe timed out at http://127.0.0.1:65535');
+  assert.equal(captured.logs, 'packaged server boot log');
+  assert.equal(captured.lastError, timeoutError);
+  assert.deepEqual(captured.lastTimeoutFallbackProbes, timeoutFallbackProbes);
+  assert.deepEqual(captured.lastProbes, [timeoutFallbackProbes.preflightProbe]);
+  assert.deepEqual(captured.context, {
+    childPid: 9453,
+    packagedProductionPlugin: true,
+    indexProbeTimedOut: true,
+  });
+});
+
 test('packaged production plugin smoke readiness helper fails fast on signaled child termination', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
