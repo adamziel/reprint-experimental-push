@@ -1619,6 +1619,13 @@ test('packaged server readiness fails closed for broken top-level signed preflig
       },
     },
     {
+      label: 'non-string top-level session id',
+      session: {
+        id: 123,
+        type: 'production-auth-session',
+      },
+    },
+    {
       label: 'wrong top-level session type',
       session: {
         id: 'session_123',
