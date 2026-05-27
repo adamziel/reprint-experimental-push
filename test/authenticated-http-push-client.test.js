@@ -985,6 +985,179 @@ test('production-shaped authenticated push keeps the normalized auth/session sou
   }
 });
 
+const runtimeAuthSessionSourceIdentity = {
+  userId: 7,
+  userLogin: 'reprint_push_admin',
+};
+
+const runtimeAuthSessionSourceOverride = {
+  ok: true,
+  sourceUrl: 'http://127.0.0.1:8080',
+  username: 'reprint_push_admin',
+  applicationPassword: 'reprint-push-admin-app-password',
+};
+
+const runtimeAuthSessionFallbackCredentials = {
+  username: 'trusted-runtime-username',
+  applicationPassword: 'trusted-runtime-password',
+};
+
+function buildProductionAuthSessionIdentity(field, mismatch = false) {
+  if (field === 'userId') {
+    return {
+      userId: mismatch ? 9 : runtimeAuthSessionSourceIdentity.userId,
+      userLogin: runtimeAuthSessionSourceIdentity.userLogin,
+    };
+  }
+
+  return {
+    userId: runtimeAuthSessionSourceIdentity.userId,
+    userLogin: mismatch ? 'different-runtime-user' : runtimeAuthSessionSourceIdentity.userLogin,
+  };
+}
+
+function buildProductionAuthSessionResponse(field, mismatch = false) {
+  return {
+    identity: buildProductionAuthSessionIdentity(field, mismatch),
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: 'psh_01j00000000000000000000000',
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+}
+
+function registerAuthSessionSourceOverrideMismatchTest(step, field) {
+  const mismatchLabel = field === 'userId' ? 'id' : 'login';
+  const expectedRequired = field === 'userId'
+    ? String(runtimeAuthSessionSourceIdentity.userId)
+    : runtimeAuthSessionSourceIdentity.userLogin;
+  const expectedObserved = field === 'userId' ? '9' : 'different-runtime-user';
+  const expectedSeenLength = step === 'dry-run' ? 3 : (step === 'apply' ? 4 : 5);
+
+  test(`production-shaped authenticated push fails closed on auth/session source override ${step} auth user ${mismatchLabel} mismatches under the stricter production-session gate`, async () => {
+    const originalFetch = global.fetch;
+    const seen = [];
+    let applyCount = 0;
+    global.fetch = async (url, options) => {
+      seen.push({ url: String(url), options });
+      const pathname = String(url);
+      if (pathname.includes('/preflight')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: buildProductionAuthSessionResponse(field),
+          session: { id: 'psh_01j00000000000000000000000' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/snapshot')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          snapshot: { resources: [] },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/dry-run')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: buildProductionAuthSessionResponse(field, step === 'dry-run'),
+          receipt: { receiptHash: 'receipt-01' },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/apply')) {
+        applyCount += 1;
+        return new Response(JSON.stringify({
+          ok: true,
+          receipt: { receiptHash: 'receipt-01' },
+          auth: buildProductionAuthSessionResponse(field, step === 'apply'),
+          signedRequest: {
+            signed: true,
+          },
+          idempotency: {
+            replayed: false,
+            freshMutationWork: true,
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (pathname.includes('/recovery/inspect')) {
+        return new Response(JSON.stringify({
+          ok: true,
+          auth: buildProductionAuthSessionResponse(field, step === 'recovery-inspect'),
+          recovery: {
+            state: 'available',
+            counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+            journal: { integrity: { status: 'ok' } },
+          },
+        }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      throw new Error(`unexpected fetch to ${url}`);
+    };
+
+    try {
+      const summary = await runAuthenticatedHttpPush({
+        sourceUrl: 'http://127.0.0.1:9090',
+        base: { resources: [] },
+        local: { resources: [] },
+        username: runtimeAuthSessionFallbackCredentials.username,
+        applicationPassword: runtimeAuthSessionFallbackCredentials.applicationPassword,
+        idempotencyKey: `idem-01-source-override-${step}-${mismatchLabel}-mismatch-required`,
+        routeProfile: 'production-shaped',
+        requireProductionAuthSession: true,
+        authSessionSource: runtimeAuthSessionSourceOverride,
+      });
+
+      assert.equal(summary.ok, false);
+      assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+      assert.deepEqual(summary.authSession, {
+        field: `auth.identity.${field}`,
+        required: expectedRequired,
+        observed: expectedObserved,
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      });
+      assert.deepEqual(summary.boundary, {
+        firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+        status: 'unimplemented',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        authSession: {
+          field: `auth.identity.${field}`,
+          required: expectedRequired,
+          observed: expectedObserved,
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+      });
+      assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, step);
+      assert.equal(summary.authSessionLifecycleSummary.read?.step, step);
+      assert.equal(summary.authSessionLifecycleSummary.read?.id, 'psh_01j00000000000000000000000');
+      assert.ok(seen.every(({ url }) => url.startsWith('http://127.0.0.1:8080/wp-json/reprint/v1/push/')));
+      assert.ok(seen.every(({ options }) => decodeBasicAuthorizationHeader(options.headers) === 'reprint_push_admin:reprint-push-admin-app-password'));
+      assert.ok(!seen.some(({ url }) => url.includes('/db-journal')));
+      assert.equal(seen.length, expectedSeenLength);
+      assert.equal(applyCount, step === 'dry-run' ? 0 : 1);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+}
+
+for (const step of ['dry-run', 'apply', 'recovery-inspect']) {
+  registerAuthSessionSourceOverrideMismatchTest(step, 'userLogin');
+  registerAuthSessionSourceOverrideMismatchTest(step, 'userId');
+}
+
 test('production-shaped authenticated push keeps direct source credentials when auth/session source fallback stays malformed through replay and journal reads', async () => {
   const originalFetch = global.fetch;
   const seen = [];
