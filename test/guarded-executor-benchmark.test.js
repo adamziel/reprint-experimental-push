@@ -11868,6 +11868,143 @@ test('guarded benchmark carries hidden queue-headroom visibility blockers into p
   );
 });
 
+test('guarded benchmark carries hidden memory-headroom visibility blockers into plugin post-pause summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+  const postPauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+  ].includes(entry.id));
+
+  assert.ok(blockers.includes('memory-ceiling-match-visible-without-memory-headroom-visibility'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility'));
+  assert.ok(blockers.includes('queue-pause-without-visible-receipt-cursor-memory-headroom'));
+  assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-memory-headroom-visibility'));
+  assert.deepEqual(
+    postPauseRejectedFastPaths
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs.filter((blockerRef) =>
+          HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS.includes(blockerRef),
+        ),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-batching-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-update-row-preconditions-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: HIDDEN_MEMORY_HEADROOM_VISIBILITY_BLOCKER_REFS,
+      },
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+  );
+});
+
 test('guarded benchmark carries hidden queue-budget visibility blockers into release-bundle post-pause summaries', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
