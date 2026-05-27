@@ -8421,6 +8421,27 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   });
 });
 
+test('checked recovery inspect evidence fails closed on conflicting accepted inline top-level storage-guard boundary instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  inlineJournal.storageGuard.boundary = 'custom-inline-adapter';
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'custom-inline-adapter',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
+  });
+});
+
 test('checked recovery inspect evidence fails closed on conflicting accepted inline top-level counters instead of silently normalizing them', { skip: !hasPhp }, () => {
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
@@ -14807,6 +14828,25 @@ test('checked db journal attachment fails closed on missing accepted inline top-
   assert.deepEqual(parsed.dbJournal.storageGuard, {
     boundary: 'wpdb-single-statement-cas',
     operation: 'update',
+  });
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline top-level storage-guard boundary instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.storageGuard.boundary = 'custom-inline-adapter';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.storageGuard, {
+    boundary: 'custom-inline-adapter',
+    operation: 'update',
+    outcome: 'applied',
   });
 });
 
