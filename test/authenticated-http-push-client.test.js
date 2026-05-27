@@ -692,8 +692,87 @@ test('production-shaped authenticated push fails closed when production auth ses
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
+    assert.equal(summary.authSessionLifecycleTrace.length, 1);
+    assert.equal(summary.authSessionLifecycleTrace[0].playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycle.minted.playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycle.history.length, 1);
+    assert.equal(summary.authSessionLifecycle.history[0].playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycleSummary.issued.playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycleSummary.observations[0].playgroundFallback, true);
     assert.equal(seen.length, 1);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push preserves preflight auth-session warning metadata in its lifecycle trace', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+            warning: 'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-preflight-warning',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    });
+    assert.equal(summary.authSessionLifecycleTrace.length, 1);
+    assert.equal(
+      summary.authSessionLifecycleTrace[0].warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(
+      summary.authSessionLifecycle.minted.warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(summary.authSessionLifecycle.history.length, 1);
+    assert.equal(
+      summary.authSessionLifecycle.history[0].warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(
+      summary.authSessionLifecycleSummary.issued.warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(
+      summary.authSessionLifecycleSummary.observations[0].warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
   } finally {
     global.fetch = originalFetch;
   }
