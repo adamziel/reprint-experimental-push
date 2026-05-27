@@ -12386,6 +12386,54 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
   ]);
 });
 
+test('guarded benchmark surfaces receipt-flush blockers at runtime', async () => {
+  const report = await runGuardedExecutorBenchmark({ profile: 'unit' });
+  const details = productionThroughputDetails(report);
+  const receiptFlushRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    entry.id.includes('receipt-flush'),
+  );
+
+  assert.deepEqual(
+    receiptFlushRejectedFastPaths.map(({ id, rejectedGate }) => ({ id, rejectedGate })),
+    [
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-activation',
+        rejectedGate: 'group',
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-update-writeback',
+        rejectedGate: 'group',
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'recovery',
+      },
+      {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'recovery',
+      },
+    ],
+  );
+
+  assert.deepEqual(summarizeRejectedGates(receiptFlushRejectedFastPaths), [
+    { rejectedGate: 'group', count: 4 },
+    { rejectedGate: 'recovery', count: 2 },
+    { rejectedGate: 'skip', count: 1 },
+  ]);
+});
+
 test('guarded benchmark carries hidden staging-disk visibility blockers into rollout summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
