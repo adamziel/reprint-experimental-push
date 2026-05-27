@@ -1489,12 +1489,20 @@ test('guarded benchmark carries direct receipt-cursor queue-slack measurement bl
     (entry) => entry.id === 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
   );
 
-  assert.deepEqual(queueSlackCommit?.blockerRefs, [
-    'queue-pause-without-measured-receipt-cursor-queue-slack',
-    'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
-    'receipt-cursor-queue-slack-not-measured',
-    'receipt-cursor-queue-slack-visible-without-measurement',
-  ]);
+  assert.deepEqual({
+    id: queueSlackCommit?.id,
+    rejectedGate: queueSlackCommit?.rejectedGate,
+    blockerRefs: queueSlackCommit?.blockerRefs,
+  }, {
+    id: 'cached-receipt-cursor-queue-slack-authorizes-commit-after-pause',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'queue-pause-without-measured-receipt-cursor-queue-slack',
+      'queue-pause-without-backpressure-aligned-receipt-cursor-queue-slack',
+      'receipt-cursor-queue-slack-not-measured',
+      'receipt-cursor-queue-slack-visible-without-measurement',
+    ],
+  });
 });
 
 test('guarded benchmark carries direct receipt-cursor memory-headroom measurement blockers into rejected fast-path summaries', () => {
@@ -1526,12 +1534,20 @@ test('guarded benchmark carries direct receipt-cursor memory-headroom measuremen
       entry.id === 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
   );
 
-  assert.deepEqual(memoryHeadroomCommit?.blockerRefs, [
-    'queue-pause-without-measured-receipt-cursor-memory-headroom',
-    'receipt-cursor-memory-headroom-visible-without-measurement',
-    'receipt-cursor-headroom-not-covered-by-queue-budget',
-    'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
-  ]);
+  assert.deepEqual({
+    id: memoryHeadroomCommit?.id,
+    rejectedGate: memoryHeadroomCommit?.rejectedGate,
+    blockerRefs: memoryHeadroomCommit?.blockerRefs,
+  }, {
+    id: 'cached-receipt-cursor-memory-headroom-skips-release-bundle-commit-after-pause',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'queue-pause-without-measured-receipt-cursor-memory-headroom',
+      'receipt-cursor-memory-headroom-visible-without-measurement',
+      'receipt-cursor-headroom-not-covered-by-queue-budget',
+      'receipt-cursor-memory-headroom-not-covered-by-queue-budget',
+    ],
+  });
 });
 
 test('guarded benchmark carries direct plugin-update commit-after-pause blockers into rejected fast-path summaries', () => {
@@ -1542,11 +1558,19 @@ test('guarded benchmark carries direct plugin-update commit-after-pause blockers
       entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
   );
 
-  assert.deepEqual(pluginUpdateCommitAfterPause?.blockerRefs, [
-    'production-atomic-group-commit-not-measured',
-    'production-row-batch-executor-not-measured',
-    'production-row-batch-executor-measured-not-proven',
-  ]);
+  assert.deepEqual({
+    id: pluginUpdateCommitAfterPause?.id,
+    rejectedGate: pluginUpdateCommitAfterPause?.rejectedGate,
+    blockerRefs: pluginUpdateCommitAfterPause?.blockerRefs,
+  }, {
+    id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-update-commit-after-pause',
+    rejectedGate: 'recovery',
+    blockerRefs: [
+      'production-atomic-group-commit-not-measured',
+      'production-row-batch-executor-not-measured',
+      'production-row-batch-executor-measured-not-proven',
+    ],
+  });
 });
 
 test('guarded benchmark surfaces plugin-update recovery blockers at runtime', () => {
