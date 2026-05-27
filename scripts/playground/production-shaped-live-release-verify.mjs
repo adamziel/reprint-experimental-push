@@ -67,8 +67,8 @@ if (packagedBoundaryRequested) {
           localUrl: localServer.baseUrl,
           packagedBoundaryRequested: true,
         }),
-      });
-      emitCombinedReleaseProof(verify.proof, applyRevalidation);
+      }, { packagedBoundaryRequested: true });
+      emitCombinedReleaseProof(verify.proof, applyRevalidation, { packagedBoundaryRequested: true });
       return null;
     });
   });
@@ -201,7 +201,7 @@ function runCheckedReleaseVerify(envOverrides = {}) {
   };
 }
 
-function runApplyRevalidationProof(envOverrides = {}) {
+function runApplyRevalidationProof(envOverrides = {}, options = {}) {
   let proof = spawnApplyRevalidationProof(envOverrides);
 
   for (let attempt = 0; attempt < applyRevalidationRetries && applyRevalidationRetryable(proof); attempt += 1) {
@@ -234,7 +234,7 @@ function runApplyRevalidationProof(envOverrides = {}) {
     },
     apply: summary.apply || null,
     recoveryInspect: summary.recoveryInspect || null,
-    boundary: summary.boundary || null,
+    boundary: normalizeApplyRevalidationBoundary(summary.boundary, options),
   };
 }
 
@@ -254,18 +254,70 @@ function spawnApplyRevalidationProof(envOverrides = {}) {
   });
 }
 
-function emitCombinedReleaseProof(verify, applyRevalidation) {
+function emitCombinedReleaseProof(verify, applyRevalidation, options = {}) {
   process.stdout.write(
     JSON.stringify(
       {
         ...verify,
-        applyRevalidation,
+        applyRevalidation: normalizeApplyRevalidationProof(applyRevalidation, options),
       },
       null,
       2,
     ),
   );
   process.stdout.write('\n');
+}
+
+export function normalizeApplyRevalidationProof(applyRevalidation, { packagedBoundaryRequested = false } = {}) {
+  if (!applyRevalidation || !packagedBoundaryRequested) {
+    return applyRevalidation;
+  }
+
+  return {
+    ...applyRevalidation,
+    boundary: normalizeApplyRevalidationBoundary(applyRevalidation.boundary, { packagedBoundaryRequested }),
+  };
+}
+
+export function normalizeApplyRevalidationBoundary(boundary, { packagedBoundaryRequested = false } = {}) {
+  if (!boundary || !packagedBoundaryRequested) {
+    return boundary || null;
+  }
+
+  const nextBoundary = {
+    ...boundary,
+    firstRemainingProductionBoundary: 'explicit live production-owned release boundary',
+    status: 'support-only',
+    verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+    liveSource: {
+      required: 'REPRINT_PUSH_SOURCE_URL',
+      observed: 'packaged-production-plugin-fallback',
+      verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+    },
+  };
+
+  if (nextBoundary.authSession?.verdict === 'LIVE_RELEASE_BOUNDARY_OK') {
+    nextBoundary.authSession = {
+      ...nextBoundary.authSession,
+      verdict: 'PACKAGED_RELEASE_BOUNDARY_OK',
+    };
+  }
+
+  if (nextBoundary.durableJournal?.verdict === 'LIVE_RELEASE_BOUNDARY_OK') {
+    nextBoundary.durableJournal = {
+      ...nextBoundary.durableJournal,
+      verdict: 'PACKAGED_RELEASE_BOUNDARY_OK',
+    };
+  }
+
+  if (nextBoundary.replayAndRetry?.verdict === 'LIVE_RELEASE_BOUNDARY_OK') {
+    nextBoundary.replayAndRetry = {
+      ...nextBoundary.replayAndRetry,
+      verdict: 'PACKAGED_RELEASE_BOUNDARY_OK',
+    };
+  }
+
+  return nextBoundary;
 }
 
 function emitReleaseFailureAndExit(verify) {

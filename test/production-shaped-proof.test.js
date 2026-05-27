@@ -799,8 +799,9 @@ test('production-shaped release verify keeps the packaged checked boundary expli
   });
   assert.equal(boundary.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
   assert.equal(boundary.durableJournal?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
-  assert.equal(boundary.replayAndRetry?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+  assert.equal(boundary.replayAndRetry?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
 });
+
 
 test('production-shaped release verify request state marks synthesized packaged production auth/session sources as packaged requests', () => {
   const request = resolvePackagedProductionPluginAuthSessionRequest({
@@ -5043,10 +5044,19 @@ maybeTest('production-shaped live release verify command proves the packaged che
   assert.equal(summary.boundary?.replayAndRetry?.required, '/snapshot');
   assert.equal(summary.boundary?.replayAndRetry?.observed, '/snapshot');
   assert.equal(summary.boundary?.replayAndRetry?.retryAttempts, 2);
-  assert.equal(summary.boundary?.replayAndRetry?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.boundary?.replayAndRetry?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
   assert.equal(summary.applyRevalidation?.ok, true);
-  assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, null);
-  assert.equal(summary.applyRevalidation?.boundary?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.applyRevalidation?.boundary?.firstRemainingProductionBoundary, 'explicit live production-owned release boundary');
+  assert.equal(summary.applyRevalidation?.boundary?.status, 'support-only');
+  assert.equal(summary.applyRevalidation?.boundary?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.deepEqual(summary.applyRevalidation?.boundary?.liveSource, {
+    required: 'REPRINT_PUSH_SOURCE_URL',
+    observed: 'packaged-production-plugin-fallback',
+    verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+  });
+  assert.equal(summary.applyRevalidation?.boundary?.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.applyRevalidation?.boundary?.durableJournal?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.applyRevalidation?.boundary?.replayAndRetry?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
@@ -5122,11 +5132,11 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         assert.match(summary.remoteSnapshot?.visibleSurfaceHash || '', /^[a-f0-9]{64}$/);
         assert.equal(summary.remoteSnapshot?.finalMatchesLocal, false);
         assert.match(proof.stdout, /"boundary": \{/);
-        assert.match(proof.stdout, /"firstRemainingProductionBoundary": null/);
-        assert.match(proof.stdout, /"verdict": "LIVE_RELEASE_BOUNDARY_OK"/);
+        assert.match(proof.stdout, /"firstRemainingProductionBoundary": "explicit live production-owned release boundary"/);
+        assert.match(proof.stdout, /"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/);
         assert.match(
           proof.stdout,
-          /"boundary": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
+          /"boundary": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"\s*\}/,
         );
         assert.match(
           proof.stdout,
@@ -5187,7 +5197,7 @@ maybeTest('production-shaped release verify command runs the live protocol branc
         );
         assert.match(
           proof.stdout,
-          /"applyRevalidation": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"[\s\S]*"authSession": \{\s*"required": "production-auth-session lifecycle",\s*"observed": "active-unexpired-preserved",\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"durableJournal": \{\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
+          /"applyRevalidation": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": "explicit live production-owned release boundary",\s*"status": "support-only",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"[\s\S]*"authSession": \{\s*"required": "production-auth-session lifecycle",\s*"observed": "active-unexpired-preserved",\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"durableJournal": \{\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"\s*\}/,
         );
         assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
       });

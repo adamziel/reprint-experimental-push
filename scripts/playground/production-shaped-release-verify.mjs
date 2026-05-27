@@ -216,7 +216,7 @@ export function resolveSuccessfulReleaseBoundary({
         retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
         verdict: proof.replayEquivalence?.equivalent === true
           && proof.replayAndRetry?.verdict === 'PRESERVED_REMOTE_RETRY_PROVEN'
-          ? 'LIVE_RELEASE_BOUNDARY_OK'
+          ? 'PACKAGED_RELEASE_BOUNDARY_OK'
           : 'PRESERVED_REMOTE_RETRY_REQUIRED',
       },
     };
@@ -1459,7 +1459,9 @@ try {
                 authSession: {
                   required: checkedAuthSessionLifecycle.required,
                   observed: checkedAuthSessionLifecycle.observed,
-                  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+                  verdict: packagedSourceFixture
+                    ? 'PACKAGED_RELEASE_BOUNDARY_OK'
+                    : 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
                 },
                 durableJournal: {
                   storageLeaseFence: 'live production-shaped auth/session is proven, but the live db-journal boundary is still missing production-owned durable journal storage, lease fencing, restart-readable artifacts, or stale-claim rejection on the checked release path',
@@ -1554,7 +1556,9 @@ try {
                 authSession: {
                   required: checkedAuthSessionLifecycle.required,
                   observed: checkedAuthSessionLifecycle.observed,
-                  verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
+                  verdict: packagedSourceFixture
+                    ? 'PACKAGED_RELEASE_BOUNDARY_OK'
+                    : 'PRODUCTION_AUTH_SESSION_LIFECYCLE_PROVEN',
                 },
                 durableJournal: {
                   storageLeaseFence: 'live production-shaped db-journal surface accepted on the checked release boundary',
