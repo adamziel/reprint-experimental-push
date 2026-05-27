@@ -32,6 +32,18 @@ Final release readiness is still held because Docker is not installed in this
 sandbox, these services are local Playground loopback WordPress instances, and
 graph identity/general plugin-driver coverage is still incomplete.
 
+Follow-up at 2026-05-27 23:39 CEST: `lane/evidence-integration-20260527`
+combines two additional tmux-visible lanes. `origin/lane/runtime-proof-feasibility-20260527`
+adds an executable runtime capability proof that fails closed with
+`DOCKER_RUNTIME_UNAVAILABLE` in this sandbox and records the exact
+Docker/external WordPress command to run next. `origin/lane/graph-identity-local-durable-20260527`
+maps a real Playground post/postmeta author graph identity and passes
+`npm run test:playground:push-protocol` with an 8-mutation ready plan and no
+`wp_users` mutation. This moves local graph evidence from pending to partial
+covered, but final readiness remains held for Docker/external runtime, broader
+graph surfaces, general plugin drivers, rollback, and crash durability outside
+Playground.
+
 ## Branch Heads
 
 | Ref | Head | Current proof |
@@ -44,7 +56,9 @@ graph identity/general plugin-driver coverage is still incomplete.
 | `origin/lane/topology-verifier-v2-20260527` | `2ce3df0f3` | Topology fail-closed behavior proof plus consolidated base merge; support evidence only. |
 | `origin/lane/critic-reorg-v2-20260527` | `110d3c970` | Critic follow-up rejects gate movement without live source evidence. |
 | `origin/lane/auditor-reorg-20260527` | `88a4249ac` | Separate auditor lane artifact refreshed; not live release proof. |
-| `lane/durable-journal-local-production-20260527` | current branch | Local live topology candidate proof with checked durable DB journal storage guard; Docker/external proof still absent. |
+| `lane/durable-journal-local-production-20260527` | `ba5ba3b4c` | Local live topology candidate proof with checked durable DB journal storage guard; Docker/external proof still absent. |
+| `origin/lane/runtime-proof-feasibility-20260527` | `7f329f305` | Executable runtime-capability proof fails closed in this sandbox and records the exact Docker/external command. |
+| `origin/lane/graph-identity-local-durable-20260527` | `293e30bc5` | Real Playground post/postmeta author identity maps; unsupported menu/navigation surfaces remain fail-closed. |
 
 Local refs not matching same-name origin, or local-only refs observed:
 
@@ -105,7 +119,7 @@ Result:
 | GATE-1 production executor/auth boundary | Local live topology proves auth/session source readback and `LIVE_RELEASE_BOUNDARY_OK` with packaged fallback disabled. | Docker/external production credential lifecycle. | `main:durable-proof2` exits `0`; older missing-source command remains useful fail-closed evidence. | Local movement only. |
 | GATE-2 durable recovery journal boundary | Local live topology proves `ownsJournal: true`, `restartReadable: true`, claim-fenced writer lease, stale-claim rejection, and `leaseFence.storageGuard: wpdb-single-statement-cas`. | Docker/external crash and restart durability. | `main:durable-proof2` exits `0`. | Local movement only. |
 | GATE-3 live production topology | Four Brewcommerce-derived local WordPress sites run as source, changed remote, local edited, and apply-revalidation source; source command readback matches. | Docker/external WordPress topology. | `main:durable-proof2` exits `0`. | Local movement only. |
-| GATE-4 plugin-driver ownership boundary | Release-state plugin-owned mutation proof preserves rejected remote and apply-time revalidation on the local release boundary; plugin-driver guard bundle runs. | General plugin-driver coverage beyond release-state fixture. | `main:durable-proof2` exits `0`. | Local movement only. |
+| GATE-4 plugin-driver ownership boundary | Release-state plugin-owned mutation proof preserves rejected remote and apply-time revalidation on the local release boundary; the graph smoke now maps a real post/postmeta author identity. | General plugin-driver coverage beyond release-state fixture and broader WordPress graph surfaces. | `main:durable-proof2` exits `0`; `main:graph-id-proof` passes `npm run test:playground:push-protocol`. | Local movement only. |
 
 ## First Missing Primitive
 
@@ -114,7 +128,7 @@ auth/session issuance and readback, durable restart-readable lease-fenced
 journal ownership, preserved rejected-remote evidence, apply-time revalidation
 before the first mutation, and release-state plugin-driver ownership. The first
 missing primitive is the same evidence on Docker or external WordPress, followed
-by graph identity mapping and general plugin-driver coverage.
+by broader graph identity mapping and general plugin-driver coverage.
 
 ## Next Exact Command
 

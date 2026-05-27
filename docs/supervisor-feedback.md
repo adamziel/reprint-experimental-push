@@ -1,9 +1,37 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-27 23:22 CEST
+Last updated: 2026-05-27 23:39 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-27 23:39 CEST - Runtime And Graph Evidence Integrated
+
+- Going well: `main:graph-id-proof` passed the real Playground push-protocol
+  smoke after exporting stable post author identity rows as graph targets. The
+  ready plan stayed at 8 mutations and did not introduce a `wp_users` mutation.
+- Also going well: `main:runtime-proof` pushed a fail-closed runtime capability
+  proof. It makes the Docker/external blocker executable instead of vague:
+  Docker and Podman are absent here, PHP has SQLite support, and the exact
+  external `REPRINT_PUSH_* npm run verify:release` command is documented.
+- Not going well: final readiness is still held. The new graph proof covers a
+  real post/postmeta author identity path, not the full WordPress graph. Docker
+  or external WordPress, crash durability outside Playground, general plugin
+  drivers, rollback, and large-site chunks remain open.
+- Progress change: merge invariants move up for the real graph identity smoke;
+  reliable executor moves slightly for the runtime fail-closed proof;
+  independent evidence moves up because both lanes are tmux-visible and pushed.
+  Recovery and fast paths stay flat.
+- Next nudge: run the complex local production site as the next substitute while
+  preserving the explicit Docker/external release blocker.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Expand from post/postmeta author identity into broader WordPress graph surfaces without opening menu/navigation mutation. |
+| Recovery | Keep local durable DB journal proof, then prove the same behavior on Docker/external storage. |
+| Reliable executor | Use the runtime proof's exact external command when Docker or credentials become available. |
+| Fast paths | Stay flat until a complex-site benchmark proves receipts, cursors, and recovery under chunking. |
+| Audit and critic | Re-audit the integrated evidence branch; do not treat the graph smoke as full graph completion. |
 
 ## 2026-05-27 23:22 CEST - Durable Local Candidate Proof
 

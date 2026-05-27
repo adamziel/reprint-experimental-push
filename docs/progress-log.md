@@ -4,6 +4,42 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-27 - Runtime And Graph Identity Evidence
+
+- Last update: 2026-05-27 23:39 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- Runtime capability proof: `origin/lane/runtime-proof-feasibility-20260527`
+  adds
+  [scripts/playground/runtime-capability-proof.mjs](../scripts/playground/runtime-capability-proof.mjs),
+  its focused test, and
+  [docs/audits/runtime-capability-proof-20260527.md](audits/runtime-capability-proof-20260527.md).
+  In this sandbox the proof exits `1` with `DOCKER_RUNTIME_UNAVAILABLE`,
+  records `npm run verify:release:local-production` as the closest checked
+  local substitute, and prints the exact external `REPRINT_PUSH_* npm run
+  verify:release` command required on a Docker or external WordPress host.
+- Graph identity proof:
+  `origin/lane/graph-identity-local-durable-20260527` maps the real Playground
+  post/postmeta author graph identity that had blocked the push protocol smoke.
+  The snapshot exporter now includes stable author identity rows as graph
+  targets, while user mutation remains unsupported. Menu/navigation graph
+  surfaces remain fail-closed.
+- Graph proof commands passed in `main:graph-id-proof`:
+  `php -l scripts/playground/snapshot-lib.php`,
+  `node --test test/push-planner.test.js`,
+  `node --test test/graph-mapping-inventory.test.js`,
+  `npm run test:playground:push-protocol`, and `git diff --check`. The protocol
+  smoke reported an 8-mutation ready plan and no `wp_users` mutation.
+- Broad-suite caveat: `npm test` still reports existing unrelated failures in
+  production-auth/package/snapshot areas. The focused graph planner and
+  protocol evidence above passed.
+- Percent movement: merge invariants move from 48% to 54%; reliable
+  executor/protocol moves from 58% to 60% because the runtime blocker is now
+  executable and fail-closed; independent evidence moves from 44% to 51%.
+  Recovery boundaries stay 45%, and fast path stays 20%.
+- Remaining release blockers: Docker or external WordPress proof, real
+  crash/restart durability outside Playground, general plugin-driver ownership,
+  broader WordPress graph surfaces, rollback, and large-site chunk benchmarks.
+
 ## 2026-05-27 - Durable Local Production Journal Proof
 
 - Last update: 2026-05-27 23:22 CEST.
