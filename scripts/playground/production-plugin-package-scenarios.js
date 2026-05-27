@@ -1,4 +1,8 @@
 const scenarioGroups = {
+  'driver-positive-proof': [
+    'core-package-routes',
+    'driver-delete-apply',
+  ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
     'driver-missing-export-guard',
@@ -77,6 +81,9 @@ function resolveScenarioMode(modeValue) {
   }
   if (modeValue === 'driver-delete-only') {
     return 'driver-delete-apply';
+  }
+  if (modeValue === 'driver-positive-only') {
+    return 'driver-positive-proof';
   }
   throw new Error(
     `Unknown production plugin package smoke mode: ${modeValue}`,

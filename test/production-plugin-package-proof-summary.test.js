@@ -85,8 +85,8 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.passedScenarioCount, 11);
   assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 0);
-  assert.equal(summary.checkedBundleCount, 4);
-  assert.equal(summary.passedBundleCount, 4);
+  assert.equal(summary.checkedBundleCount, 5);
+  assert.equal(summary.passedBundleCount, 5);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarios, 'all');
@@ -116,6 +116,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.checkedBundles, 'all');
   assert.deepEqual(summary.passedBundles, [
     'driverCallbackGuards',
+    'driverPositiveProof',
     'driverRegistrationGuards',
     'driverRegistrationShapeGuards',
     'driverVerifierGuards',
@@ -129,6 +130,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.mutationProof.deleteRejected, true);
   assert.deepEqual(summary.bundles, {
     driverVerifierGuards: 'passed',
+    driverPositiveProof: 'passed',
     driverRegistrationGuards: 'passed',
     driverCallbackGuards: 'passed',
     driverRegistrationShapeGuards: 'passed',
@@ -245,7 +247,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
   assert.equal(summary.failedBundleCount, 0);
-  assert.equal(summary.skippedBundleCount, 3);
+  assert.equal(summary.skippedBundleCount, 4);
   assert.deepEqual(summary.requestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.requestedBundles, ['driverVerifierGuards']);
   assert.deepEqual(summary.requestedConcreteScenarios, []);
@@ -294,6 +296,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
     'driver-receipt-guards',
   ]);
   assert.deepEqual(summary.bundles, {
+    driverPositiveProof: 'skipped',
     driverVerifierGuards: 'passed',
     driverRegistrationGuards: 'skipped',
     driverCallbackGuards: 'skipped',
@@ -387,7 +390,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
-  assert.equal(summary.skippedBundleCount, 3);
+  assert.equal(summary.skippedBundleCount, 4);
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 8);
   assert.equal(summary.failedScenarioCount, 1);

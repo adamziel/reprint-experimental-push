@@ -200,6 +200,21 @@ test('scenario resolver maps driver-delete-only mode to the bounded delete apply
   );
 });
 
+test('scenario resolver maps driver-positive-only mode to the bounded packaged positive proof bundle', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-positive-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-positive-proof']);
+  assert.equal(resolved.resolvedMode, 'driver-positive-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    scenarioGroups['driver-positive-proof'].slice().sort(),
+  );
+});
+
 test('scenario resolver clears mode metadata when explicit scenario input overrides the bounded mode', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-delete-apply'],
