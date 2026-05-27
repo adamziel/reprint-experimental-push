@@ -1331,18 +1331,23 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
-  recordAuthSessionLifecycle(summary, 'journal', dbJournal.body?.auth);
-  const dbJournalObservedLifecycleDrift = requireProductionAuthSession
+  const dbJournalHasAuthEnvelope = dbJournal.body?.auth && typeof dbJournal.body.auth === 'object';
+  if (dbJournalHasAuthEnvelope) {
+    recordAuthSessionLifecycle(summary, 'journal', dbJournal.body.auth);
+  }
+  const dbJournalObservedLifecycleDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveObservedProductionAuthSessionLifecycleDrift(dbJournal)
     : null;
-  const dbJournalUncheckedAuthMetadataDrift = resolveUncheckedObservedAuthSessionMetadataDrift(
-    preflightAuthEnvelope,
-    dbJournal,
-  );
+  const dbJournalUncheckedAuthMetadataDrift = dbJournalHasAuthEnvelope
+    ? resolveUncheckedObservedAuthSessionMetadataDrift(
+      preflightAuthEnvelope,
+      dbJournal,
+    )
+    : null;
   const requiredPreservedRemoteRetryAttempts = requiredPreservedRemoteRetryPath
     ? summary.readRetryEvidence?.[requiredPreservedRemoteRetryPath] || 1
     : 1;
-  const dbJournalAuthSessionDrift = requireProductionAuthSession && (
+  const dbJournalAuthSessionDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
     || hasMissingProductionAuthSessionExpiry(dbJournal)
@@ -1370,7 +1375,7 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'journal');
     return summary;
   }
-  if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dbJournal)) {
+  if (requireProductionAuthSession && dbJournalHasAuthEnvelope && hasProductionAuthSessionRevocationDrift(dbJournal)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = describeRequiredUnrevokedProductionAuthSession(dbJournal);
     summary.boundary = {
@@ -1381,7 +1386,7 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
-  const dbJournalCleanupEvidenceDrift = requireProductionAuthSession
+  const dbJournalCleanupEvidenceDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveProductionAuthSessionCleanupEvidenceDrift(dbJournal)
     : null;
   if (dbJournalCleanupEvidenceDrift) {
@@ -1394,7 +1399,12 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  if (requireProductionAuthSession && requireCleanupEvidenceContinuity && isMissingProductionAuthSessionCleanupEvidence(dbJournal)) {
+  if (
+    requireProductionAuthSession
+    && dbJournalHasAuthEnvelope
+    && requireCleanupEvidenceContinuity
+    && isMissingProductionAuthSessionCleanupEvidence(dbJournal)
+  ) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'cleanup evidence continuity',
@@ -1404,8 +1414,10 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || hasValidProductionAuthSessionCleanupEvidence(dbJournal);
-  const dbJournalInvalidIdentityField = requireProductionAuthSession
+  requireCleanupEvidenceContinuity = requireCleanupEvidenceContinuity || (
+    dbJournalHasAuthEnvelope && hasValidProductionAuthSessionCleanupEvidence(dbJournal)
+  );
+  const dbJournalInvalidIdentityField = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveInvalidObservedProductionAuthIdentityField(dbJournal)
     : null;
   if (dbJournalInvalidIdentityField) {
@@ -1419,7 +1431,7 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  if (requireProductionAuthSession && hasMissingProductionAuthSessionIdentity(dbJournal)) {
+  if (requireProductionAuthSession && dbJournalHasAuthEnvelope && hasMissingProductionAuthSessionIdentity(dbJournal)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'authenticated identity',
@@ -1434,7 +1446,7 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
-  const dbJournalIdentityMismatch = requireProductionAuthSession
+  const dbJournalIdentityMismatch = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveProductionAuthSessionIdentityMismatch(resolvedSource.username, dbJournal)
     : null;
   if (dbJournalIdentityMismatch) {
@@ -1452,7 +1464,7 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
-  const dbJournalIdentityContinuityDrift = requireProductionAuthSession
+  const dbJournalIdentityContinuityDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveProductionAuthSessionIdentityContinuityDrift(preflightAuthEnvelope, dbJournal)
     : null;
   if (dbJournalIdentityContinuityDrift) {
@@ -1470,7 +1482,7 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
-  const dbJournalIdentityUserIdDrift = requireProductionAuthSession
+  const dbJournalIdentityUserIdDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveProductionAuthSessionIdentityUserIdDrift(preflightAuthEnvelope, dbJournal)
     : null;
   if (dbJournalIdentityUserIdDrift) {
@@ -1482,7 +1494,7 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  const dbJournalSessionIdentityDrift = requireProductionAuthSession
+  const dbJournalSessionIdentityDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, dbJournal)
     : null;
   if (dbJournalSessionIdentityDrift) {
@@ -1494,7 +1506,7 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  const dbJournalSessionPreservationDrift = requireProductionAuthSession
+  const dbJournalSessionPreservationDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope
     ? resolveProductionAuthSessionPreservationDrift(preflightAuthEnvelope, dbJournal)
     : null;
   if (dbJournalSessionPreservationDrift) {
@@ -1507,7 +1519,7 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  if (hasExpiredAuthSession(dbJournal)) {
+  if (dbJournalHasAuthEnvelope && hasExpiredAuthSession(dbJournal)) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
     summary.authSession = {
       required: 'unexpired',
@@ -1527,7 +1539,9 @@ export async function runAuthenticatedHttpPush({
     setProductionAuthSessionBoundary(summary);
     return summary;
   }
-  const dbJournalAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal);
+  const dbJournalAuthEnvelopeDrift = dbJournalHasAuthEnvelope
+    ? describeAuthEnvelopeDrift(preflightAuthEnvelope, dbJournal)
+    : null;
   if (dbJournalAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dbJournalAuthEnvelopeDrift;
