@@ -4396,17 +4396,49 @@ test('production-shaped authenticated push accepts replay-equivalent signed requ
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          claim: {
+            status: 'active',
+            activeClaimId: 'psh_01j00000000000000000000000',
+            activeClaimKeyHash: 'psh_01j00000000000000000000000',
+            activeClaimSequence: 1,
+            activeClaimEvent: 'recovery-claim-opened',
+            staleClaimRejected: false,
+          },
           ownership: {
             ownsJournal: true,
             restartReadable: true,
             productionAdapter: 'filesystem-compare-rename',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimId: 'psh_01j00000000000000000000000',
+            claimKeyHash: 'psh_01j00000000000000000000000',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'filesystem-compare-rename',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
           },
           leaseFence: {
             boundary: 'filesystem-compare-rename',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             monotonicSequence: true,
             restartReadable: true,
             staleClaimRejected: false,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimId: 'psh_01j00000000000000000000000',
+              claimKeyHash: 'psh_01j00000000000000000000000',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'filesystem-compare-rename',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: false,
+            },
           },
         },
         storageGuard: {
@@ -4537,17 +4569,49 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
             { event: 'mutation-applied' },
             { event: 'apply-committed' },
           ],
+          claim: {
+            status: 'active',
+            activeClaimId: 'psh_01j00000000000000000000000',
+            activeClaimKeyHash: 'psh_01j00000000000000000000000',
+            activeClaimSequence: 1,
+            activeClaimEvent: 'recovery-claim-opened',
+            staleClaimRejected: false,
+          },
           ownership: {
             ownsJournal: true,
             restartReadable: true,
             productionAdapter: 'filesystem-compare-rename',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimId: 'psh_01j00000000000000000000000',
+            claimKeyHash: 'psh_01j00000000000000000000000',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'filesystem-compare-rename',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
           },
           leaseFence: {
             boundary: 'filesystem-compare-rename',
             claimKeyUnique: true,
+            fsyncEvidence: true,
             monotonicSequence: true,
             restartReadable: true,
             staleClaimRejected: false,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimId: 'psh_01j00000000000000000000000',
+              claimKeyHash: 'psh_01j00000000000000000000000',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'filesystem-compare-rename',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: false,
+            },
           },
         },
         storageGuard: {
@@ -4665,9 +4729,10 @@ test('production-shaped authenticated push accepts replay-equivalent committed r
   }
 });
 
-test('production-shaped authenticated push records preserved-remote retry on read-only release probes', async () => {
+test('production-shaped authenticated push records preserved-remote retry on the final read-only release probe even when a separate durable-journal boundary stays open', async () => {
   const originalFetch = global.fetch;
   const seen = [];
+  let snapshotAttempts = 0;
   global.fetch = async (url, options) => {
     seen.push({ url: String(url), options });
     const pathname = String(url);
@@ -4690,6 +4755,10 @@ test('production-shaped authenticated push records preserved-remote retry on rea
       });
     }
     if (pathname.includes('/snapshot')) {
+      snapshotAttempts += 1;
+      if (snapshotAttempts === 2) {
+        throw Object.assign(new TypeError('socket closed'), { cause: { code: 'ECONNRESET' } });
+      }
       return new Response(JSON.stringify({
         ok: true,
         snapshot: { resources: [] },
@@ -4838,8 +4907,10 @@ test('production-shaped authenticated push records preserved-remote retry on rea
       simulatePreservedRemoteRetryPath: '/snapshot',
     });
 
-    assert.equal(summary.ok, true);
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'DURABLE_JOURNAL_NOT_PROVEN');
     assert.equal(summary.retryAttempts, 2);
+    assert.equal(snapshotAttempts, 3);
     assert.equal(summary.dbJournal?.retryAttempts, 1);
     assert.deepEqual(summary.replayAndRetry, {
       required: '/snapshot',
@@ -4848,6 +4919,201 @@ test('production-shaped authenticated push records preserved-remote retry on rea
       verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
     });
     assert.ok(seen.filter(({ url }) => url.includes('/snapshot')).length >= 2);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed when only the planning snapshot retries before the final preserved-remote read', async () => {
+  const originalFetch = global.fetch;
+  let snapshotAttempts = 0;
+  global.fetch = async (url) => {
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      snapshotAttempts += 1;
+      if (snapshotAttempts === 1) {
+        throw Object.assign(new TypeError('socket closed'), { cause: { code: 'ECONNRESET' } });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: true,
+        code: 'APPLIED',
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-01',
+          timestamp: '2026-05-26T10:00:00.000Z',
+          nonceHash: 'nonce-01',
+          sessionHash: 'session-01',
+          signingKeyHash: 'signing-key-01',
+          request: { a: 1, b: 2 },
+        },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+          status: 'replayed',
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'ready',
+          journal: { integrity: { status: 'ok' } },
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        dbJournal: {
+          scope: trustedDbJournalScope,
+          latestRows: [
+            { event: 'idempotency-opened' },
+            { event: 'mutation-applied' },
+            { event: 'apply-committed' },
+          ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+        },
+        storageGuard: {
+          boundary: 'filesystem-compare-rename',
+          operation: 'update',
+          outcome: 'applied',
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-planning-snapshot-only-retry',
+      routeProfile: 'production-shaped',
+      simulatePreservedRemoteRetryPath: '/snapshot',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'PRESERVED_REMOTE_RETRY_REQUIRED');
+    assert.equal(snapshotAttempts, 3);
+    assert.deepEqual(summary.replayAndRetry, {
+      required: '/snapshot',
+      observed: 'missing-transient-retry',
+      retryAttempts: 1,
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    });
+    assert.equal(
+      summary.boundary?.firstRemainingProductionBoundary,
+      'replay and preserved-remote retry on the checked release path',
+    );
+    assert.equal(summary.boundary?.verdict, 'PRESERVED_REMOTE_RETRY_REQUIRED');
   } finally {
     global.fetch = originalFetch;
   }

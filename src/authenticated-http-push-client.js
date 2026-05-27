@@ -109,6 +109,7 @@ export async function runAuthenticatedHttpPush({
     authSessionLifecycleTrace: [],
     retryAttempts: 1,
     readRetryEvidence: {},
+    latestReadRetryEvidence: {},
   };
   const requiredPreservedRemoteRetryPath = simulatePreservedRemoteRetryPath
     ? (() => {
@@ -1345,7 +1346,9 @@ export async function runAuthenticatedHttpPush({
     )
     : null;
   const requiredPreservedRemoteRetryAttempts = requiredPreservedRemoteRetryPath
-    ? summary.readRetryEvidence?.[requiredPreservedRemoteRetryPath] || 1
+    ? summary.latestReadRetryEvidence?.[requiredPreservedRemoteRetryPath]
+      || summary.readRetryEvidence?.[requiredPreservedRemoteRetryPath]
+      || 1
     : 1;
   const dbJournalAuthSessionDrift = requireProductionAuthSession && dbJournalHasAuthEnvelope && (
     hasProductionAuthSessionTypeDrift(dbJournal)
@@ -2087,6 +2090,8 @@ function updateRetryAttempts(summary, responseSummary) {
       summary.readRetryEvidence[pathname] || 1,
       responseSummary.retryAttempts,
     );
+    summary.latestReadRetryEvidence = summary.latestReadRetryEvidence || {};
+    summary.latestReadRetryEvidence[pathname] = responseSummary.retryAttempts;
   }
 }
 
