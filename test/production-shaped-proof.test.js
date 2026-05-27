@@ -10,6 +10,7 @@ import {
   loadAuthSessionSource,
   loadAuthSessionSourceFromRuntimeEnvironment,
   resolveExplicitAllowedAuthSessionSourceUrl,
+  resolveExplicitAllowedAuthSessionSourceUrls,
   resolveAuthSessionRequestCredentials,
   resolveAuthSessionRequestState,
   resolveAuthSessionSourceCredentials,
@@ -1904,6 +1905,23 @@ test('explicit allowed auth/session source URL resolver returns empty when every
   );
 });
 
+test('explicit allowed auth/session source URL resolver returns every distinct supported runtime candidate', () => {
+  assert.deepEqual(
+    resolveExplicitAllowedAuthSessionSourceUrls(
+      'https://example.com/push?token=secret',
+      'https://example.com/push/#preserved',
+      'https://example.com/remote',
+      'https://example.com/local#hash',
+      'not-a-url',
+    ),
+    [
+      'https://example.com/push/',
+      'https://example.com/remote/',
+      'https://example.com/local/',
+    ],
+  );
+});
+
 test('packaged production plugin source command resolver accepts an explicit live sourceUrl', () => {
   const sourceUrl = 'https://example.com/push';
   const sourceCommand = resolvePackagedProductionPluginSourceCommand({
@@ -2006,6 +2024,79 @@ test('auth-session source loader derives allowedSourceUrl from explicit remote r
     ...process.env,
     NODE_NO_WARNINGS: '1',
     REPRINT_PUSH_REMOTE_URL: sourceUrl,
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth-session source loader accepts a source command that matches the explicit remote runtime env when local runtime env is also present', () => {
+  const sourceUrl = 'https://example.com/remote';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_REMOTE_URL: sourceUrl,
+    REPRINT_PUSH_LOCAL_URL: 'https://example.com/local',
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth-session source loader accepts a source command that matches the explicit local runtime env when remote runtime env is also present', () => {
+  const sourceUrl = 'https://example.com/local';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_REMOTE_URL: 'https://example.com/remote',
+    REPRINT_PUSH_LOCAL_URL: sourceUrl,
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth-session source loader accepts a source command that matches the explicit live source env when remote and local runtime envs are also present', () => {
+  const sourceUrl = 'https://example.com/push';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_SOURCE_URL: sourceUrl,
+    REPRINT_PUSH_REMOTE_URL: 'https://example.com/remote',
+    REPRINT_PUSH_LOCAL_URL: 'https://example.com/local',
   }, repoRoot);
 
   assert.deepEqual(source, {
