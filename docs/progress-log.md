@@ -3,26 +3,26 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 06:17:54
+# 2026-05-27 - Public Status Audit 06:20:54
 
-<a id="2026-05-27-public-status-audit-061754"></a>
+<a id="2026-05-27-public-status-audit-062054"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `aaa7e219c104fe4ef99c485ddeaad4271bd8c535` visible on the public
+  head `ef5e52cec9072c278f751ff2fe0be78659912987` visible on the public
   status surface for the active supervision cycle.
-- Release gates remain `0/4`. The latest reliable head requires checked
-  journal claim identity to cohere across the active claim, writer lease, and
-  lease-fence writer lease, and adds focused tests that reject mismatched
-  nested claim IDs. That is material durable-journal evidence hardening, not a
-  production boundary gate move, and it still stops short of the missing
+- Release gates remain `0/4`. The latest reliable head makes checked
+  auth/session lifecycle summaries prefer release-boundary reads from `journal`
+  or `replay` over later recovery-inspect observations, with a focused proof
+  test for that preference. That is material auth/session evidence hardening,
+  not a production boundary gate move, and it still stops short of the missing
   production-owned, non-lab-backed source mutation boundary on the real
   Reprint endpoint: one primitive that owns auth/session issuance/readback,
   durable restart-readable journal storage with lease fencing, preserved
   rejected remote evidence, and apply-time revalidation before first mutation.
 - The public page keeps packaged plugin-driver guards pinned into
-  `verify:release` as support evidence, while the coherent claim-identity
-  proof remains helper-backed and the production-owned source mutation boundary
-  still blocks gate movement. The stale percentage bars stay removed.
+  `verify:release` as support evidence, while the release-boundary read proof
+  remains helper-backed and the production-owned source mutation boundary still
+  blocks gate movement. The stale percentage bars stay removed.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [release-gate checklist](../progress.html#proof-gates).
