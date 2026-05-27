@@ -1175,6 +1175,14 @@ export function buildProductionPluginPackageProofSummary(
       passedScenarioCount: canonicalProof.passedScenarioCount ?? canonicalModePassedScenarios.length,
       failedScenarioCount: canonicalProof.failedScenarioCount ?? canonicalModeFailedScenarios.length,
       requiredScenarios: canonicalProof.requiredScenarios ?? canonicalModeScenarios,
+      scenarioStatuses: Object.fromEntries(
+        (canonicalProof.requiredScenarios ?? canonicalModeScenarios)
+          .map((scenarioName) => [
+            scenarioName,
+            scenarioPasses.get(scenarioName) === true ? 'passed' : 'missing',
+          ])
+          .sort(([left], [right]) => left.localeCompare(right)),
+      ),
       passedScenarios: canonicalProof.passedScenarios ?? canonicalModePassedScenarios,
       failedScenarios: canonicalProof.failedScenarios ?? canonicalModeFailedScenarios,
       requestedStatus: canonicalProof.requestedStatus ?? null,

@@ -1806,6 +1806,10 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
       'core-package-routes',
       'driver-delete-apply',
     ],
+    scenarioStatuses: {
+      'core-package-routes': 'passed',
+      'driver-delete-apply': 'passed',
+    },
     passedScenarios: [
       'core-package-routes',
       'driver-delete-apply',
@@ -1860,6 +1864,9 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     passedScenarioCount: 1,
     failedScenarioCount: 0,
     requiredScenarios: ['core-package-routes'],
+    scenarioStatuses: {
+      'core-package-routes': 'passed',
+    },
     passedScenarios: ['core-package-routes'],
     failedScenarios: [],
     requestedStatus: 'passed',
@@ -1895,6 +1902,9 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     passedScenarioCount: 0,
     failedScenarioCount: 1,
     requiredScenarios: ['core-package-routes'],
+    scenarioStatuses: {
+      'core-package-routes': 'missing',
+    },
     passedScenarios: [],
     failedScenarios: ['core-package-routes'],
     requestedStatus: 'missing',
