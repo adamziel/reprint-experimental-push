@@ -5512,25 +5512,25 @@ test('production-shaped authenticated push preserves consumed claim identity fro
               restartReadable: true,
               staleClaimRejected: false,
             },
-          },
-          leaseFence: {
-            boundary: 'filesystem-compare-rename',
-            storageGuard: 'filesystem-compare-rename',
-            claimKeyUnique: true,
-            fsyncEvidence: true,
-            monotonicSequence: true,
-            restartReadable: true,
-            staleClaimRejected: false,
-            writerLease: {
-              strategy: 'claim-fenced-single-writer',
-              claimId,
-              claimHash,
-              claimKeyUnique: true,
+            leaseFence: {
+              boundary: 'filesystem-compare-rename',
               storageGuard: 'filesystem-compare-rename',
+              claimKeyUnique: true,
               fsyncEvidence: true,
               monotonicSequence: true,
               restartReadable: true,
               staleClaimRejected: false,
+              writerLease: {
+                strategy: 'claim-fenced-single-writer',
+                claimId,
+                claimHash,
+                claimKeyUnique: true,
+                storageGuard: 'filesystem-compare-rename',
+                fsyncEvidence: true,
+                monotonicSequence: true,
+                restartReadable: true,
+                staleClaimRejected: false,
+              },
             },
           },
           claim: {
@@ -5647,6 +5647,7 @@ test('production-shaped authenticated push preserves consumed claim identity fro
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumedClaimId, claimId);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.journal.consumedClaimHash, claimHash);
     assert.equal(summary.recoveryInspect.recovery.productionJournal.claim.activeClaimId, claimId);
+    assert.equal(summary.recoveryInspect.recovery.productionJournal.leaseFence.writerLease.claimId, claimId);
     assert.ok(seen.some(({ url }) => url.includes('/db-journal?limit=80')));
   } finally {
     global.fetch = originalFetch;

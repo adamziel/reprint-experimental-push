@@ -1429,7 +1429,7 @@ function recoveryInspectProductionJournalInspection(recovery) {
   return {
     journal: recovery?.journal,
     claim: recovery?.claim ?? recovery?.journal?.claim,
-    leaseFence: recovery?.leaseFence,
+    leaseFence: recovery?.leaseFence ?? recovery?.journal?.leaseFence,
   };
 }
 
