@@ -3,6 +3,48 @@
 Fetched reliable ref today:
 
 - `origin/lane/reliable-executor` resolves to
+  `f9425431664b542b9819064dcca4e69fd2872eb6`
+  (`Preserve checked auth and journal drift detail`).
+
+Previous classified reliable head: `d9ec5130979968098ac7b16b93220bd0d3fdbe38`
+(`Preserve live source in release wrapper`).
+
+Verdict for `f9425431664b542b9819064dcca4e69fd2872eb6`: `0/4`
+
+Reason:
+
+- The `d9ec5130..f9425431` diff stays on the same client-side auth/journal
+  summary path. It only edits `src/authenticated-http-push-client.js` and
+  `test/authenticated-http-push-client.test.js`.
+- The code change improves drift accounting by folding writer-lease
+  `fsyncEvidence` into the summarized lease-fence surface and by adding more
+  explicit `field` detail to several auth-session and journal drift cases.
+  That makes the release-verifier summaries clearer and preserves more
+  checked-path evidence, but it still does not create a production-owned,
+  non-lab-backed checked release boundary.
+- The retained evidence remains bounded to client/test behavior and the same
+  checked path. There is no run here that proves one rerunnable release
+  command on the real `REPRINT_PUSH_SOURCE_URL` minting and rereading a live
+  auth session from durable restart-readable, lease-fenced journal storage,
+  preserving rejected remote evidence for audit, and performing apply-time
+  revalidation before the first mutation on that same boundary.
+- So no supervised release gate closes here. `f9425431` is a worthwhile
+  clarity and drift-detail improvement, but it is still support-side hardening
+  on the checked client path rather than the missing production boundary.
+
+Next exact reliable-owned primitive:
+
+- One production-owned, non-lab-backed checked release command on the real
+  Reprint endpoint where the same executable command string and same live
+  `REPRINT_PUSH_SOURCE_URL` visibly mint and then read back a live auth
+  session on that real source URL, persist it in durable restart-readable
+  journal storage with lease-fenced ownership, preserve the rejected remote
+  evidence for audit, and perform apply-time revalidation before the first
+  mutation on that same boundary.
+
+Fetched reliable ref today:
+
+- `origin/lane/reliable-executor` resolves to
   `d9ec5130979968098ac7b16b93220bd0d3fdbe38`
   (`Preserve live source in release wrapper`).
 
