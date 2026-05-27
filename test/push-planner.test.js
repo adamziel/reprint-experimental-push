@@ -32690,11 +32690,11 @@ test('blocks local term-relationship object references to a same-plan created po
   assert.equal(evidence.class, 'stale-wordpress-graph-identity');
   assert.equal(evidence.resourceKey, resourceKey);
   assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
-  assert.equal(graphBlocker.class, 'unsupported-revision-resource');
+  assert.equal(graphBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
   assert.equal(
     graphBlocker.reason,
-    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a postmeta revision target that depends on it, and identity rewriting is not yet supported.',
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.',
   );
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
@@ -32769,9 +32769,12 @@ test('blocks local term-relationship object references to a same-plan created po
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(evidence.class, 'unsupported-revision-resource');
+  assert.equal(evidence.class, 'stale-wordpress-graph-identity');
   assert.equal(evidence.resourceKey, resourceKey);
-  assert.equal(evidence.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(
+    evidence.reason,
+    'WordPress graph mutation row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"] references a term relationship post identity without proven identity mapping or reference rewriting.',
+  );
   assert.equal(graphBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
   assert.equal(graphBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
@@ -32818,7 +32821,6 @@ test('blocks legacy links graph resources while preserving a matching independen
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const pluginDecision = decisionFor(plan, 'plugin:forms');
   const planJson = JSON.stringify(plan);
@@ -32830,7 +32832,7 @@ test('blocks legacy links graph resources while preserving a matching independen
   assert.equal(blocker.class, 'unsupported-legacy-links-resource');
   assert.equal(blocker.resourceKind, 'legacy-link');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.unsupportedState, 'remote-only-drift');
+  assert.equal(blocker.unsupportedState, 'local-or-divergent-drift');
   assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
