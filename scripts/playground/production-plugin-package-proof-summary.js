@@ -317,6 +317,17 @@ function buildRequestedBundleStatusesForScenario(
   return Object.keys(bundleStatuses).length > 0 ? bundleStatuses : null;
 }
 
+function collapseRequestedBundleStatus(requestedBundleStatusesForScenario) {
+  if (
+    requestedBundleStatusesForScenario === null
+    || requestedBundleStatusesForScenario === 'all'
+  ) {
+    return requestedBundleStatusesForScenario;
+  }
+  const statuses = Object.values(requestedBundleStatusesForScenario);
+  return statuses.length === 1 ? statuses[0] : null;
+}
+
 function buildBundleScenarioDetails(bundleName, scenarioPasses, includeCoverageDetails = true) {
   const requiredScenarios = bundleSummaryGroups[bundleName].slice().sort();
   if (!includeCoverageDetails) {
@@ -703,6 +714,15 @@ export function buildProductionPluginPackageProofSummary(
     requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-release-proof'),
   };
 
+  const routeRequestedBundleStatuses = buildRequestedBundleStatusesForScenario(
+    requestedScenarioAliasMap.get('core-package-routes'),
+    requestedBundleStatuses,
+  );
+  const deleteRequestedBundleStatuses = buildRequestedBundleStatusesForScenario(
+    requestedScenarioAliasMap.get('driver-delete-apply'),
+    requestedBundleStatuses,
+  );
+
   const proofSummary = {
     kind: 'production-plugin-package-driver-proof',
     mode: resolvedMode,
@@ -855,10 +875,8 @@ export function buildProductionPluginPackageProofSummary(
           scenarioPasses.get('core-package-routes') === true,
         )
         : null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliasMap.get('core-package-routes'),
-        requestedBundleStatuses,
-      ),
+      requestedBundleStatus: collapseRequestedBundleStatus(routeRequestedBundleStatuses),
+      requestedBundleStatuses: routeRequestedBundleStatuses,
     },
     receiptGuards: {
       requested: receiptRequested,
@@ -891,10 +909,8 @@ export function buildProductionPluginPackageProofSummary(
           scenarioPasses.get('driver-delete-apply') === true,
         )
         : null,
-      requestedBundleStatuses: buildRequestedBundleStatusesForScenario(
-        requestedScenarioAliasMap.get('driver-delete-apply'),
-        requestedBundleStatuses,
-      ),
+      requestedBundleStatus: collapseRequestedBundleStatus(deleteRequestedBundleStatuses),
+      requestedBundleStatuses: deleteRequestedBundleStatuses,
     },
     mutationProof: {
       updateApplied: summary?.driverUpdateApply?.applied ?? 0,

@@ -354,6 +354,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: 'all',
     requestedBundleStatuses: 'all',
   });
   assert.equal(summary.driverRouteProof, summary.routeProof);
@@ -380,6 +381,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     remoteSupportsDelete: true,
     deletedAfterApply: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: 'all',
     requestedBundleStatuses: 'all',
   });
   assert.equal(summary.driverDeleteApplyProof, summary.deleteApplyProof);
@@ -640,6 +642,7 @@ test('plugin-driver proof summary exposes direct requested route-proof state', (
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: null,
     requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.positiveProof, {
@@ -701,6 +704,7 @@ test('plugin-driver proof summary marks missing requested route-proof state dire
     cliOk: null,
     finalMatchesLocal: null,
     requestedStatus: 'missing',
+    requestedBundleStatus: null,
     requestedBundleStatuses: null,
   });
 });
@@ -1103,6 +1107,7 @@ test('plugin-driver proof summary scopes requested bundle verdicts to requested 
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
     requestedBundleStatuses: {
       driverPositiveProof: 'passed',
     },
@@ -1437,6 +1442,7 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     cliOk: true,
     finalMatchesLocal: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
     requestedBundleStatuses: {
       driverReleaseProof: 'passed',
     },
@@ -1466,6 +1472,7 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     remoteSupportsDelete: null,
     deletedAfterApply: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
     requestedBundleStatuses: {
       driverReleaseProof: 'passed',
     },
@@ -1735,6 +1742,16 @@ test('plugin-driver proof summary exposes release and positive proof aliases alo
   assert.equal(summary.driverRegistrationGuards, summary.registrationGuards);
   assert.equal(summary.driverCallbackGuards, summary.callbackGuards);
   assert.equal(summary.driverRegistrationShapeGuards, summary.registrationShapeGuards);
+  assert.equal(summary.routeProof.requestedBundleStatus, null);
+  assert.deepEqual(summary.routeProof.requestedBundleStatuses, {
+    driverPositiveProof: 'passed',
+    driverReleaseProof: 'missing',
+  });
+  assert.equal(summary.deleteApplyProof.requestedBundleStatus, null);
+  assert.deepEqual(summary.deleteApplyProof.requestedBundleStatuses, {
+    driverPositiveProof: 'passed',
+    driverReleaseProof: 'missing',
+  });
 });
 
 test('plugin-driver proof summary carries the resolved smoke mode for bounded consumers', () => {
@@ -2892,6 +2909,7 @@ test('plugin-driver proof summary treats bundle verdicts as satisfied when only 
     remoteSupportsDelete: null,
     deletedAfterApply: true,
     requestedStatus: 'passed',
+    requestedBundleStatus: null,
     requestedBundleStatuses: null,
   });
   assert.deepEqual(summary.checkedScenarios, ['driver-delete-apply']);
@@ -2951,6 +2969,7 @@ test('plugin-driver proof summary fails requested concrete scenarios omitted fro
     remoteSupportsDelete: null,
     deletedAfterApply: false,
     requestedStatus: 'missing',
+    requestedBundleStatus: null,
     requestedBundleStatuses: null,
   });
 });
