@@ -2724,6 +2724,8 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
       replayBody.idempotency?.replayed === true
       && !replayBody.receipt?.receiptHash
     );
+  const applyAuthIdentityUserId = normalizeObservedAuthIdentityUserId(applyBody.auth?.identity?.userId);
+  const replayAuthIdentityUserId = normalizeObservedAuthIdentityUserId(replayBody.auth?.identity?.userId);
   const equivalent = applyResponse?.status === replayResponse?.status
     && applyBody.mode === replayBody.mode
     && applyBody.ok === replayBody.ok
@@ -2733,6 +2735,7 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     && hasResponseSchemaVersion
     && applyBody.responseSchemaVersion === replayBody.responseSchemaVersion
     && isStorageGuardEquivalent(applyBody.storageGuard, replayBody.storageGuard)
+    && applyAuthIdentityUserId === replayAuthIdentityUserId
     && applyBody.auth?.identity?.userLogin === replayBody.auth?.identity?.userLogin
     && applyBody.auth?.session?.id === replayBody.auth?.session?.id
     && applyBody.auth?.session?.type === replayBody.auth?.session?.type
@@ -2758,6 +2761,7 @@ function summarizeReplayEquivalence(applyResponse, replayResponse) {
     ['applied', applyBody.applied, replayBody.applied],
     replayReceiptEquivalent ? ['receiptHash', undefined, undefined] : ['receiptHash', applyBody.receipt?.receiptHash, replayBody.receipt?.receiptHash],
     ['responseSchemaVersion', hasResponseSchemaVersion ? applyBody.responseSchemaVersion : undefined, hasResponseSchemaVersion ? replayBody.responseSchemaVersion : undefined],
+    ['authUserId', applyAuthIdentityUserId, replayAuthIdentityUserId],
     ['authUser', applyBody.auth?.identity?.userLogin, replayBody.auth?.identity?.userLogin],
     ['authSessionId', applyBody.auth?.session?.id, replayBody.auth?.session?.id],
     ['authSessionType', applyBody.auth?.session?.type, replayBody.auth?.session?.type],
