@@ -66846,6 +66846,52 @@ test('blocks converged legacy link changes while preserving a matching independe
   assert.equal(pluginFileDecision.decision, 'keep-remote');
 });
 
+test('blocks converged legacy link changes while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_links","link_id:23"]';
+  const base = baseSite();
+  base.db.wp_links = {
+    'link_id:23': { link_id: 23, link_url: 'https://example.test/base', link_name: 'Base link' },
+  };
+  base.files['about.php'] = 'base about';
+
+  const local = baseSite();
+  local.db.wp_links = {
+    'link_id:23': { link_id: 23, link_url: 'https://example.test/converged', link_name: 'Converged link' },
+  };
+  local.files['about.php'] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_links = {
+    'link_id:23': { link_id: 23, link_url: 'https://example.test/converged', link_name: 'Converged link' },
+  };
+  remote.files['about.php'] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingTypeSwap = decisionFor(plan, 'file:about.php');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-legacy-links-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Legacy link graph resources are not yet supported by the planner.');
+  assert.equal(blockerJson.includes('Converged link'), false);
+  assert.equal(blockerJson.includes('Base link'), false);
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+});
+
 test('allows an existing termmeta row to reference a term created by the same plan', () => {
   const termResourceKey = 'row:["wp_terms","term_id:7"]';
   const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
