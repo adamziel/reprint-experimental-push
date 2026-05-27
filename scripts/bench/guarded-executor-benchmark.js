@@ -28,6 +28,13 @@ const RECEIPT_LEDGER_BLOCKER_REFS = Object.freeze([
   'receipt-ledger-kind-summary-not-proven',
   'receipt-ledger-kind-summary-mismatch',
 ]);
+const POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS = Object.freeze([
+  'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+  'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+  'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+  'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+  'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+]);
 
 export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
   unit: Object.freeze({
@@ -517,6 +524,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -535,6 +543,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -552,6 +561,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -603,6 +613,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -654,6 +665,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -671,6 +683,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -688,6 +701,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -807,6 +821,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -824,6 +839,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -841,6 +857,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -892,6 +909,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({
@@ -1104,6 +1122,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'production-row-batch-executor-not-measured',
       'production-row-batch-executor-measured-not-proven',
       'production-row-batch-executor-visible-without-parallelism-limits',
+      ...POST_PAUSE_ALIGNED_QUEUE_SLACK_BLOCKER_REFS,
     ]),
   }),
   Object.freeze({

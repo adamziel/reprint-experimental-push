@@ -13348,9 +13348,20 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
   const details = productionThroughputDetails(mutated);
   const blockers = productionThroughputBlockers(mutated);
   const pluginInstallPauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
+    'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
     'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
     'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
     'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+    'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+    'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+    'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+    'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+    'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
     'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
   ].includes(entry.id));
 
@@ -13368,6 +13379,61 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
       .sort((left, right) => left.id.localeCompare(right.id)),
     [
       {
+        id: 'compressed-remote-index-and-batched-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-batched-row-receipt-flush-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-digests-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-chunk-receipts-skips-plugin-install-writeback-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
         id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
         rejectedGate: 'recovery',
         blockerRefs: [
@@ -13375,6 +13441,72 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
           'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
           'queue-pause-without-consistent-receipt-cursor-slack',
           'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-install-activation-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-fingerprint-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-package-hash-skips-plugin-install-activation-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-plugin-activation-map-skips-plugin-install-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         ],
       },
       {
@@ -13388,6 +13520,17 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
         ],
       },
       {
+        id: 'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
         id: 'compressed-remote-index-and-parallel-row-batches-skips-plugin-install-backpressure-after-pause',
         rejectedGate: 'recovery',
         blockerRefs: [
@@ -13397,17 +13540,11 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into p
           'queue-pause-without-memory-safe-receipt-cursor-slack',
         ],
       },
-    ],
-  );
-  assert.ok(
-    !pluginInstallPauseRejectedFastPaths.some(
-      (entry) =>
-        entry.id === 'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
-    ),
-    'production-only row-batch plugin-install pause shortcut drops out once visible production capability evidence is present',
+    ].sort((left, right) => left.id.localeCompare(right.id)),
   );
   assert.deepEqual(summarizeRejectedGates(pluginInstallPauseRejectedFastPaths), [
-    { rejectedGate: 'recovery', count: 3 },
+    { rejectedGate: 'group', count: 11 },
+    { rejectedGate: 'recovery', count: 4 },
   ]);
 });
 
