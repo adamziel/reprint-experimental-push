@@ -4056,6 +4056,98 @@ test('packaged release verifier readiness helper keeps waiting through packaged-
   ]);
 });
 
+test('packaged release verifier readiness helper fails closed when terminal signed preflight keeps the packaged route in startup past the post-global-ready budget', async () => {
+  const snapshotStartupBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    packagedProductionPluginGlobalStartupStillWithinBudget: () => false,
+    buildPackagedTimeoutFallbackProbe: () => {
+      throw new Error('unexpected timeout fallback probe during terminal packaged-route startup limit runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 404,
+            ok: false,
+          },
+          bodyText: snapshotStartupBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => ({
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 401,
+      ok: false,
+      body: JSON.stringify({
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      }),
+      parsedBody: {
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      },
+      ready: false,
+      retryable: false,
+      terminal: true,
+    }),
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback fetch in terminal packaged-route startup limit runtime proof');
+    },
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+    throwPlaygroundReadinessFailure: async (child, prefix) => {
+      const error = new Error(prefix);
+      error.isPlaygroundReadinessFailure = true;
+      throw error;
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9463,
+  };
+  const sleepCalls = [];
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP 200 for 4 consecutive responses \(limit 4\)/,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(sleepCalls.length, 3);
+  assert.deepEqual(
+    sleepCalls.map(({ ms, child: sleptChild }) => ({ ms, child: sleptChild })),
+    [
+      { ms: 1, child },
+      { ms: 1, child },
+      { ms: 1, child },
+    ],
+  );
+});
+
 test('packaged release verifier readiness helper fails closed when packaged-route startup exceeds the post-global-ready budget', async () => {
   const readySnapshotBody = JSON.stringify({
     ok: true,
@@ -5855,6 +5947,88 @@ test('packaged production plugin smoke readiness helper keeps waiting through pa
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
     'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
   ]);
+});
+
+test('packaged production plugin smoke readiness helper fails closed when terminal signed preflight keeps the packaged route in startup past the post-global-ready budget', async () => {
+  const snapshotStartupBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    fetchTextWithTimeout: async (url) => {
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        return {
+          response: {
+            status: 404,
+            ok: false,
+          },
+          bodyText: snapshotStartupBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => ({
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 401,
+      ok: false,
+      body: JSON.stringify({
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      }),
+      parsedBody: {
+        code: 'rest_forbidden',
+        message: 'forbidden',
+      },
+      ready: false,
+      retryable: false,
+      terminal: true,
+    }),
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9463,
+  };
+  const sleepCalls = [];
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin snapshot stayed startup-shaped after global WordPress startup HTTP 200 for 4 consecutive responses \(limit 4\)/,
+      );
+      assert.match(error.message, /"packagedRouteStartup": true/);
+      assert.match(error.message, /"snapshotNotReadyProbeCount": 4/);
+      return true;
+    },
+  );
+
+  assert.equal(sleepCalls.length, 3);
+  assert.deepEqual(
+    sleepCalls.map(({ ms, child: sleptChild }) => ({ ms, child: sleptChild })),
+    [
+      { ms: 1, child },
+      { ms: 1, child },
+      { ms: 1, child },
+    ],
+  );
 });
 
 test('packaged production plugin smoke readiness helper fails closed when the snapshot route returns a terminal response', async () => {
