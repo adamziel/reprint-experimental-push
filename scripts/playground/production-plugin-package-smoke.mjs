@@ -269,6 +269,8 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
   if (shouldRunAnyScenario(Array.from(packagedDriverRegistryGuardScenarioNames))) {
     writePackagedPluginOnlyBlueprint(path.join(repoRoot, fixtures.base), registryGuardBlueprintPath);
   }
+  const reuseGuardServerForDelete = shouldRunAnyScenario(['driver-receipt-guards', ...receiptGuardScenarioNames])
+    && shouldRunAnyScenario(['driver-delete-apply']);
   if (shouldRunAnyScenario(['driver-receipt-guards', ...receiptGuardScenarioNames])) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
@@ -277,12 +279,12 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
       includeDeleteDriver: shouldRunAnyScenario(['driver-delete-apply']),
     });
   }
-  if (shouldRunAnyScenario(['driver-delete-apply']) && !shouldRunAnyScenario(['driver-receipt-guards'])) {
+  if (shouldRunAnyScenario(['driver-delete-apply']) && !reuseGuardServerForDelete) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteSnapshotBlueprintPath, {
       supportsDelete: true,
     });
   }
-  if (shouldRunAnyScenario(['driver-delete-apply'])) {
+  if (shouldRunAnyScenario(['driver-delete-apply']) && !reuseGuardServerForDelete) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverDeleteServerBlueprintPath, {
       activatePackagedPlugin: true,
       provisionAuth: true,
@@ -297,8 +299,6 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     fs.writeFileSync(basePath, `${JSON.stringify(packageSnapshots.base, null, 2)}\n`);
     fs.writeFileSync(localPath, `${JSON.stringify(packageSnapshots.local, null, 2)}\n`);
   }
-  const reuseGuardServerForDelete = shouldRunAnyScenario(['driver-receipt-guards', ...receiptGuardScenarioNames])
-    && shouldRunAnyScenario(['driver-delete-apply']);
   const activeDeleteFixture = reuseGuardServerForDelete ? deleteDriverFixture : driverFixture;
   const driverDeleteBaseSnapshot = shouldRunAnyScenario(['driver-delete-apply'])
     ? (reuseGuardServerForDelete
