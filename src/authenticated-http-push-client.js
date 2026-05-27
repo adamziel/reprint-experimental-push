@@ -415,13 +415,13 @@ export async function runAuthenticatedHttpPush({
   if (dryRunObservedAuthLifecycleFlagDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dryRunObservedAuthLifecycleFlagDrift;
-    setDurableJournalBoundary(summary, 'dry-run');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (dryRunObservedAuthSourceMetadataDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dryRunObservedAuthSourceMetadataDrift;
-    setDurableJournalBoundary(summary, 'dry-run');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dryRun)) {
@@ -439,7 +439,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dryRunAuthEnvelopeDrift;
     annotateAuthSessionLifecycleDrift(summary, summary.authSession);
-    setDurableJournalBoundary(summary, 'dry-run');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   const dryRunLifecycleSummaryDrift = requireProductionAuthSession
@@ -569,19 +569,19 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = applyAuthEnvelopeDrift;
     annotateAuthSessionLifecycleDrift(summary, summary.authSession);
-    setDurableJournalBoundary(summary, 'apply');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (applyObservedAuthLifecycleFlagDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = applyObservedAuthLifecycleFlagDrift;
-    setDurableJournalBoundary(summary, 'apply');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (applyObservedAuthSourceMetadataDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = applyObservedAuthSourceMetadataDrift;
-    setDurableJournalBoundary(summary, 'apply');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (hasExpiredAuthSession(apply)) {
@@ -689,13 +689,13 @@ export async function runAuthenticatedHttpPush({
   if (recoveryInspectObservedAuthLifecycleFlagDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = recoveryInspectObservedAuthLifecycleFlagDrift;
-    setDurableJournalBoundary(summary, 'recovery-inspect');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (recoveryInspectObservedAuthSourceMetadataDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = recoveryInspectObservedAuthSourceMetadataDrift;
-    setDurableJournalBoundary(summary, 'recovery-inspect');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(recoveryInspect)) {
@@ -726,7 +726,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = recoveryInspectAuthEnvelopeDrift;
     annotateAuthSessionLifecycleDrift(summary, summary.authSession);
-    setDurableJournalBoundary(summary, 'recovery-inspect');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   const recoveryInspectLifecycleSummaryDrift = requireProductionAuthSession
@@ -827,13 +827,13 @@ export async function runAuthenticatedHttpPush({
   if (replayObservedAuthLifecycleFlagDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = replayObservedAuthLifecycleFlagDrift;
-    setDurableJournalBoundary(summary, 'replay');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (replayObservedAuthSourceMetadataDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = replayObservedAuthSourceMetadataDrift;
-    setDurableJournalBoundary(summary, 'replay');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (replayAuthSessionDrift) {
@@ -874,7 +874,7 @@ export async function runAuthenticatedHttpPush({
     summary.authSession = recoveryInspectAuthEnvelopeDrift
       || replayAuthEnvelopeDrift;
     annotateAuthSessionLifecycleDrift(summary, summary.authSession);
-    setDurableJournalBoundary(summary, 'replay');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   const replayLifecycleSummaryDrift = requireProductionAuthSession
@@ -965,13 +965,13 @@ export async function runAuthenticatedHttpPush({
   if (dbJournalObservedAuthLifecycleFlagDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dbJournalObservedAuthLifecycleFlagDrift;
-    setDurableJournalBoundary(summary, 'journal-inspect');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (dbJournalObservedAuthSourceMetadataDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dbJournalObservedAuthSourceMetadataDrift;
-    setDurableJournalBoundary(summary, 'journal-inspect');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(dbJournal)) {
@@ -1021,7 +1021,7 @@ export async function runAuthenticatedHttpPush({
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = dbJournalAuthEnvelopeDrift;
     annotateAuthSessionLifecycleDrift(summary, summary.authSession);
-    setDurableJournalBoundary(summary, 'journal-inspect');
+    setAuthSessionBoundary(summary, summary.authSession);
     return summary;
   }
 

@@ -11103,8 +11103,8 @@ test('production-shaped authenticated push fails closed on replay-only Playgroun
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.playgroundFallback, true);
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -11446,8 +11446,8 @@ test('production-shaped authenticated push fails closed on replay-only auth-sess
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(
       summary.authSessionLifecycleTrace.at(-1)?.warning,
@@ -16372,8 +16372,8 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
       observed: 'missing',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
     });
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.recoveryInspect, null);
     assert.equal(seen.length, 4);
   } finally {
@@ -19493,8 +19493,8 @@ test('production-shaped authenticated push fails closed on recovery-inspect auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(
       summary.authSessionLifecycleTrace.at(-1)?.warning,
@@ -19763,8 +19763,8 @@ test('production-shaped authenticated push fails closed on malformed recovery-in
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'warning');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -20031,8 +20031,8 @@ for (const [fieldName, invalidValue, observed, keySuffix] of [
       });
       assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
       assert.equal(summary.boundary.status, 'unimplemented');
-      assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-      assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, fieldName);
       assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -20165,8 +20165,8 @@ test('production-shaped authenticated push fails closed on recovery-inspect auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.playgroundFallback, true);
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -20428,8 +20428,8 @@ test('production-shaped authenticated push fails closed on malformed recovery-in
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'playgroundFallback');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -20696,8 +20696,8 @@ for (const [fieldName, invalidValue, observed, keySuffix] of [
       });
       assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
       assert.equal(summary.boundary.status, 'unimplemented');
-      assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-      assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, fieldName);
       assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -20959,8 +20959,8 @@ test('production-shaped authenticated push fails closed on malformed recovery-in
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -23332,8 +23332,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'playgroundFallback');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -23870,8 +23870,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'preserved');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -24845,8 +24845,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'revoked');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -25383,8 +25383,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'cleanedUp');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -26539,8 +26539,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'cleanup');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -28311,8 +28311,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'expired');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -28667,8 +28667,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'rotated');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -29021,8 +29021,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -29375,8 +29375,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -29548,8 +29548,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -29902,8 +29902,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -30437,8 +30437,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'type');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -30791,8 +30791,8 @@ test('production-shaped authenticated push fails closed on journal-only malforme
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'journal-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'journal');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'expires-at');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'journal');
@@ -32133,8 +32133,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -32369,8 +32369,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -32604,8 +32604,8 @@ test('production-shaped authenticated push fails closed on apply auth user login
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.read?.id, 'psh_01j00000000000000000000000');
@@ -32717,8 +32717,8 @@ test('production-shaped authenticated push fails closed on apply auth user id mi
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
     assert.equal(summary.authSessionLifecycleSummary.read?.id, 'psh_01j00000000000000000000000');
@@ -33073,8 +33073,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -33309,8 +33309,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -33423,8 +33423,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'type');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -33668,8 +33668,8 @@ for (const [fieldName, invalidValue, observed, keySuffix] of [
       });
       assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
       assert.equal(summary.boundary.status, 'unimplemented');
-      assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-      assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, fieldName);
       assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -33783,8 +33783,8 @@ test('production-shaped authenticated push fails closed on malformed apply auth 
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'expires-at');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
@@ -34927,8 +34927,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-id');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -35633,8 +35633,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'user-login');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -37744,8 +37744,8 @@ test('production-shaped authenticated push fails closed on malformed recovery-in
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'revoked');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -38421,8 +38421,8 @@ test('production-shaped authenticated push fails closed on malformed recovery-in
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidLifecycleFlag, 'rotated');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -38631,8 +38631,8 @@ for (const {
       });
       assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
       assert.equal(summary.boundary.status, 'unimplemented');
-      assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-      assert.equal(summary.boundary.durableJournal.phase, 'recovery-inspect');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'recovery-inspect');
       assert.equal(summary.authSessionLifecycleTrace.at(-1)?.[invalidMarkerKey], invalidMarkerValue);
       assert.equal(summary.authSessionLifecycleSummary.read?.step, 'recovery-inspect');
@@ -38932,8 +38932,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.deepEqual(
       summary.authSessionLifecycleTrace.map(({ step, id, rotated, preserved }) => ({
         step,
@@ -39265,8 +39265,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'status');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -39558,8 +39558,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'type');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -39851,8 +39851,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'expires-at');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
@@ -40290,8 +40290,8 @@ test('production-shaped authenticated push fails closed on malformed replay auth
     });
     assert.equal(summary.boundary.firstRemainingProductionBoundary, 'auth/session lifecycle and durable journal semantics');
     assert.equal(summary.boundary.status, 'unimplemented');
-    assert.equal(summary.boundary.verdict, 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED');
-    assert.equal(summary.boundary.durableJournal.phase, 'replay');
+    assert.equal(summary.boundary.verdict, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+    assert.deepEqual(summary.boundary.authSession, summary.authSession);
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'replay');
     assert.equal(summary.authSessionLifecycleTrace.at(-1)?.invalidIdentityField, 'warning');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'replay');
