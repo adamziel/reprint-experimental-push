@@ -1,7 +1,7 @@
 No Data Loss Recovery handoff:
 
 - Timestamp: 2026-05-27 07:07:04 CEST (+0200)
-- Branch head at handoff: `983d99aed78c432885646cbcf9ffe660c1b3ccb1`
+- Branch head at handoff: `d35f6cb42922e68ab612095861fe5b8270c29002`
 
 What changed:
 
@@ -25,11 +25,11 @@ Commands:
 
 Push result:
 
-- Pending in this handoff; commit/push is the next lane action.
+- Code/tests committed locally in `d35f6cb42`; push is the next lane action.
 
 Worktree status:
 
-- Dirty tracked files: `.lane-output/final.md`, `src/apply.js`, `src/recovery-journal.js`, `test/push-planner.test.js`, `test/recovery-journal.test.js`
+- Dirty tracked files at handoff time: `.lane-output/final.md` only
 
 Next supervisor nudge:
 
