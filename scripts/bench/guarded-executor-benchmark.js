@@ -199,6 +199,14 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     ]),
   }),
   Object.freeze({
+    id: 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+    ]),
+  }),
+  Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
     blockerRefs: Object.freeze([
       'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
@@ -250,6 +258,19 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   }),
   Object.freeze({
     id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+    blockerRefs: Object.freeze([
+      'production-atomic-group-commit-not-measured',
+      'production-storage-receipts-not-measured',
+      'production-row-batch-executor-not-measured',
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+    ]),
+  }),
+  Object.freeze({
+    id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
     blockerRefs: Object.freeze([
       'production-atomic-group-commit-not-measured',
       'production-storage-receipts-not-measured',

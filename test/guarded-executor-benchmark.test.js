@@ -10015,6 +10015,7 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
         'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
       ].includes(entry.id))
       .map((entry) => ({
         id: entry.id,
@@ -10078,6 +10079,15 @@ test('guarded benchmark surfaces release-manifest release-bundle commit blockers
       },
       {
         id: 'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-storage-receipts-not-measured',
+          'production-row-batch-executor-not-measured',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-compressed-db-batches-skips-release-bundle-commit',
         rejectedGate: 'group',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
@@ -10161,6 +10171,7 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
         'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-batched-chunk-and-db-receipts-skips-release-bundle-commit-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
       ].includes(entry.id))
       .map((entry) => ({
         id: entry.id,
@@ -10214,6 +10225,17 @@ test('guarded benchmark surfaces release-cursor and receipt-flush release-bundle
       },
       {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-release-bundle-commit-after-pause',
+        rejectedGate: 'group',
+        blockerRefs: [
+          'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+          'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+          'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+          'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-file-hash-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
         blockerRefs: [
           'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
