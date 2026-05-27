@@ -3019,6 +3019,90 @@ test('packaged production plugin auth/session source helper falls back past inva
   }
 });
 
+test('packaged production plugin auth/session source helper accepts an explicit remote runtime candidate when the direct live source URL is empty', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const packaged = resolvePackagedProductionPluginAuthSessionSource({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/remote/?session=1#preserved',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        allowedSourceUrl: 'https://example.test/remote',
+      }),
+    });
+
+    assert.equal(packaged.source?.ok, true);
+    assert.deepEqual(packaged.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/remote',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
+});
+
+test('packaged production plugin auth/session source helper accepts an explicit local runtime candidate when the direct live source URL is empty', () => {
+  const previousRemoteUrl = process.env.REPRINT_PUSH_REMOTE_URL;
+  const previousLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL;
+  process.env.REPRINT_PUSH_REMOTE_URL = 'https://example.test/remote';
+  process.env.REPRINT_PUSH_LOCAL_URL = 'https://example.test/local';
+
+  try {
+    const packaged = resolvePackagedProductionPluginAuthSessionSource({
+      sourceUrl: '',
+      remoteUrl: '',
+      localUrl: '',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: 'https://example.test/local/?session=1#preserved',
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        allowedSourceUrl: 'https://example.test/local',
+      }),
+    });
+
+    assert.equal(packaged.source?.ok, true);
+    assert.deepEqual(packaged.source, {
+      ok: true,
+      sourceUrl: 'https://example.test/local',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    });
+  } finally {
+    if (previousRemoteUrl === undefined) {
+      delete process.env.REPRINT_PUSH_REMOTE_URL;
+    } else {
+      process.env.REPRINT_PUSH_REMOTE_URL = previousRemoteUrl;
+    }
+    if (previousLocalUrl === undefined) {
+      delete process.env.REPRINT_PUSH_LOCAL_URL;
+    } else {
+      process.env.REPRINT_PUSH_LOCAL_URL = previousLocalUrl;
+    }
+  }
+});
+
 test('packaged production plugin auth/session request helper marks an explicit live source URL as requested', () => {
   const explicitLiveSourceUrl = 'https://example.com/push';
   const request = resolvePackagedProductionPluginAuthSessionRequest({

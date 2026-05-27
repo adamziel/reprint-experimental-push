@@ -98,6 +98,8 @@ if (
 ) {
   const packagedProductionPluginAuthSessionRequest = resolvePackagedProductionPluginAuthSessionRequest({
     sourceUrl: liveSourceUrl || 'http://127.0.0.1:8080',
+    remoteUrl: process.env.REPRINT_PUSH_REMOTE_URL || '',
+    localUrl: process.env.REPRINT_PUSH_LOCAL_URL || '',
     username: credentials.username,
     applicationPassword: credentials.password,
     authSessionSourceCommand,

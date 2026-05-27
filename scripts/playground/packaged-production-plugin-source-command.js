@@ -31,6 +31,8 @@ export function isPackagedProductionPluginSourceCommand(command = '') {
 
 export function resolvePackagedProductionPluginAuthSessionSource({
   sourceUrl,
+  remoteUrl = '',
+  localUrl = '',
   username,
   applicationPassword,
   authSessionSourceCommand = '',
@@ -46,18 +48,24 @@ export function resolvePackagedProductionPluginAuthSessionSource({
     command,
     source: loadAuthSessionSourceFromRuntimeEnvironment(command, process.env, process.cwd(), {
       sourceUrl,
+      remoteUrl,
+      localUrl,
     }),
   };
 }
 
 export function resolvePackagedProductionPluginAuthSessionRequest({
   sourceUrl,
+  remoteUrl = '',
+  localUrl = '',
   username,
   applicationPassword,
   authSessionSourceCommand = '',
 }) {
   const request = resolvePackagedProductionPluginAuthSessionSource({
     sourceUrl,
+    remoteUrl,
+    localUrl,
     username,
     applicationPassword,
     authSessionSourceCommand,
