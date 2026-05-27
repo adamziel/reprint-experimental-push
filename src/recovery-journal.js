@@ -6,6 +6,7 @@ import { deserializeResourceValue, resourceHash } from './resources.js';
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 const PRODUCTION_RECOVERY_JOURNAL_KIND = 'production-recovery-journal';
 const PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
+const PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER = 'filesystem-compare-rename';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
@@ -634,11 +635,17 @@ export function openProductionRecoveryJournal(options) {
       claimId: persistedClaimId,
       claimHash,
       claimKeyUnique: true,
-      storageGuard: 'filesystem-compare-rename',
+      storageGuard: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
       fsyncEvidence: true,
       monotonicSequence: true,
       restartReadable,
       staleClaimRejected,
+    };
+    const ownership = {
+      ownsJournal: true,
+      restartReadable,
+      productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+      supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
     };
     return {
       journal: {
@@ -649,6 +656,7 @@ export function openProductionRecoveryJournal(options) {
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
         supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
+        ownership,
         claim,
         claimId: persistedClaimId,
         ownsJournal: true,
@@ -662,7 +670,8 @@ export function openProductionRecoveryJournal(options) {
         writerLease,
       },
       leaseFence: {
-        storageGuard: 'filesystem-compare-rename',
+        boundary: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+        storageGuard: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
         claimKeyUnique: true,
         fsyncEvidence: true,
         monotonicSequence: true,

@@ -310,6 +310,12 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(inspection.journal.journalPath, filePath);
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
+  assert.deepEqual(inspection.journal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
+  });
   assert.deepEqual(inspection.journal.claim, {
     status: 'active',
     activeClaimId: 'production-claim-01',
@@ -340,6 +346,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     staleClaimRejected: false,
   });
   assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
+  assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
   assert.deepEqual(inspection.claim, inspection.journal.claim);
@@ -432,6 +439,12 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.kind, 'production-recovery-journal');
   assert.equal(inspection.journal.journalPath, filePath);
   assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
+  assert.deepEqual(inspection.journal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
+  });
   assert.equal(inspection.journal.ownsJournal, true);
   assert.equal(inspection.journal.claimId, activeClaimId);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
@@ -454,6 +467,7 @@ test('checked release path consumes the production recovery journal inspection s
     staleClaimRejected: true,
   });
   assert.deepEqual(inspection.leaseFence.writerLease, inspection.journal.writerLease);
+  assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.restartReadable, true);
