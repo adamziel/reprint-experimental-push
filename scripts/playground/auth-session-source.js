@@ -91,6 +91,51 @@ export function loadAuthSessionSource(
   };
 }
 
+export function describeAuthSessionSourceMetadataDrift(source) {
+  if (!source || typeof source !== 'object') {
+    return null;
+  }
+
+  if (
+    source.playgroundFallback !== undefined
+    && source.playgroundFallback !== null
+    && typeof source.playgroundFallback !== 'boolean'
+  ) {
+    return {
+      field: 'auth.session.playgroundFallback',
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-playgroundFallback',
+    };
+  }
+
+  if (source.playgroundFallback === true) {
+    return {
+      field: 'auth.session.playgroundFallback',
+      required: 'production-backed auth',
+      observed: 'playground-fallback',
+    };
+  }
+
+  if (source.warning === undefined || source.warning === null) {
+    return null;
+  }
+
+  const normalizedWarning = normalizeAuthSessionSourceField(source.warning);
+  if (!normalizedWarning) {
+    return {
+      field: 'auth.session.warning',
+      required: 'string lifecycle fields',
+      observed: 'invalid-warning',
+    };
+  }
+
+  return {
+    field: 'auth.session.warning',
+    required: 'production-backed auth',
+    observed: normalizedWarning,
+  };
+}
+
 function describeAuthSessionSourceCommandFailure(result, timeout) {
   if (result.error?.code === 'ETIMEDOUT') {
     return `Auth session source command timed out after ${timeout}ms`;

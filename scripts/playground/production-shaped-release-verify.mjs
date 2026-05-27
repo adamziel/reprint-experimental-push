@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient, runAuthenticatedHttpPush } from '../../src/authenticated-http-push-client.js';
 import { digest } from '../../src/stable-json.js';
 import {
+  describeAuthSessionSourceMetadataDrift,
   loadAuthSessionSource,
   resolveAuthSessionRequestCredentials,
   resolveAuthSessionRequestState,
@@ -126,6 +127,12 @@ function summarizeAuthSessionSource(command, source) {
     sourceUrl: source?.sourceUrl || '',
     username: source?.username || '',
     applicationPasswordPresent: Boolean(source?.applicationPassword),
+    ...(Object.prototype.hasOwnProperty.call(source || {}, 'warning')
+      ? { warning: source.warning }
+      : {}),
+    ...(Object.prototype.hasOwnProperty.call(source || {}, 'playgroundFallback')
+      ? { playgroundFallback: source.playgroundFallback }
+      : {}),
     error: source?.error || '',
   };
 }
@@ -239,6 +246,53 @@ if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSour
   );
   process.stdout.write('\n');
   throw new ProofFailure();
+}
+
+if (requireProductionAuthSession && authSessionSource?.ok) {
+  const authSessionSourceMetadataDrift = describeAuthSessionSourceMetadataDrift(authSessionSource);
+  if (authSessionSourceMetadataDrift) {
+    process.stdout.write(
+      JSON.stringify(
+        {
+          ok: false,
+          boundary: {
+            firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+            status: 'unimplemented',
+            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            authSession: {
+              ...authSessionSourceMetadataDrift,
+              verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            },
+            liveAuthSessionSource: {
+              ...liveAuthSessionSourceBlocker,
+              field: authSessionSourceMetadataDrift.field,
+              observed: authSessionSourceMetadataDrift.observed,
+            },
+          },
+          protocolExtension,
+          preflight: {
+            status: 0,
+            authSessionType: 'invalid-production-auth-session-source',
+            routeProfile: 'production-shaped',
+            session: {
+              id: '',
+              type: 'invalid-production-auth-session-source',
+            },
+          },
+          releaseProof: {
+            ok: false,
+            status: 501,
+            code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          },
+          authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+        },
+        null,
+        2,
+      ),
+    );
+    process.stdout.write('\n');
+    throw new ProofFailure();
+  }
 }
 
 if ((!liveSourceUrl || !username || !applicationPassword) && authSessionSourceCommand) {

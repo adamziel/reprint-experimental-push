@@ -6,6 +6,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  describeAuthSessionSourceMetadataDrift,
   loadAuthSessionSource,
   loadAuthSessionSourceFromRuntimeEnvironment,
   resolveExplicitAllowedAuthSessionSourceUrl,
@@ -1168,6 +1169,40 @@ test('production-shaped release verify can force the production auth/session sou
   );
 });
 
+test('auth-session source metadata drift fails closed on production-source warnings', () => {
+  assert.deepEqual(
+    describeAuthSessionSourceMetadataDrift({
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      warning: 'lab-only-warning',
+    }),
+    {
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'lab-only-warning',
+    },
+  );
+});
+
+test('auth-session source metadata drift fails closed on malformed Playground fallback metadata', () => {
+  assert.deepEqual(
+    describeAuthSessionSourceMetadataDrift({
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:8080',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      playgroundFallback: 'not-a-boolean',
+    }),
+    {
+      field: 'auth.session.playgroundFallback',
+      required: 'boolean lifecycle flags',
+      observed: 'invalid-playgroundFallback',
+    },
+  );
+});
+
 test('production-shaped release verify ignores malformed direct auth/session source credentials', () => {
   const source = {
     ok: true,
@@ -2324,6 +2359,38 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"verdict": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED"/);
   assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
   assert.match(proof.stdout, /"error": "Auth session source command must return a JSON object"/);
+  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+});
+
+test('production-shaped release verify fails closed when a required production auth/session source command reports source warnings', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: buildAuthSessionSourceCommand({
+        sourceUrl: 'http://127.0.0.1:8080',
+        username: 'reprint_push_admin',
+        applicationPassword: 'secret-value',
+        warning: 'lab-only-warning',
+      }),
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'warning auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'warning auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"field": "auth\.session\.warning"/);
+  assert.match(proof.stdout, /"observed": "lab-only-warning"/);
+  assert.match(proof.stdout, /"warning": "lab-only-warning"/);
   assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
