@@ -329,14 +329,12 @@ test('scenario resolver maps driver-proof-only mode to the bounded driver delete
     'driver-proof-only',
   );
 
-  assert.deepEqual(resolved.requestedScenarios, [
-    'driver-delete-apply',
-    'driver-verifier-guards',
-  ]);
+  assert.deepEqual(resolved.requestedScenarios, ['driver-proof']);
   assert.equal(resolved.resolvedMode, 'driver-proof-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
+      'driver-proof',
       'driver-verifier-guards',
       'driver-delete-apply',
       ...scenarioGroups['driver-verifier-guards'],

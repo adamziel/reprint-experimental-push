@@ -14,6 +14,11 @@ const bundleSummaryGroups = {
   'driver-positive-proof': [
     ...scenarioGroups['driver-positive-proof'],
   ],
+  'driver-proof': [
+    'driver-receipt-guards',
+    ...registrationGuardScenarioNames,
+    'driver-delete-apply',
+  ],
   'driver-release-proof': [
     'core-package-routes',
     'driver-receipt-guards',
@@ -843,6 +848,37 @@ export function buildProductionPluginPackageProofSummary(
         ?? buildConcreteRequestedBundleStatus('driver-positive-proof'),
       requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-positive-proof'),
       requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-positive-proof'),
+    },
+    driverProof: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-proof')
+          || concreteBundleRequests['driver-proof'],
+      selected: buildObjectBundleSelected('driver-proof'),
+      ok: buildObjectBundleStatus('driver-proof') === 'passed',
+      status: buildObjectBundleStatus('driver-proof'),
+      verifierStatus: scenarioResults.driverReceiptGuards,
+      exportStatus: scenarioResults.driverMissingExportGuard,
+      applyStatus: scenarioResults.driverMissingApplyGuard,
+      validateStatus: scenarioResults.driverMissingValidateGuard,
+      missingNameStatus: scenarioResults.driverMissingNameGuard,
+      missingPluginOwnerStatus: scenarioResults.driverMissingPluginOwnerGuard,
+      missingTableStatus: scenarioResults.driverMissingTableGuard,
+      duplicateNameStatus: scenarioResults.driverDuplicateNameGuard,
+      duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
+      deleteStatus: scenarioResults.driverDeleteApply,
+      resourceKey: summary?.driverDeleteApply?.resourceKey ?? null,
+      remoteSupportsDelete: summary?.driverDeleteApply?.remoteSupportsDelete ?? null,
+      deletedAfterApply: summary?.driverDeleteApply?.deletedAfterApply ?? false,
+      ...buildBundleScenarioDetails(
+        'driver-proof',
+        scenarioPasses,
+        buildObjectBundleStatus('driver-proof') !== 'skipped',
+      ),
+      requestedStatus: requestedScenarioStatuses['driver-proof']
+        ?? buildConcreteRequestedBundleStatus('driver-proof'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-proof'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-proof'),
     },
     releaseProof: {
       requested: normalizedRequestedScenarios === null

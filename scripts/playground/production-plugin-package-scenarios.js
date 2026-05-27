@@ -8,9 +8,26 @@ const receiptGuardScenarioNames = [
   'driver-receipt-revoked-credential-guard',
 ];
 
+const registrationGuardScenarioNames = [
+  'driver-missing-export-guard',
+  'driver-missing-apply-guard',
+  'driver-missing-validate-guard',
+  'driver-missing-name-guard',
+  'driver-missing-plugin-owner-guard',
+  'driver-missing-table-guard',
+  'driver-duplicate-name-guard',
+  'driver-duplicate-table-guard',
+];
+
 const scenarioGroups = {
   'driver-positive-proof': [
     'core-package-routes',
+    'driver-delete-apply',
+  ],
+  'driver-proof': [
+    'driver-verifier-guards',
+    ...receiptGuardScenarioNames,
+    ...registrationGuardScenarioNames,
     'driver-delete-apply',
   ],
   'driver-release-proof': [
@@ -21,37 +38,14 @@ const scenarioGroups = {
   'driver-receipt-guards': receiptGuardScenarioNames,
   'driver-verifier-guards': [
     ...receiptGuardScenarioNames,
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
+    ...registrationGuardScenarioNames,
   ],
-  'driver-registration-guards': [
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
-  ],
+  'driver-registration-guards': registrationGuardScenarioNames,
   'driver-receipt-registration-guards': [
     'driver-receipt-guards',
     ...receiptGuardScenarioNames,
     'driver-registration-guards',
-    'driver-missing-export-guard',
-    'driver-missing-apply-guard',
-    'driver-missing-validate-guard',
-    'driver-missing-name-guard',
-    'driver-missing-plugin-owner-guard',
-    'driver-missing-table-guard',
-    'driver-duplicate-name-guard',
-    'driver-duplicate-table-guard',
+    ...registrationGuardScenarioNames,
   ],
   'driver-callback-guards': [
     'driver-missing-export-guard',
@@ -122,7 +116,7 @@ function resolveScenarioMode(modeValue) {
     return 'driver-release-proof';
   }
   if (modeValue === 'driver-proof-only') {
-    return 'driver-delete-apply,driver-verifier-guards';
+    return 'driver-proof';
   }
   throw new Error(
     `Unknown production plugin package smoke mode: ${modeValue}`,
