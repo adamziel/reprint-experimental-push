@@ -859,6 +859,13 @@ export function resolveProductionPluginPackageModeProof(summary, modeValue, opti
       )
     )
   ) {
+    if (
+      summary
+      && typeof summary === 'object'
+      && shouldSyncTopLevelModeProof(summary.modeProof, attachedPluginDriverModeProof)
+    ) {
+      summary.modeProof = attachedPluginDriverModeProof;
+    }
     return attachedPluginDriverModeProof;
   }
 

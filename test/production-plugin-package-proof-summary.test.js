@@ -867,6 +867,53 @@ test('plugin-driver proof summary repairs an alias-stale top-level modeProof cac
   assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
 });
 
+test('plugin-driver mode proof resolver repairs an alias-stale top-level modeProof cache when the nested proof is reused', () => {
+  const pluginDriverProof = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driverReleaseProof'],
+    requestedBundles: ['driverReleaseProof'],
+    selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+    modeProof: {
+      mode: 'driverReleaseProof',
+      canonicalMode: 'driver-release-proof',
+      proofKey: 'driverReleaseProof',
+      legacyProofKey: 'driverReleaseProof',
+      requestedScenarios: ['driverReleaseProof'],
+      requestedBundles: ['driverReleaseProof'],
+      selectedScenarios: Array.from(new Set(bundleSummaryGroups['driver-release-proof'])).sort(),
+      requestedBundleStatus: 'passed',
+      marker: 'nested-canonical',
+    },
+    ok: true,
+  };
+
+  const rawSummary = {
+    pluginDriverProof,
+    modeProof: {
+      ...pluginDriverProof.modeProof,
+      mode: 'driverMutationProof',
+      legacyProofKey: 'driverMutationProof',
+      requestedScenarios: ['driverMutationProof'],
+      requestedBundles: ['driverMutationProof'],
+      requestedBundleStatus: 'missing',
+    },
+  };
+
+  const modeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverReleaseProof', {
+    requestedScenarios: ['driverReleaseProof'],
+    selectedScenarios: new Set(bundleSummaryGroups['driver-release-proof']),
+    resolvedMode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.equal(modeProof, pluginDriverProof.modeProof);
+  assert.equal(rawSummary.modeProof, pluginDriverProof.modeProof);
+  assert.equal(rawSummary.modeProof?.mode, 'driverReleaseProof');
+  assert.deepEqual(rawSummary.modeProof?.requestedBundles, ['driverReleaseProof']);
+  assert.equal(rawSummary.modeProof?.requestedBundleStatus, 'passed');
+});
+
 test('plugin-driver proof summary reuses an attached nested mode proof when requested bundle aliases are legacy-only', () => {
   const pluginDriverProof = {
     mode: 'driverMutationProof',
