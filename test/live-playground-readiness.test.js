@@ -237,6 +237,27 @@ test('packaged preflight terminal context carries index-terminal readiness evide
   assert.deepEqual(
     packagedProductionPluginPreflightTerminalContext(
       {
+        childPid: 987,
+        indexTerminal: true,
+        invalidReadinessBody: true,
+      },
+      {
+        snapshotStartupFallback: true,
+      },
+    ),
+    {
+      childPid: 987,
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      indexTerminal: true,
+      invalidReadinessBody: true,
+      snapshotStartupFallback: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      {
         childPid: 654,
       },
       {
