@@ -1,33 +1,36 @@
 # Critic Verdict
 
-Current reliable head: `a7e1a4c340492635a0354d7d68be19fda750ed43`
-(`Tighten strict auth session id drift`).
+Current reliable head: `fd2028238478d4a1b3c88b1cdbf7ba104c1a9d36`
+(`Fail closed on malformed auth identity drift`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head tightens auth session id drift handling across preflight, dry-run,
-  apply, recovery-inspect, replay, and journal paths in the checked release
-  client. That is still support-side release-path hardening, not proof that
-  the project can safely cross the supervised production boundary.
-- The diff still does not prove live auth/session issuance and readback on the
-  real endpoint, restart-readable durable journal storage with lease-fenced
-  ownership, preserved rejected remote evidence on the live boundary, plugin
-  driver ownership, or apply-time revalidation before the first mutation on
-  the same production boundary.
-- So the verdict remains `0/4`: `a7e1a4c3` is support-side boundary
-  hardening, not a gate-closing production-boundary proof.
+- This head tightens the checked production-session client path so malformed
+  `auth.identity.userLogin` values are rejected before they can be treated as
+  lifecycle evidence. It also extends the checked-path failure reporting for
+  malformed observed auth envelope identity/session fields.
+- The new tests prove the release-verifier/client path now fails closed with
+  `PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED` on malformed auth identity
+  input, but they still only exercise the packaged checked path. That is
+  support-side hardening, not a production-owned, non-lab-backed source
+  mutation boundary on the real Reprint endpoint.
+- This head therefore does not close any supervised release gate. The missing
+  primitive remains a real endpoint proof that issues and reads back a live
+  auth session, persists it in restart-readable durable journal storage with
+  lease fencing, and revalidates at apply time before mutation.
 
 Next owner / command:
 
-- `main:reliable-exec` should move beyond auth-session drift hardening and
-  land the next exact primitive: one production-owned, non-lab-backed checked
-  release command on the real Reprint endpoint, with the same executable
-  command and same live `REPRINT_PUSH_SOURCE_URL` visibly minting and
-  rereading a live auth session, persisting durable restart-readable
-  lease-fenced journal state, preserving rejected remote evidence, and
-  revalidating before the first mutation. The relevant path remains
-  `scripts/playground/production-shaped-release-verify.mjs` plus the
-  journal/auth helpers it consumes, under the checked `verify:release`
-  command.
+- `main:reliable-exec` should land the next exact primitive beyond malformed
+  auth identity drift hardening: a production-owned, non-lab-backed
+  source-mutation/auth-session boundary on the real Reprint endpoint that
+  issues a live session, reads it back after restart from durable journal
+  storage, enforces lease-fenced ownership of those journal rows, and
+  revalidates the session at apply time before mutation without falling back
+  to Playground package-mode scaffolding. The proof should come through
+  `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `src/recovery-journal.js`, and `src/authenticated-http-push-client.js` with
+  `timeout 300s npm run verify:release`.
