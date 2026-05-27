@@ -7089,6 +7089,61 @@ test('blocks _menu_item_object_id metadata owned by a nav_menu_item post even wh
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('blocks _menu_item_object_id metadata owned by a nav_menu_item post even when it targets a same-plan post and unrelated remote revision noise exists', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:461"]';
+  const ownerResourceKey = 'row:["wp_posts","ID:1"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:1'] = {
+    ID: 1,
+    post_title: 'Local nav_menu_item owner',
+    post_content: 'local-private-nav-menu-item-owner-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local menu object post',
+    post_content: 'local-private-menu-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_postmeta = {
+    'meta_id:461': {
+      meta_id: 461,
+      post_id: 1,
+      meta_key: '_menu_item_object_id',
+      meta_value: 2,
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote revision noise',
+    post_content: 'remote-private-menu-object-revision-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+    post_parent: 7,
+  };
+
+  const plan = planFor(base, local, remote);
+  const ownerMutation = mutationFor(plan, ownerResourceKey);
+  const targetMutation = mutationFor(plan, targetResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(ownerMutation, undefined);
+  assert.equal(targetMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.ok(blocker);
+  assert.equal(blocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blocker.surface, 'nav_menu_item');
+  assert.equal(JSON.stringify(blocker).includes('local-private-nav-menu-item-owner-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('local-private-menu-object-body'), false);
+  assert.equal(JSON.stringify(blocker).includes('remote-private-menu-object-revision-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows local _menu_item_object_id taxonomy metadata to reference a term created by the same plan', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:462"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
