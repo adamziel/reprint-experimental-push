@@ -1284,6 +1284,10 @@ test('packaged server readiness requires a production-shaped preflight when pres
           expired: false,
         },
       },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
     },
   };
   const terminalPreflight = {
@@ -1303,6 +1307,10 @@ test('packaged server readiness requires a production-shaped preflight when pres
           expiresAt: '2099-01-01T00:00:00Z',
           expired: false,
         },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
       },
     },
   };
@@ -1328,6 +1336,95 @@ test('packaged server readiness requires a production-shaped preflight when pres
     }),
     false,
   );
+});
+
+test('packaged server readiness fails closed for broken top-level signed preflight session envelopes', () => {
+  const readySnapshot = {
+    status: 200,
+    body: {
+      ok: true,
+      snapshot: {
+        posts: [],
+      },
+    },
+  };
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+      },
+    },
+  };
+
+  const terminalEnvelopes = [
+    {
+      label: 'missing top-level session',
+      session: undefined,
+    },
+    {
+      label: 'missing top-level session id',
+      session: {
+        type: 'production-auth-session',
+      },
+    },
+    {
+      label: 'wrong top-level session type',
+      session: {
+        id: 'session_123',
+        type: 'lab-auth-session',
+      },
+    },
+  ];
+
+  for (const { label, session } of terminalEnvelopes) {
+    const terminalPreflight = {
+      ...basePreflight,
+      body: {
+        ...basePreflight.body,
+        ...(session === undefined ? { session: undefined } : { session }),
+      },
+    };
+
+    assert.equal(
+      packagedProductionPluginPreflightReady(terminalPreflight),
+      false,
+      `${label} should not be considered ready`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(terminalPreflight),
+      false,
+      `${label} should fail closed instead of retrying`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(terminalPreflight),
+      true,
+      `${label} should be terminal`,
+    );
+    assert.equal(
+      packagedProductionPluginServerReady({
+        snapshot: readySnapshot,
+        preflight: terminalPreflight,
+      }),
+      false,
+      `${label} should keep the packaged server unready`,
+    );
+  }
 });
 
 test('packaged server readiness fails closed for terminal production auth session states', () => {
@@ -1356,6 +1453,10 @@ test('packaged server readiness fails closed for terminal production auth sessio
           type: 'production-auth-session',
           expiresAt: '2099-01-01T00:00:00Z',
         },
+      },
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
       },
     },
   };

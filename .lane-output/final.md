@@ -1,42 +1,40 @@
-2026-05-27 08:31:40 CEST (+0200)
+2026-05-27 08:34:06 CEST (+0200)
 
 Changed files:
+- `scripts/playground/packaged-production-plugin-readiness.js`
 - `test/live-playground-readiness.test.js`
 - `.lane-output/final.md`
 
 Result:
-- Added a focused packaged-readiness test that pins the fail-closed rule once signed preflight already returns a normal `200` body but the body itself is broken.
-- The new coverage proves packaged startup hints must not keep retrying when the preflight body shows a wrong production route profile, a missing auth session, or an expired production session.
-- This keeps the lane on readiness-owned helper behavior instead of guessing at the reliable lane's newer verifier refactor.
+- Fixed a packaged-readiness fail-open: signed preflight is no longer considered ready unless the top-level `session` envelope includes a non-empty `session.id` and `session.type === "production-auth-session"`.
+- Added focused coverage proving missing top-level session data, missing `session.id`, or the wrong top-level `session.type` all stay terminal instead of being treated as ready or retryable.
+- This keeps packaged startup fail-closed when the signed preflight body looks superficially healthy through `auth.session` but is still broken at the session envelope the verifier needs.
 
 Commands run:
 - `git status --short --branch`
 - `sed -n '1,220p' AGENTS.md`
 - `sed -n '1,220p' supervision/README.md`
-- `find supervision/lanes -maxdepth 1 -type f | sort`
-- `find .lane-output -maxdepth 1 -type f | sort`
-- `sed -n '1,220p' .lane-output/final.md`
-- `for f in $(find .lane-output -maxdepth 1 -name 'final-loop-*.md' | sort | tail -n 4); do ...; done`
-- `git log --oneline --decorate -n 8`
-- `git diff -- .lane-output/final.md`
-- `sed -n '1,260p' /home/claude/.codex/skills/wp-playground/SKILL.md`
-- `grep -Rni "waitForPackagedProductionPluginServer\\|WordPress is not ready yet\\|signed-preflight\\|indexTerminal\\|preflight" scripts/playground test | sed -n '1,260p'`
+- `sed -n '1,240p' /home/claude/.codex/skills/wp-playground/SKILL.md`
 - `git fetch origin lane/reliable-executor`
+- `git ls-remote --heads origin refs/heads/lane/reliable-executor refs/heads/lane/playground-readiness-code-20260526-1836`
 - `git show --stat --oneline origin/lane/reliable-executor`
-- `git diff --stat HEAD..origin/lane/reliable-executor -- scripts/playground/production-shaped-release-verify.mjs scripts/playground/production-plugin-package-smoke.mjs scripts/playground/packaged-production-plugin-readiness.js test/live-playground-readiness.test.js test/production-shaped-proof.test.js`
-- `sed -n '1,520p' scripts/playground/packaged-production-plugin-readiness.js`
-- `sed -n '1,1425p' test/live-playground-readiness.test.js`
-- `git show origin/lane/reliable-executor:scripts/playground/production-shaped-release-verify.mjs | sed -n '1,120p'`
-- `grep` checks on helper/test usage sites
+- `grep -RniE "waitForPackagedProductionPluginServer|WordPress is not ready yet|signedPreflight|signed-preflight|preflight|routeProfile|authSession" scripts/playground test/live-playground-readiness.test.js test/production-shaped-proof.test.js | sed -n '1,260p'`
+- `sed -n '1,260p' scripts/playground/packaged-production-plugin-readiness.js`
+- `sed -n '1,260p' scripts/playground/production-auth-session-lifecycle.js`
+- `sed -n '1260,1455p' test/live-playground-readiness.test.js`
+- `git diff --stat HEAD..origin/lane/reliable-executor -- scripts/playground/production-shaped-release-verify.mjs scripts/playground/packaged-production-plugin-readiness.js test/live-playground-readiness.test.js test/production-shaped-proof.test.js`
+- `node --input-type=module ...` to probe `packagedProductionPluginPreflightReady()` and confirm missing/broken top-level session envelopes were incorrectly accepted as ready before the patch
+- `node --input-type=module ...` to probe `packagedProductionPluginPreflightRetryable()` / `packagedProductionPluginPreflightTerminal()` for the broken top-level session case
 - `timeout 60s node --test test/live-playground-readiness.test.js`
 - `git diff --check`
+- `git diff -- scripts/playground/packaged-production-plugin-readiness.js test/live-playground-readiness.test.js`
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 
 Push result:
 - Pending commit/push from this pass.
 
 Worktree status:
-- Branch `lane/playground-readiness-code-20260526-1836` has tracked edits in `test/live-playground-readiness.test.js` and this handoff file.
+- Branch `lane/playground-readiness-code-20260526-1836` has tracked edits in `scripts/playground/packaged-production-plugin-readiness.js`, `test/live-playground-readiness.test.js`, and this handoff file.
 
 Next supervisor nudge:
-- This lane now owns a concrete packaged-readiness fail-closed contract for "ready-looking but broken" signed preflight responses. After this commit lands, keep the lane parked unless reliable reintroduces a new packaged-startup divergence or starts consuming a readiness-helper branch that is still unpinned here.
+- This lane now owns the top-level signed-preflight session envelope contract as part of packaged readiness. After this commit lands, keep the lane parked unless reliable reintroduces another packaged-startup divergence between `production-shaped-release-verify.mjs` and these readiness helpers.

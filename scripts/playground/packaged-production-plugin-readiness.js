@@ -154,6 +154,12 @@ function packagedProductionPluginRouteProfileReady(routeProfile) {
     && routeProfile?.labBacked === false;
 }
 
+function packagedProductionPluginSessionEnvelopeReady(session) {
+  return typeof session?.id === 'string'
+    && session.id.length > 0
+    && session?.type === 'production-auth-session';
+}
+
 export function packagedProductionPluginRestIndexReady(status, bodyText = '') {
   if (status !== 200) {
     return false;
@@ -227,6 +233,7 @@ export function packagedProductionPluginPreflightReady(preflight) {
   }
 
   return packagedProductionPluginRouteProfileReady(preflight.body?.routeProfile)
+    && packagedProductionPluginSessionEnvelopeReady(preflight.body?.session)
     && evaluateProductionAuthSessionLifecycle(preflight.body?.auth?.session).ok;
 }
 
