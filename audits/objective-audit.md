@@ -8,12 +8,12 @@
 - The project is **not yet releasable as a production WordPress push path**.
 
 - Audit time: 2026-05-27 10:13:13 CEST (+0200)
-- Release-classification heads verified before write-up:
+- Release-classification heads verified after critic catch-up:
   - `origin/lane/reliable-executor` -> `a7e1a4c340492635a0354d7d68be19fda750ed43` (`Tighten strict auth session id drift`)
-  - `origin/lane/critic` -> `1a73173521cc3490c44cd75cbca94f19cf707eda`
-  - `origin/lane/independent-auditor` -> `1cf93d6c3b468eafde7bc9addc02456ec5801167`
-  - `origin/lane/progress-publisher` -> `d3fa417f6071f1f924487cd23beb66ce8bcd30cf`
-  - `origin/main` -> `a6f611ea7381c71d7795ffc451b81508c7b85578`
+  - `origin/lane/critic` -> `0299c04ec953bbce20a6bdd3cda6d5d1352fa5c0`
+  - `origin/lane/independent-auditor` -> `a2ff22a28e3217f7430826275628a865e878c53f`
+  - `origin/lane/progress-publisher` -> `d047f5f92850aa3c02cfdc9a043430a60b26c9cd`
+  - `origin/main` -> `102ccea4dc1ad273d8f04548a80417778bb5ddd2`
 
 ## Evidence Table
 
