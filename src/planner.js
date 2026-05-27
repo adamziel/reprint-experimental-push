@@ -336,6 +336,26 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         continue;
       }
 
+      const steadyGuidSupport = unsupportedGuidResourceSupport({
+        resource,
+        baseValue,
+        localValue,
+        remoteValue,
+      });
+      if (!steadyGuidSupport.supported) {
+        addUnsupportedGuidResourceBlocker(plan, {
+          resource,
+          support: steadyGuidSupport,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
         if (!support.supported) {
@@ -5023,6 +5043,12 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
     && stableStringify(localValue) === stableStringify(remoteValue)
     && stableStringify(localValue) !== stableStringify(baseValue)
   );
+  const steadyUnsupported = (
+    localValue !== ABSENT
+    && remoteValue !== ABSENT
+    && stableStringify(localValue) === stableStringify(baseValue)
+    && stableStringify(remoteValue) === stableStringify(baseValue)
+  );
   if (
     !candidate
     || candidate === ABSENT
@@ -5031,6 +5057,7 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
     || (
       !localIntroducedGuid
       && !remoteIntroducedGuid
+      && !steadyUnsupported
     )
   ) {
     return { supported: true };
@@ -5043,6 +5070,8 @@ function unsupportedGuidResourceSupport({ resource, baseValue, localValue, remot
       ? 'converged-drift'
       : remoteOnlyDrift
         ? 'remote-only-drift'
+        : steadyUnsupported
+          ? 'steady-unsupported'
         : 'local-or-divergent-drift',
     reason: 'Post GUID graph resources are not yet supported by the planner.',
   };

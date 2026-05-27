@@ -39229,6 +39229,111 @@ test('blocks steady unsupported post GUID rows before they can be treated as alr
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks steady unsupported post GUID rows before they can be treated as already in sync while preserving remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_posts","ID:57"]';
+  const matchingEditResourceKey = 'row:["wp_posts","ID:1"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:57'] = {
+    ID: 57,
+    guid: 'https://example.test/?p=57&steady=1',
+    post_title: 'Steady unsupported GUID post',
+    post_content: 'Steady unsupported GUID content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.db.wp_posts['ID:1'].post_title = 'Base steady unsupported GUID shared title';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:57'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:57']));
+  local.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported GUID title';
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:57'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:57']));
+  remote.db.wp_posts['ID:1'].post_title = 'Shared steady unsupported GUID title';
+  remote.plugins.forms.description = 'remote-only plugin steady unsupported GUID change';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin steady unsupported GUID change */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingEdit = decisionFor(plan, matchingEditResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKind, 'post-guid');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported GUID content'), false);
+  assert.equal(planJson.includes('remote-only plugin steady unsupported GUID change'), false);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Shared steady unsupported GUID title');
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin steady unsupported GUID change');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin steady unsupported GUID change */');
+});
+
+test('blocks steady unsupported post GUID rows before they can be treated as already in sync while preserving a matching independent file type swap and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:58"]';
+  const swapFileKey = 'file:wp-content/uploads/steady-unsupported-guid-cover';
+  const base = baseSite();
+  base.db.wp_posts['ID:58'] = {
+    ID: 58,
+    guid: 'https://example.test/?p=58&steady=1',
+    post_title: 'Steady unsupported GUID removal post',
+    post_content: 'Steady unsupported GUID removal content',
+    post_status: 'publish',
+    post_type: 'post',
+  };
+  base.files[swapFileKey.slice('file:'.length)] = 'base steady unsupported GUID cover bytes';
+
+  const local = baseSite();
+  local.db.wp_posts['ID:58'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:58']));
+  local.files[swapFileKey.slice('file:'.length)] = { type: 'directory' };
+
+  const remote = baseSite();
+  remote.db.wp_posts['ID:58'] = JSON.parse(JSON.stringify(base.db.wp_posts['ID:58']));
+  remote.files[swapFileKey.slice('file:'.length)] = { type: 'directory' };
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingTypeSwap = decisionFor(plan, swapFileKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-guid-resource');
+  assert.equal(blocker.resourceKind, 'post-guid');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'steady-unsupported');
+  assert.equal(blocker.reason, 'Post GUID graph resources are not yet supported by the planner.');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Steady unsupported GUID removal content'), false);
+  assert.equal(planJson.includes('base steady unsupported GUID cover bytes'), false);
+  assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
+});
+
 test('blocks remote-only created post GUIDs while preserving a matching independent edit and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_posts","ID:55"]';
   const base = baseSite();
