@@ -368,7 +368,7 @@ test('keeps remote-only plugin removals while preserving an independent delete a
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
   assert.equal(matchingTypeSwap.decision, 'already-in-sync');
@@ -755,7 +755,7 @@ test('keeps remote-only plugin drift while a live-preconditioned file delete pre
   const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
   assertEveryMutationHasLiveRemotePrecondition(plan);
@@ -1872,7 +1872,7 @@ test('keeps remote-only plugin changes while a local file delete, matching indep
   const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(fileDelete.action, 'delete');
   assert.equal(fileDelete.changeKind, 'delete');
   assert.equal(rowDelete.decision, 'already-in-sync');
@@ -2810,7 +2810,7 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete a
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(fileDelete.action, 'delete');
   assert.equal(fileDelete.changeKind, 'delete');
   assert.equal(matchingEdit.decision, 'already-in-sync');
@@ -2845,7 +2845,7 @@ test('keeps remote-only plugin changes while a live-preconditioned file delete a
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(fileDelete.action, 'delete');
   assert.equal(fileDelete.changeKind, 'delete');
   assert.equal(matchingCreate.decision, 'already-in-sync');
@@ -2935,7 +2935,7 @@ test('keeps remote-only plugin changes while a live-preconditioned delete and ma
   const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
 
   assert.equal(plan.status, 'ready');
-  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.summary.mutations, 1);
   assert.equal(deleteMutation.action, 'delete');
   assert.equal(deleteMutation.changeKind, 'delete');
   assert.equal(createDecision.decision, 'already-in-sync');
