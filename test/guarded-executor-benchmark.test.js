@@ -10774,6 +10774,7 @@ test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw re
   const details = productionThroughputDetails(mutated);
   const releaseBundlePauseRejectedFastPaths = details.rejectedFastPaths.filter((entry) => [
     'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
+    'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
     'compressed-remote-index-and-cached-release-manifest-and-journal-lag-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-cached-release-cursor-skips-release-bundle-commit-after-pause',
     'compressed-remote-index-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
@@ -10788,11 +10789,17 @@ test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw re
         id: entry.id,
         rejectedGate: entry.rejectedGate,
         blockerRefs: entry.blockerRefs,
-      })),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
     [
       {
         id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-commit-after-pause',
         rejectedGate: 'group',
+        blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+        rejectedGate: 'skip',
         blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
       },
       {
@@ -10825,12 +10832,13 @@ test('guarded benchmark keeps release-bundle pause shortcuts blocked when raw re
         rejectedGate: 'group',
         blockerRefs: ['staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'],
       },
-    ],
+    ].sort((left, right) => left.id.localeCompare(right.id)),
   );
 
   assert.deepEqual(summarizeRejectedGates(releaseBundlePauseRejectedFastPaths), [
     { rejectedGate: 'group', count: 5 },
     { rejectedGate: 'recovery', count: 2 },
+    { rejectedGate: 'skip', count: 1 },
   ]);
 });
 
