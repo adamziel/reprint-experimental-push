@@ -5415,6 +5415,60 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     }),
     false,
   );
+  const hiddenSupportedSurfaceOwnership = {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
+  };
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      ownership: Object.create({
+        productionAdapter: 'wpdb-single-statement-cas',
+        supportedSurface: 'production-recovery-journal-adapter',
+        ownsJournal: true,
+        restartReadable: true,
+      }),
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  Object.defineProperty(hiddenSupportedSurfaceOwnership, 'supportedSurface', {
+    value: 'production-recovery-journal-adapter',
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      ownership: hiddenSupportedSurfaceOwnership,
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
   assert.equal(
     checkedDurableJournalBoundarySatisfied({
       ...baseContract,

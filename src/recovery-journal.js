@@ -97,8 +97,9 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
-  const productionAdapter = dbJournal?.ownership?.productionAdapter;
-  const supportedSurface = dbJournal?.ownership?.supportedSurface;
+  const ownership = surfacedCheckedBoundaryOwnership(dbJournal?.ownership);
+  const productionAdapter = ownership.productionAdapter;
+  const supportedSurface = ownership.supportedSurface;
   const journalPath = surfacedCheckedBoundaryJournalPath(dbJournal, 'journalPath');
   const artifactRefs = surfacedCheckedBoundaryArtifactRefs(dbJournal, journalPath.path);
   const activeClaim = surfacedCheckedBoundaryClaim(dbJournal?.claim);
@@ -108,8 +109,8 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.acceptedOnCheckedBoundary === true
     && journalPath.valid
     && artifactRefs.valid
-    && dbJournal?.ownership?.ownsJournal === true
-    && dbJournal?.ownership?.restartReadable === true
+    && ownership.ownsJournal === true
+    && ownership.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
     && supportedSurface === 'production-recovery-journal-adapter'
     && writerLeaseContractMatches(writerLease)
@@ -135,6 +136,45 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && checkedBoundaryClaimHashMatches(activeClaim.claimId, activeClaim.claimHash)
     && checkedBoundaryLeaseClaimHashMatches(writerLease, activeClaim.claimId)
     && checkedBoundaryLeaseClaimHashMatches(nestedWriterLease, activeClaim.claimId);
+}
+
+function surfacedCheckedBoundaryOwnership(ownership) {
+  if (!isStrictPlainObject(ownership) || hasHiddenOwnStringKeys(ownership)) {
+    return {
+      ownsJournal: null,
+      restartReadable: null,
+      productionAdapter: null,
+      supportedSurface: null,
+    };
+  }
+
+  const ownsJournal = Object.hasOwn(ownership, 'ownsJournal')
+    && !hasHiddenOwnStringProperty(ownership, 'ownsJournal')
+    && ownership.ownsJournal === true;
+  const restartReadable = Object.hasOwn(ownership, 'restartReadable')
+    && !hasHiddenOwnStringProperty(ownership, 'restartReadable')
+    && ownership.restartReadable === true;
+  const productionAdapter = Object.hasOwn(ownership, 'productionAdapter')
+    && !hasHiddenOwnStringProperty(ownership, 'productionAdapter')
+    && typeof ownership.productionAdapter === 'string'
+    && ownership.productionAdapter.trim().length > 0
+    && ownership.productionAdapter.trim() === ownership.productionAdapter
+      ? ownership.productionAdapter
+      : null;
+  const supportedSurface = Object.hasOwn(ownership, 'supportedSurface')
+    && !hasHiddenOwnStringProperty(ownership, 'supportedSurface')
+    && typeof ownership.supportedSurface === 'string'
+    && ownership.supportedSurface.trim().length > 0
+    && ownership.supportedSurface.trim() === ownership.supportedSurface
+      ? ownership.supportedSurface
+      : null;
+
+  return {
+    ownsJournal,
+    restartReadable,
+    productionAdapter,
+    supportedSurface,
+  };
 }
 
 function writerLeaseContractMatches(candidate) {
