@@ -2877,10 +2877,25 @@ test('fast-path proofs and rejections carry the expected gate metadata', () => {
     counts.set(fastPath.allowedShortcut, (counts.get(fastPath.allowedShortcut) ?? 0) + 1);
     return counts;
   }, new Map());
+  const rolloutRejectedCounts = model.rejectedFastPaths.reduce((counts, fastPath) => {
+    if (
+      fastPath.id === 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause'
+      || fastPath.id === 'compressed-remote-index-and-parallel-row-batches-skips-plugin-update-commit'
+      || fastPath.id === 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-dependency-checks'
+    ) {
+      counts.set(fastPath.id, (counts.get(fastPath.id) ?? 0) + 1);
+    }
+    return counts;
+  }, new Map());
   assert.deepEqual(
     [...shortcutCounts.entries()].filter(([, count]) => count > 1),
     [],
     'every fast-path shortcut id should remain unique so direct lookup stays deterministic',
+  );
+  assert.deepEqual(
+    [...rolloutRejectedCounts.entries()].filter(([, count]) => count > 1),
+    [],
+    'rollout-exposed rejected fast-path ids should remain unique so release claim lookups stay deterministic',
   );
   assert.ok(
     model.rejectedFastPaths.find((fastPath) => fastPath.id === 'compressed-receipt-log-authorizes-apply-after-pause')?.violates.includes('backpressure'),
@@ -4927,6 +4942,9 @@ test('rejected fast paths cover precondition bypasses and atomic group splits', 
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('backpressure'),
+  );
+  assert.ok(
+    rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('atomic-file-publish'),
   );
   assert.ok(
     rejectedById.get('compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause').violates.includes('remote-index-planning-only'),

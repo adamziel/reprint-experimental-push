@@ -4910,7 +4910,7 @@ export const REJECTED_FAST_PATHS = Object.freeze([
     violates: ['remote-index-planning-only', 'compression', 'parallelism-limits', 'backpressure', 'chunk-receipts', 'live-preconditions', 'durable-progress'],
   },
   {
-    id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-backpressure-after-pause',
+    id: 'compressed-remote-index-and-parallel-chunk-sends-skips-large-upload-queue-recovery-after-pause',
     proposal: 'use a compressed remote index plus parallel chunk sends to skip large-upload backpressure after a pause',
     rejectedBecause: 'planning evidence and extra fan-out cannot prove which chunk acknowledgements survived the pause, which chunks remain queued, or that journal order stayed recoverable',
     rejectedGate: 'recovery',
