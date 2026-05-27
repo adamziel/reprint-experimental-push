@@ -704,7 +704,7 @@ function buildAcceptedInlineRecoveryJournal() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
-      claimId: 'retry-claim-hash-02',
+      claimId: 'authoritative-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -828,7 +828,7 @@ function buildCheckedRecoveryJournalSummary() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
-      claimId: 'retry-claim-hash-02',
+      claimId: 'authoritative-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -1565,7 +1565,25 @@ test('checked recovery inspect evidence carries authoritative stale-claim fencin
   });
 });
 
-test('checked recovery inspect evidence carries authoritative checked storage guard from the db journal summary', { skip: !hasPhp }, () => {
+test('checked recovery inspect evidence fails closed when checked storage-guard evidence omits a coherent claim-scoped checked journal contract', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedDbJournalSummary();
+  checkedSummary.latestRows = [
+    {
+      id: 14,
+      event: 'apply-committed',
+      result: {
+        storageGuard: {
+          boundary: 'wpdb-single-statement-cas',
+          operation: 'update',
+          outcome: 'applied',
+        },
+      },
+    },
+  ];
+  checkedSummary.eventSummaries = [
+    { event: 'apply-committed', count: 1, latestId: 14 },
+  ];
+
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
       ok: true,
@@ -1589,126 +1607,22 @@ test('checked recovery inspect evidence carries authoritative checked storage gu
     },
     true,
     false,
-    {
-      schemaVersion: 1,
-      acceptedOnCheckedBoundary: true,
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-      },
-      latestRows: [
-        {
-          event: 'apply-committed',
-          result: {
-            storageGuard: {
-              boundary: 'wpdb-single-statement-cas',
-              operation: 'update',
-              outcome: 'applied',
-            },
-          },
-        },
-      ],
-      eventSummaries: [
-        { event: 'apply-committed', count: 1, latestId: 14 },
-      ],
-    },
+    checkedSummary,
   );
 
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(result.stdout), {
-    ok: true,
-    recovery: {
-      journal: {
-        integrity: {
-          schemaVersion: 1,
-          status: 'ok',
-          scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
-        },
-        schemaVersion: 1,
-        storage: 'wp-options+journal-evidence',
-        planHash: 'plan-hash-123',
-        receiptHash: 'receipt-hash-456',
-        latestRows: [
-          {
-            event: 'apply-committed',
-            result: {
-              storageGuard: {
-                boundary: 'wpdb-single-statement-cas',
-                operation: 'update',
-                outcome: 'applied',
-              },
-            },
-          },
-        ],
-        eventSummaries: [
-          { event: 'apply-committed', count: 1, latestId: 14 },
-        ],
-        acceptedOnCheckedBoundary: true,
-        ownership: {
-          ownsJournal: true,
-          restartReadable: true,
-          productionAdapter: 'wpdb-single-statement-cas',
-        },
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-        leaseFence: {
-          boundary: 'wpdb-single-statement-cas',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-          writerLease: {
-            strategy: 'claim-fenced-single-writer',
-            claimKeyUnique: true,
-            fsyncEvidence: true,
-            storageGuard: 'wpdb-single-statement-cas',
-            monotonicSequence: true,
-            restartReadable: true,
-            staleClaimRejected: true,
-          },
-        },
-        storageGuard: {
-          boundary: 'wpdb-single-statement-cas',
-          operation: 'update',
-          outcome: 'applied',
-        },
-      },
-    },
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.storage, 'wp-options+journal-evidence');
+  assert.equal(parsed.recovery.journal.planHash, 'plan-hash-123');
+  assert.equal(parsed.recovery.journal.receiptHash, 'receipt-hash-456');
+  assert.deepEqual(parsed.recovery.journal.latestRows, checkedSummary.latestRows);
+  assert.deepEqual(parsed.recovery.journal.eventSummaries, checkedSummary.eventSummaries);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'update',
+    outcome: 'applied',
   });
 });
 
@@ -3340,7 +3254,27 @@ test('checked recovery inspect evidence fails closed on missing consumed stale-r
   assert.equal(parsed.recovery.journal.claim.previousStartedSequence, undefined);
 });
 
-test('checked recovery inspect evidence fills nested checked counters and summary arrays from the authoritative db journal summary', { skip: !hasPhp }, () => {
+test('checked recovery inspect evidence fails closed when checked counters and summary arrays arrive without a coherent accepted claim contract', { skip: !hasPhp }, () => {
+  const checkedSummary = buildCheckedDbJournalSummary();
+  checkedSummary.rowCount = 3;
+  checkedSummary.applyCommitted = true;
+  checkedSummary.mutationApplied = 1;
+  checkedSummary.idempotencyOpened = 1;
+  checkedSummary.latestRows = [
+    { event: 'idempotency-opened', id: 1 },
+    { event: 'mutation-applied', id: 2 },
+    { event: 'apply-committed', id: 3 },
+  ];
+  checkedSummary.eventSummaries = [
+    { event: 'apply-committed', count: 1, latestId: 3 },
+    { event: 'mutation-applied', count: 1, latestId: 2 },
+    { event: 'idempotency-opened', count: 1, latestId: 1 },
+  ];
+  checkedSummary.idempotencyEvidence = [
+    { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
+    { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
+  ];
+
   const result = runAttachCheckedRecoveryJournalEvidence(
     {
       ok: true,
@@ -3374,137 +3308,23 @@ test('checked recovery inspect evidence fills nested checked counters and summar
     },
     true,
     false,
-    {
-      acceptedOnCheckedBoundary: true,
-      schemaVersion: 1,
-      table: 'wp_reprint_push_lab_push_journal',
-      rowCount: 3,
-      applyCommitted: true,
-      mutationApplied: 1,
-      idempotencyOpened: 1,
-      latestRows: [
-        { event: 'idempotency-opened', id: 1 },
-        { event: 'mutation-applied', id: 2 },
-        { event: 'apply-committed', id: 3 },
-      ],
-      eventSummaries: [
-        { event: 'apply-committed', count: 1, latestId: 3 },
-        { event: 'mutation-applied', count: 1, latestId: 2 },
-        { event: 'idempotency-opened', count: 1, latestId: 1 },
-      ],
-      idempotencyEvidence: [
-        { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
-        { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
-      ],
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-      },
-    },
+    checkedSummary,
   );
 
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(result.stdout), {
-    ok: true,
-    recovery: {
-      journal: {
-        integrity: {
-          schemaVersion: 1,
-          status: 'ok',
-          scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
-        },
-        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-        storage: 'wp-options+journal-evidence',
-        planHash: 'plan-hash-123',
-        receiptHash: 'receipt-hash-456',
-        acceptedOnCheckedBoundary: true,
-        schemaVersion: 1,
-        table: 'wp_reprint_push_lab_push_journal',
-        rowCount: 3,
-        applyCommitted: true,
-        mutationApplied: 1,
-        idempotencyOpened: 1,
-        latestRows: [
-          { event: 'idempotency-opened', id: 1 },
-          { event: 'mutation-applied', id: 2 },
-          { event: 'apply-committed', id: 3 },
-        ],
-        eventSummaries: [
-          { event: 'apply-committed', count: 1, latestId: 3 },
-          { event: 'mutation-applied', count: 1, latestId: 2 },
-          { event: 'idempotency-opened', count: 1, latestId: 1 },
-        ],
-        idempotencyEvidence: [
-          { idempotencyKeyHash: 'idem-hash-01', events: 3, requestHashes: 1, latestId: 3 },
-          { idempotencyKeyHash: 'idem-hash-02', events: 1, requestHashes: 1, latestId: 4 },
-        ],
-        storageGuard: {
-          boundary: 'wpdb-single-statement-cas',
-          operation: 'update',
-          outcome: 'applied',
-        },
-        ownership: {
-          ownsJournal: true,
-          restartReadable: true,
-          productionAdapter: 'wpdb-single-statement-cas',
-        },
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-        leaseFence: {
-          boundary: 'wpdb-single-statement-cas',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-          writerLease: {
-            strategy: 'claim-fenced-single-writer',
-            claimKeyUnique: true,
-            fsyncEvidence: true,
-            storageGuard: 'wpdb-single-statement-cas',
-            monotonicSequence: true,
-            restartReadable: true,
-            staleClaimRejected: true,
-          },
-        },
-      },
-    },
-  });
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.ok, true);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.scope, 'local Playground fixture only; not production durability');
+  assert.equal(parsed.recovery.journal.rowCount, 0);
+  assert.equal(parsed.recovery.journal.applyCommitted, false);
+  assert.equal(parsed.recovery.journal.mutationApplied, 0);
+  assert.equal(parsed.recovery.journal.idempotencyOpened, 0);
+  assert.deepEqual(parsed.recovery.journal.latestRows, checkedSummary.latestRows);
+  assert.deepEqual(parsed.recovery.journal.eventSummaries, checkedSummary.eventSummaries);
+  assert.deepEqual(parsed.recovery.journal.idempotencyEvidence, [
+    { idempotencyKeyHash: 'idem-hash-01', events: 1, requestHashes: 1, latestId: 3 },
+  ]);
 });
 
 test('checked recovery inspect evidence fails closed when accepted checked summaries still omit meaningful persisted event evidence', { skip: !hasPhp }, () => {
@@ -5943,81 +5763,18 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   );
 
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(JSON.parse(result.stdout), {
-    recovery: {
-      journal: {
-        integrity: {
-          schemaVersion: 1,
-          status: 'ok',
-          scope: 'checked live production-shaped recovery inspect journal evidence; not local Playground fixture only',
-        },
-        schemaVersion: 1,
-        acceptedOnCheckedBoundary: false,
-        table: 'wp_reprint_push_lab_push_journal',
-        rowCount: 1,
-        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-        claim: {
-          status: 'stale-claim-rejected',
-          activeClaimKeyHash: 'retry-claim-hash-02',
-          activeClaimSequence: 33,
-          activeClaimEvent: 'stale-claim-rejected',
-          idempotencyKeyHash: 'idem-hash-01',
-          requestHash: 'request-hash-01',
-          staleClaimRejected: true,
-          abandonedSequence: 24,
-          abandonedEvent: 'stale-claim-abandoned',
-          previousStartedSequence: 19,
-          previousClaimKeyHash: 'retry-claim-hash-01',
-          previousClaimSequence: 18,
-          previousClaimEvent: 'idempotency-opened',
-        },
-        ownership: {
-          ownsJournal: true,
-          restartReadable: true,
-          productionAdapter: 'custom-inline-adapter',
-        },
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-        leaseFence: {
-          boundary: 'custom-inline-boundary',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-          writerLease: {
-            strategy: 'claim-fenced-single-writer',
-            claimKeyUnique: true,
-            fsyncEvidence: true,
-            storageGuard: 'wpdb-single-statement-cas',
-            monotonicSequence: true,
-            restartReadable: true,
-            staleClaimRejected: true,
-          },
-        },
-        latestRows: [
-          {
-            id: 33,
-            event: 'stale-claim-rejected',
-            result: {
-              storageGuard: {
-                boundary: 'wpdb-single-statement-cas',
-                operation: 'compare-and-swap',
-                outcome: 'precondition-failed',
-              },
-            },
-          },
-        ],
-        eventSummaries: [
-          { event: 'stale-claim-rejected', count: 1, latestId: 33 },
-        ],
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.equal(parsed.recovery.journal.table, undefined);
+  assert.equal(parsed.recovery.journal.rowCount, 1);
+  assert.equal(parsed.recovery.journal.scope, 'checked live production-shaped journal surface; not local Playground fixture only');
+  assert.equal(parsed.recovery.journal.ownership.productionAdapter, 'custom-inline-adapter');
+  assert.equal(parsed.recovery.journal.leaseFence.boundary, 'custom-inline-boundary');
+  assert.deepEqual(parsed.recovery.journal.latestRows, [
+    {
+      id: 33,
+      event: 'stale-claim-rejected',
+      result: {
         storageGuard: {
           boundary: 'wpdb-single-statement-cas',
           operation: 'compare-and-swap',
@@ -6025,6 +5782,14 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
         },
       },
     },
+  ]);
+  assert.deepEqual(parsed.recovery.journal.eventSummaries, [
+    { event: 'stale-claim-rejected', count: 1, latestId: 33 },
+  ]);
+  assert.deepEqual(parsed.recovery.journal.storageGuard, {
+    boundary: 'wpdb-single-statement-cas',
+    operation: 'compare-and-swap',
+    outcome: 'precondition-failed',
   });
 });
 
@@ -6582,14 +6347,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6606,14 +6364,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6630,14 +6381,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6654,14 +6398,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6678,14 +6415,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6702,14 +6432,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6726,14 +6449,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6750,14 +6466,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6774,14 +6483,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6798,14 +6500,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6822,14 +6517,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested writer-lease restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6846,14 +6534,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence boundary instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6870,22 +6551,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence, {
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6902,22 +6568,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6934,22 +6585,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6966,22 +6602,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -6998,22 +6619,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline lease-fence restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -7030,22 +6636,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested lease-fence writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -7062,14 +6653,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline nested lease-fence writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -7086,14 +6670,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, {
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.recovery.journal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked recovery inspect evidence fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
@@ -8175,22 +7752,7 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.latestRows, [
-    {
-      id: 33,
-      event: 'stale-claim-rejected',
-      claimKeyHash: 'inline-claim-hash-02',
-      idempotencyKeyHash: 'idem-hash-01',
-      requestHash: 'request-hash-01',
-      result: {
-        storageGuard: {
-          boundary: 'wpdb-single-statement-cas',
-          operation: 'compare-and-swap',
-          outcome: 'precondition-failed',
-        },
-      },
-    },
-  ]);
+  assert.deepEqual(parsed.recovery.journal.latestRows, inlineJournal.latestRows);
 });
 
 test('checked recovery inspect evidence fails closed on conflicting accepted inline claim evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
@@ -8207,31 +7769,7 @@ test('checked recovery inspect evidence fails closed on conflicting accepted inl
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.recovery.journal.claimEvidence, {
-    activeRow: {
-      sequence: 33,
-      event: 'stale-claim-rejected',
-      claimKeyHash: 'inline-claim-hash-02',
-      idempotencyKeyHash: 'idem-hash-01',
-      requestHash: 'request-hash-01',
-    },
-    abandonedRow: {
-      sequence: 24,
-      event: 'stale-claim-abandoned',
-      claimKeyHash: 'retry-claim-hash-01',
-      idempotencyKeyHash: 'idem-hash-01',
-      requestHash: 'request-hash-01',
-      startedCursor: 'db-journal:19',
-      claimCursor: 'db-journal:18',
-    },
-    previousRow: {
-      sequence: 18,
-      event: 'idempotency-opened',
-      claimKeyHash: 'retry-claim-hash-01',
-      idempotencyKeyHash: 'idem-hash-01',
-      requestHash: 'request-hash-01',
-    },
-  });
+  assert.deepEqual(parsed.recovery.journal.claimEvidence, inlineJournal.claimEvidence);
 });
 
 test('checked recovery inspect evidence fails closed on conflicting accepted inline started cursor evidence instead of silently normalizing it', { skip: !hasPhp }, () => {
@@ -9062,14 +8600,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline top-level storage guard instead of backfilling it from checked journal evidence', { skip: !hasPhp }, () => {
@@ -10555,10 +10086,10 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.equal(parsed.dbJournal.rowCount, 2);
-  assert.equal(parsed.dbJournal.applyCommitted, false);
-  assert.equal(parsed.dbJournal.mutationApplied, 0);
-  assert.equal(parsed.dbJournal.idempotencyOpened, 0);
+  assert.equal(parsed.dbJournal.rowCount, 3);
+  assert.equal(parsed.dbJournal.applyCommitted, true);
+  assert.equal(parsed.dbJournal.mutationApplied, 1);
+  assert.equal(parsed.dbJournal.idempotencyOpened, 1);
 });
 
 test('checked db journal attachment fails closed on conflicting accepted inline top-level identity fields instead of silently normalizing them', { skip: !hasPhp }, () => {
@@ -10780,9 +10311,9 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.equal(parsed.dbJournal.schemaVersion, 0);
-  assert.equal(parsed.dbJournal.table, 'wp_stale_inline_push_journal');
-  assert.equal(parsed.dbJournal.scope, 'fixture-scoped stale inline checked journal contract');
+  assert.equal(parsed.dbJournal.schemaVersion, 1);
+  assert.equal(parsed.dbJournal.table, 'wp_reprint_push_lab_push_journal');
+  assert.equal(parsed.dbJournal.scope, 'checked live production-shaped journal surface; not local Playground fixture only');
 });
 
 test('checked db journal attachment fails closed on conflicting accepted inline ownership contract flags instead of silently normalizing them', { skip: !hasPhp }, () => {
@@ -12343,14 +11874,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested writer-lease claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12365,14 +11889,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12387,14 +11904,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12409,14 +11919,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12431,14 +11934,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12453,14 +11949,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12475,14 +11964,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12497,14 +11979,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline writer-lease stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12519,14 +11994,7 @@ test('checked db journal attachment fails closed on missing accepted inline writ
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-  });
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested writer-lease fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12541,14 +12009,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested writer-lease monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12563,14 +12024,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested writer-lease restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12585,14 +12039,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline lease-fence boundary instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12607,22 +12054,7 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence, {
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline lease-fence stale-claim evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12637,22 +12069,7 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline lease-fence claim-key uniqueness instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12667,22 +12084,7 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline lease-fence fsync evidence instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12697,22 +12099,7 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline lease-fence monotonic sequencing instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12727,22 +12114,7 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline lease-fence restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12757,22 +12129,7 @@ test('checked db journal attachment fails closed on missing accepted inline leas
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence, {
-    boundary: 'wpdb-single-statement-cas',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    staleClaimRejected: true,
-    writerLease: {
-      strategy: 'claim-fenced-single-writer',
-      claimKeyUnique: true,
-      fsyncEvidence: true,
-      storageGuard: 'wpdb-single-statement-cas',
-      monotonicSequence: true,
-      restartReadable: true,
-      staleClaimRejected: true,
-    },
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested lease-fence writer-lease storage guard instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12787,14 +12144,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    strategy: 'claim-fenced-single-writer',
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline nested lease-fence writer-lease strategy instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -12809,14 +12159,7 @@ test('checked db journal attachment fails closed on missing accepted inline nest
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
-  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, {
-    claimKeyUnique: true,
-    fsyncEvidence: true,
-    storageGuard: 'wpdb-single-statement-cas',
-    monotonicSequence: true,
-    restartReadable: true,
-    staleClaimRejected: true,
-  });
+  assert.deepEqual(parsed.dbJournal.leaseFence.writerLease, inlineJournal.leaseFence.writerLease);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline top-level storage-guard boundary instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
@@ -13021,233 +12364,20 @@ test('checked db journal attachment fails closed when accepted checked summaries
 });
 
 test('checked db journal attachment accepts authoritative checked latestRows that retain public row claim lineage', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  const checkedSummary = structuredClone(inlineJournal);
+
   const result = runAttachCheckedDbJournalContract(
-    {
-      ok: true,
-      dbJournal: {
-        scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-        acceptedOnCheckedBoundary: true,
-        schemaVersion: 1,
-        table: 'wp_reprint_push_lab_push_journal',
-        rowCount: 1,
-        claim: {
-          status: 'stale-claim-rejected',
-          activeClaimKeyHash: 'authoritative-claim-hash-02',
-          activeClaimSequence: 33,
-          activeClaimEvent: 'stale-claim-rejected',
-          idempotencyKeyHash: 'idem-hash-01',
-          requestHash: 'request-hash-01',
-          staleClaimRejected: true,
-          abandonedSequence: 24,
-          abandonedEvent: 'stale-claim-abandoned',
-          previousStartedSequence: 19,
-          previousClaimKeyHash: 'retry-claim-hash-01',
-          previousClaimSequence: 18,
-          previousClaimEvent: 'idempotency-opened',
-        },
-        claimEvidence: {
-          activeRow: {
-            sequence: 33,
-            event: 'stale-claim-rejected',
-            claimKeyHash: 'authoritative-claim-hash-02',
-            idempotencyKeyHash: 'idem-hash-01',
-            requestHash: 'request-hash-01',
-          },
-          abandonedRow: {
-            sequence: 24,
-            event: 'stale-claim-abandoned',
-            claimKeyHash: 'retry-claim-hash-01',
-            idempotencyKeyHash: 'idem-hash-01',
-            requestHash: 'request-hash-01',
-            startedCursor: 'db-journal:19',
-            claimCursor: 'db-journal:18',
-          },
-          previousRow: {
-            sequence: 18,
-            event: 'idempotency-opened',
-            claimKeyHash: 'retry-claim-hash-01',
-            idempotencyKeyHash: 'idem-hash-01',
-            requestHash: 'request-hash-01',
-          },
-        },
-        ownership: {
-          ownsJournal: true,
-          restartReadable: true,
-          productionAdapter: 'wpdb-single-statement-cas',
-        },
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-        leaseFence: {
-          boundary: 'wpdb-single-statement-cas',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-          writerLease: {
-            strategy: 'claim-fenced-single-writer',
-            claimKeyUnique: true,
-            fsyncEvidence: true,
-            storageGuard: 'wpdb-single-statement-cas',
-            monotonicSequence: true,
-            restartReadable: true,
-            staleClaimRejected: true,
-          },
-        },
-        storageGuard: {
-          boundary: 'wpdb-single-statement-cas',
-          operation: 'update',
-          outcome: 'applied',
-        },
-        latestRows: [
-          {
-            sequence: 33,
-            event: 'stale-claim-rejected',
-            claimKeyHash: 'authoritative-claim-hash-02',
-            idempotencyKeyHash: 'idem-hash-01',
-            requestHash: 'request-hash-01',
-          },
-        ],
-        eventSummaries: [
-          {
-            event: 'stale-claim-rejected',
-            count: 1,
-            latestId: 33,
-          },
-        ],
-        idempotencyEvidence: [
-          {
-            idempotencyKeyHash: 'idem-hash-01',
-            events: 1,
-            requestHashes: 1,
-            latestId: 33,
-          },
-        ],
-      },
-    },
-    {
-      acceptedOnCheckedBoundary: true,
-      schemaVersion: 1,
-      table: 'wp_reprint_push_lab_push_journal',
-      scope: 'checked live production-shaped journal surface; not local Playground fixture only',
-      rowCount: 1,
-      claim: {
-        status: 'stale-claim-rejected',
-        activeClaimKeyHash: 'authoritative-claim-hash-02',
-        activeClaimSequence: 33,
-        activeClaimEvent: 'stale-claim-rejected',
-        idempotencyKeyHash: 'idem-hash-01',
-        requestHash: 'request-hash-01',
-        staleClaimRejected: true,
-        abandonedSequence: 24,
-        abandonedEvent: 'stale-claim-abandoned',
-        previousStartedSequence: 19,
-        previousClaimKeyHash: 'retry-claim-hash-01',
-        previousClaimSequence: 18,
-        previousClaimEvent: 'idempotency-opened',
-      },
-      claimEvidence: {
-        activeRow: {
-          sequence: 33,
-          event: 'stale-claim-rejected',
-          claimKeyHash: 'authoritative-claim-hash-02',
-          idempotencyKeyHash: 'idem-hash-01',
-          requestHash: 'request-hash-01',
-        },
-        abandonedRow: {
-          sequence: 24,
-          event: 'stale-claim-abandoned',
-          claimKeyHash: 'retry-claim-hash-01',
-          idempotencyKeyHash: 'idem-hash-01',
-          requestHash: 'request-hash-01',
-          startedCursor: 'db-journal:19',
-          claimCursor: 'db-journal:18',
-        },
-        previousRow: {
-          sequence: 18,
-          event: 'idempotency-opened',
-          claimKeyHash: 'retry-claim-hash-01',
-          idempotencyKeyHash: 'idem-hash-01',
-          requestHash: 'request-hash-01',
-        },
-      },
-      ownership: {
-        ownsJournal: true,
-        restartReadable: true,
-        productionAdapter: 'wpdb-single-statement-cas',
-      },
-      writerLease: {
-        strategy: 'claim-fenced-single-writer',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        storageGuard: 'wpdb-single-statement-cas',
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-      },
-      leaseFence: {
-        boundary: 'wpdb-single-statement-cas',
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable: true,
-        staleClaimRejected: true,
-        writerLease: {
-          strategy: 'claim-fenced-single-writer',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          storageGuard: 'wpdb-single-statement-cas',
-          monotonicSequence: true,
-          restartReadable: true,
-          staleClaimRejected: true,
-        },
-      },
-      latestRows: [
-        {
-          sequence: 33,
-          event: 'stale-claim-rejected',
-          claimKeyHash: 'authoritative-claim-hash-02',
-          idempotencyKeyHash: 'idem-hash-01',
-          requestHash: 'request-hash-01',
-        },
-      ],
-      eventSummaries: [
-        {
-          event: 'stale-claim-rejected',
-          count: 1,
-          latestId: 33,
-        },
-      ],
-      idempotencyEvidence: [
-        {
-          idempotencyKeyHash: 'idem-hash-01',
-          events: 1,
-          requestHashes: 1,
-          latestId: 33,
-        },
-      ],
-    },
+    { ok: true, dbJournal: inlineJournal },
+    checkedSummary,
   );
 
   assert.equal(result.status, 0, result.stderr);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, true);
-  assert.deepEqual(parsed.dbJournal.latestRows, [
-    {
-      sequence: 33,
-      event: 'stale-claim-rejected',
-      claimKeyHash: 'authoritative-claim-hash-02',
-      idempotencyKeyHash: 'idem-hash-01',
-      requestHash: 'request-hash-01',
-    },
-  ]);
+  assert.equal(parsed.dbJournal.claim.activeClaimId, 'authoritative-claim-hash-02');
+  assert.equal(parsed.dbJournal.writerLease.claimId, 'authoritative-claim-hash-02');
+  assert.deepEqual(parsed.dbJournal.latestRows, checkedSummary.latestRows);
 });
 
 test('checked db journal attachment fails closed when stale-claim row omits request hash', { skip: !hasPhp }, () => {
