@@ -1239,21 +1239,38 @@ test('blocks featured image references when the attachment target diverged on re
   assert.equal(planJson.includes('remote-private-attachment-body'), false);
 });
 
-test('allows same-plan comment graph closure when post and comment targets are created locally', () => {
+test('allows same-plan comment and user graph closure when author and comment targets are created locally', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
+  const userResourceKey = 'row:["wp_users","ID:7"]';
+  const usermetaResourceKey = 'row:["wp_usermeta","meta_id:61"]';
   const parentCommentResourceKey = 'row:["wp_comments","comment_ID:11"]';
   const childCommentResourceKey = 'row:["wp_comments","comment_ID:12"]';
   const commentmetaResourceKey = 'row:["wp_commentmeta","meta_id:51"]';
   const base = baseSite();
+  base.db.wp_users = {};
+  base.db.wp_usermeta = {};
   base.db.wp_comments = {};
   base.db.wp_commentmeta = {};
   const local = JSON.parse(JSON.stringify(base));
   const remote = JSON.parse(JSON.stringify(base));
 
+  local.db.wp_users['ID:7'] = {
+    ID: 7,
+    user_login: 'local-author',
+    user_email: 'author@example.test',
+    display_name: 'Local Author',
+  };
   local.db.wp_posts['ID:2'] = {
     ID: 2,
-    post_title: 'Local commented post',
+    post_title: 'Local authored post',
     post_status: 'draft',
+    post_author: 7,
+  };
+  local.db.wp_usermeta['meta_id:61'] = {
+    meta_id: 61,
+    user_id: 7,
+    meta_key: 'nickname',
+    meta_value: 'local-author-nickname',
   };
   local.db.wp_comments['comment_ID:11'] = {
     comment_ID: 11,
@@ -1278,14 +1295,73 @@ test('allows same-plan comment graph closure when post and comment targets are c
   const result = applyPlan(remote, plan);
 
   assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, userResourceKey).changeKind, 'create');
   assert.equal(mutationFor(plan, postResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, usermetaResourceKey).changeKind, 'create');
   assert.equal(mutationFor(plan, parentCommentResourceKey).changeKind, 'create');
   assert.equal(mutationFor(plan, childCommentResourceKey).changeKind, 'create');
   assert.equal(mutationFor(plan, commentmetaResourceKey).changeKind, 'create');
   assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_author, 7);
+  assert.equal(result.site.db.wp_usermeta['meta_id:61'].user_id, 7);
   assert.equal(result.site.db.wp_comments['comment_ID:11'].comment_post_ID, 2);
   assert.equal(result.site.db.wp_comments['comment_ID:12'].comment_parent, 11);
   assert.equal(result.site.db.wp_commentmeta['meta_id:51'].comment_id, 12);
+});
+
+test('blocks post author and usermeta references when the remote user target diverged', () => {
+  const postResourceKey = 'row:["wp_posts","ID:2"]';
+  const usermetaResourceKey = 'row:["wp_usermeta","meta_id:61"]';
+  const targetUserResourceKey = 'row:["wp_users","ID:7"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-private-user-login',
+      user_email: 'base-private-user@example.test',
+      display_name: 'Base Private User',
+    },
+  };
+  base.db.wp_usermeta = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local user-authored post',
+    post_status: 'draft',
+    post_author: 7,
+  };
+  local.db.wp_usermeta['meta_id:61'] = {
+    meta_id: 61,
+    user_id: 7,
+    meta_key: 'nickname',
+    meta_value: 'local-private-usermeta',
+  };
+  remote.db.wp_users['ID:7'] = {
+    ...remote.db.wp_users['ID:7'],
+    user_email: 'remote-private-user@example.test',
+    display_name: 'Remote Private User',
+  };
+
+  const plan = planFor(base, local, remote);
+  const postBlocker = plan.blockers.find((blocker) => blocker.resourceKey === postResourceKey);
+  const usermetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === usermetaResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, postResourceKey), undefined);
+  assert.equal(mutationFor(plan, usermetaResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetUserResourceKey).decision, 'keep-remote');
+  assert.equal(postBlocker.references[0].relationshipType, 'post-author');
+  assert.equal(postBlocker.references[0].targetResourceKey, targetUserResourceKey);
+  assert.equal(postBlocker.references[0].targetChange.remoteChange, 'update');
+  assert.equal(usermetaBlocker.references[0].relationshipType, 'usermeta-user');
+  assert.equal(usermetaBlocker.references[0].targetResourceKey, targetUserResourceKey);
+  assert.equal(planJson.includes('local-private-usermeta'), false);
+  assert.equal(planJson.includes('remote-private-user@example.test'), false);
+  assert.equal(planJson.includes('Remote Private User'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks comment graph references when the remote post target is missing', () => {

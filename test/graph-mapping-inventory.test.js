@@ -15,6 +15,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     'comment-parent',
     'commentmeta-comment',
     'post-parent',
+    'post-author',
     'postmeta-post',
     'featured-image-attachment',
     'term-relationship-object',
@@ -22,6 +23,7 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     'term-taxonomy-term',
     'term-taxonomy-parent',
     'termmeta-term',
+    'usermeta-user',
   ]);
   assert.deepEqual(inventory.mappedFamilyCounters, {
     totalFamilies: 7,
