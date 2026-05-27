@@ -22757,6 +22757,127 @@ test('production recovery support report accepts a consumed claim summary that p
   assert.equal(report.inspectionErrorMessage, null);
 });
 
+test('consumeProductionRecoveryJournal fails closed when artifactRefs.remote is hidden for a persisted owned remote artifact', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Hidden Consume Artifact Remote Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-hidden-consume-artifact-refs-remote.jsonl`;
+  const claimId = 'claim-consumed-hidden-consume-artifact-refs-remote';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const hiddenArtifactRefs = {
+    journal: filePath,
+  };
+  Object.defineProperty(hiddenArtifactRefs, 'remote', {
+    value: remoteArtifactPath,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const error = captureError(() => consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: hiddenArtifactRefs,
+    writerLease,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires enumerable artifactRefs keys.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  });
+});
+
+test('consumeProductionRecoveryJournal fails closed when remote ownership drifts from the persisted owned remote artifact path', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Consumed Claim Remote Ownership Drift Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/consumed-remote-ownership-drift.jsonl`;
+  const driftedRemoteArtifactPath = `${path.dirname(filePath)}/consumed-remote-ownership-drifted.jsonl`;
+  const claimId = 'claim-consumed-remote-ownership-drift';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+    remote: remoteArtifactPath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const error = captureError(() => consumeProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      journal: filePath,
+      remote: driftedRemoteArtifactPath,
+    },
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath: driftedRemoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal consumption requires the persisted owned remote artifact path.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: driftedRemoteArtifactPath,
+  });
+  assert.deepEqual(error.details.persistedArtifactRefs, artifactRefs);
+});
+
 test('openProductionRecoveryJournal fails closed when a consumed claim is reopened with a stale lease epoch', () => {
   const base = baseSite();
   const local = structuredClone(base);
