@@ -66,6 +66,9 @@ function resolveScenarioMode(modeValue) {
   if (modeValue === 'driver-registration-only') {
     return 'driver-registration-guards';
   }
+  if (modeValue === 'driver-delete-only') {
+    return 'driver-delete-apply';
+  }
   throw new Error(
     `Unknown production plugin package smoke mode: ${modeValue}`,
   );

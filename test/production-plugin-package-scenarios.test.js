@@ -140,6 +140,21 @@ test('scenario resolver maps driver-registration-only mode to the malformed regi
   );
 });
 
+test('scenario resolver maps driver-delete-only mode to the bounded delete apply scenario', () => {
+  const resolved = resolveProductionPluginPackageScenarios(
+    [],
+    undefined,
+    'driver-delete-only',
+  );
+
+  assert.deepEqual(resolved.requestedScenarios, ['driver-delete-apply']);
+  assert.equal(resolved.resolvedMode, 'driver-delete-only');
+  assert.deepEqual(
+    Array.from(resolved.selectedScenarios).sort(),
+    ['driver-delete-apply'],
+  );
+});
+
 test('scenario resolver clears mode metadata when explicit scenario input overrides the bounded mode', () => {
   const resolved = resolveProductionPluginPackageScenarios(
     ['--scenario=driver-delete-apply'],
