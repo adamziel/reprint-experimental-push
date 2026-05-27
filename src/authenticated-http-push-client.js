@@ -53,6 +53,7 @@ export async function runAuthenticatedHttpPush({
   requireProductionAuthSession = false,
   simulateStaleClaimRetry = false,
   simulatePreservedRemoteRetryPath = '',
+  proveDurableJournalBoundary = false,
   labAuthSessionDrift = '',
   authSessionSource = null,
   now = new Date(),
@@ -104,6 +105,7 @@ export async function runAuthenticatedHttpPush({
     apply: null,
     recoveryInspect: null,
     replay: null,
+    idempotencyConflict: null,
     after: null,
     dbJournal: null,
     authSessionLifecycleTrace: [],
@@ -1320,6 +1322,59 @@ export async function runAuthenticatedHttpPush({
   summary.after = summarizeSnapshot(afterApply, local);
   updateRetryAttempts(summary, summary.after);
   summary.afterObject = afterApply.body.snapshot;
+
+  if (proveDurableJournalBoundary) {
+    let conflict;
+    try {
+      conflict = await client.signedPost(withAuthSessionDrift('/apply'), idempotencyConflictPayload(applyPayload), {
+        session,
+        idempotencyKey,
+      });
+    } catch (error) {
+      captureTransportFailure(summary, 'idempotencyConflict', error, 'IDEMPOTENCY_CONFLICT_PROOF_FAILED', 'replay');
+      return summary;
+    }
+
+    summary.idempotencyConflict = summarizeResponse(conflict);
+    updateRetryAttempts(summary, summary.idempotencyConflict);
+    const conflictAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, conflict);
+    if (conflictAuthEnvelopeDrift) {
+      summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+      summary.authSession = conflictAuthEnvelopeDrift;
+      setDurableJournalBoundary(summary, 'replay');
+      return summary;
+    }
+
+    let afterConflict;
+    try {
+      afterConflict = await client.get('/snapshot');
+    } catch (error) {
+      captureTransportFailure(summary, 'after', error, 'SNAPSHOT_FAILED', 'replay');
+      return summary;
+    }
+
+    const beforeConflictSurfaceHash = digest(visibleSurface(afterApply.body.snapshot));
+    const afterConflictSurfaceHash = digest(visibleSurface(afterConflict.body.snapshot));
+    summary.idempotencyConflict.targetSnapshotUnchanged = beforeConflictSurfaceHash === afterConflictSurfaceHash;
+    summary.idempotencyConflict.finalMatchesLocal = digest(visibleSurface(afterConflict.body.snapshot)) === digest(visibleSurface(local));
+    summary.after = summarizeSnapshot(afterConflict, local);
+    updateRetryAttempts(summary, summary.after);
+    summary.afterObject = afterConflict.body.snapshot;
+
+    if (
+      conflict.status !== 409
+      || conflict.body?.ok !== false
+      || conflict.body?.code !== 'IDEMPOTENCY_KEY_CONFLICT'
+      || conflict.body?.idempotency?.conflict !== true
+      || conflict.body?.idempotency?.freshMutationWork !== false
+      || summary.idempotencyConflict.targetSnapshotUnchanged !== true
+    ) {
+      summary.code = conflict.body?.code || 'IDEMPOTENCY_CONFLICT_PROOF_FAILED';
+      setDurableJournalBoundary(summary, 'replay');
+      return summary;
+    }
+  }
+
   let dbJournal;
   try {
     dbJournal = await client.signedGet(withAuthSessionDrift('/db-journal?limit=80'), {
@@ -1636,6 +1691,14 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.ok === true
     && replay.body?.idempotency?.replayed === true
     && replay.body?.idempotency?.freshMutationWork === false
+    && (!proveDurableJournalBoundary
+      || (
+        summary.idempotencyConflict?.status === 409
+        && summary.idempotencyConflict?.code === 'IDEMPOTENCY_KEY_CONFLICT'
+        && summary.idempotencyConflict?.idempotency?.conflict === true
+        && summary.idempotencyConflict?.idempotency?.freshMutationWork === false
+        && summary.idempotencyConflict?.targetSnapshotUnchanged === true
+      ))
     && replayEquivalent
     && !applyAuthEnvelopeDrift
     && !recoveryInspectAuthEnvelopeDrift
@@ -1698,6 +1761,16 @@ export async function runAuthenticatedHttpPush({
     setApplyRevalidationBoundary(summary);
   }
   return summary;
+}
+
+function idempotencyConflictPayload(applyPayload) {
+  return {
+    ...applyPayload,
+    durableJournalBoundaryProbe: {
+      type: 'same-key-different-body-conflict-before-mutation',
+      schemaVersion: 1,
+    },
+  };
 }
 
 export function resolveAuthenticatedHttpPushSource({
@@ -2315,15 +2388,43 @@ function summarizeDbJournal(response) {
   }
   const rows = response.body.dbJournal?.latestRows || [];
   const storageGuard = summarizeDbJournalStorageGuard(response.body);
+  const eventSummaries = Array.isArray(response.body.dbJournal?.eventSummaries)
+    ? response.body.dbJournal.eventSummaries
+    : [];
+  const eventCounts = Object.fromEntries(eventSummaries.map((entry) => [
+    entry.event,
+    Number.isInteger(entry.count) ? entry.count : 0,
+  ]));
   return {
     status: response.status,
     ok: true,
     retryAttempts: response.retryAttempts || 1,
     scope: response.body?.dbJournal?.scope,
     rows: rows.length,
+    rowCount: Number.isInteger(response.body?.dbJournal?.rowCount)
+      ? response.body.dbJournal.rowCount
+      : rows.length,
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
+    eventCounts,
+    latestEvents: rows.map((entry) => ({
+      sequence: entry.sequence,
+      event: entry.event,
+      claimId: entry.claimId || null,
+      idempotencyKeyHash: entry.idempotencyKeyHash || null,
+      requestHash: entry.requestHash || null,
+      appliedCount: Number.isInteger(entry.appliedCount) ? entry.appliedCount : null,
+      errorCode: entry.errorCode || null,
+    })),
+    idempotencyEvidence: Array.isArray(response.body.dbJournal?.idempotencyEvidence)
+      ? response.body.dbJournal.idempotencyEvidence.map((entry) => ({
+        idempotencyKeyHash: entry.idempotencyKeyHash || null,
+        events: Number.isInteger(entry.events) ? entry.events : null,
+        requestHashes: Number.isInteger(entry.requestHashes) ? entry.requestHashes : null,
+        latestId: Number.isInteger(entry.latestId) ? entry.latestId : null,
+      }))
+      : [],
     claim: summarizeDbJournalClaim(response.body?.dbJournal?.claim),
     storageGuard,
     ownership: summarizeDbJournalOwnership(response.body?.dbJournal),

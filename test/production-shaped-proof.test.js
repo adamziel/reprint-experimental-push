@@ -50,6 +50,7 @@ import {
 } from '../scripts/playground/packaged-production-plugin-readiness.js';
 import {
   applyRevalidationRetryable,
+  buildDurableRecoveryJournalReleaseProof,
   hasExplicitCheckedBoundaryRequest,
   resolveCheckedReleaseRequirementEnv,
   resolveCheckedReleaseTopology,
@@ -97,6 +98,169 @@ const packagedProofSubprocessTimeoutMs = 90_000;
 const proofSubprocessKillSignal = 'SIGTERM';
 const liveProofSubprocessTimeoutMs = 15_000;
 const liveProofSubprocessKillSignal = 'SIGKILL';
+
+test('durable recovery journal release proof binds ownership, replay, conflict, partial states, and preserved rejection', () => {
+  const claim = {
+    activeClaimId: 'psh_active_claim_123456',
+    activeClaimKeyHash: 'a'.repeat(64),
+    activeClaimEvent: 'stale-claim-rejected',
+    previousClaimId: 'psh_previous_claim_123456',
+    previousClaimKeyHash: 'b'.repeat(64),
+    staleClaimRejected: true,
+  };
+  const writerLease = {
+    claimId: claim.activeClaimId,
+    claimKeyHash: claim.activeClaimKeyHash,
+    staleClaimRejected: true,
+    restartReadable: true,
+  };
+  const journal = {
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
+    },
+    claim,
+    writerLease,
+    leaseFence: {
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease,
+    },
+  };
+  const releaseSummary = {
+    topology: {
+      sourceUrl: 'http://127.0.0.1:49152',
+    },
+    boundary: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+    },
+    durableJournal: {
+      proof: {
+        journal,
+        leaseFence: journal.leaseFence,
+      },
+    },
+    releaseProof: {
+      plan: {
+        mutations: 2,
+      },
+      recoveryInspect: {
+        status: 200,
+        recovery: {
+          state: 'fully-updated-remote',
+          journalState: 'ok',
+          counts: {
+            old: 0,
+            new: 2,
+            blockedUnknown: 0,
+            total: 2,
+          },
+        },
+      },
+      replay: {
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+        },
+      },
+      idempotencyConflict: {
+        status: 409,
+        code: 'IDEMPOTENCY_KEY_CONFLICT',
+        idempotency: {
+          conflict: true,
+          freshMutationWork: false,
+        },
+        targetSnapshotUnchanged: true,
+      },
+      dbJournal: {
+        mutationApplied: 2,
+        eventCounts: {
+          'idempotency-key-conflict': 1,
+        },
+        latestEvents: [
+          { sequence: 1, event: 'idempotency-opened' },
+          { sequence: 2, event: 'apply-started' },
+          { sequence: 3, event: 'mutation-applied' },
+          { sequence: 4, event: 'mutation-applied' },
+          { sequence: 5, event: 'apply-committed' },
+          { sequence: 6, event: 'apply-replayed' },
+          { sequence: 7, event: 'idempotency-key-conflict' },
+        ],
+      },
+      staleClaimRetry: {
+        abandoned: {
+          status: 500,
+          code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+        },
+      },
+      replayAndRetry: {
+        required: '/snapshot',
+        observed: '/snapshot',
+        retryAttempts: 2,
+        verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+      },
+    },
+  };
+  const applyRevalidation = {
+    apply: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+    },
+    recoveryInspect: {
+      recovery: {
+        state: 'blocked-recovery',
+        counts: {
+          old: 1,
+          new: 0,
+          blockedUnknown: 1,
+          total: 2,
+        },
+      },
+    },
+  };
+
+  const proof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary,
+    applyRevalidation,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.gate, 'GATE-2');
+  assert.equal(proof.gateStatus, 'proven');
+  assert.equal(proof.ownership.ownsJournal, true);
+  assert.equal(proof.ownership.restartReadable, true);
+  assert.equal(proof.leaseOwnerIdentity.matches, true);
+  assert.equal(proof.staleOwnerFencing.proved, true);
+  assert.equal(proof.recoveryInspectAfterRestart.proved, true);
+  assert.equal(proof.sameKeyBodyReplay.proved, true);
+  assert.equal(proof.sameKeyDifferentBodyConflict.proved, true);
+  assert.equal(proof.partialStates.old.proved, true);
+  assert.equal(proof.partialStates.new.proved, true);
+  assert.equal(proof.partialStates.blocked.proved, true);
+  assert.equal(proof.preservedRejectedRemoteEvidence.proved, true);
+
+  const unsafeConflictProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: {
+      ...releaseSummary,
+      releaseProof: {
+        ...releaseSummary.releaseProof,
+        dbJournal: {
+          ...releaseSummary.releaseProof.dbJournal,
+          latestEvents: [
+            ...releaseSummary.releaseProof.dbJournal.latestEvents,
+            { sequence: 8, event: 'mutation-applied' },
+          ],
+        },
+      },
+    },
+    applyRevalidation,
+  });
+
+  assert.equal(unsafeConflictProof.ok, false);
+  assert.equal(unsafeConflictProof.sameKeyDifferentBodyConflict.proved, false);
+});
 const liveProofInnerTimeoutMs = Math.max(1_000, Math.min(3_000, liveProofSubprocessTimeoutMs - 8_000));
 const liveWrapperSubprocessTimeoutMs = 180_000;
 const livePlaygroundMaxConsecutiveNotReadyProbes = runLivePlaygroundTopologyTests
