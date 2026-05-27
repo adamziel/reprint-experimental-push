@@ -221,6 +221,29 @@ function checkedBoundaryStaleClaimRowMatches(row, claim) {
     return false;
   }
 
+  if (row.event === 'stale-claim-abandoned') {
+    if (
+      isPositiveInteger(claim?.abandonedSequence)
+      && checkedBoundaryLatestRowSequence(row) !== claim.abandonedSequence
+    ) {
+      return false;
+    }
+
+    if (
+      isPositiveInteger(claim?.previousStartedSequence)
+      && cursorSequence(row?.resourceHashEvidence?.startedCursor) !== claim.previousStartedSequence
+    ) {
+      return false;
+    }
+
+    if (
+      isPositiveInteger(claim?.previousClaimSequence)
+      && cursorSequence(row?.resourceHashEvidence?.claimCursor) !== claim.previousClaimSequence
+    ) {
+      return false;
+    }
+  }
+
   if (!claim || typeof claim !== 'object') {
     return true;
   }

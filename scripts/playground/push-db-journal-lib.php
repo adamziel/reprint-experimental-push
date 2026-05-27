@@ -1183,6 +1183,32 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($r
         return false;
     }
 
+    if (($row['event'] ?? null) === 'stale-claim-abandoned') {
+        if (
+            reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)
+            && reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row)
+                !== (int) ($claim['abandonedSequence'] ?? 0)
+        ) {
+            return false;
+        }
+
+        if (
+            reprint_push_lab_db_journal_is_positive_int($claim['previousStartedSequence'] ?? null)
+            && reprint_push_lab_db_journal_cursor_sequence($row['resourceHashEvidence']['startedCursor'] ?? null)
+                !== (int) ($claim['previousStartedSequence'] ?? 0)
+        ) {
+            return false;
+        }
+
+        if (
+            reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
+            && reprint_push_lab_db_journal_cursor_sequence($row['resourceHashEvidence']['claimCursor'] ?? null)
+                !== (int) ($claim['previousClaimSequence'] ?? 0)
+        ) {
+            return false;
+        }
+    }
+
     $claim_key_hash = (string) ($row['claimKeyHash'] ?? '');
     if (
         $claim_key_hash !== ''
