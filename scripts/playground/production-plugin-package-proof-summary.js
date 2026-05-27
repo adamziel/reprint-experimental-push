@@ -786,6 +786,23 @@ function pluginDriverProofTopLevelBundleViewMatchesNestedModeProof(pluginDriverP
   }
 
   if (
+    pluginDriverProof?.legacyRequestedBundleStatus !== undefined
+    && pluginDriverProof?.legacyRequestedBundleStatus !== nestedModeProof?.legacyRequestedBundleStatus
+  ) {
+    return false;
+  }
+
+  if (
+    pluginDriverProof?.legacyRequestedBundleStatuses !== undefined
+    && !requestedBundleStatusMapsMatch(
+      pluginDriverProof?.legacyRequestedBundleStatuses,
+      nestedModeProof?.legacyRequestedBundleStatuses,
+    )
+  ) {
+    return false;
+  }
+
+  if (
     pluginDriverProof?.requestedBundlesSatisfied !== undefined
     && pluginDriverProof?.requestedBundlesSatisfied !== nestedModeProof?.requestedBundlesSatisfied
   ) {
