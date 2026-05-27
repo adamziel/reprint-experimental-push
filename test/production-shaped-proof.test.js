@@ -3505,6 +3505,210 @@ test('packaged release verifier readiness helper preserves invalid timeout fallb
   });
 });
 
+test('packaged release verifier readiness helper fails closed when signed preflight returns an invalid readiness body after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const captured = {
+    prefix: null,
+    logs: null,
+    context: null,
+    lastError: null,
+    lastProbes: null,
+    lastTimeoutFallbackProbes: null,
+  };
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+      throw new Error('unexpected timeout fallback startup classification during invalid signed-preflight runtime proof');
+    },
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during timeout invalid signed-preflight runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        throw timeoutError;
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => ({
+      preflightProbe: {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 200,
+        ok: true,
+        body: JSON.stringify({
+          ok: true,
+          routeProfile: {
+            profile: 'production-shaped',
+            restNamespace: 'reprint/v1',
+            routePrefix: '/push',
+            labBacked: false,
+          },
+        }),
+        parsedBody: null,
+        ready: false,
+        retryable: false,
+        terminal: true,
+      },
+      indexProbe: null,
+    }),
+    throwPlaygroundReadinessFailure: async (child, prefix, lastError, lastProbes, logs, context, lastTimeoutFallbackProbes) => {
+      captured.prefix = prefix;
+      captured.logs = logs;
+      captured.context = context;
+      captured.lastError = lastError;
+      captured.lastProbes = lastProbes;
+      captured.lastTimeoutFallbackProbes = lastTimeoutFallbackProbes;
+      throw new Error(prefix);
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 94545,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(captured.prefix, 'Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http://127.0.0.1:65535');
+  assert.equal(captured.logs, 'packaged server boot log');
+  assert.equal(captured.lastError, timeoutError);
+  assert.deepEqual(captured.lastTimeoutFallbackProbes, {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({
+        ok: true,
+        routeProfile: {
+          profile: 'production-shaped',
+          restNamespace: 'reprint/v1',
+          routePrefix: '/push',
+          labBacked: false,
+        },
+      }),
+      parsedBody: null,
+      ready: false,
+      retryable: false,
+      terminal: true,
+    },
+    indexProbe: null,
+  });
+  assert.deepEqual(captured.lastProbes, [captured.lastTimeoutFallbackProbes.preflightProbe]);
+  assert.deepEqual(captured.context, {
+    childPid: 94545,
+    packagedProductionPlugin: true,
+    preflightTerminal: true,
+    timeoutFallback: true,
+  });
+});
+
+test('packaged release verifier readiness helper fails closed when signed preflight returns a terminal response after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const captured = {
+    prefix: null,
+    logs: null,
+    context: null,
+    lastError: null,
+    lastProbes: null,
+    lastTimeoutFallbackProbes: null,
+  };
+  const helper = buildPackagedReleaseVerifierWaitHelper({
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+      throw new Error('unexpected timeout fallback startup classification during terminal signed-preflight runtime proof');
+    },
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during timeout terminal signed-preflight runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        throw timeoutError;
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => ({
+      preflightProbe: {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 401,
+        ok: false,
+        body: JSON.stringify({
+          code: 'reprint_push_lab_auth_required',
+          message: 'auth required',
+        }),
+        parsedBody: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'auth required',
+        },
+        ready: false,
+        retryable: false,
+        terminal: true,
+      },
+      indexProbe: null,
+    }),
+    throwPlaygroundReadinessFailure: async (child, prefix, lastError, lastProbes, logs, context, lastTimeoutFallbackProbes) => {
+      captured.prefix = prefix;
+      captured.logs = logs;
+      captured.context = context;
+      captured.lastError = lastError;
+      captured.lastProbes = lastProbes;
+      captured.lastTimeoutFallbackProbes = lastTimeoutFallbackProbes;
+      throw new Error(prefix);
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 94546,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log'),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight became terminal while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(captured.prefix, 'Packaged production plugin signed preflight became terminal while the snapshot probe timed out at http://127.0.0.1:65535');
+  assert.equal(captured.logs, 'packaged server boot log');
+  assert.equal(captured.lastError, timeoutError);
+  assert.deepEqual(captured.lastTimeoutFallbackProbes, {
+    preflightProbe: {
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 401,
+      ok: false,
+      body: JSON.stringify({
+        code: 'reprint_push_lab_auth_required',
+        message: 'auth required',
+      }),
+      parsedBody: {
+        code: 'reprint_push_lab_auth_required',
+        message: 'auth required',
+      },
+      ready: false,
+      retryable: false,
+      terminal: true,
+    },
+    indexProbe: null,
+  });
+  assert.deepEqual(captured.lastProbes, [captured.lastTimeoutFallbackProbes.preflightProbe]);
+  assert.deepEqual(captured.context, {
+    childPid: 94546,
+    packagedProductionPlugin: true,
+    preflightTerminal: true,
+    timeoutFallback: true,
+  });
+});
+
 test('packaged release verifier readiness helper preserves terminal timeout fallback probes when signed preflight times out and /wp-json/ returns a terminal body', async () => {
   const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot after 100ms');
   timeoutError.name = 'TimeoutError';
@@ -5829,6 +6033,59 @@ test('packaged production plugin smoke readiness helper fails closed when signed
       assert.match(
         error.message,
         /Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
+      );
+      return true;
+    },
+  );
+});
+
+test('packaged production plugin smoke readiness helper fails closed when signed preflight returns a terminal response after the snapshot probe times out', async () => {
+  const timeoutError = new Error('Timed out fetching http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot');
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginClassifyTimeoutFallbackStartup: () => {
+      throw new Error('unexpected timeout fallback startup classification during terminal signed-preflight runtime proof');
+    },
+    sleepUnlessChildExit: async () => {
+      throw new Error('unexpected readiness sleep during timeout terminal signed-preflight runtime proof');
+    },
+    fetchTextWithTimeout: async (url) => {
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        throw timeoutError;
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedTimeoutFallbackProbes: async () => ({
+      preflightProbe: {
+        route: '/wp-json/reprint/v1/push/preflight',
+        status: 401,
+        ok: false,
+        body: JSON.stringify({
+          code: 'reprint_push_lab_auth_required',
+          message: 'auth required',
+        }),
+        parsedBody: {
+          code: 'reprint_push_lab_auth_required',
+          message: 'auth required',
+        },
+        ready: false,
+        retryable: false,
+        terminal: true,
+      },
+      indexProbe: null,
+    }),
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9468,
+  };
+
+  await assert.rejects(
+    helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']),
+    (error) => {
+      assert.match(
+        error.message,
+        /Packaged production plugin signed preflight became terminal while the snapshot probe timed out at http:\/\/127\.0\.0\.1:65535/,
       );
       return true;
     },
