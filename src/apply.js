@@ -1939,7 +1939,25 @@ function inspectedWriterLeaseContractsMatch(left, right) {
     && left.storageGuard === right.storageGuard
     && left.monotonicSequence === right.monotonicSequence
     && left.restartReadable === right.restartReadable
-    && left.staleClaimRejected === right.staleClaimRejected;
+    && left.staleClaimRejected === right.staleClaimRejected
+    && optionalWriterLeaseIdentityMatches(left, right, 'claimId')
+    && optionalWriterLeaseIdentityMatches(left, right, 'claimHash')
+    && optionalWriterLeaseIdentityMatches(left, right, 'claimKeyHash');
+}
+
+function optionalWriterLeaseIdentityMatches(left, right, key) {
+  const leftHasKey = Object.hasOwn(left, key);
+  const rightHasKey = Object.hasOwn(right, key);
+
+  if (leftHasKey !== rightHasKey) {
+    return false;
+  }
+
+  if (!leftHasKey) {
+    return true;
+  }
+
+  return left[key] === right[key];
 }
 
 function recoveryJournalConsumedRecord(records) {
