@@ -259,6 +259,135 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
   );
 }
 
+function buildPackagedSmokeWaitHelper(overrides = {}) {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const start = smokeSource.indexOf('async function waitForServer(child, baseUrl, logs) {');
+  assert.notEqual(start, -1, 'expected packaged smoke readiness helper in smoke source');
+  const end = smokeSource.indexOf('async function fetchPackagedWordPressIndexProbe(', start);
+  assert.notEqual(end, -1, 'expected packaged smoke readiness helper boundary in smoke source');
+  const helperSource = smokeSource.slice(start, end);
+
+  const unexpectedAsyncDependency = async () => {
+    throw new Error('unexpected packaged smoke readiness helper dependency call during runtime proof');
+  };
+  const unexpectedSyncDependency = () => {
+    throw new Error('unexpected packaged smoke readiness helper dependency call during runtime proof');
+  };
+  const fallbackFormatPackagedReadinessFailure = (
+    prefix,
+    lastError,
+    lastProbes,
+    logs,
+    context = null,
+    lastTimeoutFallbackProbes = null,
+  ) => {
+    const lines = [prefix];
+    if (lastError?.message) {
+      lines.push(`Last readiness error: ${lastError.message}`);
+    }
+    if (lastProbes?.length) {
+      const lastProbe = lastProbes.at(-1);
+      lines.push(`Last readiness probe route: ${lastProbe.route}`);
+      lines.push(`Last readiness probe status: ${lastProbe.status}`);
+      lines.push(`Last readiness probe body: ${JSON.stringify(lastProbe.body, null, 2)}`);
+    }
+    if (lastTimeoutFallbackProbes?.preflightProbe) {
+      lines.push(`Last timeout fallback preflight route: ${lastTimeoutFallbackProbes.preflightProbe.route}`);
+    }
+    if (lastTimeoutFallbackProbes?.indexProbe) {
+      lines.push(`Last timeout fallback index route: ${lastTimeoutFallbackProbes.indexProbe.route}`);
+    }
+    if (context && typeof context === 'object' && Object.keys(context).length > 0) {
+      lines.push(`Readiness context: ${JSON.stringify(context, null, 2)}`);
+    }
+    if (Array.isArray(logs) && logs.length > 0) {
+      lines.push(logs.join(''));
+    }
+    return lines.join('\n');
+  };
+  const compileHelper = new Function(
+    'serverStartupTimeoutMs',
+    'readinessProbeFetchTimeoutMs',
+    'packagedProductionPluginNextRouteNotReadyProbeCounts',
+    'packagedProductionPluginResetRouteNotReadyProbeCounts',
+    'packagedProductionPluginReadinessBodyRetryable',
+    'packagedProductionPluginPreflightTerminalContext',
+    'packagedProductionPluginRouteStartupClassificationReady',
+    'fetchPackagedWordPressIndexProbe',
+    'buildPackagedTimeoutFallbackProbe',
+    'packagedProductionPluginClassifyBoundedStartup',
+    'packagedProductionPluginGlobalStartupStillWithinBudget',
+    'sleepUnlessChildExit',
+    'formatPackagedReadinessFailure',
+    'packagedProductionPluginPackagedRouteStartupLimitReached',
+    'packagedProductionPluginPackagedRouteStartupStillWithinBudget',
+    'packagedProductionPluginMalformedTerminalIndexProbe',
+    'packagedProductionPluginServerReady',
+    'packagedProductionPluginSnapshotRetryable',
+    'packagedProductionPluginPreflightReady',
+    'packagedProductionPluginPreflightRetryable',
+    'fetchPackagedPreflightProbe',
+    'packagedProductionPluginReadinessErrorRetryable',
+    'packagedProductionPluginReadinessProbeTimedOut',
+    'fetchPackagedTimeoutFallbackProbes',
+    'packagedProductionPluginClassifyTimeoutFallbackStartup',
+    'packagedProductionPluginNotReadyProbeLimitReached',
+    'packagedProductionPluginNextTimeoutProbeCount',
+    'packagedProductionPluginMaxConsecutiveNotReadyProbes',
+    'readinessProbeIntervalMs',
+    'maxPackagedRouteStartupAfterGlobalReadyProbes',
+    'maxPackagedStartupNotReadyProbeCount',
+    'fetchTextWithTimeout',
+    'authHeaders',
+    'signedHeadersForPreflight',
+    'writeStageProgress',
+    'readinessFailureBodyLimit',
+    `${helperSource}\nreturn waitForServer;`,
+  );
+
+  return compileHelper(
+    1_000,
+    100,
+    packagedProductionPluginNextRouteNotReadyProbeCounts,
+    packagedProductionPluginResetRouteNotReadyProbeCounts,
+    packagedProductionPluginReadinessBodyRetryable,
+    packagedProductionPluginPreflightTerminalContext,
+    overrides.packagedProductionPluginRouteStartupClassificationReady ?? unexpectedSyncDependency,
+    overrides.fetchPackagedWordPressIndexProbe ?? unexpectedAsyncDependency,
+    overrides.buildPackagedTimeoutFallbackProbe ?? unexpectedSyncDependency,
+    packagedProductionPluginClassifyBoundedStartup,
+    overrides.packagedProductionPluginGlobalStartupStillWithinBudget ?? unexpectedSyncDependency,
+    overrides.sleepUnlessChildExit ?? unexpectedAsyncDependency,
+    overrides.formatPackagedReadinessFailure ?? fallbackFormatPackagedReadinessFailure,
+    packagedProductionPluginPackagedRouteStartupLimitReached,
+    packagedProductionPluginPackagedRouteStartupStillWithinBudget,
+    packagedProductionPluginMalformedTerminalIndexProbe,
+    packagedProductionPluginServerReady,
+    packagedProductionPluginSnapshotRetryable,
+    packagedProductionPluginPreflightReady,
+    packagedProductionPluginPreflightRetryable,
+    overrides.fetchPackagedPreflightProbe ?? unexpectedAsyncDependency,
+    packagedProductionPluginReadinessErrorRetryable,
+    packagedProductionPluginReadinessProbeTimedOut,
+    overrides.fetchPackagedTimeoutFallbackProbes ?? unexpectedAsyncDependency,
+    overrides.packagedProductionPluginClassifyTimeoutFallbackStartup ?? packagedProductionPluginClassifyTimeoutFallbackStartup,
+    overrides.packagedProductionPluginNotReadyProbeLimitReached ?? packagedProductionPluginNotReadyProbeLimitReached,
+    overrides.packagedProductionPluginNextTimeoutProbeCount ?? packagedProductionPluginNextTimeoutProbeCount,
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    1,
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    packagedProductionPluginMaxConsecutiveNotReadyProbes,
+    overrides.fetchTextWithTimeout ?? unexpectedAsyncDependency,
+    overrides.authHeaders ?? (() => ({})),
+    overrides.signedHeadersForPreflight ?? (() => ({})),
+    overrides.writeStageProgress ?? (() => {}),
+    500,
+  );
+}
+
 function spawnReleaseVerify(env = {}, options = {}) {
   const timeout = boundedReleaseVerifyTimeout(options.timeout ?? proofSubprocessTimeoutMs);
   const killSignal = options.killSignal ?? proofSubprocessKillSignal;
@@ -3159,6 +3288,116 @@ test('packaged release verifier readiness helper waits through packaged-route st
   };
 
   await helper(child, 'http://127.0.0.1:65535', () => 'packaged server boot log');
+
+  assert.equal(sleepCalls.length, 1);
+  assert.equal(sleepCalls[0].ms, 1);
+  assert.equal(sleepCalls[0].child, child);
+  assert.deepEqual(fetchCalls, [
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/snapshot',
+    'http://127.0.0.1:65535/wp-json/reprint/v1/push/preflight',
+  ]);
+});
+
+test('packaged production plugin smoke readiness helper waits through packaged-route startup after global WordPress readiness', async () => {
+  const snapshotStartupBody = JSON.stringify({
+    code: 'rest_no_route',
+    message: 'No route was found matching the URL and request method.',
+  });
+  const readySnapshotBody = JSON.stringify({
+    ok: true,
+    snapshot: {},
+  });
+  const readyPreflightBody = JSON.stringify({
+    ok: true,
+    routeProfile: {
+      profile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      labBacked: false,
+    },
+    auth: {
+      session: {
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+  });
+  const fetchCalls = [];
+  const sleepCalls = [];
+  const helper = buildPackagedSmokeWaitHelper({
+    packagedProductionPluginRouteStartupClassificationReady: () => true,
+    fetchTextWithTimeout: async (url) => {
+      fetchCalls.push(url);
+      if (url.endsWith('/wp-json/reprint/v1/push/snapshot')) {
+        if (fetchCalls.filter((entry) => entry.endsWith('/wp-json/reprint/v1/push/snapshot')).length === 1) {
+          return {
+            response: {
+              status: 404,
+              ok: false,
+            },
+            bodyText: snapshotStartupBody,
+          };
+        }
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readySnapshotBody,
+        };
+      }
+      if (url.endsWith('/wp-json/reprint/v1/push/preflight')) {
+        return {
+          response: {
+            status: 200,
+            ok: true,
+          },
+          bodyText: readyPreflightBody,
+        };
+      }
+      throw new Error(`unexpected readiness fetch ${url}`);
+    },
+    fetchPackagedPreflightProbe: async () => ({
+      route: '/wp-json/reprint/v1/push/preflight',
+      status: 404,
+      ok: false,
+      body: snapshotStartupBody,
+      parsedBody: {
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      },
+      ready: false,
+      retryable: true,
+      terminal: false,
+    }),
+    fetchPackagedWordPressIndexProbe: async () => ({
+      route: '/wp-json/',
+      status: 200,
+      ok: true,
+      body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+      parsedBody: {
+        namespaces: ['reprint/v1'],
+      },
+      ready: true,
+      retryable: false,
+      terminal: false,
+    }),
+    fetchPackagedTimeoutFallbackProbes: async () => {
+      throw new Error('unexpected timeout fallback fetch in packaged smoke route-startup runtime proof');
+    },
+    sleepUnlessChildExit: async (ms, child) => {
+      sleepCalls.push({ ms, child });
+    },
+  });
+  const child = {
+    exitCode: null,
+    signalCode: null,
+    pid: 9456,
+  };
+
+  await helper(child, 'http://127.0.0.1:65535', ['packaged smoke boot log']);
 
   assert.equal(sleepCalls.length, 1);
   assert.equal(sleepCalls[0].ms, 1);
