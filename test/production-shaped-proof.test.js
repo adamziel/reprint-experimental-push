@@ -46,6 +46,7 @@ import {
 import {
   applyRevalidationRetryable,
   hasExplicitCheckedBoundaryRequest,
+  resolveCheckedReleaseTopology,
   resolveCheckedLiveBoundaryEnv,
   resolveLiveApplyRevalidationEnv,
   shouldUseProductionSnapshotExport,
@@ -3772,6 +3773,34 @@ test('production-shaped live release verify preserves explicit checked-boundary 
       REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: explicitSourceCommand,
     },
   );
+
+  assert.deepEqual(
+    resolveCheckedReleaseTopology({
+      remoteBaseUrl: 'http://127.0.0.1:49152',
+      explicitSourceUrl: 'http://127.0.0.1:49152',
+      explicitLocalUrl: 'http://127.0.0.1:49153',
+      packagedBoundaryRequested: false,
+    }),
+    {
+      remoteBase: 'http://127.0.0.1:49152',
+      remoteChanged: 'http://127.0.0.1:49152',
+      localEdited: 'http://127.0.0.1:49153',
+    },
+  );
+
+  assert.deepEqual(
+    resolveCheckedReleaseTopology({
+      remoteBaseUrl: 'http://127.0.0.1:49152',
+      explicitSourceUrl: 'http://127.0.0.1:49152',
+      explicitLocalUrl: '',
+      packagedBoundaryRequested: true,
+    }),
+    {
+      remoteBase: 'http://127.0.0.1:49152',
+      remoteChanged: 'remote-changed',
+      localEdited: 'local-edited',
+    },
+  );
 });
 
 maybeTest('production-shaped release proof runs the live preflight branch against a local Playground source', async () => {
@@ -3801,102 +3830,108 @@ maybeTest('production-shaped release proof runs the live preflight branch agains
 
 maybeTest('production-shaped release verify command runs the live protocol branch with local Playground source and local edited site', () => {
   return withPlaygroundServer('remote-base', path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json'), async (remoteServer) => {
-    const proof = spawnProductionShapedReleaseVerifySync(
-      {
-        ...process.env,
-        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
-        NODE_NO_WARNINGS: '1',
-      },
-      {
-        timeout: liveProofInnerTimeoutMs,
-        killSignal: liveProofSubprocessKillSignal,
-      },
-      'live release verify',
-    );
-    assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
-    assert.equal(proof.status, 0, proof.stderr);
-    assert.match(proof.stdout, /"ok": true/);
-    assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
-    assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
-    assert.match(proof.stdout, /"remoteChanged": "(http:\/\/127\.0\.0\.1:\d+|remote-changed)"/);
-    assert.match(proof.stdout, /"localEdited": "(http:\/\/127\.0\.0\.1:\d+|local-edited)"/);
-    assert.match(
-      proof.stdout,
-      /"protocolExtension": \{\s*"stages": \[\s*"preflight",\s*"remote-snapshot-hashes",\s*"dry-run-plan-upload",\s*"mutation-batch-apply",\s*"journal-inspect",\s*"recovery-inspect",\s*"recovery-mutate"\s*\],\s*"pullToPushMapping": \{\s*"exporter": "discovers the merge base and coverage evidence before any push request exists"/,
-    );
-    assert.match(
-      proof.stdout,
-      /"remoteSnapshotHashes": \{\s*"sameRemoteIdentity": true,\s*"baseHash": "[a-f0-9]{64}",\s*"changedHash": "[a-f0-9]{64}"\s*\}/,
-    );
-    assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"snapshotHash": "[a-f0-9]{64}",\s*"visibleSurfaceHash": "[a-f0-9]{64}",\s*"finalMatchesLocal": false\s*\}/);
-    assert.match(proof.stdout, /"boundary": \{/);
-    assert.match(proof.stdout, /"firstRemainingProductionBoundary": null/);
-    assert.match(proof.stdout, /"verdict": "LIVE_RELEASE_BOUNDARY_OK"/);
-    assert.match(
-      proof.stdout,
-      /"boundary": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
-    );
-    assert.match(
-      proof.stdout,
-      /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
-    );
-    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
-    assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
-    assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"/);
-    assert.match(proof.stdout, /"ownsJournal": true/);
-    assert.match(proof.stdout, /"restartReadable": true/);
-    assert.match(proof.stdout, /"staleClaimRejected": true/);
-    assert.match(proof.stdout, /"checkedAccepted": true/);
-    assert.match(
-      proof.stdout,
-      /"leaseFence": \{[\s\S]*"storageGuard": "wpdb-single-statement-cas"[\s\S]*"fsyncEvidence": true[\s\S]*"staleClaimRejected": true/,
-    );
-    assert.match(proof.stdout, /"consumed": true/);
-    assert.match(
-      proof.stdout,
-      /"releaseProof": \{\s*"ok": true[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\}/,
-    );
-    assert.match(
-      proof.stdout,
-      /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "(journal|replay)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
-    );
-    assert.match(
-      proof.stdout,
-      /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\}/,
-    );
-    assert.match(
-      proof.stdout,
-      /"authSessionLifecycleTrace": \[[\s\S]*?\{\s*"step": "(dry-run|apply|replay|journal)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
-    );
-    assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
-    assert.match(
-      proof.stdout,
-      /"staleClaimRetry": \{\s*"abandoned": \{\s*"status": 500,\s*"ok": false,\s*"code": "LAB_SIMULATED_STALE_CLAIM_ALL_OLD"/,
-    );
-    assert.match(
-      proof.stdout,
-      /"apply": \{[\s\S]*?"idempotency": \{\s*"replayed": true,\s*"freshMutationWork": false,\s*"status": "replayed",\s*"conflict": false,\s*"staleClaimRetry": true\s*\}/,
-    );
-    assert.match(proof.stdout, /"releaseProof": \{[\s\S]*?"retryAttempts": 2[\s\S]*?\}/);
-    assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"retryAttempts": 2/);
-    assert.match(proof.stdout, /"replayEquivalence": \{\s*"equivalent": true,\s*"mismatches": \[\]\s*\}/);
-    assert.match(
-      proof.stdout,
-      /"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}/,
-    );
-    assert.match(proof.stdout, /"applyRevalidation": \{\s*"ok": true,/);
-    assert.match(
-      proof.stdout,
-      /"applyRevalidation": \{[\s\S]*"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
-    );
-    assert.match(
-      proof.stdout,
-      /"applyRevalidation": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"[\s\S]*"authSession": \{\s*"required": "production-auth-session lifecycle",\s*"observed": "active-unexpired-preserved",\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"durableJournal": \{\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
-    );
-    assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
+    return withPlaygroundServer('local-edited', path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json'), async (localServer) => {
+      const proof = spawnProductionShapedReleaseVerifySync(
+        {
+          ...process.env,
+          REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+          REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+          REPRINT_PUSH_LOCAL_URL: localServer.baseUrl,
+          REPRINT_PUSH_LAB_AUTH_ADMIN_USER: liveCredentials.username,
+          REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: liveCredentials.password,
+          NODE_NO_WARNINGS: '1',
+        },
+        {
+          timeout: liveProofInnerTimeoutMs,
+          killSignal: liveProofSubprocessKillSignal,
+        },
+        'live release verify',
+      );
+      assertSpawnCompletedWithoutSpawnError(proof, 'live release verify', liveProofInnerTimeoutMs);
+      assert.equal(proof.status, 0, proof.stderr);
+      assert.match(proof.stdout, /"ok": true/);
+      assert.match(proof.stdout, /"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
+      assert.match(proof.stdout, /"topology": \{\s*"remoteBase": "http:\/\/127\.0\.0\.1:\d+"/);
+      assert.match(proof.stdout, /"remoteChanged": "http:\/\/127\.0\.0\.1:\d+"/);
+      assert.match(
+        proof.stdout,
+        new RegExp(`"localEdited": ${JSON.stringify(localServer.baseUrl)}`),
+      );
+      assert.match(
+        proof.stdout,
+        /"protocolExtension": \{\s*"stages": \[\s*"preflight",\s*"remote-snapshot-hashes",\s*"dry-run-plan-upload",\s*"mutation-batch-apply",\s*"journal-inspect",\s*"recovery-inspect",\s*"recovery-mutate"\s*\],\s*"pullToPushMapping": \{\s*"exporter": "discovers the merge base and coverage evidence before any push request exists"/,
+      );
+      assert.match(
+        proof.stdout,
+        /"remoteSnapshotHashes": \{\s*"sameRemoteIdentity": true,\s*"baseHash": "[a-f0-9]{64}",\s*"changedHash": "[a-f0-9]{64}"\s*\}/,
+      );
+      assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"snapshotHash": "[a-f0-9]{64}",\s*"visibleSurfaceHash": "[a-f0-9]{64}",\s*"finalMatchesLocal": false\s*\}/);
+      assert.match(proof.stdout, /"boundary": \{/);
+      assert.match(proof.stdout, /"firstRemainingProductionBoundary": null/);
+      assert.match(proof.stdout, /"verdict": "LIVE_RELEASE_BOUNDARY_OK"/);
+      assert.match(
+        proof.stdout,
+        /"boundary": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
+      );
+      assert.match(
+        proof.stdout,
+        /"gateDependencies": \{\s*"productionAuthSession": "production-backed auth\/session issuance, read, expiry, rotation, revocation, and cleanup on the checked release path",\s*"durableJournal": "production durable journal storage with lease fencing, restart-readable artifacts, and release-path consumption",\s*"replayAndRetry": "checked live replay equivalence plus preserved-remote retry on the release verifier path"\s*\}/,
+      );
+      assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
+      assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
+      assert.match(proof.stdout, /"recoveryInspect": \{[\s\S]*"journal": \{[\s\S]*"productionAdapter": "wpdb-single-statement-cas"/);
+      assert.match(proof.stdout, /"ownsJournal": true/);
+      assert.match(proof.stdout, /"restartReadable": true/);
+      assert.match(proof.stdout, /"staleClaimRejected": true/);
+      assert.match(proof.stdout, /"checkedAccepted": true/);
+      assert.match(
+        proof.stdout,
+        /"leaseFence": \{[\s\S]*"storageGuard": "wpdb-single-statement-cas"[\s\S]*"fsyncEvidence": true[\s\S]*"staleClaimRejected": true/,
+      );
+      assert.match(proof.stdout, /"consumed": true/);
+      assert.match(
+        proof.stdout,
+        /"releaseProof": \{\s*"ok": true[\s\S]*?"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\}/,
+      );
+      assert.match(
+        proof.stdout,
+        /"authSessionLifecycleSummary": \{\s*"issued": \{\s*"step": "preflight",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": false\s*\},\s*"read": \{\s*"step": "(journal|replay)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"revoked": false,\s*"cleanedUp": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
+      );
+      assert.match(
+        proof.stdout,
+        /"authSessionLifecycle": \{\s*"minted": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\},\s*"read": \{\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false\s*\}/,
+      );
+      assert.match(
+        proof.stdout,
+        /"authSessionLifecycleTrace": \[[\s\S]*?\{\s*"step": "(dry-run|apply|replay|journal)",\s*"id": "[^"]+",\s*"type": "production-auth-session",\s*"status": "active",\s*"expiresAt": "[^"]+",\s*"authUser": "[^"]+",\s*"expired": false,\s*"rotated": false,\s*"preserved": true\s*\}/,
+      );
+      assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
+      assert.match(
+        proof.stdout,
+        /"staleClaimRetry": \{\s*"abandoned": \{\s*"status": 500,\s*"ok": false,\s*"code": "LAB_SIMULATED_STALE_CLAIM_ALL_OLD"/,
+      );
+      assert.match(
+        proof.stdout,
+        /"apply": \{[\s\S]*?"idempotency": \{\s*"replayed": true,\s*"freshMutationWork": false,\s*"status": "replayed",\s*"conflict": false,\s*"staleClaimRetry": true\s*\}/,
+      );
+      assert.match(proof.stdout, /"releaseProof": \{[\s\S]*?"retryAttempts": 2[\s\S]*?\}/);
+      assert.match(proof.stdout, /"remoteSnapshot": \{\s*"status": 200,\s*"ok": true,\s*"retryAttempts": 2/);
+      assert.match(proof.stdout, /"replayEquivalence": \{\s*"equivalent": true,\s*"mismatches": \[\]\s*\}/);
+      assert.match(
+        proof.stdout,
+        /"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}/,
+      );
+      assert.match(proof.stdout, /"applyRevalidation": \{\s*"ok": true,/);
+      assert.match(
+        proof.stdout,
+        /"applyRevalidation": \{[\s\S]*"apply": \{\s*"status": 412,\s*"code": "PRECONDITION_FAILED",\s*"preconditionCheck": "just-in-time",\s*"recovery": \{\s*"required": true,\s*"state": "blocked-recovery"/,
+      );
+      assert.match(
+        proof.stdout,
+        /"applyRevalidation": \{[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "PRESERVED_REMOTE_RETRY_PROVEN"\s*\}[\s\S]*"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"[\s\S]*"authSession": \{\s*"required": "production-auth-session lifecycle",\s*"observed": "active-unexpired-preserved",\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"durableJournal": \{\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}[\s\S]*"replayAndRetry": \{\s*"required": "\/snapshot",\s*"observed": "\/snapshot",\s*"retryAttempts": 2,\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"\s*\}/,
+      );
+      assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"ok": true,\s*"mode": "preflight"/);
+    });
   });
 });
 

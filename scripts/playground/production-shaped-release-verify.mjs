@@ -50,7 +50,10 @@ import {
   packagedProductionPluginSnapshotRetryable,
   packagedProductionPluginServerReady,
 } from './packaged-production-plugin-readiness.js';
-import { shouldUseProductionSnapshotExport } from './production-shaped-live-release-verify-lib.js';
+import {
+  resolveCheckedReleaseTopology,
+  shouldUseProductionSnapshotExport,
+} from './production-shaped-live-release-verify-lib.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
 import {
   appendRecoveryClaimOpened,
@@ -78,6 +81,7 @@ const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION
 const labAuthSessionDrift = process.env.REPRINT_PUSH_LAB_AUTH_SESSION_DRIFT || '';
 const requiredPreservedRemoteRetryPath = process.env.REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH || '/snapshot';
 const explicitReleaseVerifySourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
+const explicitReleaseVerifyLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
 const explicitReleaseVerifyUsername = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || process.env.REPRINT_PUSH_USERNAME || '';
 const explicitReleaseVerifyApplicationPassword = process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || process.env.REPRINT_PUSH_APPLICATION_PASSWORD || '';
 let liveSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
@@ -720,8 +724,16 @@ try {
     liveSourceUrl = remoteServer.baseUrl;
   }
 
+  const checkedTopology = resolveCheckedReleaseTopology({
+    remoteBaseUrl: remoteServer.baseUrl,
+    explicitSourceUrl: explicitReleaseVerifySourceUrl,
+    explicitLocalUrl: explicitReleaseVerifyLocalUrl,
+    packagedBoundaryRequested: packagedSourceFixture !== null,
+  });
   const localEditedSnapshot = withoutUnmappedGraphPostmeta(
-    exportSnapshotFromBlueprint('local-edited', localEditedFixturePath),
+    explicitReleaseVerifyLocalUrl
+      ? await exportSnapshot('local-edited', explicitReleaseVerifyLocalUrl)
+      : exportSnapshotFromBlueprint('local-edited', localEditedFixturePath),
   );
   const remoteChangedSnapshot = exportSnapshotFromBlueprint('remote-changed', remoteChangedFixturePath);
   try {
@@ -772,14 +784,14 @@ try {
               ok: false,
               topology: {
                 sourceUrl: liveSourceUrl,
-                remoteBase: remoteServer.baseUrl,
-                remoteChanged: 'remote-changed',
-                localEdited: 'local-edited',
+                remoteBase: checkedTopology.remoteBase,
+                remoteChanged: checkedTopology.remoteChanged,
+                localEdited: checkedTopology.localEdited,
               },
               drift: labDriftAfterSnapshot ? {
                 mode: labDriftAfterSnapshot,
                 sameRemoteIdentity: true,
-                changedHash: snapshotHash(remoteChangedSnapshot),
+                changedHash: snapshotHash(proof.remoteSnapshotObject || remoteChangedSnapshot),
               } : {
                 sameRemoteIdentity: true,
               },
@@ -825,9 +837,9 @@ try {
               ok: false,
               topology: {
                 sourceUrl: liveSourceUrl,
-                remoteBase: remoteServer.baseUrl,
+                remoteBase: checkedTopology.remoteBase,
                 remoteChanged: null,
-                localEdited: 'local-edited',
+                localEdited: checkedTopology.localEdited,
               },
               boundary: {
                 firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
@@ -1019,9 +1031,9 @@ try {
               ok: false,
               topology: {
                 sourceUrl: liveSourceUrl,
-                remoteBase: remoteServer.baseUrl,
+                remoteBase: checkedTopology.remoteBase,
                 remoteChanged: null,
-                localEdited: 'local-edited',
+                localEdited: checkedTopology.localEdited,
               },
               boundary: {
                 firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
@@ -1072,8 +1084,15 @@ try {
       const liveDrift = {
         sameRemoteIdentity: true,
         baseHash: snapshotHash(remoteBaseSnapshot),
-        changedHash: snapshotHash(remoteChangedSnapshot),
-        changedFixture: remoteChangedSnapshot.meta?.fixture,
+        changedHash: snapshotHash(
+          explicitReleaseVerifySourceUrl && packagedSourceFixture === null
+            ? (proof.remoteSnapshotObject || remoteBaseSnapshot)
+            : remoteChangedSnapshot
+        ),
+        changedFixture:
+          explicitReleaseVerifySourceUrl && packagedSourceFixture === null
+            ? (proof.remoteSnapshotObject?.meta?.fixture || null)
+            : remoteChangedSnapshot.meta?.fixture,
       };
       const authSessionLifecycleSummary =
         proof.authSessionLifecycleSummary
@@ -1086,9 +1105,9 @@ try {
               ok: false,
               topology: {
                 sourceUrl: liveSourceUrl,
-                remoteBase: remoteServer.baseUrl,
-                remoteChanged: 'remote-changed',
-                localEdited: 'local-edited',
+                remoteBase: checkedTopology.remoteBase,
+                remoteChanged: checkedTopology.remoteChanged,
+                localEdited: checkedTopology.localEdited,
               },
               remoteSnapshotHashes: {
                 sameRemoteIdentity: true,
@@ -1174,9 +1193,9 @@ try {
               ok: false,
               topology: {
                 sourceUrl: liveSourceUrl,
-                remoteBase: remoteServer.baseUrl,
-                remoteChanged: 'remote-changed',
-                localEdited: 'local-edited',
+                remoteBase: checkedTopology.remoteBase,
+                remoteChanged: checkedTopology.remoteChanged,
+                localEdited: checkedTopology.localEdited,
               },
               remoteSnapshotHashes: {
                 sameRemoteIdentity: true,
@@ -1267,9 +1286,9 @@ try {
               ok: false,
               topology: {
                 sourceUrl: liveSourceUrl,
-                remoteBase: remoteServer.baseUrl,
-                remoteChanged: 'remote-changed',
-                localEdited: 'local-edited',
+                remoteBase: checkedTopology.remoteBase,
+                remoteChanged: checkedTopology.remoteChanged,
+                localEdited: checkedTopology.localEdited,
               },
               remoteSnapshotHashes: {
                 sameRemoteIdentity: true,
@@ -1397,9 +1416,9 @@ try {
           ok: true,
           topology: {
             sourceUrl: liveSourceUrl,
-            remoteBase: remoteServer.baseUrl,
-            remoteChanged: 'remote-changed',
-            localEdited: 'local-edited',
+            remoteBase: checkedTopology.remoteBase,
+            remoteChanged: checkedTopology.remoteChanged,
+            localEdited: checkedTopology.localEdited,
           },
           remoteSnapshotHashes: {
             sameRemoteIdentity: true,
@@ -1463,15 +1482,15 @@ try {
             ok: false,
             topology: {
               sourceUrl: liveSourceUrl,
-              remoteBase: remoteServer.baseUrl,
-              remoteChanged: 'remote-changed',
-              localEdited: 'local-edited',
+              remoteBase: checkedTopology.remoteBase,
+              remoteChanged: checkedTopology.remoteChanged,
+              localEdited: checkedTopology.localEdited,
             },
             drift: labDriftAfterSnapshot
               ? {
                   mode: labDriftAfterSnapshot,
                   sameRemoteIdentity: true,
-                  changedHash: snapshotHash(remoteChangedSnapshot),
+                  changedHash: snapshotHash(proof.remoteSnapshotObject || remoteChangedSnapshot),
                 }
               : {
                   sameRemoteIdentity: true,

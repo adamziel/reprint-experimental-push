@@ -109,3 +109,18 @@ export function shouldUseProductionSnapshotExport({
 } = {}) {
   return Boolean(packagedBoundaryRequested || explicitSourceUrl);
 }
+
+export function resolveCheckedReleaseTopology({
+  remoteBaseUrl = '',
+  explicitSourceUrl = '',
+  explicitLocalUrl = '',
+  packagedBoundaryRequested = false,
+} = {}) {
+  const explicitLiveTopologyRequested = Boolean(explicitSourceUrl) && !packagedBoundaryRequested;
+
+  return {
+    remoteBase: remoteBaseUrl,
+    remoteChanged: explicitLiveTopologyRequested ? explicitSourceUrl : 'remote-changed',
+    localEdited: explicitLocalUrl || 'local-edited',
+  };
+}
