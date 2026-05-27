@@ -33035,6 +33035,102 @@ test('production recovery support report fails closed when the surfaced writer c
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
 });
 
+test('production recovery support report fails closed when the surfaced writer lease id is hidden instead of enumerable', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const claimId = 'writer-lease-hidden-claim-id';
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId, epoch: 3 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-writer-lease-hidden-claim-id' },
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-writer-lease-hidden-claim-id',
+    state: 'opened',
+    observedHash: 'hash-writer-lease-hidden-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const writerWithHiddenSurfacedWriterLeaseId = {
+    ...journal,
+    writerLease: {
+      epoch: 3,
+    },
+  };
+  Object.defineProperty(writerWithHiddenSurfacedWriterLeaseId.writerLease, 'id', {
+    value: claimId,
+    enumerable: false,
+    configurable: true,
+    writable: true,
+  });
+
+  const report = productionRecoverySupportReport(writerWithHiddenSurfacedWriterLeaseId);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
+test('production recovery support report fails closed when the surfaced writer lease id is inherited through the prototype', () => {
+  const filePath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
+  const claimId = 'writer-lease-prototype-claim-id';
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease: { id: claimId, epoch: 3 },
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan: { id: 'plan-writer-lease-prototype-claim-id' },
+    current: baseSite(),
+    claimId,
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.appendEvent('journal-opened', {
+    planId: 'plan-writer-lease-prototype-claim-id',
+    state: 'opened',
+    observedHash: 'hash-writer-lease-prototype-claim-id',
+    artifactRefs: {
+      journal: filePath,
+      remote: remoteArtifactPath,
+    },
+  });
+  journal.close();
+
+  const surfacedWriterLease = Object.create({ id: claimId });
+  surfacedWriterLease.epoch = 3;
+  const writerWithInheritedSurfacedWriterLeaseId = {
+    ...journal,
+    writerLease: surfacedWriterLease,
+  };
+
+  const report = productionRecoverySupportReport(writerWithInheritedSurfacedWriterLeaseId);
+
+  assert.equal(report.supported, false);
+  assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+});
+
 test('production recovery support report fails closed when inspected claimId diverges from the active fenced lease identity', () => {
   const filePath = tempRecoveryJournalPath();
   const remoteArtifactPath = `${path.dirname(filePath)}/remote.jsonl`;
