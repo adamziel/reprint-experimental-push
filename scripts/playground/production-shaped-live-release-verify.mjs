@@ -28,7 +28,8 @@ const packagedBoundaryRequested = shouldRequestPackagedProductionPluginAuthSessi
   fixtureApplicationPassword: credentials.applicationPassword,
 });
 const innerVerifyTimeoutMs = packagedBoundaryRequested ? 180_000 : 90_000;
-const applyRevalidationTimeoutMs = packagedBoundaryRequested ? 60_000 : 45_000;
+const applyRevalidationTimeoutMs = packagedBoundaryRequested ? 90_000 : 75_000;
+const applyRevalidationRetries = packagedBoundaryRequested ? 2 : 1;
 
 if (packagedBoundaryRequested) {
   const verify = runCheckedReleaseVerify();
@@ -71,24 +72,22 @@ function runCheckedReleaseVerify(envOverrides = {}) {
 }
 
 function runApplyRevalidationProof() {
-  const proof = spawnSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    timeout: applyRevalidationTimeoutMs,
-    killSignal: 'SIGKILL',
-    maxBuffer: 1024 * 1024 * 20,
-    env: {
-      ...process.env,
-      NODE_NO_WARNINGS: '1',
-    },
-  });
+  let proof = spawnApplyRevalidationProof();
+
+  for (let attempt = 0; attempt < applyRevalidationRetries && applyRevalidationStartupRetryable(proof); attempt += 1) {
+    proof = spawnApplyRevalidationProof();
+  }
 
   process.stderr.write(proof.stderr || '');
   assert.equal(proof.error, undefined, proof.error?.stack || proof.stderr || proof.stdout);
   assert.equal(proof.signal, null, proof.stderr || proof.stdout);
   assert.equal(proof.status, 0, proof.stderr || proof.stdout);
 
-  const summary = parseJsonOutput(proof.stdout, 'apply revalidation proof');
+  const summary = parseJsonOutput(
+    proof.stdout,
+    'apply revalidation proof',
+    `${proof.stdout || ''}${proof.stderr ? `\n${proof.stderr}` : ''}`,
+  );
   return {
     ok: summary.ok === true,
     topology: summary.topology || null,
@@ -108,6 +107,31 @@ function runApplyRevalidationProof() {
   };
 }
 
+function spawnApplyRevalidationProof() {
+  return spawnSync(process.execPath, ['scripts/playground/production-shaped-apply-revalidation-smoke.mjs'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    timeout: applyRevalidationTimeoutMs,
+    killSignal: 'SIGKILL',
+    maxBuffer: 1024 * 1024 * 20,
+    env: {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+  });
+}
+
+function applyRevalidationStartupRetryable(proof) {
+  const combinedOutput = `${proof.stdout ?? ''}\n${proof.stderr ?? ''}`;
+  return proof.status !== 0
+    && /apply-revalidation:/.test(combinedOutput)
+    && (
+      /Timed out waiting for Playground server/.test(combinedOutput)
+      || /readiness probe error fetch failed/.test(combinedOutput)
+      || /WordPress is not ready yet/.test(combinedOutput)
+    );
+}
+
 function emitCombinedReleaseProof(verify, applyRevalidation) {
   process.stdout.write(
     JSON.stringify(
@@ -122,11 +146,56 @@ function emitCombinedReleaseProof(verify, applyRevalidation) {
   process.stdout.write('\n');
 }
 
-function parseJsonOutput(stdout, label) {
+function parseJsonOutput(stdout, label, details = stdout) {
   const trimmed = (stdout || '').trim();
   const firstBrace = trimmed.indexOf('{');
-  assert.notEqual(firstBrace, -1, `${label} did not emit JSON\n${stdout}`);
-  return JSON.parse(trimmed.slice(firstBrace));
+  assert.notEqual(firstBrace, -1, `${label} did not emit JSON\n${details}`);
+  return JSON.parse(extractFirstJsonObject(trimmed.slice(firstBrace), label, details));
+}
+
+function extractFirstJsonObject(text, label, details) {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '{') {
+      depth += 1;
+      continue;
+    }
+
+    if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(0, index + 1);
+      }
+    }
+  }
+
+  throw new assert.AssertionError({
+    message: `${label} emitted unterminated JSON\n${details}`,
+    actual: text,
+    expected: 'complete JSON object',
+    operator: 'extractFirstJsonObject',
+  });
 }
 
 async function withPlaygroundServer(name, blueprintPath, run) {

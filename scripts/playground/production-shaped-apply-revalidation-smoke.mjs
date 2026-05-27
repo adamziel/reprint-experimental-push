@@ -9,10 +9,12 @@ import { createPushPlan } from '../../src/planner.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-const serverStartupTimeoutMs = 12_000;
+const serverStartupTimeoutMs = 20_000;
 const serverFetchTimeoutMs = 2_000;
-const playgroundServerTimeoutMs = 29;
+const playgroundServerTimeoutMs = 45;
 const requestTimeoutMs = 2_000;
+const readinessProbeIntervalMs = 500;
+const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -38,11 +40,11 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
   stopAllPlaygroundChildrenSync();
 });
-process.on('uncaughtException', () => {
-  stopAllPlaygroundChildrenSync();
+process.on('uncaughtException', (error) => {
+  handleFatalProcessError(error, 'uncaught exception');
 });
-process.on('unhandledRejection', () => {
-  stopAllPlaygroundChildrenSync();
+process.on('unhandledRejection', (reason) => {
+  handleFatalProcessError(reason, 'unhandled rejection');
 });
 
 try {
@@ -216,7 +218,13 @@ async function startPlaygroundServer(name, blueprintPath) {
     ['--preserve-status', '--kill-after=1s', `${playgroundServerTimeoutMs}s`, 'npx', ...args],
     {
       cwd: repoRoot,
-      env: process.env,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+        NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
+      },
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     },
@@ -289,6 +297,37 @@ function stopAllPlaygroundChildrenSync() {
   }
 }
 
+function handleFatalProcessError(error, label) {
+  stopAllPlaygroundChildrenSync();
+  process.exitCode = 1;
+  if (error instanceof Error) {
+    process.stderr.write(`apply-revalidation: ${label}: ${error.stack || error.message}\n`);
+    return;
+  }
+  process.stderr.write(`apply-revalidation: ${label}: ${String(error)}\n`);
+}
+
+function appendNodeOption(existing, option) {
+  return [existing, option].filter(Boolean).join(' ');
+}
+
+function localhostListenPreloadOption() {
+  const source = `
+import http from 'node:http';
+const originalListen = http.Server.prototype.listen;
+http.Server.prototype.listen = function reprintPushLocalhostListen(...args) {
+  if (typeof args[0] === 'number' && (args.length === 1 || typeof args[1] === 'function')) {
+    return originalListen.call(this, args[0], '127.0.0.1', ...args.slice(1));
+  }
+  if (typeof args[0] === 'number' && typeof args[1] === 'number') {
+    return originalListen.call(this, args[0], '127.0.0.1', ...args.slice(1));
+  }
+  return Reflect.apply(originalListen, this, args);
+};
+`;
+  return `--import=data:text/javascript,${encodeURIComponent(source)}`;
+}
+
 async function waitForServer(child, baseUrl, getLogs) {
   const deadline = Date.now() + serverStartupTimeoutMs;
   let lastError = null;
@@ -345,7 +384,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           consecutiveIndex502s = 0;
         }
       }
-      if (consecutiveIndex502s >= 4) {
+      if (consecutiveIndex502s >= maxNotReadyReadinessProbes) {
         break;
       }
     } catch (error) {
@@ -353,7 +392,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       process.stderr.write(`apply-revalidation: readiness probe error ${error.message}\n`);
       consecutiveIndex502s = 0;
     }
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, readinessProbeIntervalMs));
   }
   throw new Error(`Timed out waiting for Playground server at ${baseUrl}: ${lastError?.message || 'unknown'}${formatProbeTrail(lastProbes)}\n${getLogs()}`);
 }
