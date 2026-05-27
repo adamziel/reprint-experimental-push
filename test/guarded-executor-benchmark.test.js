@@ -2352,15 +2352,17 @@ test('guarded benchmark surfaces chunk-receipts plugin-install blockers at runti
 test('guarded benchmark surfaces row-receipts plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const rowReceiptsPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
+      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-backpressure-after-pause',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-finalize-after-pause',
-        'compressed-remote-index-and-cached-row-receipts-skips-plugin-install-writeback',
-      ].includes(entry.id))
+    rowReceiptsPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2413,20 +2415,27 @@ test('guarded benchmark surfaces row-receipts plugin-install blockers at runtime
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(rowReceiptsPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 3 },
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
 });
 
 test('guarded benchmark surfaces row-batch-receipts plugin-install blockers at runtime', () => {
   const report = smallBenchmark();
   const details = productionThroughputDetails(report);
+  const rowBatchReceiptsPluginInstallRejectedFastPaths = details.rejectedFastPaths.filter((entry) =>
+    [
+      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
+      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
+      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
+      'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
+    ].includes(entry.id),
+  );
 
   assert.deepEqual(
-    details.rejectedFastPaths
-      .filter((entry) => [
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-activation',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-backpressure',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-finalize-after-pause',
-        'compressed-remote-index-and-cached-row-batch-receipts-skips-plugin-install-writeback',
-      ].includes(entry.id))
+    rowBatchReceiptsPluginInstallRejectedFastPaths
       .map((entry) => ({
         id: entry.id,
         rejectedGate: entry.rejectedGate,
@@ -2479,6 +2488,11 @@ test('guarded benchmark surfaces row-batch-receipts plugin-install blockers at r
       },
     ].sort((left, right) => left.id.localeCompare(right.id)),
   );
+
+  assert.deepEqual(summarizeRejectedGates(rowBatchReceiptsPluginInstallRejectedFastPaths), [
+    { rejectedGate: 'group', count: 3 },
+    { rejectedGate: 'recovery', count: 1 },
+  ]);
 });
 
 test('guarded benchmark surfaces plugin-install backpressure blockers at runtime', () => {
