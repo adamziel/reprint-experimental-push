@@ -1095,6 +1095,37 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_match
     $stale_claim_evidence_floor = reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_floor(
         is_array($journal['claim'] ?? null) ? $journal['claim'] : []
     );
+    $stale_claim_rows = [];
+
+    foreach ((is_array($journal['latestRows'] ?? null) ? $journal['latestRows'] : []) as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+        $event = (string) ($row['event'] ?? '');
+        $sequence = reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row);
+        if (
+            ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
+            && reprint_push_lab_db_journal_is_positive_int($sequence)
+            && (int) $sequence >= $stale_claim_evidence_floor
+        ) {
+            $stale_claim_rows[] = $row;
+        }
+    }
+
+    if (count($stale_claim_rows) > 0) {
+        foreach ($stale_claim_rows as $row) {
+            if (
+                reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches(
+                    $row,
+                    is_array($journal['claim'] ?? null) ? $journal['claim'] : []
+                )
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     foreach ((is_array($journal['eventSummaries'] ?? null) ? $journal['eventSummaries'] : []) as $summary) {
         if (!is_array($summary)) {
@@ -1111,22 +1142,43 @@ function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_match
         }
     }
 
-    foreach ((is_array($journal['latestRows'] ?? null) ? $journal['latestRows'] : []) as $row) {
-        if (!is_array($row)) {
-            continue;
-        }
-        $event = (string) ($row['event'] ?? '');
-        $sequence = reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row);
-        if (
-            ($event === 'stale-claim-abandoned' || $event === 'stale-claim-rejected')
-            && reprint_push_lab_db_journal_is_positive_int($sequence)
-            && (int) $sequence >= $stale_claim_evidence_floor
-        ) {
-            return true;
-        }
+    return false;
+}
+
+function reprint_push_lab_db_journal_checked_boundary_stale_claim_row_matches($row, array $claim): bool
+{
+    if (!is_array($row)) {
+        return false;
     }
 
-    return false;
+    $claim_key_hash = (string) ($row['claimKeyHash'] ?? '');
+    if (
+        $claim_key_hash !== ''
+        && $claim_key_hash !== (string) ($claim['activeClaimKeyHash'] ?? '')
+        && $claim_key_hash !== (string) ($claim['previousClaimKeyHash'] ?? '')
+    ) {
+        return false;
+    }
+
+    $idempotency_key_hash = (string) ($claim['idempotencyKeyHash'] ?? '');
+    if (
+        $idempotency_key_hash !== ''
+        && reprint_push_lab_db_journal_non_empty_string($row['idempotencyKeyHash'] ?? null)
+        && (string) ($row['idempotencyKeyHash'] ?? '') !== $idempotency_key_hash
+    ) {
+        return false;
+    }
+
+    $request_hash = (string) ($claim['requestHash'] ?? '');
+    if (
+        $request_hash !== ''
+        && reprint_push_lab_db_journal_non_empty_string($row['requestHash'] ?? null)
+        && (string) ($row['requestHash'] ?? '') !== $request_hash
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 function reprint_push_lab_db_journal_checked_boundary_stale_claim_evidence_floor(array $claim): int

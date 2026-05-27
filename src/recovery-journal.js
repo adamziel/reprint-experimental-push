@@ -177,6 +177,18 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
   }
 
   const staleClaimEvidenceFloor = checkedBoundaryStaleClaimEvidenceFloor(dbJournal?.claim);
+  const staleClaimRows = Array.isArray(dbJournal?.latestRows)
+    ? dbJournal.latestRows.filter((row) => {
+      const rowSequence = checkedBoundaryLatestRowSequence(row);
+      return checkedBoundaryStaleClaimEventMatches(row?.event)
+        && isPositiveInteger(rowSequence)
+        && rowSequence >= staleClaimEvidenceFloor;
+    })
+    : [];
+
+  if (staleClaimRows.length > 0) {
+    return staleClaimRows.some((row) => checkedBoundaryStaleClaimRowMatches(row, dbJournal?.claim));
+  }
 
   for (const summary of Array.isArray(dbJournal?.eventSummaries) ? dbJournal.eventSummaries : []) {
     if (
@@ -189,18 +201,32 @@ function checkedBoundaryStaleClaimEvidenceMatches(dbJournal) {
     }
   }
 
-  for (const row of Array.isArray(dbJournal?.latestRows) ? dbJournal.latestRows : []) {
-    const rowSequence = checkedBoundaryLatestRowSequence(row);
-    if (
-      checkedBoundaryStaleClaimEventMatches(row?.event)
-      && isPositiveInteger(rowSequence)
-      && rowSequence >= staleClaimEvidenceFloor
-    ) {
-      return true;
+  return false;
+}
+
+function checkedBoundaryStaleClaimRowMatches(row, claim) {
+  if (!row || typeof row !== 'object') {
+    return false;
+  }
+
+  if (!claim || typeof claim !== 'object') {
+    return true;
+  }
+
+  if (hasNonEmptyString(row.claimKeyHash)) {
+    const claimKeyMatches = row.claimKeyHash === claim.activeClaimKeyHash
+      || row.claimKeyHash === claim.previousClaimKeyHash;
+    if (!claimKeyMatches) {
+      return false;
     }
   }
 
-  return false;
+  return (!hasNonEmptyString(claim.idempotencyKeyHash)
+      || !hasNonEmptyString(row.idempotencyKeyHash)
+      || row.idempotencyKeyHash === claim.idempotencyKeyHash)
+    && (!hasNonEmptyString(claim.requestHash)
+      || !hasNonEmptyString(row.requestHash)
+      || row.requestHash === claim.requestHash);
 }
 
 function checkedBoundaryStaleClaimEvidenceFloor(claim) {
