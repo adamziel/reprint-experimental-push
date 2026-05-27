@@ -1379,6 +1379,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
                 : null,
             ['productionAdapter']
         )
+        || reprint_push_lab_rest_checked_contract_anchor_omissions(
+            isset($premerge_db_journal['ownership']) && is_array($premerge_db_journal['ownership'])
+                ? $premerge_db_journal['ownership']
+                : null,
+            isset($checked_summary['ownership']) && is_array($checked_summary['ownership'])
+                ? $checked_summary['ownership']
+                : null,
+            ['productionAdapter']
+        )
     ) {
         return true;
     }
@@ -1400,6 +1409,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
 
     if (
         reprint_push_lab_rest_checked_contract_anchor_conflicts(
+            isset($premerge_db_journal['writerLease']) && is_array($premerge_db_journal['writerLease'])
+                ? $premerge_db_journal['writerLease']
+                : null,
+            isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
+                ? $checked_summary['writerLease']
+                : null,
+            ['storageGuard']
+        )
+        || reprint_push_lab_rest_checked_contract_anchor_omissions(
             isset($premerge_db_journal['writerLease']) && is_array($premerge_db_journal['writerLease'])
                 ? $premerge_db_journal['writerLease']
                 : null,
@@ -1437,6 +1455,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
                 : null,
             ['boundary']
         )
+        || reprint_push_lab_rest_checked_contract_anchor_omissions(
+            isset($premerge_db_journal['leaseFence']) && is_array($premerge_db_journal['leaseFence'])
+                ? $premerge_db_journal['leaseFence']
+                : null,
+            isset($checked_summary['leaseFence']) && is_array($checked_summary['leaseFence'])
+                ? $checked_summary['leaseFence']
+                : null,
+            ['boundary']
+        )
     ) {
         return true;
     }
@@ -1458,6 +1485,15 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
 
     if (
         reprint_push_lab_rest_checked_contract_anchor_conflicts(
+            isset($premerge_db_journal['leaseFence']['writerLease']) && is_array($premerge_db_journal['leaseFence']['writerLease'])
+                ? $premerge_db_journal['leaseFence']['writerLease']
+                : null,
+            isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
+                ? $checked_summary['leaseFence']['writerLease']
+                : null,
+            ['storageGuard']
+        )
+        || reprint_push_lab_rest_checked_contract_anchor_omissions(
             isset($premerge_db_journal['leaseFence']['writerLease']) && is_array($premerge_db_journal['leaseFence']['writerLease'])
                 ? $premerge_db_journal['leaseFence']['writerLease']
                 : null,
@@ -1530,6 +1566,34 @@ function reprint_push_lab_rest_checked_contract_anchor_conflicts(
         $existing_anchor = is_string($existing_fields[$anchor_key]) ? $existing_fields[$anchor_key] : '';
         $checked_anchor = is_string($checked_fields[$anchor_key]) ? $checked_fields[$anchor_key] : '';
         if ($existing_anchor !== '' && $checked_anchor !== '' && $existing_anchor !== $checked_anchor) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_checked_contract_anchor_omissions(
+    ?array $existing_fields,
+    ?array $checked_fields,
+    array $anchor_keys
+): bool {
+    if (!is_array($existing_fields) || !is_array($checked_fields)) {
+        return false;
+    }
+
+    foreach ($anchor_keys as $anchor_key) {
+        if (!array_key_exists($anchor_key, $checked_fields)) {
+            continue;
+        }
+
+        $checked_anchor = is_string($checked_fields[$anchor_key]) ? $checked_fields[$anchor_key] : '';
+        if ($checked_anchor === '') {
+            continue;
+        }
+
+        $existing_anchor = isset($existing_fields[$anchor_key]) ? (string) $existing_fields[$anchor_key] : '';
+        if ($existing_anchor === '') {
             return true;
         }
     }
