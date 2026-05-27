@@ -123,6 +123,17 @@ function summarizeRequestedScenario(selected, passed) {
   return selected && passed ? 'passed' : 'missing';
 }
 
+function buildBundleScenarioDetails(bundleName, scenarioPasses) {
+  const requiredScenarios = scenarioGroups[bundleName].slice().sort();
+  const passedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) === true);
+  const failedScenarios = requiredScenarios.filter((scenario) => scenarioPasses.get(scenario) !== true);
+  return {
+    requiredScenarios,
+    passedScenarios,
+    failedScenarios,
+  };
+}
+
 export function buildProductionPluginPackageProofSummary(
   summary,
   { requestedScenarios = null, selectedScenarios = null } = {},
@@ -458,6 +469,7 @@ export function buildProductionPluginPackageProofSummary(
       remoteSupportsDelete: summary?.driverDeleteApply?.remoteSupportsDelete ?? null,
       deletedAfterApply: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? null,
+      ...buildBundleScenarioDetails('driver-positive-proof', scenarioPasses),
       requestedStatus: requestedScenarioStatuses['driver-positive-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverPositiveProof ?? null,
     },
@@ -486,6 +498,7 @@ export function buildProductionPluginPackageProofSummary(
       remoteSupportsDelete: summary?.driverDeleteApply?.remoteSupportsDelete ?? null,
       deletedAfterApply: summary?.driverDeleteApply?.deletedAfterApply ?? false,
       finalMatchesLocal: summary?.final?.finalMatchesLocal ?? null,
+      ...buildBundleScenarioDetails('driver-release-proof', scenarioPasses),
       requestedStatus: requestedScenarioStatuses['driver-release-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverReleaseProof ?? null,
     },
@@ -519,6 +532,7 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
       duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
+      ...buildBundleScenarioDetails('driver-verifier-guards', scenarioPasses),
       requestedStatus: requestedScenarioStatuses['driver-verifier-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverVerifierGuards ?? null,
     },
@@ -546,6 +560,7 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
       duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
+      ...buildBundleScenarioDetails('driver-registration-guards', scenarioPasses),
       requestedStatus: requestedScenarioStatuses['driver-registration-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationGuards ?? null,
     },
@@ -563,6 +578,7 @@ export function buildProductionPluginPackageProofSummary(
       missingExportRowsCallback: summary?.driverExportGuard?.missingExportRowsCallback ?? false,
       missingApplyRowCallback: summary?.driverApplyGuard?.missingApplyRowCallback ?? false,
       missingValidateMutationCallback: summary?.driverValidateGuard?.missingValidateMutationCallback ?? false,
+      ...buildBundleScenarioDetails('driver-callback-guards', scenarioPasses),
       requestedStatus: requestedScenarioStatuses['driver-callback-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverCallbackGuards ?? null,
     },
@@ -584,6 +600,7 @@ export function buildProductionPluginPackageProofSummary(
       duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
       duplicateDriverName: summary?.driverDuplicateNameGuard?.duplicateDriverName ?? false,
       duplicateTable: summary?.driverDuplicateTableGuard?.duplicateTable ?? false,
+      ...buildBundleScenarioDetails('driver-registration-shape-guards', scenarioPasses),
       requestedStatus: requestedScenarioStatuses['driver-registration-shape-guards'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverRegistrationShapeGuards ?? null,
     },
