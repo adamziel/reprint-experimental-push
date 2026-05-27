@@ -7256,6 +7256,14 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
   );
   assert.match(
     smokeSource,
+    /signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    verifierSource,
+    /signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?indexTerminal:\s*true/s,
+  );
+  assert.match(
+    smokeSource,
     /packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
@@ -7318,6 +7326,25 @@ test('packaged readiness helper builds consistent preflight terminal context', (
     {
       packagedProductionPlugin: true,
       preflightTerminal: true,
+      timeoutFallback: true,
+    },
+  );
+
+  assert.deepEqual(
+    packagedProductionPluginPreflightTerminalContext(
+      {
+        childPid: 456,
+        indexTerminal: true,
+        invalidReadinessBody: true,
+      },
+      { timeoutFallback: true },
+    ),
+    {
+      childPid: 456,
+      packagedProductionPlugin: true,
+      preflightTerminal: true,
+      indexTerminal: true,
+      invalidReadinessBody: true,
       timeoutFallback: true,
     },
   );
@@ -8012,6 +8039,10 @@ test('packaged smoke readiness helper fails closed on non-retryable route respon
     helperSource,
     /if \(!preflightRetryableWithIndex\) \{[\s\S]*?Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} at \$\{baseUrl\}/s,
   );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?indexTerminal:\s*true/s,
+  );
 });
 
 test('packaged release verifier readiness helper fails closed on non-retryable route responses without waiting for classifier-specific terminal flags', () => {
@@ -8082,6 +8113,10 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   assert.match(
     helperSource,
     /if \(!preflightRetryableWithIndex\) \{[\s\S]*?Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe\.status\} after \$\{preflightNotReadyProbeCount\} consecutive response\$\{preflightNotReadyProbeCount === 1 \? '' : 's'\} at \$\{baseUrl\}/s,
+  );
+  assert.match(
+    helperSource,
+    /Packaged production plugin signed preflight stayed startup-shaped while \/wp-json\/ returned a terminal readiness failure HTTP \$\{indexProbe(?:\?\.status \?\? 0|\.status)\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?indexTerminal:\s*true/s,
   );
   assert.match(
     helperSource,

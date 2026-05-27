@@ -1152,12 +1152,11 @@ async function waitForServer(child, baseUrl, logs) {
                   lastError,
                   lastProbes,
                   logs,
-                  {
-                    packagedProductionPlugin: true,
+                  packagedProductionPluginPreflightTerminalContext({
                     ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                     indexTerminal: true,
                     preflightNotReadyProbeCount,
-                  },
+                  }),
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1275,12 +1274,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
-                {
-                  packagedProductionPlugin: true,
+                packagedProductionPluginPreflightTerminalContext({
                   ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                   indexTerminal: true,
                   preflightNotReadyProbeCount,
-                },
+                }),
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1384,12 +1382,11 @@ async function waitForServer(child, baseUrl, logs) {
                 lastError,
                 lastProbes,
                 logs,
-                {
-                  packagedProductionPlugin: true,
+                packagedProductionPluginPreflightTerminalContext({
                   ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                   indexTerminal: true,
                   preflightNotReadyProbeCount,
-                },
+                }),
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1536,12 +1533,11 @@ async function waitForServer(child, baseUrl, logs) {
                 error,
                 lastProbes,
                 logs,
-                {
-                  packagedProductionPlugin: true,
+                packagedProductionPluginPreflightTerminalContext({
                   ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                   indexTerminal: true,
                   snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
-                },
+                }),
                 lastTimeoutFallbackProbes,
               ),
             );
@@ -1664,11 +1660,13 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
-                  {
-                    packagedProductionPlugin: true,
-                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
-                    indexTerminal: true,
-                  },
+                  packagedProductionPluginPreflightTerminalContext(
+                    {
+                      ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                      indexTerminal: true,
+                    },
+                    { timeoutFallback: true },
+                  ),
                   lastTimeoutFallbackProbes,
                 ),
               );
@@ -1766,11 +1764,13 @@ async function waitForServer(child, baseUrl, logs) {
                   error,
                   lastProbes,
                   logs,
-                  {
-                    packagedProductionPlugin: true,
-                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
-                    indexTerminal: true,
-                  },
+                  packagedProductionPluginPreflightTerminalContext(
+                    {
+                      ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                      indexTerminal: true,
+                    },
+                    { timeoutFallback: true },
+                  ),
                   lastTimeoutFallbackProbes,
                 ),
               );

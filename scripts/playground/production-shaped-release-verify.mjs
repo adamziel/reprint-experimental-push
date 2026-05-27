@@ -1952,13 +1952,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastError,
                 lastProbes,
                 getOutput(),
-                {
+                packagedProductionPluginPreflightTerminalContext({
                   childPid: child.pid ?? null,
-                  packagedProductionPlugin: true,
                   ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                   indexTerminal: true,
                   preflightNotReadyProbeCount,
-                },
+                }),
               );
             }
             if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
@@ -2078,13 +2077,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError,
               lastProbes,
               getOutput(),
-              {
+              packagedProductionPluginPreflightTerminalContext({
                 childPid: child.pid ?? null,
-                packagedProductionPlugin: true,
                 ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                 indexTerminal: true,
                 preflightNotReadyProbeCount,
-              },
+              }),
             );
           }
           const startupBranch = packagedProductionPluginClassifyTimeoutFallbackStartup(
@@ -2184,13 +2182,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError,
               lastProbes,
               getOutput(),
-              {
+              packagedProductionPluginPreflightTerminalContext({
                 childPid: child.pid ?? null,
-                packagedProductionPlugin: true,
                 ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                 indexTerminal: true,
                 preflightNotReadyProbeCount,
-              },
+              }),
             );
           }
           if (packagedProductionPluginGlobalStartupStillWithinBudget(preflightNotReadyProbeCount)) {
@@ -2325,13 +2322,12 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastError,
               lastProbes,
               getOutput(),
-              {
+              packagedProductionPluginPreflightTerminalContext({
                 childPid: child.pid ?? null,
-                packagedProductionPlugin: true,
                 ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
                 indexTerminal: true,
                 snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
-              },
+              }),
               lastTimeoutFallbackProbes,
             );
           }
@@ -2457,12 +2453,14 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastError,
                 lastProbes,
                 getOutput(),
-                {
-                  childPid: child.pid ?? null,
-                  packagedProductionPlugin: true,
-                  ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
-                  indexTerminal: true,
-                },
+                packagedProductionPluginPreflightTerminalContext(
+                  {
+                    childPid: child.pid ?? null,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                    indexTerminal: true,
+                  },
+                  { timeoutFallback: true },
+                ),
                 lastTimeoutFallbackProbes,
               );
             }
@@ -2563,12 +2561,14 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
                 lastError,
                 lastProbes,
                 getOutput(),
-                {
-                  childPid: child.pid ?? null,
-                  packagedProductionPlugin: true,
-                  ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
-                  indexTerminal: true,
-                },
+                packagedProductionPluginPreflightTerminalContext(
+                  {
+                    childPid: child.pid ?? null,
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                    indexTerminal: true,
+                  },
+                  { timeoutFallback: true },
+                ),
                 lastTimeoutFallbackProbes,
               );
             }
