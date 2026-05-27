@@ -134,7 +134,9 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     blockerRefs: Object.freeze([
       'memory-ceiling-match-visible-without-queue-slack-visibility',
       'queue-headroom-visible-without-queue-slack-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-headroom-measurement',
       'queue-pause-without-visible-receipt-cursor-queue-slack',
+      'receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement',
       'receipt-cursor-memory-headroom-visible-without-queue-slack-visibility',
     ]),
   }),
@@ -143,7 +145,9 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
     blockerRefs: Object.freeze([
       'memory-ceiling-match-visible-without-memory-headroom-visibility',
       'queue-headroom-visible-without-receipt-cursor-memory-headroom-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-headroom-measurement',
       'queue-pause-without-visible-receipt-cursor-memory-headroom',
+      'receipt-cursor-memory-headroom-visible-without-queue-headroom-measurement',
       'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
     ]),
   }),
