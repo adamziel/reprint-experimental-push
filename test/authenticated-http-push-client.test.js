@@ -1241,9 +1241,9 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.expired',
+        field: 'auth.session.expiresAt',
         required: 'unexpired',
-        observed: 'expired',
+        observed: '2000-01-01T00:00:00Z',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
@@ -1514,9 +1514,9 @@ test('production-shaped authenticated push fails closed when production auth ses
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.expired',
+        field: 'auth.session.expiresAt',
         required: 'unexpired',
-        observed: 'expired',
+        observed: '2000-01-01T00:00:00Z',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
@@ -1528,9 +1528,11 @@ test('production-shaped authenticated push fails closed when production auth ses
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2000-01-01T00:00:00Z',
+          expiredField: 'auth.session.expiresAt',
           expired: true,
           revoked: false,
           cleanedUp: false,
+          cleanup: false,
           rotated: false,
           preserved: false,
         },
@@ -1540,9 +1542,11 @@ test('production-shaped authenticated push fails closed when production auth ses
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2000-01-01T00:00:00Z',
+        expiredField: 'auth.session.expiresAt',
         expired: true,
         revoked: false,
         cleanedUp: false,
+        cleanup: false,
         rotated: false,
         preserved: false,
       },
@@ -1553,9 +1557,11 @@ test('production-shaped authenticated push fails closed when production auth ses
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2000-01-01T00:00:00Z',
+        expiredField: 'auth.session.expiresAt',
         expired: true,
         revoked: false,
         cleanedUp: false,
+        cleanup: false,
         rotated: false,
         preserved: false,
       },
@@ -1571,9 +1577,11 @@ test('production-shaped authenticated push fails closed when production auth ses
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2000-01-01T00:00:00Z',
+        expiredField: 'auth.session.expiresAt',
         expired: true,
         revoked: false,
         cleanedUp: false,
+        cleanup: false,
         rotated: false,
         preserved: false,
       },
@@ -1584,9 +1592,11 @@ test('production-shaped authenticated push fails closed when production auth ses
         type: 'production-auth-session',
         status: 'active',
         expiresAt: '2000-01-01T00:00:00Z',
+        expiredField: 'auth.session.expiresAt',
         expired: true,
         revoked: false,
         cleanedUp: false,
+        cleanup: false,
         rotated: false,
         preserved: false,
       },
@@ -1601,9 +1611,11 @@ test('production-shaped authenticated push fails closed when production auth ses
           type: 'production-auth-session',
           status: 'active',
           expiresAt: '2000-01-01T00:00:00Z',
+          expiredField: 'auth.session.expiresAt',
           expired: true,
           revoked: false,
           cleanedUp: false,
+          cleanup: false,
           rotated: false,
           preserved: false,
         },
@@ -1774,7 +1786,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       field: 'auth.session.type',
       required: 'string lifecycle fields',
@@ -1836,7 +1848,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userLogin',
       required: 'string auth identity fields',
@@ -1898,7 +1910,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userId',
       required: 'integer auth identity fields',
@@ -1960,7 +1972,7 @@ test('production-shaped authenticated push fails closed on malformed preflight a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       field: 'auth.session.status',
       required: 'string lifecycle fields',
@@ -2306,7 +2318,7 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userLogin',
       required: 'string auth identity fields',
@@ -2388,7 +2400,7 @@ test('production-shaped authenticated push fails closed on malformed dry-run aut
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
       field: 'auth.identity.userId',
       required: 'integer auth identity fields',
@@ -3153,9 +3165,11 @@ test('production-shaped authenticated push fails closed when production auth ses
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      expiredField: 'auth.session.expiresAt',
       expired: true,
       revoked: false,
       cleanedUp: false,
+      cleanup: false,
       rotated: false,
       preserved: true,
       step: 'apply',
@@ -3634,53 +3648,39 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSessionLifecycleTrace.map(({ step, revoked, cleanedUp }) => ({ step, revoked, cleanedUp })), [
       { step: 'preflight', revoked: false, cleanedUp: false },
       { step: 'dry-run', revoked: true, cleanedUp: false },
-      { step: 'apply', revoked: false, cleanedUp: true },
-      { step: 'recovery-inspect', revoked: false, cleanedUp: false },
-      { step: 'replay', revoked: false, cleanedUp: true },
-      { step: 'journal', revoked: false, cleanedUp: false },
     ]);
     assert.equal(summary.authSessionLifecycle.dryRun.status, 'active');
     assert.equal(summary.authSessionLifecycle.dryRun.revoked, true);
-    assert.equal(summary.authSessionLifecycle.apply.status, 'active');
-    assert.equal(summary.authSessionLifecycle.apply.cleanedUp, true);
-    assert.equal(summary.authSessionLifecycle.replay.cleanedUp, true);
     assert.deepEqual(summary.authSessionLifecycle.revoked, {
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'revoked',
+      status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      unrevokedField: 'auth.session.revoked',
       expired: false,
       revoked: true,
       cleanedUp: false,
+      cleanup: false,
       rotated: false,
       preserved: true,
     });
-    assert.deepEqual(summary.authSessionLifecycle.cleanedUp, {
-      step: 'apply',
-      id: 'psh_01j00000000000000000000000',
-      type: 'production-auth-session',
-      status: 'cleaned-up',
-      expiresAt: '2030-01-01T00:00:00Z',
-      expired: false,
-      revoked: false,
-      cleanedUp: true,
-      rotated: false,
-      preserved: true,
-    });
+    assert.equal(summary.authSessionLifecycle.cleanedUp, null);
     assert.deepEqual(summary.authSessionLifecycle.preserved, {
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
-      status: 'revoked',
+      status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      unrevokedField: 'auth.session.revoked',
       expired: false,
       revoked: true,
       cleanedUp: false,
+      cleanup: false,
       rotated: false,
       preserved: true,
     });
@@ -3695,20 +3695,14 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       [
         { step: 'preflight', revoked: false, cleanedUp: false, rotated: false, preserved: false },
         { step: 'dry-run', revoked: true, cleanedUp: false, rotated: false, preserved: true },
-        { step: 'apply', revoked: false, cleanedUp: true, rotated: false, preserved: true },
-        { step: 'recovery-inspect', revoked: false, cleanedUp: false, rotated: false, preserved: true },
-        { step: 'replay', revoked: false, cleanedUp: true, rotated: false, preserved: true },
-        { step: 'journal', revoked: false, cleanedUp: false, rotated: false, preserved: false },
       ],
     );
     assert.equal(summary.authSessionLifecycleSummary.revoked?.step, 'dry-run');
     assert.equal(summary.authSessionLifecycleSummary.revoked?.revoked, true);
-    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.step, 'apply');
-    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.status, 'cleaned-up');
-    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycleSummary.cleanedUp, null);
     assert.equal(summary.authSessionLifecycleSummary.preserved?.step, 'dry-run');
     assert.equal(summary.authSessionLifecycleSummary.preserved?.preserved, true);
-    assert.equal(seen.length, 8);
+    assert.equal(seen.length, 3);
   } finally {
     global.fetch = originalFetch;
   }
@@ -3883,7 +3877,7 @@ test('production-shaped authenticated push fails closed on revoked auth-session 
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.status',
+        field: 'auth.session.revoked',
         required: 'unrevoked',
         observed: 'revoked',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -3967,7 +3961,7 @@ test('production-shaped authenticated push classifies revoked status drift as an
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.revoked',
+      field: 'auth.session.status',
       required: 'unrevoked',
       observed: 'revoked',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -3977,7 +3971,7 @@ test('production-shaped authenticated push classifies revoked status drift as an
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.revoked',
+        field: 'auth.session.status',
         required: 'unrevoked',
         observed: 'revoked',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -4351,7 +4345,7 @@ test('production-shaped authenticated push threads auth-session drift on the che
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.status',
+      field: 'auth.session.revoked',
       required: 'unrevoked',
       observed: 'revoked',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -4435,12 +4429,12 @@ test('production-shaped authenticated push reports rotated dry-run session ids a
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.id',
-      required: 'psh_01j00000000000000000000000',
-      observed: 'psh_01j00000000000000000000000-rotated',
-      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      field: 'auth.session.rotated',
+      required: 'preserved read',
+      observed: 'rotated',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(
       summary.authSessionLifecycleTrace.map(({ step, id, rotated, preserved }) => ({
@@ -4473,6 +4467,7 @@ test('production-shaped authenticated push reports rotated dry-run session ids a
       expired: false,
       revoked: false,
       cleanedUp: false,
+      cleanup: false,
       rotated: true,
       preserved: false,
     });
@@ -4531,9 +4526,9 @@ test('production-shaped authenticated push fails closed on an expired preflight 
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
-        field: 'auth.session.expired',
+        field: 'auth.session.expiresAt',
         required: 'unexpired',
-        observed: 'expired',
+        observed: '2000-01-01T00:00:00Z',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
@@ -4706,9 +4701,11 @@ test('production-shaped authenticated push fails closed when a required producti
       type: 'production-auth-session',
       status: 'active',
       expiresAt: '2030-01-01T00:00:00Z',
+      rotatedField: 'auth.session.rotated',
       expired: false,
       revoked: false,
       cleanedUp: false,
+      cleanup: false,
       rotated: true,
       preserved: false,
     });
@@ -4830,9 +4827,11 @@ test('production-shaped authenticated push fails closed when a required producti
       type: 'production-auth-session',
       status: 'rotated',
       expiresAt: '2030-01-01T00:00:00Z',
+      rotatedField: 'auth.session.status',
       expired: false,
       revoked: false,
       cleanedUp: false,
+      cleanup: false,
       rotated: true,
       preserved: false,
     });
