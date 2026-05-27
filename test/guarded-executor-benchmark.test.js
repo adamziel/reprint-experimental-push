@@ -32,7 +32,7 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-test('guarded executor benchmark moves buffers and row payloads through durable evidence', () => {
+test('guarded executor benchmark moves buffers and row payloads through durable evidence', { concurrency: false }, () => {
   const report = smallBenchmark();
 
   assert.equal(report.claims.labGuardedExecutorEvidence, true);
@@ -50,6 +50,39 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   );
   assert.equal(report.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity, true);
   assert.equal(report.evidence.wordpressGraphIdentity.graphIdentityBlockers, 0);
+  assert.deepEqual(report.evidence.wordpressGraphIdentity.familyCounters, {
+    totalFamilies: 7,
+    mappedFamilies: 1,
+    unmappedFamilies: 5,
+    blockedFamilies: 0,
+    guardedFamilies: 1,
+    mappedReferences: report.shape.rowCount,
+    unmappedReferences: 0,
+  });
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.postmetaPostRefs.status,
+    'mapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.postmetaPostRefs.mapped,
+    report.shape.rowCount,
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.postsParents.status,
+    'unmapped',
+  );
+  assert.equal(
+    report.evidence.wordpressGraphIdentity.familyReport.unsupportedPluginOwnedSurfaces.status,
+    'planner-guarded',
+  );
+  assert.ok(
+    report.evidence.wordpressGraphIdentity.actionableBlockers.some(
+      (blocker) =>
+        blocker.family === 'posts/parents'
+        && blocker.plannerOwner === 'planner:test/push-planner.test.js'
+        && blocker.smokeOwner === 'smoke:scripts/playground/push-protocol-smoke.mjs',
+    ),
+  );
   assert.equal(report.evidence.journal.allJournalsIntegrityOk, true);
   assert.equal(report.evidence.redaction.durableJournalsContainNoRawValues, true);
   assert.equal(report.evidence.recovery.successInspectionStatus, 'fully-updated-remote');
@@ -60,7 +93,7 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
-test('guarded benchmark refuses production throughput claims until production gaps are measured', () => {
+test('guarded benchmark refuses production throughput claims until production gaps are measured', { concurrency: false }, () => {
   const report = smallBenchmark();
 
   assert.equal(report.claims.productionThroughput.status, 'blocked');
@@ -87,7 +120,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   );
 });
 
-test('production claim gate fails closed if benchmark evidence is tampered', () => {
+test('production claim gate fails closed if benchmark evidence is tampered', { concurrency: false }, () => {
   const report = smallBenchmark();
 
   const missingReceipt = clone(report);
@@ -106,6 +139,7 @@ test('production claim gate fails closed if benchmark evidence is tampered', () 
 
   const missingGraphIdentity = clone(report);
   missingGraphIdentity.evidence.wordpressGraphIdentity.allPostmetaReferencesUseStableRemoteIdentity = false;
+  missingGraphIdentity.evidence.wordpressGraphIdentity.familyReport.postmetaPostRefs.status = 'blocked';
   assert.ok(
     productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
   );

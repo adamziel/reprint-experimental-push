@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { applyPlan, PushPlanError } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
 import {
+  appendRecoveryClaimOpened,
   assertJournalRecordHasNoRawValues,
   openRecoveryJournal,
   readRecoveryJournal,
@@ -23,6 +24,57 @@ const PAYMENTS_PLUGIN = 'payments';
 const COMMERCE_MAIN_FILE = `wp-content/plugins/${COMMERCE_PLUGIN}/${COMMERCE_PLUGIN}.php`;
 const PAYMENTS_MAIN_FILE = `wp-content/plugins/${PAYMENTS_PLUGIN}/${PAYMENTS_PLUGIN}.php`;
 const ATOMIC_GROUP_ID = 'install-commerce-stack';
+const GRAPH_FAMILY_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    id: 'postsParents',
+    label: 'posts/parents',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
+    notes: 'Requires post_parent identity remap coverage and same-plan parent create/update proof.',
+  }),
+  Object.freeze({
+    id: 'postmetaPostRefs',
+    label: 'postmeta/post refs',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/bench/guarded-executor-benchmark.js',
+    notes: 'Covers stable wp_postmeta.post_id references only; same-plan rewrites still block.',
+  }),
+  Object.freeze({
+    id: 'featuredImagesAttachments',
+    label: 'featured images/attachments',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
+    notes: 'Needs attachment identity, _thumbnail_id, and GUID rewrite proof.',
+  }),
+  Object.freeze({
+    id: 'termsTaxonomies',
+    label: 'terms/taxonomies',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
+    notes: 'Needs wp_terms/wp_term_taxonomy relationship mapping and remote-stable proofs.',
+  }),
+  Object.freeze({
+    id: 'termRelationships',
+    label: 'term relationships',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/playground/push-protocol-smoke.mjs',
+    notes: 'Needs wp_term_relationships mapping across posts and taxonomy ids.',
+  }),
+  Object.freeze({
+    id: 'termmeta',
+    label: 'termmeta',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/playground/forms-lab-table-driver-smoke.mjs',
+    notes: 'Planner has termmeta surface classification, but no graph rewrite benchmark/smoke proof.',
+  }),
+  Object.freeze({
+    id: 'unsupportedPluginOwnedSurfaces',
+    label: 'unsupported/plugin-owned surfaces',
+    plannerOwner: 'planner:test/push-planner.test.js',
+    smokeOwner: 'smoke:scripts/playground/forms-lab-table-driver-smoke.mjs',
+    notes: 'Must stay fail-closed until an allowlisted driver and smoke prove safe ownership/mapping.',
+  }),
+]);
 
 export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
   unit: Object.freeze({
@@ -58,13 +110,21 @@ export function runGuardedExecutorBenchmark(options = {}) {
   const config = benchmarkConfig(options);
   const tempDir = config.tempDir || fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-guarded-bench-'));
   fs.mkdirSync(tempDir, { recursive: true });
+  const journalClaimPrefix = path.basename(tempDir);
 
   const timings = {};
   const successJournalPath = path.join(tempDir, 'success.jsonl');
+  const successClaimId = `${journalClaimPrefix}:guarded-executor-benchmark-success`;
   const successJournal = openRecoveryJournal(successJournalPath, {
     truncate: true,
     now: config.now,
-    claimId: 'guarded-executor-benchmark-success',
+    claimId: successClaimId,
+  });
+  appendRecoveryClaimOpened(successJournal, {
+    plan: { id: 'plan-guarded-executor-benchmark' },
+    current: { benchmark: 'guarded-executor-benchmark', phase: 'success' },
+    claimId: successClaimId,
+    reason: 'Benchmark staging claim opened before durable chunk receipts.',
   });
 
   let stagedFile;
@@ -428,10 +488,17 @@ function benchmarkPostIdForRow(index) {
 
 function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtMutation = null }) {
   const journalPath = path.join(tempDir, `${mode}.jsonl`);
+  const claimId = `${path.basename(tempDir)}:guarded-executor-benchmark:${mode}`;
   const durableJournal = openRecoveryJournal(journalPath, {
     truncate: true,
     now,
-    claimId: `guarded-executor-benchmark-${mode}`,
+    claimId,
+  });
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    reason: `Benchmark ${mode} failure probe claim opened before applyPlan.`,
   });
   const current = clone(remote);
   const before = JSON.stringify(current);
@@ -510,6 +577,7 @@ function buildReport({
     preCommitFailure.durableJournalHasNoRawValues,
     partialFailure.durableJournalHasNoRawValues,
   ].every(Boolean);
+  const graphIdentityReport = buildGraphIdentityReport({ config, sites, plan });
 
   return {
     schemaVersion: 1,
@@ -593,11 +661,14 @@ function buildReport({
         durableJournalsContainNoRawValues,
       },
       wordpressGraphIdentity: {
-        postmetaReferences: config.rowCount,
-        stableRemotePostTargets: sites.graphIdentityTargets.length,
-        allPostmetaReferencesUseStableRemoteIdentity: benchmarkGraphIdentityStable(sites),
-        graphIdentityBlockers: plan.blockers.filter((blocker) =>
-          blocker.class === 'stale-wordpress-graph-identity').length,
+        postmetaReferences: graphIdentityReport.postmetaReferences,
+        stableRemotePostTargets: graphIdentityReport.stableRemotePostTargets,
+        allPostmetaReferencesUseStableRemoteIdentity:
+          graphIdentityReport.allPostmetaReferencesUseStableRemoteIdentity,
+        graphIdentityBlockers: graphIdentityReport.graphIdentityBlockers,
+        familyCounters: graphIdentityReport.familyCounters,
+        familyReport: graphIdentityReport.families,
+        actionableBlockers: graphIdentityReport.actionableBlockers,
       },
     },
     results: {
@@ -632,6 +703,80 @@ function benchmarkGraphIdentityStable(sites) {
       && remotePost
       && JSON.stringify(basePost) === JSON.stringify(remotePost);
   });
+}
+
+function buildGraphIdentityReport({ config, sites, plan }) {
+  const allPostmetaReferencesUseStableRemoteIdentity = benchmarkGraphIdentityStable(sites);
+  const graphIdentityBlockers = plan.blockers.filter((blocker) =>
+    blocker.class === 'stale-wordpress-graph-identity').length;
+  const families = {};
+
+  for (const definition of GRAPH_FAMILY_DEFINITIONS) {
+    const family = {
+      family: definition.label,
+      plannerOwner: definition.plannerOwner,
+      smokeOwner: definition.smokeOwner,
+      notes: definition.notes,
+    };
+    if (definition.id === 'postmetaPostRefs') {
+      family.status = allPostmetaReferencesUseStableRemoteIdentity && graphIdentityBlockers === 0
+        ? 'mapped'
+        : 'blocked';
+      family.mapped = allPostmetaReferencesUseStableRemoteIdentity ? config.rowCount : 0;
+      family.unmapped = allPostmetaReferencesUseStableRemoteIdentity ? 0 : config.rowCount;
+      family.targets = sites.graphIdentityTargets.length;
+      family.blockers = graphIdentityBlockers === 0
+        ? []
+        : [`planner emitted ${graphIdentityBlockers} stale-wordpress-graph-identity blocker(s)`];
+    } else if (definition.id === 'unsupportedPluginOwnedSurfaces') {
+      family.status = 'planner-guarded';
+      family.mapped = 0;
+      family.unmapped = 0;
+      family.blockers = [
+        'surface remains intentionally fail-closed outside explicit driver allowlists',
+      ];
+    } else {
+      family.status = 'unmapped';
+      family.mapped = 0;
+      family.unmapped = 0;
+      family.blockers = [
+        `no benchmark coverage for ${definition.label}`,
+      ];
+    }
+    families[definition.id] = family;
+  }
+
+  const actionableBlockers = Object.values(families)
+    .filter((family) => family.status !== 'mapped')
+    .map((family) => ({
+      family: family.family,
+      status: family.status,
+      plannerOwner: family.plannerOwner,
+      smokeOwner: family.smokeOwner,
+      blockers: family.blockers,
+    }));
+  const mappedFamilies = Object.values(families).filter((family) => family.status === 'mapped').length;
+  const unmappedFamilies = Object.values(families).filter((family) => family.status === 'unmapped').length;
+  const guardedFamilies = Object.values(families).filter((family) => family.status === 'planner-guarded').length;
+  const blockedFamilies = Object.values(families).filter((family) => family.status === 'blocked').length;
+
+  return {
+    postmetaReferences: config.rowCount,
+    stableRemotePostTargets: sites.graphIdentityTargets.length,
+    allPostmetaReferencesUseStableRemoteIdentity,
+    graphIdentityBlockers,
+    familyCounters: {
+      totalFamilies: GRAPH_FAMILY_DEFINITIONS.length,
+      mappedFamilies,
+      unmappedFamilies,
+      blockedFamilies,
+      guardedFamilies,
+      mappedReferences: Object.values(families).reduce((sum, family) => sum + family.mapped, 0),
+      unmappedReferences: Object.values(families).reduce((sum, family) => sum + family.unmapped, 0),
+    },
+    families,
+    actionableBlockers,
+  };
 }
 
 function assertBenchmarkPlan(plan, config) {
