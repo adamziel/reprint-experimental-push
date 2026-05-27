@@ -4,6 +4,9 @@ import { digest } from './stable-json.js';
 import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
+const PRODUCTION_RECOVERY_JOURNAL_KIND = 'production-recovery-journal';
+const PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
+const PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER = 'filesystem-compare-rename';
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
@@ -106,6 +109,78 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && durableJournalStorageGuardMatchesBoundary(storageGuard, productionAdapter);
 }
 
+export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) {
+  const journal = inspection?.journal;
+  const ownership = journal?.ownership;
+  const claim = inspection?.claim;
+  const journalClaim = journal?.claim;
+  const writerLease = journal?.writerLease;
+  const leaseFence = inspection?.leaseFence;
+  const leaseFenceWriterLease = leaseFence?.writerLease;
+  const consumedIdentityMatches = journal?.consumed === true
+    ? journal?.consumedClaimId === claim?.activeClaimId
+      && journal?.consumedClaimHash === claim?.activeClaimHash
+    : journal?.consumedClaimId == null && journal?.consumedClaimHash == null;
+
+  return hasOwnProperties(journal, [
+    'kind',
+    'path',
+    'journalPath',
+    'checked',
+    'artifactRefs',
+    'productionAdapter',
+    'supportedSurface',
+    'ownership',
+    'ownsJournal',
+    'consumed',
+    'staleClaimRejected',
+    'restartReadable',
+    'schemaVersion',
+    'integrity',
+    'records',
+    'claim',
+    'claimId',
+    'claimHash',
+    'consumedClaimId',
+    'consumedClaimHash',
+    'writerLease',
+  ])
+    && journal?.kind === PRODUCTION_RECOVERY_JOURNAL_KIND
+    && hasNonEmptyString(journal?.path)
+    && journal.path === journal.journalPath
+    && Array.isArray(journal?.checked)
+    && journal.checked.length > 0
+    && journal.checked.every(hasNonEmptyString)
+    && journal.checked.includes(journal.journalPath)
+    && artifactRefsContractMatches(journal?.artifactRefs)
+    && journal?.productionAdapter === 'openProductionRecoveryJournal'
+    && journal?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE
+    && productionRecoveryJournalOwnershipContractMatches(ownership)
+    && journal?.ownsJournal === true
+    && typeof journal?.consumed === 'boolean'
+    && typeof journal?.staleClaimRejected === 'boolean'
+    && journal?.restartReadable === true
+    && journal?.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
+    && recoveryJournalIntegrityContractMatches(journal?.integrity)
+    && isPositiveInteger(journal?.records)
+    && productionRecoveryJournalClaimContractMatches(claim)
+    && productionRecoveryJournalClaimsAgree(journalClaim, claim)
+    && journal?.claimId === claim.activeClaimId
+    && journal?.claimHash === claim.activeClaimHash
+    && consumedIdentityMatches
+    && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
+    && writerLease?.restartReadable === journal.restartReadable
+    && writerLease?.staleClaimRejected === journal.staleClaimRejected
+    && productionRecoveryJournalLeaseFenceContractMatches(leaseFence)
+    && productionRecoveryJournalWriterLeaseContractMatches(leaseFenceWriterLease, claim)
+    && productionRecoveryJournalWriterLeasesAgree(writerLease, leaseFenceWriterLease)
+    && leaseFenceWriterLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && leaseFenceWriterLease?.restartReadable === journal.restartReadable
+    && leaseFenceWriterLease?.staleClaimRejected === journal.staleClaimRejected
+    && leaseFence?.restartReadable === journal.restartReadable
+    && leaseFence?.staleClaimRejected === journal.staleClaimRejected;
+}
+
 function durableJournalWriterLeaseMatchesBoundary(writerLease, boundary, claim) {
   if (!writerLease || typeof writerLease !== 'object') {
     return false;
@@ -136,9 +211,6 @@ function durableJournalClaimContractMatches(claim) {
     'previousClaimKeyHash',
     'previousClaimSequence',
     'previousClaimEvent',
-    'previousStartedSequence',
-    'abandonedSequence',
-    'abandonedEvent',
   ])) {
     return false;
   }
@@ -164,6 +236,9 @@ function durableJournalClaimContractMatches(claim) {
     && hasNonEmptyString(claim.idempotencyKeyHash)
     && hasNonEmptyString(claim.requestHash)
     && typeof claim.staleClaimRejected === 'boolean'
+    && optionalClaimFieldIsOwnIfPresent(claim, 'previousStartedSequence')
+    && optionalClaimFieldIsOwnIfPresent(claim, 'abandonedSequence')
+    && optionalClaimFieldIsOwnIfPresent(claim, 'abandonedEvent')
     && statusMatchesStaleClaim
     && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
@@ -172,6 +247,12 @@ function durableJournalClaimContractMatches(claim) {
       && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ));
+}
+
+function optionalClaimFieldIsOwnIfPresent(claim, field) {
+  return claim?.[field] === undefined
+    || claim?.[field] === null
+    || Object.hasOwn(claim, field);
 }
 
 function checkedDurableJournalClaimEventMatches(event) {
@@ -189,6 +270,120 @@ function durableJournalStorageGuardMatchesBoundary(storageGuard, boundary) {
   return storageGuard.boundary === boundary
     && storageGuard.operation === 'update'
     && storageGuard.outcome === 'applied';
+}
+
+function artifactRefsContractMatches(artifactRefs) {
+  const entries = Object.entries(artifactRefs ?? {});
+  return entries.length > 0
+    && entries.every(([key, value]) => hasNonEmptyString(key) && hasNonEmptyString(value));
+}
+
+function productionRecoveryJournalOwnershipContractMatches(ownership) {
+  return hasOwnProperties(ownership, [
+    'ownsJournal',
+    'restartReadable',
+    'productionAdapter',
+    'supportedSurface',
+  ])
+    && ownership?.ownsJournal === true
+    && ownership?.restartReadable === true
+    && ownership?.productionAdapter === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && ownership?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE;
+}
+
+function productionRecoveryJournalClaimContractMatches(claim) {
+  return hasOwnProperties(claim, [
+    'status',
+    'activeClaimId',
+    'activeClaimHash',
+    'previousClaimId',
+    'previousClaimHash',
+    'sequence',
+    'type',
+  ])
+    && (claim?.status === 'active' || claim?.status === 'advanced')
+    && hasNonEmptyString(claim?.activeClaimId)
+    && CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    && (claim?.previousClaimId === null || hasNonEmptyString(claim?.previousClaimId))
+    && (claim?.previousClaimHash === null || CLAIM_HASH_PATTERN.test(claim?.previousClaimHash || ''))
+    && isPositiveInteger(claim?.sequence)
+    && CLAIM_STATE_EVENT_TYPES.has(claim?.type);
+}
+
+function productionRecoveryJournalClaimsAgree(journalClaim, inspectionClaim) {
+  return productionRecoveryJournalClaimContractMatches(journalClaim)
+    && productionRecoveryJournalClaimContractMatches(inspectionClaim)
+    && journalClaim.activeClaimId === inspectionClaim.activeClaimId
+    && journalClaim.activeClaimHash === inspectionClaim.activeClaimHash
+    && journalClaim.previousClaimId === inspectionClaim.previousClaimId
+    && journalClaim.previousClaimHash === inspectionClaim.previousClaimHash
+    && journalClaim.sequence === inspectionClaim.sequence
+    && journalClaim.type === inspectionClaim.type
+    && journalClaim.status === inspectionClaim.status;
+}
+
+function productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim) {
+  return hasOwnProperties(writerLease, [
+    'strategy',
+    'claimId',
+    'claimHash',
+    'claimKeyUnique',
+    'storageGuard',
+    'fsyncEvidence',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+  ])
+    && writerLease?.strategy === 'claim-fenced-single-writer'
+    && writerLease?.claimId === claim?.activeClaimId
+    && writerLease?.claimHash === claim?.activeClaimHash
+    && writerLease?.claimKeyUnique === true
+    && writerLease?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && writerLease?.fsyncEvidence === true
+    && writerLease?.monotonicSequence === true
+    && writerLease?.restartReadable === true
+    && typeof writerLease?.staleClaimRejected === 'boolean';
+}
+
+function productionRecoveryJournalWriterLeasesAgree(writerLease, nestedWriterLease) {
+  return writerLease?.strategy === nestedWriterLease?.strategy
+    && writerLease?.claimId === nestedWriterLease?.claimId
+    && writerLease?.claimHash === nestedWriterLease?.claimHash
+    && writerLease?.claimKeyUnique === nestedWriterLease?.claimKeyUnique
+    && writerLease?.storageGuard === nestedWriterLease?.storageGuard
+    && writerLease?.fsyncEvidence === nestedWriterLease?.fsyncEvidence
+    && writerLease?.monotonicSequence === nestedWriterLease?.monotonicSequence
+    && writerLease?.restartReadable === nestedWriterLease?.restartReadable
+    && writerLease?.staleClaimRejected === nestedWriterLease?.staleClaimRejected;
+}
+
+function productionRecoveryJournalLeaseFenceContractMatches(leaseFence) {
+  return hasOwnProperties(leaseFence, [
+    'boundary',
+    'storageGuard',
+    'claimKeyUnique',
+    'fsyncEvidence',
+    'monotonicSequence',
+    'restartReadable',
+    'staleClaimRejected',
+    'writerLease',
+  ])
+    && leaseFence?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && leaseFence?.storageGuard === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && leaseFence?.claimKeyUnique === true
+    && leaseFence?.fsyncEvidence === true
+    && leaseFence?.monotonicSequence === true
+    && leaseFence?.restartReadable === true
+    && typeof leaseFence?.staleClaimRejected === 'boolean';
+}
+
+function recoveryJournalIntegrityContractMatches(integrity) {
+  return hasOwnProperties(integrity, ['status'])
+    && integrity?.status === 'ok'
+    && (!Object.hasOwn(integrity, 'reason')
+      || integrity.reason === null
+      || hasNonEmptyString(integrity.reason))
+    && (!Object.hasOwn(integrity, 'errors') || Array.isArray(integrity.errors));
 }
 
 export function openProductionRecoveryJournal(options) {
