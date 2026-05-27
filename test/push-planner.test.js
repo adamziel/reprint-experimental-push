@@ -19665,6 +19665,125 @@ test('allows existing term-taxonomy and termmeta rows to reference the same term
   assert.equal(result.site.db.wp_termmeta['meta_id:12'].meta_value, 'local-private-existing-term-note');
 });
 
+test('allows existing term-taxonomy and termmeta rows to reference the same term created by the plan while preserving a matching independent restore and remote-only plugin removals', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:9"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  delete base.files[matchingRestoreResourceKey.slice('file:'.length)];
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'base term taxonomy description',
+    },
+  };
+  base.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 0,
+      meta_key: 'term-note',
+      meta_value: 'base-private-existing-term-note',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingRestoreResourceKey.slice('file:'.length)] = '<?php echo "shared restore";';
+  local.db.wp_terms = {
+    'term_id:9': {
+      term_id: 9,
+      name: 'Local same-plan term',
+      slug: 'local-same-plan-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:5': {
+      term_taxonomy_id: 5,
+      term_id: 9,
+      taxonomy: 'category',
+      parent: 0,
+      description: 'local term taxonomy description',
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 9,
+      meta_key: 'term-note',
+      meta_value: 'local-private-existing-term-note',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingRestoreResourceKey.slice('file:'.length)] = '<?php echo "shared restore";';
+  remote.db.wp_term_taxonomy = JSON.parse(JSON.stringify(base.db.wp_term_taxonomy));
+  remote.db.wp_termmeta = JSON.parse(JSON.stringify(base.db.wp_termmeta));
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const termmetaMutation = mutationFor(plan, termmetaResourceKey);
+  const taxonomyReference = taxonomyMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'term-taxonomy-term');
+  const termmetaReference = termmetaMutation.wordpressGraphReferences.find((reference) =>
+    reference.relationshipType === 'termmeta-term');
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'update');
+  assert.equal(termmetaMutation.changeKind, 'update');
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(taxonomyMutation),
+    'term create must be ordered before dependent existing taxonomy update',
+  );
+  assert.ok(
+    plan.mutations.indexOf(termMutation) < plan.mutations.indexOf(termmetaMutation),
+    'term create must be ordered before dependent existing termmeta update',
+  );
+  assert.deepEqual(taxonomyMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.deepEqual(termmetaMutation.dependsOnMutationIds, [termMutation.id]);
+  assert.equal(plan.summary.graphDependencies, 2);
+  assert.deepEqual(
+    plan.graphDependencies.map((dependency) => [dependency.relationshipType, dependency.sourceResourceKey, dependency.targetResourceKey]),
+    [
+      ['term-taxonomy-term', taxonomyResourceKey, termResourceKey],
+      ['termmeta-term', termmetaResourceKey, termResourceKey],
+    ],
+  );
+  assert.equal(taxonomyReference.relationshipKey, 'wp_term_taxonomy.term_id');
+  assert.equal(taxonomyReference.relationshipType, 'term-taxonomy-term');
+  assert.equal(taxonomyReference.targetResourceKey, termResourceKey);
+  assert.equal(taxonomyReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(termmetaReference.relationshipKey, 'wp_termmeta.term_id');
+  assert.equal(termmetaReference.relationshipType, 'termmeta-term');
+  assert.equal(termmetaReference.targetResourceKey, termResourceKey);
+  assert.equal(termmetaReference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.files[matchingRestoreResourceKey.slice('file:'.length)], '<?php echo "shared restore";');
+  assert.equal(result.site.db.wp_terms['term_id:9'].name, 'Local same-plan term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].term_id, 9);
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:5'].description, 'local term taxonomy description');
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].term_id, 9);
+  assert.equal(result.site.db.wp_termmeta['meta_id:12'].meta_value, 'local-private-existing-term-note');
+  assert.equal(result.site.plugins.forms, undefined);
+  assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks an existing term-taxonomy row when its same-plan term belongs to a nav menu taxonomy', () => {
   const termResourceKey = 'row:["wp_terms","term_id:9"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:5"]';
