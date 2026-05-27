@@ -577,6 +577,17 @@ test('production recovery journal inspection surface helper fails closed when le
   missingArtifactRefs.journal.artifactRefs = {};
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingArtifactRefs), false);
 
+  const inheritedIntegrityStatus = clone(inspection);
+  inheritedIntegrityStatus.journal.integrity = Object.assign(
+    Object.create({ status: inheritedIntegrityStatus.journal.integrity.status }),
+    {
+      reason: inheritedIntegrityStatus.journal.integrity.reason,
+      errors: inheritedIntegrityStatus.journal.integrity.errors,
+    },
+  );
+  delete inheritedIntegrityStatus.journal.integrity.status;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedIntegrityStatus), false);
+
   const divergentConsumedClaimId = clone(inspection);
   divergentConsumedClaimId.journal.consumedClaimId = 'fabricated-production-claim-id';
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentConsumedClaimId), false);

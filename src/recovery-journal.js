@@ -205,7 +205,7 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && typeof journal?.staleClaimRejected === 'boolean'
     && journal?.restartReadable === true
     && journal?.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION
-    && journal?.integrity?.status === 'ok'
+    && recoveryJournalIntegrityContractMatches(journal?.integrity)
     && isPositiveInteger(journal?.records)
     && productionRecoveryJournalClaimContractMatches(claim)
     && productionRecoveryJournalClaimsAgree(journalClaim, claim)
@@ -655,6 +655,14 @@ function storageGuardContractMatches(candidate) {
     && candidate.operation.length > 0
     && typeof candidate?.outcome === 'string'
     && candidate.outcome.length > 0;
+}
+
+function recoveryJournalIntegrityContractMatches(integrity) {
+  return hasOwnProperties(integrity, ['status', 'reason', 'errors'])
+    && integrity?.status === 'ok'
+    && integrity?.reason === null
+    && Array.isArray(integrity?.errors)
+    && integrity.errors.length === 0;
 }
 
 function durableJournalClaimContractMatches(claim) {
