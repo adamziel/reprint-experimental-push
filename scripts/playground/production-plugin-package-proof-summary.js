@@ -259,7 +259,18 @@ export function buildProductionPluginPackageProofSummary(
     checkedBundles: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedBundles.sort(),
     passedBundles: passedBundles.sort(),
     failedBundles: failedBundles.sort(),
-    requestedScenariosSatisfied: checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount,
+    requestedScenariosSatisfied: normalizedRequestedScenarios === null
+      ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
+      : (
+        (hasRequestedBundles
+          ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
+          : true)
+        && (
+          requestedConcreteScenarios === 'all'
+            ? checkedScenarioCount > 0 && checkedScenarioCount === passedScenarioCount
+            : failedRequestedConcreteScenarios.length === 0
+        )
+      ),
     requestedBundlesSatisfied: hasRequestedBundles
       ? checkedBundleCount > 0 && checkedBundleCount === passedBundleCount
       : true,

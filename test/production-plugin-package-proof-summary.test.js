@@ -814,6 +814,105 @@ test('plugin-driver proof summary exposes failing requested concrete scenarios w
   assert.deepEqual(summary.failedRequestedConcreteScenarios, ['driver-delete-apply']);
 });
 
+test('plugin-driver proof summary keeps requested scenario verdict scoped to the requested proof set', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: false,
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-verifier-guards'],
+      selectedScenarios: new Set([
+        'driver-receipt-guards',
+        'driver-delete-apply',
+        'driver-missing-export-guard',
+        'driver-missing-apply-guard',
+        'driver-missing-validate-guard',
+        'driver-missing-name-guard',
+        'driver-missing-plugin-owner-guard',
+        'driver-missing-table-guard',
+        'driver-duplicate-name-guard',
+        'driver-duplicate-table-guard',
+      ]),
+    },
+  );
+
+  assert.equal(summary.ok, false);
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.failedRequestedScenarios, []);
+  assert.deepEqual(summary.failedRequestedBundles, []);
+  assert.deepEqual(summary.failedRequestedConcreteScenarios, []);
+  assert.deepEqual(summary.failedScenarios, ['driver-delete-apply']);
+});
+
 test('plugin-driver proof summary treats bundle verdicts as satisfied when only concrete scenarios were requested', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
