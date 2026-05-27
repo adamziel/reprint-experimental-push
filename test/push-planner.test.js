@@ -35932,6 +35932,90 @@ test('blocks local same-plan created comment user target identity while preservi
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks local same-plan created comment user target identity while preserving a matching independent delete and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:33"]';
+  const targetResourceKey = 'row:["wp_users","ID:24"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:33': {
+      comment_ID: 33,
+      comment_post_ID: 1,
+      user_id: 24,
+      comment_content: 'Base comment delete change symmetry content',
+    },
+  };
+  base.files['wp-content/uploads/comment-user-delete-change.txt'] = 'base comment user delete change bytes';
+
+  const local = baseSite();
+  local.db.wp_users = {
+    'ID:24': {
+      ID: 24,
+      user_login: 'local-delete-change-same-plan-user',
+      user_email: 'local-delete-change-same-plan-user@example.test',
+    },
+  };
+  local.db.wp_comments = {
+    'comment_ID:33': {
+      comment_ID: 33,
+      comment_post_ID: 1,
+      user_id: 24,
+      comment_content: 'Local comment delete change symmetry content',
+    },
+  };
+  delete local.files['wp-content/uploads/comment-user-delete-change.txt'];
+
+  const remote = baseSite();
+  remote.db.wp_comments = JSON.parse(JSON.stringify(base.db.wp_comments));
+  delete remote.files['wp-content/uploads/comment-user-delete-change.txt'];
+  remote.plugins.forms.description = 'remote-only plugin delete changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin delete changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const commentBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references[0];
+  const matchingDelete = decisionFor(plan, 'file:wp-content/uploads/comment-user-delete-change.txt');
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, targetResourceKey), undefined);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(commentBlocker.class, 'unsupported-comments-users-resource');
+  assert.equal(commentBlocker.resourceKey, resourceKey);
+  assert.equal(commentBlocker.unsupportedState, 'same-plan-reference');
+  assert.equal(commentBlocker.reason, 'WordPress graph mutation row:["wp_comments","comment_ID:33"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(commentBlocker.references[0].relationshipKey, 'wp_comments.user_id');
+  assert.equal(commentBlocker.references[0].relationshipType, 'comment-user');
+  assert.equal(commentBlocker.references[0].targetResourceKey, targetResourceKey);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.unsupportedState, 'same-plan-reference');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_users","ID:24"] is created in the same plan as a comment user identity that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(reference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(reference.relationshipType, 'comment-user');
+  assert.equal(reference.sourceResourceKey, resourceKey);
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.remote.state, 'absent');
+  assert.equal(reference.targetChange.local.state, 'present');
+  assert.equal(matchingDelete.decision, 'already-in-sync');
+  assert.equal(matchingDelete.change.localChange, 'delete');
+  assert.equal(matchingDelete.change.remoteChange, 'delete');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local comment delete change symmetry content'), false);
+  assert.equal(planJson.includes('Base comment delete change symmetry content'), false);
+  assert.equal(planJson.includes('local-delete-change-same-plan-user'), false);
+  assert.equal(planJson.includes('base comment user delete change bytes'), false);
+  assert.equal(remote.db.wp_comments['comment_ID:33'].comment_content, 'Base comment delete change symmetry content');
+  assert.equal(Object.hasOwn(remote.files, 'wp-content/uploads/comment-user-delete-change.txt'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin delete changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin delete changes */');
+});
+
 test('blocks local same-plan created comment user target identity while preserving a matching independent edit and remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:28"]';
   const targetResourceKey = 'row:["wp_users","ID:19"]';
