@@ -257,6 +257,7 @@ if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSour
 if (requireProductionAuthSession && authSessionSource?.ok) {
   const authSessionSourceMetadataDrift = describeAuthSessionSourceMetadataDrift(authSessionSource);
   if (authSessionSourceMetadataDrift) {
+    const observedAuthSessionType = authSessionSourceMetadataDrift.observed;
     process.stdout.write(
       JSON.stringify(
         {
@@ -278,11 +279,11 @@ if (requireProductionAuthSession && authSessionSource?.ok) {
           protocolExtension,
           preflight: {
             status: 0,
-            authSessionType: 'invalid-production-auth-session-source',
+            authSessionType: observedAuthSessionType,
             routeProfile: 'production-shaped',
             session: {
               id: '',
-              type: 'invalid-production-auth-session-source',
+              type: observedAuthSessionType,
             },
           },
           releaseProof: {

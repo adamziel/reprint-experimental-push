@@ -2759,6 +2759,33 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
 });
 
+test('production-shaped release verify fails closed when a required production auth/session source command reports Playground fallback metadata', () => {
+  const proof = spawnProductionShapedReleaseVerifySync(
+    {
+      ...process.env,
+      REPRINT_PUSH_SOURCE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_REMOTE_URL: 'http://127.0.0.1:8080',
+      REPRINT_PUSH_USERNAME: 'stale-lab-username',
+      REPRINT_PUSH_APPLICATION_PASSWORD: 'stale-lab-password',
+      REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin', applicationPassword:'reprint-push-admin-app-password', playgroundFallback:true}))"`,
+      REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION: '1',
+      NODE_NO_WARNINGS: '1',
+    },
+    {
+      timeout: releaseVerifyInnerTimeoutMs,
+      killSignal: proofSubprocessKillSignal,
+    },
+    'fallback auth/session source release verify',
+  );
+  assertSpawnCompletedWithoutSpawnError(proof, 'fallback auth/session source release verify', releaseVerifyInnerTimeoutMs);
+  assert.equal(proof.status, 1, proof.stderr);
+  assert.match(proof.stdout, /"ok": false/);
+  assert.match(proof.stdout, /"field": "auth\.session\.playgroundFallback"/);
+  assert.match(proof.stdout, /"required": "production-backed auth"/);
+  assert.match(proof.stdout, /"observed": "playground-fallback"/);
+  assert.match(proof.stdout, /"authSessionType": "playground-fallback"/);
+});
+
 test('production-shaped release verify fails closed when a required production auth/session source command omits username', () => {
   const proof = spawnProductionShapedReleaseVerifySync(
     {
@@ -3004,7 +3031,7 @@ test('production-shaped release verify fails closed when a required production a
   assert.match(proof.stdout, /"field": "auth\.session\.warning"/);
   assert.match(proof.stdout, /"observed": "lab-only-warning"/);
   assert.match(proof.stdout, /"warning": "lab-only-warning"/);
-  assert.match(proof.stdout, /"authSessionType": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"authSessionType": "lab-only-warning"/);
 });
 
 test('production-shaped release verify fails closed when a required production auth/session source command returns a non-string sourceUrl', () => {
