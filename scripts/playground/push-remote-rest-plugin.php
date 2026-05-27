@@ -1867,6 +1867,15 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
     }
 
     foreach ($anchor_keys as $anchor_key) {
+        $existing_anchor = isset($existing_fields[$anchor_key]) ? (string) $existing_fields[$anchor_key] : '';
+
+        if (
+            !array_key_exists($anchor_key, $checked_fields)
+            && $existing_anchor !== ''
+        ) {
+            return true;
+        }
+
         if (!array_key_exists($anchor_key, $checked_fields)) {
             continue;
         }
@@ -1876,7 +1885,6 @@ function reprint_push_lab_rest_checked_contract_anchor_omissions(
             continue;
         }
 
-        $existing_anchor = isset($existing_fields[$anchor_key]) ? (string) $existing_fields[$anchor_key] : '';
         if ($existing_anchor === '') {
             return true;
         }
