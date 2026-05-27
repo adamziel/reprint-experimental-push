@@ -163,6 +163,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
     blockerRefs: Object.freeze([
+      'queue-pause-without-measured-queue-headroom-proof',
       'queue-budget-not-visible',
       'memory-ceiling-match-visible-without-queue-slack-visibility',
       'memory-ceiling-match-visible-without-memory-headroom-visibility',
@@ -182,6 +183,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
     blockerRefs: Object.freeze([
+      'queue-pause-without-measured-queue-headroom-proof',
       'memory-ceiling-match-visible-without-queue-slack-visibility',
       'memory-ceiling-match-visible-without-memory-headroom-visibility',
       'queue-headroom-visible-without-queue-slack-visibility',
@@ -198,6 +200,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
     blockerRefs: Object.freeze([
+      'queue-pause-without-measured-queue-headroom-proof',
       'memory-ceiling-match-visible-without-queue-slack-visibility',
       'memory-ceiling-match-visible-without-memory-headroom-visibility',
       'queue-headroom-visible-without-queue-slack-visibility',

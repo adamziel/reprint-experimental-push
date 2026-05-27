@@ -9272,6 +9272,77 @@ test('guarded benchmark carries direct queue-slack visibility blockers into roll
   ]);
 });
 
+test('guarded benchmark carries direct measured queue-headroom proof blockers into rejected retry summaries', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.executorCapabilities.productionAtomicCommit = 'production-atomic-group-commit';
+  mutated.executorCapabilities.fileReceipts = 'production-storage-receipts';
+  mutated.executorCapabilities.rowApply = 'production-batched-compare-and-swap';
+  mutated.evidence.parallelism.parallelismLimitsMeasured = true;
+  mutated.evidence.parallelism.parallelismLimitsVisible = true;
+  mutated.evidence.parallelism.parallelismLimits = {
+    chunkUpload: 4,
+    fileHashing: 2,
+    dbBatchPerTable: 2,
+  };
+  mutated.evidence.atomicGroup.productionAtomicCommitMeasured = true;
+  mutated.evidence.atomicGroup.productionAtomicCommitVisible = true;
+  mutated.evidence.atomicGroup.productionAtomicGroupMetadataVisible = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsMeasured = true;
+  mutated.evidence.atomicGroup.productionStorageReceiptsVisible = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorMeasured = true;
+  mutated.evidence.atomicGroup.productionRowBatchExecutorVisible = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('queue-pause-without-measured-queue-headroom-proof'));
+  assert.deepEqual(
+    details.rejectedFastPaths
+      .filter((entry) => [
+        'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+      ].includes(entry.id))
+      .map((entry) => ({
+        id: entry.id,
+        rejectedGate: entry.rejectedGate,
+        blockerRefs: entry.blockerRefs,
+      })),
+    [
+      {
+        id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-measured-queue-headroom-proof',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-headroom-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-measured-queue-headroom-proof',
+          'queue-budget-visible-without-queue-headroom-measurement',
+          'memory-ceiling-visible-without-queue-headroom-measurement',
+          'queue-headroom-visible-without-measurement',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-queue-headroom-authorizes-atomic-group-commit-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-measured-queue-headroom-proof',
+          'queue-budget-visible-without-queue-headroom-measurement',
+          'memory-ceiling-visible-without-queue-headroom-measurement',
+          'queue-headroom-visible-without-measurement',
+        ],
+      },
+    ],
+  );
+});
+
 test('guarded benchmark carries direct memory-headroom visibility blockers into rollout summaries under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
