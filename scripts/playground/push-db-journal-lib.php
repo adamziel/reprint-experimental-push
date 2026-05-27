@@ -971,6 +971,7 @@ function reprint_push_lab_db_journal_ownership_contract_matches($ownership): boo
         && is_bool($ownership['ownsJournal'] ?? null)
         && ($ownership['ownsJournal'] ?? false) === true
         && is_bool($ownership['restartReadable'] ?? null)
+        && ($ownership['restartReadable'] ?? false) === true
         && reprint_push_lab_db_journal_non_empty_string($ownership['productionAdapter'] ?? null);
 }
 
