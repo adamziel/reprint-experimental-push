@@ -2,16 +2,16 @@
 
 ## Verdict
 
-- Audited commit: `4b4f9393610f86742e41426b9f95b99082adf70f` (`Prove apply revalidation retry boundary`)
-- Previous audited reliable head: `f378246a0a06425416c57ac636dfb1a663c8f7af`
+- Audited commit: `051fe7f44a2dd400d4f1e08c7cff4f745e944a02` (`Use production snapshot export for live source verify`)
+- Previous audited reliable head: `4b4f9393610f86742e41426b9f95b99082adf70f`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 04:26:59 CEST (+0200)
+- Audit time: 2026-05-27 04:33:01 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `4b4f9393610f86742e41426b9f95b99082adf70f` (`Prove apply revalidation retry boundary`)
+  - `origin/lane/reliable-executor` -> `051fe7f44a2dd400d4f1e08c7cff4f745e944a02` (`Use production snapshot export for live source verify`)
   - `origin/lane/critic` -> `5a9151557a72619b287a721ded4d7d38d747a304`
-  - `origin/lane/independent-auditor` -> `0e25436192f632c7db81e206cf44bd9675da115a`
+  - `origin/lane/independent-auditor` -> `998949bfbf56ed79a81252a0575e55383fdffd65`
   - `origin/lane/progress-publisher` -> `fde9d34e448b019f807f8afa268015511bc173fe`
   - `origin/main` -> `3d37812277ec7512ff724e064fd24a1f6f324632`
 
@@ -19,23 +19,23 @@
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Live mutation boundary | `4b4f9393` pushes the checked release verifier through preserved-remote retry on the apply-revalidation path and now reports the retry boundary as proven inside the verifier. That is stronger checked release evidence, but it still runs inside the verifier surface rather than a production-owned mutation boundary on the real Reprint endpoint. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
-| Production auth/session lifecycle | The commit still only demonstrates auth/session evidence within the checked proof and does not show one executable real-endpoint command minting and reading back a live auth session on the exact production-owned `REPRINT_PUSH_SOURCE_URL`. | One checked real-endpoint command proving issuance and readback on the same production-owned source boundary. | Blocked |
-| Durable restart-readable journal ownership | The release verifier reports durable-journal details and lease-fence evidence, but the checked path still does not prove durable ownership and restart-readable replay on the real endpoint as a production-owned primitive consumed end to end. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
-| Apply-time revalidation before first mutation | The head now proves apply revalidation and preserved-remote retry together in the checked boundary, but it still does not provide a production-owned end-to-end pre-mutation revalidation proof on the real endpoint. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
-| Preserved-remote retry | Preserved-remote retry is now proven inside the checked verifier boundary, but it remains verifier-surfaced evidence rather than a production-owned checked release primitive on the real endpoint. | Release-path preserved-remote retry evidence consumed by the checked release command. | Blocked |
-| Release-boundary proof | The evidence remains narrow: stronger apply-revalidation/auth boundary surfacing, lease-fence details, and preserved-remote retry inside the checked verifier. It still does not emit the single real-endpoint release artifact tying together live auth issuance/readback, durable journal ownership, preserved-remote retry, and pre-mutation revalidation. | One production-owned checked release artifact on the real Reprint endpoint tying together auth issuance/readback, durable journal ownership, preserved-remote retry, and pre-mutation apply-time revalidation. | Blocked |
+| Live mutation boundary | `051fe7f4` makes the checked release verifier choose the production snapshot export when the source URL is explicit. That is a narrower and more realistic wrapper path, but it is still source selection inside the verifier rather than a production-owned mutation boundary on the real Reprint endpoint. | One production-owned, non-lab-backed checked mutation boundary on the real Reprint endpoint. | Blocked |
+| Production auth/session lifecycle | The commit improves live-source handling for the verifier, but it still does not show one executable real-endpoint command minting and reading back a live auth session on the exact production-owned `REPRINT_PUSH_SOURCE_URL`. | One checked real-endpoint command proving issuance and readback on the same production-owned source boundary. | Blocked |
+| Durable restart-readable journal ownership | The change does not add a production-owned durable journal consumer or restart-readable replay proof on the real endpoint. The journal boundary is still only implied by verifier wiring. | Durable journal proof on the real endpoint with lease-fenced ownership and restart-readable recovery outside Playground/package-only scaffolding. | Blocked |
+| Apply-time revalidation before first mutation | The verifier now prefers the production-shaped snapshot export for explicit live-source runs, but that remains wrapper-level routing rather than an end-to-end production proof that revalidation occurs before the first mutation on the real source boundary. | A checked real-endpoint proof showing apply-time revalidation runs before the first mutation on the production-owned boundary. | Blocked |
+| Preserved-remote retry | The commit does not introduce or consume a preserved-remote retry proof on the real release path. It only makes the verifier pick the production-shaped snapshot route when configured to do so. | Release-path preserved-remote retry evidence consumed by the checked release command. | Blocked |
+| Release-boundary proof | The evidence is better aligned with live source selection, but it still does not emit the single real-endpoint artifact tying together live auth issuance/readback, durable journal ownership, preserved-remote retry, and pre-mutation revalidation. | One production-owned checked release artifact on the real Reprint endpoint tying together auth issuance/readback, durable journal ownership, preserved-remote retry, and pre-mutation apply-time revalidation. | Blocked |
 
 ## Change Assessment
 
-1. The `4b4f9393` diff touches `scripts/playground/production-shaped-apply-revalidation-smoke.mjs` and `test/production-shaped-proof.test.js`.
-2. The release verifier now proves preserved-remote retry together with apply revalidation on the checked path and exposes a narrower remaining blocker.
-3. The commit still does not establish the missing production-owned, real-endpoint mutation boundary on the actual Reprint source URL.
+1. The `4b4f9393` diff proved apply-revalidation retry inside the checked verifier, but it was superseded by the later live-source selection work.
+2. The `051fe7f4` diff touches `scripts/playground/production-shaped-live-release-verify-lib.js`, `scripts/playground/production-shaped-release-verify.mjs`, and `test/production-shaped-proof.test.js`.
+3. The new helper now chooses the production snapshot export for explicit live-source verification, but that is still wrapper-level source selection rather than the production-owned mutation boundary on the actual Reprint source URL.
 4. Because the supervised release gates depend on that production-owned artifact, the release verdict stays `0/4`.
 
 ## Conclusion
 
-`4b4f9393` is meaningful release-path evidence, but it closes no supervised release gate. It strengthens apply-revalidation/auth boundary proof, proves preserved-remote retry in the checked verifier, and narrows the remaining gap, yet it still leaves the real production boundary unproven. The verdict remains `0/4`.
+`051fe7f4` is meaningful release-path evidence, but it closes no supervised release gate. It narrows the checked verifier to the production snapshot export for explicit live-source runs, yet it still leaves the real production boundary unproven. The verdict remains `0/4`.
 
 The next exact production primitive that should use this preserved wrapper path is:
 
