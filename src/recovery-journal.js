@@ -143,7 +143,6 @@ function durableJournalClaimContractMatches(claim) {
   return hasNonEmptyString(claim.status)
     && hasNonEmptyString(claim.activeClaimId)
     && hasNonEmptyString(claim.activeClaimKeyHash)
-    && claim.activeClaimId === claim.activeClaimKeyHash
     && isPositiveInteger(claim.activeClaimSequence)
     && hasNonEmptyString(claim.activeClaimEvent)
     && hasNonEmptyString(claim.idempotencyKeyHash)
@@ -154,7 +153,6 @@ function durableJournalClaimContractMatches(claim) {
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
       && hasNonEmptyString(claim.previousClaimKeyHash)
-      && claim.previousClaimId === claim.previousClaimKeyHash
       && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ));

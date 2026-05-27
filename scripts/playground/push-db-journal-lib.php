@@ -134,7 +134,7 @@ function reprint_push_lab_db_journal_package_mode_enabled(): bool
 function reprint_push_lab_db_journal_claim_id_from_key_hash($claim_key_hash): ?string
 {
     return reprint_push_lab_db_journal_non_empty_string($claim_key_hash)
-        ? (string) $claim_key_hash
+        ? 'psh_' . substr(hash('sha256', 'reprint-push-claim-id:' . (string) $claim_key_hash), 0, 27)
         : null;
 }
 
@@ -647,14 +647,12 @@ function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
         && reprint_push_lab_db_journal_non_empty_string($claim['idempotencyKeyHash'] ?? null)
         && reprint_push_lab_db_journal_non_empty_string($claim['requestHash'] ?? null)
         && is_bool($stale_claim_rejected)
-        && (string) ($claim['activeClaimId'] ?? '') === (string) ($claim['activeClaimKeyHash'] ?? '')
         && (!$has_previous_claim_identity || (
             reprint_push_lab_db_journal_non_empty_string($claim['previousClaimId'] ?? null)
             &&
             reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null)
             && reprint_push_lab_db_journal_is_positive_int($claim['previousClaimSequence'] ?? null)
             && reprint_push_lab_db_journal_non_empty_string($claim['previousClaimEvent'] ?? null)
-            && (string) ($claim['previousClaimId'] ?? '') === (string) ($claim['previousClaimKeyHash'] ?? '')
         ))
         && (!$has_abandoned_claim_identity || (
             reprint_push_lab_db_journal_is_positive_int($claim['abandonedSequence'] ?? null)

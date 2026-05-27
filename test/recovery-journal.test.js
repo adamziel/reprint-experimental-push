@@ -446,31 +446,35 @@ test('production recovery journal consumer rejects hidden open options', () => {
 });
 
 test('checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence', () => {
+  const activeClaimId = 'retry-claim-id-02';
+  const previousClaimId = 'retry-claim-id-01';
+  const activeClaimKeyHash = 'a'.repeat(64);
+  const previousClaimKeyHash = 'b'.repeat(64);
   const baseContract = {
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     latestRows: [
       {
         sequence: 20,
         event: 'stale-claim-rejected',
-        claimId: 'retry-claim-id-02',
+        claimId: activeClaimId,
       },
       {
         sequence: 18,
         event: 'stale-claim-abandoned',
-        claimId: 'retry-claim-id-01',
+        claimId: previousClaimId,
       },
     ],
     claim: {
       status: 'stale-claim-rejected',
-      activeClaimId: 'retry-claim-id-02',
-      activeClaimKeyHash: 'retry-claim-id-02',
+      activeClaimId,
+      activeClaimKeyHash,
       activeClaimSequence: 20,
       activeClaimEvent: 'stale-claim-rejected',
       idempotencyKeyHash: 'idempotency-hash-01',
       requestHash: 'request-hash-01',
       staleClaimRejected: true,
-      previousClaimId: 'retry-claim-id-01',
-      previousClaimKeyHash: 'retry-claim-id-01',
+      previousClaimId,
+      previousClaimKeyHash,
       previousClaimSequence: 11,
       previousClaimEvent: 'idempotency-opened',
       abandonedSequence: 18,
@@ -489,8 +493,8 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
-      claimId: 'retry-claim-id-02',
-      claimKeyHash: 'retry-claim-id-02',
+      claimId: activeClaimId,
+      claimKeyHash: activeClaimKeyHash,
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -507,8 +511,8 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       staleClaimRejected: false,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
-        claimId: 'retry-claim-id-02',
-        claimKeyHash: 'retry-claim-id-02',
+        claimId: activeClaimId,
+        claimKeyHash: activeClaimKeyHash,
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',

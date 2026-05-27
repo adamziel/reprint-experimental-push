@@ -4428,6 +4428,11 @@ maybeTest('production-shaped live release verify command proves the packaged che
   assert.match(summary.durableJournal?.proof?.journal?.scope || '', /packaged production plugin recovery journal surface/);
   assert.equal(summary.durableJournal?.proof?.journal?.storageGuard?.boundary, 'wpdb-single-statement-cas');
   assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
+  assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash || '', /^[a-f0-9]{64}$/);
+  assert.notEqual(
+    summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
+    summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
+  );
   assert.equal(
     summary.durableJournal?.proof?.journal?.writerLease?.claimId,
     summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
@@ -4648,12 +4653,14 @@ maybeTest('production-shaped live release verify command proves the explicit che
         assert.match(summary.durableJournal?.proof?.journal?.scope || '', /checked live production-shaped recovery journal surface/);
         assert.equal(summary.durableJournal?.proof?.journal?.storageGuard?.boundary, 'wpdb-single-statement-cas');
         assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
-        assert.equal(
+        assert.match(summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash || '', /^[a-f0-9]{64}$/);
+        assert.notEqual(
           summary.durableJournal?.proof?.journal?.claim?.activeClaimId,
           summary.durableJournal?.proof?.journal?.claim?.activeClaimKeyHash,
         );
         assert.match(summary.durableJournal?.proof?.journal?.claim?.previousClaimId || '', /^[A-Za-z0-9_-]{16,160}$/);
-        assert.equal(
+        assert.match(summary.durableJournal?.proof?.journal?.claim?.previousClaimKeyHash || '', /^[a-f0-9]{64}$/);
+        assert.notEqual(
           summary.durableJournal?.proof?.journal?.claim?.previousClaimId,
           summary.durableJournal?.proof?.journal?.claim?.previousClaimKeyHash,
         );
