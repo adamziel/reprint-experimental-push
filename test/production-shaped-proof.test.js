@@ -1755,6 +1755,60 @@ test('auth-session source loader derives allowedSourceUrl from explicit local ru
   });
 });
 
+test('auth-session source loader falls back to runtime env when explicit option values are empty', () => {
+  const sourceUrl = 'https://example.com/local';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_LOCAL_URL: sourceUrl,
+  }, repoRoot, {
+    sourceUrl: '',
+    remoteUrl: '',
+    localUrl: '',
+  });
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth-session source loader falls back past invalid option values to runtime env', () => {
+  const sourceUrl = 'https://example.com/local';
+  const command = buildAuthSessionSourceCommand({
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+    allowedSourceUrl: sourceUrl,
+  });
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_LOCAL_URL: sourceUrl,
+  }, repoRoot, {
+    sourceUrl: 'not-a-url',
+    remoteUrl: ' https://invalid.example.com/push ',
+    localUrl: '',
+  });
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
 test('auth-session source loader fails closed when the source command exits non-zero', () => {
   const source = loadAuthSessionSource(
     `${process.execPath} -e "process.stderr.write('boom\\n'); process.exit(23)"`,
