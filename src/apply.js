@@ -1320,7 +1320,11 @@ export function productionRecoverySupportReport(writer) {
     addMissingDependency('journal-readable inspection records with sequence and type');
   }
 
-  const checkedBoundaryProof = checkedDurableJournalBoundaryProof(writer, inspected);
+  const checkedBoundaryProof = checkedDurableJournalBoundaryProof(
+    writer,
+    inspected,
+    missingDependency,
+  );
 
   return {
     supported: missingDependency.length === 0,
@@ -1333,13 +1337,25 @@ export function productionRecoverySupportReport(writer) {
   };
 }
 
-function checkedDurableJournalBoundaryProof(writer, inspected) {
+function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency = []) {
   const staleClaimLineageProven = hasStaleClaimRejectionEvidence(inspected?.records);
   const inspectedBoundary = isStrictPlainObject(inspected?.leaseFenceContract)
     && !hasHiddenOwnStringKeys(inspected.leaseFenceContract)
     && typeof inspected.leaseFenceContract.boundary === 'string'
     ? inspected.leaseFenceContract.boundary
     : null;
+  const checkedBoundaryBlockedByMissingDependency = missingDependency.some((dependency) => [
+      'owned restart-readable recovery journal path',
+      'absolute restart-readable recovery journal path',
+      'restart-readable recovery journal schema',
+      'restart-readable recovery artifact references',
+      'restart-readable recovery remote artifact references',
+      'restart-readable remote recovery artifact ownership',
+      'fencing or lease ownership for the journal writer',
+      'stable-storage flush or fsync semantics',
+      'journal-readable inspection records with sequence and type',
+      'restart-readable recovery journal adapter',
+    ].includes(dependency));
   const inspectedOwnsJournal = Object.hasOwn(inspected ?? {}, 'ownsJournal')
     && !hasHiddenOwnStringProperty(inspected, 'ownsJournal')
     && inspected.ownsJournal === true;
@@ -1357,7 +1373,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected) {
         ? inspected.scope
         : null
     );
-  const acceptedOnCheckedBoundary = Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
+  const acceptedOnCheckedBoundary = (
+    Object.hasOwn(writer ?? {}, 'acceptedOnCheckedBoundary')
     && !hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')
     ? writer.acceptedOnCheckedBoundary === true
     : (
@@ -1365,7 +1382,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected) {
       && !hasHiddenOwnStringProperty(inspected, 'acceptedOnCheckedBoundary')
         ? inspected.acceptedOnCheckedBoundary === true
         : false
-    );
+    )
+  ) && !checkedBoundaryBlockedByMissingDependency;
 
   return {
     scope,
