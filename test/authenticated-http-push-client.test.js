@@ -8,6 +8,7 @@ import {
   runAuthenticatedHttpPush,
 } from '../src/authenticated-http-push-client.js';
 import { recoveryClaimHash } from '../src/recovery-journal.js';
+import { digest } from '../src/stable-json.js';
 
 const credential = {
   username: 'reprint_push_admin',
@@ -15,6 +16,45 @@ const credential = {
 };
 
 const trustedDbJournalScope = 'checked live production-shaped journal surface; not local Playground fixture only';
+
+function buildApplyRevalidationEvidence(plan, receipt, claimId, claimHash) {
+  const mutations = Array.isArray(plan?.mutations) ? plan.mutations : [];
+  const preconditions = Array.isArray(plan?.preconditions) ? plan.preconditions : [];
+
+  return {
+    schemaVersion: 1,
+    required: 'fresh-live-hashes-before-first-mutation',
+    phase: 'before-first-mutation',
+    checkedAgainst: 'live-remote',
+    planHash: receipt?.planHash || digest(plan),
+    receiptHash: receipt?.receiptHash || null,
+    preconditionSetHash: digest(preconditions.map((precondition) => ({
+      mutationId: String(precondition?.mutationId || ''),
+      resourceKey: String(precondition?.resourceKey || ''),
+      resource: precondition?.resource,
+      expectedHash: String(precondition?.expectedHash || ''),
+    }))),
+    mutationSetHash: digest(mutations.map((mutation) => ({
+      id: String(mutation?.id || ''),
+      resourceKey: String(mutation?.resourceKey || ''),
+      resource: mutation?.resource,
+      action: mutation?.action ?? null,
+      changeKind: mutation?.changeKind ?? null,
+      baseHash: mutation?.baseHash ?? null,
+      remoteBeforeHash: mutation?.remoteBeforeHash ?? null,
+      localHash: mutation?.localHash ?? null,
+    }))),
+    mutationCount: mutations.length,
+    verifiedCount: mutations.length,
+    verifiedResourceKeys: mutations.map((mutation) => String(mutation.resourceKey || '')),
+    claim: {
+      activeClaimId: claimId,
+      activeClaimKeyHash: claimHash,
+      activeClaimSequence: 1,
+      staleClaimRetry: false,
+    },
+  };
+}
 
 test('authenticated push client requires an explicit session and idempotency key for mutating requests', () => {
   const client = authenticatedHttpClient({
@@ -9626,6 +9666,7 @@ test('production-shaped authenticated push preserves consumed claim identity fro
     }
     if (pathname.includes('/apply')) {
       applyCount += 1;
+      const payload = JSON.parse(String(options?.body || '{}'));
       return new Response(JSON.stringify({
         ok: true,
         mode: 'apply',
@@ -9654,6 +9695,12 @@ test('production-shaped authenticated push preserves consumed claim identity fro
           freshMutationWork: applyCount === 1,
           conflict: false,
         },
+        applyRevalidation: buildApplyRevalidationEvidence(
+          payload.plan,
+          payload.receipt,
+          claimId,
+          claimHash,
+        ),
       }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -9697,21 +9744,11 @@ test('production-shaped authenticated push preserves consumed claim identity fro
       requireProductionAuthSession: true,
     });
 
-    assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'APPLY_REVALIDATION_REQUIRED');
-    assert.equal(
-      summary.boundary?.firstRemainingProductionBoundary,
-      'apply-time revalidation before first mutation on the checked release path',
-    );
-    assert.equal(summary.boundary?.status, 'unimplemented');
-    assert.equal(summary.boundary?.verdict, 'APPLY_REVALIDATION_REQUIRED');
-    assert.deepEqual(summary.boundary?.applyRevalidation, {
-      field: 'planHash',
-      required: summary.boundary?.applyRevalidation?.required,
-      observed: null,
-      verdict: 'APPLY_REVALIDATION_REQUIRED',
-    });
-    assert.match(summary.boundary?.applyRevalidation?.required || '', /^[a-f0-9]{64}$/);
+    assert.equal(summary.ok, true);
+    assert.equal(summary.code, undefined);
+    assert.equal(summary.boundary, undefined);
+    assert.equal(summary.applyRevalidation?.required, 'fresh-live-hashes-before-first-mutation');
+    assert.equal(summary.applyRevalidation?.checkedAgainst, 'live-remote');
     assert.equal(summary.recoveryInspect.recovery.journal.kind, 'production-recovery-journal');
     assert.equal(summary.recoveryInspect.recovery.journal.consumed, true);
     assert.equal(summary.recoveryInspect.recovery.journal.consumedClaimId, claimId);

@@ -1969,6 +1969,7 @@ function summarizeApplyRevalidation(body) {
 }
 
 function resolveApplyRevalidationDrift(applyRevalidation, plan, receipt) {
+  const planEvidence = summarizePlanEvidenceForApplyRevalidation(plan);
   const expectedResourceKeys = Array.isArray(plan?.mutations)
     ? plan.mutations.map((mutation) => mutation.resourceKey)
     : [];
@@ -1979,8 +1980,8 @@ function resolveApplyRevalidationDrift(applyRevalidation, plan, receipt) {
     ['checkedAgainst', 'live-remote'],
     ['planHash', receipt?.planHash || digest(plan)],
     ['receiptHash', receipt?.receiptHash || null],
-    ['preconditionSetHash', receipt?.preconditionSetHash || null],
-    ['mutationSetHash', receipt?.mutationSetHash || null],
+    ['preconditionSetHash', receipt?.preconditionSetHash || planEvidence.preconditionSetHash],
+    ['mutationSetHash', receipt?.mutationSetHash || planEvidence.mutationSetHash],
     ['mutationCount', expectedResourceKeys.length],
     ['verifiedCount', expectedResourceKeys.length],
   ];
@@ -2030,6 +2031,30 @@ function resolveApplyRevalidationDrift(applyRevalidation, plan, receipt) {
   }
 
   return null;
+}
+
+function summarizePlanEvidenceForApplyRevalidation(plan) {
+  const mutations = Array.isArray(plan?.mutations) ? plan.mutations : [];
+  const preconditions = Array.isArray(plan?.preconditions) ? plan.preconditions : [];
+
+  return {
+    mutationSetHash: digest(mutations.map((mutation) => ({
+      id: String(mutation?.id || ''),
+      resourceKey: String(mutation?.resourceKey || ''),
+      resource: mutation?.resource,
+      action: mutation?.action ?? null,
+      changeKind: mutation?.changeKind ?? null,
+      baseHash: mutation?.baseHash ?? null,
+      remoteBeforeHash: mutation?.remoteBeforeHash ?? null,
+      localHash: mutation?.localHash ?? null,
+    }))),
+    preconditionSetHash: digest(preconditions.map((precondition) => ({
+      mutationId: String(precondition?.mutationId || ''),
+      resourceKey: String(precondition?.resourceKey || ''),
+      resource: precondition?.resource,
+      expectedHash: String(precondition?.expectedHash || ''),
+    }))),
+  };
 }
 
 function summarizeTransportFailure(error) {
