@@ -95,6 +95,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
     blockerRefs: Object.freeze([
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
       'queue-budget-not-visible',
       'queue-budget-visible-without-memory-ceiling-visibility',
       'queue-budget-visible-without-queue-headroom-visible',
@@ -213,6 +214,7 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
   Object.freeze({
     id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
     blockerRefs: Object.freeze([
+      'queue-pause-without-measured-and-aligned-receipt-cursor-backpressure-proof',
       'queue-budget-not-visible',
       'queue-budget-visible-without-memory-ceiling-visibility',
       'queue-budget-visible-without-queue-headroom-visible',
