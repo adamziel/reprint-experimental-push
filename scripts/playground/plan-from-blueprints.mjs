@@ -44,7 +44,7 @@ assertConflict(plan, 'row:["wp_options","option_name:reprint_push_plugin_payload
 assertConflict(plan, 'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]', 'plugin-data-conflict');
 
 assertMutation(plan, postKeyByTitle(snapshots.local, 'Local-only draft'), 'create');
-assertBlocker(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'stale-wordpress-graph-identity');
+assertMutation(plan, 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]', 'create');
 assertMutation(plan, 'file:wp-content/uploads/reprint-push/local-only.txt', 'create');
 
 assertDecision(plan, postKeyByTitle(snapshots.remote, 'Remote-only announcement'), 'keep-remote');
