@@ -85,3 +85,20 @@ test('packaged plugin-driver scenario resolver exposes a dedicated receipt crede
     ]),
   );
 });
+
+test('packaged plugin-driver scenario resolver exposes a dedicated non-mutation guard bundle mode', () => {
+  const resolved = resolveProductionPluginPackageScenarios([], undefined, 'driverNonMutationGuards');
+
+  assert.equal(resolved.resolvedMode, 'driverNonMutationGuards');
+  assert.equal(resolved.canonicalMode, 'driver-non-mutation-guards');
+  assert.deepEqual(resolved.requestedScenarios, ['driver-non-mutation-guards']);
+  assert.deepEqual(
+    resolved.selectedScenarios,
+    new Set([
+      'driver-non-mutation-guards',
+      'driver-delete-guard',
+      'driver-update-validation-guard',
+      'driver-receipt-blank-row-id-guard',
+    ]),
+  );
+});

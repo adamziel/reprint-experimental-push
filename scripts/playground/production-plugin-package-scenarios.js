@@ -22,6 +22,12 @@ const receiptCredentialGuardScenarioNames = [
   'driver-receipt-revoked-credential-guard',
 ];
 
+const nonMutationGuardScenarioNames = [
+  'driver-delete-guard',
+  'driver-update-validation-guard',
+  'driver-receipt-blank-row-id-guard',
+];
+
 const registrationGuardScenarioNames = [
   'driver-missing-export-guard',
   'driver-missing-apply-guard',
@@ -52,6 +58,7 @@ const scenarioGroups = {
   'driver-receipt-guards': receiptGuardScenarioNames,
   'driver-receipt-auth-guards': receiptAuthGuardScenarioNames,
   'driver-receipt-credential-guards': receiptCredentialGuardScenarioNames,
+  'driver-non-mutation-guards': nonMutationGuardScenarioNames,
   'driver-verifier-guards': [
     ...receiptGuardScenarioNames,
     ...registrationGuardScenarioNames,
@@ -113,6 +120,7 @@ const scenarioNameAliases = new Map([
   ['driverReceiptGuards', 'driver-receipt-guards'],
   ['driverReceiptAuthGuards', 'driver-receipt-auth-guards'],
   ['driverReceiptCredentialGuards', 'driver-receipt-credential-guards'],
+  ['driverNonMutationGuards', 'driver-non-mutation-guards'],
   ['driverDeleteApplyProof', 'driver-delete-apply'],
   ['driver-delete-apply-proof', 'driver-delete-apply'],
   ['driverPositiveProof', 'driver-positive-proof'],
@@ -149,6 +157,12 @@ const modeNameMappings = new Map([
   ['driverReceiptCredentialGuards', 'driver-receipt-credential-guards'],
   ['driver-receipt-credential-guards-only', 'driver-receipt-credential-guards'],
   ['driverReceiptCredentialGuardsOnly', 'driver-receipt-credential-guards'],
+  ['driver-non-mutation-only', 'driver-non-mutation-guards'],
+  ['driverNonMutationOnly', 'driver-non-mutation-guards'],
+  ['driver-non-mutation-guards', 'driver-non-mutation-guards'],
+  ['driverNonMutationGuards', 'driver-non-mutation-guards'],
+  ['driver-non-mutation-guards-only', 'driver-non-mutation-guards'],
+  ['driverNonMutationGuardsOnly', 'driver-non-mutation-guards'],
   ['driver-verifier-only', 'driver-verifier-guards'],
   ['driverVerifierOnly', 'driver-verifier-guards'],
   ['driver-verifier-guards', 'driver-verifier-guards'],

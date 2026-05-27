@@ -17,6 +17,9 @@ const receiptAuthGuardScenarioNames = [
 const receiptCredentialGuardScenarioNames = [
   ...scenarioGroups['driver-receipt-credential-guards'],
 ];
+const nonMutationGuardScenarioNames = [
+  ...scenarioGroups['driver-non-mutation-guards'],
+];
 const registrationShapeGuardScenarioNames = [
   ...scenarioGroups['driver-registration-shape-guards'],
 ];
@@ -43,6 +46,9 @@ const bundleSummaryGroups = {
   ],
   'driver-receipt-credential-guards': [
     ...receiptCredentialGuardScenarioNames,
+  ],
+  'driver-non-mutation-guards': [
+    ...nonMutationGuardScenarioNames,
   ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
@@ -148,6 +154,11 @@ const guardProofScenarioMaps = Object.freeze({
   'driver-receipt-credential-guards': Object.freeze({
     rotatedCredential: 'driver-receipt-rotated-credential-guard',
     revokedCredential: 'driver-receipt-revoked-credential-guard',
+  }),
+  'driver-non-mutation-guards': Object.freeze({
+    deleteGuard: 'driver-delete-guard',
+    updateValidationGuard: 'driver-update-validation-guard',
+    blankRowId: 'driver-receipt-blank-row-id-guard',
   }),
   'driver-registration-guards': Object.freeze({
     missingExport: 'driver-missing-export-guard',
@@ -278,6 +289,15 @@ function buildReceiptCredentialGuardProofMap(summary) {
   };
 }
 
+function buildNonMutationGuardProofMap(summary) {
+  const receiptGuardProof = buildReceiptGuardProofMap(summary);
+  return {
+    deleteGuard: receiptGuardProof.deleteGuard,
+    updateValidationGuard: receiptGuardProof.updateValidationGuard,
+    blankRowId: receiptGuardProof.blankRowId,
+  };
+}
+
 function buildRegistrationCallbackGuardProofMap(summary) {
   const registrationGuardProof = buildRegistrationGuardProofMap(summary);
   return {
@@ -350,6 +370,9 @@ function buildModeGuardProof(canonicalMode, summary, scenarioPasses) {
       break;
     case 'driver-receipt-credential-guards':
       guardProof = buildReceiptCredentialGuardProofMap(summary);
+      break;
+    case 'driver-non-mutation-guards':
+      guardProof = buildNonMutationGuardProofMap(summary);
       break;
     case 'driver-registration-guards':
       guardProof = buildRegistrationGuardProofMap(summary);
@@ -763,6 +786,7 @@ export const proofKeyByCanonicalMode = Object.freeze({
   'driver-receipt-guards': 'driverReceiptGuards',
   'driver-receipt-auth-guards': 'driverReceiptAuthGuards',
   'driver-receipt-credential-guards': 'driverReceiptCredentialGuards',
+  'driver-non-mutation-guards': 'driverNonMutationGuards',
   'driver-delete-apply': 'driverDeleteApplyProof',
   'driver-positive-proof': 'driverPositiveProof',
   'driver-proof': 'driverProof',
@@ -2497,6 +2521,29 @@ export function buildProductionPluginPackageProofSummary(
       requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-receipt-credential-guards'),
       requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-receipt-credential-guards'),
     },
+    nonMutationGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : canonicalRequestedScenarios.includes('driver-non-mutation-guards')
+          || concreteBundleRequests['driver-non-mutation-guards'],
+      selected: buildObjectBundleSelected('driver-non-mutation-guards'),
+      ok: buildObjectBundleStatus('driver-non-mutation-guards') === 'passed',
+      status: buildObjectBundleStatus('driver-non-mutation-guards'),
+      deleteGuard: summary?.driverDeleteGuard?.dryRunRejectedCode ?? null,
+      updateValidationGuard: summary?.driverUpdateValidationGuard?.dryRunRejectedCode ?? null,
+      ...(summary?.driverReceiptBlankRowIdGuard !== undefined
+        ? { blankRowId: summary?.driverReceiptBlankRowIdGuard?.blankRejectedCode ?? null }
+        : {}),
+      ...buildBundleScenarioDetails(
+        'driver-non-mutation-guards',
+        scenarioPasses,
+        buildObjectBundleStatus('driver-non-mutation-guards') !== 'skipped',
+      ),
+      requestedStatus: requestedScenarioStatuses['driver-non-mutation-guards']
+        ?? buildConcreteRequestedBundleStatus('driver-non-mutation-guards'),
+      requestedBundleStatus: buildConcreteRequestedBundleStatus('driver-non-mutation-guards'),
+      requestedBundleStatuses: buildConcreteRequestedBundleStatuses('driver-non-mutation-guards'),
+    },
     deleteApplyProof: {
       requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
         || requestedScenarioAliasMap.get('driver-delete-apply').length > 0,
@@ -2762,6 +2809,7 @@ export function buildProductionPluginPackageProofSummary(
   proofSummary.driverReceiptGuards = proofSummary.receiptGuards;
   proofSummary.driverReceiptAuthGuards = proofSummary.receiptAuthGuards;
   proofSummary.driverReceiptCredentialGuards = proofSummary.receiptCredentialGuards;
+  proofSummary.driverNonMutationGuards = proofSummary.nonMutationGuards;
   proofSummary.driverDeleteApplyProof = proofSummary.deleteApplyProof;
   proofSummary.driverMutationProof = proofSummary.mutationProof;
   proofSummary.driverVerifierGuards = proofSummary.verifierGuards;

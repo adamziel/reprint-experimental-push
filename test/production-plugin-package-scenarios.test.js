@@ -698,6 +698,14 @@ test('scenario resolver exports the shared runtime mode aliases for each canonic
     'driverReceiptGuardsOnly',
     'driverReceiptOnly',
   ]);
+  assert.deepEqual(modeAliasesByCanonicalMode['driver-non-mutation-guards'], [
+    'driver-non-mutation-guards',
+    'driver-non-mutation-guards-only',
+    'driver-non-mutation-only',
+    'driverNonMutationGuards',
+    'driverNonMutationGuardsOnly',
+    'driverNonMutationOnly',
+  ]);
   assert.deepEqual(modeAliasesByCanonicalMode['driver-verifier-guards'], [
     'driver-verifier-guards',
     'driver-verifier-guards-only',

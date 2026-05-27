@@ -81,6 +81,13 @@ test('package scripts pin the bounded plugin-driver receipt credential guard bun
   );
 });
 
+test('package scripts pin the bounded plugin-driver non-mutation guard bundle entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-non-mutation-guards'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverNonMutationGuards node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver registration guard bundle entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-registration-guards'],
@@ -396,6 +403,20 @@ test('package scripts pin the bounded plugin-driver receipt credential-only mode
   );
 });
 
+test('package scripts pin the bounded plugin-driver non-mutation-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-non-mutation-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverNonMutationOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver non-mutation guard alias entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-non-mutation-guards-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driverNonMutationGuardsOnly node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver receipt-only mode entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-only'],
@@ -611,6 +632,7 @@ test('package scripts keep every guard-proof canonical mode reachable through ru
 
   assert.deepEqual(guardProofModeNames, [
     'driver-callback-guards',
+    'driver-non-mutation-guards',
     'driver-proof',
     'driver-receipt-auth-guards',
     'driver-receipt-credential-guards',

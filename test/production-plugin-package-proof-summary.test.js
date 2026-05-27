@@ -147,6 +147,10 @@ test('plugin-driver proof summary bundle groups stay aligned with shared scenari
     scenarioGroups['driver-receipt-credential-guards'],
   );
   assert.deepEqual(
+    bundleSummaryGroups['driver-non-mutation-guards'],
+    scenarioGroups['driver-non-mutation-guards'],
+  );
+  assert.deepEqual(
     bundleSummaryGroups['driver-callback-guards'],
     scenarioGroups['driver-callback-guards'],
   );
@@ -187,6 +191,7 @@ test('plugin-driver proof summary tracks every shared plugin-driver scenario exa
 test('plugin-driver proof summary exports guard-proof mode aliases for every canonical guarded bundle', () => {
   assert.deepEqual(guardProofModeNames, [
     'driver-callback-guards',
+    'driver-non-mutation-guards',
     'driver-proof',
     'driver-receipt-auth-guards',
     'driver-receipt-credential-guards',
@@ -218,6 +223,7 @@ test('plugin-driver proof summary exports canonical proof keys for downstream mo
     'driver-callback-guards': 'driverCallbackGuards',
     'driver-delete-apply': 'driverDeleteApplyProof',
     'driver-positive-proof': 'driverPositiveProof',
+    'driver-non-mutation-guards': 'driverNonMutationGuards',
     'driver-proof': 'driverProof',
     'driver-receipt-auth-guards': 'driverReceiptAuthGuards',
     'driver-receipt-credential-guards': 'driverReceiptCredentialGuards',
@@ -277,6 +283,9 @@ test('plugin-driver proof summary resolves every exported runtime mode alias to 
     ['driverReceiptCredentialOnly', { canonicalMode: 'driver-receipt-credential-guards', proofKey: 'driverReceiptCredentialGuards' }],
     ['driverReceiptCredentialGuards', { canonicalMode: 'driver-receipt-credential-guards', proofKey: 'driverReceiptCredentialGuards' }],
     ['driverReceiptCredentialGuardsOnly', { canonicalMode: 'driver-receipt-credential-guards', proofKey: 'driverReceiptCredentialGuards' }],
+    ['driverNonMutationOnly', { canonicalMode: 'driver-non-mutation-guards', proofKey: 'driverNonMutationGuards' }],
+    ['driverNonMutationGuards', { canonicalMode: 'driver-non-mutation-guards', proofKey: 'driverNonMutationGuards' }],
+    ['driverNonMutationGuardsOnly', { canonicalMode: 'driver-non-mutation-guards', proofKey: 'driverNonMutationGuards' }],
     ['driverRegistrationOnly', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
     ['driverRegistrationGuards', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
     ['driverRegistrationGuardsOnly', { canonicalMode: 'driver-registration-guards', proofKey: 'driverRegistrationGuards' }],
@@ -9664,6 +9673,83 @@ test('plugin-driver proof summary carries receipt credential guards on dedicated
   assert.deepEqual(summary.modeProof?.guardProof?.revokedCredential, {
     status: 'passed',
     rejectedCode: 'reprint_push_lab_auth_required',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+});
+
+test('plugin-driver proof summary carries non-mutation guards on dedicated modeProof', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+      driverReceiptBlankRowIdGuard: {
+        blankRejectedCode: 'INVALID_PLAN',
+        whitespaceRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+        payloadModeAfterReject: 'local-update',
+      },
+    },
+    {
+      requestedScenarios: ['driver-non-mutation-guards'],
+      selectedScenarios: new Set([
+        'driver-non-mutation-guards',
+        ...scenarioGroups['driver-non-mutation-guards'],
+      ]),
+      resolvedMode: 'driverNonMutationGuardsOnly',
+      canonicalMode: 'driver-non-mutation-guards',
+    },
+  );
+
+  assert.equal(summary.modeProof?.proof, summary.driverNonMutationGuards);
+  assert.equal(summary.modeProof?.proofKey, 'driverNonMutationGuards');
+  assert.equal(summary.modeProof?.requestedStatus, 'passed');
+  assert.equal(summary.modeProof?.requestedSatisfied, true);
+  assert.equal(summary.modeProof?.requestedBundlesSatisfied, true);
+  assert.equal(summary.modeProof?.guardProof?.ok, true);
+  assert.equal(summary.modeProof?.guardProof?.guardCount, 3);
+  assert.equal(summary.modeProof?.guardProof?.passedGuardCount, 3);
+  assert.deepEqual(summary.modeProof?.guardProof?.guardStatuses, {
+    deleteGuard: 'passed',
+    updateValidationGuard: 'passed',
+    blankRowId: 'passed',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.passedGuards, [
+    'deleteGuard',
+    'updateValidationGuard',
+    'blankRowId',
+  ]);
+  assert.deepEqual(summary.modeProof?.guardProof?.deleteGuard, {
+    status: 'passed',
+    rejectedCode: 'INVALID_PLAN',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.updateValidationGuard, {
+    status: 'passed',
+    rejectedCode: 'INVALID_PLAN',
+    rowRetainedAfterReject: true,
+    payloadModeAfterReject: 'local-update',
+    updatedMarkerAfterReject: 'local-update',
+  });
+  assert.deepEqual(summary.modeProof?.guardProof?.blankRowId, {
+    status: 'passed',
+    rejectedCode: 'INVALID_PLAN',
+    blankRejectedCode: 'INVALID_PLAN',
+    whitespaceRejectedCode: 'INVALID_PLAN',
     rowRetainedAfterReject: true,
     payloadModeAfterReject: 'local-update',
     updatedMarkerAfterReject: 'local-update',
