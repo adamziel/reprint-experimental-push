@@ -126,6 +126,10 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.staleClaimRejected === true;
 }
 
+export function checkedDurableJournalBoundaryContractIsPresent(dbJournal) {
+  return checkedDurableJournalBoundarySatisfied(dbJournal);
+}
+
 function checkedBoundaryPersistedEvidenceMatches(dbJournal) {
   return hasNonEmptyString(dbJournal?.table)
     && isPositiveInteger(dbJournal?.rowCount)

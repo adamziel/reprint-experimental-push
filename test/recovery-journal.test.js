@@ -9,6 +9,7 @@ import {
   appendStaleClaimAdvanced,
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
+  checkedDurableJournalBoundaryContractIsPresent,
   checkedDurableJournalBoundarySatisfied,
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
@@ -2222,6 +2223,52 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
           ...baseContract.leaseFence.writerLease,
           staleClaimRejected: true,
           storageGuard: 'filesystem-compare-rename',
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundaryContractIsPresent({
+      ...baseContract,
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    checkedDurableJournalBoundaryContractIsPresent({
+      ...baseContract,
+      storageGuard: {
+        boundary: 'wpdb-single-statement-cas',
+        operation: 'update',
+        outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: false,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
         },
       },
     }),
