@@ -49539,6 +49539,67 @@ test('blocks converged comments graph drift while preserving a matching independ
   assert.equal(Object.hasOwn(remote.files, 'wp-content/plugins/forms/forms.php'), false);
 });
 
+test('blocks converged comments graph drift while preserving a matching independent restore and remote-only plugin changes', () => {
+  const resourceKey = 'row:["wp_comments","comment_ID:17"]';
+  const matchingRestoreKey = 'file:wp-content/uploads/converged-comment-restore-drift.txt';
+  const base = baseSite();
+  delete base.files[matchingRestoreKey.slice('file:'.length)];
+  base.db.wp_comments = {
+    'comment_ID:17': {
+      comment_ID: 17,
+      comment_post_ID: 1,
+      comment_author: 'Base converged restore drift commenter',
+      comment_content: 'Base converged restore drift comment content',
+      comment_approved: '1',
+    },
+  };
+
+  const local = baseSite();
+  local.files[matchingRestoreKey.slice('file:'.length)] = 'shared converged comment restore drift bytes';
+  local.db.wp_comments = {
+    'comment_ID:17': {
+      comment_ID: 17,
+      comment_post_ID: 1,
+      comment_author: 'Converged restore drift commenter',
+      comment_content: 'Converged restore drift comment content',
+      comment_approved: '0',
+    },
+  };
+
+  const remote = baseSite();
+  remote.files[matchingRestoreKey.slice('file:'.length)] = 'shared converged comment restore drift bytes';
+  remote.db.wp_comments = JSON.parse(JSON.stringify(local.db.wp_comments));
+  remote.plugins.forms.description = 'remote-only plugin changes';
+  remote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-only plugin changes */';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(decisionFor(plan, resourceKey), undefined);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-comments-users-resource');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.unsupportedState, 'converged-drift');
+  assert.equal(blocker.reason, 'Comments graph resources are not yet supported by the planner.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Converged restore drift comment content'), false);
+  assert.equal(planJson.includes('Base converged restore drift comment content'), false);
+  assert.equal(planJson.includes('shared converged comment restore drift bytes'), false);
+  assert.equal(remote.plugins.forms.description, 'remote-only plugin changes');
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin changes */');
+});
+
 test('blocks converged comments graph drift while preserving a matching independent delete and remote-only plugin changes', () => {
   const resourceKey = 'row:["wp_comments","comment_ID:18"]';
   const matchingDeleteKey = 'file:wp-content/uploads/converged-comment-delete.txt';
