@@ -26,6 +26,10 @@ const bundleSummaryGroups = {
   'driver-registration-guards': [
     ...registrationGuardScenarioNames,
   ],
+  'driver-receipt-registration-guards': [
+    'driver-receipt-guards',
+    ...registrationGuardScenarioNames,
+  ],
   'driver-callback-guards': [
     ...callbackGuardScenarioNames,
   ],

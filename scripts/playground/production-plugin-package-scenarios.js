@@ -40,6 +40,19 @@ const scenarioGroups = {
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
   ],
+  'driver-receipt-registration-guards': [
+    'driver-receipt-guards',
+    ...receiptGuardScenarioNames,
+    'driver-registration-guards',
+    'driver-missing-export-guard',
+    'driver-missing-apply-guard',
+    'driver-missing-validate-guard',
+    'driver-missing-name-guard',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
   'driver-callback-guards': [
     'driver-missing-export-guard',
     'driver-missing-apply-guard',
@@ -91,7 +104,7 @@ function resolveScenarioMode(modeValue) {
     return 'driver-registration-guards';
   }
   if (modeValue === 'driver-receipt-registration-only') {
-    return 'driver-receipt-guards,driver-registration-guards';
+    return 'driver-receipt-registration-guards';
   }
   if (modeValue === 'driver-callback-only') {
     return 'driver-callback-guards';

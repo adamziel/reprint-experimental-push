@@ -224,18 +224,13 @@ test('scenario resolver maps driver-receipt-registration-only mode to the bounde
     'driver-receipt-registration-only',
   );
 
-  assert.deepEqual(resolved.requestedScenarios, [
-    'driver-receipt-guards',
-    'driver-registration-guards',
-  ]);
+  assert.deepEqual(resolved.requestedScenarios, ['driver-receipt-registration-guards']);
   assert.equal(resolved.resolvedMode, 'driver-receipt-registration-only');
   assert.deepEqual(
     Array.from(resolved.selectedScenarios).sort(),
     [
-      'driver-receipt-guards',
-      ...scenarioGroups['driver-receipt-guards'],
-      'driver-registration-guards',
-      ...scenarioGroups['driver-registration-guards'],
+      'driver-receipt-registration-guards',
+      ...scenarioGroups['driver-receipt-registration-guards'],
     ].sort(),
   );
 });

@@ -17,6 +17,13 @@ test('plugin-driver proof summary bundle groups stay aligned with shared scenari
     scenarioGroups['driver-registration-guards'],
   );
   assert.deepEqual(
+    bundleSummaryGroups['driver-receipt-registration-guards'],
+    [
+      'driver-receipt-guards',
+      ...scenarioGroups['driver-registration-guards'],
+    ],
+  );
+  assert.deepEqual(
     bundleSummaryGroups['driver-callback-guards'],
     scenarioGroups['driver-callback-guards'],
   );
@@ -138,8 +145,8 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.passedScenarioCount, 11);
   assert.equal(summary.failedScenarioCount, 0);
   assert.equal(summary.skippedScenarioCount, 0);
-  assert.equal(summary.checkedBundleCount, 6);
-  assert.equal(summary.passedBundleCount, 6);
+  assert.equal(summary.checkedBundleCount, 7);
+  assert.equal(summary.passedBundleCount, 7);
   assert.equal(summary.failedBundleCount, 0);
   assert.equal(summary.skippedBundleCount, 0);
   assert.equal(summary.requestedScenarioCount, 'all');
@@ -182,6 +189,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.deepEqual(summary.passedBundles, [
     'driverCallbackGuards',
     'driverPositiveProof',
+    'driverReceiptRegistrationGuards',
     'driverRegistrationGuards',
     'driverRegistrationShapeGuards',
     'driverReleaseProof',
@@ -238,6 +246,7 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     driverVerifierGuards: 'passed',
     driverPositiveProof: 'passed',
     driverReleaseProof: 'passed',
+    driverReceiptRegistrationGuards: 'passed',
     driverRegistrationGuards: 'passed',
     driverCallbackGuards: 'passed',
     driverRegistrationShapeGuards: 'passed',
@@ -355,7 +364,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 1);
   assert.equal(summary.failedBundleCount, 0);
-  assert.equal(summary.skippedBundleCount, 5);
+  assert.equal(summary.skippedBundleCount, 6);
   assert.equal(summary.requestedScenarioCount, 1);
   assert.equal(summary.passedRequestedScenarioCount, 1);
   assert.equal(summary.failedRequestedScenarioCount, 0);
@@ -422,6 +431,7 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.deepEqual(summary.bundles, {
     driverPositiveProof: 'skipped',
     driverReleaseProof: 'skipped',
+    driverReceiptRegistrationGuards: 'skipped',
     driverVerifierGuards: 'passed',
     driverRegistrationGuards: 'skipped',
     driverCallbackGuards: 'skipped',
@@ -659,7 +669,7 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.checkedBundleCount, 1);
   assert.equal(summary.passedBundleCount, 0);
   assert.equal(summary.failedBundleCount, 1);
-  assert.equal(summary.skippedBundleCount, 5);
+  assert.equal(summary.skippedBundleCount, 6);
   assert.equal(summary.checkedScenarioCount, 9);
   assert.equal(summary.passedScenarioCount, 8);
   assert.equal(summary.failedScenarioCount, 1);
@@ -702,8 +712,10 @@ test('plugin-driver proof summary fails requested bundle verdict when a requeste
   assert.equal(summary.failedRequestedConcreteScenarioCount, 0);
   assert.deepEqual(summary.passedRequestedBundles, []);
   assert.deepEqual(summary.failedRequestedBundles, ['driverVerifierGuards']);
+  assert.equal(summary.bundles.driverReceiptGuards, undefined);
   assert.equal(summary.bundles.driverVerifierGuards, 'missing');
   assert.equal(summary.scenarios.driverMissingValidateGuard, 'missing');
+  assert.equal(summary.bundles.driverReceiptRegistrationGuards, 'skipped');
   assert.deepEqual(summary.requestedConcreteScenarios, []);
   assert.deepEqual(summary.passedRequestedConcreteScenarios, []);
   assert.deepEqual(summary.failedRequestedConcreteScenarios, []);
@@ -1234,14 +1246,11 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
 
 test('plugin-driver proof summary tracks combined receipt and registration guard bundles', () => {
   const requestedScenarios = [
-    'driver-receipt-guards',
-    'driver-registration-guards',
+    'driver-receipt-registration-guards',
   ];
   const selectedScenarios = new Set([
-    'driver-receipt-guards',
-    ...scenarioGroups['driver-receipt-guards'],
-    'driver-registration-guards',
-    ...scenarioGroups['driver-registration-guards'],
+    'driver-receipt-registration-guards',
+    ...scenarioGroups['driver-receipt-registration-guards'],
   ]);
   const summary = buildProductionPluginPackageProofSummary(
     {
@@ -1316,56 +1325,42 @@ test('plugin-driver proof summary tracks combined receipt and registration guard
 
   assert.equal(summary.ok, true);
   assert.deepEqual(summary.requestedScenarios, requestedScenarios);
-  assert.deepEqual(summary.requestedBundles, [
-    'driverReceiptGuards',
-    'driverRegistrationGuards',
-  ]);
+  assert.deepEqual(summary.requestedBundles, ['driverReceiptRegistrationGuards']);
   assert.deepEqual(summary.passedRequestedScenarios, requestedScenarios);
   assert.deepEqual(summary.failedRequestedScenarios, []);
-  assert.deepEqual(summary.passedRequestedBundles, [
-    'driverReceiptGuards',
-    'driverRegistrationGuards',
-  ]);
+  assert.deepEqual(summary.passedRequestedBundles, ['driverReceiptRegistrationGuards']);
   assert.deepEqual(summary.failedRequestedBundles, []);
   assert.deepEqual(summary.requestedScenarioStatuses, {
-    'driver-receipt-guards': 'passed',
-    'driver-registration-guards': 'passed',
+    'driver-receipt-registration-guards': 'passed',
   });
   assert.deepEqual(summary.requestedBundleStatuses, {
-    driverReceiptGuards: 'passed',
-    driverRegistrationGuards: 'passed',
+    driverReceiptRegistrationGuards: 'passed',
   });
-  assert.deepEqual(summary.checkedBundles, [
-    'driverReceiptGuards',
-    'driverRegistrationGuards',
-  ]);
-  assert.deepEqual(summary.passedBundles, [
-    'driverReceiptGuards',
-    'driverRegistrationGuards',
-  ]);
+  assert.deepEqual(summary.checkedBundles, ['driverReceiptRegistrationGuards']);
+  assert.deepEqual(summary.passedBundles, ['driverReceiptRegistrationGuards']);
   assert.deepEqual(summary.failedBundles, []);
   assert.equal(summary.receiptGuards.requested, true);
   assert.equal(summary.receiptGuards.selected, true);
   assert.equal(summary.receiptGuards.ok, true);
   assert.equal(summary.receiptGuards.status, 'passed');
   assert.deepEqual(summary.receiptGuards.requestedBundleStatuses, {
-    driverReceiptGuards: 'passed',
+    driverReceiptRegistrationGuards: 'passed',
   });
-  assert.equal(summary.registrationGuards.requested, true);
-  assert.equal(summary.registrationGuards.selected, true);
-  assert.equal(summary.registrationGuards.ok, true);
-  assert.equal(summary.registrationGuards.status, 'passed');
+  assert.equal(summary.registrationGuards.requested, false);
+  assert.equal(summary.registrationGuards.selected, false);
+  assert.equal(summary.registrationGuards.ok, false);
+  assert.equal(summary.registrationGuards.status, 'skipped');
   assert.deepEqual(summary.registrationGuards.requestedBundleStatuses, {
-    driverRegistrationGuards: 'passed',
+    driverReceiptRegistrationGuards: 'passed',
   });
   assert.deepEqual(summary.bundles, {
     driverPositiveProof: 'skipped',
     driverReleaseProof: 'skipped',
     driverVerifierGuards: 'skipped',
-    driverRegistrationGuards: 'passed',
+    driverReceiptRegistrationGuards: 'passed',
+    driverRegistrationGuards: 'skipped',
     driverCallbackGuards: 'skipped',
     driverRegistrationShapeGuards: 'skipped',
-    driverReceiptGuards: 'passed',
   });
 });
 

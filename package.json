@@ -25,7 +25,7 @@
     "test:playground:production-plugin-driver-receipt-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-verifier-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-verifier-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-registration-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-registration-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
-    "test:playground:production-plugin-driver-receipt-registration-guards": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-receipt-registration-only node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-receipt-registration-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-registration-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-callback-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-callback-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-registration-shape-guards": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-registration-shape-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
     "test:playground:production-plugin-driver-delete-apply": "REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply node ./scripts/playground/production-plugin-package-smoke.mjs",

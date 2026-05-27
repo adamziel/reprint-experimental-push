@@ -42,7 +42,7 @@ test('package scripts pin the bounded plugin-driver registration guard bundle en
 test('package scripts pin the bounded plugin-driver combined receipt and registration guard entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-receipt-registration-guards'],
-    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-receipt-registration-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-registration-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
 
