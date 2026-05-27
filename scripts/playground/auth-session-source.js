@@ -54,10 +54,15 @@ export function loadAuthSessionSource(
       error: 'Auth session source command must return sourceUrl',
     };
   }
-  if (!isPermittedAuthSessionSourceUrl(sourceUrl, options.allowedSourceUrl)) {
+  if (!isPermittedAuthSessionSourceUrl(
+    sourceUrl,
+    options.allowedSourceUrls ?? options.allowedSourceUrl,
+  )) {
     return {
       ok: false,
-      error: describeUnsupportedAuthSessionSourceUrl(options.allowedSourceUrl),
+      error: describeUnsupportedAuthSessionSourceUrl(
+        options.allowedSourceUrls ?? options.allowedSourceUrl,
+      ),
     };
   }
 
@@ -349,7 +354,7 @@ export function loadAuthSessionSourceFromRuntimeEnvironment(
     return null;
   }
 
-  const allowedSourceUrl = resolveExplicitAllowedAuthSessionSourceUrl(
+  const allowedSourceUrls = resolveExplicitAllowedAuthSessionSourceUrls(
     options.sourceUrl,
     baseEnv.REPRINT_PUSH_SOURCE_URL,
     options.remoteUrl,
@@ -360,7 +365,7 @@ export function loadAuthSessionSourceFromRuntimeEnvironment(
 
   return loadAuthSessionSource(command, baseEnv, cwd, {
     ...options,
-    allowedSourceUrl,
+    allowedSourceUrls,
   });
 }
 
@@ -385,23 +390,23 @@ function normalizeAuthSessionSourceTimeout(timeout) {
   return Math.max(1, Math.trunc(timeout));
 }
 
-function describeUnsupportedAuthSessionSourceUrl(allowedSourceUrl) {
-  return normalizeExplicitAllowedAuthSessionSourceUrl(allowedSourceUrl)
+function describeUnsupportedAuthSessionSourceUrl(allowedSourceUrls) {
+  return normalizeExplicitAllowedAuthSessionSourceUrls(allowedSourceUrls).length > 0
     ? 'Auth session source command must return a supported local sourceUrl or match the explicit live sourceUrl'
     : 'Auth session source command must return a supported local sourceUrl';
 }
 
-function isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrl) {
+function isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrls) {
   if (isSupportedAuthSessionSourceUrl(sourceUrl)) {
     return true;
   }
 
   const normalizedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(sourceUrl);
-  const normalizedAllowedSourceUrl = normalizeExplicitAllowedAuthSessionSourceUrl(allowedSourceUrl);
   return Boolean(
     normalizedSourceUrl
-    && normalizedAllowedSourceUrl
-    && normalizedSourceUrl === normalizedAllowedSourceUrl,
+    && normalizeExplicitAllowedAuthSessionSourceUrls(allowedSourceUrls).some(
+      (allowedSourceUrl) => normalizedSourceUrl === allowedSourceUrl,
+    ),
   );
 }
 
@@ -425,6 +430,19 @@ export function normalizeExplicitAllowedAuthSessionSourceUrl(value) {
   }
 
   return parsed.toString();
+}
+
+function normalizeExplicitAllowedAuthSessionSourceUrls(values) {
+  const entries = Array.isArray(values) ? values : [values];
+  const normalized = entries
+    .map((value) => normalizeExplicitAllowedAuthSessionSourceUrl(value))
+    .filter(Boolean);
+
+  return [...new Set(normalized)];
+}
+
+export function resolveExplicitAllowedAuthSessionSourceUrls(...values) {
+  return normalizeExplicitAllowedAuthSessionSourceUrls(values);
 }
 
 function isSupportedAuthSessionSourceUrl(sourceUrl) {

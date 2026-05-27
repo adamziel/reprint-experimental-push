@@ -1092,6 +1092,27 @@ test('production auth/session source loader accepts matching explicit live sourc
   });
 });
 
+test('production auth/session source loader accepts any matching explicit runtime sourceUrl', () => {
+  const runtimeRemoteSource = loadAuthSessionSourceFromRuntimeEnvironment(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://runtime.example.test/push?session=1', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+      REPRINT_PUSH_SOURCE_URL: 'https://example.com/push',
+      REPRINT_PUSH_REMOTE_URL: 'https://runtime.example.test/push',
+      REPRINT_PUSH_LOCAL_URL: 'https://local.example.test/push',
+    },
+    repoRoot,
+  );
+
+  assert.deepEqual(runtimeRemoteSource, {
+    ok: true,
+    sourceUrl: 'https://runtime.example.test/push?session=1',
+    username: 'reprint_push_admin',
+    applicationPassword: 'secret-value',
+  });
+});
+
 test('production auth/session source loader fails closed when a remote sourceUrl does not match the explicit live boundary', () => {
   const source = loadAuthSessionSourceFromRuntimeEnvironment(
     `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://different.example.test/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
