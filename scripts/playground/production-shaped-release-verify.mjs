@@ -2321,23 +2321,23 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
             const malformedIndexBody =
               packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
             lastError = error;
-            await throwPlaygroundReadinessFailure(
-              child,
-              malformedIndexBody
-                ? `Packaged production plugin signed preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
-                : `Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
+              await throwPlaygroundReadinessFailure(
+                child,
+                malformedIndexBody
+                    ? `Packaged production plugin signed preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
+                    : `Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
-              packagedProductionPluginPreflightTerminalContext({
-                childPid: child.pid ?? null,
-                ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
-                indexTerminal: true,
-                snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
-              }),
-              lastTimeoutFallbackProbes,
-            );
-          }
+                packagedProductionPluginPreflightTerminalContext({
+                  childPid: child.pid ?? null,
+                  ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                  indexTerminal: true,
+                  snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+                }, { timeoutFallback: true }),
+                lastTimeoutFallbackProbes,
+              );
+            }
           lastError = error;
           await throwPlaygroundReadinessFailure(
             child,

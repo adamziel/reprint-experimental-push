@@ -1531,23 +1531,23 @@ async function waitForServer(child, baseUrl, logs) {
           if (startupBranch?.kind === 'timed-out-route-index-terminal') {
             const malformedIndexBody =
               packagedProductionPluginMalformedTerminalIndexProbe(indexProbe);
-            throw new Error(
-              formatPackagedReadinessFailure(
-                malformedIndexBody
-                  ? `Packaged production plugin signed preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
-                  : `Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
+              throw new Error(
+                formatPackagedReadinessFailure(
+                  malformedIndexBody
+                    ? `Packaged production plugin signed preflight probe timed out while /wp-json/ returned an invalid readiness body after snapshot responded at ${baseUrl}`
+                    : `Packaged production plugin signed preflight probe timed out while /wp-json/ returned a terminal readiness failure HTTP ${indexProbe?.status ?? 0} after snapshot responded at ${baseUrl}`,
                 error,
                 lastProbes,
                 logs,
-                packagedProductionPluginPreflightTerminalContext({
-                  ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
-                  indexTerminal: true,
-                  snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
-                }),
-                lastTimeoutFallbackProbes,
-              ),
-            );
-          }
+                  packagedProductionPluginPreflightTerminalContext({
+                    ...(malformedIndexBody ? { invalidReadinessBody: true } : {}),
+                    indexTerminal: true,
+                    snapshotNotReadyProbeCount: activeSnapshotNotReadyProbeCount,
+                  }, { timeoutFallback: true }),
+                  lastTimeoutFallbackProbes,
+                ),
+              );
+            }
           throw new Error(
             formatPackagedReadinessFailure(
             `Packaged production plugin signed preflight probe timed out after snapshot responded at ${baseUrl}`,

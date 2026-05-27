@@ -7940,6 +7940,10 @@ test('packaged readiness helpers distinguish signed preflight timeouts after sna
       source.includes('Packaged production plugin signed preflight probe timed out after snapshot responded at ${baseUrl}'),
       'expected packaged signed preflight timeout branch to distinguish snapshot responses from snapshot timeouts',
     );
+    assert.match(
+      source,
+      /signed preflight probe timed out while \/wp-json\/ returned an invalid readiness body after snapshot responded at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?invalidReadinessBody:\s*true[\s\S]*?snapshotNotReadyProbeCount:\s*activeSnapshotNotReadyProbeCount[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+    );
   }
 });
 
