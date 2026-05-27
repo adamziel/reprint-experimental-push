@@ -915,6 +915,27 @@ test('production auth/session source loader accepts a non-local sourceUrl when i
   });
 });
 
+test('production auth/session source loader accepts a non-local sourceUrl when it matches the explicit live source boundary with runtime query metadata', () => {
+  const source = loadAuthSessionSource(
+    `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push/?session=1#preserved', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
+    {
+      ...process.env,
+      NODE_NO_WARNINGS: '1',
+    },
+    repoRoot,
+    {
+      allowedSourceUrl: 'https://example.com/push/',
+    },
+  );
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl: 'https://example.com/push/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'secret-value',
+  });
+});
+
 test('production auth/session source loader fails closed when a non-local sourceUrl does not match the explicit live sourceUrl', () => {
   const source = loadAuthSessionSource(
     `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'https://example.com/push', username:'reprint_push_admin', applicationPassword:'secret-value'}))"`,
@@ -2405,6 +2426,25 @@ test('auth-session source loader accepts a source command that matches the expli
     ...process.env,
     NODE_NO_WARNINGS: '1',
     REPRINT_PUSH_REMOTE_URL: sourceUrl,
+    REPRINT_PUSH_LOCAL_URL: 'https://example.com/local',
+  }, repoRoot);
+
+  assert.deepEqual(source, {
+    ok: true,
+    sourceUrl,
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  });
+});
+
+test('auth-session source loader accepts a source command that matches the explicit remote runtime boundary with runtime query metadata when local runtime env is also present', () => {
+  const sourceUrl = 'https://example.com/remote/?session=1#preserved';
+  const command = `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'${sourceUrl}', username:'reprint_push_admin', applicationPassword:'reprint-push-admin-app-password'}))"`;
+
+  const source = loadAuthSessionSourceFromRuntimeEnvironment(command, {
+    ...process.env,
+    NODE_NO_WARNINGS: '1',
+    REPRINT_PUSH_REMOTE_URL: 'https://example.com/remote',
     REPRINT_PUSH_LOCAL_URL: 'https://example.com/local',
   }, repoRoot);
 

@@ -422,7 +422,25 @@ function isPermittedAuthSessionSourceUrl(sourceUrl, allowedSourceUrl, allowedSou
     allowedSourceUrl,
     ...(Array.isArray(allowedSourceUrls) ? allowedSourceUrls : []),
   );
-  return normalizedAllowedSourceUrls.includes(normalizedSourceUrl);
+  return normalizedAllowedSourceUrls.some((allowedUrl) =>
+    explicitAuthSessionSourceUrlsMatch(normalizedSourceUrl, allowedUrl),
+  );
+}
+
+function explicitAuthSessionSourceUrlsMatch(sourceUrl, allowedSourceUrl) {
+  if (sourceUrl === allowedSourceUrl) {
+    return true;
+  }
+
+  try {
+    const sourceBaseUrl = new URL(sourceUrl);
+    const allowedBaseUrl = new URL(allowedSourceUrl);
+    return sourceBaseUrl.protocol === allowedBaseUrl.protocol
+      && sourceBaseUrl.host === allowedBaseUrl.host
+      && sourceBaseUrl.pathname === allowedBaseUrl.pathname;
+  } catch {
+    return false;
+  }
 }
 
 export function normalizeExplicitAllowedAuthSessionSourceUrl(value) {
