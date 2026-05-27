@@ -2948,6 +2948,249 @@ test('plugin-driver proof summary attach helper repairs stale receipt-registrati
   assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, false);
 });
 
+test('plugin-driver proof summary attach helper repairs stale receipt-registration alias legacy bundle statuses when the nested mode proof is current', () => {
+  const fullReceiptRegistrationSelection = new Set([
+    'driver-receipt-registration-guards',
+    ...scenarioGroups['driver-receipt-registration-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverReceiptRegistrationGuardsOnly',
+    canonicalMode: 'driver-receipt-registration-guards',
+    requestedScenarios: ['driverReceiptRegistrationGuardsOnly'],
+    selectedScenarios: Array.from(fullReceiptRegistrationSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_DRIVER_ROW',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_PLAN_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_IDENTITY_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReceiptRegistrationGuardsOnly'],
+    selectedScenarios: fullReceiptRegistrationSelection,
+    resolvedMode: 'driverReceiptRegistrationGuardsOnly',
+    canonicalMode: 'driver-receipt-registration-guards',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    legacyRequestedBundleStatus: 'passed',
+    legacyRequestedBundleStatuses: {
+      driverReceiptRegistrationGuards: 'passed',
+    },
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReceiptRegistrationGuardsOnly'],
+    selectedScenarios: fullReceiptRegistrationSelection,
+    resolvedMode: 'driverReceiptRegistrationGuardsOnly',
+    canonicalMode: 'driver-receipt-registration-guards',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.equal(repairedProof.legacyRequestedBundleStatus, undefined);
+  assert.equal(repairedProof.legacyRequestedBundleStatuses, undefined);
+  assert.equal(repairedProof.modeProof?.legacyRequestedBundleStatus, 'missing');
+  assert.deepEqual(repairedProof.modeProof?.legacyRequestedBundleStatuses, {
+    driverReceiptRegistrationGuards: 'missing',
+  });
+});
+
+test('plugin-driver proof summary attach helper repairs stale receipt-registration alias requested bundles when the nested mode proof is current', () => {
+  const fullReceiptRegistrationSelection = new Set([
+    'driver-receipt-registration-guards',
+    ...scenarioGroups['driver-receipt-registration-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverReceiptRegistrationGuardsOnly',
+    canonicalMode: 'driver-receipt-registration-guards',
+    requestedScenarios: ['driverReceiptRegistrationGuardsOnly'],
+    selectedScenarios: Array.from(fullReceiptRegistrationSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_DRIVER_ROW',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_PLAN_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_IDENTITY_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReceiptRegistrationGuardsOnly'],
+    selectedScenarios: fullReceiptRegistrationSelection,
+    resolvedMode: 'driverReceiptRegistrationGuardsOnly',
+    canonicalMode: 'driver-receipt-registration-guards',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedBundleStatus: 'passed',
+    requestedBundleStatuses: {
+      driverReceiptRegistrationGuards: 'passed',
+    },
+    requestedBundles: ['driverReceiptRegistrationGuards'],
+    requestedBundlesSatisfied: true,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverReceiptRegistrationGuardsOnly'],
+    selectedScenarios: fullReceiptRegistrationSelection,
+    resolvedMode: 'driverReceiptRegistrationGuardsOnly',
+    canonicalMode: 'driver-receipt-registration-guards',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(repairedProof.requestedBundles, ['driverReceiptRegistrationGuards']);
+  assert.deepEqual(repairedProof.requestedBundleStatuses, {
+    driverReceiptRegistrationGuards: 'missing',
+  });
+  assert.equal(repairedProof.requestedBundlesSatisfied, false);
+  assert.deepEqual(repairedProof.modeProof?.requestedBundles, ['driverReceiptRegistrationGuards']);
+  assert.equal(repairedProof.modeProof?.requestedBundlesSatisfied, false);
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',
