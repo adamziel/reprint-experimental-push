@@ -4622,9 +4622,13 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
   assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"/,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": "explicit live production-owned release boundary",\s*"status": "support-only",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"/,
   );
   assert.match(proof.stdout, /"checkedAccepted": true/);
+  assert.match(
+    proof.stdout,
+    /"liveSource": \{\s*"required": "REPRINT_PUSH_SOURCE_URL",\s*"observed": "packaged-production-plugin-fallback",\s*"verdict": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"\s*\}/,
+  );
   assert.match(proof.stdout, /"authSessionSource": \{[\s\S]*"sourceUrl": "http:\/\/127\.0\.0\.1:\d+"/);
   assert.match(
     proof.stdout,

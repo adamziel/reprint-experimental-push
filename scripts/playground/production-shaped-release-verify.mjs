@@ -63,6 +63,9 @@ import {
 } from '../../src/recovery-journal.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const isMainModule = process.argv[1]
+  ? path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+  : false;
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const readinessProbeIntervalMs = 200;
 const readinessFailureBodyLimit = 240;
@@ -176,6 +179,73 @@ function summarizeAuthSessionSource(command, source) {
   };
 }
 
+export function resolveSuccessfulReleaseBoundary({
+  packagedSourceFixture = false,
+  checkedAuthSessionLifecycle,
+  checkedDurableJournalAccepted,
+  requiredPreservedRemoteRetryPath,
+  proof,
+}) {
+  if (packagedSourceFixture) {
+    return {
+      firstRemainingProductionBoundary: 'explicit live production-owned release boundary',
+      status: 'support-only',
+      verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      liveSource: {
+        required: 'REPRINT_PUSH_SOURCE_URL',
+        observed: 'packaged-production-plugin-fallback',
+        verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      },
+      authSession: {
+        required: checkedAuthSessionLifecycle.required,
+        observed: checkedAuthSessionLifecycle.observed,
+        verdict: 'PACKAGED_RELEASE_BOUNDARY_OK',
+      },
+      durableJournal: {
+        storageLeaseFence: 'packaged production plugin journal surface accepted on the checked release boundary',
+        verdict: checkedDurableJournalAccepted
+          ? 'PACKAGED_RELEASE_BOUNDARY_OK'
+          : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      },
+      replayAndRetry: {
+        required: requiredPreservedRemoteRetryPath,
+        observed: proof.replayAndRetry?.observed || requiredPreservedRemoteRetryPath,
+        retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
+        verdict: proof.replayEquivalence?.equivalent === true
+          && proof.replayAndRetry?.verdict === 'PRESERVED_REMOTE_RETRY_PROVEN'
+          ? 'LIVE_RELEASE_BOUNDARY_OK'
+          : 'PRESERVED_REMOTE_RETRY_REQUIRED',
+      },
+    };
+  }
+
+  return {
+    firstRemainingProductionBoundary: null,
+    status: 'checked',
+    verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+    authSession: {
+      required: checkedAuthSessionLifecycle.required,
+      observed: checkedAuthSessionLifecycle.observed,
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+    },
+    durableJournal: {
+      storageLeaseFence: 'live production-shaped db-journal surface accepted on the checked release boundary',
+      verdict: checkedDurableJournalAccepted
+        ? 'LIVE_RELEASE_BOUNDARY_OK'
+        : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+    },
+    replayAndRetry: {
+      required: requiredPreservedRemoteRetryPath,
+      observed: proof.replayAndRetry?.observed || requiredPreservedRemoteRetryPath,
+      retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
+      verdict: proof.replayEquivalence?.equivalent === true
+        && proof.replayAndRetry?.verdict === 'PRESERVED_REMOTE_RETRY_PROVEN'
+        ? 'LIVE_RELEASE_BOUNDARY_OK'
+        : 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    },
+  };
+}
+
 class ProofFailure extends Error {
   constructor() {
     super('production-shaped release verify failed closed');
@@ -189,6 +259,7 @@ let stopAllPlaygroundChildren = async () => {};
 let stopAllPlaygroundChildrenSync = () => {};
 
 try {
+if (isMainModule) {
 
 const protocolExtension = {
   stages: [
@@ -1490,32 +1561,13 @@ try {
         throw new ProofFailure();
       }
 
-      const successfulReleaseBoundary = {
-        firstRemainingProductionBoundary: null,
-        status: 'checked',
-        verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
-        authSession: {
-          required: checkedAuthSessionLifecycle.required,
-          observed: checkedAuthSessionLifecycle.observed,
-          verdict: packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK',
-        },
-          durableJournal: {
-            storageLeaseFence: packagedSourceFixture
-              ? 'packaged production plugin journal surface accepted on the checked release boundary'
-              : 'live production-shaped db-journal surface accepted on the checked release boundary',
-            verdict: checkedDurableJournalAccepted
-              ? (packagedSourceFixture ? 'PACKAGED_RELEASE_BOUNDARY_OK' : 'LIVE_RELEASE_BOUNDARY_OK')
-              : 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-          },
-        replayAndRetry: {
-          required: requiredPreservedRemoteRetryPath,
-          observed: proof.replayAndRetry?.observed || requiredPreservedRemoteRetryPath,
-          retryAttempts: proof.replayAndRetry?.retryAttempts || proof.retryAttempts || 1,
-          verdict: checkedReplayEquivalence && checkedPreservedRemoteRetry
-            ? 'LIVE_RELEASE_BOUNDARY_OK'
-            : 'PRESERVED_REMOTE_RETRY_REQUIRED',
-        },
-      };
+      const successfulReleaseBoundary = resolveSuccessfulReleaseBoundary({
+        packagedSourceFixture: packagedSourceFixture !== null,
+        checkedAuthSessionLifecycle,
+        checkedDurableJournalAccepted,
+        requiredPreservedRemoteRetryPath,
+        proof,
+      });
 
       process.stdout.write(
         JSON.stringify(
@@ -2948,6 +3000,7 @@ function isPortFree(port) {
   });
 }
 
+}
 } catch (error) {
   topLevelError = error;
 } finally {

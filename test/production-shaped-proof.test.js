@@ -56,6 +56,7 @@ import {
   shouldRequestCheckedLivePackagedBoundary,
   shouldUseProductionSnapshotExport,
 } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
+import { resolveSuccessfulReleaseBoundary } from '../scripts/playground/production-shaped-release-verify.mjs';
 import {
   evaluateCheckedReleaseAuthSessionLifecycleSummary,
   evaluateProductionAuthSessionLifecycle,
@@ -762,6 +763,41 @@ test('production-shaped release verify fails fast with the live-source gate befo
   );
   assert.doesNotMatch(proof.stdout, /Starting Playground server/);
   assert.doesNotMatch(proof.stderr, /Starting Playground server/);
+});
+
+test('production-shaped release verify keeps the packaged checked boundary explicitly open until a live source is provided', () => {
+  const boundary = resolveSuccessfulReleaseBoundary({
+    packagedSourceFixture: true,
+    checkedAuthSessionLifecycle: {
+      required: 'checked release production-auth-session lifecycle',
+      observed: 'journal',
+    },
+    checkedDurableJournalAccepted: true,
+    requiredPreservedRemoteRetryPath: '/snapshot',
+    proof: {
+      retryAttempts: 2,
+      replayEquivalence: {
+        equivalent: true,
+      },
+      replayAndRetry: {
+        observed: '/snapshot',
+        retryAttempts: 2,
+        verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+      },
+    },
+  });
+
+  assert.equal(boundary.firstRemainingProductionBoundary, 'explicit live production-owned release boundary');
+  assert.equal(boundary.status, 'support-only');
+  assert.equal(boundary.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.deepEqual(boundary.liveSource, {
+    required: 'REPRINT_PUSH_SOURCE_URL',
+    observed: 'packaged-production-plugin-fallback',
+    verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+  });
+  assert.equal(boundary.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(boundary.durableJournal?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(boundary.replayAndRetry?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
 });
 
 test('production-shaped release verify request state marks synthesized packaged production auth/session sources as packaged requests', () => {
@@ -4698,7 +4734,12 @@ maybeTest('production-shaped live release verify command proves the packaged che
   const summary = JSON.parse(proof.stdout);
 
   assert.equal(summary.ok, true);
-  assert.equal(summary.boundary?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
+  assert.equal(summary.boundary?.firstRemainingProductionBoundary, 'explicit live production-owned release boundary');
+  assert.equal(summary.boundary?.status, 'support-only');
+  assert.equal(summary.boundary?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.equal(summary.boundary?.liveSource?.required, 'REPRINT_PUSH_SOURCE_URL');
+  assert.equal(summary.boundary?.liveSource?.observed, 'packaged-production-plugin-fallback');
+  assert.equal(summary.boundary?.liveSource?.verdict, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(summary.boundary?.authSession?.required, 'checked release production-auth-session lifecycle');
   assert.equal(summary.boundary?.authSession?.observed, 'journal');
   assert.equal(summary.boundary?.authSession?.verdict, 'PACKAGED_RELEASE_BOUNDARY_OK');
