@@ -1344,6 +1344,7 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     && typeof inspected.leaseFenceContract.boundary === 'string'
     ? inspected.leaseFenceContract.boundary
     : null;
+  const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
   const checkedBoundaryBlockedByMissingDependency = missingDependency.some((dependency) => [
       'owned restart-readable recovery journal path',
       'absolute restart-readable recovery journal path',
@@ -1385,7 +1386,8 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     )
   ) && !checkedBoundaryBlockedByMissingDependency
     && inspectedOwnsJournal
-    && inspectedRestartReadable;
+    && inspectedRestartReadable
+    && checkedBoundaryContractAligned;
 
   return {
     scope,
@@ -1410,6 +1412,17 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
       }
       : null,
   };
+}
+
+function inspectedLeaseFenceBoundaryMatchesWriterContract(inspected) {
+  return hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
+    && hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
+    && inspected.leaseFenceContract.boundary === inspected.writerLeaseContract.storageGuard
+    && inspected.leaseFenceContract.storageGuard === inspected.writerLeaseContract.storageGuard
+    && inspectedWriterLeaseContractsMatch(
+      inspected.leaseFenceContract.writerLease,
+      inspected.writerLeaseContract,
+    );
 }
 
 function productionRecoveryArtifactRefs(writer, inspected) {
