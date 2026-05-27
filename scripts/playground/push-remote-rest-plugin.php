@@ -684,7 +684,40 @@ function reprint_push_lab_rest_attach_checked_recovery_journal_evidence(
             unset($result['recovery']['journal']['leaseFence']);
         }
     }
+    $result['recovery'] = reprint_push_lab_rest_mirror_checked_recovery_contract(
+        $result['recovery']
+    );
     return $result;
+}
+
+function reprint_push_lab_rest_mirror_checked_recovery_contract(array $recovery): array
+{
+    $journal = isset($recovery['journal']) && is_array($recovery['journal'])
+        ? $recovery['journal']
+        : null;
+    if (!is_array($journal) || ($journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
+        return $recovery;
+    }
+
+    foreach ([
+        'ownership' => 'reprint_push_lab_db_journal_ownership_contract_matches',
+        'writerLease' => 'reprint_push_lab_db_journal_writer_lease_contract_matches',
+        'claim' => 'reprint_push_lab_db_journal_claim_contract_matches',
+        'leaseFence' => 'reprint_push_lab_db_journal_lease_fence_contract_matches',
+    ] as $key => $contract_matcher) {
+        if (!isset($journal[$key]) || !is_array($journal[$key])) {
+            continue;
+        }
+
+        $current = isset($recovery[$key]) && is_array($recovery[$key])
+            ? $recovery[$key]
+            : null;
+        if (!$contract_matcher($current)) {
+            $recovery[$key] = $journal[$key];
+        }
+    }
+
+    return $recovery;
 }
 
 function reprint_push_lab_rest_should_upgrade_checked_recovery_integrity_scope(string $existing_scope): bool
