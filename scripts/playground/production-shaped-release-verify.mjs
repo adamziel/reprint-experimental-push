@@ -2800,6 +2800,7 @@ async function waitForServer(child, baseUrl, getLogs) {
   const lastProbes = [];
   let notReadyProbeCount = 0;
   let timeoutProbeCount = 0;
+  let snapshotTimeoutProbeCount = 0;
   while (Date.now() < deadline) {
     if (child.exitCode !== null || child.signalCode !== null) {
       const exitLabel =
@@ -2836,6 +2837,7 @@ async function waitForServer(child, baseUrl, getLogs) {
       const readinessRetryable = labReadinessBodyRetryable(response.status, responseBody);
       if (response.status === 200 && !readinessRetryable) {
         notReadyProbeCount = 0;
+        snapshotTimeoutProbeCount = 0;
         const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
           headers: {
             Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
@@ -2913,13 +2915,41 @@ async function waitForServer(child, baseUrl, getLogs) {
         );
         const readinessProbeCount = lastProbes.filter((probe) => probe.route === '/wp-json/').length;
         if (readinessRetryable) {
-          const { response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
-            headers: {
-              Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
-              connection: 'close',
-            },
-          }, serverFetchTimeoutMs, child);
+          let snapshot;
+          let snapshotBody;
+          try {
+            ({ response: snapshot, bodyText: snapshotBody } = await fetchTextWithTimeout(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
+              headers: {
+                Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+                connection: 'close',
+              },
+            }, serverFetchTimeoutMs, child));
+          } catch (error) {
+            if (labReadinessProbeTimedOut(error)) {
+              lastError = error;
+              snapshotTimeoutProbeCount = labNextTimeoutProbeCount(snapshotTimeoutProbeCount, error);
+              if (labNotReadyProbeLimitReached(snapshotTimeoutProbeCount)) {
+                await throwPlaygroundReadinessFailure(
+                  child,
+                  `Playground lab snapshot probe timed out while /wp-json/ still reported startup-shaped readiness HTTP ${response.status} after ${snapshotTimeoutProbeCount} consecutive timeout${snapshotTimeoutProbeCount === 1 ? '' : 's'}`,
+                  lastError,
+                  lastProbes,
+                  getLogs(),
+                  {
+                    childPid: child.pid ?? null,
+                    timeoutProbeCount: snapshotTimeoutProbeCount,
+                    startupIndexStatus: response.status,
+                    snapshotProbeTimedOut: true,
+                  },
+                );
+              }
+              await sleepUnlessChildExit(readinessProbeIntervalMs, child);
+              continue;
+            }
+            throw error;
+          }
           timeoutProbeCount = 0;
+          snapshotTimeoutProbeCount = 0;
           const snapshotPreview = snapshotBody.slice(0, 500);
           lastProbes.push({
             route: '/wp-json/reprint-push-lab/v1/snapshot',
@@ -2989,6 +3019,7 @@ async function waitForServer(child, baseUrl, getLogs) {
           continue;
         }
         notReadyProbeCount = 0;
+        snapshotTimeoutProbeCount = 0;
         if (response.status !== 200 && readinessProbeCount >= maxReadinessProbes) {
           await throwPlaygroundReadinessFailure(
             child,
@@ -3008,6 +3039,7 @@ async function waitForServer(child, baseUrl, getLogs) {
         throw error;
       }
       lastError = error;
+      snapshotTimeoutProbeCount = 0;
       timeoutProbeCount = labNextTimeoutProbeCount(timeoutProbeCount, error);
       if (labReadinessProbeTimedOut(error) && labNotReadyProbeLimitReached(timeoutProbeCount)) {
         await throwPlaygroundReadinessFailure(
