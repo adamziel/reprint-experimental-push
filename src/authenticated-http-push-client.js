@@ -612,6 +612,9 @@ export async function runAuthenticatedHttpPush({
   const replayObservedProductionAuthIdentityDrift = requireProductionAuthSession
     ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, replay)
     : null;
+  const replayObservedAuthLifecycleFlagDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionLifecycleFlagDrift(replay);
   const replayAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(replay)
     || hasProductionAuthSessionStatusDrift(replay)
@@ -642,6 +645,12 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (replayObservedAuthLifecycleFlagDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = replayObservedAuthLifecycleFlagDrift;
+    setDurableJournalBoundary(summary, 'replay');
     return summary;
   }
   if (replayAuthSessionDrift) {
@@ -1844,6 +1853,21 @@ function resolveObservedProductionAuthIdentityDrift(expected, response) {
   }
 
   return null;
+}
+
+function resolveObservedAuthSessionLifecycleFlagDrift(response) {
+  const session = response?.body?.auth?.session;
+  const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
+  if (!invalidLifecycleFlag) {
+    return null;
+  }
+
+  return {
+    field: `auth.session.${invalidLifecycleFlag}`,
+    required: 'boolean lifecycle flags',
+    observed: `invalid-${invalidLifecycleFlag}`,
+    verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+  };
 }
 
 function resolveInvalidProductionAuthSessionLifecycleFlag(session) {
