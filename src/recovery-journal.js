@@ -561,6 +561,10 @@ function productionRecoveryJournalClaimContractMatches(claim) {
   const validType = claim.type === 'recovery-claim-opened' || claim.type === 'stale-claim-advanced';
   const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimId)
     || CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '');
+  const validTimingEvidence =
+    optionalNonNegativeIntegerContractMatches(claim.staleThresholdMs)
+    && optionalNonNegativeIntegerContractMatches(claim.previousClaimAgeMs);
+  const validReason = claim.reason === null || hasNonEmptyString(claim.reason);
 
   return validStatus
     && hasNonEmptyString(claim.activeClaimId)
@@ -568,6 +572,8 @@ function productionRecoveryJournalClaimContractMatches(claim) {
     && claim.activeClaimHash === recoveryClaimHash(claim.activeClaimId)
     && isPositiveInteger(claim.sequence)
     && validType
+    && validTimingEvidence
+    && validReason
     && (claim.status !== 'advanced' || claim.type === 'stale-claim-advanced')
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
@@ -1525,6 +1531,10 @@ function normalizeOptionalNonNegativeInteger(value) {
     throw new Error('Recovery claim timing evidence must be a non-negative integer.');
   }
   return value;
+}
+
+function optionalNonNegativeIntegerContractMatches(value) {
+  return value === null || (Number.isInteger(value) && value >= 0);
 }
 
 function visitRecord(value, pathParts) {

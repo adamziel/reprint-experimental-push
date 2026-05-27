@@ -636,6 +636,16 @@ test('production recovery journal inspection surface helper fails closed when le
   divergentActiveClaimHash.leaseFence.writerLease.claimHash = fabricatedActiveClaimHash;
   divergentActiveClaimHash.journal.consumedClaimHash = fabricatedActiveClaimHash;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(divergentActiveClaimHash), false);
+
+  const malformedClaimTimingEvidence = clone(inspection);
+  malformedClaimTimingEvidence.claim.staleThresholdMs = '30000';
+  malformedClaimTimingEvidence.journal.claim.staleThresholdMs = '30000';
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(malformedClaimTimingEvidence), false);
+
+  const malformedAdvancedClaimReason = clone(inspection);
+  malformedAdvancedClaimReason.claim.reason = { message: 'Production recovery journal claim opened.' };
+  malformedAdvancedClaimReason.journal.claim.reason = malformedAdvancedClaimReason.claim.reason;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(malformedAdvancedClaimReason), false);
 });
 
 test('production recovery journal inspection preserves advanced previous-claim identity on restart', () => {
