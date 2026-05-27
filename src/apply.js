@@ -860,6 +860,9 @@ export function productionRecoverySupportReport(writer) {
   ) {
     addMissingDependency('restart-readable recovery inspection');
   } else {
+    if (hasHiddenOwnStringProperty(writer, 'acceptedOnCheckedBoundary')) {
+      addMissingDependency('restart-readable recovery inspection');
+    }
     if (hasHiddenOwnStringKeys(inspected)) {
       addMissingDependency('restart-readable recovery inspection');
     }
@@ -1397,22 +1400,7 @@ function checkedDurableJournalBoundaryProof(writer, inspected, missingDependency
     ? inspected.leaseFenceContract.boundary
     : null;
   const checkedBoundaryContractAligned = inspectedLeaseFenceBoundaryMatchesWriterContract(inspected);
-  const checkedBoundaryBlockedByMissingDependency = missingDependency.some((dependency) => [
-      'production recovery journal adapter marker',
-      'explicit production recovery adapter marker',
-      'supported production recovery journal adapter surface',
-      'restart-readable recovery inspection',
-      'owned restart-readable recovery journal path',
-      'absolute restart-readable recovery journal path',
-      'restart-readable recovery journal schema',
-      'restart-readable recovery artifact references',
-      'restart-readable recovery remote artifact references',
-      'restart-readable remote recovery artifact ownership',
-      'fencing or lease ownership for the journal writer',
-      'stable-storage flush or fsync semantics',
-      'journal-readable inspection records with sequence and type',
-      'restart-readable recovery journal adapter',
-    ].includes(dependency));
+  const checkedBoundaryBlockedByMissingDependency = missingDependency.length > 0;
   const inspectedOwnsJournal = Object.hasOwn(inspected ?? {}, 'ownsJournal')
     && !hasHiddenOwnStringProperty(inspected, 'ownsJournal')
     && inspected.ownsJournal === true;
