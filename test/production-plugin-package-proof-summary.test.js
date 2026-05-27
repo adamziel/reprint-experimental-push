@@ -159,6 +159,16 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
   });
+  assert.deepEqual(summary.deleteApplyProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
+    remoteSupportsDelete: true,
+    deletedAfterApply: true,
+    requestedStatus: 'passed',
+  });
   assert.equal(summary.mutationProof.deleteRejected, true);
   assert.deepEqual(summary.bundles, {
     driverVerifierGuards: 'passed',
@@ -916,6 +926,16 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
     revokedCredential: 'reprint_push_lab_auth_required',
     requestedStatus: 'passed',
   });
+  assert.deepEqual(summary.deleteApplyProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    resourceKey: null,
+    remoteSupportsDelete: null,
+    deletedAfterApply: true,
+    requestedStatus: 'passed',
+  });
 });
 
 test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
@@ -1581,6 +1601,16 @@ test('plugin-driver proof summary treats bundle verdicts as satisfied when only 
   assert.deepEqual(summary.requestedConcreteScenarioStatuses, {
     'driver-delete-apply': 'passed',
   });
+  assert.deepEqual(summary.deleteApplyProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    resourceKey: null,
+    remoteSupportsDelete: null,
+    deletedAfterApply: true,
+    requestedStatus: 'passed',
+  });
   assert.deepEqual(summary.checkedScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.passedScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.failedScenarios, []);
@@ -1628,6 +1658,16 @@ test('plugin-driver proof summary fails requested concrete scenarios omitted fro
   assert.deepEqual(summary.requestedBundleStatuses, {});
   assert.deepEqual(summary.requestedConcreteScenarioStatuses, {
     'driver-delete-apply': 'missing',
+  });
+  assert.deepEqual(summary.deleteApplyProof, {
+    requested: true,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    resourceKey: null,
+    remoteSupportsDelete: null,
+    deletedAfterApply: false,
+    requestedStatus: 'missing',
   });
 });
 

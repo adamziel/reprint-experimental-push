@@ -415,6 +415,24 @@ export function buildProductionPluginPackageProofSummary(
         )
         : null,
     },
+    deleteApplyProof: {
+      requested: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
+        || requestedScenarioAliasMap.get('driver-delete-apply').length > 0,
+      selected: selectedScenarios === null
+        || selectedScenarios.has('driver-delete-apply'),
+      ok: scenarioResults.driverDeleteApply === 'passed',
+      status: scenarioResults.driverDeleteApply,
+      resourceKey: summary?.driverDeleteApply?.resourceKey ?? null,
+      remoteSupportsDelete: summary?.driverDeleteApply?.remoteSupportsDelete ?? null,
+      deletedAfterApply: summary?.driverDeleteApply?.deletedAfterApply ?? false,
+      requestedStatus: requestedScenarioAliasMap.get('driver-delete-apply') === 'all'
+        || requestedScenarioAliasMap.get('driver-delete-apply').length > 0
+        ? summarizeRequestedScenario(
+          selectedScenarios === null || selectedScenarios.has('driver-delete-apply'),
+          scenarioPasses.get('driver-delete-apply') === true,
+        )
+        : null,
+    },
     mutationProof: {
       updateApplied: summary?.driverUpdateApply?.applied ?? 0,
       deleteRejected: summary?.driverDeleteGuard?.forgedPlanAcceptedByDryRun === false,
