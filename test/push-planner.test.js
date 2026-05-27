@@ -29489,6 +29489,73 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-only plugin change */');
 });
 
+test('blocks local post-parent references to a same-plan created nav menu item while preserving a matching independent restore and remote-only plugin removals', () => {
+  const resourceKey = 'row:["wp_posts","ID:67"]';
+  const targetResourceKey = 'row:["wp_posts","ID:68"]';
+  const matchingRestoreResourceKey = 'file:about.php';
+  const base = baseSite();
+  base.plugins.forms = {
+    version: '1.0.0',
+    enabled: true,
+    description: 'base plugin forms',
+  };
+  base.files['wp-content/plugins/forms/forms.php'] = '<?php /* base plugin forms */';
+  base.files['about.php'] = '<?php echo "base about";';
+
+  const local = baseSite();
+  local.plugins.forms = JSON.parse(JSON.stringify(base.plugins.forms));
+  local.files['wp-content/plugins/forms/forms.php'] = base.files['wp-content/plugins/forms/forms.php'];
+  local.files['about.php'] = '<?php echo "shared restore";';
+  local.db.wp_posts['ID:68'] = {
+    ID: 68,
+    post_title: 'Local same-plan nav menu item',
+    post_content: 'Local same-plan nav menu item content',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+  };
+  local.db.wp_posts['ID:67'] = {
+    ID: 67,
+    post_title: 'Local private navigation',
+    post_content: 'Local private navigation content',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 68,
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared restore";';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-navigation-resource' && entry.resourceKey === targetResourceKey);
+  const matchingRestore = decisionFor(plan, matchingRestoreResourceKey);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const pluginFileDecision = decisionFor(plan, 'file:wp-content/plugins/forms/forms.php');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey), undefined);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(blocker.class, 'unsupported-navigation-resource');
+  assert.equal(blocker.resourceKey, targetResourceKey);
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:68"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'update');
+  assert.equal(matchingRestore.change.remoteChange, 'update');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginFileDecision.decision, 'keep-remote');
+  assert.equal(planJson.includes('Local same-plan nav menu item content'), false);
+  assert.equal(planJson.includes('Local private navigation content'), false);
+  assert.equal(planJson.includes('shared restore'), false);
+  assert.equal(planJson.includes('base plugin forms'), false);
+  assert.equal(remote.files['about.php'], '<?php echo "shared restore";');
+  assert.equal(remote.plugins.forms, undefined);
+  assert.equal(remote.files['wp-content/plugins/forms/forms.php'], undefined);
+});
+
 test('blocks local menu item parent references to a same-plan created wp navigation while preserving remote-only plugin removals', () => {
   const resourceKey = 'row:["wp_posts","ID:57"]';
   const targetResourceKey = 'row:["wp_posts","ID:58"]';
