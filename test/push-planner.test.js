@@ -50581,6 +50581,169 @@ test('production durable journal partial commits fail closed when claimHash hide
   );
 });
 
+test('production durable journal partial commits fail closed when claimKeyHash diverges mid-run', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-drifted-claim-key-hash';
+  const baseWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId, epoch: 1 },
+  });
+  const durableJournal = {
+    ...baseWriter,
+    appendEvent(type, payload) {
+      if (type === 'apply-committing') {
+        this.writerLease = {
+          ...this.writerLease,
+          claimKeyHash: 'b'.repeat(64),
+        };
+      }
+      return baseWriter.appendEvent(type, payload);
+    },
+    close() {
+      return baseWriter.close();
+    },
+  };
+  const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.durableRecoveryStateWriteFailed, true);
+  assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
+  assert.match(
+    error.details.durableJournalError.causeMessage,
+    /fenced claim ownership/,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state'),
+    false,
+  );
+});
+
+test('production durable journal partial commits fail closed when claimKeyHash hides behind a non-enumerable key mid-run', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local";';
+  local.db.wp_posts['ID:2'] = { ID: 2, post_title: 'Inserted locally', post_status: 'draft' };
+  const plan = planFor(base, local, baseSite());
+  const durableJournalPath = tempRecoveryJournalPath();
+  const remoteArtifactPath = `${durableJournalPath}.remote`;
+  const claimId = 'lease-hidden-claim-key-hash';
+  const baseWriter = openProductionRecoveryJournal(durableJournalPath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath,
+    writerLease: { id: claimId, epoch: 1 },
+  });
+  const durableJournal = {
+    ...baseWriter,
+    appendEvent(type, payload) {
+      if (type === 'apply-committing') {
+        this.writerLease = {
+          ...this.writerLease,
+        };
+        Object.defineProperty(this.writerLease, 'claimKeyHash', {
+          value: 'c'.repeat(64),
+          enumerable: false,
+          configurable: true,
+          writable: true,
+        });
+      }
+      return baseWriter.appendEvent(type, payload);
+    },
+    close() {
+      return baseWriter.close();
+    },
+  };
+  const remote = baseSite();
+  appendRecoveryClaimOpened(durableJournal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+  durableJournal.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'opened',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  });
+
+  const error = captureError(() =>
+    applyPlan(remote, plan, {
+      durableJournal,
+      requireProductionDurableJournal: true,
+      mutateRemote: true,
+      failDuringCommitAtMutation: 1,
+    }),
+  );
+
+  durableJournal.close();
+
+  const persisted = readRecoveryJournal(durableJournalPath);
+
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(error.details.recovery.status, 'blocked-recovery');
+  assert.equal(error.details.durableRecoveryStateWriteFailed, true);
+  assert.equal(error.details.durableJournalError.eventType, 'recovery-state');
+  assert.match(
+    error.details.durableJournalError.causeMessage,
+    /fenced claim ownership/,
+  );
+  assert.equal(
+    persisted.records.some((record) => record.type === 'recovery-state'),
+    false,
+  );
+});
+
 test('production durable journal claims fail closed when writerLease is inherited through the prototype', () => {
   const events = [];
   const writerLease = Object.create({
