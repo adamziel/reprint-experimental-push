@@ -687,7 +687,7 @@ function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
     resolvedOptions.requestedScenarios,
   )
     && selectedScenariosMatch(
-      summary?.selectedScenarios,
+      modeProof?.selectedScenarios ?? summary?.selectedScenarios,
       resolvedOptions.selectedScenarios,
     )
     && (
@@ -1908,6 +1908,9 @@ export function buildProductionPluginPackageProofSummary(
       legacyProofKey: legacyModeProofKey,
       legacyProof: proofSummary?.[legacyModeProofKey] ?? null,
       requestedScenarios: modeRequestedScenarios,
+      selectedScenarios: normalizedSelectedScenarios === null
+        ? 'all'
+        : Array.from(normalizedSelectedScenarios).sort(),
       requestedBundles: modeRequestedBundles,
       legacyRequestedBundles: modeLegacyRequestedBundles,
       requestedConcreteScenarios: modeRequestedConcreteScenarios,

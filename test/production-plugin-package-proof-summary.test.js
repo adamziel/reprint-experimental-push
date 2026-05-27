@@ -1271,6 +1271,103 @@ test('plugin-driver mode proof resolver rebuilds a stale attached top-level mode
   assert.equal(rawSummary.modeProof?.failedScenarioCount, narrowSummary.modeProof?.failedScenarioCount);
 });
 
+test('plugin-driver mode proof resolver rebuilds a narrow attached top-level modeProof when the raw summary selection has already widened', () => {
+  const rawSummary = {
+    mode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: [
+      'driver-verifier-guards',
+      ...scenarioGroups['driver-verifier-guards'],
+    ],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const narrowSummary = buildProductionPluginPackageProofSummary(rawSummary, {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: new Set(['core-package-routes', 'driver-missing-export-guard']),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+  rawSummary.modeProof = narrowSummary.modeProof;
+
+  const rebuiltModeProof = resolveProductionPluginPackageModeProof(rawSummary, 'driverVerifierGuards', {
+    requestedScenarios: ['driver-verifier-guards'],
+    selectedScenarios: new Set(rawSummary.selectedScenarios),
+    resolvedMode: 'driverVerifierGuards',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.notEqual(rebuiltModeProof, rawSummary.modeProof);
+  assert.equal(rebuiltModeProof?.mode, 'driverVerifierGuards');
+  assert.deepEqual(rebuiltModeProof?.requestedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(
+    rebuiltModeProof?.selectedScenarios,
+    rawSummary.selectedScenarios.slice().sort(),
+  );
+  assert.deepEqual(
+    rawSummary.modeProof?.selectedScenarios,
+    narrowSummary.modeProof?.selectedScenarios,
+  );
+});
+
 test('plugin-driver mode proof resolver rebuilds a stale attached nested modeProof when the selected scenario scope changes', () => {
   const rawSummary = {
     mode: 'driverVerifierGuards',
@@ -3556,6 +3653,11 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
     legacyProofKey: 'driverPositiveProof',
     legacyProof: summary.driverPositiveProof,
     requestedScenarios: ['driver-positive-proof'],
+    selectedScenarios: [
+      'core-package-routes',
+      'driver-delete-apply',
+      'driver-positive-proof',
+    ],
     requestedBundles: ['driverPositiveProof'],
     legacyRequestedBundles: ['driverPositiveProof'],
     requestedConcreteScenarios: [],
@@ -3633,6 +3735,7 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     legacyProofKey: 'driverRouteProof',
     legacyProof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
+    selectedScenarios: ['core-package-routes'],
     requestedBundles: [],
     legacyRequestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
@@ -3687,6 +3790,7 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     legacyProofKey: 'driverRouteProof',
     legacyProof: summary.driverRouteProof,
     requestedScenarios: ['core-package-routes'],
+    selectedScenarios: ['core-package-routes'],
     requestedBundles: [],
     legacyRequestedBundles: [],
     requestedConcreteScenarios: ['core-package-routes'],
