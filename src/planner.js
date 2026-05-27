@@ -1077,7 +1077,7 @@ function isSafeSamePlanWordPressGraphReference(reference) {
     || reference.targetChange.localChange === 'update';
 }
 
-const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
+export const SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = Object.freeze([
   'comment-post',
   'comment-parent',
   'commentmeta-comment',
@@ -1090,6 +1090,10 @@ const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
   'term-taxonomy-parent',
   'termmeta-term',
 ]);
+
+const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set(
+  SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
+);
 
 function wordpressGraphReferences(resource, value) {
   const suffix = wordpressGraphTableSuffix(resource.table);
