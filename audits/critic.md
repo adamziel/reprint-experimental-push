@@ -1,28 +1,24 @@
 # Critic Verdict
 
-Current reliable head: `f89370f41d4cc0519c980f89e038c9fff6dbcbb1`
-(`Keep packaged release boundary support-only`).
+Current reliable head: `3a9e010e368d3d24a00171e7e5a98b6ff65bc289`
+(`Require explicit lease-fence storage guard`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head deliberately keeps the packaged boundary in support-only mode. The
-  live wrapper now rewrites the packaged release boundary verdicts so the
-  packaged path reports `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, marks the
-  boundary as `support-only`, and downgrades packaged auth/session, durable
-  journal, and replay-and-retry verdicts to `PACKAGED_RELEASE_BOUNDARY_OK`
-  rather than a live release boundary.
-- The test diff confirms that the packaged path still exercises the same
-  Playground/package-mode verifier scaffold: the assertions now expect the
-  explicit live-source requirement and the support-only boundary shape, not a
-  production-owned live boundary on the real Reprint endpoint.
-- That is useful to prevent the packaged verifier from overstating readiness,
-  but it does not prove the missing production-owned source mutation boundary.
-  The supervised release gate remains closed at `0/4` because there is still no
-  checked real-endpoint proof with live auth/session issuance and readback,
-  restart-readable durable journal storage with lease fencing, and apply-time
-  revalidation before the first mutation.
+- This head tightens the checked durable-journal boundary by requiring an
+  explicit `leaseFence.storageGuard` match alongside the existing
+  `wpdb-single-statement-cas` fence and the recovery-journal stale-claim
+  checks. That is real recovery/journal hardening, but it remains a
+  verifier-side guard on the same checked surface rather than a production-
+  owned, non-lab-backed mutation boundary on the real Reprint endpoint.
+- The test diff confirms the same pattern: it adds support for the new nested
+  `leaseFence.storageGuard` field and a regression that keeps the boundary
+  closed when the guard is missing. That prevents unsupported journal claims,
+  but it does not prove live auth/session issuance and readback on the real
+  source URL, restart-readable durable journal storage on the production path,
+  or apply-time revalidation before the first mutation.
 - Verdict therefore remains `0/4`.
 
 Next owner / command:
