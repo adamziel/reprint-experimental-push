@@ -147,6 +147,9 @@ export function buildProductionPluginPackageProofSummary(
   const failedRequestedConcreteScenarios = [];
   const passedRequestedScenarios = [];
   const failedRequestedScenarios = [];
+  const requestedBundleStatuses = {};
+  const requestedConcreteScenarioStatuses = {};
+  const requestedScenarioStatuses = {};
   let checkedBundleCount = 0;
   let passedBundleCount = 0;
   let failedBundleCount = 0;
@@ -171,12 +174,14 @@ export function buildProductionPluginPackageProofSummary(
         passedScenarios.push(definition.scenario);
         if (requestedConcreteScenarioSet?.has(definition.scenario)) {
           passedRequestedConcreteScenarios.push(definition.scenario);
+          requestedConcreteScenarioStatuses[definition.scenario] = 'passed';
         }
       } else {
         failedScenarioCount += 1;
         failedScenarios.push(definition.scenario);
         if (requestedConcreteScenarioSet?.has(definition.scenario)) {
           failedRequestedConcreteScenarios.push(definition.scenario);
+          requestedConcreteScenarioStatuses[definition.scenario] = 'missing';
         }
       }
     } else {
@@ -205,6 +210,8 @@ export function buildProductionPluginPackageProofSummary(
       if (requestedBundleSet?.has(bundleKey)) {
         passedRequestedBundles.push(bundleKey);
         passedRequestedScenarios.push(bundleName);
+        requestedBundleStatuses[bundleKey] = 'passed';
+        requestedScenarioStatuses[bundleName] = 'passed';
       }
     } else if (selected) {
       failedBundles.push(bundleKey);
@@ -212,6 +219,8 @@ export function buildProductionPluginPackageProofSummary(
       if (requestedBundleSet?.has(bundleKey)) {
         failedRequestedBundles.push(bundleKey);
         failedRequestedScenarios.push(bundleName);
+        requestedBundleStatuses[bundleKey] = 'missing';
+        requestedScenarioStatuses[bundleName] = 'missing';
       }
     }
   }
@@ -219,6 +228,12 @@ export function buildProductionPluginPackageProofSummary(
   if (requestedConcreteScenarios !== 'all') {
     passedRequestedScenarios.push(...passedRequestedConcreteScenarios);
     failedRequestedScenarios.push(...failedRequestedConcreteScenarios);
+    for (const scenario of passedRequestedConcreteScenarios) {
+      requestedScenarioStatuses[scenario] = 'passed';
+    }
+    for (const scenario of failedRequestedConcreteScenarios) {
+      requestedScenarioStatuses[scenario] = 'missing';
+    }
   }
 
   return {
@@ -253,6 +268,24 @@ export function buildProductionPluginPackageProofSummary(
     failedRequestedConcreteScenarios: requestedConcreteScenarios === 'all'
       ? 'all'
       : failedRequestedConcreteScenarios.sort(),
+    requestedScenarioStatuses: normalizedRequestedScenarios === null
+      ? 'all'
+      : Object.fromEntries(
+        Object.entries(requestedScenarioStatuses)
+          .sort(([left], [right]) => left.localeCompare(right)),
+      ),
+    requestedBundleStatuses: requestedBundles === 'all'
+      ? 'all'
+      : Object.fromEntries(
+        Object.entries(requestedBundleStatuses)
+          .sort(([left], [right]) => left.localeCompare(right)),
+      ),
+    requestedConcreteScenarioStatuses: requestedConcreteScenarios === 'all'
+      ? 'all'
+      : Object.fromEntries(
+        Object.entries(requestedConcreteScenarioStatuses)
+          .sort(([left], [right]) => left.localeCompare(right)),
+      ),
     checkedScenarios: normalizedRequestedScenarios === null && selectedScenarios === null ? 'all' : checkedScenarios.sort(),
     passedScenarios: passedScenarios.sort(),
     failedScenarios: failedScenarios.sort(),

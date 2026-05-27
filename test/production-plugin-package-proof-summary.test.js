@@ -100,6 +100,9 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.failedRequestedBundles, 'all');
   assert.equal(summary.passedRequestedConcreteScenarios, 'all');
   assert.equal(summary.failedRequestedConcreteScenarios, 'all');
+  assert.equal(summary.requestedScenarioStatuses, 'all');
+  assert.equal(summary.requestedBundleStatuses, 'all');
+  assert.equal(summary.requestedConcreteScenarioStatuses, 'all');
   assert.equal(summary.checkedScenarios, 'all');
   assert.deepEqual(summary.passedScenarios, [
     'core-package-routes',
@@ -288,6 +291,13 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.requestedScenariosSatisfied, true);
   assert.equal(summary.requestedBundlesSatisfied, true);
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-verifier-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverVerifierGuards: 'passed',
+  });
+  assert.deepEqual(summary.requestedConcreteScenarioStatuses, {});
   assert.deepEqual(summary.selectedScenarios, [
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
@@ -812,6 +822,16 @@ test('plugin-driver proof summary exposes failing requested concrete scenarios w
   assert.deepEqual(summary.requestedConcreteScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.passedRequestedConcreteScenarios, []);
   assert.deepEqual(summary.failedRequestedConcreteScenarios, ['driver-delete-apply']);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-delete-apply': 'missing',
+    'driver-verifier-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverVerifierGuards: 'passed',
+  });
+  assert.deepEqual(summary.requestedConcreteScenarioStatuses, {
+    'driver-delete-apply': 'missing',
+  });
 });
 
 test('plugin-driver proof summary keeps requested scenario verdict scoped to the requested proof set', () => {
@@ -957,6 +977,13 @@ test('plugin-driver proof summary treats bundle verdicts as satisfied when only 
   assert.deepEqual(summary.requestedConcreteScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.passedRequestedConcreteScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.failedRequestedConcreteScenarios, []);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-delete-apply': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.requestedConcreteScenarioStatuses, {
+    'driver-delete-apply': 'passed',
+  });
   assert.deepEqual(summary.checkedScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.passedScenarios, ['driver-delete-apply']);
   assert.deepEqual(summary.failedScenarios, []);
@@ -1057,4 +1084,13 @@ test('plugin-driver proof summary exposes failed requested bundles directly', ()
   assert.deepEqual(summary.failedRequestedScenarios, ['driver-verifier-guards']);
   assert.deepEqual(summary.passedRequestedBundles, ['driverRegistrationGuards']);
   assert.deepEqual(summary.failedRequestedBundles, ['driverVerifierGuards']);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-registration-guards': 'passed',
+    'driver-verifier-guards': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverRegistrationGuards: 'passed',
+    driverVerifierGuards: 'missing',
+  });
+  assert.deepEqual(summary.requestedConcreteScenarioStatuses, {});
 });
