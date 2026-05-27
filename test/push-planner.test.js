@@ -33025,6 +33025,93 @@ test('allows a local term relationship object reference to a same-plan post even
   assert.equal(JSON.stringify(reference).includes('remote-attachment-body'), false);
 });
 
+test('allows a local term relationship object reference to a same-plan post even when a navigation menu taxonomy is blocked elsewhere', () => {
+  const postResourceKey = 'row:["wp_posts","ID:3"]';
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:20"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:3|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local taxonomy object post',
+    post_content: 'local-private-taxonomy-object-body',
+    post_status: 'publish',
+  };
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local relationship term',
+      slug: 'local-relationship-term',
+    },
+    'term_id:11': {
+      term_id: 11,
+      name: 'Local blocked elsewhere nav menu term',
+      slug: 'local-blocked-elsewhere-nav-menu-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 11,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+
+  const plan = planFor(base, local, baseSite());
+  const postMutation = mutationFor(plan, postResourceKey);
+  const termMutation = mutationFor(plan, termResourceKey);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const blockedTaxonomyMutation = mutationFor(plan, blockedTaxonomyResourceKey);
+  const blockedTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedTaxonomyResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const reference = relationshipMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-relationship-object');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.blockers, 1);
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(termMutation.changeKind, 'create');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(blockedTaxonomyMutation, undefined);
+  assert.equal(blockedTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(blockedTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.ok(
+    plan.mutations.indexOf(postMutation) < plan.mutations.indexOf(relationshipMutation),
+    'owning post create must be ordered before dependent term relationship',
+  );
+  assert.ok(
+    plan.mutations.indexOf(taxonomyMutation) < plan.mutations.indexOf(relationshipMutation),
+    'term taxonomy create must be ordered before dependent term relationship',
+  );
+  assert.deepEqual(relationshipMutation.dependsOnMutationIds.sort(), [postMutation.id, taxonomyMutation.id].sort());
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(reference.relationshipType, 'term-relationship-object');
+  assert.equal(reference.targetResourceKey, postResourceKey);
+  assert.equal(JSON.stringify(reference).includes('local-private-taxonomy-object-body'), false);
+  assert.equal(JSON.stringify(reference).includes('Local blocked elsewhere nav menu term'), false);
+});
+
 test('allows an existing term relationship object reference to retarget to a same-plan post create', () => {
   const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
   const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
