@@ -993,6 +993,10 @@ function wordpressGraphIdentitySupport({
 }
 
 function isUnsafeWordPressGraphReference(reference) {
+  if (isSafeSamePlanWordPressGraphReference(reference)) {
+    return false;
+  }
+
   if (reference.targetChange.remote.state !== 'present') {
     return true;
   }
@@ -1003,6 +1007,33 @@ function isUnsafeWordPressGraphReference(reference) {
 
   return reference.targetLocalHash !== reference.targetRemoteHash;
 }
+
+function isSafeSamePlanWordPressGraphReference(reference) {
+  if (!SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS.has(reference.relationshipType)) {
+    return false;
+  }
+
+  if (reference.targetRemoteHash !== reference.targetBaseHash) {
+    return false;
+  }
+
+  if (reference.targetLocalHash === reference.targetRemoteHash) {
+    return false;
+  }
+
+  if (reference.targetChange.local.state !== 'present') {
+    return false;
+  }
+
+  return reference.targetChange.localChange === 'create'
+    || reference.targetChange.localChange === 'update';
+}
+
+const SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS = new Set([
+  'post-parent',
+  'postmeta-post',
+  'featured-image-attachment',
+]);
 
 function wordpressGraphReferences(resource, value) {
   const suffix = wordpressGraphTableSuffix(resource.table);
