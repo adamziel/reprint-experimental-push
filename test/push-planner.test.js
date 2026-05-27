@@ -3022,6 +3022,81 @@ test('blocks a local termmeta reference when its same-plan term is claimed by a 
   assert.equal(plan.blockers.length, 3);
 });
 
+test('blocks a local termmeta reference when its same-plan term is claimed by a nav menu taxonomy and a sibling category taxonomy depends on the same blocked term even when unrelated remote wp_navigation noise exists', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:7"]';
+  const categoryTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:9"]';
+  const navMenuTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:20"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:12"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_terms = {
+    'term_id:7': {
+      term_id: 7,
+      name: 'Local shared term',
+      slug: 'local-shared-term',
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+    'term_taxonomy_id:20': {
+      term_taxonomy_id: 20,
+      term_id: 7,
+      taxonomy: 'nav_menu',
+      description: '',
+      parent: 0,
+      count: 0,
+    },
+  };
+  local.db.wp_termmeta = {
+    'meta_id:12': {
+      meta_id: 12,
+      term_id: 7,
+      meta_key: 'term-note',
+      meta_value: 'local-private-termmeta-value',
+    },
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote unrelated wp_navigation',
+    post_content: 'remote-private-unrelated-termmeta-wp-navigation-body',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+  };
+
+  const plan = planFor(base, local, remote);
+  const categoryTaxonomyMutation = mutationFor(plan, categoryTaxonomyResourceKey);
+  const navMenuTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === navMenuTaxonomyResourceKey);
+  const categoryTaxonomyBlocker = plan.blockers.find((entry) => entry.resourceKey === categoryTaxonomyResourceKey);
+  const termmetaBlocker = plan.blockers.find((entry) => entry.resourceKey === termmetaResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, termResourceKey).changeKind, 'create');
+  assert.equal(categoryTaxonomyMutation.changeKind, 'create');
+  assert.equal(mutationFor(plan, navMenuTaxonomyResourceKey), undefined);
+  assert.equal(mutationFor(plan, termmetaResourceKey), undefined);
+  assert.equal(navMenuTaxonomyBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(navMenuTaxonomyBlocker.surface, 'nav_menu');
+  assert.equal(categoryTaxonomyBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(categoryTaxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(categoryTaxonomyBlocker.references[0].targetResourceKey, termResourceKey);
+  assert.equal(termmetaBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(termmetaBlocker.surface, 'nav_menu');
+  assert.equal(JSON.stringify(termmetaBlocker).includes('local-private-termmeta-value'), false);
+  assert.equal(
+    JSON.stringify(termmetaBlocker).includes('remote-private-unrelated-termmeta-wp-navigation-body'),
+    false,
+  );
+  assert.equal(plan.blockers.length, 3);
+});
+
 test('allows a local termmeta reference to a same-plan term even when an unrelated remote attachment exists', () => {
   const resourceKey = 'row:["wp_termmeta","meta_id:12"]';
   const targetResourceKey = 'row:["wp_terms","term_id:7"]';
