@@ -5,8 +5,12 @@ import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+import { buildAuthSessionSourceCommand } from './auth-session-source-command.js';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
-import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-production-plugin-source-command.js';
+import {
+  resolvePackagedProductionPluginSourceCommand,
+  shouldRequestPackagedProductionPluginAuthSession,
+} from './packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -37,13 +41,11 @@ if (packagedBoundaryRequested) {
   await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
     await withPlaygroundServer('local-edited', localEditedFixturePath, async (localServer) => {
       const applyRevalidation = runApplyRevalidationProof({
-        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-        REPRINT_PUSH_LOCAL_URL: localServer.baseUrl,
-        REPRINT_PUSH_USERNAME: credentials.username,
-        REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
+        ...resolveApplyRevalidationAuthEnv({
+          sourceUrl: remoteServer.baseUrl,
+          localUrl: localServer.baseUrl,
+          packagedBoundaryRequested: true,
+        }),
       });
       emitCombinedReleaseProof(verify, applyRevalidation);
     });
@@ -58,9 +60,43 @@ if (packagedBoundaryRequested) {
       REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
       REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
     });
-    const applyRevalidation = runApplyRevalidationProof();
+    const applyRevalidation = runApplyRevalidationProof(
+      resolveApplyRevalidationAuthEnv({
+        sourceUrl: remoteServer.baseUrl,
+        packagedBoundaryRequested: false,
+      }),
+    );
     emitCombinedReleaseProof(verify, applyRevalidation);
   });
+}
+
+function resolveApplyRevalidationAuthEnv({
+  sourceUrl,
+  localUrl = '',
+  packagedBoundaryRequested = false,
+}) {
+  const authSessionSourceCommand = packagedBoundaryRequested
+    ? resolvePackagedProductionPluginSourceCommand({
+        sourceUrl,
+        username: credentials.username,
+        applicationPassword: credentials.applicationPassword,
+      })
+    : buildAuthSessionSourceCommand({
+        sourceUrl,
+        username: credentials.username,
+        applicationPassword: credentials.applicationPassword,
+      });
+
+  return {
+    REPRINT_PUSH_SOURCE_URL: sourceUrl,
+    REPRINT_PUSH_REMOTE_URL: sourceUrl,
+    ...(localUrl ? { REPRINT_PUSH_LOCAL_URL: localUrl } : {}),
+    REPRINT_PUSH_USERNAME: credentials.username,
+    REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
+    REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+    REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
+    REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND: authSessionSourceCommand,
+  };
 }
 
 function runCheckedReleaseVerify(envOverrides = {}) {
@@ -104,6 +140,7 @@ function runApplyRevalidationProof(envOverrides = {}) {
   return {
     ok: summary.ok === true,
     topology: summary.topology || null,
+    authSessionSource: summary.authSessionSource || null,
     preflight: {
       status: summary.preflight?.status ?? null,
       routeProfile: summary.preflight?.routeProfile?.profile || summary.preflight?.routeProfile || null,

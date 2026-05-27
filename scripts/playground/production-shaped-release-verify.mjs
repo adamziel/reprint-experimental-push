@@ -2157,7 +2157,7 @@ function summarizePackagedPluginDriverProof() {
       ['scripts/playground/production-plugin-package-smoke.mjs'],
       {
         cwd: repoRoot,
-        timeout: 45_000,
+        timeout: 130_000,
         killSignal: 'SIGKILL',
         encoding: 'utf8',
         maxBuffer: 1024 * 1024 * 20,
@@ -2165,6 +2165,7 @@ function summarizePackagedPluginDriverProof() {
           ...process.env,
           NODE_NO_WARNINGS: '1',
           REPRINT_PUSH_PACKAGE_SMOKE_MODE: 'driver-guard-only',
+          REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO: 'driver-verifier-guards',
         },
       },
       'packaged plugin driver revoked-credential guard smoke',

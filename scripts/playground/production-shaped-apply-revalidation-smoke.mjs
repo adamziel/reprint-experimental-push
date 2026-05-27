@@ -6,6 +6,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { createPushPlan } from '../../src/planner.js';
+import {
+  loadAuthSessionSource,
+  resolveAuthSessionRequestState,
+} from './auth-session-source.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -24,8 +28,25 @@ const credentials = {
     || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD
     || 'reprint-push-admin-app-password',
 };
+const requireProductionAuthSession = process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1';
 const externalRemoteBaseUrl = process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '';
 const externalLocalEditedUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
+const authSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const authSessionSource = authSessionSourceCommand
+  ? loadAuthSessionSource(authSessionSourceCommand)
+  : null;
+const resolvedAuthSessionRequest = resolveAuthSessionRequestState({
+  liveSourceUrl: externalRemoteBaseUrl,
+  username: credentials.username,
+  applicationPassword: credentials.password,
+}, authSessionSource, {
+  preferSource: requireProductionAuthSession,
+});
+const resolvedCredentials = {
+  username: resolvedAuthSessionRequest.username,
+  password: resolvedAuthSessionRequest.applicationPassword,
+};
+const resolvedExternalRemoteBaseUrl = resolvedAuthSessionRequest.liveSourceUrl || externalRemoteBaseUrl;
 
 const remoteBlueprint = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
 const localBlueprint = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
@@ -55,9 +76,12 @@ process.on('unhandledRejection', (reason) => {
 });
 
 try {
-  if (externalRemoteBaseUrl && externalLocalEditedUrl) {
+  if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSource?.ok) {
+    emitInvalidAuthSessionSourceProof();
+    process.exitCode = 1;
+  } else if (resolvedExternalRemoteBaseUrl && externalLocalEditedUrl) {
     await runApplyRevalidationProof({
-      remoteServer: { name: 'remote-base', baseUrl: externalRemoteBaseUrl },
+      remoteServer: { name: 'remote-base', baseUrl: resolvedExternalRemoteBaseUrl },
       localServer: { name: 'local-edited', baseUrl: externalLocalEditedUrl },
       externalTopology: true,
     });
@@ -76,7 +100,7 @@ try {
 async function runApplyRevalidationProof({ remoteServer, localServer, externalTopology }) {
   const client = authenticatedHttpClient({
     sourceUrl: remoteServer.baseUrl,
-    credential: credentials,
+    credential: resolvedCredentials,
     routeProfile: 'production-shaped',
     requestTimeoutMs,
   });
@@ -146,6 +170,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
       proxyPolicy: 'local-only',
       ingressPort: 8080,
     },
+    authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource, remoteServer.baseUrl),
     preflight: {
       status: preflight.status,
       routeProfile: preflight.body.routeProfile,
@@ -180,10 +205,53 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   process.stdout.write('\n');
 }
 
+function summarizeAuthSessionSource(command, source, fallbackSourceUrl = '') {
+  if (!command) {
+    return null;
+  }
+
+  return {
+    command,
+    ok: Boolean(source?.ok),
+    sourceUrl: source?.sourceUrl || fallbackSourceUrl || '',
+    username: source?.username || resolvedCredentials.username || '',
+    applicationPasswordPresent: Boolean(source?.applicationPassword || resolvedCredentials.password),
+    error: source?.error || '',
+  };
+}
+
+function emitInvalidAuthSessionSourceProof() {
+  process.stdout.write(JSON.stringify({
+    ok: false,
+    topology: {
+      sourceUrl: resolvedExternalRemoteBaseUrl || externalRemoteBaseUrl || '',
+      remoteBase: 'remote-base',
+      localEdited: externalLocalEditedUrl ? 'local-edited' : null,
+      externalTopology: Boolean(externalLocalEditedUrl),
+      proxyPolicy: 'local-only',
+      ingressPort: 8080,
+    },
+    authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
+    boundary: {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      liveAuthSessionSource: {
+        requiredCommand: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+        observed: 'invalid-production-auth-session-source',
+        error: authSessionSource?.error || 'invalid auth session source',
+      },
+      durableJournal: {
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      },
+    },
+  }, null, 2));
+  process.stdout.write('\n');
+}
+
 async function exportSnapshot(name, baseUrl) {
   const response = await fetch(`${baseUrl}/wp-json/reprint-push-lab/v1/snapshot`, {
     headers: {
-      Authorization: `Basic ${Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64')}`,
+      Authorization: `Basic ${Buffer.from(`${resolvedCredentials.username}:${resolvedCredentials.password}`).toString('base64')}`,
     },
   });
   assert.equal(response.status, 200, `${name} snapshot HTTP ${response.status}`);
@@ -238,8 +306,8 @@ async function startPlaygroundServer(name, blueprintPath) {
     env: {
       ...process.env,
       REPRINT_PUSH_LAB_AUTH_BOOTSTRAP: '1',
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.password,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: resolvedCredentials.username,
+      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: resolvedCredentials.password,
       NODE_OPTIONS: appendNodeOption(process.env.NODE_OPTIONS, localhostListenPreloadOption()),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
