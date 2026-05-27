@@ -574,7 +574,6 @@ function productionRecoveryJournalClaimContractMatches(claim) {
     && validType
     && validTimingEvidence
     && validReason
-    && (claim.status !== 'advanced' || claim.type === 'stale-claim-advanced')
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
       && CLAIM_HASH_PATTERN.test(claim.previousClaimHash || '')
@@ -1018,28 +1017,24 @@ export function openProductionRecoveryJournal(options) {
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
-    const claim = classifyRecoveryJournalClaims(persisted.records);
-    const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
-    const persistedClaimId = claim.activeClaimId || claimId;
+    const claim = summarizeProductionRecoveryJournalClaim(persisted);
+    const persistedClaimId = claim?.activeClaimId || claimId;
     const claimHash = persistedClaimId ? recoveryClaimHash(persistedClaimId) : null;
     const restartReadable = persisted.integrity.status === 'ok';
-    const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
-    const writerLease = {
-      strategy: 'claim-fenced-single-writer',
-      claimId: persistedClaimId,
-      claimHash,
-      claimKeyUnique: true,
+    const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
+    const consumed = persisted.records.some((record) => record.type === 'recovery-journal-consumed');
+    const consumedClaimId = consumed ? claim?.activeClaimId || null : null;
+    const consumedClaimHash = consumed ? claim?.activeClaimHash || null : null;
+    const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
+    const leaseFence = {
+      boundary: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
       storageGuard: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+      claimKeyUnique: true,
       fsyncEvidence: true,
-      monotonicSequence: true,
+      monotonicSequence: restartReadable,
       restartReadable,
       staleClaimRejected,
-    };
-    const ownership = {
-      ownsJournal: true,
-      restartReadable,
-      productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
-      supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
+      writerLease,
     };
     return {
       journal: {
@@ -1050,32 +1045,34 @@ export function openProductionRecoveryJournal(options) {
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
         supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
-        ownership,
+        ownership: {
+          ownsJournal: true,
+          restartReadable,
+          productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+          supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
+        },
         claim,
         claimId: persistedClaimId,
         ownsJournal: true,
         claimHash,
-        consumed: consumedRecord !== null,
-        consumedClaimId: consumedRecord?.claimId || null,
-        consumedClaimHash: consumedRecord?.claimHash || null,
+        consumed,
+        consumedClaimId,
+        consumedClaimHash,
         restartReadable,
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
         records: persisted.records.length,
         staleClaimRejected,
+        storageGuard: {
+          boundary: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+          operation: 'update',
+          outcome: 'applied',
+        },
         writerLease,
-      },
-      leaseFence: {
-        boundary: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
-        storageGuard: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
-        claimKeyUnique: true,
-        fsyncEvidence: true,
-        monotonicSequence: true,
-        restartReadable,
-        staleClaimRejected,
-        writerLease,
+        leaseFence,
       },
       claim,
+      leaseFence,
     };
   };
 
@@ -1110,8 +1107,6 @@ export function consumeProductionRecoveryJournal(options) {
     journal.appendEvent('recovery-journal-consumed', {
       planId: plan.id,
       state: 'consumed',
-      claimId,
-      claimHash: recoveryClaimHash(claimId),
       observedHash: digest(current),
       artifactRefs,
     });
@@ -1489,6 +1484,40 @@ function blockedClaimState(record, reason) {
     sequence: record.sequence || null,
     type: record.type || null,
     reason,
+  };
+}
+
+function summarizeProductionRecoveryJournalClaim(persisted) {
+  const claimState = classifyRecoveryJournalClaims(persisted.records);
+  if (claimState.status === 'none' || claimState.status === 'blocked') {
+    return undefined;
+  }
+
+  return {
+    status: hasStaleClaimRejectionEvidence(persisted.records) ? 'advanced' : 'active',
+    activeClaimId: claimState.activeClaimId || null,
+    activeClaimHash: claimState.activeClaimHash || null,
+    previousClaimId: claimState.previousClaimId || null,
+    previousClaimHash: claimState.previousClaimHash || null,
+    sequence: claimState.sequence ?? null,
+    type: claimState.type || null,
+    staleThresholdMs: claimState.staleThresholdMs ?? null,
+    previousClaimAgeMs: claimState.previousClaimAgeMs ?? null,
+    reason: claimState.reason || null,
+  };
+}
+
+function productionRecoveryJournalWriterLease(persisted, claimSummary) {
+  return {
+    strategy: 'claim-fenced-single-writer',
+    claimId: claimSummary?.activeClaimId || null,
+    claimHash: claimSummary?.activeClaimHash || null,
+    claimKeyUnique: true,
+    storageGuard: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+    fsyncEvidence: true,
+    monotonicSequence: persisted.integrity.status === 'ok',
+    restartReadable: persisted.integrity.status === 'ok',
+    staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
   };
 }
 

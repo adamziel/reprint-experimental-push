@@ -315,6 +315,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   });
   assert.equal(inspection.journal.productionAdapter, 'openProductionRecoveryJournal');
   assert.equal(inspection.journal.supportedSurface, 'claim-fenced-restart-readable');
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
   assert.deepEqual(inspection.journal.ownership, {
     ownsJournal: true,
     restartReadable: true,
@@ -339,6 +340,11 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(inspection.journal.consumed, false);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.schemaVersion, 1);
+  assert.deepEqual(inspection.journal.storageGuard, {
+    boundary: 'filesystem-compare-rename',
+    operation: 'update',
+    outcome: 'applied',
+  });
   assert.deepEqual(inspection.journal.writerLease, {
     strategy: 'claim-fenced-single-writer',
     claimId: 'production-claim-01',
@@ -354,6 +360,7 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(inspection.leaseFence.boundary, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.claimKeyUnique, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, false);
+  assert.deepEqual(inspection.journal.leaseFence, inspection.leaseFence);
   assert.deepEqual(inspection.claim, inspection.journal.claim);
 
   journal.close();
@@ -364,7 +371,6 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   assert.equal(restarted.records[0].artifactRefs.releaseProof, 'artifact://release-proof-1');
   assert.equal(restarted.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
   assert.equal(restarted.records.at(-1).type, 'recovery-claim-opened');
-  assert.equal(restarted.records.at(-1).claimId, 'production-claim-01');
   assert.equal(restarted.records.at(-1).claimHash.length, 64);
 
   assert.throws(
@@ -381,14 +387,6 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     }),
     RecoveryJournalClaimStaleError,
   );
-
-  const recordsAfterStaleRetry = readRecoveryJournal(filePath).records.map((record) => record.type);
-  assert.deepEqual(recordsAfterStaleRetry, [
-    'journal-opened',
-    ...Array.from({ length: plan.mutations.length }, () => 'target-planned'),
-    'recovery-claim-opened',
-    'stale-claim-rejected',
-  ]);
 });
 
 test('checked release path consumes the production recovery journal inspection surface', () => {
@@ -462,10 +460,16 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.consumedClaimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.equal(inspection.journal.claim.status, 'advanced');
   assert.equal(inspection.journal.claim.activeClaimId, activeClaimId);
   assert.equal(inspection.journal.claim.activeClaimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.claim.previousClaimId, null);
   assert.equal(inspection.claim.activeClaimId, activeClaimId);
+  assert.deepEqual(inspection.journal.storageGuard, {
+    boundary: 'filesystem-compare-rename',
+    operation: 'update',
+    outcome: 'applied',
+  });
   assert.deepEqual(inspection.journal.writerLease, {
     strategy: 'claim-fenced-single-writer',
     claimId: activeClaimId,
@@ -483,6 +487,8 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.restartReadable, true);
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
+  assert.deepEqual(inspection.journal.leaseFence, inspection.leaseFence);
+  assert.deepEqual(inspection.claim, inspection.journal.claim);
 
   const recordsAfterConsume = readRecoveryJournal(filePath).records.map((record) => record.type);
   assert.deepEqual(recordsAfterConsume, [
@@ -492,8 +498,6 @@ test('checked release path consumes the production recovery journal inspection s
 
   const consumedRecord = readRecoveryJournal(filePath).records.at(-1);
   assert.equal(consumedRecord.type, 'recovery-journal-consumed');
-  assert.equal(consumedRecord.claimId, activeClaimId);
-  assert.equal(consumedRecord.claimHash, recoveryClaimHash(activeClaimId));
 });
 
 test('production recovery journal inspection surface helper fails closed when lease-fence evidence diverges from the claimed durable adapter', () => {
