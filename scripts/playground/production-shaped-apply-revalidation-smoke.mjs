@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
 import { createPushPlan } from '../../src/planner.js';
+import { getResource, resourceHash, deserializeResourceValue } from '../../src/resources.js';
 import { checkedDurableJournalBoundarySatisfied } from '../../src/recovery-journal.js';
+import { ABSENT, deepClone, digest } from '../../src/stable-json.js';
 import {
   loadAuthSessionSourceFromRuntimeEnvironment,
   resolveAuthSessionRequestState,
@@ -18,11 +21,11 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
-// Match the checked release verifier's bounded readiness window so the inline
-// apply-revalidation proof does not fail earlier than the wrapper it now runs
-// inside.
-const serverStartupTimeoutMs = 30_000;
-const serverFetchTimeoutMs = 1_000;
+// The proof may boot both remote-base and local-edited Playground sources
+// before it can reach the apply boundary. Keep the readiness window aligned
+// with the production-shaped smoke scripts that do the same two-source startup.
+const serverStartupTimeoutMs = 180_000;
+const serverFetchTimeoutMs = 3_000;
 const requestTimeoutMs = 10_000;
 const readinessProbeIntervalMs = 500;
 const maxNotReadyReadinessProbes = Math.max(4, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
@@ -64,15 +67,6 @@ const resolvedExternalRemoteBaseUrl = resolvedAuthSessionRequest.liveSourceUrl |
 
 const remoteBlueprint = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
 const localBlueprint = path.join(repoRoot, 'fixtures/playground/local-edited.blueprint.json');
-const driftMutation = {
-  mutationId: 'reprint-push-apply-revalidation-drift',
-  resourceKey: 'file:wp-content/uploads/reprint-push/shared.txt',
-  value: {
-    type: 'file',
-    content: 'production-shaped apply revalidation drift',
-  },
-};
-
 const activePlaygroundChildren = new Set();
 let currentOperation = 'startup';
 process.on('beforeExit', stopAllPlaygroundChildrenSync);
@@ -94,16 +88,26 @@ try {
   if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSource?.ok) {
     emitInvalidAuthSessionSourceProof();
     process.exitCode = 1;
-  } else if (resolvedExternalRemoteBaseUrl && externalLocalEditedUrl) {
+  } else if (resolvedExternalRemoteBaseUrl) {
+    const localSnapshot = externalLocalEditedUrl
+      ? await exportSnapshot('local-edited', externalLocalEditedUrl)
+      : exportSnapshotFromBlueprint('local-edited', localBlueprint);
     await runApplyRevalidationProof({
       remoteServer: { name: 'remote-base', baseUrl: resolvedExternalRemoteBaseUrl },
-      localServer: { name: 'local-edited', baseUrl: externalLocalEditedUrl },
+      localServer: {
+        name: externalLocalEditedUrl ? 'local-edited' : 'local-edited-blueprint',
+        baseUrl: externalLocalEditedUrl || null,
+      },
+      localSnapshot,
       externalTopology: true,
     });
   } else {
     await withPlaygroundServer('remote-base', remoteBlueprint, async (remoteServer) => {
-      await withPlaygroundServer('local-edited', localBlueprint, async (localServer) => {
-        await runApplyRevalidationProof({ remoteServer, localServer, externalTopology: false });
+      await runApplyRevalidationProof({
+        remoteServer,
+        localServer: { name: 'local-edited-blueprint', baseUrl: null },
+        localSnapshot: exportSnapshotFromBlueprint('local-edited', localBlueprint),
+        externalTopology: false,
       });
     });
   }
@@ -112,7 +116,7 @@ try {
   throw error;
 }
 
-async function runApplyRevalidationProof({ remoteServer, localServer, externalTopology }) {
+async function runApplyRevalidationProof({ remoteServer, localServer, localSnapshot, externalTopology }) {
   currentOperation = 'build authenticated client';
   const client = authenticatedHttpClient({
     sourceUrl: remoteServer.baseUrl,
@@ -133,18 +137,37 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
 
   currentOperation = `export snapshot remote-base ${remoteServer.baseUrl}`;
   const base = await exportSnapshot('remote-base', remoteServer.baseUrl);
-  currentOperation = `export snapshot local-edited ${localServer.baseUrl}`;
-  const local = withoutUnmappedGraphPostmeta(await exportSnapshot('local-edited', localServer.baseUrl));
-  const plan = createPushPlan({ base, local, remote: base });
+  currentOperation = localServer.baseUrl
+    ? `export snapshot local-edited ${localServer.baseUrl}`
+    : 'export snapshot local-edited blueprint';
+  const local = withoutUnmappedGraphPostmeta(
+    localSnapshot || await exportSnapshot('local-edited', localServer.baseUrl),
+  );
+  const sourcePlan = createPushPlan({ base, local, remote: base });
+  const plan = readyPlanFromSupportedMutations(sourcePlan);
   assert.equal(plan.status, 'ready');
   assert.ok(plan.mutations.length > 0, 'apply revalidation proof needs at least one mutation');
 
-  const driftTarget = plan.mutations.find((mutation) => mutation.resourceKey === driftMutation.resourceKey)
-    || plan.mutations.find((mutation) => mutation.resourceKey.startsWith('file:'))
-    || plan.mutations[0];
+  const driftTarget = plan.mutations[0];
   assert.ok(driftTarget, 'apply revalidation proof needs a prepared mutation target');
+  assert.equal(
+    plan.mutations.findIndex((mutation) => mutation.id === driftTarget.id),
+    0,
+    'apply revalidation drift target must be the first mutation',
+  );
+  const driftPayload = driftPayloadForMutation(base, driftTarget);
   const session = preflight.body.session.id;
   const idempotencyKey = `production-shaped-apply-revalidation-smoke-${Date.now()}-${process.pid}`;
+  const missingReceiptIdempotencyKey = `${idempotencyKey}-missing-receipt`;
+
+  process.stderr.write('apply-revalidation: missing receipt /apply\n');
+  currentOperation = 'missing receipt /apply';
+  const missingReceipt = await client.signedPost('/apply', { plan }, { session, idempotencyKey: missingReceiptIdempotencyKey });
+  assert.equal(missingReceipt.status, 428);
+  assert.equal(missingReceipt.body.ok, false);
+  assert.equal(missingReceipt.body.code, 'MISSING_DRY_RUN_RECEIPT');
+  const afterMissingReceipt = await exportSnapshot('remote-after-missing-receipt', remoteServer.baseUrl);
+  assertTargetSurfaceEqual(afterMissingReceipt, base, 'missing receipt apply must be read-only for target resources');
 
   process.stderr.write('apply-revalidation: dry-run /dry-run\n');
   currentOperation = 'dry-run /dry-run';
@@ -153,29 +176,64 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.equal(dryRun.body.ok, true);
   assert.equal(dryRun.body.mode, 'dry-run');
   assert.ok(dryRun.body.receipt?.receiptHash, 'dry-run receipt hash missing');
+  assertReceiptBindsReleaseInput({
+    receipt: dryRun.body.receipt,
+    plan,
+    sourceUrl: remoteServer.baseUrl,
+    idempotencyKey,
+  });
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'dry-run', dryRun.body?.auth);
+  const afterDryRun = await exportSnapshot('remote-after-dry-run', remoteServer.baseUrl);
+  assertTargetSurfaceEqual(afterDryRun, base, 'dry-run must be read-only for target resources');
 
   process.stderr.write('apply-revalidation: apply /apply\n');
   currentOperation = 'apply /apply';
-  const apply = await client.signedPost('/apply', {
+  const applyBody = {
     plan,
     receipt: dryRun.body.receipt,
-    labDriftAfterPrepared: {
+    labDriftBeforeStorageWrite: {
       mutationId: driftTarget.id,
       resourceKey: driftTarget.resourceKey,
-      value: {
-        type: 'file',
-        content: 'production-shaped apply revalidation drift',
-      },
+      ...driftPayload,
     },
+  };
+  const apply = await client.signedPost('/apply', {
+    ...applyBody,
   }, { session, idempotencyKey });
   assert.equal(apply.status, 412);
   assert.equal(apply.body.ok, false);
   assert.equal(apply.body.code, 'PRECONDITION_FAILED');
-  assert.equal(apply.body.preconditionCheck, 'just-in-time');
+  assert.equal(apply.body.preconditionCheck, 'storage-boundary-cas');
+  assert.equal(apply.body.applied, 0, 'stale remote must fail before the first mutation is applied');
+  assert.equal(apply.body.applyRevalidation?.phase, 'before-first-mutation');
+  assert.equal(apply.body.applyRevalidation?.checkedAgainst, 'live-remote');
+  assert.equal(apply.body.applyRevalidation?.verifiedCount, plan.mutations.length);
+  assert.equal(
+    apply.body.applyRevalidation?.receiptBinding?.dryRunIdempotencyKeyHash,
+    apply.body.applyRevalidation?.claim?.activeClaimKeyHash,
+    'apply claim must reuse the dry-run receipt idempotency binding',
+  );
+  assert.equal(apply.body.rejectedRemoteEvidence?.preservedRemoteChange, true);
+  assert.equal(apply.body.rejectedRemoteEvidence?.appliedBeforeFailure, 0);
+  assert.equal(apply.body.storageGuard?.outcome, 'stale-at-write');
   assert.equal(apply.body.recovery?.required, true);
   assert.equal(apply.body.recovery?.state, 'blocked-recovery');
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'apply', apply.body?.auth);
+  const afterApply = await exportSnapshot('remote-after-apply-rejected', remoteServer.baseUrl);
+  assert.equal(resourceHash(afterApply, driftTarget.resource), apply.body.actualHash);
+  assert.notEqual(resourceHash(afterApply, driftTarget.resource), driftTarget.localHash);
+  assertNoPlannedMutationApplied(afterApply, plan);
+
+  process.stderr.write('apply-revalidation: replay rejected /apply\n');
+  currentOperation = 'replay rejected /apply';
+  const replay = await client.signedPost('/apply', applyBody, { session, idempotencyKey });
+  assert.equal(replay.status, 412);
+  assert.equal(replay.body.ok, false);
+  assert.equal(replay.body.idempotency?.replayed, true);
+  assert.equal(replay.body.idempotency?.freshMutationWork, false);
+  recordAuthSessionLifecycle(authSessionLifecycleTrace, 'replay', replay.body?.auth);
+  const afterReplay = await exportSnapshot('remote-after-replayed-rejection', remoteServer.baseUrl);
+  assertTargetSurfaceEqual(afterReplay, afterApply, 'replayed rejection must not overwrite preserved remote changes');
 
   process.stderr.write('apply-revalidation: recovery inspect /recovery/inspect\n');
   currentOperation = 'recovery inspect /recovery/inspect';
@@ -187,6 +245,21 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
   assert.equal(recoveryInspect.body.ok, true);
   assert.ok(recoveryInspect.body.recovery?.counts?.blockedUnknown >= 1);
   recordAuthSessionLifecycle(authSessionLifecycleTrace, 'recovery-inspect', recoveryInspect.body?.auth);
+
+  process.stderr.write('apply-revalidation: db journal /db-journal\n');
+  currentOperation = 'db journal /db-journal';
+  const dbJournal = await client.signedGet('/db-journal?limit=80', {
+    session,
+    idempotencyKey,
+    retryable: true,
+  });
+  assert.equal(dbJournal.status, 200);
+  assert.equal(dbJournal.body.ok, true);
+  recordAuthSessionLifecycle(authSessionLifecycleTrace, 'journal', dbJournal.body?.auth);
+  const mutationOrdering = summarizeMutationOrdering(dbJournal.body, driftTarget.id);
+  assert.equal(mutationOrdering.ordered, true, JSON.stringify(mutationOrdering, null, 2));
+  assert.equal(mutationOrdering.mutationAppliedBeforeFailure, 0);
+  assert.equal(mutationOrdering.applyCommitted, false);
 
   process.stderr.write('apply-revalidation: preserved remote retry /snapshot\n');
   currentOperation = `preserved remote retry ${requiredPreservedRemoteRetryPath}`;
@@ -214,12 +287,21 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
       sourceUrl: remoteServer.baseUrl,
       remoteBase: remoteServer.baseUrl,
       remoteChanged: externalRemoteChangedUrl || null,
-      localEdited: localServer.baseUrl,
+      localEdited: localServer.baseUrl || localServer.name,
       externalTopology,
       proxyPolicy: 'local-only',
       ingressPort: 8080,
     },
     authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource, remoteServer.baseUrl),
+    planning: {
+      sourceStatus: sourcePlan.status,
+      sourceSummary: sourcePlan.summary,
+      proofPlanStatus: plan.status,
+      proofPlanHash: digest(plan),
+      proofMutationCount: plan.mutations.length,
+      excludedBlockers: sourcePlan.blockers.length,
+      excludedConflicts: sourcePlan.conflicts.length,
+    },
     preflight: {
       status: preflight.status,
       routeProfile: preflight.body.routeProfile,
@@ -232,16 +314,43 @@ async function runApplyRevalidationProof({ remoteServer, localServer, externalTo
       status: dryRun.status,
       mode: dryRun.body.mode,
       receiptHash: dryRun.body.receipt.receiptHash,
+      readOnly: {
+        targetSurfaceUnchanged: digest(targetSurface(afterDryRun)) === digest(targetSurface(base)),
+        beforeHash: digest(targetSurface(base)),
+        afterHash: digest(targetSurface(afterDryRun)),
+      },
+      receiptBinding: summarizeReceiptBinding(dryRun.body.receipt),
     },
     apply: {
       status: apply.status,
       code: apply.body.code,
       preconditionCheck: apply.body.preconditionCheck,
+      applied: apply.body.applied,
+      applyRevalidation: apply.body.applyRevalidation,
+      storageGuard: apply.body.storageGuard,
+      rejectedRemoteEvidence: apply.body.rejectedRemoteEvidence,
       recovery: apply.body.recovery,
+    },
+    replay: {
+      status: replay.status,
+      code: replay.body.code,
+      replayed: replay.body.idempotency?.replayed === true,
+      freshMutationWork: replay.body.idempotency?.freshMutationWork === true,
+      preservedRemoteUnchanged: digest(targetSurface(afterReplay)) === digest(targetSurface(afterApply)),
     },
     recoveryInspect: {
       status: recoveryInspect.status,
       recovery: recoveryInspect.body.recovery,
+    },
+    dbJournal: {
+      status: dbJournal.status,
+      ordering: mutationOrdering,
+      rowCount: dbJournal.body.dbJournal?.rowCount ?? null,
+    },
+    missingReceipt: {
+      status: missingReceipt.status,
+      code: missingReceipt.body.code,
+      readOnly: digest(targetSurface(afterMissingReceipt)) === digest(targetSurface(base)),
     },
     authSessionLifecycle: {
       summary: authSessionLifecycleSummary,
@@ -276,6 +385,300 @@ function summarizeAuthSessionSource(command, source, fallbackSourceUrl = '') {
     applicationPasswordPresent: Boolean(source?.applicationPassword || resolvedCredentials.password),
     error: source?.error || '',
   };
+}
+
+function readyPlanFromSupportedMutations(sourcePlan) {
+  if (sourcePlan.status === 'ready') {
+    return sourcePlan;
+  }
+
+  assert.equal(
+    sourcePlan.conflicts.length,
+    0,
+    'apply revalidation proof refuses to derive a focused plan from a conflicted source plan',
+  );
+  assert.ok(
+    sourcePlan.mutations.length > 0,
+    'apply revalidation proof needs planner-produced supported mutations',
+  );
+
+  const mutationIds = new Set(sourcePlan.mutations.map((mutation) => mutation.id));
+  const focused = deepClone(sourcePlan);
+  focused.id = `${sourcePlan.id}-supported-mutations`;
+  focused.status = 'ready';
+  focused.mutations = focused.mutations.filter((mutation) => mutationIds.has(mutation.id));
+  focused.preconditions = focused.preconditions.filter((precondition) => mutationIds.has(precondition.mutationId));
+  focused.conflicts = [];
+  focused.blockers = [];
+  focused.decisions = [];
+  focused.atomicGroups = focused.atomicGroups.filter((group) =>
+    focused.mutations.some((mutation) => mutation.atomicGroupId && mutation.atomicGroupId === group.id),
+  );
+  focused.summary = {
+    mutations: focused.mutations.length,
+    decisions: focused.decisions.length,
+    conflicts: focused.conflicts.length,
+    blockers: focused.blockers.length,
+    atomicGroups: focused.atomicGroups.length,
+  };
+
+  assert.equal(
+    focused.preconditions.length,
+    focused.mutations.length,
+    'focused apply revalidation plan must preserve one precondition per mutation',
+  );
+
+  return focused;
+}
+
+function assertReceiptBindsReleaseInput({ receipt, plan, sourceUrl, idempotencyKey }) {
+  assert.equal(receipt?.mode, 'dry-run');
+  assert.equal(receipt?.planHash, digest(plan));
+  assert.equal(receipt?.mutationSetHash, receipt?.authBinding?.preconditions?.mutationSetHash);
+  assert.equal(receipt?.preconditionSetHash, receipt?.authBinding?.preconditions?.preconditionSetHash);
+  assert.equal(receipt?.mutationCount, plan.mutations.length);
+  assert.equal(receipt?.authBinding?.preconditions?.mutationCount, plan.mutations.length);
+  assert.equal(receipt?.authBinding?.request?.planPayloadHash, digest(plan));
+  assert.equal(receipt?.authBinding?.request?.dryRunBodyHash, digest({ plan }));
+  assert.equal(
+    receipt?.authBinding?.pushSession?.dryRunIdempotencyKeyHash,
+    sha256Hex(idempotencyKey),
+  );
+  assert.match(receipt?.authBinding?.pushSession?.sessionHash || '', /^[a-f0-9]{64}$/);
+  assert.match(receipt?.authBinding?.source?.sourceHash || '', /^[a-f0-9]{64}$/);
+  assert.equal(
+    normalizeUrlForEvidence(receipt?.authBinding?.source?.siteUrl || ''),
+    normalizeUrlForEvidence(sourceUrl),
+  );
+
+  const withoutHash = deepClone(receipt);
+  const receiptHash = withoutHash.receiptHash;
+  delete withoutHash.receiptHash;
+  assert.equal(digest(withoutHash), receiptHash, 'dry-run receipt must bind its full body');
+}
+
+function summarizeReceiptBinding(receipt) {
+  const binding = receipt?.authBinding || {};
+  return {
+    planHash: receipt?.planHash || null,
+    receiptHash: receipt?.receiptHash || null,
+    mutationSetHash: receipt?.mutationSetHash || null,
+    preconditionSetHash: receipt?.preconditionSetHash || null,
+    sourceHash: binding.source?.sourceHash || null,
+    sessionHash: binding.pushSession?.sessionHash || null,
+    dryRunIdempotencyKeyHash: binding.pushSession?.dryRunIdempotencyKeyHash || null,
+    dryRunBodyHash: binding.request?.dryRunBodyHash || null,
+    dryRunRawBodyHash: binding.request?.dryRunRawBodyHash || null,
+  };
+}
+
+function driftPayloadForMutation(snapshot, mutation) {
+  const resource = mutation.resource || {};
+  if (resource.type === 'file') {
+    return {
+      value: {
+        type: 'file',
+        content: 'production-shaped apply revalidation drift',
+      },
+    };
+  }
+
+  const current = getResource(snapshot, resource);
+  const planned = deserializeResourceValue(mutation.value);
+  const sourceValue = current === ABSENT ? planned : current;
+  if (sourceValue === ABSENT) {
+    return {
+      value: fallbackValueForCreatedResource(resource),
+    };
+  }
+
+  if (resource.type === 'row') {
+    return {
+      value: driftRowValue(resource, sourceValue),
+    };
+  }
+
+  if (resource.type === 'plugin') {
+    return {
+      value: {
+        ...deepClone(sourceValue),
+        active: sourceValue?.active === true ? false : true,
+      },
+    };
+  }
+
+  throw new Error(`Unsupported drift target resource type: ${resource.type}`);
+}
+
+function fallbackValueForCreatedResource(resource) {
+  if (resource.type === 'row') {
+    if (resource.table === 'wp_posts') {
+      const id = Number(String(resource.id || '').replace(/^ID:/, '')) || 999999;
+      return {
+        ID: id,
+        post_title: 'production-shaped apply revalidation drift',
+        post_name: 'production-shaped-apply-revalidation-drift',
+        post_content: '',
+        post_status: 'draft',
+        post_type: 'post',
+        post_parent: 0,
+        post_author: 1,
+      };
+    }
+    if (resource.table === 'wp_options') {
+      return {
+        option_name: String(resource.id || '').replace(/^option_name:/, ''),
+        option_value: 'production-shaped apply revalidation drift',
+        __pluginOwner: 'forms',
+      };
+    }
+    if (resource.table === 'wp_postmeta') {
+      return {
+        post_id: 1,
+        meta_key: 'reprint_push_forms_schema',
+        meta_value: 'production-shaped apply revalidation drift',
+        __pluginOwner: 'forms',
+      };
+    }
+    if (resource.table === 'wp_reprint_push_forms_lab') {
+      return {
+        id: Number(String(resource.id || '').replace(/^id:/, '')) || 1,
+        form_slug: 'production-shaped-apply-revalidation',
+        payload: { drift: true },
+        updated_marker: 'production-shaped apply revalidation drift',
+        __pluginOwner: 'forms',
+      };
+    }
+  }
+  if (resource.type === 'plugin') {
+    const name = String(resource.name || 'reprint-push-drift-plugin');
+    return {
+      name,
+      version: '0.0.0-drift',
+      pluginFile: `${name}/${name}.php`,
+      active: false,
+      __pluginOwner: name,
+    };
+  }
+  throw new Error(`No fallback drift value for ${resource.type}:${resource.key || ''}`);
+}
+
+function driftRowValue(resource, value) {
+  const next = deepClone(value);
+  if (resource.table === 'wp_posts') {
+    next.post_title = 'production-shaped apply revalidation drift';
+    return next;
+  }
+  if (resource.table === 'wp_options') {
+    next.option_value = typeof next.option_value === 'object' && next.option_value !== null
+      ? { ...next.option_value, reprint_push_apply_revalidation_drift: true }
+      : 'production-shaped apply revalidation drift';
+    return next;
+  }
+  if (resource.table === 'wp_postmeta') {
+    next.meta_value = typeof next.meta_value === 'object' && next.meta_value !== null
+      ? { ...next.meta_value, reprint_push_apply_revalidation_drift: true }
+      : 'production-shaped apply revalidation drift';
+    return next;
+  }
+  if (resource.table === 'wp_reprint_push_forms_lab') {
+    next.updated_marker = 'production-shaped apply revalidation drift';
+    return next;
+  }
+  throw new Error(`Unsupported row drift target table: ${resource.table}`);
+}
+
+function assertNoPlannedMutationApplied(snapshot, plan) {
+  for (const mutation of plan.mutations) {
+    assert.notEqual(
+      resourceHash(snapshot, mutation.resource),
+      mutation.localHash,
+      `mutation ${mutation.id} reached planned after hash unexpectedly`,
+    );
+  }
+}
+
+function summarizeMutationOrdering(body, mutationId) {
+  const rows = journalRows(body);
+  const sequence = (event, predicate = () => true) => {
+    const row = rows.find((entry) => entry.event === event && predicate(entry));
+    return row ? Number(row.sequence || 0) : null;
+  };
+  const matchesMutation = (entry) =>
+    String(entry.resourceHashEvidence?.mutation?.mutationId || '') === mutationId;
+  const idempotencyOpened = sequence('idempotency-opened');
+  const applyStarted = sequence('apply-started');
+  const mutationPrepared = sequence('mutation-prepared', matchesMutation);
+  const storageReady = sequence('mutation-storage-write-ready', matchesMutation);
+  const preconditionFailed = sequence('mutation-precondition-failed', matchesMutation);
+  const applyRejected = sequence('apply-rejected');
+  const applyReplayed = sequence('apply-replayed');
+  const applyCommitted = rows.some((entry) => entry.event === 'apply-committed');
+  const mutationAppliedBeforeFailure = rows.filter((entry) =>
+    entry.event === 'mutation-applied'
+    && Number(entry.sequence || 0) > 0
+    && preconditionFailed !== null
+    && Number(entry.sequence || 0) < preconditionFailed
+  ).length;
+  const ordered = [
+    idempotencyOpened,
+    applyStarted,
+    mutationPrepared,
+    storageReady,
+    preconditionFailed,
+    applyRejected,
+    applyReplayed,
+  ].every((item) => Number.isInteger(item) && item > 0)
+    && idempotencyOpened < applyStarted
+    && applyStarted < mutationPrepared
+    && mutationPrepared < storageReady
+    && storageReady < preconditionFailed
+    && preconditionFailed < applyRejected
+    && applyRejected < applyReplayed;
+
+  return {
+    ordered,
+    idempotencyOpened,
+    applyStarted,
+    mutationPrepared,
+    storageReady,
+    preconditionFailed,
+    applyRejected,
+    applyReplayed,
+    mutationAppliedBeforeFailure,
+    applyCommitted,
+  };
+}
+
+function journalRows(body) {
+  if (Array.isArray(body?.dbJournal?.latestRows)) {
+    return body.dbJournal.latestRows;
+  }
+  if (Array.isArray(body?.journal?.latestRows)) {
+    return body.journal.latestRows;
+  }
+  return [];
+}
+
+function assertTargetSurfaceEqual(actual, expected, label) {
+  assert.deepEqual(targetSurface(actual), targetSurface(expected), `${label} target surface mismatch`);
+  assert.equal(digest(targetSurface(actual)), digest(targetSurface(expected)), `${label} target surface hash mismatch`);
+}
+
+function targetSurface(snapshot) {
+  return {
+    files: snapshot?.files || {},
+    plugins: snapshot?.plugins || {},
+    db: snapshot?.db || {},
+  };
+}
+
+function normalizeUrlForEvidence(value) {
+  return String(value || '').replace(/\/+$/, '');
+}
+
+function sha256Hex(value) {
+  return createHash('sha256').update(String(value), 'utf8').digest('hex');
 }
 
 function emitInvalidAuthSessionSourceProof() {
@@ -414,6 +817,45 @@ async function exportSnapshot(name, baseUrl) {
   const body = await response.json();
   assert.equal(body.ok, true, `${name} snapshot body not ok`);
   return body.snapshot;
+}
+
+function exportSnapshotFromBlueprint(name, blueprintPath) {
+  const result = spawnSync('npx', [
+    '--yes',
+    '@wp-playground/cli@latest',
+    'php',
+    '--blueprint',
+    blueprintPath,
+    '--mount',
+    `${repoRoot}:/workspace`,
+    '--verbosity',
+    'quiet',
+    '--',
+    '/workspace/scripts/playground/export-site-snapshot.php',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024 * 20,
+  });
+
+  assert.equal(
+    result.status,
+    0,
+    `Playground snapshot export failed for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+  );
+  return parseMarkedJson(
+    result.stdout,
+    'REPRINT_PUSH_SNAPSHOT_JSON_BEGIN',
+    'REPRINT_PUSH_SNAPSHOT_JSON_END',
+    `Snapshot markers missing for ${name}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`,
+  );
+}
+
+function parseMarkedJson(stdout, beginMarker, endMarker, errorMessage) {
+  const pattern = new RegExp(`${beginMarker}\\n([\\s\\S]*?)\\n${endMarker}`);
+  const match = pattern.exec(stdout);
+  assert.ok(match, errorMessage);
+  return JSON.parse(match[1]);
 }
 
 function withoutUnmappedGraphPostmeta(snapshot) {

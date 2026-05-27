@@ -700,6 +700,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
     $accepted = null;
     $plan = null;
     $receipt = null;
+    $active_claim_entry = null;
 
     try {
         $idempotency_key = trim((string) $request->get_header('x-reprint-push-idempotency-key'));
@@ -834,6 +835,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
         }
 
         $opened_entry = $claim['entry'];
+        $active_claim_entry = $opened_entry;
         reprint_push_lab_rest_delay_after_idempotency_open($payload);
         if (!is_array($accepted)) {
             $plan = reprint_push_lab_rest_plan_payload($payload, 'apply');
@@ -843,6 +845,13 @@ function reprint_push_lab_rest_apply_with_db_journal(
         $result = reprint_push_lab_rest_run_db_journal_apply($payload, $context, $opened_entry, $plan, $receipt, $accepted);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
+        if (is_array($accepted)) {
+            $result = reprint_push_lab_rest_attach_rejected_apply_revalidation_evidence(
+                $result,
+                $accepted,
+                is_array($active_claim_entry) ? $active_claim_entry : []
+            );
+        }
         if (is_array($context)) {
             $rejected_entry = reprint_push_lab_db_journal_append_event('apply-rejected', $context + [
                 'appliedCount' => (int) ($result['applied'] ?? 0),
@@ -872,6 +881,47 @@ function reprint_push_lab_rest_apply_with_db_journal(
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_attach_rejected_apply_revalidation_evidence(
+    array $result,
+    array $accepted,
+    array $claim_entry
+): array {
+    $result['applyRevalidation'] = reprint_push_lab_rest_apply_revalidation_evidence($accepted, $claim_entry);
+    $rejected_remote_evidence = reprint_push_lab_rest_rejected_remote_evidence($result);
+    if (is_array($rejected_remote_evidence)) {
+        $result['rejectedRemoteEvidence'] = $rejected_remote_evidence;
+    }
+    return $result;
+}
+
+function reprint_push_lab_rest_rejected_remote_evidence(array $result): ?array
+{
+    if ((string) ($result['code'] ?? '') !== 'PRECONDITION_FAILED') {
+        return null;
+    }
+
+    $evidence = [
+        'schemaVersion' => 1,
+        'code' => 'PRECONDITION_FAILED',
+        'preconditionCheck' => (string) ($result['preconditionCheck'] ?? ''),
+        'mutationId' => (string) ($result['mutationId'] ?? ''),
+        'resourceKey' => (string) ($result['resourceKey'] ?? ''),
+        'expectedHash' => (string) ($result['expectedHash'] ?? ''),
+        'actualHash' => (string) ($result['actualHash'] ?? ''),
+        'preWriteExpectedHash' => (string) ($result['preWriteExpectedHash'] ?? ''),
+        'preWriteActualHash' => (string) ($result['preWriteActualHash'] ?? ''),
+        'appliedBeforeFailure' => max(0, (int) ($result['applied'] ?? 0)),
+        'preservedRemoteChange' => true,
+        'freshMutationWork' => false,
+    ];
+
+    if (isset($result['storageGuard']) && is_array($result['storageGuard'])) {
+        $evidence['storageGuard'] = $result['storageGuard'];
+    }
+
+    return $evidence;
 }
 
 function reprint_push_lab_rest_validate_apply_for_db_journal(array $plan, ?array $receipt_payload, array $context): array
@@ -953,12 +1003,45 @@ function reprint_push_lab_rest_apply_revalidation_evidence(
         'mutationCount' => count($mutations),
         'verifiedCount' => count($verified_preconditions),
         'verifiedResourceKeys' => $verified_resource_keys,
+        'receiptBinding' => reprint_push_lab_rest_apply_receipt_binding_evidence($accepted),
         'claim' => [
             'activeClaimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($claim_entry['claimKeyHash'] ?? null),
             'activeClaimKeyHash' => isset($claim_entry['claimKeyHash']) ? (string) $claim_entry['claimKeyHash'] : '',
             'activeClaimSequence' => (int) ($claim_entry['sequence'] ?? 0),
             'staleClaimRetry' => is_array($stale_claim_retry),
         ],
+    ];
+}
+
+function reprint_push_lab_rest_apply_receipt_binding_evidence(array $accepted): array
+{
+    $receipt = isset($accepted['receipt']) && is_array($accepted['receipt'])
+        ? $accepted['receipt']
+        : [];
+    $binding = isset($receipt['authBinding']) && is_array($receipt['authBinding'])
+        ? $receipt['authBinding']
+        : [];
+    $push_session = isset($binding['pushSession']) && is_array($binding['pushSession'])
+        ? $binding['pushSession']
+        : [];
+    $request = isset($binding['request']) && is_array($binding['request'])
+        ? $binding['request']
+        : [];
+    $source = isset($binding['source']) && is_array($binding['source'])
+        ? $binding['source']
+        : [];
+
+    return [
+        'schemaVersion' => 1,
+        'planHash' => (string) ($receipt['planHash'] ?? ''),
+        'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+        'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
+        'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
+        'sourceHash' => (string) ($source['sourceHash'] ?? ''),
+        'sessionHash' => (string) ($push_session['sessionHash'] ?? ''),
+        'dryRunIdempotencyKeyHash' => (string) ($push_session['dryRunIdempotencyKeyHash'] ?? ''),
+        'dryRunBodyHash' => (string) ($request['dryRunBodyHash'] ?? ''),
+        'dryRunContentHash' => (string) ($push_session['dryRunContentHash'] ?? ''),
     ];
 }
 
@@ -1153,7 +1236,7 @@ function reprint_push_lab_rest_run_db_journal_apply(
 function reprint_push_lab_rest_db_journal_mutation_callback(array $context, array $started_entry): callable
 {
     return static function (string $event, array $evidence) use ($context, $started_entry): void {
-        if (!in_array($event, ['mutation-prepared', 'mutation-precondition-failed', 'mutation-applied'], true)) {
+        if (!in_array($event, ['mutation-prepared', 'mutation-storage-write-ready', 'mutation-precondition-failed', 'mutation-applied'], true)) {
             return;
         }
 
@@ -3030,7 +3113,9 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'dryRunNonceHash' => $signed_request['nonceHash'],
             'dryRunContentHash' => $signed_request['contentHash'],
             'dryRunCanonicalHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
+            'dryRunIdempotencyKeyHash' => (string) ($signed_request['request']['idempotencyKeyHash'] ?? ''),
         ],
+        'source' => reprint_push_lab_rest_source_identity($request),
         'request' => [
             'restNamespace' => (string) $profile['restNamespace'],
             'dryRunRoute' => (string) $profile['dryRunRoute'],
@@ -3038,6 +3123,7 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'labBacked' => (bool) ($profile['labBacked'] ?? false),
             'planPayloadHash' => hash('sha256', reprint_push_stable_json($plan)),
             'dryRunBodyHash' => hash('sha256', reprint_push_stable_json($payload)),
+            'dryRunRawBodyHash' => (string) $signed_request['contentHash'],
         ],
         'preconditions' => [
             'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
@@ -3051,6 +3137,20 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
     $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
 
     return $receipt;
+}
+
+function reprint_push_lab_rest_source_identity(WP_REST_Request $request): array
+{
+    $profile = reprint_push_lab_rest_route_profile($request);
+    $identity = [
+        'siteUrl' => get_site_url(),
+        'homeUrl' => get_home_url(),
+        'restNamespace' => (string) $profile['restNamespace'],
+        'routeProfile' => (string) $profile['profile'],
+        'labBacked' => (bool) ($profile['labBacked'] ?? false),
+    ];
+    $identity['sourceHash'] = hash('sha256', reprint_push_stable_json($identity));
+    return $identity;
 }
 
 function reprint_push_lab_rest_validate_authenticated_receipt(
@@ -3111,6 +3211,18 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt request binding does not match the supplied apply plan.', $receipt);
     }
 
+    $source_binding = isset($binding['source']) && is_array($binding['source']) ? $binding['source'] : [];
+    $current_source = reprint_push_lab_rest_source_identity($request);
+    if ((string) ($source_binding['sourceHash'] ?? '') === ''
+        || (string) ($source_binding['sourceHash'] ?? '') !== (string) $current_source['sourceHash']
+        || (string) ($source_binding['siteUrl'] ?? '') !== (string) $current_source['siteUrl']
+        || (string) ($source_binding['homeUrl'] ?? '') !== (string) $current_source['homeUrl']
+        || (string) ($source_binding['restNamespace'] ?? '') !== (string) $current_source['restNamespace']
+        || (string) ($source_binding['routeProfile'] ?? '') !== (string) $current_source['routeProfile']
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt source binding does not match the current live source.', $receipt);
+    }
+
     $preconditions = isset($binding['preconditions']) && is_array($binding['preconditions'])
         ? $binding['preconditions']
         : [];
@@ -3130,6 +3242,20 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         || (string) ($push_session['signingKeyHash'] ?? '') !== (string) ($signed_request['signingKeyHash'] ?? '')
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt signed session binding does not match the current request.', $receipt);
+    }
+
+    if ((string) ($push_session['dryRunContentHash'] ?? '') === ''
+        || (string) ($push_session['dryRunContentHash'] ?? '') !== (string) ($request_binding['dryRunRawBodyHash'] ?? '')
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt dry-run body binding is incomplete.', $receipt);
+    }
+
+    if ((string) ($profile['profile'] ?? '') === 'production-shaped') {
+        if ((string) ($push_session['dryRunIdempotencyKeyHash'] ?? '') === ''
+            || (string) ($push_session['dryRunIdempotencyKeyHash'] ?? '') !== (string) ($signed_request['request']['idempotencyKeyHash'] ?? '')
+        ) {
+            reprint_push_lab_rest_auth_receipt_mismatch('Production-shaped apply must reuse the dry-run receipt idempotency binding.', $receipt);
+        }
     }
 }
 
