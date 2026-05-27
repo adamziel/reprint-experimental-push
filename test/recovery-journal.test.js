@@ -589,6 +589,13 @@ test('production recovery journal inspection surface helper fails closed when le
   delete inheritedJournalMarker.journal.staleClaimRejected;
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inheritedJournalMarker), false);
 
+  const driftedWriterLeaseRetryOutcome = clone(inspection);
+  driftedWriterLeaseRetryOutcome.journal.staleClaimRejected = true;
+  driftedWriterLeaseRetryOutcome.journal.writerLease.staleClaimRejected = false;
+  driftedWriterLeaseRetryOutcome.leaseFence.staleClaimRejected = true;
+  driftedWriterLeaseRetryOutcome.leaseFence.writerLease.staleClaimRejected = true;
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(driftedWriterLeaseRetryOutcome), false);
+
   const missingArtifactRefs = clone(inspection);
   missingArtifactRefs.journal.artifactRefs = {};
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(missingArtifactRefs), false);

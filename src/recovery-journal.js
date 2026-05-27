@@ -215,6 +215,8 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && journal?.claimHash === claim.activeClaimHash
     && consumedIdentityMatches
     && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
+    && writerLease?.restartReadable === journal.restartReadable
+    && writerLease?.staleClaimRejected === journal.staleClaimRejected
     && productionRecoveryJournalLeaseFenceContractMatches(leaseFence)
     && productionRecoveryJournalWriterLeaseContractMatches(leaseFenceWriterLease, claim)
     && productionRecoveryJournalWriterLeasesAgree(writerLease, leaseFenceWriterLease)
