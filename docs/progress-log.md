@@ -3,12 +3,12 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 02:41:55
+# 2026-05-27 - Public Status Audit 02:43:09
 
-<a id="2026-05-27-public-status-audit-024155"></a>
+<a id="2026-05-27-public-status-audit-024309"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `2aa02bf7954f93bc4219a16e31e2a6b7c2166b16` visible on the public
+  head `4fec89c9d6f853bd066f0b3a58cd22a738c1c747` visible on the public
   status surface for the active supervision cycle.
 - Release gates remain `0/4`. The checked durability boundary still requires
   the live `/db-journal` surface itself; `recovery/inspect` remains
