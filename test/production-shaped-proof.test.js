@@ -3655,6 +3655,128 @@ test('production auth/session lifecycle trace summary preserves status-only revo
   );
 });
 
+test('production auth/session lifecycle trace summary preserves lifecycle field attribution metadata', () => {
+  const revokedSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'cleaned-up',
+      expiresAt: '2099-01-01T00:00:00Z',
+      unrevokedField: 'auth.session.cleanup',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(revokedSummary.cleanedUp?.unrevokedField, 'auth.session.cleanup');
+  assert.equal(revokedSummary.read?.unrevokedField, 'auth.session.cleanup');
+  assert.equal(revokedSummary.observations[1]?.unrevokedField, 'auth.session.cleanup');
+  assert.deepEqual(evaluateProductionAuthSessionLifecycleSummary(revokedSummary), {
+    ok: false,
+    field: 'auth.session.status',
+    required: 'unrevoked',
+    observed: 'cleaned-up',
+  });
+
+  const expiredSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'expired',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expiredField: 'auth.session.expired',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(expiredSummary.expired?.expiredField, 'auth.session.expired');
+  assert.equal(expiredSummary.read?.expiredField, 'auth.session.expired');
+  assert.equal(expiredSummary.observations[1]?.expiredField, 'auth.session.expired');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(expiredSummary),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'unexpired',
+      observed: 'expired',
+    },
+  );
+
+  const rotatedSummary = summarizeProductionAuthSessionLifecycleTrace([
+    {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: false,
+    },
+    {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'rotated',
+      expiresAt: '2099-01-01T00:00:00Z',
+      rotatedField: 'auth.session.rotated',
+      expired: false,
+      revoked: false,
+      cleanedUp: false,
+      rotated: false,
+      preserved: true,
+    },
+  ]);
+
+  assert.equal(rotatedSummary.rotated?.rotatedField, 'auth.session.rotated');
+  assert.equal(rotatedSummary.read?.rotatedField, 'auth.session.rotated');
+  assert.equal(rotatedSummary.observations[1]?.rotatedField, 'auth.session.rotated');
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(rotatedSummary),
+    {
+      ok: false,
+      field: 'auth.session.status',
+      required: 'preserved read',
+      observed: 'rotated',
+    },
+  );
+});
+
 test('production auth/session lifecycle trace summary preserves status-only expired markers', () => {
   const expiredSummary = summarizeProductionAuthSessionLifecycleTrace([
     {

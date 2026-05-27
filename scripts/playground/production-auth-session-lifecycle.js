@@ -512,6 +512,9 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       ...(resolveInvalidAuthSessionIdentityField(entry)
         ? { invalidIdentityField: resolveInvalidAuthSessionIdentityField(entry) }
         : {}),
+      ...(typeof entry.unrevokedField === 'string' ? { unrevokedField: entry.unrevokedField } : {}),
+      ...(typeof entry.expiredField === 'string' ? { expiredField: entry.expiredField } : {}),
+      ...(typeof entry.rotatedField === 'string' ? { rotatedField: entry.rotatedField } : {}),
       expired: entry.expired === true || entry.status === 'expired',
       revoked: entry.revoked === true || entry.status === 'revoked',
       cleanedUp: entry.cleanedUp === true || entry.cleanup === true || entry.status === 'cleaned-up',
