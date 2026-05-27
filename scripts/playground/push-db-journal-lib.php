@@ -200,6 +200,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract(
             'ownsJournal' => true,
             'restartReadable' => $restart_readable,
             'productionAdapter' => 'wpdb-single-statement-cas',
+            'supportedSurface' => 'claim-fenced-restart-readable',
         ],
         'writerLease' => $writer_lease,
         'leaseFence' => [
@@ -995,7 +996,8 @@ function reprint_push_lab_db_journal_ownership_contract_matches($ownership): boo
         && ($ownership['ownsJournal'] ?? false) === true
         && is_bool($ownership['restartReadable'] ?? null)
         && ($ownership['restartReadable'] ?? false) === true
-        && reprint_push_lab_db_journal_non_empty_string($ownership['productionAdapter'] ?? null);
+        && reprint_push_lab_db_journal_non_empty_string($ownership['productionAdapter'] ?? null)
+        && ($ownership['supportedSurface'] ?? null) === 'claim-fenced-restart-readable';
 }
 
 function reprint_push_lab_db_journal_writer_lease_contract_matches($writer_lease): bool

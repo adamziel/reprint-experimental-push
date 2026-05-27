@@ -818,6 +818,7 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -870,6 +871,28 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
         boundary: 'wpdb-single-statement-cas',
         operation: 'update',
         outcome: 'applied',
+      },
+      writerLease: {
+        ...baseContract.writerLease,
+        staleClaimRejected: true,
+      },
+      leaseFence: {
+        ...baseContract.leaseFence,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied({
+      ...baseContract,
+      ownership: {
+        ...baseContract.ownership,
+        supportedSurface: 'restart-readable-only',
       },
       writerLease: {
         ...baseContract.writerLease,

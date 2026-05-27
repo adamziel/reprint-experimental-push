@@ -1451,7 +1451,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['ownership']) && is_array($checked_summary['ownership'])
                 ? $checked_summary['ownership']
                 : null,
-            ['productionAdapter']
+            ['productionAdapter', 'supportedSurface']
         )
         || reprint_push_lab_rest_checked_contract_anchor_omissions(
             isset($premerge_db_journal['ownership']) && is_array($premerge_db_journal['ownership'])
@@ -1460,7 +1460,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['ownership']) && is_array($checked_summary['ownership'])
                 ? $checked_summary['ownership']
                 : null,
-            ['productionAdapter']
+            ['productionAdapter', 'supportedSurface']
         )
     ) {
         return true;
@@ -1475,7 +1475,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
                 ? $checked_summary['ownership']
                 : null,
             ['ownsJournal', 'restartReadable'],
-            ['productionAdapter']
+            ['productionAdapter', 'supportedSurface']
         )
         || reprint_push_lab_rest_checked_contract_field_omissions(
             isset($premerge_db_journal['ownership']) && is_array($premerge_db_journal['ownership'])

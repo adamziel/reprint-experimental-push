@@ -7,6 +7,7 @@ export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 const PRODUCTION_RECOVERY_JOURNAL_KIND = 'production-recovery-journal';
 const PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 const PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER = 'filesystem-compare-rename';
+const CHECKED_DB_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
   'recovery-claim-opened',
@@ -123,6 +124,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
+    && dbJournal?.ownership?.supportedSurface === CHECKED_DB_JOURNAL_SUPPORTED_SURFACE
     && writerLeaseContractMatches(writerLease, claim)
     && writerLeaseContractMatches(nestedWriterLease, claim)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)

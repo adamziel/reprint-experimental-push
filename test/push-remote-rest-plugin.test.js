@@ -701,6 +701,7 @@ function buildAcceptedInlineRecoveryJournal() {
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -825,6 +826,7 @@ function buildCheckedRecoveryJournalSummary() {
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -1027,6 +1029,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
         ownsJournal: true,
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
+        supportedSurface: 'claim-fenced-restart-readable',
       },
       writerLease: {
         strategy: 'claim-fenced-single-writer',
@@ -1064,6 +1067,7 @@ test('checked db journal merge fills nested ownership and lease fence gaps', { s
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -1102,6 +1106,7 @@ test('checked db journal merge fills missing claim ownership evidence from the a
         ownsJournal: true,
         restartReadable: true,
         productionAdapter: 'wpdb-single-statement-cas',
+        supportedSurface: 'claim-fenced-restart-readable',
       },
     },
     {
@@ -1136,6 +1141,7 @@ test('checked db journal merge fills missing claim ownership evidence from the a
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     claim: {
       status: 'stale-claim-rejected',
@@ -3377,6 +3383,7 @@ test('checked recovery inspect evidence fails closed when accepted checked summa
       ownsJournal: true,
       restartReadable: true,
       productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
@@ -6239,6 +6246,7 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.deepEqual(parsed.recovery.journal.ownership, {
     ownsJournal: true,
     productionAdapter: 'wpdb-single-statement-cas',
+    supportedSurface: 'claim-fenced-restart-readable',
   });
 });
 
@@ -6259,6 +6267,28 @@ test('checked recovery inspect evidence fails closed on missing accepted inline 
   assert.deepEqual(parsed.recovery.journal.ownership, {
     ownsJournal: true,
     restartReadable: true,
+    supportedSurface: 'claim-fenced-restart-readable',
+  });
+});
+
+test('checked recovery inspect evidence fails closed on missing accepted inline ownership supported surface instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineRecoveryJournal();
+  delete inlineJournal.ownership.supportedSurface;
+
+  const result = runAttachCheckedRecoveryJournalEvidence(
+    { recovery: { journal: inlineJournal } },
+    true,
+    false,
+    buildCheckedRecoveryJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.recovery.journal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.recovery.journal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
   });
 });
 
@@ -8581,6 +8611,7 @@ test('checked db journal attachment fails closed on missing accepted inline owne
   assert.deepEqual(parsed.dbJournal.ownership, {
     ownsJournal: true,
     productionAdapter: 'wpdb-single-statement-cas',
+    supportedSurface: 'claim-fenced-restart-readable',
   });
 });
 
@@ -11796,6 +11827,25 @@ test('checked db journal attachment fails closed on missing accepted inline owne
   assert.deepEqual(parsed.dbJournal.ownership, {
     ownsJournal: true,
     restartReadable: true,
+  });
+});
+
+test('checked db journal attachment fails closed on missing accepted inline ownership supported surface instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  delete inlineJournal.ownership.supportedSurface;
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.ownership, {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'wpdb-single-statement-cas',
   });
 });
 
