@@ -13335,6 +13335,66 @@ test('blocks plugin-owned deletes when the owner plugin was removed remotely whi
   assert.equal(remote.plugins.forms, undefined);
 });
 
+test('blocks plugin-owned deletes when the owner plugin was removed remotely while preserving matching independent restore, edit, and type swap', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  base.files['about.php'] = '<?php echo "base about";';
+  base.files['wp-content/uploads/gallery/photo.txt'] = 'base photo';
+  delete base.files['wp-content/uploads/archive/keep.txt'];
+
+  const local = baseSite();
+  local.files['about.php'] = '<?php echo "shared about";';
+  local.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+  local.files['wp-content/uploads/archive/keep.txt'] = 'restored archive bytes';
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy({
+      resourceKey,
+      pluginOwner: 'forms',
+      driver: 'wp-option',
+      allowDelete: true,
+    }),
+  };
+
+  const remote = baseSite();
+  remote.files['about.php'] = '<?php echo "shared about";';
+  remote.files['wp-content/uploads/gallery/photo.txt'] = { type: 'directory' };
+  remote.files['wp-content/uploads/archive/keep.txt'] = 'restored archive bytes';
+  delete remote.plugins.forms;
+  delete remote.files['wp-content/plugins/forms/forms.php'];
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const matchingEdit = decisionFor(plan, 'file:about.php');
+  const matchingTypeSwap = decisionFor(plan, 'file:wp-content/uploads/gallery/photo.txt');
+  const matchingRestore = decisionFor(plan, 'file:wp-content/uploads/archive/keep.txt');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(matchingEdit.decision, 'already-in-sync');
+  assert.equal(matchingEdit.change.localChange, 'update');
+  assert.equal(matchingEdit.change.remoteChange, 'update');
+  assert.equal(matchingTypeSwap.decision, 'already-in-sync');
+  assert.equal(matchingTypeSwap.change.localChange, 'type-change');
+  assert.equal(matchingTypeSwap.change.remoteChange, 'type-change');
+  assert.equal(matchingRestore.decision, 'already-in-sync');
+  assert.equal(matchingRestore.change.localChange, 'create');
+  assert.equal(matchingRestore.change.remoteChange, 'create');
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blockerJson.includes('shared about'), false);
+  assert.equal(blockerJson.includes('base photo'), false);
+  assert.equal(blockerJson.includes('restored archive bytes'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+  assert.equal(remote.files['about.php'], '<?php echo "shared about";');
+  assert.deepEqual(remote.files['wp-content/uploads/gallery/photo.txt'], { type: 'directory' });
+  assert.equal(remote.files['wp-content/uploads/archive/keep.txt'], 'restored archive bytes');
+  assert.equal(remote.plugins.forms, undefined);
+});
+
 test('blocks plugin-owned deletes when the owner plugin was removed remotely while preserving matching independent delete, edit, and type swap', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
