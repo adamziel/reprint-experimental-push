@@ -5641,9 +5641,9 @@ test('production-shaped authenticated push fails closed immediately when apply r
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.expiresAt',
+      field: 'auth.session.expired',
       required: 'unexpired',
-      observed: '2000-01-01T00:00:00Z',
+      observed: 'expired',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(summary.boundary, {
@@ -7475,9 +7475,9 @@ test('production-shaped authenticated push fails closed on replay-only expired a
       },
     });
     assert.deepEqual(summary.authSession, {
-      field: 'auth.session.expiresAt',
+      field: 'auth.session.expired',
       required: 'unexpired',
-      observed: '2000-01-01T00:00:00Z',
+      observed: 'expired',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(
