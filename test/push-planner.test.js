@@ -59776,6 +59776,75 @@ test('blocks a local post parent reference owned by an attachment when the same-
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks a local post parent reference owned by an attachment when the same-plan post target is itself blocked by a nav_menu_item parent even when unrelated remote revision noise exists', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:2"]';
+  const blockedParentResourceKey = 'row:["wp_posts","ID:3"]';
+  const attachmentResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_type: 'nav_menu_item',
+    post_title: 'Local nav menu item parent',
+    post_content: 'local-private-nav-menu-item-parent-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_type: 'post',
+    post_title: 'Blocked same-plan parent post',
+    post_content: 'local-private-blocked-parent-body',
+    post_status: 'publish',
+    post_parent: 2,
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local attachment child',
+    post_content: 'local-private-attachment-child-body',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 3,
+  };
+  remote.db.wp_posts['ID:9'] = {
+    ID: 9,
+    post_type: 'revision',
+    post_title: 'Remote unrelated revision noise',
+    post_content: 'remote-private-unrelated-revision-body',
+    post_status: 'inherit',
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemMutation = mutationFor(plan, menuItemResourceKey);
+  const blockedParentMutation = mutationFor(plan, blockedParentResourceKey);
+  const attachmentMutation = mutationFor(plan, attachmentResourceKey);
+  const menuItemBlocker = plan.blockers.find((entry) => entry.resourceKey === menuItemResourceKey);
+  const blockedParentBlocker = plan.blockers.find((entry) => entry.resourceKey === blockedParentResourceKey);
+  const attachmentBlocker = plan.blockers.find((entry) => entry.resourceKey === attachmentResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(menuItemMutation, undefined);
+  assert.equal(blockedParentMutation.changeKind, 'create');
+  assert.equal(attachmentMutation.changeKind, 'create');
+  assert.equal(menuItemBlocker.class, 'unsupported-wordpress-graph-surface');
+  assert.equal(menuItemBlocker.surface, 'nav_menu_item');
+  assert.equal(blockedParentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(blockedParentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(blockedParentBlocker.references[0].targetResourceKey, menuItemResourceKey);
+  assert.equal(attachmentBlocker.class, 'missing-wordpress-graph-dependency');
+  assert.equal(attachmentBlocker.references[0].relationshipType, 'post-parent');
+  assert.equal(attachmentBlocker.references[0].targetResourceKey, blockedParentResourceKey);
+  assert.equal(attachmentMutation.dependsOnMutationIds, undefined);
+  assert.equal(
+    JSON.stringify(attachmentBlocker).includes('remote-private-unrelated-revision-body'),
+    false,
+  );
+  assert.equal(JSON.stringify(attachmentBlocker).includes('local-private-nav-menu-item-parent-body'), false);
+  assert.equal(JSON.stringify(attachmentBlocker).includes('local-private-blocked-parent-body'), false);
+  assert.equal(JSON.stringify(attachmentBlocker).includes('local-private-attachment-child-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks a local post parent reference owned by an attachment when the same-plan post target is itself blocked by a revision parent even when unrelated remote attachment noise exists', () => {
   const revisionResourceKey = 'row:["wp_posts","ID:2"]';
   const blockedParentResourceKey = 'row:["wp_posts","ID:3"]';
