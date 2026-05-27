@@ -1504,6 +1504,41 @@ test('plugin-driver proof summary reuses attached pluginDriverProof across alias
   assert.ok(reusedProof.selectedScenarios.includes('driver-release-proof'));
 });
 
+test('plugin-driver proof summary reuses attached pluginDriverProof for direct scenario aliases under the same canonical mode', () => {
+  const rawSummary = {
+    mode: 'driverRouteProof',
+    canonicalMode: 'core-package-routes',
+    requestedScenarios: ['core-package-routes'],
+    selectedScenarios: ['core-package-routes'],
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+  };
+
+  const originalProof = resolveProductionPluginPackagePluginDriverProof(rawSummary);
+  const reusedProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driver-route-proof'],
+    selectedScenarios: new Set(['driver-route-proof']),
+    resolvedMode: 'driverRouteProof',
+    canonicalMode: 'core-package-routes',
+  });
+
+  assert.equal(reusedProof, originalProof);
+  assert.equal(reusedProof, rawSummary.pluginDriverProof);
+  assert.deepEqual(reusedProof.requestedScenarios, ['core-package-routes']);
+  assert.ok(reusedProof.selectedScenarios.includes('core-package-routes'));
+});
+
 test('plugin-driver mode proof resolver rebuilds a stale attached top-level modeProof when the selected scenario scope changes', () => {
   const rawSummary = {
     mode: 'driverVerifierGuards',

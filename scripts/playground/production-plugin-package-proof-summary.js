@@ -681,6 +681,24 @@ function normalizeSelectedScenarioNamesForComparison(selectedScenarios) {
   ).sort();
 }
 
+function requestedScenarioAppliesToCanonicalMode(requestedScenario, canonicalMode) {
+  const canonicalRequestedScenario = canonicalizeScenarioName(requestedScenario);
+
+  if (canonicalRequestedScenario === canonicalMode) {
+    return true;
+  }
+
+  if ((modeAliasesByCanonicalMode[canonicalMode] ?? []).includes(requestedScenario)) {
+    return true;
+  }
+
+  if ((scenarioGroups[canonicalMode] ?? []).includes(canonicalRequestedScenario)) {
+    return true;
+  }
+
+  return false;
+}
+
 function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
   return requestedScenarioListsMatch(
     modeProof?.requestedScenarios,
@@ -839,11 +857,6 @@ export function resolveProductionPluginPackagePluginDriverProof(
     const resolvedModeProofOptions = expectedModeProof === null
       ? null
       : (() => {
-        const allowedRequestedScenarioNames = new Set([
-          expectedModeProof.canonicalMode,
-          ...(modeAliasesByCanonicalMode[expectedModeProof.canonicalMode] ?? []),
-          ...(scenarioGroups[expectedModeProof.canonicalMode] ?? []),
-        ]);
         return {
         ...resolvedOptions,
         canonicalMode: expectedModeProof.canonicalMode,
@@ -851,7 +864,10 @@ export function resolveProductionPluginPackagePluginDriverProof(
           || resolvedOptions.requestedScenarios === null
           ? resolvedOptions.requestedScenarios
           : resolvedOptions.requestedScenarios.filter(
-            (scenarioName) => allowedRequestedScenarioNames.has(scenarioName),
+            (scenarioName) => requestedScenarioAppliesToCanonicalMode(
+              scenarioName,
+              expectedModeProof.canonicalMode,
+            ),
           ),
       };
       })();
