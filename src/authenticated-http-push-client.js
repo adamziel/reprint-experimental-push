@@ -1361,15 +1361,28 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
-  if (requireProductionAuthSession && !dbJournalHasAuthEnvelope) {
-    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
-    summary.authSession = {
-      required: 'preserved read',
-      observed: 'missing-auth-envelope',
-      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-    };
-    setProductionAuthSessionBoundary(summary);
-    return summary;
+  if (!dbJournalHasAuthEnvelope) {
+    if (requireProductionAuthSession) {
+      summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+      summary.authSession = {
+        required: 'preserved read',
+        observed: 'missing-auth-envelope',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+      };
+      setProductionAuthSessionBoundary(summary);
+      return summary;
+    }
+    if (preflightAuthEnvelope.sessionType === 'production-auth-session') {
+      summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+      summary.authSession = {
+        field: 'auth',
+        required: 'production-auth-session',
+        observed: 'missing',
+        verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+      };
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
   }
   if (dbJournalObservedLifecycleDrift) {
     summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
