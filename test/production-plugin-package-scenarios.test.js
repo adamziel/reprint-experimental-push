@@ -649,6 +649,44 @@ test('scenario resolver accepts bundle-aligned driver mode names without only-su
   );
 });
 
+test('scenario resolver maps every exported runtime mode alias to the canonical scenario bundle contract', () => {
+  for (const [canonicalMode, aliases] of Object.entries(modeAliasesByCanonicalMode)) {
+    const expectedSelectedScenarios = [
+      canonicalMode,
+      ...(scenarioGroups[canonicalMode] ?? []),
+    ].sort();
+
+    for (const alias of aliases) {
+      const resolved = resolveProductionPluginPackageScenarios(
+        [],
+        undefined,
+        alias,
+      );
+
+      assert.deepEqual(
+        resolved.requestedScenarios,
+        [canonicalMode],
+        `${alias} should request only ${canonicalMode}`,
+      );
+      assert.equal(
+        resolved.canonicalMode,
+        canonicalMode,
+        `${alias} should canonicalize to ${canonicalMode}`,
+      );
+      assert.equal(
+        resolved.resolvedMode,
+        alias,
+        `${alias} should be preserved as the resolved runtime mode`,
+      );
+      assert.deepEqual(
+        Array.from(resolved.selectedScenarios).sort(),
+        expectedSelectedScenarios,
+        `${alias} should expand to the expected canonical scenario bundle`,
+      );
+    }
+  }
+});
+
 test('scenario resolver exports the shared runtime mode aliases for each canonical guard-capable bundle', () => {
   assert.deepEqual(modeAliasesByCanonicalMode['driver-receipt-guards'], [
     'driver-guard-only',
