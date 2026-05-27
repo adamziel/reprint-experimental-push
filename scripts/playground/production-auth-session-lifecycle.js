@@ -135,6 +135,10 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
 
   const issuedAuthUser = resolveAuthSessionIdentitySummary(issuedObservation);
   const observations = Array.isArray(summary.observations) ? summary.observations : [];
+  const lifecycleBoundaryObservations = observations.slice(
+    0,
+    resolveLifecycleBoundaryObservationCount(observations, summary.read),
+  );
   if (observations.length > 0) {
     const issuedIndex = observations.findIndex((observation) =>
       observation
@@ -275,7 +279,7 @@ export function evaluateProductionAuthSessionLifecycleSummary(summary, now = Dat
     };
   }
 
-  for (const observation of observations) {
+  for (const observation of lifecycleBoundaryObservations) {
     if (!observation || typeof observation !== 'object') {
       continue;
     }
@@ -435,14 +439,18 @@ export function summarizeProductionAuthSessionLifecycleTrace(trace) {
       };
     });
   const readObservation = resolvePreferredAuthSessionReadObservation(observations);
+  const lifecycleBoundaryObservations = observations.slice(
+    0,
+    resolveLifecycleBoundaryObservationCount(observations, readObservation),
+  );
 
   return {
     issued: observations.find((entry) => entry.step === 'preflight') ?? null,
     read: readObservation,
-    expired: observations.find((entry) => entry.expired) ?? null,
-    revoked: observations.find((entry) => entry.revoked) ?? null,
-    cleanedUp: observations.find((entry) => entry.cleanedUp) ?? null,
-    rotated: observations.find((entry) => entry.rotated) ?? null,
+    expired: lifecycleBoundaryObservations.find((entry) => entry.expired) ?? null,
+    revoked: lifecycleBoundaryObservations.find((entry) => entry.revoked) ?? null,
+    cleanedUp: lifecycleBoundaryObservations.find((entry) => entry.cleanedUp) ?? null,
+    rotated: lifecycleBoundaryObservations.find((entry) => entry.rotated) ?? null,
     preserved: observations.find((entry) => entry.preserved) ?? null,
     observations,
   };
@@ -461,6 +469,23 @@ function resolvePreferredAuthSessionReadObservation(observations) {
   return reversed.find((entry) => entry.step === 'journal' || entry.step === 'replay')
     || reversed.find((entry) => isAuthSessionReadStep(entry.step))
     || null;
+}
+
+function resolveLifecycleBoundaryObservationCount(observations, readObservation) {
+  if (!Array.isArray(observations) || observations.length === 0) {
+    return 0;
+  }
+
+  if (!readObservation || typeof readObservation !== 'object') {
+    return observations.length;
+  }
+
+  const readIndex = observations.findIndex((entry) => authSessionObservationEquals(entry, readObservation));
+  if (readIndex === -1) {
+    return observations.length;
+  }
+
+  return readIndex + 1;
 }
 
 function normalizeAuthSessionObservationId(id) {
