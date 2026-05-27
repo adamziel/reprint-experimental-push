@@ -951,6 +951,74 @@ test('plugin-driver proof summary reports requested callback bundle verdicts dir
   });
 });
 
+test('plugin-driver proof summary fails revoked credential receipt guards when the row mutates after rejection', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        payloadModeAfterReject: 'local-update',
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+        rowRetainedAfterReject: true,
+        updatedMarkerAfterReject: 'local-update',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+        rowRetainedAfterReject: false,
+        updatedMarkerAfterReject: 'forged-update',
+      },
+    },
+    {
+      requestedScenarios: ['driver-receipt-guards'],
+      selectedScenarios: new Set(scenarioGroups['driver-receipt-guards']),
+    },
+  );
+
+  assert.equal(summary.ok, false);
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, false);
+  assert.equal(summary.scenarios.driverReceiptGuards, 'missing');
+  assert.equal(summary.bundles.driverReceiptGuards, 'missing');
+  assert.equal(summary.receiptGuards.ok, false);
+  assert.equal(summary.receiptGuards.status, 'missing');
+  assert.equal(summary.receiptGuards.revokedCredential, 'reprint_push_lab_auth_required');
+  assert.equal(summary.receiptGuards.requestedStatus, 'missing');
+  assert.equal(summary.receiptGuards.requestedBundleStatus, 'missing');
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-receipt-guards': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverReceiptGuards: 'missing',
+  });
+  assert.deepEqual(summary.failedRequestedScenarios, ['driver-receipt-guards']);
+  assert.deepEqual(summary.failedRequestedBundles, ['driverReceiptGuards']);
+});
+
 test('plugin-driver proof summary exposes bounded release-proof bundle status', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
