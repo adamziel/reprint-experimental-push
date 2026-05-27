@@ -47281,7 +47281,7 @@ test('closes an owned production recovery journal writer after replaying a compl
   assert.equal(error.details.boundary, 'journal-replayed');
   assert.equal(
     error.details.causeMessage,
-    'Production durable journal recovery is not available in this worktree.',
+    'Production durable journal lost its fenced claim ownership before recording recovery state.',
   );
   assert.equal(error.details.recovery.status, 'fully-updated-remote');
   assert.equal(closed, 1);
