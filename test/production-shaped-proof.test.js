@@ -3085,6 +3085,40 @@ test('packaged readiness helpers pass snapshot startup context into signed prefl
   }
 });
 
+test('packaged readiness helpers recompute parsed signed preflight retryability with the current index probe', () => {
+  const smokeSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),
+    'utf8',
+  );
+  const verifierSource = readFileSync(
+    path.join(repoRoot, 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+
+  for (const source of [smokeSource, verifierSource]) {
+    assert.ok(
+      source.includes('const packagedPreflightReadinessContext = { packagedStartup: true };'),
+      'expected packaged signed preflight parsed-body path to keep an explicit readiness context',
+    );
+    assert.ok(
+      source.includes('const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);'),
+      'expected packaged signed preflight parsed-body path to fetch the current index probe',
+    );
+    assert.ok(
+      source.includes('const preflightRetryableWithIndex = packagedProductionPluginPreflightRetryable('),
+      'expected packaged signed preflight parsed-body path to recompute retryability with the current index probe',
+    );
+    assert.ok(
+      source.includes('{ ...packagedPreflightReadinessContext, indexProbe }'),
+      'expected packaged signed preflight parsed-body path to merge the current index probe into the readiness context',
+    );
+    assert.ok(
+      source.includes('if (!preflightRetryableWithIndex) {'),
+      'expected packaged signed preflight parsed-body path to fail closed when the recomputed retryability turns terminal',
+    );
+  }
+});
+
 test('packaged timeout fallback helpers preserve packaged startup context for signed preflight probes', () => {
   const smokeSource = readFileSync(
     path.join(repoRoot, 'scripts/playground/production-plugin-package-smoke.mjs'),

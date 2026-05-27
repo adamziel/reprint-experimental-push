@@ -1075,9 +1075,10 @@ async function waitForServer(child, baseUrl, logs) {
       }
 
       lastError = new Error(`Production plugin package preflight readiness HTTP ${preflightResponse.status}`);
+      const packagedPreflightReadinessContext = { packagedStartup: true };
       if (packagedProductionPluginPreflightRetryable(
         { status: preflightResponse.status, body: preflightBody },
-        { packagedStartup: true },
+        packagedPreflightReadinessContext,
       )) {
         if (
           packagedProductionPluginRouteStartupClassificationReady(
@@ -1087,6 +1088,20 @@ async function waitForServer(child, baseUrl, logs) {
           const indexProbe = await fetchPackagedWordPressIndexProbe(baseUrl, child);
           lastProbe = indexProbe;
           lastProbes.push(indexProbe);
+          const preflightRetryableWithIndex = packagedProductionPluginPreflightRetryable(
+            { status: preflightResponse.status, body: preflightBody },
+            { ...packagedPreflightReadinessContext, indexProbe },
+          );
+          if (!preflightRetryableWithIndex) {
+            notReadyProbeCounts = packagedProductionPluginResetRouteNotReadyProbeCounts(
+              notReadyProbeCounts,
+              'preflight',
+            );
+            throw new Error(
+              `Packaged production plugin preflight returned a terminal readiness failure at ${baseUrl}\n`
+              + `${preflightText.slice(0, readinessFailureBodyLimit)}\n${logs.join('')}`,
+            );
+          }
           const startupBranch = packagedProductionPluginClassifyBoundedStartup(
             {
               retryable: true,
