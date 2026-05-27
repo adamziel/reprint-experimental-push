@@ -2078,6 +2078,7 @@ test('plugin-driver proof summary carries the resolved smoke mode for bounded co
       'driver-delete-apply',
     ],
     failedScenarios: [],
+    guardProof: null,
     requestedStatus: 'passed',
     requestedScenarioStatuses: {
       'driver-positive-proof': 'passed',
@@ -2140,6 +2141,7 @@ test('plugin-driver proof summary exposes direct mode proof for scenario modes',
     },
     passedScenarios: ['core-package-routes'],
     failedScenarios: [],
+    guardProof: null,
     requestedStatus: 'passed',
     requestedScenarioStatuses: {
       'core-package-routes': 'passed',
@@ -2188,6 +2190,7 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
     },
     passedScenarios: [],
     failedScenarios: ['core-package-routes'],
+    guardProof: null,
     requestedStatus: 'missing',
     requestedScenarioStatuses: {
       'core-package-routes': 'missing',
@@ -2300,6 +2303,50 @@ test('plugin-driver proof summary carries the full selected verifier guard proof
   assert.equal(summary.modeProof?.proof.revokedCredential, 'reprint_push_lab_auth_required');
   assert.equal(summary.modeProof?.proof.missingExportRowsCallback, true);
   assert.equal(summary.modeProof?.proof.missingPluginOwner, true);
+  assert.deepEqual(summary.modeProof?.guardProof, {
+    deleteGuard: {
+      rejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: null,
+      payloadModeAfterReject: null,
+      updatedMarkerAfterReject: null,
+    },
+    updateValidationGuard: {
+      rejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: null,
+      payloadModeAfterReject: null,
+      updatedMarkerAfterReject: null,
+    },
+    planBinding: {
+      rejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    expiry: {
+      rejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    identity: {
+      rejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    rotatedCredential: {
+      rejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+    revokedCredential: {
+      rejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+      updatedMarkerAfterReject: 'local-update',
+    },
+  });
 });
 
 test('plugin-driver proof summary narrows modeProof requests to the selected canonical mode', () => {

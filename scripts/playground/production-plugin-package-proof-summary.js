@@ -63,6 +63,37 @@ function payloadModeRetainedAfterReject(summary) {
     || summary?.payloadModeAfterReject === 'local-update';
 }
 
+function buildGuardRejectionProof(summary, codeField) {
+  return {
+    rejectedCode: summary?.[codeField] ?? null,
+    rowRetainedAfterReject: summary?.rowRetainedAfterReject ?? null,
+    payloadModeAfterReject: summary?.payloadModeAfterReject ?? null,
+    updatedMarkerAfterReject: summary?.updatedMarkerAfterReject ?? null,
+  };
+}
+
+function buildModeGuardProof(canonicalMode, summary) {
+  if (![
+    'driver-proof',
+    'driver-release-proof',
+    'driver-verifier-guards',
+    'driver-receipt-registration-guards',
+    'driver-receipt-guards',
+  ].includes(canonicalMode)) {
+    return null;
+  }
+
+  return {
+    deleteGuard: buildGuardRejectionProof(summary?.driverDeleteGuard, 'dryRunRejectedCode'),
+    updateValidationGuard: buildGuardRejectionProof(summary?.driverUpdateValidationGuard, 'dryRunRejectedCode'),
+    planBinding: buildGuardRejectionProof(summary?.driverReceiptPlanBindingGuard, 'applyRejectedCode'),
+    expiry: buildGuardRejectionProof(summary?.driverReceiptExpiryGuard, 'applyRejectedCode'),
+    identity: buildGuardRejectionProof(summary?.driverReceiptIdentityGuard, 'applyRejectedCode'),
+    rotatedCredential: buildGuardRejectionProof(summary?.driverReceiptRotatedCredentialGuard, 'rotatedCredentialRejectedCode'),
+    revokedCredential: buildGuardRejectionProof(summary?.driverReceiptRevokedCredentialGuard, 'applyRejectedCode'),
+  };
+}
+
 const scenarioDefinitions = [
   {
     key: 'corePackageRoutes',
@@ -1249,6 +1280,9 @@ export function buildProductionPluginPackageProofSummary(
   const modeRequestedBundleStatus = canonicalMode === null
     ? null
     : collapseRequestedBundleStatus(modeRequestedBundleStatuses);
+  const modeGuardProof = canonicalMode === null
+    ? null
+    : buildModeGuardProof(canonicalMode, summary);
   proofSummary.modeProof = canonicalProof === null
     ? null
     : {
@@ -1277,6 +1311,7 @@ export function buildProductionPluginPackageProofSummary(
       ),
       passedScenarios: canonicalProof.passedScenarios ?? canonicalModePassedScenarios,
       failedScenarios: canonicalProof.failedScenarios ?? canonicalModeFailedScenarios,
+      guardProof: modeGuardProof,
       requestedStatus: canonicalProof.requestedStatus ?? null,
       requestedScenarioStatuses: modeRequestedScenarioStatuses,
       requestedConcreteScenarioStatuses: modeRequestedConcreteScenarioStatuses,
