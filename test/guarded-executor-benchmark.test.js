@@ -1489,6 +1489,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
     details.rejectedFastPaths
       .filter((entry) => [
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
+        'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-batch-sizing',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-finalize',
         'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-row-preconditions',
@@ -1515,6 +1516,19 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
       {
         id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-activation-after-pause-and-backpressure',
         rejectedGate: 'group',
+        blockerRefs: [
+          'production-atomic-group-commit-not-measured',
+          'production-row-batch-executor-not-measured',
+          'production-row-batch-executor-measured-not-proven',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'compressed-remote-index-and-cached-dependency-graph-skips-plugin-update-backpressure-after-pause',
+        rejectedGate: 'recovery',
         blockerRefs: [
           'production-atomic-group-commit-not-measured',
           'production-row-batch-executor-not-measured',
@@ -1674,7 +1688,7 @@ test('guarded benchmark surfaces plugin-update recovery blockers at runtime', ()
 
   assert.equal(
     details.rejectedFastPaths.filter((entry) => entry.id.includes('plugin-update')).length,
-    18,
+    19,
   );
 });
 
