@@ -133,6 +133,20 @@ test('plugin-driver proof summary reports full packaged guard coverage', () => {
   assert.equal(summary.requestedConcreteScenariosSatisfied, true);
   assert.equal(summary.selectedScenarios, 'all');
   assert.equal(summary.routes.labBacked, false);
+  assert.deepEqual(summary.routeProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    namespace: 'reprint/v1',
+    profile: 'production-shaped',
+    labBacked: false,
+    labNamespaceDisabled: true,
+    authBootstrapDisabled: true,
+    cliOk: true,
+    finalMatchesLocal: true,
+    requestedStatus: null,
+  });
   assert.deepEqual(summary.receiptGuards, {
     requested: true,
     selected: true,
@@ -334,6 +348,88 @@ test('plugin-driver proof summary marks unselected scenarios as skipped', () => 
   assert.equal(summary.scenarios.driverReceiptGuards, 'passed');
   assert.equal(summary.scenarios.driverDeleteApply, 'skipped');
   assert.equal(summary.scenarios.driverDuplicateTableGuard, 'passed');
+});
+
+test('plugin-driver proof summary exposes direct requested route-proof state', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+    },
+    {
+      requestedScenarios: ['core-package-routes'],
+      selectedScenarios: new Set(['core-package-routes']),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, true);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'core-package-routes': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.routeProof, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    namespace: 'reprint/v1',
+    profile: 'production-shaped',
+    labBacked: false,
+    labNamespaceDisabled: true,
+    authBootstrapDisabled: true,
+    cliOk: true,
+    finalMatchesLocal: true,
+    requestedStatus: 'passed',
+  });
+});
+
+test('plugin-driver proof summary marks missing requested route-proof state directly', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {},
+    {
+      requestedScenarios: ['core-package-routes'],
+      selectedScenarios: new Set(),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.equal(summary.requestedConcreteScenariosSatisfied, false);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'core-package-routes': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {});
+  assert.deepEqual(summary.routeProof, {
+    requested: true,
+    selected: false,
+    ok: false,
+    status: 'skipped',
+    namespace: null,
+    profile: null,
+    labBacked: null,
+    labNamespaceDisabled: null,
+    authBootstrapDisabled: null,
+    cliOk: null,
+    finalMatchesLocal: null,
+    requestedStatus: 'missing',
+  });
 });
 
 test('plugin-driver proof summary fails core package routes when packaged routes still report lab-backed mode', () => {

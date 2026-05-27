@@ -354,6 +354,23 @@ export function buildProductionPluginPackageProofSummary(
       labNamespaceDisabled: summary?.routes?.labNamespaceDisabled ?? null,
       authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
     },
+    routeProof: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('core-package-routes'),
+      selected: selectedScenarios === null
+        || selectedScenarios.has('core-package-routes'),
+      ok: scenarioResults.corePackageRoutes === 'passed',
+      status: scenarioResults.corePackageRoutes,
+      namespace: summary?.routes?.namespace ?? null,
+      profile: summary?.routes?.profile ?? null,
+      labBacked: summary?.routes?.labBacked ?? null,
+      labNamespaceDisabled: summary?.routes?.labNamespaceDisabled ?? null,
+      authBootstrapDisabled: summary?.routes?.authBootstrapDisabled ?? null,
+      cliOk: summary?.cli?.ok ?? null,
+      finalMatchesLocal: summary?.final?.finalMatchesLocal ?? null,
+      requestedStatus: requestedScenarioStatuses['core-package-routes'] ?? null,
+    },
     receiptGuards: {
       requested: normalizedRequestedScenarios === null
         ? true
