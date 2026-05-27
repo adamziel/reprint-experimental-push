@@ -30,6 +30,7 @@
     "test:playground:production-shaped-release-verify": "node ./scripts/playground/production-shaped-release-verify.mjs",
     "test:playground:production-shaped-live-release-verify": "node ./scripts/playground/production-shaped-live-release-verify.mjs",
     "test:playground:production-plugin-driver-verifier-guards": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-verifier-guards node ./scripts/playground/production-plugin-package-smoke.mjs",
+    "test:playground:production-plugin-driver-delete-apply-only": "REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply node ./scripts/playground/production-plugin-package-smoke.mjs",
     "verify:release": "npm run test:playground:production-shaped-topology-proof && REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1 REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1 REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH=/snapshot npm run test:playground:production-shaped-live-release-verify && npm run test:playground:production-plugin-driver-verifier-guards && npm run test:recovery:file-journal",
     "test:playground:production-shaped-proof": "node ./scripts/playground/production-shaped-proof.mjs",
     "test:playground:production-plugin-package": "node ./scripts/playground/production-plugin-package-smoke.mjs",
