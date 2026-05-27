@@ -1603,8 +1603,12 @@ function checkedDurableJournalBoundaryProof(
   )
     ? inspected.claimHash
     : null;
-  const checkedBoundaryWriterClaimId = (
+  const checkedBoundaryActiveClaimIdentityComplete = (
     checkedBoundaryActiveClaimId !== null
+    && checkedBoundaryActiveClaimHash !== null
+  );
+  const checkedBoundaryWriterClaimId = (
+    checkedBoundaryActiveClaimIdentityComplete
     && Object.hasOwn(inspected ?? {}, 'writerLease')
     && hasValidProductionLeaseIdentity(inspected?.writerLease)
     && inspected.writerLease.id === checkedBoundaryActiveClaimId
@@ -1612,7 +1616,7 @@ function checkedDurableJournalBoundaryProof(
     ? inspected.writerLease.id
     : null;
   const checkedBoundaryLeaseFenceClaimId = (
-    checkedBoundaryActiveClaimId !== null
+    checkedBoundaryActiveClaimIdentityComplete
     && Object.hasOwn(inspected ?? {}, 'leaseFence')
     && hasValidProductionLeaseIdentity(inspected?.leaseFence)
     && inspected.leaseFence.id === checkedBoundaryActiveClaimId
@@ -1700,7 +1704,7 @@ function checkedDurableJournalBoundaryProof(
   return {
     scope,
     acceptedOnCheckedBoundary,
-    claim: checkedBoundaryActiveClaimId === null
+    claim: !checkedBoundaryActiveClaimIdentityComplete
       ? null
       : {
         activeClaimId: checkedBoundaryActiveClaimId,

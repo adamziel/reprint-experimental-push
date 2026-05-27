@@ -29877,6 +29877,11 @@ test('production recovery support report fails closed when inspected claim recor
 
   assert.equal(report.supported, false);
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimHash, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimHash, null);
 });
 
 test('production recovery support report fails closed when inspected claimHash is hidden instead of enumerable', () => {
@@ -29934,6 +29939,11 @@ test('production recovery support report fails closed when inspected claimHash i
 
   assert.equal(report.supported, false);
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimHash, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimHash, null);
 });
 
 test('production recovery support report fails closed when inspected claimHash is inherited through the prototype', () => {
@@ -29986,6 +29996,11 @@ test('production recovery support report fails closed when inspected claimHash i
 
   assert.equal(report.supported, false);
   assert.ok(report.missingDependency.includes('fencing or lease ownership for the journal writer'));
+  assert.equal(report.checkedBoundaryProof.claim, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.writerLease.claimHash, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimId, null);
+  assert.equal(report.checkedBoundaryProof.leaseFence.writerLease.claimHash, null);
 });
 
 test('production recovery support report fails closed when the persisted claim omits its lease identity', () => {
