@@ -96,7 +96,7 @@ function assertAllowedOptionKeys(options, allowedKeys, operationName) {
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
-  const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
+  const leaseFenceBoundary = surfacedCheckedBoundaryLeaseFenceBoundary(dbJournal?.leaseFence);
   const ownership = surfacedCheckedBoundaryOwnership(dbJournal?.ownership);
   const productionAdapter = ownership.productionAdapter;
   const supportedSurface = ownership.supportedSurface;
@@ -116,6 +116,7 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && writerLeaseContractMatches(writerLease)
     && writerLeaseContractMatches(nestedWriterLease)
     && writerLeaseContractsAgree(writerLease, nestedWriterLease)
+    && leaseFenceContractMatches(dbJournal?.leaseFence)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
@@ -180,6 +181,15 @@ function surfacedCheckedBoundaryOwnership(ownership) {
 function writerLeaseContractMatches(candidate) {
   return isStrictPlainObject(candidate)
     && !hasHiddenOwnStringKeys(candidate)
+    && [
+      'strategy',
+      'claimKeyUnique',
+      'fsyncEvidence',
+      'storageGuard',
+      'monotonicSequence',
+      'restartReadable',
+      'staleClaimRejected',
+    ].every((key) => Object.hasOwn(candidate, key))
     && typeof candidate?.strategy === 'string'
     && candidate.strategy.length > 0
     && candidate?.claimKeyUnique === true
@@ -189,6 +199,43 @@ function writerLeaseContractMatches(candidate) {
     && candidate?.monotonicSequence === true
     && candidate?.restartReadable === true
     && candidate?.staleClaimRejected === true;
+}
+
+function leaseFenceContractMatches(candidate) {
+  return isStrictPlainObject(candidate)
+    && !hasHiddenOwnStringKeys(candidate)
+    && [
+      'boundary',
+      'claimKeyUnique',
+      'fsyncEvidence',
+      'monotonicSequence',
+      'restartReadable',
+      'staleClaimRejected',
+      'writerLease',
+    ].every((key) => Object.hasOwn(candidate, key))
+    && typeof candidate.boundary === 'string'
+    && candidate.boundary.length > 0
+    && candidate.claimKeyUnique === true
+    && candidate.fsyncEvidence === true
+    && candidate.monotonicSequence === true
+    && candidate.restartReadable === true
+    && candidate.staleClaimRejected === true
+    && writerLeaseContractMatches(candidate.writerLease);
+}
+
+function surfacedCheckedBoundaryLeaseFenceBoundary(candidate) {
+  if (
+    !isStrictPlainObject(candidate)
+    || !Object.hasOwn(candidate, 'boundary')
+    || hasHiddenOwnStringProperty(candidate, 'boundary')
+    || typeof candidate.boundary !== 'string'
+    || candidate.boundary.trim().length === 0
+    || candidate.boundary.trim() !== candidate.boundary
+  ) {
+    return null;
+  }
+
+  return candidate.boundary;
 }
 
 function writerLeaseContractsAgree(writerLease, nestedWriterLease) {

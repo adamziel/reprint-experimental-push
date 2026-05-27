@@ -5762,6 +5762,86 @@ test('checked durable journal boundary stays closed until stale-claim rejection 
     checkedDurableJournalBoundarySatisfied(hiddenNestedWriterLeaseContract),
     false,
   );
+  const inheritedWriterStaleClaimContract = {
+    ...baseContract,
+    writerLease: Object.assign(
+      Object.create({ staleClaimRejected: true }),
+      {
+        strategy: baseContract.writerLease.strategy,
+        claimKeyUnique: baseContract.writerLease.claimKeyUnique,
+        fsyncEvidence: baseContract.writerLease.fsyncEvidence,
+        storageGuard: baseContract.writerLease.storageGuard,
+        monotonicSequence: baseContract.writerLease.monotonicSequence,
+        restartReadable: baseContract.writerLease.restartReadable,
+        claimId: baseContract.writerLease.claimId,
+        claimHash: baseContract.writerLease.claimHash,
+      },
+    ),
+    leaseFence: {
+      ...baseContract.leaseFence,
+      staleClaimRejected: true,
+      writerLease: {
+        ...baseContract.leaseFence.writerLease,
+        staleClaimRejected: true,
+      },
+    },
+  };
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedWriterStaleClaimContract),
+    false,
+  );
+  const inheritedLeaseFenceStaleClaimContract = {
+    ...baseContract,
+    writerLease: {
+      ...baseContract.writerLease,
+      staleClaimRejected: true,
+    },
+    leaseFence: Object.assign(
+      Object.create({ staleClaimRejected: true }),
+      {
+        boundary: baseContract.leaseFence.boundary,
+        claimKeyUnique: baseContract.leaseFence.claimKeyUnique,
+        fsyncEvidence: baseContract.leaseFence.fsyncEvidence,
+        storageGuard: baseContract.leaseFence.storageGuard,
+        monotonicSequence: baseContract.leaseFence.monotonicSequence,
+        restartReadable: baseContract.leaseFence.restartReadable,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    ),
+  };
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedLeaseFenceStaleClaimContract),
+    false,
+  );
+  const inheritedLeaseFenceBoundaryContract = {
+    ...baseContract,
+    writerLease: {
+      ...baseContract.writerLease,
+      staleClaimRejected: true,
+    },
+    leaseFence: Object.assign(
+      Object.create({ boundary: baseContract.leaseFence.boundary }),
+      {
+        claimKeyUnique: baseContract.leaseFence.claimKeyUnique,
+        fsyncEvidence: baseContract.leaseFence.fsyncEvidence,
+        storageGuard: baseContract.leaseFence.storageGuard,
+        monotonicSequence: baseContract.leaseFence.monotonicSequence,
+        restartReadable: baseContract.leaseFence.restartReadable,
+        staleClaimRejected: true,
+        writerLease: {
+          ...baseContract.leaseFence.writerLease,
+          staleClaimRejected: true,
+        },
+      },
+    ),
+  };
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(inheritedLeaseFenceBoundaryContract),
+    false,
+  );
 });
 
 test('checked durable journal boundary accepts the packaged production journal scope', () => {
