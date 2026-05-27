@@ -1303,6 +1303,56 @@ test('auth/session boundary proof reports same-source readback and capability co
   assert.equal(drifted.identityContinuity.manageOptions, false);
 });
 
+test('auth/session boundary proof rejects readback source drift from the exact live source', () => {
+  const sourceCommand = buildAuthSessionSourceCommand({
+    sourceUrl: 'http://127.0.0.1:65535',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  const proof = resolveAuthSessionBoundaryProof({
+    liveSourceUrlEnv: 'http://127.0.0.1:65535',
+    effectiveSourceUrl: 'http://127.0.0.1:65534',
+    authSessionSourceCommand: sourceCommand,
+    authSessionSource: {
+      ok: true,
+      sourceUrl: 'http://127.0.0.1:65535',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    },
+    authSessionLifecycleSummary: {
+      issued: {
+        step: 'preflight',
+        id: 'session-01',
+        authUser: liveCredentials.username,
+        authUserId: 7,
+        authCapabilities: { manage_options: true },
+      },
+      read: {
+        step: 'journal',
+        id: 'session-01',
+        authUser: liveCredentials.username,
+        authUserId: 7,
+        authCapabilities: { manage_options: true },
+      },
+    },
+  });
+
+  assert.equal(proof.verdict, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
+  assert.equal(proof.exactLiveSourceUrlEnv, 'http://127.0.0.1:65535');
+  assert.equal(proof.sourceCommand.issuance, sourceCommand);
+  assert.equal(proof.sourceCommand.readback, sourceCommand);
+  assert.equal(proof.source.matchesLiveSourceUrl, true);
+  assert.equal(proof.source.sameSourceAtReadback, false);
+  assert.equal(proof.issuance.sourceUrl, 'http://127.0.0.1:65534');
+  assert.equal(proof.readback.sourceUrl, 'http://127.0.0.1:65534');
+  assert.equal(proof.identityContinuity.sameSession, true);
+  assert.equal(proof.identityContinuity.sameUserLogin, true);
+  assert.equal(proof.identityContinuity.sameUserId, true);
+  assert.equal(proof.identityContinuity.manageOptions, true);
+  assert.equal(proof.packagedFixtureCredentialFallback.acceptedForReleaseSuccess, false);
+});
+
 test('production auth/session source loader fails closed when required fields are missing', () => {
   const source = loadAuthSessionSource(
     `${process.execPath} -e "process.stdout.write(JSON.stringify({sourceUrl:'http://127.0.0.1:8080', username:'reprint_push_admin'}))"`,
