@@ -80,7 +80,14 @@ const packagedServerFetchTimeoutMs = 3_000;
 const packagedSnapshotExportTimeoutMs = 45_000;
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
-const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;
+// Shared remote-changed/local-edited fixtures can clear /wp-json/ global
+// readiness before the lab snapshot route finishes booting. Keep a bounded
+// post-global-ready window so the verifier does not fail at this last startup
+// branch after only four probes.
+const maxSnapshotStartupAfterGlobalReadyProbes = Math.max(
+  labMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 // Snapshot fetches can time out transiently while /wp-json/ is still clearly in
 // startup. Give that fallback a slightly wider bounded budget than the base
 // four-probe classifier without letting it consume the entire startup window.

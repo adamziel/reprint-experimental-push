@@ -101,7 +101,10 @@ const releaseVerifySlowPathTimeoutMs = 15_000;
 const releaseVerifySlowPathInnerTimeoutMs = Math.max(1_000, Math.min(6_000, releaseVerifySlowPathTimeoutMs - 6_000));
 const maxReadinessProbes = Math.max(10, Math.ceil(serverStartupTimeoutMs / readinessProbeIntervalMs));
 const maxNotReadyReadinessProbes = Math.max(labMaxConsecutiveNotReadyProbes, maxReadinessProbes);
-const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;
+const maxSnapshotStartupAfterGlobalReadyProbes = Math.max(
+  labMaxConsecutiveNotReadyProbes,
+  Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
+);
 const maxSnapshotTimeoutFallbackProbes = Math.max(
   labMaxConsecutiveNotReadyProbes,
   Math.ceil(15_000 / (serverFetchTimeoutMs + readinessProbeIntervalMs)),
@@ -5297,7 +5300,7 @@ test('shared lab waitForServer keeps index and snapshot body reads child-aware',
   );
   assert.match(
     verifierSource,
-    /const maxSnapshotStartupAfterGlobalReadyProbes = labMaxConsecutiveNotReadyProbes;/,
+    /const maxSnapshotStartupAfterGlobalReadyProbes = Math\.max\(\s*labMaxConsecutiveNotReadyProbes,\s*Math\.ceil\(15_000 \/ \(serverFetchTimeoutMs \+ readinessProbeIntervalMs\)\),\s*\);/s,
   );
   assert.match(
     verifierSource,
@@ -6579,6 +6582,83 @@ test('shared lab waitForServer fails closed after bounded snapshot timeouts whil
 
   assert.equal(indexCalls, maxSnapshotTimeoutFallbackProbes);
   assert.equal(snapshotCalls, maxSnapshotTimeoutFallbackProbes);
+});
+
+test('shared lab waitForServer tolerates more than four startup-shaped snapshot responses after global WordPress readiness', async () => {
+  let indexCalls = 0;
+  let snapshotCalls = 0;
+  const readyAfterSnapshotCalls = labMaxConsecutiveNotReadyProbes + 1;
+  const server = createServer((request, response) => {
+    if (request.url === '/wp-json/') {
+      indexCalls += 1;
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ namespaces: ['reprint-push-lab/v1'] }));
+      return;
+    }
+
+    if (request.url === '/wp-json/reprint-push-lab/v1/snapshot') {
+      snapshotCalls += 1;
+      if (snapshotCalls < readyAfterSnapshotCalls) {
+        response.statusCode = 502;
+        response.setHeader('content-type', 'application/json; charset=utf-8');
+        response.end(JSON.stringify({
+          code: 'wordpress_not_ready',
+          message: 'WordPress is not ready yet',
+        }));
+        return;
+      }
+      response.statusCode = 200;
+      response.setHeader('content-type', 'application/json; charset=utf-8');
+      response.end(JSON.stringify({ ok: true, snapshot: {} }));
+      return;
+    }
+
+    response.statusCode = 404;
+    response.end('not found');
+  });
+
+  await new Promise((resolve, reject) => {
+    server.listen(0, '127.0.0.1', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+
+  const address = server.address();
+  assert.ok(address && typeof address === 'object' && typeof address.port === 'number');
+
+  try {
+    await waitForServer(
+      {
+        exitCode: null,
+        signalCode: null,
+        pid: null,
+      },
+      `http://127.0.0.1:${address.port}`,
+      () => '',
+    );
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+
+  assert.equal(indexCalls, readyAfterSnapshotCalls);
+  assert.equal(snapshotCalls, readyAfterSnapshotCalls);
+  assert.ok(
+    maxSnapshotStartupAfterGlobalReadyProbes >= readyAfterSnapshotCalls,
+    'expected widened post-global-ready snapshot startup budget',
+  );
 });
 
 test('shared lab waitForServer fails closed when snapshot stays startup-shaped after global WordPress readiness', async () => {
