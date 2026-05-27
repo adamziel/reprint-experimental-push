@@ -1949,14 +1949,16 @@ function summarizeDbJournalLeaseFence(dbJournal) {
     return undefined;
   }
 
+  const summarizedWriterLease = summarizeDbJournalWriterLease(leaseFence.writerLease);
+
   return {
     boundary: leaseFence.boundary || null,
     claimKeyUnique: leaseFence.claimKeyUnique === true,
-    fsyncEvidence: leaseFence.fsyncEvidence === true,
+    fsyncEvidence: leaseFence.fsyncEvidence === true || summarizedWriterLease?.fsyncEvidence === true,
     monotonicSequence: leaseFence.monotonicSequence === true,
     restartReadable: leaseFence.restartReadable === true,
     staleClaimRejected: leaseFence.staleClaimRejected === true,
-    writerLease: summarizeDbJournalWriterLease(leaseFence.writerLease),
+    writerLease: summarizedWriterLease,
   };
 }
 

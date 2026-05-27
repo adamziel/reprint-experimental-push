@@ -988,6 +988,7 @@ test('production-shaped authenticated push fails closed when production prefligh
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
     assert.deepEqual(summary.authSession, {
+      field: 'auth.session.status',
       required: 'string lifecycle fields',
       observed: 'invalid-status',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -997,6 +998,7 @@ test('production-shaped authenticated push fails closed when production prefligh
       status: 'unimplemented',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
+        field: 'auth.session.status',
         required: 'string lifecycle fields',
         observed: 'invalid-status',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
@@ -5846,6 +5848,7 @@ test('production-shaped authenticated push fails closed when recovery inspect dr
       },
     });
     assert.deepEqual(summary.authSession, {
+      field: 'auth.session.type',
       required: 'production-auth-session',
       observed: 'application-password-basic',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -6121,6 +6124,7 @@ test('production-shaped authenticated push fails closed when recovery inspect om
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.equal(summary.recoveryInspect.authUser, undefined);
     assert.deepEqual(summary.authSession, {
+      field: 'auth',
       required: 'production-auth-session',
       observed: 'missing',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -8389,6 +8393,7 @@ test('production-shaped authenticated push fails closed when replay changes the 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
+      field: 'auth.identity.userLogin',
       required: 'reprint_push_admin',
       observed: 'different-user',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
@@ -8862,6 +8867,7 @@ test('production-shaped authenticated push fails closed when replay changes the 
     assert.equal(summary.ok, false);
     assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
     assert.deepEqual(summary.authSession, {
+      field: 'auth',
       required: 'production-auth-session',
       observed: 'missing',
       verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
