@@ -31,3 +31,52 @@ test('package scripts pin the bounded plugin-driver proof bundle entrypoint', ()
     'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-delete-apply,driver-verifier-guards node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
+
+test('package scripts pin the bounded plugin-driver verifier-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-verifier-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-verifier-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver registration-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-registration-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver callback-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-callback-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-callback-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver registration-shape-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-registration-shape-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-registration-shape-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver receipt-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-receipt-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-receipt-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver delete-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-delete-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-delete-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver positive-only mode entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-positive-only'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-positive-only node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
