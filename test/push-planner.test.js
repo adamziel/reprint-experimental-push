@@ -31721,6 +31721,104 @@ test('allows an existing term relationship object reference to retarget to a sam
   assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'nav_menu_item');
 });
 
+test('allows an existing term relationship object reference to retarget to a same-plan post create even when an unrelated remote revision post exists', () => {
+  const existingPostResourceKey = 'row:["wp_posts","ID:3"]';
+  const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:4|term_taxonomy_id:9"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+
+  base.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Existing tagged post',
+    post_content: 'base-private-existing-tagged-post-body',
+    post_status: 'publish',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:3'] = {
+    ...base.db.wp_posts['ID:3'],
+  };
+  remote.db.wp_posts['ID:21'] = {
+    ID: 21,
+    post_title: 'Remote revision noise',
+    post_content: 'remote-revision-noise-body',
+    post_status: 'inherit',
+    post_type: 'revision',
+  };
+  base.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      term_taxonomy_id: 9,
+      term_id: 7,
+      taxonomy: 'category',
+      description: '',
+      parent: 0,
+      count: 1,
+    },
+  };
+  local.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  remote.db.wp_term_taxonomy = {
+    'term_taxonomy_id:9': {
+      ...base.db.wp_term_taxonomy['term_taxonomy_id:9'],
+    },
+  };
+  base.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      object_id: 3,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  local.db.wp_term_relationships = {
+    'object_id:4|term_taxonomy_id:9': {
+      object_id: 4,
+      term_taxonomy_id: 9,
+      term_order: 0,
+    },
+  };
+  remote.db.wp_term_relationships = {
+    'object_id:3|term_taxonomy_id:9': {
+      ...base.db.wp_term_relationships['object_id:3|term_taxonomy_id:9'],
+    },
+  };
+  local.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'Local retagged post',
+    post_content: 'local-private-retagged-post-body',
+    post_status: 'publish',
+  };
+
+  const plan = planFor(base, local, remote);
+  const existingPostMutation = mutationFor(plan, existingPostResourceKey);
+  const samePlanPostMutation = mutationFor(plan, samePlanPostResourceKey);
+  const relationshipMutation = mutationFor(plan, relationshipResourceKey);
+  const reference = relationshipMutation.wordpressGraphReferences.find((entry) => entry.relationshipType === 'term-relationship-object');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(existingPostMutation, undefined);
+  assert.equal(samePlanPostMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.deepEqual(relationshipMutation.dependsOnMutationIds, [samePlanPostMutation.id]);
+  assert.equal(reference.resolutionPolicy, 'same-plan-local-create');
+  assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
+  assert.equal(reference.relationshipType, 'term-relationship-object');
+  assert.equal(reference.targetResourceKey, samePlanPostResourceKey);
+  assert.equal(JSON.stringify(reference).includes('base-private-existing-tagged-post-body'), false);
+  assert.equal(JSON.stringify(reference).includes('local-private-retagged-post-body'), false);
+  assert.equal(JSON.stringify(reference).includes('remote-revision-noise-body'), false);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_term_relationships['object_id:4|term_taxonomy_id:9'].object_id, 4);
+  assert.equal(Object.hasOwn(result.site.db.wp_term_relationships, 'object_id:3|term_taxonomy_id:9'), false);
+  assert.equal(result.site.db.wp_posts['ID:21'].post_type, 'revision');
+});
+
 test('allows an existing term relationship object reference to retarget to a same-plan post create even when a navigation menu taxonomy is blocked elsewhere', () => {
   const samePlanPostResourceKey = 'row:["wp_posts","ID:4"]';
   const blockedTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:20"]';
