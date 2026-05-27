@@ -219,8 +219,8 @@ function buildPackagedReleaseVerifierWaitHelper(overrides = {}) {
   );
 
   return compileHelper(
-    1_000,
-    100,
+    overrides.packagedServerStartupTimeoutMs ?? 1_000,
+    overrides.packagedServerFetchTimeoutMs ?? 100,
     packagedProductionPluginNextRouteNotReadyProbeCounts,
     packagedProductionPluginResetRouteNotReadyProbeCounts,
     packagedProductionPluginReadinessBodyRetryable,
@@ -7506,6 +7506,49 @@ test('packaged preflight retryability lets a live index probe override stale pac
       indexProbe: startupIndexProbe,
     }),
     true,
+  );
+});
+
+test('packaged preflight retryability keeps packaged-route startup retryable after global WordPress readiness', () => {
+  const preflight = {
+    status: 404,
+    body: {
+      code: 'rest_no_route',
+      message: 'No route was found matching the URL and request method.',
+    },
+  };
+  const readyIndexProbe = {
+    status: 200,
+    body: JSON.stringify({ namespaces: ['reprint/v1'] }),
+  };
+
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(preflight, {
+      packagedStartup: true,
+      indexProbe: readyIndexProbe,
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(preflight, {
+      packagedStartup: true,
+      indexProbe: readyIndexProbe,
+    }),
+    false,
+  );
+  assert.deepEqual(
+    packagedProductionPluginClassifyBoundedStartup(
+      {
+        retryable: true,
+        status: preflight.status,
+        body: JSON.stringify(preflight.body),
+      },
+      readyIndexProbe,
+    ),
+    {
+      kind: 'retryable-route-packaged-route-starting',
+      packagedRouteStartup: true,
+    },
   );
 });
 
