@@ -1769,6 +1769,15 @@ maybeTest('production-shaped release verify command runs the live protocol branc
     assert.match(proof.stdout, /"restartReadable": true/);
     assert.match(proof.stdout, /"staleClaimRejected": true/);
     assert.match(proof.stdout, /"checkedAccepted": true/);
+    assert.match(proof.stdout, /"activeClaimId": "[A-Za-z0-9_-]{16,160}"/);
+    assert.match(
+      proof.stdout,
+      /"writerLease": \{[\s\S]*?"claimId": "[A-Za-z0-9_-]{16,160}"/,
+    );
+    assert.match(
+      proof.stdout,
+      /"leaseFence": \{[\s\S]*?"writerLease": \{[\s\S]*?"claimId": "[A-Za-z0-9_-]{16,160}"/,
+    );
     assert.match(
       proof.stdout,
       /"leaseFence": \{\s*"storageGuard": "filesystem-compare-rename",\s*"fsyncEvidence": true,\s*"monotonicSequence": true,\s*"staleClaimRejected": true\s*\}/,

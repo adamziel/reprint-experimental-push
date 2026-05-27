@@ -140,7 +140,12 @@ export function checkedDurableJournalBoundarySatisfied(dbJournal) {
     && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
-    && dbJournal?.leaseFence?.staleClaimRejected === true;
+    && dbJournal?.leaseFence?.staleClaimRejected === true
+    && checkedBoundaryClaimIdentityMatches(
+      dbJournal?.claim?.activeClaimId,
+      writerLease?.claimId,
+      nestedWriterLease?.claimId,
+    );
 }
 
 export function checkedDurableJournalBoundaryContractIsPresent(dbJournal) {
@@ -741,6 +746,18 @@ function writerLeaseContractsAgree(writerLease, nestedWriterLease) {
 
   return writerLease?.claimId === nestedWriterLease?.claimId
     && writerLease?.claimKeyHash === nestedWriterLease?.claimKeyHash;
+}
+
+function checkedBoundaryClaimIdentityMatches(...claimIds) {
+  const surfacedClaimIds = claimIds.filter((claimId) =>
+    typeof claimId === 'string' && claimId.trim().length > 0 && claimId.trim() === claimId,
+  );
+
+  if (surfacedClaimIds.length === 0) {
+    return true;
+  }
+
+  return surfacedClaimIds.every((claimId) => claimId === surfacedClaimIds[0]);
 }
 
 function assertProductionRecoveryClaimId(claimId, operationName) {
