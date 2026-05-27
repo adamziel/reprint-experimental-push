@@ -38535,7 +38535,6 @@ test('production durable journal retries keep blocked partial commits blocked an
       mutateRemote: true,
     }),
   );
-  retryWriter.close();
 
   const persistedAfterRetry = readRecoveryJournal(durableJournalPath);
   const blockedRecoveryRecordsAfterRetry = persistedAfterRetry.records.filter(
@@ -38544,6 +38543,16 @@ test('production durable journal retries keep blocked partial commits blocked an
 
   assert.equal(retryError.code, 'RECOVERY_BLOCKED');
   assert.equal(retryError.details.recovery.status, 'blocked-recovery');
+  assert.equal(isDurableJournalClosed(retryWriter), true);
+  assert.throws(() => retryWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'retrying-blocked-partial-commit',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
   assert.ok(retryError.details.recovery.artifacts.journal, 'retry must keep journal artifacts');
   assert.ok(retryError.details.recovery.artifacts.remote, 'retry must keep remote artifacts');
   assert.equal(
@@ -38634,12 +38643,21 @@ test('production durable journal retries a fully committed partial failure as fu
       mutateRemote: true,
     }),
   );
-  retryWriter.close();
 
   const persistedAfterRetry = readRecoveryJournal(durableJournalPath);
 
   assert.equal(retryError.code, 'JOURNAL_WRITE_FAILED');
   assert.equal(retryError.details.recovery.status, 'fully-updated-remote');
+  assert.equal(isDurableJournalClosed(retryWriter), true);
+  assert.throws(() => retryWriter.appendEvent('journal-opened', {
+    planId: plan.id,
+    state: 'retrying-fully-updated-partial-commit',
+    observedHash: 'snapshot-hash-only',
+    artifactRefs: {
+      journal: durableJournalPath,
+      remote: remoteArtifactPath,
+    },
+  }), /Recovery journal is closed/);
   assert.equal(retryError.details.recovery.artifacts.remote, undefined);
   assert.equal(retryError.details.recovery.artifacts.journal.status, 'completed');
   assert.equal(
