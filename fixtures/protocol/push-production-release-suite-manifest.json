@@ -1,0 +1,323 @@
+{
+  "schemaVersion": 1,
+  "contractId": "push-production-release-suite-manifest",
+  "checkedCommand": "npm run verify:release-suite",
+  "releaseGateTotal": 4,
+  "evidencePolicy": {
+    "productionGateOpenRequires": "the gate command exits 0 and its parsed proof satisfies every acceptance criterion",
+    "missingLiveProofStatus": "blocked",
+    "supportOnlyStatus": "support-only",
+    "supportOnlyEvidence": "lab, fixture, model, and Playground checks can support a gate but never open a production release gate by themselves"
+  },
+  "networkPolicy": {
+    "ingressPort": 8080,
+    "proxyPolicy": "local-only",
+    "tunnels": "disallowed"
+  },
+  "defaultInjectedEnv": {
+    "NODE_NO_WARNINGS": "1"
+  },
+  "gates": [
+    {
+      "id": "production-owned-push-executor",
+      "name": "Production-owned push executor",
+      "claim": "A live production-owned Reprint source endpoint mutates the source site through the release push protocol without relying on lab-backed routes.",
+      "releaseCommand": {
+        "label": "npm run test:playground:production-shaped-live-release-verify",
+        "command": "node",
+        "args": [
+          "scripts/playground/production-shaped-live-release-verify.mjs"
+        ],
+        "env": {
+          "REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION": "1",
+          "REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL": "1",
+          "REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH": "/snapshot"
+        },
+        "timeoutMs": 180000
+      },
+      "requiredEnv": [
+        {
+          "id": "live-source",
+          "anyOf": [
+            "REPRINT_PUSH_SOURCE_URL",
+            "REPRINT_PUSH_REMOTE_URL"
+          ],
+          "code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
+          "firstMissing": "api:REPRINT_PUSH_SOURCE_URL production-owned /wp-json/reprint/v1/push/* endpoint"
+        },
+        {
+          "id": "production-owned-source-attestation",
+          "equals": {
+            "REPRINT_PUSH_PRODUCTION_OWNED_SOURCE": "1"
+          },
+          "code": "REPRINT_PUSH_PRODUCTION_OWNED_SOURCE_REQUIRED",
+          "firstMissing": "api:production-owned Reprint source mutation endpoint, not packaged Playground fallback"
+        },
+        {
+          "id": "production-source-url-shape",
+          "urlFromAnyOf": [
+            "REPRINT_PUSH_SOURCE_URL",
+            "REPRINT_PUSH_REMOTE_URL"
+          ],
+          "allowedProtocols": [
+            "https:"
+          ],
+          "allowLoopbackWhen": "REPRINT_PUSH_RELEASE_ALLOW_LOOPBACK_SOURCE",
+          "code": "REPRINT_PUSH_PRODUCTION_SOURCE_URL_REQUIRED",
+          "firstMissing": "api:https production-owned /wp-json/reprint/v1/push/* endpoint"
+        },
+        {
+          "id": "push-username-or-auth-source",
+          "anyOf": [
+            "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND",
+            "REPRINT_PUSH_USERNAME",
+            "REPRINT_PUSH_LAB_AUTH_ADMIN_USER"
+          ],
+          "code": "REPRINT_PUSH_SECRET_REQUIRED",
+          "firstMissing": "env:REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND or REPRINT_PUSH_USERNAME"
+        },
+        {
+          "id": "push-secret-or-auth-source",
+          "anyOf": [
+            "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND",
+            "REPRINT_PUSH_APPLICATION_PASSWORD",
+            "REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD",
+            "REPRINT_PUSH_SIGNING_SECRET"
+          ],
+          "code": "REPRINT_PUSH_SECRET_REQUIRED",
+          "firstMissing": "env:REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND or REPRINT_PUSH_APPLICATION_PASSWORD"
+        }
+      ],
+      "proofAcceptance": [
+        {
+          "path": "boundary.firstRemainingProductionBoundary",
+          "equals": null
+        },
+        {
+          "path": "boundary.status",
+          "equals": "checked"
+        },
+        {
+          "path": "boundary.verdict",
+          "equals": "LIVE_RELEASE_BOUNDARY_OK"
+        },
+        {
+          "path": "releaseProof.routeProfile.labBacked",
+          "equals": false
+        }
+      ],
+      "supportEvidence": [
+        {
+          "id": "topology-contract",
+          "classification": "support-only",
+          "command": {
+            "label": "npm run test:playground:production-shaped-topology-proof",
+            "command": "npm",
+            "args": [
+              "run",
+              "test:playground:production-shaped-topology-proof"
+            ],
+            "timeoutMs": 30000
+          }
+        },
+        {
+          "id": "core-playground-lab",
+          "classification": "support-only",
+          "command": {
+            "label": "npm run test:playground",
+            "command": "npm",
+            "args": [
+              "run",
+              "test:playground"
+            ],
+            "timeoutMs": 120000
+          }
+        }
+      ]
+    },
+    {
+      "id": "production-auth-journal-recovery",
+      "name": "Production auth, durable journal, and recovery",
+      "claim": "The release path proves production-scoped auth/session lifecycle, durable journal ownership, lease fencing, restart-readable recovery artifacts, and preserved-remote retry.",
+      "releaseCommand": {
+        "label": "npm run test:playground:production-shaped-live-release-verify",
+        "command": "node",
+        "args": [
+          "scripts/playground/production-shaped-live-release-verify.mjs"
+        ],
+        "env": {
+          "REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION": "1",
+          "REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL": "1",
+          "REPRINT_PUSH_SIMULATE_PRESERVED_REMOTE_RETRY_PATH": "/snapshot"
+        },
+        "timeoutMs": 180000
+      },
+      "requiredEnv": [
+        {
+          "id": "live-source",
+          "anyOf": [
+            "REPRINT_PUSH_SOURCE_URL",
+            "REPRINT_PUSH_REMOTE_URL"
+          ],
+          "code": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
+          "firstMissing": "api:REPRINT_PUSH_SOURCE_URL production-owned /wp-json/reprint/v1/push/* endpoint"
+        },
+        {
+          "id": "production-owned-source-attestation",
+          "equals": {
+            "REPRINT_PUSH_PRODUCTION_OWNED_SOURCE": "1"
+          },
+          "code": "REPRINT_PUSH_PRODUCTION_OWNED_SOURCE_REQUIRED",
+          "firstMissing": "api:production-owned auth/session and durable journal boundary"
+        },
+        {
+          "id": "push-username-or-auth-source",
+          "anyOf": [
+            "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND",
+            "REPRINT_PUSH_USERNAME",
+            "REPRINT_PUSH_LAB_AUTH_ADMIN_USER"
+          ],
+          "code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",
+          "firstMissing": "api:production auth/session source command or scoped push user"
+        },
+        {
+          "id": "push-secret-or-auth-source",
+          "anyOf": [
+            "REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND",
+            "REPRINT_PUSH_APPLICATION_PASSWORD",
+            "REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD",
+            "REPRINT_PUSH_SIGNING_SECRET"
+          ],
+          "code": "PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED",
+          "firstMissing": "api:production auth/session secret source"
+        }
+      ],
+      "proofAcceptance": [
+        {
+          "path": "boundary.firstRemainingProductionBoundary",
+          "equals": null
+        },
+        {
+          "path": "boundary.authSession.verdict",
+          "equals": "LIVE_RELEASE_BOUNDARY_OK"
+        },
+        {
+          "path": "boundary.durableJournal.verdict",
+          "equals": "LIVE_RELEASE_BOUNDARY_OK"
+        },
+        {
+          "path": "boundary.replayAndRetry.verdict",
+          "equals": "LIVE_RELEASE_BOUNDARY_OK"
+        },
+        {
+          "path": "applyRevalidation.boundary.verdict",
+          "equals": "LIVE_RELEASE_BOUNDARY_OK"
+        }
+      ],
+      "supportEvidence": [
+        {
+          "id": "jsonl-recovery-journal",
+          "classification": "support-only",
+          "command": {
+            "label": "npm run test:recovery:file-journal",
+            "command": "npm",
+            "args": [
+              "run",
+              "test:recovery:file-journal"
+            ],
+            "timeoutMs": 60000
+          }
+        },
+        {
+          "id": "authenticated-client-unit",
+          "classification": "support-only",
+          "command": {
+            "label": "node --test test/authenticated-http-push-client.test.js",
+            "command": "node",
+            "args": [
+              "--test",
+              "test/authenticated-http-push-client.test.js"
+            ],
+            "timeoutMs": 120000
+          }
+        }
+      ]
+    },
+    {
+      "id": "production-plugin-coverage",
+      "name": "Production plugin and graph coverage",
+      "claim": "Plugin-owned tables, files, options, activation hooks, generated data, and graph identity rewrites are covered by production semantic drivers or blocked with retained evidence.",
+      "knownUnavailableProof": {
+        "code": "PRODUCTION_PLUGIN_DRIVER_CONTRACT_REQUIRED",
+        "firstMissing": "api:production plugin semantic-driver registry for tables/files/options/activation hooks"
+      },
+      "supportEvidence": [
+        {
+          "id": "driver-verifier-guards",
+          "classification": "support-only",
+          "command": {
+            "label": "npm run test:playground:production-plugin-driver-verifier-guards",
+            "command": "npm",
+            "args": [
+              "run",
+              "test:playground:production-plugin-driver-verifier-guards"
+            ],
+            "timeoutMs": 90000
+          }
+        },
+        {
+          "id": "planner-graph-and-plugin-guards",
+          "classification": "support-only",
+          "command": {
+            "label": "node --test test/push-planner.test.js test/playground-snapshot-lib.test.js",
+            "command": "node",
+            "args": [
+              "--test",
+              "test/push-planner.test.js",
+              "test/playground-snapshot-lib.test.js"
+            ],
+            "timeoutMs": 120000
+          }
+        }
+      ]
+    },
+    {
+      "id": "production-performance",
+      "name": "Production guarded performance",
+      "claim": "Large-file and large-table throughput is measured through the guarded production executor while live preconditions, atomic groups, and recovery evidence remain enabled.",
+      "knownUnavailableProof": {
+        "code": "PRODUCTION_THROUGHPUT_BENCHMARK_REQUIRED",
+        "firstMissing": "command:node scripts/bench/guarded-executor-benchmark.js --profile=guardedLarge --claim-production-throughput"
+      },
+      "supportEvidence": [
+        {
+          "id": "performance-model",
+          "classification": "support-only",
+          "command": {
+            "label": "node --test test/performance-model.test.js test/guarded-executor-benchmark.test.js",
+            "command": "node",
+            "args": [
+              "--test",
+              "test/performance-model.test.js",
+              "test/guarded-executor-benchmark.test.js"
+            ],
+            "timeoutMs": 120000
+          }
+        },
+        {
+          "id": "guarded-benchmark-ci",
+          "classification": "support-only",
+          "command": {
+            "label": "node scripts/bench/guarded-executor-benchmark.js --profile=ci",
+            "command": "node",
+            "args": [
+              "scripts/bench/guarded-executor-benchmark.js",
+              "--profile=ci"
+            ],
+            "timeoutMs": 120000
+          }
+        }
+      ]
+    }
+  ]
+}
