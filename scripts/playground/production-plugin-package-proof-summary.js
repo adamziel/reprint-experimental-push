@@ -659,7 +659,26 @@ function selectedScenariosMatch(left, right) {
   if (normalizedLeft === undefined || normalizedRight === undefined) {
     return normalizedLeft === normalizedRight;
   }
-  return JSON.stringify(Array.from(normalizedLeft).sort()) === JSON.stringify(Array.from(normalizedRight).sort());
+  return JSON.stringify(
+    normalizeSelectedScenarioNamesForComparison(normalizedLeft),
+  ) === JSON.stringify(
+    normalizeSelectedScenarioNamesForComparison(normalizedRight),
+  );
+}
+
+function normalizeSelectedScenarioNamesForComparison(selectedScenarios) {
+  return Array.from(
+    selectedScenarios
+      .values()
+      .reduce((expandedNames, scenarioName) => {
+        const canonicalScenarioName = canonicalizeScenarioName(scenarioName);
+        const expandedScenarioNames = scenarioGroups[canonicalScenarioName] ?? [canonicalScenarioName];
+        for (const expandedScenarioName of expandedScenarioNames) {
+          expandedNames.add(expandedScenarioName);
+        }
+        return expandedNames;
+      }, new Set()),
+  ).sort();
 }
 
 function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
@@ -809,29 +828,11 @@ export function resolveProductionPluginPackagePluginDriverProof(
       resolvedOptions.canonicalMode === undefined
       || attachedPluginDriverProof?.canonicalMode === resolvedOptions.canonicalMode
     );
-    const selectedScenariosMatch = (() => {
-      if (resolvedOptions.selectedScenarios === undefined) {
-        return true;
-      }
-
-      const attachedSelectedScenarios = normalizeSelectedScenarios(
+    const selectedScenariosStillMatch = resolvedOptions.selectedScenarios === undefined
+      || selectedScenariosMatch(
         attachedPluginDriverProof?.selectedScenarios,
-      );
-      const resolvedSelectedScenarios = normalizeSelectedScenarios(
         resolvedOptions.selectedScenarios,
       );
-
-      if (attachedSelectedScenarios === null || resolvedSelectedScenarios === null) {
-        return attachedSelectedScenarios === resolvedSelectedScenarios;
-      }
-      if (attachedSelectedScenarios === undefined || resolvedSelectedScenarios === undefined) {
-        return attachedSelectedScenarios === resolvedSelectedScenarios;
-      }
-
-      const attachedSelectedScenarioNames = Array.from(attachedSelectedScenarios).sort();
-      const resolvedSelectedScenarioNames = Array.from(resolvedSelectedScenarios).sort();
-      return JSON.stringify(attachedSelectedScenarioNames) === JSON.stringify(resolvedSelectedScenarioNames);
-    })();
     const expectedModeProof = resolvedOptions.resolvedMode === undefined || resolvedOptions.resolvedMode === null
       ? null
       : resolveProductionPluginPackageModeProofKey(resolvedOptions.resolvedMode);
@@ -871,7 +872,7 @@ export function resolveProductionPluginPackagePluginDriverProof(
       requestedScenariosMatch
       && modeMatches
       && canonicalModeMatches
-      && selectedScenariosMatch
+      && selectedScenariosStillMatch
       && nestedModeProofMatches
     ) {
       return attachedPluginDriverProof;
