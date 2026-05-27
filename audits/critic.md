@@ -1,31 +1,35 @@
 # Critic Verdict
 
-Current reliable head: `368b7e74834ddf2e7289fa73a944d569e636e11f`
-(`Fail closed on fallback auth session sources`).
+Current reliable head: `c40affc90c17853bc61a213e6e32fa6ffdfb510c`
+(`Require journal auth continuity`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds a fail-closed guard in `scripts/playground/production-shaped-release-verify.mjs`
-  and `test/production-shaped-proof.test.js` so a required production auth
-  session source command cannot silently fall back to Playground metadata.
-- That is useful checked-release hardening, but it still only constrains the
-  verifier path. It does not prove a live production-owned Reprint endpoint
-  boundary that mints a session, reads it back from durable lease-fenced
-  journal storage after restart, preserves rejected-remote evidence, and
-  revalidates at apply time before the first mutation.
-- No supervised release gate closes here. The remaining primitive is still the
-  real endpoint proof rather than another checked release-verifier fallback
-  check.
+- This head extends the checked release-path client so journal-auth continuity
+  is preserved across the production-auth-session path. In
+  `src/authenticated-http-push-client.js`, the release-path checks now carry the
+  journal auth identity through the lifecycle gates, and
+  `test/authenticated-http-push-client.test.js` adds focused coverage for the
+  continuity cases.
+- The diff is still support-side hardening on the checked verifier path: it
+  does not prove a production-owned, non-lab-backed mutation boundary on the
+  real Reprint endpoint, live auth/session issuance and readback, durable
+  restart-readable journal storage with lease fencing, or apply-time
+  revalidation before the first mutation.
+- Verdict therefore remains `0/4`.
 
 Next owner / command:
 
-- `main:reliable-exec` should move to the next exact production-owned
-  boundary: live auth/session issuance and readback on the real Reprint
-  endpoint, or durable journal ownership/restart-readable replay if that is
-  the gating dependency. The checked proof should continue through
-  `scripts/playground/production-shaped-release-verify.mjs`,
-  `scripts/playground/push-remote-rest-plugin.php`, `src/recovery-journal.js`,
-  and `src/authenticated-http-push-client.js` under `timeout 300s npm run
-  verify:release`.
+- `main:reliable-exec` should keep this as support evidence and move the proof
+  boundary to the real endpoint: a production-owned, non-lab-backed
+  `verify:release` path that, on the same live `REPRINT_PUSH_SOURCE_URL`,
+  mints and rereads a live auth session, persists it in a durable
+  restart-readable lease-fenced journal under plugin-driver ownership,
+  preserves rejected remote evidence, and performs apply-time revalidation
+  before the first mutation on `/wp-json/reprint/v1/push/*`. The relevant
+  proof path remains `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `src/recovery-journal.js`, and `src/authenticated-http-push-client.js`
+  under `timeout 300s npm run verify:release`.
