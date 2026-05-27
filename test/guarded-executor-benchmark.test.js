@@ -16383,13 +16383,24 @@ test('guarded benchmark carries direct aligned queue-slack proof blockers into r
   assert.ok(blockers.includes('queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof'));
   assert.ok(blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
   assert.ok(blockers.includes('staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
-  assert.deepEqual(releaseBundlePlanning?.blockerRefs, [
-    'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
-    'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
-    'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
-    'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
-    'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
-  ]);
+  assert.deepEqual(
+    {
+      id: releaseBundlePlanning?.id,
+      rejectedGate: releaseBundlePlanning?.rejectedGate,
+      blockerRefs: releaseBundlePlanning?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-release-manifest-and-batched-receipt-flush-skips-release-bundle-planning-after-pause',
+      rejectedGate: 'skip',
+      blockerRefs: [
+        'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+        'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+        'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark surfaces release-manifest release-bundle commit blockers at runtime', () => {
@@ -17772,13 +17783,24 @@ test('guarded benchmark carries incomplete pause-footprint blockers into rejecte
   assert.ok(
     blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
   );
-  assert.deepEqual(releaseBundleBackpressure?.blockerRefs, [
-    ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
+  assert.deepEqual(
+    {
+      id: releaseBundleBackpressure?.id,
+      rejectedGate: releaseBundleBackpressure?.rejectedGate,
+      blockerRefs: releaseBundleBackpressure?.blockerRefs,
+    },
+    {
+      id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+      rejectedGate: 'recovery',
+      blockerRefs: [
+        ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+  );
   assert.deepEqual(
     pluginInstallBackpressureRejectedFastPaths
       .map((entry) => ({
@@ -17898,13 +17920,24 @@ test('guarded benchmark carries incomplete pause-footprint blockers into rejecte
       },
     ],
   );
-  assert.deepEqual(stagingDiskReplay?.blockerRefs, [
-    ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
-    'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
-    'queue-pause-without-consistent-receipt-cursor-slack',
-    'queue-pause-without-memory-safe-receipt-cursor-slack',
-  ]);
+  assert.deepEqual(
+    {
+      id: stagingDiskReplay?.id,
+      rejectedGate: stagingDiskReplay?.rejectedGate,
+      blockerRefs: stagingDiskReplay?.blockerRefs,
+    },
+    {
+      id: 'cached-receipt-cursor-staging-disk-headroom-and-journal-lag-skips-post-pause-replay',
+      rejectedGate: 'recovery',
+      blockerRefs: [
+        ...INCOMPLETE_PAUSE_FOOTPRINT_BLOCKER_REFS,
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+        'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+        'queue-pause-without-consistent-receipt-cursor-slack',
+        'queue-pause-without-memory-safe-receipt-cursor-slack',
+      ],
+    },
+  );
 });
 
 test('guarded benchmark carries hidden staging-disk visibility blockers into plugin-update and plugin-install post-pause summaries', () => {
