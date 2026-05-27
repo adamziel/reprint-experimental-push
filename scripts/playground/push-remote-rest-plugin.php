@@ -773,6 +773,7 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
             $result['dbJournal'] = $db_journal;
         }
     } else {
+        $premerge_checked_db_journal = $result['dbJournal'];
         $premerge_checked_claim = isset($result['dbJournal']['claim']) && is_array($result['dbJournal']['claim'])
             ? $result['dbJournal']['claim']
             : null;
@@ -811,7 +812,8 @@ function reprint_push_lab_rest_attach_checked_db_journal_contract(
         $result['dbJournal'] = reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
             $result['dbJournal'],
             $db_journal,
-            $premerge_checked_claim ?? null
+            $premerge_checked_claim ?? null,
+            $premerge_checked_db_journal ?? null
         );
     }
     if (is_array($storage_guard)) {
@@ -850,7 +852,8 @@ function reprint_push_lab_rest_checked_claim_contract_conflicts($existing_claim,
 function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
     array $db_journal,
     ?array $checked_summary = null,
-    ?array $premerge_claim = null
+    ?array $premerge_claim = null,
+    ?array $premerge_db_journal = null
 ): array
 {
     if (($db_journal['acceptedOnCheckedBoundary'] ?? false) !== true) {
@@ -877,7 +880,114 @@ function reprint_push_lab_rest_fail_closed_checked_db_journal_acceptance(
         $db_journal['acceptedOnCheckedBoundary'] = false;
     }
 
+    if (
+        is_array($checked_summary)
+        && reprint_push_lab_rest_checked_latest_row_conflicts(
+            $premerge_db_journal,
+            $checked_summary
+        )
+    ) {
+        $db_journal['acceptedOnCheckedBoundary'] = false;
+        if (is_array($premerge_db_journal)) {
+            foreach (['claimEvidence', 'latestRows', 'eventSummaries', 'idempotencyEvidence'] as $key) {
+                if (array_key_exists($key, $premerge_db_journal)) {
+                    $db_journal[$key] = $premerge_db_journal[$key];
+                } else {
+                    unset($db_journal[$key]);
+                }
+            }
+        }
+    }
+
     return $db_journal;
+}
+
+function reprint_push_lab_rest_checked_latest_row_conflicts(
+    ?array $premerge_db_journal,
+    ?array $checked_summary
+): bool {
+    if (!is_array($premerge_db_journal) || !is_array($checked_summary)) {
+        return false;
+    }
+
+    if (
+        ($premerge_db_journal['acceptedOnCheckedBoundary'] ?? false) !== true
+        || ($checked_summary['acceptedOnCheckedBoundary'] ?? false) !== true
+    ) {
+        return false;
+    }
+
+    $premerge_rejected_row = reprint_push_lab_rest_latest_checked_row_for_event(
+        $premerge_db_journal['latestRows'] ?? null,
+        'stale-claim-rejected'
+    );
+    $checked_rejected_row = reprint_push_lab_rest_latest_checked_row_for_event(
+        $checked_summary['latestRows'] ?? null,
+        'stale-claim-rejected'
+    );
+
+    if (!is_array($premerge_rejected_row) || !is_array($checked_rejected_row)) {
+        return false;
+    }
+
+    return reprint_push_lab_rest_checked_latest_row_field_conflicts(
+        $premerge_rejected_row,
+        $checked_rejected_row,
+        ['claimKeyHash', 'idempotencyKeyHash', 'requestHash']
+    );
+}
+
+function reprint_push_lab_rest_latest_checked_row_for_event($rows, string $event): ?array
+{
+    if (!is_array($rows)) {
+        return null;
+    }
+
+    $latest_row = null;
+    $latest_sequence = null;
+    foreach ($rows as $row) {
+        if (!is_array($row) || (string) ($row['event'] ?? '') !== $event) {
+            continue;
+        }
+
+        $sequence = reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($row);
+        if (!reprint_push_lab_db_journal_is_positive_int($sequence)) {
+            continue;
+        }
+
+        if ($latest_row === null || (int) $sequence > (int) $latest_sequence) {
+            $latest_row = $row;
+            $latest_sequence = (int) $sequence;
+        }
+    }
+
+    return $latest_row;
+}
+
+function reprint_push_lab_rest_checked_latest_row_field_conflicts(
+    array $existing_row,
+    array $checked_row,
+    array $keys
+): bool {
+    $existing_sequence = reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($existing_row);
+    $checked_sequence = reprint_push_lab_db_journal_checked_boundary_latest_row_sequence($checked_row);
+    if (
+        reprint_push_lab_db_journal_is_positive_int($existing_sequence)
+        && reprint_push_lab_db_journal_is_positive_int($checked_sequence)
+        && (int) $existing_sequence !== (int) $checked_sequence
+    ) {
+        return true;
+    }
+
+    foreach ($keys as $key) {
+        $existing_value = isset($existing_row[$key]) ? (string) $existing_row[$key] : '';
+        $checked_value = isset($checked_row[$key]) ? (string) $checked_row[$key] : '';
+        if ($existing_value !== '' && $checked_value !== '' && $existing_value !== $checked_value) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function reprint_push_lab_rest_fail_closed_checked_recovery_journal_acceptance(
