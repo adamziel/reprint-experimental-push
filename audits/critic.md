@@ -1,22 +1,22 @@
 # Critic Verdict
 
-Current reliable head: `1403c6d19a6592278c55a39eb11bde68d048d3bd`
-(`Carry explicit live drift env through apply proof`).
+Current reliable head: `534d3d2fef0cfe3f1415fd197e193b52892af8f2`
+(`Require checked gates in live verify wrapper`).
 
-Previous classified reliable head: `1e0a553b731b6b3a09619547f2be4beed7a547c2`
-(`Honor explicit live drift topology`).
+Previous classified reliable head: `1403c6d19a6592278c55a39eb11bde68d048d3bd`
+(`Carry explicit live drift env through apply proof`).
 
 Verdict: `0/4`
 
 Reason:
 
 - I repolled `origin/lane/reliable-executor` and confirmed it now points at
-  `1403c6d19a6592278c55a39eb11bde68d048d3bd`.
-- The `1e0a553b..1403c6d1` delta carries the explicit live drift env through
-  the apply proof path. It threads `REPRINT_PUSH_REMOTE_CHANGED_URL` into the
-  live apply revalidation env, preserves that explicit changed-URL topology
-  through the checked live boundary resolver, and updates the proof fixture
-  assertions accordingly. It still stays inside
+  `534d3d2fef0cfe3f1415fd197e193b52892af8f2`.
+- The `1403c6d1..534d3d2f` delta requires checked gates in the live verify
+  wrapper. It adds `REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1` and
+  `REPRINT_PUSH_REQUIRE_PRODUCTION_DURABLE_JOURNAL=1` to the checked live
+  boundary env and asserts those requirements are threaded through the live
+  release verify child proofs. It still stays inside
   `scripts/playground/production-shaped-apply-revalidation-smoke.mjs`,
   `scripts/playground/production-shaped-live-release-verify-lib.js`,
   `scripts/playground/production-shaped-release-verify.mjs`, and
@@ -28,9 +28,10 @@ Reason:
   lease-fenced ownership, preserves the rejected remote evidence for audit,
   and performs apply-time revalidation before the first mutation on that same
   live boundary.
-- So the verdict remains `0/4`: `1403c6d1` clarifies explicit live drift env
-  handling in the checked verifier path, but it still does not prove the
-  missing production-owned, non-lab-backed checked release boundary.
+- So the verdict remains `0/4`: `534d3d2f` hardens the checked live wrapper
+  to require production auth/session and durable-journal gates, but it still
+  does not prove the missing production-owned, non-lab-backed checked release
+  boundary.
 
 Next exact reliable-owned primitive:
 
