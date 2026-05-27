@@ -5377,6 +5377,318 @@ test('production-shaped authenticated push fails closed when the checked release
   }
 });
 
+test('production-shaped authenticated push fails closed when checked db-journal stale-claim lifecycle metadata drifts', async () => {
+  const originalFetch = global.fetch;
+  let applyCount = 0;
+  global.fetch = async (url) => {
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'dry-run',
+        applied: 0,
+        receipt: { receiptHash: 'receipt-01' },
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        recovery: {
+          state: 'available',
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+          journal: { integrity: { status: 'ok' } },
+        },
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimId: 'psh_01j00000000000000000000000',
+            activeClaimKeyHash: 'psh_01j00000000000000000000000',
+            activeClaimSequence: 2,
+            activeClaimEvent: 'stale-claim-rejected',
+            previousClaimId: 'psh_01i99999999999999999999999',
+            previousClaimKeyHash: 'psh_01i99999999999999999999999',
+            previousClaimSequence: 1,
+            previousClaimEvent: 'recovery-claim-opened',
+            idempotencyKeyHash: 'idempotency-claim-01',
+            requestHash: 'request-claim-01',
+            planHash: 'plan-claim-01',
+            receiptHash: 'receipt-claim-01',
+            planFingerprint: 'plan-fingerprint-01',
+            mutationCount: 1,
+            appliedCount: 1,
+            staleClaimRejected: false,
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimId: 'psh_01j00000000000000000000000',
+            claimKeyHash: 'psh_01j00000000000000000000000',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimId: 'psh_01j00000000000000000000000',
+              claimKeyHash: 'psh_01j00000000000000000000000',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'wpdb-single-statement-cas',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: true,
+            },
+          },
+          latestRows: [
+            { event: 'idempotency-opened' },
+            {
+              event: 'mutation-applied',
+              resourceHashEvidence: {
+                mutation: {
+                  storageGuard: {
+                    boundary: 'wpdb-single-statement-cas',
+                    operation: 'update',
+                    outcome: 'applied',
+                  },
+                },
+              },
+            },
+            { event: 'apply-committed' },
+          ],
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: 0,
+        receipt: { receiptHash: 'receipt-01' },
+        responseSchemaVersion: 1,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        signedRequest: {
+          signed: true,
+          schemaVersion: 1,
+          contentHash: 'content-01',
+          timestamp: applyCount === 1 ? '2026-05-26T10:00:00.000Z' : '2026-05-26T10:00:02.000Z',
+          nonceHash: applyCount === 1 ? 'nonce-01' : 'nonce-02',
+          sessionHash: 'session-01',
+          signingKeyHash: 'signing-key-01',
+          request: { a: 1, b: 2 },
+        },
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+          status: 'replayed',
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        dbJournal: {
+          scope: 'packaged production plugin journal surface; not local Playground fixture only',
+          claim: {
+            status: 'stale-claim-rejected',
+            activeClaimId: 'psh_01j00000000000000000000000',
+            activeClaimKeyHash: 'psh_01j00000000000000000000000',
+            activeClaimSequence: 2,
+            activeClaimEvent: 'stale-claim-rejected',
+            previousClaimId: 'psh_01i99999999999999999999999',
+            previousClaimKeyHash: 'psh_01i99999999999999999999999',
+            previousClaimSequence: 1,
+            previousClaimEvent: 'recovery-claim-opened',
+            idempotencyKeyHash: 'idempotency-claim-01',
+            requestHash: 'request-claim-01',
+            planHash: 'plan-claim-01',
+            receiptHash: 'receipt-claim-01',
+            planFingerprint: 'plan-fingerprint-01',
+            mutationCount: 1,
+            appliedCount: 1,
+            staleClaimRejected: false,
+          },
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'wpdb-single-statement-cas',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          writerLease: {
+            strategy: 'claim-fenced-single-writer',
+            claimId: 'psh_01j00000000000000000000000',
+            claimKeyHash: 'psh_01j00000000000000000000000',
+            claimKeyUnique: true,
+            fsyncEvidence: true,
+            storageGuard: 'wpdb-single-statement-cas',
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+          },
+          leaseFence: {
+            boundary: 'wpdb-single-statement-cas',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: true,
+            writerLease: {
+              strategy: 'claim-fenced-single-writer',
+              claimId: 'psh_01j00000000000000000000000',
+              claimKeyHash: 'psh_01j00000000000000000000000',
+              claimKeyUnique: true,
+              fsyncEvidence: true,
+              storageGuard: 'wpdb-single-statement-cas',
+              monotonicSequence: true,
+              restartReadable: true,
+              staleClaimRejected: true,
+            },
+          },
+          latestRows: [
+            { event: 'idempotency-opened' },
+            {
+              event: 'mutation-applied',
+              resourceHashEvidence: {
+                mutation: {
+                  storageGuard: {
+                    boundary: 'wpdb-single-statement-cas',
+                    operation: 'update',
+                    outcome: 'applied',
+                  },
+                },
+              },
+            },
+            { event: 'apply-committed' },
+          ],
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-checked-journal-stale-claim-lifecycle-drift',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'DURABLE_JOURNAL_NOT_PROVEN');
+    assert.equal(summary.dbJournal?.claim?.activeClaimEvent, 'stale-claim-rejected');
+    assert.equal(summary.dbJournal?.claim?.staleClaimRejected, false);
+    assert.equal(summary.dbJournal?.leaseFence?.staleClaimRejected, true);
+    assert.deepEqual(summary.boundary, {
+      firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+      status: 'unimplemented',
+      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+      durableJournal: {
+        storageLeaseFence: 'retained Playground journal storage is lab-scoped; production ownership, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+        verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+        phase: 'journal-inspect',
+      },
+    });
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push preserves recovery inspect claim and storage-guard evidence', async () => {
   const originalFetch = global.fetch;
   global.fetch = async (url) => {

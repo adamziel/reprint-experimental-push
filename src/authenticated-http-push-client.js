@@ -1702,6 +1702,29 @@ function summarizeAuthSessionLifecycle(auth) {
   const authUser = typeof auth?.identity?.userLogin === 'string'
     ? auth.identity.userLogin.trim()
     : '';
+  const invalidLifecycleFlag = resolveInvalidProductionAuthSessionLifecycleFlag(session);
+  const invalidIdentityField = resolveInvalidProductionAuthSessionIdentityField(session);
+  const unrevokedObservation = (
+    session.revoked === true
+    || session.status === 'revoked'
+    || session.cleanedUp === true
+    || session.cleanup === true
+    || session.status === 'cleaned-up'
+  )
+    ? { field: resolveProductionAuthSessionUnrevokedField(session) }
+    : null;
+  const expiredObservation = (
+    session.status === 'expired'
+    || session.expired === true
+    || isExpiredSession(session)
+  )
+    ? {
+        field: session.status === 'expired'
+          ? 'auth.session.status'
+          : normalizeProductionAuthSessionLifecycleField(session?.expiredField)
+            || 'auth.session.expired',
+      }
+    : null;
 
   return {
     id: session.id || null,

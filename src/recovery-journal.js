@@ -127,6 +127,14 @@ function durableJournalClaimContractMatches(claim) {
     return false;
   }
 
+  const statusMatchesStaleClaim = (
+    (claim.status === 'active' && claim.staleClaimRejected === false)
+    || (claim.status === 'stale-claim-rejected' && claim.staleClaimRejected === true)
+  );
+  const eventMatchesStaleClaim = hasNonEmptyString(claim.activeClaimEvent)
+    && checkedDurableJournalClaimEventMatches(claim.activeClaimEvent)
+    && !(claim.staleClaimRejected === false && claim.activeClaimEvent === 'stale-claim-rejected')
+    && !(claim.staleClaimRejected === true && claim.activeClaimEvent === 'idempotency-opened');
   const hasPreviousClaimIdentity = hasNonEmptyString(claim.previousClaimId)
     || hasNonEmptyString(claim.previousClaimKeyHash)
     || isPositiveInteger(claim.previousClaimSequence)
@@ -141,6 +149,8 @@ function durableJournalClaimContractMatches(claim) {
     && hasNonEmptyString(claim.idempotencyKeyHash)
     && hasNonEmptyString(claim.requestHash)
     && typeof claim.staleClaimRejected === 'boolean'
+    && statusMatchesStaleClaim
+    && eventMatchesStaleClaim
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
       && hasNonEmptyString(claim.previousClaimKeyHash)
@@ -148,6 +158,13 @@ function durableJournalClaimContractMatches(claim) {
       && isPositiveInteger(claim.previousClaimSequence)
       && hasNonEmptyString(claim.previousClaimEvent)
     ));
+}
+
+function checkedDurableJournalClaimEventMatches(event) {
+  return event === 'idempotency-opened'
+    || event === 'stale-claim-retry-started'
+    || event === 'stale-claim-retry-in-progress'
+    || event === 'stale-claim-rejected';
 }
 
 function durableJournalStorageGuardMatchesBoundary(storageGuard, boundary) {
