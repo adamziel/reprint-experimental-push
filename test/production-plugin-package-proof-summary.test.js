@@ -4270,6 +4270,66 @@ test('plugin-driver proof summary fails mode proof requested satisfaction when t
   });
 });
 
+test('plugin-driver proof summary accepts array selectedScenarios for bundle-backed mode summaries', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      cli: {
+        ok: true,
+      },
+      final: {
+        finalMatchesLocal: true,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverDeleteApply: {
+        deletedAfterApply: true,
+      },
+    },
+    {
+      requestedScenarios: ['driverReleaseProof'],
+      selectedScenarios: ['driverReleaseProof'],
+      resolvedMode: 'driverReleaseProof',
+      canonicalMode: 'driver-release-proof',
+    },
+  );
+
+  assert.equal(summary.releaseProof.selected, true);
+  assert.equal(summary.releaseProof.status, 'passed');
+  assert.equal(summary.modeProof?.mode, 'driverReleaseProof');
+  assert.equal(summary.modeProof?.selected, true);
+  assert.equal(summary.modeProof?.status, 'passed');
+  assert.deepEqual(summary.modeProof?.selectedScenarios, ['driverReleaseProof']);
+});
+
 test('plugin-driver proof summary distinguishes canonical and legacy proof objects for mutation aliases', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {

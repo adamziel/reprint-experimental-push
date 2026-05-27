@@ -1352,13 +1352,13 @@ export function buildProductionPluginPackageProofSummary(
   }
   function buildObjectBundleSelected(bundleName) {
     if (canonicalRequestedScenarios === null) {
-      return isBundleSelected(selectedScenarios, bundleName);
+      return isBundleSelected(canonicalSelectedScenarios, bundleName);
     }
     if (
       canonicalRequestedScenarios.includes(bundleName)
       || concreteBundleRequests[bundleName]
     ) {
-      return isBundleSelected(selectedScenarios, bundleName);
+      return isBundleSelected(canonicalSelectedScenarios, bundleName);
     }
     return false;
   }
@@ -1374,7 +1374,7 @@ export function buildProductionPluginPackageProofSummary(
       (scenario) => scenarioPasses.get(scenario) === true,
     );
     return summarizeScenario(
-      isBundleSelected(selectedScenarios, bundleName),
+      isBundleSelected(canonicalSelectedScenarios, bundleName),
       passed,
     );
   }
@@ -1383,7 +1383,7 @@ export function buildProductionPluginPackageProofSummary(
       (scenario) => scenarioPasses.get(scenario) === true,
     );
     return summarizeScenario(
-      isBundleSelected(selectedScenarios, bundleName),
+      isBundleSelected(canonicalSelectedScenarios, bundleName),
       passed,
     );
   }
