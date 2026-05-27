@@ -12047,6 +12047,49 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   });
 });
 
+test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk measurement is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomMeasured = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('staging-disk-headroom-visible-without-measurement'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-measurement',
+    ],
+  });
+});
+
+test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk headroom drifts outside the plan reserve', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.stagingDiskHeadroomWithinPlanReserve = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('staging-disk-headroom-outside-plan-reserve'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-outside-plan-reserve',
+    ],
+  });
+});
+
 test('guarded benchmark keeps rollout summaries pinned when raw memory-ceiling bytes drift under visible production capability evidence', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
