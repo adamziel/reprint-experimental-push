@@ -1194,7 +1194,9 @@ async function waitForServer(child, baseUrl, logs) {
             lastError,
             lastProbes,
             logs,
-            packagedProductionPluginPreflightTerminalContext({}),
+            packagedProductionPluginPreflightTerminalContext({
+              invalidReadinessBody: true,
+            }),
             lastTimeoutFallbackProbes,
           ),
         );
@@ -1696,7 +1698,9 @@ async function waitForServer(child, baseUrl, logs) {
                 lastProbes,
                 logs,
                 packagedProductionPluginPreflightTerminalContext(
-                  {},
+                  {
+                    ...(malformedTimeoutFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                  },
                   { timeoutFallback: true },
                 ),
                 lastTimeoutFallbackProbes,

@@ -1994,6 +1994,7 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           getOutput(),
           packagedProductionPluginPreflightTerminalContext({
             childPid: child.pid ?? null,
+            invalidReadinessBody: true,
           }),
         );
       }
@@ -2490,7 +2491,10 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
               lastProbes,
               getOutput(),
               packagedProductionPluginPreflightTerminalContext(
-                { childPid: child.pid ?? null },
+                {
+                  childPid: child.pid ?? null,
+                  ...(malformedTimeoutFallbackPreflightBody ? { invalidReadinessBody: true } : {}),
+                },
                 { timeoutFallback: true },
               ),
               lastTimeoutFallbackProbes,

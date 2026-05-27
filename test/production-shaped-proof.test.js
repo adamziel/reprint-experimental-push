@@ -3583,6 +3583,8 @@ test('packaged release verifier readiness helper fails closed when signed prefli
   assert.equal(captured.prefix, 'Packaged production plugin signed preflight returned an invalid readiness body while the snapshot probe timed out at http://127.0.0.1:65535');
   assert.equal(captured.logs, 'packaged server boot log');
   assert.equal(captured.lastError, timeoutError);
+  assert.equal(captured.context?.invalidReadinessBody, true);
+  assert.equal(captured.context?.timeoutFallback, true);
   assert.deepEqual(captured.lastTimeoutFallbackProbes, {
     preflightProbe: {
       route: '/wp-json/reprint/v1/push/preflight',
@@ -8144,7 +8146,7 @@ test('packaged release verifier readiness helper fails closed on non-retryable r
   );
   assert.match(
     helperSource,
-    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\s*childPid:\s*child\.pid\s*\?\?\s*null,\s*\}\)/s,
+    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{[\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null,[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?\}\)/s,
   );
   assert.match(
     helperSource,
@@ -8177,7 +8179,7 @@ test('packaged smoke readiness helper formats malformed snapshot and preflight b
   );
   assert.match(
     helperSource,
-    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{\}\)/s,
+    /Packaged production plugin signed preflight returned an invalid readiness body at \$\{baseUrl\}[\s\S]*?packagedProductionPluginResetRouteNotReadyProbeCounts\(\s*notReadyProbeCounts,\s*'preflight',\s*\)[\s\S]*?packagedProductionPluginPreflightTerminalContext\(\{[\s\S]*?invalidReadinessBody:\s*true[\s\S]*?\}\)/s,
   );
   assert.match(
     helperSource,
