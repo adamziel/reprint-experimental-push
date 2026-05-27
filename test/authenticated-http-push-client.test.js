@@ -6640,6 +6640,220 @@ test('production-shaped authenticated push fails closed immediately on malformed
   }
 });
 
+test('production-shaped authenticated push fails closed on apply auth-session warning drift even without the stricter production-session gate', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (String(url).includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (String(url).includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (String(url).includes('/apply')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+            warning: 'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+          },
+        },
+        applied: true,
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-apply-warning-drift-unrequired',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.warning',
+      required: 'production-backed auth',
+      observed: 'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
+    assert.equal(
+      summary.authSessionLifecycleTrace.at(-1)?.warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(
+      summary.authSessionLifecycleSummary.read?.warning,
+      'Lab-only Playground Basic bootstrap fallback; not production authentication.',
+    );
+    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(seen.length, 4);
+    assert.match(seen[3].url, /\/wp-json\/reprint\/v1\/push\/apply$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('production-shaped authenticated push fails closed on apply auth-session Playground fallback drift even without the stricter production-session gate', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    if (String(url).includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (String(url).includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (String(url).includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (String(url).includes('/apply')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2030-01-01T00:00:00Z',
+            playgroundFallback: true,
+          },
+        },
+        applied: true,
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-apply-playground-fallback-drift-unrequired',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, false);
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth.session.playgroundFallback',
+      required: 'production-backed auth',
+      observed: 'playground-fallback',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleTrace.at(-1)?.playgroundFallback, true);
+    assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
+    assert.equal(summary.authSessionLifecycleSummary.read?.playgroundFallback, true);
+    assert.equal(summary.boundary.durableJournal.phase, 'apply');
+    assert.equal(seen.length, 4);
+    assert.match(seen[3].url, /\/wp-json\/reprint\/v1\/push\/apply$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push accepts replay-equivalent signed request payloads with canonical key order', async () => {
   const originalFetch = global.fetch;
   const seen = [];
