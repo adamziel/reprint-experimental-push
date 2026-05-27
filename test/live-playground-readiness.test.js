@@ -1724,12 +1724,47 @@ test('packaged server readiness fails closed for broken top-level signed preflig
 
   const terminalSessions = [
     {
+      label: 'missing top-level session status',
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'missing top-level session expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+      },
+    },
+    {
+      label: 'invalid top-level session expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: 'not-a-timestamp',
+      },
+    },
+    {
       label: 'expired top-level session',
       session: {
         id: 'session_123',
         status: 'active',
         type: 'production-auth-session',
         expiresAt: '2000-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
       },
     },
     {
@@ -1742,10 +1777,59 @@ test('packaged server readiness fails closed for broken top-level signed preflig
       },
     },
     {
+      label: 'explicitly revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
       label: 'cleaned-up top-level session',
       session: {
         id: 'session_123',
         status: 'cleaned_up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleaned-up top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
+      },
+    },
+    {
+      label: 'rotated top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
       },
@@ -1793,6 +1877,197 @@ test('packaged server readiness fails closed for broken top-level signed preflig
       }),
       false,
       `${label} should keep the packaged server unready`,
+    );
+  }
+});
+
+test('packaged preflight startup context still fails closed for broken top-level signed preflight session lifecycle variants', () => {
+  const basePreflight = {
+    status: 200,
+    body: {
+      ok: true,
+      routeProfile: {
+        profile: 'production-shaped',
+        restNamespace: 'reprint/v1',
+        routePrefix: '/push',
+        labBacked: false,
+      },
+      auth: {
+        session: {
+          id: 'session_123',
+          status: 'active',
+          type: 'production-auth-session',
+          expiresAt: '2099-01-01T00:00:00Z',
+        },
+      },
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+  };
+  const startupContext = {
+    packagedStartup: true,
+    indexProbe: {
+      status: 503,
+      body: JSON.stringify({
+        code: 'wordpress_not_ready',
+        message: 'WordPress is not ready yet',
+      }),
+    },
+    snapshotProbe: {
+      status: 404,
+      body: JSON.stringify({
+        code: 'rest_no_route',
+        message: 'No route was found matching the URL and request method.',
+      }),
+    },
+  };
+
+  const terminalSessions = [
+    {
+      label: 'missing top-level session status',
+      session: {
+        id: 'session_123',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'missing top-level session expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+      },
+    },
+    {
+      label: 'invalid top-level session expiry',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: 'not-a-timestamp',
+      },
+    },
+    {
+      label: 'expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2000-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly expired top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        expired: true,
+      },
+    },
+    {
+      label: 'revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'revoked',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'explicitly revoked top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        revoked: true,
+      },
+    },
+    {
+      label: 'cleaned-up top-level session',
+      session: {
+        id: 'session_123',
+        status: 'cleaned_up',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleaned-up top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
+      label: 'cleanup underscore top-level session marker',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleaned_up: true,
+      },
+    },
+    {
+      label: 'rotated top-level session status',
+      session: {
+        id: 'session_123',
+        status: 'rotated',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'rotated top-level session',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        rotated: true,
+      },
+    },
+  ];
+
+  for (const { label, session } of terminalSessions) {
+    const terminalPreflight = {
+      ...basePreflight,
+      body: {
+        ...basePreflight.body,
+        session,
+      },
+    };
+
+    assert.equal(
+      packagedProductionPluginPreflightRetryable(terminalPreflight, startupContext),
+      false,
+      `${label} should fail closed instead of inheriting packaged startup retryability`,
+    );
+    assert.equal(
+      packagedProductionPluginPreflightTerminal(terminalPreflight, startupContext),
+      true,
+      `${label} should remain terminal even with packaged startup context`,
     );
   }
 });
