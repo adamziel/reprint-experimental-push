@@ -3185,7 +3185,7 @@ test('production-shaped authenticated push fails closed when production auth ses
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(seen.length, 5);
+    assert.equal(seen.length, 4);
   } finally {
     global.fetch = originalFetch;
     Date.now = originalDateNow;
@@ -5045,7 +5045,7 @@ test('production-shaped authenticated push fails closed immediately when apply d
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(seen.length, 5);
+    assert.equal(seen.length, 4);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
     assert.match(seen[1].url, /\/wp-json\/reprint\/v1\/push\/snapshot$/);
     assert.match(seen[2].url, /\/wp-json\/reprint\/v1\/push\/dry-run$/);
@@ -5150,7 +5150,7 @@ test('production-shaped authenticated push fails closed immediately when apply r
         phase: 'apply',
       },
     });
-    assert.equal(seen.length, 5);
+    assert.equal(seen.length, 4);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
     assert.match(seen[1].url, /\/wp-json\/reprint\/v1\/push\/snapshot$/);
     assert.match(seen[2].url, /\/wp-json\/reprint\/v1\/push\/dry-run$/);
@@ -5311,7 +5311,7 @@ test('production-shaped authenticated push fails closed immediately when apply r
     );
     assert.equal(summary.authSessionLifecycleSummary.issued?.step, 'preflight');
     assert.equal(summary.authSessionLifecycleSummary.read?.step, 'apply');
-    assert.equal(seen.length, 5);
+    assert.equal(seen.length, 4);
     assert.match(seen[3].url, /\/wp-json\/reprint\/v1\/push\/apply$/);
   } finally {
     global.fetch = originalFetch;
@@ -10059,8 +10059,9 @@ test('production-shaped authenticated push fails closed when production auth ses
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
-    assert.equal(seen.length, 4);
+    assert.equal(seen.length, 5);
     assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+    assert.match(seen[4].url, /\/wp-json\/reprint\/v1\/push\/recovery\/inspect$/);
   } finally {
     global.fetch = originalFetch;
   }
