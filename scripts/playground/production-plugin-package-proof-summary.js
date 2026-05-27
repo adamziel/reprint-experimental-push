@@ -668,6 +668,41 @@ function normalizeRequestedScenarioName(name) {
   return canonicalScenarioName;
 }
 
+function normalizeRequestedBundleName(name) {
+  const resolvedModeProof = resolveProductionPluginPackageModeProofKey(name);
+  if (resolvedModeProof?.proofKey) {
+    return resolvedModeProof.proofKey;
+  }
+  return name;
+}
+
+function requestedBundleListsMatch(left, right) {
+  if (left === undefined || right === undefined) {
+    return left === right;
+  }
+  if (left === null || right === null) {
+    return left === right;
+  }
+  return JSON.stringify(
+    Array.from(new Set(left.map(normalizeRequestedBundleName))).sort(),
+  ) === JSON.stringify(
+    Array.from(new Set(right.map(normalizeRequestedBundleName))).sort(),
+  );
+}
+
+function filterRequestedBundleListForModeComparison(requestedValues, allowedValues) {
+  if (requestedValues === 'all') {
+    return Array.from(allowedValues).sort();
+  }
+  return Array.from(
+    new Set(
+      requestedValues
+        .map(normalizeRequestedBundleName)
+        .filter((value) => allowedValues.has(value)),
+    ),
+  ).sort();
+}
+
 function selectedScenariosMatch(left, right) {
   const normalizedLeft = normalizeSelectedScenarios(left);
   const normalizedRight = normalizeSelectedScenarios(right);
@@ -728,9 +763,9 @@ function modeProofMatchesResolvedContext(summary, modeProof, resolvedOptions) {
     )
     && (
       modeProof?.requestedBundles === undefined
-      || requestedListsMatch(
+      || requestedBundleListsMatch(
         modeProof?.requestedBundles,
-        filterRequestedListForMode(
+        filterRequestedBundleListForModeComparison(
           summary?.requestedBundles ?? [],
           new Set(
             resolvedOptions.canonicalMode === null
