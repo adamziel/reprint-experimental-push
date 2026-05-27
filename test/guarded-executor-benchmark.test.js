@@ -12109,6 +12109,53 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   });
 });
 
+test('guarded benchmark blocks release-bundle post-pause planning summaries when aligned queue-slack proof is missing after a full pause footprint', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.queuePausedBeforeOverflow = true;
+  mutated.evidence.backpressure.queueBudgetVisible = true;
+  mutated.evidence.backpressure.queueHeadroomVisible = true;
+  mutated.evidence.backpressure.queueHeadroomMeasured = true;
+  mutated.evidence.backpressure.queueHeadroomWithinResourceCeiling = true;
+  mutated.evidence.backpressure.receiptCursorWithinQueueBudget = true;
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingMatchesQueueBudgetVisible = true;
+  mutated.evidence.backpressure.receiptCursorQueueSlackVisible = true;
+  mutated.evidence.backpressure.receiptCursorMemoryHeadroomVisible = true;
+  mutated.evidence.backpressure.receiptCursorPauseFootprintComplete = true;
+  mutated.evidence.backpressure.queuePauseHasMeasuredReceiptCursorQueueSlack = false;
+  mutated.evidence.backpressure.queuePauseHasMeasuredAndAlignedReceiptCursorQueueSlack = false;
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomMeasured = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomWithinPlanReserve = true;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(
+    blockers.includes(
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+    ),
+  );
+  assert.ok(blockers.includes('queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.ok(blockers.includes('staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: false,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
+      'queue-pause-with-complete-footprint-without-measured-and-aligned-receipt-cursor-queue-slack',
+      'queue-pause-without-measured-and-aligned-receipt-cursor-queue-slack-proof',
+      'queue-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+      'staging-disk-headroom-visible-without-aligned-receipt-cursor-queue-slack-proof',
+    ],
+  });
+});
+
 test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk measurement is hidden', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
