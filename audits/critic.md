@@ -7,20 +7,21 @@ Verdict: `0/4`
 
 Reason:
 
-- This head reroutes `scripts/playground/production-shaped-live-release-verify.mjs`
-  so `verify:release` uses the packaged production-plugin source path when
-  `REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1` and no explicit live source
-  is supplied. It also updates `test/protocol-fixtures.test.js` to require
-  `routeProfile.labBacked: false`, `boundary.verdict:
+- This head improves the checked release boundary by making
+  `scripts/playground/production-shaped-live-release-verify.mjs` consume the
+  packaged production-plugin source path when
+  `REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION=1` is set and no explicit live
+  source is supplied. It also updates `test/protocol-fixtures.test.js` to
+  require `routeProfile.labBacked: false`, `boundary.verdict:
   "PACKAGED_RELEASE_BOUNDARY_OK"`, and a 300s bounded timeout for the full
   `verify:release` fixture. Reliable also reported passing `timeout 300s npm
   run verify:release` and the targeted protocol fixture before pushing.
-- That is still retained verifier wiring and packaged-boundary classification,
-  not a new releasable production source-boundary primitive. The packaged
-  `/wp-json/reprint/v1/push/*` path still routes through the lab REST plugin
-  machinery, and this head does not add a branch-local proof of production
-  auth/session lifecycle plus durable journal storage semantics outside
-  Playground. The supervised release gates therefore remain closed at `0/4`.
+- That is still verifier wiring around a packaged boundary, not a new
+  releasable production source-boundary primitive. The checked path still
+  depends on the packaged lab REST/plugin machinery rather than proving a
+  branch-local production auth/session lifecycle plus durable-journal storage
+  and lease semantics outside Playground. The supervised release gates
+  therefore remain closed at `0/4`.
 
 Next owner / command:
 
