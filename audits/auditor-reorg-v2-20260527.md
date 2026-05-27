@@ -620,6 +620,44 @@ consolidated head `8d9a53f88`; it exited `1` with
 `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and release movement `0/4`. These support
 branch refreshes do not provide a real live `REPRINT_PUSH_SOURCE_URL` command.
 
+## Follow-Up Artifact-Only Check 18:40:16
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=refname --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/topology-verifier-v2-20260527
+git diff --stat origin/supervisor/release-boundary-consolidated-20260527..origin/lane/apply-revalidation-boundary-v2-20260527
+git worktree add --detach /tmp/reprint-audit-consolidated-184016 \
+  origin/supervisor/release-boundary-consolidated-20260527
+cd /tmp/reprint-audit-consolidated-184016
+timeout 300s npm run verify:release
+```
+
+New artifact fact since the previous auditor update:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `8d9a53f88` | Unchanged since the 18:38 verifier run |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `83e07628d` | Advanced remote v2 support branch |
+
+The apply support branch diff against the consolidated release branch is now
+2 files, 118 insertions, and 1 deletion. The log shows merge-only refreshes on
+top of the earlier focused apply-revalidation boundary test.
+
+The clean detached consolidated verifier run from `8d9a53f88` again exited
+`1` with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `packagedFallbackAllowed: false`,
+source/local/drift/apply-revalidation ports as `null`, and release movement
+`allowed: false`, `gates: 0/4`.
+
+This is support/audit-refresh evidence only. It does not move release gates.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
