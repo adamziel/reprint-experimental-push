@@ -654,6 +654,7 @@ function buildAcceptedInlineRecoveryJournal() {
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     claim: {
       status: 'stale-claim-rejected',
+      activeClaimId: 'retry-claim-hash-02',
       activeClaimKeyHash: 'retry-claim-hash-02',
       activeClaimSequence: 33,
       activeClaimEvent: 'stale-claim-rejected',
@@ -663,6 +664,7 @@ function buildAcceptedInlineRecoveryJournal() {
       abandonedSequence: 24,
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 19,
+      previousClaimId: 'retry-claim-hash-01',
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimSequence: 18,
       previousClaimEvent: 'idempotency-opened',
@@ -670,6 +672,7 @@ function buildAcceptedInlineRecoveryJournal() {
     claimEvidence: {
       activeRow: {
         sequence: 33,
+        claimId: 'retry-claim-hash-02',
         event: 'stale-claim-rejected',
         claimKeyHash: 'retry-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
@@ -677,6 +680,7 @@ function buildAcceptedInlineRecoveryJournal() {
       },
       abandonedRow: {
         sequence: 24,
+        claimId: 'retry-claim-hash-01',
         event: 'stale-claim-abandoned',
         claimKeyHash: 'retry-claim-hash-01',
         idempotencyKeyHash: 'idem-hash-01',
@@ -686,6 +690,7 @@ function buildAcceptedInlineRecoveryJournal() {
       },
       previousRow: {
         sequence: 18,
+        claimId: 'retry-claim-hash-01',
         event: 'idempotency-opened',
         claimKeyHash: 'retry-claim-hash-01',
         idempotencyKeyHash: 'idem-hash-01',
@@ -699,6 +704,7 @@ function buildAcceptedInlineRecoveryJournal() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
+      claimId: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -715,6 +721,7 @@ function buildAcceptedInlineRecoveryJournal() {
       staleClaimRejected: true,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
+        claimId: 'retry-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -732,6 +739,7 @@ function buildAcceptedInlineRecoveryJournal() {
       {
         id: 33,
         event: 'stale-claim-rejected',
+        claimId: 'retry-claim-hash-02',
         claimKeyHash: 'retry-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
         requestHash: 'request-hash-01',
@@ -770,6 +778,7 @@ function buildCheckedRecoveryJournalSummary() {
     scope: 'checked live production-shaped journal surface; not local Playground fixture only',
     claim: {
       status: 'stale-claim-rejected',
+      activeClaimId: 'retry-claim-hash-02',
       activeClaimKeyHash: 'retry-claim-hash-02',
       activeClaimSequence: 33,
       activeClaimEvent: 'stale-claim-rejected',
@@ -779,6 +788,7 @@ function buildCheckedRecoveryJournalSummary() {
       abandonedSequence: 24,
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 19,
+      previousClaimId: 'retry-claim-hash-01',
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimSequence: 18,
       previousClaimEvent: 'idempotency-opened',
@@ -786,6 +796,7 @@ function buildCheckedRecoveryJournalSummary() {
     claimEvidence: {
       activeRow: {
         sequence: 33,
+        claimId: 'retry-claim-hash-02',
         event: 'stale-claim-rejected',
         claimKeyHash: 'retry-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
@@ -793,6 +804,7 @@ function buildCheckedRecoveryJournalSummary() {
       },
       abandonedRow: {
         sequence: 24,
+        claimId: 'retry-claim-hash-01',
         event: 'stale-claim-abandoned',
         claimKeyHash: 'retry-claim-hash-01',
         idempotencyKeyHash: 'idem-hash-01',
@@ -802,6 +814,7 @@ function buildCheckedRecoveryJournalSummary() {
       },
       previousRow: {
         sequence: 18,
+        claimId: 'retry-claim-hash-01',
         event: 'idempotency-opened',
         claimKeyHash: 'retry-claim-hash-01',
         idempotencyKeyHash: 'idem-hash-01',
@@ -815,6 +828,7 @@ function buildCheckedRecoveryJournalSummary() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
+      claimId: 'retry-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -831,6 +845,7 @@ function buildCheckedRecoveryJournalSummary() {
       staleClaimRejected: true,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
+        claimId: 'retry-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -843,6 +858,7 @@ function buildCheckedRecoveryJournalSummary() {
       {
         id: 33,
         event: 'stale-claim-rejected',
+        claimId: 'retry-claim-hash-02',
         claimKeyHash: 'retry-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
         requestHash: 'request-hash-01',
@@ -878,6 +894,7 @@ function buildAcceptedInlineDbJournal() {
     rowCount: 1,
     claim: {
       status: 'stale-claim-rejected',
+      activeClaimId: 'authoritative-claim-hash-02',
       activeClaimKeyHash: 'authoritative-claim-hash-02',
       activeClaimSequence: 33,
       activeClaimEvent: 'stale-claim-rejected',
@@ -887,6 +904,7 @@ function buildAcceptedInlineDbJournal() {
       abandonedSequence: 24,
       abandonedEvent: 'stale-claim-abandoned',
       previousStartedSequence: 19,
+      previousClaimId: 'retry-claim-hash-01',
       previousClaimKeyHash: 'retry-claim-hash-01',
       previousClaimSequence: 18,
       previousClaimEvent: 'idempotency-opened',
@@ -894,6 +912,7 @@ function buildAcceptedInlineDbJournal() {
     claimEvidence: {
       activeRow: {
         sequence: 33,
+        claimId: 'authoritative-claim-hash-02',
         event: 'stale-claim-rejected',
         claimKeyHash: 'authoritative-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
@@ -901,6 +920,7 @@ function buildAcceptedInlineDbJournal() {
       },
       abandonedRow: {
         sequence: 24,
+        claimId: 'retry-claim-hash-01',
         event: 'stale-claim-abandoned',
         claimKeyHash: 'retry-claim-hash-01',
         idempotencyKeyHash: 'idem-hash-01',
@@ -910,6 +930,7 @@ function buildAcceptedInlineDbJournal() {
       },
       previousRow: {
         sequence: 18,
+        claimId: 'retry-claim-hash-01',
         event: 'idempotency-opened',
         claimKeyHash: 'retry-claim-hash-01',
         idempotencyKeyHash: 'idem-hash-01',
@@ -923,6 +944,7 @@ function buildAcceptedInlineDbJournal() {
     },
     writerLease: {
       strategy: 'claim-fenced-single-writer',
+      claimId: 'authoritative-claim-hash-02',
       claimKeyUnique: true,
       fsyncEvidence: true,
       storageGuard: 'wpdb-single-statement-cas',
@@ -939,6 +961,7 @@ function buildAcceptedInlineDbJournal() {
       staleClaimRejected: true,
       writerLease: {
         strategy: 'claim-fenced-single-writer',
+        claimId: 'authoritative-claim-hash-02',
         claimKeyUnique: true,
         fsyncEvidence: true,
         storageGuard: 'wpdb-single-statement-cas',
@@ -956,6 +979,7 @@ function buildAcceptedInlineDbJournal() {
       {
         sequence: 33,
         event: 'stale-claim-rejected',
+        claimId: 'authoritative-claim-hash-02',
         claimKeyHash: 'authoritative-claim-hash-02',
         idempotencyKeyHash: 'idem-hash-01',
         requestHash: 'request-hash-01',

@@ -1060,7 +1060,7 @@ function reprint_push_lab_rest_checked_latest_row_conflicts(
     return reprint_push_lab_rest_checked_latest_row_field_conflicts(
         $premerge_rejected_row,
         $checked_rejected_row,
-        ['claimKeyHash', 'idempotencyKeyHash', 'requestHash']
+        ['claimId', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash']
     );
 }
 
@@ -1143,9 +1143,9 @@ function reprint_push_lab_rest_checked_claim_evidence_conflicts(
     }
 
     foreach ([
-        'activeRow' => ['sequence', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
-        'abandonedRow' => ['sequence', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash', 'startedCursor', 'claimCursor'],
-        'previousRow' => ['sequence', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
+        'activeRow' => ['sequence', 'claimId', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
+        'abandonedRow' => ['sequence', 'claimId', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash', 'startedCursor', 'claimCursor'],
+        'previousRow' => ['sequence', 'claimId', 'event', 'claimKeyHash', 'idempotencyKeyHash', 'requestHash'],
     ] as $evidence_key => $keys) {
         $premerge_row = isset($premerge_claim_evidence[$evidence_key]) && is_array($premerge_claim_evidence[$evidence_key])
             ? $premerge_claim_evidence[$evidence_key]
@@ -1521,7 +1521,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
                 ? $checked_summary['writerLease']
                 : null,
-            ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+            ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
             ['storageGuard']
         )
         || reprint_push_lab_rest_checked_contract_field_omissions(
@@ -1531,7 +1531,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['writerLease']) && is_array($checked_summary['writerLease'])
                 ? $checked_summary['writerLease']
                 : null,
-            ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+            ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
         )
     ) {
         return true;
@@ -1614,7 +1614,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
         isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
             ? $checked_summary['leaseFence']['writerLease']
             : null,
-        ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
+        ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected'],
         ['storageGuard']
     )
         || reprint_push_lab_rest_checked_contract_field_omissions(
@@ -1624,7 +1624,7 @@ function reprint_push_lab_rest_checked_nested_contract_conflicts(
             isset($checked_summary['leaseFence']['writerLease']) && is_array($checked_summary['leaseFence']['writerLease'])
                 ? $checked_summary['leaseFence']['writerLease']
                 : null,
-            ['strategy', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
+            ['strategy', 'claimId', 'claimKeyUnique', 'fsyncEvidence', 'monotonicSequence', 'restartReadable', 'staleClaimRejected']
         );
 }
 
