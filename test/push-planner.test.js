@@ -22886,6 +22886,58 @@ test('openProductionRecoveryJournal fails closed when a consumed claim is reopen
   assert.deepEqual(error.details.persistedArtifactRefs, artifactRefs);
 });
 
+test('openProductionRecoveryJournal fails closed when a reopen introduces remote ownership state absent from persisted artifacts', () => {
+  const base = baseSite();
+  const local = structuredClone(base);
+  local.db.wp_options['option_name:blogname'] = {
+    option_name: 'blogname',
+    option_value: 'Introduced Remote Ownership Site',
+  };
+  const remote = structuredClone(base);
+  const plan = planFor(base, local, remote);
+  const filePath = tempRecoveryJournalPath();
+  const introducedRemoteArtifactPath = `${path.dirname(filePath)}/introduced-remote-ownership.jsonl`;
+  const claimId = 'claim-introduced-remote-ownership';
+  const writerLease = { id: claimId, epoch: 3 };
+  const artifactRefs = {
+    journal: filePath,
+  };
+  const journal = openProductionRecoveryJournal(filePath, {
+    truncate: true,
+    now: fixedNow,
+    claimId,
+    writerLease,
+  });
+  appendRecoveryClaimOpened(journal, {
+    plan,
+    current: remote,
+    claimId,
+    artifactRefs,
+  });
+  journal.close();
+
+  const error = captureError(() => openProductionRecoveryJournal(filePath, {
+    claimId,
+    writerLease,
+    ownsRemoteArtifact: true,
+    remoteArtifactPath: introducedRemoteArtifactPath,
+  }));
+
+  assert.equal(error.code, 'UNSUPPORTED_PRODUCTION_RECOVERY_JOURNAL');
+  assert.equal(
+    error.message,
+    'Production recovery journal support requires reopening with the persisted remote artifact ownership state.',
+  );
+  assert.deepEqual(error.details.artifactRefs, {
+    journal: filePath,
+    remote: introducedRemoteArtifactPath,
+  });
+  assert.deepEqual(error.details.persistedArtifactRefs, {
+    journal: filePath,
+    remote: null,
+  });
+});
+
 test('production recovery support report fails closed when a reopen introduces unpersisted remote artifact ownership', () => {
   const filePath = tempRecoveryJournalPath();
   const introducedRemoteArtifactPath = `${path.dirname(filePath)}/introduced-remote.jsonl`;
