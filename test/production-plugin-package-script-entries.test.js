@@ -214,6 +214,13 @@ test('package scripts pin the bounded plugin-driver missing-name guard entrypoin
   );
 });
 
+test('package scripts pin the bounded plugin-driver whitespace-name guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-whitespace-name-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-whitespace-name-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver missing-plugin-owner guard entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-missing-plugin-owner-guard'],
@@ -221,10 +228,24 @@ test('package scripts pin the bounded plugin-driver missing-plugin-owner guard e
   );
 });
 
+test('package scripts pin the bounded plugin-driver whitespace-plugin-owner guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-whitespace-plugin-owner-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-whitespace-plugin-owner-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
 test('package scripts pin the bounded plugin-driver missing-table guard entrypoint', () => {
   assert.equal(
     packageJson.scripts['test:playground:production-plugin-driver-missing-table-guard'],
     'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-missing-table-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
+  );
+});
+
+test('package scripts pin the bounded plugin-driver whitespace-table guard entrypoint', () => {
+  assert.equal(
+    packageJson.scripts['test:playground:production-plugin-driver-whitespace-table-guard'],
+    'REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-whitespace-table-guard node ./scripts/playground/production-plugin-package-smoke.mjs',
   );
 });
 

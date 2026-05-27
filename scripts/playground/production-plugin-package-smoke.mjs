@@ -85,8 +85,11 @@ const packagedDriverRegistryGuardScenarioNames = new Set([
   'driver-missing-apply-guard',
   'driver-missing-validate-guard',
   'driver-missing-name-guard',
+  'driver-whitespace-name-guard',
   'driver-missing-plugin-owner-guard',
+  'driver-whitespace-plugin-owner-guard',
   'driver-missing-table-guard',
+  'driver-whitespace-table-guard',
   'driver-duplicate-name-guard',
   'driver-duplicate-table-guard',
 ]);
@@ -169,38 +172,74 @@ $scenarios['driver-missing-validate-guard'] = static function (array $drivers) u
     return $drivers;
 };
 $scenarios['driver-missing-name-guard'] = static function (array $drivers) use ($driver_table, $plugin_owner): array {
-    $drivers['${driverFixture.driver}'] = [
-        'driver' => '',
+  $drivers['${driverFixture.driver}'] = [
+    'driver' => '',
         'table' => $driver_table,
         'pluginOwner' => $plugin_owner,
         'supportsDelete' => false,
         'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
         'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
         'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
-    ];
-    return $drivers;
+  ];
+  return $drivers;
+};
+$scenarios['driver-whitespace-name-guard'] = static function (array $drivers) use ($driver_table, $plugin_owner): array {
+  $drivers['${driverFixture.driver}'] = [
+    'driver' => '   ',
+    'table' => $driver_table,
+    'pluginOwner' => $plugin_owner,
+    'supportsDelete' => false,
+    'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+    'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+    'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+  ];
+  return $drivers;
 };
 $scenarios['driver-missing-plugin-owner-guard'] = static function (array $drivers) use ($driver_name, $driver_table): array {
-    $drivers[$driver_name] = [
-        'driver' => $driver_name,
+  $drivers[$driver_name] = [
+    'driver' => $driver_name,
         'table' => $driver_table,
         'supportsDelete' => false,
         'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
         'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
         'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
-    ];
-    return $drivers;
+  ];
+  return $drivers;
+};
+$scenarios['driver-whitespace-plugin-owner-guard'] = static function (array $drivers) use ($driver_name, $driver_table): array {
+  $drivers[$driver_name] = [
+    'driver' => $driver_name,
+    'table' => $driver_table,
+    'pluginOwner' => '   ',
+    'supportsDelete' => false,
+    'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+    'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+    'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+  ];
+  return $drivers;
 };
 $scenarios['driver-missing-table-guard'] = static function (array $drivers) use ($driver_name, $plugin_owner): array {
-    $drivers[$driver_name] = [
-        'driver' => $driver_name,
+  $drivers[$driver_name] = [
+    'driver' => $driver_name,
         'pluginOwner' => $plugin_owner,
         'supportsDelete' => false,
         'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
         'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
         'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
-    ];
-    return $drivers;
+  ];
+  return $drivers;
+};
+$scenarios['driver-whitespace-table-guard'] = static function (array $drivers) use ($driver_name, $plugin_owner): array {
+  $drivers[$driver_name] = [
+    'driver' => $driver_name,
+    'table' => '   ',
+    'pluginOwner' => $plugin_owner,
+    'supportsDelete' => false,
+    'exportRowsCallback' => 'reprint_push_packaged_driver_guard_export_rows',
+    'applyRowCallback' => 'reprint_push_packaged_driver_guard_apply_row',
+    'validateMutationCallback' => 'reprint_push_packaged_driver_guard_validate_mutation',
+  ];
+  return $drivers;
 };
 $scenarios['driver-duplicate-name-guard'] = static function (array $drivers) use ($driver_name, $driver_table, $plugin_owner): array {
     $drivers[$driver_name] = [
@@ -1244,6 +1283,20 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     };
   });
 
+  await runScenario('driver-whitespace-name-guard', async () => {
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-whitespace-name-guard', pluginDir);
+    assertPackagedDriverFatalExport(
+      malformedSnapshot,
+      /missing driver name for table: wp_reprint_push_driver_fixture/i,
+      'packaged snapshot did not fail closed on a whitespace-only plugin-owned driver name',
+    );
+
+    summary.driverWhitespaceNameGuard = {
+      exportFailed: malformedSnapshot.ok === false,
+      missingDriverName: /missing driver name for table: wp_reprint_push_driver_fixture/i.test(malformedSnapshot.error?.message || ''),
+    };
+  });
+
   await runScenario('driver-missing-plugin-owner-guard', async () => {
     const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-plugin-owner-guard', pluginDir);
     assertPackagedDriverFatalExport(
@@ -1258,6 +1311,20 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     };
   });
 
+  await runScenario('driver-whitespace-plugin-owner-guard', async () => {
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-whitespace-plugin-owner-guard', pluginDir);
+    assertPackagedDriverFatalExport(
+      malformedSnapshot,
+      /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i,
+      'packaged snapshot did not fail closed on a whitespace-only plugin-owned driver pluginOwner',
+    );
+
+    summary.driverWhitespacePluginOwnerGuard = {
+      exportFailed: malformedSnapshot.ok === false,
+      missingPluginOwner: /missing pluginOwner for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
+    };
+  });
+
   await runScenario('driver-missing-table-guard', async () => {
     const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-table-guard', pluginDir);
     assertPackagedDriverFatalExport(
@@ -1267,6 +1334,20 @@ echo "REPRINT_PUSH_DRIVER_GUARD_JSON_END\\n";
     );
 
     summary.driverMissingTableGuard = {
+      exportFailed: malformedSnapshot.ok === false,
+      missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
+    };
+  });
+
+  await runScenario('driver-whitespace-table-guard', async () => {
+    const malformedSnapshot = runPackagedDriverRegistryGuard('driver-whitespace-table-guard', pluginDir);
+    assertPackagedDriverFatalExport(
+      malformedSnapshot,
+      /missing table for driver: fixture-arbitrary-plugin-table/i,
+      'packaged snapshot did not fail closed on a whitespace-only plugin-owned driver table mapping',
+    );
+
+    summary.driverWhitespaceTableGuard = {
       exportFailed: malformedSnapshot.ok === false,
       missingTable: /missing table for driver: fixture-arbitrary-plugin-table/i.test(malformedSnapshot.error?.message || ''),
     };

@@ -71,8 +71,11 @@ const scenarioNames = [
   'driver-missing-apply-guard',
   'driver-missing-validate-guard',
   'driver-missing-name-guard',
+  'driver-whitespace-name-guard',
   'driver-missing-plugin-owner-guard',
+  'driver-whitespace-plugin-owner-guard',
   'driver-missing-table-guard',
+  'driver-whitespace-table-guard',
   'driver-duplicate-name-guard',
   'driver-duplicate-table-guard',
 ];
