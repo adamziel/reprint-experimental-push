@@ -2715,6 +2715,122 @@ test('plugin-driver proof summary attach helper repairs a stale verifier alias n
   );
 });
 
+test('plugin-driver proof summary attach helper repairs stale verifier alias nested requested concrete scenarios when the top-level cache is current', () => {
+  const fullVerifierSelection = new Set([
+    'driver-verifier-guards',
+    ...scenarioGroups['driver-verifier-guards'],
+  ]);
+  const rawSummary = {
+    mode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: Array.from(fullVerifierSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_DRIVER_ROW',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'local-update',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_PLAN_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_IDENTITY_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      payloadModeAfterReject: 'local-update',
+    },
+    driverExportGuard: {
+      missingExportRowsCallback: true,
+    },
+    driverApplyGuard: {
+      missingApplyRowCallback: true,
+    },
+    driverValidateGuard: {
+      missingValidateMutationCallback: true,
+    },
+    driverMissingNameGuard: {
+      missingDriverName: true,
+    },
+    driverPluginOwnerGuard: {
+      missingPluginOwner: true,
+    },
+    driverMissingTableGuard: {
+      missingTable: true,
+    },
+    driverDuplicateNameGuard: {
+      duplicateDriverName: true,
+    },
+    driverDuplicateTableGuard: {
+      duplicateTable: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: fullVerifierSelection,
+    resolvedMode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+  });
+  rawSummary.modeProof = {
+    ...currentProof.modeProof,
+  };
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    modeProof: {
+      ...currentProof.modeProof,
+      requestedConcreteScenarios: ['driver-delete-guard'],
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverVerifierGuardsOnly'],
+    selectedScenarios: fullVerifierSelection,
+    resolvedMode: 'driverVerifierGuardsOnly',
+    canonicalMode: 'driver-verifier-guards',
+  });
+
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    rawSummary.pluginDriverProof.modeProof?.requestedConcreteScenarios,
+    currentProof.modeProof?.requestedConcreteScenarios,
+  );
+});
+
 test('plugin-driver proof summary attach helper rebuilds a stale verifier alias top-level bundle cache when the nested mode proof is current', () => {
   const fullVerifierSelection = new Set([
     'driver-verifier-guards',

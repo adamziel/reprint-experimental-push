@@ -1404,6 +1404,7 @@ function proofSummaryHasRequestedViewFields(summary) {
     || summary?.requestedBundlesSatisfied !== undefined
     || summary?.requestedSatisfied !== undefined
     || summary?.requestedScenarioStatuses !== undefined
+    || summary?.requestedConcreteScenarios !== undefined
     || summary?.requestedConcreteScenarioStatuses !== undefined
     || summary?.requestedScenariosSatisfied !== undefined
     || summary?.requestedConcreteScenariosSatisfied !== undefined;
