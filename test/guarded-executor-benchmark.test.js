@@ -12210,6 +12210,30 @@ test('guarded benchmark blocks release-bundle post-pause planning summaries when
   });
 });
 
+test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk visibility is hidden', () => {
+  const report = smallBenchmark();
+  const mutated = clone(report);
+
+  mutated.evidence.backpressure.receiptCursorMemoryCeilingBytes =
+    mutated.evidence.backpressure.queueBudgetBytes;
+  mutated.evidence.backpressure.receiptCursorQueueSlackMatchesQueueHeadroom = true;
+  mutated.evidence.backpressure.stagingDiskHeadroomVisible = false;
+
+  const details = productionThroughputDetails(mutated);
+  const blockers = productionThroughputBlockers(mutated);
+
+  assert.ok(blockers.includes('staging-disk-headroom-not-visible'));
+  assert.deepEqual(details.releaseBundlePlanningSummary, {
+    surface: 'release-bundle-post-pause-planning',
+    status: 'blocked',
+    measured: true,
+    visible: false,
+    blockerRefs: [
+      'staging-disk-headroom-not-visible',
+    ],
+  });
+});
+
 test('guarded benchmark blocks release-bundle post-pause planning summaries when staging-disk headroom drifts outside the plan reserve', () => {
   const report = smallBenchmark();
   const mutated = clone(report);
