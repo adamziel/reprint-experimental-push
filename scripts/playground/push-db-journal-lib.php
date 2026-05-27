@@ -567,6 +567,7 @@ function reprint_push_lab_db_journal_attach_checked_contract(
     $summary['writerLease'] = $writer_lease;
     $summary['leaseFence'] = [
         'boundary' => 'wpdb-single-statement-cas',
+        'storageGuard' => 'wpdb-single-statement-cas',
         'claimKeyUnique' => $claim_key_unique,
         'fsyncEvidence' => true,
         'monotonicSequence' => $monotonic_sequence,
@@ -797,6 +798,7 @@ function reprint_push_lab_db_journal_lease_fence_contract_matches($lease_fence):
 {
     return is_array($lease_fence)
         && reprint_push_lab_db_journal_non_empty_string($lease_fence['boundary'] ?? null)
+        && reprint_push_lab_db_journal_non_empty_string($lease_fence['storageGuard'] ?? null)
         && is_bool($lease_fence['claimKeyUnique'] ?? null)
         && is_bool($lease_fence['fsyncEvidence'] ?? null)
         && is_bool($lease_fence['monotonicSequence'] ?? null)
@@ -840,6 +842,7 @@ function reprint_push_lab_db_journal_checked_boundary_storage_guard_is_coherent(
     return ($storage_guard['boundary'] ?? null) === ($ownership['productionAdapter'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($lease_fence['boundary'] ?? null)
+        && ($storage_guard['boundary'] ?? null) === ($lease_fence['storageGuard'] ?? null)
         && ($storage_guard['boundary'] ?? null) === ($lease_fence_writer_lease['storageGuard'] ?? null);
 }
 
@@ -885,6 +888,7 @@ function reprint_push_lab_db_journal_checked_boundary_contract_is_coherent($jour
 
     return ($ownership['productionAdapter'] ?? null) === ($writer_lease['storageGuard'] ?? null)
         && ($ownership['productionAdapter'] ?? null) === ($lease_fence['boundary'] ?? null)
+        && ($ownership['productionAdapter'] ?? null) === ($lease_fence['storageGuard'] ?? null)
         && ($ownership['restartReadable'] ?? null) === ($writer_lease['restartReadable'] ?? null)
         && ($ownership['restartReadable'] ?? null) === ($lease_fence['restartReadable'] ?? null)
         && ($writer_lease['strategy'] ?? null) === ($lease_fence_writer_lease['strategy'] ?? null)

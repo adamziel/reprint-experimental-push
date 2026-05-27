@@ -4,6 +4,44 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-27 - Durable Local Production Journal Proof
+
+- Last update: 2026-05-27 23:22 CEST.
+- Current durable proof branch:
+  `lane/durable-journal-local-production-20260527`.
+- New proof: `npm run verify:release:local-production` passed in the
+  `main:durable-proof2` tmux window and printed `DURABLE_PROOF_STATUS:0`.
+- Release movement: the live local topology now reports
+  `releaseMovement.allowed: true`, `gates: candidate-for-review`, and
+  `reason: checked live source/local/changed topology passed without packaged
+  fallback`.
+- Durable journal boundary: the checked live path reports
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session, durable journal, and
+  replay/retry. The accepted DB journal includes `ownsJournal: true`,
+  `restartReadable: true`, `productionAdapter: wpdb-single-statement-cas`,
+  `writerLease.storageGuard: wpdb-single-statement-cas`, and
+  `leaseFence.storageGuard: wpdb-single-statement-cas`.
+- Code evidence:
+  [scripts/playground/push-db-journal-lib.php](../scripts/playground/push-db-journal-lib.php)
+  now carries the `leaseFence.storageGuard` contract through the checked PHP
+  journal summary, and
+  [test/authenticated-http-push-client.test.js](../test/authenticated-http-push-client.test.js)
+  keeps the strict JS client proof closed unless that guard is present.
+- Targeted checks passed:
+  `php -l scripts/playground/push-db-journal-lib.php`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `git diff --check -- scripts/playground/push-db-journal-lib.php test/authenticated-http-push-client.test.js`,
+  `node --test test/recovery-journal.test.js`, and
+  `node --test --test-name-pattern='db journal proof requires the checked durable-journal contract when explicitly requested' test/authenticated-http-push-client.test.js`.
+- Caveat: this is still local Playground production-shaped evidence. Docker is
+  not installed in the sandbox, and final release readiness still needs the
+  same proof on Docker or external WordPress plus graph identity mapping and
+  general plugin-driver coverage.
+- Percent movement: recovery boundaries move from 36% to 45%; reliable
+  executor/protocol moves from 51% to 58%; independent evidence moves from 38%
+  to 44%; merge invariants get a small local-proof bump from 47% to 48%; fast
+  path remains 20%.
+
 ## 2026-05-27 - Local Production Topology Proof
 
 - Last update: 2026-05-27 19:26 CEST.

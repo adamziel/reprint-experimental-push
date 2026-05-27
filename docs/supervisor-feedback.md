@@ -1,9 +1,42 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-27 19:26 CEST
+Last updated: 2026-05-27 23:22 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-27 23:22 CEST - Durable Local Candidate Proof
+
+- Going well: `main:durable-proof2` ran
+  `npm run verify:release:local-production` to completion and printed
+  `DURABLE_PROOF_STATUS:0`.
+- Also going well: the checked live local topology now reports
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session, durable journal, and
+  replay/retry, with `releaseMovement.allowed: true` and
+  `gates: candidate-for-review`.
+- Durable journal change: the PHP DB journal summary now exposes
+  `leaseFence.storageGuard: wpdb-single-statement-cas`, and the client-side
+  proof remains strict about requiring that storage guard when the checked
+  boundary is requested.
+- Not going well: Docker is not installed in this sandbox, so this is still
+  local Playground production-shaped evidence. Final readiness still needs an
+  external or containerized WordPress runtime plus graph identity and general
+  plugin-driver proof.
+- Progress change: recovery boundaries, reliable executor/protocol, and
+  independent evidence move up because the previous durable-journal blocker is
+  now satisfied in the local live topology. Fast path stays flat.
+- Next nudge: prove the same durable journal and credential lifecycle on a
+  Docker/external WordPress runtime if one can be made available; otherwise keep
+  advancing graph identity mapping and arbitrary plugin-driver coverage in the
+  same tmux-visible style.
+
+| Lane | Nudge |
+| --- | --- |
+| Recovery | Move from local Playground durable DB journal to Docker/external restart and crash durability. |
+| Reliable executor | Keep the local `candidate-for-review` proof, then verify credentials and leases on a non-Playground runtime. |
+| Invariants | Use the local production topology to prove graph identity mapping beyond release-state rows. |
+| Fast paths | Stay flat until graph/recovery gates can preserve receipts and cursors under chunking. |
+| Audit and critic | Re-audit the durable local candidate proof and keep final readiness held for Docker/external and graph gaps. |
 
 ## 2026-05-27 19:26 CEST - Local Production Proof Landed
 
