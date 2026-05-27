@@ -1155,6 +1155,90 @@ test('blocks local postmeta references to stale remote-created post identity', (
   assert.equal(remote.db.wp_posts['ID:2'].post_title, 'remote-private-post-title');
 });
 
+test('allows same-plan post and attachment graph closure when remote still matches base', () => {
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'Local parent post',
+    post_status: 'draft',
+  };
+  local.db.wp_posts['ID:3'] = {
+    ID: 3,
+    post_title: 'Local attachment asset',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2,
+  };
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 2,
+      meta_key: '_thumbnail_id',
+      meta_value: '3',
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 3);
+  assert.equal(mutationFor(plan, 'row:["wp_posts","ID:2"]').action, 'put');
+  assert.equal(mutationFor(plan, 'row:["wp_posts","ID:3"]').action, 'put');
+  assert.equal(mutationFor(plan, 'row:["wp_postmeta","meta_id:45"]').action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(remote, plan);
+  assert.equal(result.site.db.wp_posts['ID:2'].post_title, 'Local parent post');
+  assert.equal(result.site.db.wp_posts['ID:3'].post_parent, 2);
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].post_id, 2);
+  assert.equal(result.site.db.wp_postmeta['meta_id:45'].meta_value, '3');
+});
+
+test('blocks featured image references when the attachment target diverged on remote', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
+  const targetResourceKey = 'row:["wp_posts","ID:2"]';
+  const base = baseSite();
+  base.db.wp_posts['ID:2'] = {
+    ID: 2,
+    post_title: 'base-private-attachment-title',
+    post_status: 'inherit',
+    post_type: 'attachment',
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_postmeta = {
+    'meta_id:45': {
+      meta_id: 45,
+      post_id: 1,
+      meta_key: '_thumbnail_id',
+      meta_value: '2',
+    },
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+  remote.db.wp_posts['ID:2'].post_title = 'remote-private-attachment-title';
+  remote.db.wp_posts['ID:2'].post_content = 'remote-private-attachment-body';
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const reference = blocker.references[0];
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'update');
+  assert.equal(planJson.includes('remote-private-attachment-title'), false);
+  assert.equal(planJson.includes('remote-private-attachment-body'), false);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();
