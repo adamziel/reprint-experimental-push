@@ -11,7 +11,11 @@ import {
   resolveProductionPluginPackageModeProofKey,
   scenarioDefinitionNames,
 } from '../scripts/playground/production-plugin-package-proof-summary.js';
-import { scenarioGroups, scenarioNames } from '../scripts/playground/production-plugin-package-scenarios.js';
+import {
+  modeAliasesByCanonicalMode,
+  scenarioGroups,
+  scenarioNames,
+} from '../scripts/playground/production-plugin-package-scenarios.js';
 
 test('plugin-driver proof summary bundle groups stay aligned with shared scenario groups', () => {
   assert.deepEqual(
@@ -158,6 +162,35 @@ test('plugin-driver proof summary resolves every exported runtime mode alias to 
       },
       `${mode} should resolve to one canonical proof key`,
     );
+  }
+});
+
+test('plugin-driver proof summary resolves every shared runtime mode alias to one canonical proof key', () => {
+  for (const [canonicalMode, aliases] of Object.entries(modeAliasesByCanonicalMode)) {
+    for (const mode of aliases) {
+      const resolved = resolveProductionPluginPackageModeProofKey(mode);
+
+      assert.notEqual(
+        resolved,
+        null,
+        `${mode} should resolve to a downstream proof key`,
+      );
+      assert.equal(
+        resolved?.mode,
+        mode,
+        `${mode} should preserve its exact runtime alias`,
+      );
+      assert.equal(
+        resolved?.canonicalMode,
+        canonicalMode,
+        `${mode} should resolve to ${canonicalMode}`,
+      );
+      assert.match(
+        resolved?.proofKey ?? '',
+        /^driver[A-Z]/,
+        `${mode} should resolve to a canonical plugin-driver proof key`,
+      );
+    }
   }
 });
 
