@@ -1,9 +1,44 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 01:20 CEST
+Last updated: 2026-05-28 01:37 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 01:37 CEST - Post Parent Graph Evidence
+
+- Going well:
+  `npm run verify:release:local-production:complex-site:post-parent-graph`
+  passed in `main:post-parent-graph-proof` with
+  `[POST_PARENT_GRAPH_PROOF_STATUS:0]`.
+- Also going well: the Brewcommerce-derived local production proof now covers a
+  same-plan `post_parent` page graph surface. The planner emitted the parent
+  and child `wp_posts` rows with live remote preconditions, 24 ready mutations,
+  24 preconditions, `childReferencesParent: true`, and
+  `staleGraphBlockers: 0`.
+- Release evidence improved: the checked verifier reported receipt
+  `23d0f2068a5cff0b6ef62b4b3b40919e938f8d7d47d0a41198414cc3f1f6ddef`,
+  80 durable DB-journal rows, 24 `mutation-applied` events,
+  `applyRevalidationVerifiedCount: 24`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK`, replay equivalence, stale-owner fencing, and
+  same-key/different-body conflict before mutation.
+- Not yet done: this is still local Playground loopback evidence with stable
+  fixture IDs. General parent/child rewriting, menus, serialized blocks,
+  production importer/exporter identity maps, Docker/external WordPress
+  durability, rollback, and arbitrary plugin drivers remain required work.
+- Progress change: merge invariants and independent evidence move up modestly.
+  Recovery, reliable-executor, and fast-path percentages stay flat.
+- Next nudge: continue adding narrow graph surfaces or move the same
+  release/journal boundary to Docker/external WordPress while keeping the final
+  release held for the remaining required work.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Expand graph proof carefully; same-plan closures now include featured image, category taxonomy, and post_parent page fixtures only. |
+| Recovery | Pair the graph fixtures with Docker/external restart proof next. |
+| Reliable executor | Keep receipt, auth/session, DB-journal, replay, and conflict guards on every graph proof. |
+| Fast paths | Still needs a guarded transfer/chunk benchmark; this proof is not a speed proof. |
+| Audit and critic | Re-audit the integrated branch at the post_parent graph commit and keep final readiness held. |
 
 ## 2026-05-28 01:20 CEST - Taxonomy Graph Evidence
 

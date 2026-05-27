@@ -4,6 +4,62 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Post Parent Graph Evidence
+
+- Last update: 2026-05-28 01:37 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:post-parent-graph`
+  passed in tmux window `main:post-parent-graph-proof` with
+  `[POST_PARENT_GRAPH_PROOF_STATUS:0]`.
+- Code change: the Brewcommerce-derived local production proof can now opt into
+  a same-plan `post_parent` graph fixture through
+  `REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF=1`. The
+  fixture creates a local-only parent page
+  `row:["wp_posts","ID:71801"]` and child page
+  `row:["wp_posts","ID:71802"]`, where the child row's `post_parent` points at
+  the same-plan parent row.
+- Planner evidence: the graph-enabled topology reported 12 complex posts,
+  5 complex form-schema postmeta rows, 3 complex upload files, 4 forms-lab
+  rows, 1 local post-parent graph parent, and 1 local post-parent graph child.
+  The ready plan had 24 mutations, 24 live-remote preconditions, 0 blockers,
+  and mutation families `file: 3`, `row:wp_options: 1`,
+  `row:wp_postmeta: 5`, `row:wp_posts: 14`, and
+  `row:wp_reprint_push_release_state: 1`.
+- Graph evidence: the parent and child post resources were both planned with
+  live preconditions, `childReferencesParent: true`, and
+  `staleGraphBlockers: 0`. The remote-drift plan still failed closed with
+  9 preserve-remote conflicts.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `23d0f2068a5cff0b6ef62b4b3b40919e938f8d7d47d0a41198414cc3f1f6ddef`,
+  reported 80 durable DB journal rows, `mutationApplied: 24`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 24`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session, durable journal, replay/retry,
+  replay equivalence, and `releaseMovement.gates: candidate-for-review`.
+- Recovery and retry evidence on the same release verifier path includes
+  same-key/body replay with 24 mutation events, same-key/different-body
+  `409 IDEMPOTENCY_KEY_CONFLICT` before mutation, stale-owner fencing, 24/24
+  fully updated recovery inspect, and blocked apply-time revalidation state
+  with `old: 23`, `new: 0`, `blockedUnknown: 1`.
+- Focused checks passed:
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `node --test --test-name-pattern "post parent|same-plan post|graph closure|featured image|taxonomy" test/push-planner.test.js`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:post-parent-graph`.
+- Caveat: this closes one local Playground same-plan `post_parent` fixture with
+  stable fixture identities. It does not prove general WordPress identity
+  rewriting for arbitrary parent/child pages, arbitrary attachments, GUIDs,
+  menus, serialized blocks, custom taxonomies, production importer/exporter
+  identity maps, external WordPress durability, rollback, or general
+  plugin-driver correctness.
+- Percent movement: merge invariants move from 64% to 66%; reliable
+  executor/protocol stays at 71%; independent evidence moves from 66% to 67%.
+  Recovery boundaries stay at 58%, and fast path/chunking stays at 37% because
+  this proof adds graph coverage, not external crash durability or a larger
+  transfer benchmark.
+
 ## 2026-05-28 - Taxonomy Graph Evidence
 
 - Last update: 2026-05-28 01:20 CEST.

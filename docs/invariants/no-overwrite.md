@@ -38,6 +38,11 @@ the live remote immediately before apply.
   plan only when all four resources carry live-remote preconditions and no
   stale graph blocker is present. This covers one stable-ID fixture closure,
   not arbitrary term, taxonomy, menu, or relationship remapping.
+- The checked local production post-parent fixture may create a parent page and
+  child page in the same plan only when both post resources carry live-remote
+  preconditions, the child `post_parent` points at the planned parent, and no
+  stale graph blocker is present. This covers one stable-ID fixture closure,
+  not arbitrary parent/child identity remapping.
 
 Every automatic mutation must include a precondition tied to the mutation id,
 the resource key, the live remote hash observed during planning, and the
@@ -91,10 +96,10 @@ the resource key, the live remote hash observed during planning, and the
 - WordPress graph mutations that reference a graph target absent from the live
   remote, unless the mutation belongs to a specifically proven same-plan graph
   closure with both the target and relationship resource preconditioned. Today
-  those exceptions are only the local featured-image attachment fixture and the
-  local category taxonomy fixture; general same-plan identity creation and
-  relationship rewriting remain blocked until broader identity-map/rewrite
-  proof exists.
+  those exceptions are only the local featured-image attachment fixture, the
+  local category taxonomy fixture, and the local post-parent page fixture;
+  general same-plan identity creation and relationship rewriting remain held
+  until broader identity-map/rewrite proof exists.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather

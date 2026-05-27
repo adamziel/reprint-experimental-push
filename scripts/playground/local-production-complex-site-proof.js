@@ -11,6 +11,7 @@ export const complexSiteFixtureShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  postParentGraph: false,
 });
 
 const proofNow = new Date('2026-05-27T21:45:00.000Z');
@@ -21,6 +22,16 @@ const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
 const featuredImageMetaKey = '_thumbnail_id';
 const featuredImageAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageAttachmentId}"]`;
 const featuredImageMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImagePostId}:meta_key:${featuredImageMetaKey}"]`;
+const postParentGraphParentId = 71801;
+const postParentGraphChildId = 71802;
+const postParentGraphParentSlug = 'reprint-push-post-parent-graph-parent';
+const postParentGraphChildSlug = 'reprint-push-post-parent-graph-child';
+const postParentGraphParentResourceKey = `row:["wp_posts","ID:${postParentGraphParentId}"]`;
+const postParentGraphChildResourceKey = `row:["wp_posts","ID:${postParentGraphChildId}"]`;
+const postParentGraphResourceKeys = Object.freeze([
+  postParentGraphParentResourceKey,
+  postParentGraphChildResourceKey,
+]);
 const taxonomyGraphPostId = 71001;
 const taxonomyGraphTermId = 72901;
 const taxonomyGraphTermTaxonomyId = 72911;
@@ -48,6 +59,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     remoteDriftFiles: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_FILES, complexSiteFixtureShape.remoteDriftFiles),
     featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
     taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
+    postParentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF === '1',
   });
 }
 
@@ -65,6 +77,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_remote_drift_files = ${positiveInt(shape.remoteDriftFiles)};`,
     `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
     `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
+    `$complex_post_parent_graph = ${shape.postParentGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
     "  $stable_id = 71000 + $i;",
     "  $suffix = str_pad((string) $i, 2, '0', STR_PAD_LEFT);",
@@ -96,6 +109,16 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  if (is_wp_error($attachment_result)) { throw new RuntimeException($attachment_result->get_error_message()); }",
     "  add_post_meta((int) $attachment_result, 'reprint_push_fixture', 'complex-featured-image', true);",
     `  update_post_meta($featured_post_id, ${phpString(featuredImageMetaKey)}, (string) $attachment_id);`,
+    "}",
+    "if ($complex_post_parent_graph && $complex_is_local) {",
+    `  $parent_post_id = ${postParentGraphParentId};`,
+    `  $child_post_id = ${postParentGraphChildId};`,
+    `  $parent_result = wp_insert_post(array('import_id'=>$parent_post_id,'post_title'=>'Reprint Push Parent Graph Parent','post_name'=>${phpString(postParentGraphParentSlug)},'post_content'=>'Local parent page used for same-plan post_parent graph proof.','post_status'=>'publish','post_type'=>'page','post_parent'=>0,'post_author'=>0));`,
+    "  if (is_wp_error($parent_result)) { throw new RuntimeException($parent_result->get_error_message()); }",
+    "  add_post_meta((int) $parent_result, 'reprint_push_fixture', 'complex-post-parent-graph', true);",
+    `  $child_result = wp_insert_post(array('import_id'=>$child_post_id,'post_title'=>'Reprint Push Parent Graph Child','post_name'=>${phpString(postParentGraphChildSlug)},'post_content'=>'Local child page whose post_parent points at the same-plan parent page.','post_status'=>'publish','post_type'=>'page','post_parent'=>$parent_post_id,'post_author'=>0));`,
+    "  if (is_wp_error($child_result)) { throw new RuntimeException($child_result->get_error_message()); }",
+    "  add_post_meta((int) $child_result, 'reprint_push_fixture', 'complex-post-parent-graph', true);",
     "}",
     "if ($complex_taxonomy_graph && $complex_is_local) {",
     `  $taxonomy_post_id = ${taxonomyGraphPostId};`,
@@ -155,6 +178,7 @@ export function buildComplexSitePlannerProof({
     + positiveInt(shape.fileCount)
     + 2
     + (shape.featuredImageGraph ? 2 : 0)
+    + (shape.postParentGraph ? postParentGraphResourceKeys.length : 0)
     + (shape.taxonomyGraph ? taxonomyGraphResourceKeys.length : 0);
   const expectedMinimumConflicts =
     positiveInt(shape.remoteDriftPosts)
@@ -200,6 +224,21 @@ export function buildComplexSitePlannerProof({
           && typeof precondition.expectedHash === 'string'
           && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
     featuredImageGraphNoStaleBlocker: !shape.featuredImageGraph
+      || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
+    postParentGraphCountsPresent: !shape.postParentGraph
+      || (summarizeComplexSnapshot(localEditedSnapshot).postParentGraphParents >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).postParentGraphChildren >= 1),
+    postParentGraphPlanned: !shape.postParentGraph
+      || postParentGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+    postParentGraphHasLivePreconditions: !shape.postParentGraph
+      || postParentGraphResourceKeys.every((resourceKey) =>
+        readyPlan.preconditions?.some((precondition) =>
+          precondition.resourceKey === resourceKey
+          && precondition.checkedAgainst === 'live-remote'
+          && typeof precondition.expectedHash === 'string'
+          && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
+    postParentGraphNoStaleBlocker: !shape.postParentGraph
       || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
     taxonomyGraphCountsPresent: !shape.taxonomyGraph
       || (summarizeComplexSnapshot(localEditedSnapshot).taxonomyGraphTerms >= 1
@@ -259,6 +298,18 @@ export function buildComplexSitePlannerProof({
         mutation.resourceKey === featuredImageAttachmentResourceKey),
       thumbnailMetaPlanned: readyMutations.some((mutation) =>
         mutation.resourceKey === featuredImageMetaResourceKey),
+      staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
+        blocker.class === 'stale-wordpress-graph-identity').length,
+    } : null,
+    postParentGraphEvidence: shape.postParentGraph ? {
+      type: 'post-parent-page-closure',
+      parentResourceKey: postParentGraphParentResourceKey,
+      childResourceKey: postParentGraphChildResourceKey,
+      allResourcesPlanned: postParentGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+      childReferencesParent: Number(
+        localEditedSnapshot?.db?.wp_posts?.[`ID:${postParentGraphChildId}`]?.post_parent,
+      ) === postParentGraphParentId,
       staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
         blocker.class === 'stale-wordpress-graph-identity').length,
     } : null,
@@ -436,6 +487,14 @@ export function summarizeComplexSnapshot(snapshot) {
     featuredImageMeta: Object.values(postmeta).filter((row) =>
       String(row?.meta_key || '') === featuredImageMetaKey
       && String(row?.meta_value || '') === String(featuredImageAttachmentId)).length,
+    postParentGraphParents: Object.values(posts).filter((row) =>
+      Number(row?.ID) === postParentGraphParentId
+      && String(row?.post_name || '') === postParentGraphParentSlug
+      && Number(row?.post_parent) === 0).length,
+    postParentGraphChildren: Object.values(posts).filter((row) =>
+      Number(row?.ID) === postParentGraphChildId
+      && String(row?.post_name || '') === postParentGraphChildSlug
+      && Number(row?.post_parent) === postParentGraphParentId).length,
     taxonomyGraphTerms: Object.values(terms).filter((row) =>
       String(row?.slug || '') === taxonomyGraphTermSlug).length,
     taxonomyGraphTaxonomies: Object.values(termTaxonomy).filter((row) =>

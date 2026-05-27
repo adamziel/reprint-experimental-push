@@ -33,6 +33,7 @@ The first executable matrix lives in `test/push-planner.test.js`.
 | Local WordPress graph row references a stale remote-created post identity | Plan is `blocked`; the local `wp_postmeta` mutation is not emitted; the remote-created `wp_posts` row is kept; blocker evidence records relationship key, target resource key, hashes, and change kinds without raw post or meta payload values. | `blocks local postmeta references to stale remote-created post identity` |
 | Local production featured image attachment graph closure | The Brewcommerce-derived local production proof plans the same-plan attachment row `row:["wp_posts","ID:71901"]` and `_thumbnail_id` postmeta row `row:["wp_postmeta","post_id:71001:meta_key:_thumbnail_id"]` with live remote preconditions, zero stale graph blockers, a 24-mutation release receipt, and 80 durable DB-journal rows. | `npm run verify:release:local-production:complex-site:graph` |
 | Local production taxonomy graph closure | The Brewcommerce-derived local production proof plans the same-plan category term row `row:["wp_terms","term_id:72901"]`, term taxonomy row `row:["wp_term_taxonomy","term_taxonomy_id:72911"]`, post-term relationship row `row:["wp_term_relationships","object_id:71001|term_taxonomy_id:72911"]`, and marker termmeta row `row:["wp_termmeta","meta_id:72921"]` with live remote preconditions, zero stale graph blockers, a 26-mutation release receipt, and 88 durable DB-journal rows. | `npm run verify:release:local-production:complex-site:taxonomy-graph` |
+| Local production post-parent graph closure | The Brewcommerce-derived local production proof plans the same-plan parent page `row:["wp_posts","ID:71801"]` and child page `row:["wp_posts","ID:71802"]` with the child `post_parent` pointing at the planned parent, live remote preconditions, zero stale graph blockers, a 24-mutation release receipt, and 80 durable DB-journal rows. | `npm run verify:release:local-production:complex-site:post-parent-graph` |
 | Atomic plugin install is missing dependency | Plan is `blocked`; apply refuses. | `blocks an atomic plugin install when dependencies are absent` |
 | Atomic plugin dependency metadata includes private fields | Plan evidence records only normalized plugin dependency audit fields and omits raw dependency payloads from blockers and atomic-group dependencies. | `redacts raw plugin dependency metadata from blocker evidence` |
 | Plugin install and dependency are included together | All files, plugin metadata, and options apply as one atomic group. | `applies an atomic plugin install when dependencies are included in the same plan` |
@@ -135,12 +136,13 @@ The first executable matrix lives in `test/push-planner.test.js`.
   planner proof blocks a local `wp_postmeta.post_id` reference when the target
   `wp_posts` identity changed on the remote since the pull base, and it records
   hash-only relationship evidence. The local production graph proofs now cover
-  two stable same-plan fixtures: featured-image attachment plus `_thumbnail_id`
-  postmeta, and category term plus term taxonomy, post-term relationship, and
-  marker termmeta. Outside those narrow stable-ID fixtures, they do not prove
+  three stable same-plan fixtures: featured-image attachment plus
+  `_thumbnail_id` postmeta, category term plus term taxonomy, post-term
+  relationship, and marker termmeta, and parent page plus child page
+  `post_parent`. Outside those narrow stable-ID fixtures, they do not prove
   safe automatic rewriting for arbitrary attachments, GUIDs, nav menus, custom
-  taxonomies, term splitting, serialized blocks, `post_parent`, arbitrary
-  `wp_term_relationships`, arbitrary `wp_term_taxonomy`, arbitrary
+  taxonomies, term splitting, serialized blocks, arbitrary `post_parent`,
+  arbitrary `wp_term_relationships`, arbitrary `wp_term_taxonomy`, arbitrary
   `wp_termmeta`, cross-table create batches, or production importer/exporter
   identity maps.
 - Production DB-table journal and kill-process recovery tests around every

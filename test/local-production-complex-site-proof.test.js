@@ -19,6 +19,7 @@ const smallShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  postParentGraph: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -55,11 +56,25 @@ test('complex-site seed PHP can add a taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add a post parent graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    postParentGraph: true,
+  });
+
+  assert.match(php, /reprint-push-post-parent-graph-parent/);
+  assert.match(php, /reprint-push-post-parent-graph-child/);
+  assert.match(php, /post_parent'=>\$parent_post_id/);
+  assert.match(php, /if \(\$complex_post_parent_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_parent_graph = false/);
+});
+
 test('complex-site fixture shape can be expanded for journal-window evidence', () => {
   const shape = complexSiteFixtureShapeFromEnv({
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
   });
 
   assert.equal(shape.postCount, 25);
@@ -67,6 +82,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.fileCount, 3);
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
+  assert.equal(shape.postParentGraph, true);
 });
 
 test('complex-site planner proof reports dense counts, receipts prerequisites, and no-data-loss invariants', () => {
@@ -140,6 +156,30 @@ test('complex-site planner proof covers real taxonomy graph closure', () => {
   assert.equal(proof.invariants.taxonomyGraphCountsPresent, true);
   assert.equal(proof.invariants.taxonomyGraphPlanned, true);
   assert.equal(proof.invariants.taxonomyGraphHasLivePreconditions, true);
+});
+
+test('complex-site planner proof covers real post parent graph closure', () => {
+  const graphShape = { ...smallShape, postParentGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.postParentGraphParents, 0);
+  assert.equal(proof.counts.source.postParentGraphChildren, 0);
+  assert.equal(proof.counts.localEdited.postParentGraphParents, 1);
+  assert.equal(proof.counts.localEdited.postParentGraphChildren, 1);
+  assert.equal(proof.postParentGraphEvidence.type, 'post-parent-page-closure');
+  assert.equal(proof.postParentGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.postParentGraphEvidence.childReferencesParent, true);
+  assert.equal(proof.postParentGraphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.postParentGraphCountsPresent, true);
+  assert.equal(proof.invariants.postParentGraphPlanned, true);
+  assert.equal(proof.invariants.postParentGraphHasLivePreconditions, true);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -273,6 +313,29 @@ function syntheticComplexSnapshot(variant, shape) {
       post_id: 71001,
       meta_key: '_thumbnail_id',
       meta_value: '71901',
+    };
+  }
+
+  if (shape.postParentGraph && local) {
+    snapshot.db.wp_posts['ID:71801'] = {
+      ID: 71801,
+      post_title: 'Reprint Push Parent Graph Parent',
+      post_name: 'reprint-push-post-parent-graph-parent',
+      post_content: 'Local parent page used for same-plan post_parent graph proof.',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    snapshot.db.wp_posts['ID:71802'] = {
+      ID: 71802,
+      post_title: 'Reprint Push Parent Graph Child',
+      post_name: 'reprint-push-post-parent-graph-child',
+      post_content: 'Local child page whose post_parent points at the same-plan parent page.',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 71801,
+      post_author: 0,
     };
   }
 
