@@ -501,6 +501,9 @@ export async function runAuthenticatedHttpPush({
     ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, recoveryInspect)
     : null;
   const recoveryInspectLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
+  const recoveryInspectObservedAuthLifecycleFlagDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionLifecycleFlagDrift(recoveryInspect);
   const recoveryInspectAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(recoveryInspect)
     || hasProductionAuthSessionStatusDrift(recoveryInspect)
@@ -536,6 +539,12 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     };
     setAuthSessionBoundary(summary, summary.authSession);
+    return summary;
+  }
+  if (recoveryInspectObservedAuthLifecycleFlagDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = recoveryInspectObservedAuthLifecycleFlagDrift;
+    setDurableJournalBoundary(summary, 'recovery-inspect');
     return summary;
   }
   if (requireProductionAuthSession && hasProductionAuthSessionRevocationDrift(recoveryInspect)) {
