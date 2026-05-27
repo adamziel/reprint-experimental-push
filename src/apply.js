@@ -1325,6 +1325,7 @@ export function productionRecoverySupportReport(writer) {
 }
 
 function checkedDurableJournalBoundaryProof(writer, inspected) {
+  const staleClaimLineageProven = hasStaleClaimRejectionEvidence(inspected?.records);
   const inspectedBoundary = isStrictPlainObject(inspected?.leaseFenceContract)
     && !hasHiddenOwnStringKeys(inspected.leaseFenceContract)
     && typeof inspected.leaseFenceContract.boundary === 'string'
@@ -1364,10 +1365,18 @@ function checkedDurableJournalBoundaryProof(writer, inspected) {
       productionAdapter: inspectedBoundary,
     },
     writerLease: hasValidLeaseFenceWriterContract(inspected?.writerLeaseContract)
-      ? inspected.writerLeaseContract
+      ? {
+        ...inspected.writerLeaseContract,
+        staleClaimRejected: inspected.writerLeaseContract.staleClaimRejected === true
+          && staleClaimLineageProven,
+      }
       : null,
     leaseFence: hasValidLeaseFenceEnvelopeContract(inspected?.leaseFenceContract)
-      ? inspected.leaseFenceContract
+      ? {
+        ...inspected.leaseFenceContract,
+        staleClaimRejected: inspected.leaseFenceContract.staleClaimRejected === true
+          && staleClaimLineageProven,
+      }
       : null,
   };
 }
