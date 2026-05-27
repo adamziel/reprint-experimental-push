@@ -1,5 +1,8 @@
 import { resolveAuthSessionSourceCommand } from './auth-session-source-command.js';
-import { loadAuthSessionSource, normalizeSupportedAuthSessionSourceUrl } from './auth-session-source.js';
+import {
+  loadAuthSessionSourceFromRuntimeEnvironment,
+  normalizeSupportedAuthSessionSourceUrl,
+} from './auth-session-source.js';
 
 export function resolvePackagedProductionPluginSourceCommand({
   sourceUrl,
@@ -37,8 +40,8 @@ export function resolvePackagedProductionPluginAuthSessionSource({
 
   return {
     command,
-    source: loadAuthSessionSource(command, process.env, process.cwd(), {
-      allowedSourceUrl: sourceUrl,
+    source: loadAuthSessionSourceFromRuntimeEnvironment(command, process.env, process.cwd(), {
+      sourceUrl,
     }),
   };
 }

@@ -2463,6 +2463,74 @@ test('packaged production plugin auth/session source helper accepts an explicit 
   });
 });
 
+test('packaged production plugin auth/session source helper falls back to runtime env when the explicit sourceUrl is empty', () => {
+  const explicitLiveSourceUrl = 'https://example.com/push';
+  const previousSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL;
+  process.env.REPRINT_PUSH_SOURCE_URL = explicitLiveSourceUrl;
+
+  try {
+    const packaged = resolvePackagedProductionPluginAuthSessionSource({
+      sourceUrl: '',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: explicitLiveSourceUrl,
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        allowedSourceUrl: explicitLiveSourceUrl,
+      }),
+    });
+
+    assert.equal(packaged.source?.ok, true);
+    assert.deepEqual(packaged.source, {
+      ok: true,
+      sourceUrl: explicitLiveSourceUrl,
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    });
+  } finally {
+    if (previousSourceUrl === undefined) {
+      delete process.env.REPRINT_PUSH_SOURCE_URL;
+    } else {
+      process.env.REPRINT_PUSH_SOURCE_URL = previousSourceUrl;
+    }
+  }
+});
+
+test('packaged production plugin auth/session source helper falls back past invalid explicit sourceUrl values to runtime env', () => {
+  const explicitLiveSourceUrl = 'https://example.com/push';
+  const previousSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL;
+  process.env.REPRINT_PUSH_SOURCE_URL = explicitLiveSourceUrl;
+
+  try {
+    const packaged = resolvePackagedProductionPluginAuthSessionSource({
+      sourceUrl: ' https://invalid.example.com/push ',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: explicitLiveSourceUrl,
+        username: 'reprint_push_admin',
+        applicationPassword: 'reprint-push-admin-app-password',
+        allowedSourceUrl: explicitLiveSourceUrl,
+      }),
+    });
+
+    assert.equal(packaged.source?.ok, true);
+    assert.deepEqual(packaged.source, {
+      ok: true,
+      sourceUrl: explicitLiveSourceUrl,
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    });
+  } finally {
+    if (previousSourceUrl === undefined) {
+      delete process.env.REPRINT_PUSH_SOURCE_URL;
+    } else {
+      process.env.REPRINT_PUSH_SOURCE_URL = previousSourceUrl;
+    }
+  }
+});
+
 test('packaged production plugin auth/session request helper marks an explicit live source URL as requested', () => {
   const explicitLiveSourceUrl = 'https://example.com/push';
   const request = resolvePackagedProductionPluginAuthSessionRequest({
