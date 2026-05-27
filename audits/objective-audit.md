@@ -2,19 +2,19 @@
 
 ## Verdict
 
-- Audited commit: `f28ff529e542875510e9343f0314366f5526cd8d` (`Fail closed on malformed recovery auth identities`)
-- Previous audited reliable head: `401ee0b3ac3d17ef3599627e99ca4db906df8a83`
-- Latest reliable diff reviewed: `401ee0b3ac3d17ef3599627e99ca4db906df8a83..f28ff529e542875510e9343f0314366f5526cd8d`
+- Audited commit: `3ee9908847b2e2b89bad40abc4d0add4acd96731` (`Prioritize checked journal validation before retry proof`)
+- Previous audited reliable head: `f28ff529e542875510e9343f0314366f5526cd8d`
+- Latest reliable diff reviewed: `f28ff529e542875510e9343f0314366f5526cd8d..3ee9908847b2e2b89bad40abc4d0add4acd96731`
 - Reliable advanced since the supervisor baseline: `no`
-- Current critic head: `e816b6ec75bece7ef0edef4a6e123dba462b67e3`
+- Current critic head: `c355d08644a767e418fc716ef51c9d3315cfe109`
 - Critic verdict: `0/4`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 07:45:09 CEST (+0200)
-- Fresh remote heads re-polled after critic alignment:
-  - `origin/lane/reliable-executor` -> `f28ff529e542875510e9343f0314366f5526cd8d` (`Fail closed on malformed recovery auth identities`)
-  - `origin/lane/critic` -> `e816b6ec75bece7ef0edef4a6e123dba462b67e3` (`Classify reliable head f28ff529`)
+- Audit time: 2026-05-27 08:40:00 CEST (+0200)
+- Fresh remote heads re-polled before write-up:
+  - `origin/lane/reliable-executor` -> `3ee9908847b2e2b89bad40abc4d0add4acd96731` (`Prioritize checked journal validation before retry proof`)
+  - `origin/lane/critic` -> `c355d08644a767e418fc716ef51c9d3315cfe109` (`Classify reliable head 3ee99088`)
   - `origin/lane/independent-auditor` -> `2c77f2b52ffd4f74ca052e7ee700e3f578635652`
   - `origin/main` -> `1c7ccf9e8d5f6b6974f6ee4ceb92840d34391565`
 
@@ -22,23 +22,23 @@
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Recovery auth identity validation | `src/authenticated-http-push-client.js` now rejects malformed observed `auth.identity.userId` values during recovery inspection, keeps `userLogin` malformed handling, and threads the precise required-field description into preflight, dry-run, apply, recovery-inspect, replay, DB-journal, and drift summaries. | A production-owned endpoint that proves those auth/session identity checks are enforced on the real Reprint mutation boundary with live session issuance and readback. | Support-only |
-| Recovery-inspect fail-closed regression coverage | `test/authenticated-http-push-client.test.js` now covers malformed recovery-inspect `userLogin` and `userId` payloads even when the stricter production-session gate would not be the first failing condition, and asserts `AUTH_SESSION_LIFECYCLE_DRIFT` before the client proceeds to durable-journal readback. | One checked live run showing the same malformed identity refusal and exact evidence payload on the real endpoint, not only in the client test harness. | Support-only |
-| Production-owned auth/session lifecycle | `f28ff529` improves client-side malformed identity rejection, but it does not add a production auth/session issuer, live session store, or endpoint-owned session readback on the same mutation boundary. | One checked live run on the real endpoint proving auth/session issuance, readback, expiry or rotation handling, and stale-session refusal on that same boundary. | Blocked |
-| Durable journal ownership with lease fencing and restart-readable replay | The new tests stop earlier on malformed recovery auth identity drift, which is useful safety hardening, but they do not add production-owned journal storage, lease fencing, or restart-readable replay evidence on the real endpoint. | Real endpoint proof that the durable journal is production-owned, lease-fenced, crash-readable after restart, and tied to the same live boundary being audited. | Blocked |
-| Plugin-driver ownership | No plugin-driver contract, plugin-owned resource validator, or release-boundary plugin proof changed in `f28ff529`. | Real boundary proof for plugin-driver ownership and conservative blocking or validation of plugin-owned state on the release path. | Blocked |
-| Preserved rejected-remote evidence and first-mutation revalidation | `f28ff529` improves malformed recovery identity evidence with more precise `required` strings, but it still does not prove preserved rejected-remote evidence or apply-time revalidation before first mutation on a production-owned endpoint. | One checked live run on the real endpoint proving preserved rejected-remote evidence plus apply-time revalidation before first mutation on that same production boundary. | Blocked |
+| Checked journal validation ordering | `src/authenticated-http-push-client.js` now computes checked-journal acceptability before returning `PRESERVED_REMOTE_RETRY_REQUIRED`, so missing preserved-remote retry evidence cannot outrank an unproven checked journal or auth/session boundary. | A production-owned checked release path that proves the same ordering against the real Reprint mutation boundary, not only the client verifier. | Support-only |
+| Durable journal boundary precedence | When preserved-remote retry evidence is missing, the verifier now returns `DURABLE_JOURNAL_NOT_PROVEN` first if journal proof is still not acceptable, and only reports the retry requirement after journal proof is already acceptable. | Live durable-journal ownership, restart readability, and lease fencing on the real endpoint being audited. | Support-only |
+| Auth/session drift precedence | The new regression test keeps malformed or drifted DB-journal auth/session readback ahead of preserved-remote retry proof, so checked release verification fails closed on the earlier auth/session boundary. | Production-owned auth/session issuance, readback, expiry or rotation, and same-boundary stale-session refusal. | Support-only |
+| Production-owned auth/session lifecycle | `3ee99088` improves support-side ordering in the checked verifier, but it does not add a production auth/session issuer, session store, or live endpoint-owned session readback on the real mutation boundary. | One checked live run on the real endpoint proving auth/session issuance, readback, expiry or rotation handling, and stale-session refusal on that same boundary. | Blocked |
+| Durable journal ownership with lease fencing and restart-readable replay | The commit strengthens failure ordering around `dbJournalProofIsAcceptable(...)`, but it does not add production-owned journal storage, lease fencing, or restart-readable replay evidence on the real endpoint. | Real endpoint proof that the durable journal is production-owned, lease-fenced, crash-readable after restart, and tied to the same live boundary being audited. | Blocked |
+| Plugin-driver ownership, preserved rejected-remote evidence, and first-mutation revalidation | No plugin-driver contract, preserved rejected-remote artifact, or apply-time same-boundary revalidation primitive changed in `3ee99088`. | One checked live run on the real endpoint proving plugin-driver ownership, preserved rejected-remote evidence, and apply-time revalidation before the first mutation on that same production boundary. | Blocked |
 
 ## Release Blockers
 
-1. `f28ff529` is useful auth/session drift hardening in the authenticated HTTP push client, especially for malformed recovery-inspect `userId` and `userLogin` payloads.
-2. The diff is still limited to client-side validation and regression tests. It does not create a production-owned auth/session lifecycle, a real endpoint-owned durable journal, or plugin-driver ownership evidence on the release boundary.
-3. The current critic lane is aligned for this head and independently keeps `f28ff529` at `0/4`.
+1. `3ee99088` is useful support-side ordering hardening: checked journal validation now stays ahead of preserved-remote retry proof, and auth/session drift on DB-journal readback still fails before retry proof is considered.
+2. The diff is still limited to `src/authenticated-http-push-client.js` and `test/authenticated-http-push-client.test.js`. It does not create a production-owned auth/session lifecycle, a real endpoint-owned durable journal, plugin-driver ownership, preserved rejected-remote evidence, or apply-time revalidation before first mutation on that same boundary.
+3. The current critic lane is aligned for this head and independently keeps `3ee99088` at `0/4`.
 4. The required checked live release primitive is unchanged: one run on the real Reprint endpoint must prove auth/session issuance and readback, durable restart-readable journal ownership with lease fencing, plugin-driver ownership, preserved rejected-remote evidence, and apply-time revalidation before the first mutation on that same boundary.
 
 ## Critic Alignment
 
-The current critic verdict at `e816b6ec75bece7ef0edef4a6e123dba462b67e3` remains aligned with this audit. Both lanes treat `f28ff529` as useful malformed recovery auth identity hardening while keeping the overall release-gate verdict at `0/4`.
+The current critic verdict at `c355d08644a767e418fc716ef51c9d3315cfe109` remains aligned with this audit. Both lanes treat `3ee99088` as useful checked-journal and auth/session ordering hardening while keeping the overall release-gate verdict at `0/4`.
 
 ## Next Primitive
 
