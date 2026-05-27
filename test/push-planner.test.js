@@ -34776,7 +34776,7 @@ test('blocks remote-only wp navigation drift while preserving a matching indepen
   assert.equal(blocker.resourceKind, 'navigation');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'remote-only-drift');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:50"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -34832,7 +34832,7 @@ test('blocks remote-only nav menu item drift while preserving a matching indepen
   assert.equal(blocker.resourceKind, 'navigation');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'remote-only-drift');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:13"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -34888,7 +34888,7 @@ test('blocks converged nav menu item drift while preserving a matching independe
   assert.equal(blocker.resourceKind, 'navigation');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blocker.unsupportedState, 'converged-drift');
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:52"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -34935,7 +34935,7 @@ test('blocks local nav menu item graph resources while preserving remote-only pl
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:50"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'Navigation and menu graph resources are not yet supported by the planner.');
   assert.equal(pluginDecision.decision, 'keep-remote');
   assert.equal(planJson.includes('Local nav menu item content'), false);
   assert.equal(planJson.includes('Base nav menu item content'), false);
@@ -35109,7 +35109,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:52"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:11"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(matchingEdit.decision, 'already-in-sync');
   assert.equal(matchingEdit.change.localChange, 'update');
   assert.equal(matchingEdit.change.remoteChange, 'update');
@@ -35164,7 +35164,7 @@ test('blocks local post-parent references to a same-plan created nav menu item w
   assert.equal(plan.conflicts.length, 0);
   assert.equal(blocker.class, 'unsupported-navigation-resource');
   assert.equal(blocker.resourceKey, targetResourceKey);
-  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:50"] is created in the same plan as a menu item parent target that depends on it, and identity rewriting is not yet supported.');
+  assert.equal(blocker.reason, 'WordPress graph mutation row:["wp_posts","ID:11"] is created in the same plan as a post parent target that depends on it, and identity rewriting is not yet supported.');
   assert.equal(planJson.includes('Local same-plan nav menu item'), false);
   assert.equal(planJson.includes('Local child post content'), false);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
@@ -35283,8 +35283,10 @@ test('blocks local term-relationship object references to a same-plan created po
   delete remote.files['wp-content/plugins/forms/forms.php'];
 
   const plan = planFor(base, local, remote);
-  const evidence = plan.blockers[0] || plan.conflicts[0];
-  const reference = evidence.references[0];
+  const evidence = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const graphBlocker = plan.blockers.find((entry) => entry.resourceKey === targetResourceKey);
+  const relationshipBlocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = relationshipBlocker.references[0];
   const matchingEdit = decisionFor(plan, 'row:["wp_posts","ID:1"]');
   const planJson = JSON.stringify(plan);
 
@@ -35292,12 +35294,20 @@ test('blocks local term-relationship object references to a same-plan created po
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(evidence.class, 'unsupported-revision-resource');
+  assert.equal(evidence.class, 'stale-wordpress-graph-identity');
   assert.equal(evidence.resourceKey, resourceKey);
-  assert.equal(evidence.reason, 'Revision graph resources are not yet supported by the planner.');
+  assert.equal(evidence.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(graphBlocker.class, 'stale-wordpress-graph-identity');
   assert.equal(graphBlocker.resourceKey, targetResourceKey);
   assert.equal(graphBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(
+    graphBlocker.reason,
+    'WordPress graph mutation row:["wp_posts","ID:7"] is created in the same plan as a term relationship post target that depends on it, and identity rewriting is not yet supported.',
+  );
+  assert.equal(
+    relationshipBlocker.reason,
+    'WordPress graph mutation row:["wp_term_relationships","object_id:7,term_taxonomy_id:5"] references a term relationship post identity without proven identity mapping or reference rewriting.',
+  );
   assert.equal(reference.relationshipKey, 'wp_term_relationships.object_id');
   assert.equal(reference.relationshipType, 'term-relationship-object');
   assert.equal(reference.sourceResourceKey, resourceKey);
@@ -35553,7 +35563,7 @@ test('blocks local term-relationship object references to a same-plan created re
   assert.equal(plan.summary.mutations, 0);
   assert.equal(mutationFor(plan, resourceKey), undefined);
   assert.equal(decisionFor(plan, targetResourceKey), undefined);
-  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.class, 'unsupported-revision-resource');
   assert.equal(relationshipBlocker.resourceKey, relationshipResourceKey);
   assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
   assert.equal(graphBlocker.class, 'unsupported-revision-resource');
