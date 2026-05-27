@@ -1232,6 +1232,20 @@ function reprint_push_lab_rest_checked_event_summary_conflicts(
         $checked_value = $checked_event_summary[$key] ?? null;
         if (
             reprint_push_lab_db_journal_is_positive_int($premerge_value)
+            && !reprint_push_lab_db_journal_is_positive_int($checked_value)
+        ) {
+            return true;
+        }
+
+        if (
+            !array_key_exists($key, $premerge_summary)
+            && reprint_push_lab_db_journal_is_positive_int($checked_value)
+        ) {
+            return true;
+        }
+
+        if (
+            reprint_push_lab_db_journal_is_positive_int($premerge_value)
             && reprint_push_lab_db_journal_is_positive_int($checked_value)
             && (int) $premerge_value !== (int) $checked_value
         ) {
@@ -1305,6 +1319,13 @@ function reprint_push_lab_rest_checked_idempotency_evidence_conflicts(
         if (
             !array_key_exists($key, $premerge_evidence)
             && reprint_push_lab_db_journal_is_positive_int($checked_value)
+        ) {
+            return true;
+        }
+
+        if (
+            reprint_push_lab_db_journal_is_positive_int($premerge_value)
+            && !reprint_push_lab_db_journal_is_positive_int($checked_value)
         ) {
             return true;
         }
