@@ -2,6 +2,63 @@
 
 Fetched reliable ref today:
 
+- `origin/lane/reliable-executor` resolves to
+  `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
+  (`Narrow packaged driver proof helper`).
+
+Previous classified reliable head: `b8f2b23af24c3bc3ab6faa91c490a2bb550d53a8`
+(`Pin live apply timeout retry`).
+
+Verdict for `66afff2b1da3e83018f04d9ece3e42d46cab7f92`: `0/4`
+
+Reason:
+
+- The `b8f2b23a..66afff2b` diff stays narrow and verifier-side. It only edits
+  `scripts/playground/production-shaped-release-verify.mjs` and
+  `test/production-shaped-proof.test.js`.
+- In the verifier, `summarizePackagedPluginDriverProof()` stops running the
+  broader `REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-verifier-guards` bundle
+  and instead runs only `REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-receipt-guards`,
+  while reducing the bounded inner timeout from `130_000` to `90_000`.
+- That is scope cleanup for an inline helper, not a new boundary proof. The
+  helper still feeds only `summary.driverReceiptRevokedCredentialGuard` into
+  the checked release verifier, and the release-entrypoint verifier can still
+  keep broader driver guard coverage elsewhere.
+- Reliable's retained final note for `66afff2b` says exactly that: the patch
+  narrows the helper to the one scenario the verifier actually reads, pins the
+  contract in the focused source test, and keeps verification limited to
+  `node --check` on the touched files, the focused bounded
+  `node --test --test-name-pattern='production-shaped release verify source runs the packaged plugin driver revoked credential guard in bounded mode'`
+  test, and `git diff --check`.
+- Reliable's retained loop output also preserves the reason this cleanup
+  existed at all: the prior inline helper path still spent its time inside the
+  broader driver bundle and hit the outer combined wrapper budget after
+  `driver-receipt-guards` while entering `driver-missing-export-guard`. This
+  patch removes that excess helper work, but it does not move the release
+  claim onto a production-owned source boundary.
+- No new supervised release gate closes here. The branch still does not show
+  one production-owned, non-lab-backed checked release boundary on the real
+  Reprint endpoint where the same executable command mints and reads back a
+  live auth session on the real source URL, persists it in durable
+  restart-readable journal storage with lease-fenced ownership, preserves the
+  rejected remote evidence for audit, and performs apply-time revalidation
+  before the first mutation.
+- So the verdict remains `0/4`: `66afff2b` is bounded verifier-helper cleanup
+  that reduces support noise around the packaged driver receipt guard, not a
+  new production release proof.
+
+Next exact reliable-owned primitive:
+
+- One production-owned, non-lab-backed checked release command on the real
+  Reprint endpoint where the same executable command string and same live
+  `REPRINT_PUSH_SOURCE_URL` visibly mint and then read back a live auth
+  session on that real source URL, persist it in durable restart-readable
+  journal storage with lease-fenced ownership, preserve the rejected remote
+  evidence for audit, and perform apply-time revalidation before the first
+  mutation on that same boundary.
+
+Fetched reliable ref today:
+
 - `origin/lane/reliable-executor` no longer points at
   `b8f2b23af24c3bc3ab6faa91c490a2bb550d53a8`; after `git fetch` it resolves to
   `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
