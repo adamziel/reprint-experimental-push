@@ -1217,25 +1217,6 @@ export async function runAuthenticatedHttpPush({
   const requiredPreservedRemoteRetryAttempts = requiredPreservedRemoteRetryPath
     ? summary.readRetryEvidence?.[requiredPreservedRemoteRetryPath] || 1
     : 1;
-  if (simulatePreservedRemoteRetryPath && requiredPreservedRemoteRetryAttempts < 2) {
-    summary.code = 'PRESERVED_REMOTE_RETRY_REQUIRED';
-    summary.replayAndRetry = {
-      required: simulatePreservedRemoteRetryPath,
-      observed: 'missing-transient-retry',
-      retryAttempts: requiredPreservedRemoteRetryAttempts,
-      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
-    };
-    setReplayAndRetryBoundary(summary);
-    return summary;
-  }
-  if (simulatePreservedRemoteRetryPath) {
-    summary.replayAndRetry = {
-      required: simulatePreservedRemoteRetryPath,
-      observed: simulatePreservedRemoteRetryPath,
-      retryAttempts: requiredPreservedRemoteRetryAttempts,
-      verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
-    };
-  }
   const dbJournalAuthSessionDrift = requireProductionAuthSession && (
     hasProductionAuthSessionTypeDrift(dbJournal)
     || hasProductionAuthSessionStatusDrift(dbJournal)
@@ -1404,6 +1385,34 @@ export async function runAuthenticatedHttpPush({
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
+  const dbJournalAccepted = dbJournalProofIsAcceptable(summary.dbJournal, {
+    requireCheckedBoundary: requireProductionAuthSession,
+    requireStaleClaimRejected: simulateStaleClaimRetry,
+  });
+  if (simulatePreservedRemoteRetryPath && requiredPreservedRemoteRetryAttempts < 2) {
+    summary.replayAndRetry = {
+      required: simulatePreservedRemoteRetryPath,
+      observed: 'missing-transient-retry',
+      retryAttempts: requiredPreservedRemoteRetryAttempts,
+      verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
+    };
+    if (!dbJournalAccepted) {
+      summary.code = 'DURABLE_JOURNAL_NOT_PROVEN';
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
+    summary.code = 'PRESERVED_REMOTE_RETRY_REQUIRED';
+    setReplayAndRetryBoundary(summary, { durableJournalProven: true });
+    return summary;
+  }
+  if (simulatePreservedRemoteRetryPath) {
+    summary.replayAndRetry = {
+      required: simulatePreservedRemoteRetryPath,
+      observed: simulatePreservedRemoteRetryPath,
+      retryAttempts: requiredPreservedRemoteRetryAttempts,
+      verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+    };
+  }
 
   summary.ok = apply.status === 200
     && apply.body?.ok === true
@@ -1419,20 +1428,14 @@ export async function runAuthenticatedHttpPush({
     && !replayAuthEnvelopeDrift
     && dbJournal.status === 200
     && dbJournal.body?.ok === true
-    && dbJournalProofIsAcceptable(summary.dbJournal, {
-      requireCheckedBoundary: requireProductionAuthSession,
-      requireStaleClaimRejected: simulateStaleClaimRetry,
-    })
+    && dbJournalAccepted
     && summary.after?.finalMatchesLocal === true;
   if (!summary.ok) {
     const replayIdempotency = replay.body?.idempotency;
     const authEnvelopeDrift = applyAuthEnvelopeDrift || replayAuthEnvelopeDrift;
     const journalProofFailed = dbJournal.status === 200
       && dbJournal.body?.ok === true
-      && !dbJournalProofIsAcceptable(summary.dbJournal, {
-        requireCheckedBoundary: requireProductionAuthSession,
-        requireStaleClaimRejected: simulateStaleClaimRetry,
-      });
+      && !dbJournalAccepted;
     const replayEquivalenceFailed = replay.status === 200
       && replay.body?.ok === true
       && replayIdempotency
@@ -2982,7 +2985,8 @@ function setDurableJournalBoundary(summary, phase) {
   };
 }
 
-function setReplayAndRetryBoundary(summary) {
+function setReplayAndRetryBoundary(summary, options = {}) {
+  const durableJournalProven = options.durableJournalProven === true;
   if (summary.boundary) {
     return;
   }
@@ -2996,10 +3000,14 @@ function setReplayAndRetryBoundary(summary) {
       observed: 'missing-transient-retry',
       verdict: 'PRESERVED_REMOTE_RETRY_REQUIRED',
     },
-    durableJournal: {
-      storageLeaseFence: 'production durable journal storage, lease fencing, and replay wiring are not yet proven on the checked release boundary',
-      verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-    },
+    durableJournal: durableJournalProven
+      ? {
+          verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+        }
+      : {
+          storageLeaseFence: 'production durable journal storage, lease fencing, and replay wiring are not yet proven on the checked release boundary',
+          verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+        },
   };
 }
 
