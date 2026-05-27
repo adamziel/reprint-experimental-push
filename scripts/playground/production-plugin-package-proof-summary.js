@@ -381,6 +381,26 @@ export function buildProductionPluginPackageProofSummary(
       requestedStatus: requestedScenarioStatuses['driver-release-proof'] ?? null,
       requestedBundleStatus: requestedBundleStatuses.driverReleaseProof ?? null,
     },
+    verifierGuards: {
+      requested: normalizedRequestedScenarios === null
+        ? true
+        : normalizedRequestedScenarios.includes('driver-verifier-guards'),
+      selected: selectedScenarios === null
+        || scenarioGroups['driver-verifier-guards'].every((scenario) => selectedScenarios.has(scenario)),
+      ok: bundleResults.driverVerifierGuards === 'passed',
+      status: bundleResults.driverVerifierGuards,
+      receiptStatus: scenarioResults.driverReceiptGuards,
+      exportStatus: scenarioResults.driverMissingExportGuard,
+      applyStatus: scenarioResults.driverMissingApplyGuard,
+      validateStatus: scenarioResults.driverMissingValidateGuard,
+      missingNameStatus: scenarioResults.driverMissingNameGuard,
+      missingPluginOwnerStatus: scenarioResults.driverMissingPluginOwnerGuard,
+      missingTableStatus: scenarioResults.driverMissingTableGuard,
+      duplicateNameStatus: scenarioResults.driverDuplicateNameGuard,
+      duplicateTableStatus: scenarioResults.driverDuplicateTableGuard,
+      requestedStatus: requestedScenarioStatuses['driver-verifier-guards'] ?? null,
+      requestedBundleStatus: requestedBundleStatuses.driverVerifierGuards ?? null,
+    },
     bundles: bundleResults,
     scenarios: scenarioResults,
   };

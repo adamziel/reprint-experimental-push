@@ -665,6 +665,102 @@ test('plugin-driver proof summary exposes bounded release-proof bundle status', 
   });
 });
 
+test('plugin-driver proof summary reports requested verifier bundle verdicts directly', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      package: {
+        plugin: 'reprint-push/reprint-push.php',
+        mountedAs: '/wordpress/wp-content/plugins/reprint-push',
+      },
+      routes: {
+        namespace: 'reprint/v1',
+        profile: 'production-shaped',
+        labNamespaceDisabled: true,
+        authBootstrapDisabled: true,
+        labBacked: false,
+      },
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+      driverDuplicateNameGuard: {
+        duplicateDriverName: true,
+      },
+      driverDuplicateTableGuard: {
+        duplicateTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-verifier-guards'],
+      selectedScenarios: new Set(scenarioGroups['driver-verifier-guards']),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, true);
+  assert.equal(summary.requestedBundlesSatisfied, true);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-verifier-guards': 'passed',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverVerifierGuards: 'passed',
+  });
+  assert.deepEqual(summary.verifierGuards, {
+    requested: true,
+    selected: true,
+    ok: true,
+    status: 'passed',
+    receiptStatus: 'passed',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'passed',
+    duplicateTableStatus: 'passed',
+    requestedStatus: 'passed',
+    requestedBundleStatus: 'passed',
+  });
+});
+
 test('plugin-driver proof summary dedupes repeated requested bundle aliases', () => {
   const summary = buildProductionPluginPackageProofSummary(
     {
@@ -1519,6 +1615,93 @@ test('plugin-driver proof summary exposes missing requested release bundle state
     routeStatus: 'passed',
     receiptStatus: 'passed',
     deleteStatus: 'skipped',
+    requestedStatus: 'missing',
+    requestedBundleStatus: 'missing',
+  });
+});
+
+test('plugin-driver proof summary marks incomplete requested verifier bundle as missing', () => {
+  const summary = buildProductionPluginPackageProofSummary(
+    {
+      driverUpdateApply: {
+        applied: 1,
+      },
+      driverDeleteGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverUpdateValidationGuard: {
+        dryRunRejectedCode: 'INVALID_PLAN',
+      },
+      driverReceiptPlanBindingGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptExpiryGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+      },
+      driverReceiptIdentityGuard: {
+        applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRotatedCredentialGuard: {
+        rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+      },
+      driverReceiptRevokedCredentialGuard: {
+        applyRejectedCode: 'reprint_push_lab_auth_required',
+      },
+      driverExportGuard: {
+        missingExportRowsCallback: true,
+      },
+      driverApplyGuard: {
+        missingApplyRowCallback: true,
+      },
+      driverValidateGuard: {
+        missingValidateMutationCallback: true,
+      },
+      driverMissingNameGuard: {
+        missingDriverName: true,
+      },
+      driverPluginOwnerGuard: {
+        missingPluginOwner: true,
+      },
+      driverMissingTableGuard: {
+        missingTable: true,
+      },
+    },
+    {
+      requestedScenarios: ['driver-verifier-guards'],
+      selectedScenarios: new Set([
+        'driver-receipt-guards',
+        'driver-missing-export-guard',
+        'driver-missing-apply-guard',
+        'driver-missing-validate-guard',
+        'driver-missing-name-guard',
+        'driver-missing-plugin-owner-guard',
+        'driver-missing-table-guard',
+      ]),
+    },
+  );
+
+  assert.equal(summary.requestedScenariosSatisfied, false);
+  assert.equal(summary.requestedBundlesSatisfied, false);
+  assert.deepEqual(summary.requestedScenarioStatuses, {
+    'driver-verifier-guards': 'missing',
+  });
+  assert.deepEqual(summary.requestedBundleStatuses, {
+    driverVerifierGuards: 'missing',
+  });
+  assert.deepEqual(summary.verifierGuards, {
+    requested: true,
+    selected: false,
+    ok: false,
+    status: 'missing',
+    receiptStatus: 'passed',
+    exportStatus: 'passed',
+    applyStatus: 'passed',
+    validateStatus: 'passed',
+    missingNameStatus: 'passed',
+    missingPluginOwnerStatus: 'passed',
+    missingTableStatus: 'passed',
+    duplicateNameStatus: 'skipped',
+    duplicateTableStatus: 'skipped',
     requestedStatus: 'missing',
     requestedBundleStatus: 'missing',
   });
