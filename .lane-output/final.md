@@ -1,12 +1,11 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-27 01:26:11 CEST (+0200)
-- Branch head before this pass: `05a2db92c291cbc160e28cb88081e26f525262f8`
-- This pass fixed a production-recovery retry bug on the lane-owned journal wrapper. `applyPlan()` decides whether to append `journal-retry-opened` from `writer.nextSequence`, but the production recovery adapter did not expose that live sequence. Production retries were therefore reopening as fresh `journal-opened` records instead of append-only retries. The wrapper now exposes live `nextSequence`, and focused planner coverage locks canonical artifact refs plus inherited-caller-ref rejection on `journal-retry-opened`.
+- Timestamp: 2026-05-27 04:13:21 CEST (+0200)
+- Branch head before this pass: `86c3e4faa55bb22d071dc01092f5e39cabee10ca`
+- This pass pinned a recovery-owned reopen contract that was already enforced in `openProductionRecoveryJournal()`: direct top-level reopen options must be enumerable. The new additive planner test proves a consumed-claim reopen fails closed when `remoteArtifactPath` is supplied only through a non-enumerable top-level option key, so reliable cannot silently regress that owned-remote-artifact boundary while it keeps wiring release-path consumption.
 
 Changed files:
 
-- [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js)
 - [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
 - [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
 
@@ -14,11 +13,10 @@ Commands:
 
 - `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
 - `git status --short --branch`
-- `grep -n "journal-retry-opened" test/push-planner.test.js`
-- `sed -n '2016,2105p' src/apply.js`
-- `sed -n '2298,2358p' src/apply.js`
-- `grep -n "function openRecoveryJournal\\|nextSequence" src/recovery-journal.js`
-- `timeout 120s node --test --test-name-pattern 'production durable journal apply records canonical artifact refs on journal-retry-opened|production durable journal apply ignores inherited caller artifact refs on journal-retry-opened|durable retry after an old-remote failure reopens append-only without duplicating targets' test/push-planner.test.js`
+- `sed -n ...` on `AGENTS.md`, `supervision/README.md`, `supervision/lanes/no-data-loss-recovery.md`, recent `.lane-output/final*.md`, `src/recovery-journal.js`, and `test/push-planner.test.js`
+- `grep -n ...` / `grep -RniE ...` on recovery journal reopen, lease, and artifact-ref terms
+- `node --check test/push-planner.test.js`
+- `timeout 120s node --test --test-name-pattern='openProductionRecoveryJournal fails closed when a consumed claim is reopened with a hidden top-level remoteArtifactPath' test/push-planner.test.js`
 - `git diff --check`
 
 Push result:
@@ -27,8 +25,8 @@ Push result:
 
 Worktree status:
 
-- Dirty tracked files are expected for this handoff until commit/push runs: `.lane-output/final.md`, `src/recovery-journal.js`, `test/push-planner.test.js`.
+- Dirty tracked files are expected for this handoff until commit/push runs: `.lane-output/final.md`, `test/push-planner.test.js`.
 
 Next supervisor nudge:
 
-- Recovery closed a real production retry gap: production recovery writers now emit `journal-retry-opened` on append-only retries, with canonical artifact refs preserved. Reliable can treat production retry-opened artifact continuity as closed on the recovery side and keep its next code pass on the remaining gate blockers: production auth/session lifecycle, preserved-remote retry, or deeper production-owned durable-journal semantics on the checked boundary.
+- Recovery does not expose a new adapter/API gap from the latest reliable fencing work. This lane has now pinned another reopen-time fail-closed boundary on the production adapter surface and can stay parked unless reliable exposes a recovery-owned mismatch around release-path consumption of `openProductionRecoveryJournal()`, owned remote artifact persistence, or restart-readable production storage semantics.
