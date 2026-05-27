@@ -2914,11 +2914,90 @@ test('production-shaped authenticated push fails closed when production auth ses
   }
 });
 
+test('production-shaped authenticated push evaluates session expiry against the run clock instead of wall time', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2025-06-01T00:00:00Z',
+          },
+        },
+        session: { id: 'psh_01j00000000000000000000000' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth: {
+          identity: { userLogin: 'reprint_push_admin' },
+          session: {
+            type: 'production-auth-session',
+            status: 'active',
+            id: 'psh_01j00000000000000000000000',
+            expiresAt: '2025-06-01T00:00:00Z',
+          },
+        },
+        receipt: { receiptHash: 'receipt-01' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-01-verifier-clock-expiry',
+      routeProfile: 'production-shaped',
+      requireProductionAuthSession: true,
+      dryRunOnly: true,
+      now: new Date('2025-01-01T00:00:00Z'),
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.code, undefined);
+    assert.equal(summary.authSessionLifecycleTrace?.[0]?.expired, false);
+    assert.equal(summary.authSessionLifecycleTrace?.[1]?.expired, false);
+    assert.equal(summary.authSessionLifecycleTrace?.[0]?.expiresAt, '2025-06-01T00:00:00Z');
+    assert.equal(summary.authSessionLifecycleTrace?.[1]?.expiresAt, '2025-06-01T00:00:00Z');
+    assert.equal(seen.length, 4);
+    assert.match(seen[0].url, /\/wp-json\/reprint\/v1\/push\/preflight$/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production auth session expires after preflight', async () => {
   const originalFetch = global.fetch;
-  const originalDateNow = Date.now;
   const seen = [];
-  Date.now = () => new Date('2024-01-01T00:00:00Z').getTime();
   global.fetch = async (url, options) => {
     seen.push({ url: String(url), options });
     const pathname = String(url);
@@ -2968,7 +3047,6 @@ test('production-shaped authenticated push fails closed when production auth ses
       });
     }
     if (pathname.includes('/apply')) {
-      Date.now = () => new Date('2035-01-01T00:00:00Z').getTime();
       return new Response(JSON.stringify({
         ok: true,
         auth: {
@@ -2977,7 +3055,7 @@ test('production-shaped authenticated push fails closed when production auth ses
             type: 'production-auth-session',
             status: 'active',
             id: 'psh_01j00000000000000000000000',
-            expiresAt: '2030-01-01T00:00:00Z',
+            expiresAt: '2020-01-01T00:00:00Z',
           },
         },
         idempotency: {
@@ -3001,6 +3079,7 @@ test('production-shaped authenticated push fails closed when production auth ses
       applicationPassword: credential.password,
       idempotencyKey: 'idem-01-expiry-after-preflight',
       routeProfile: 'production-shaped',
+      now: new Date('2024-01-01T00:00:00Z'),
     });
 
     assert.equal(summary.ok, false);
@@ -3015,14 +3094,14 @@ test('production-shaped authenticated push fails closed when production auth ses
     assert.equal(summary.authSessionLifecycleTrace[2].expired, true);
     assert.deepEqual(summary.authSession, {
       required: 'unexpired',
-      observed: '2030-01-01T00:00:00Z',
+      observed: '2020-01-01T00:00:00Z',
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
     });
     assert.deepEqual(summary.authSessionLifecycle.expired, {
       id: 'psh_01j00000000000000000000000',
       type: 'production-auth-session',
       status: 'active',
-      expiresAt: '2030-01-01T00:00:00Z',
+      expiresAt: '2020-01-01T00:00:00Z',
       authUser: 'reprint_push_admin',
       expired: true,
       revoked: false,
@@ -3037,14 +3116,13 @@ test('production-shaped authenticated push fails closed when production auth ses
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: {
         required: 'unexpired',
-        observed: '2030-01-01T00:00:00Z',
+        observed: '2020-01-01T00:00:00Z',
         verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       },
     });
     assert.equal(seen.length, 4);
   } finally {
     global.fetch = originalFetch;
-    Date.now = originalDateNow;
   }
 });
 
