@@ -7632,6 +7632,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rol
         'queue-memory-ceiling-does-not-match-queue-budget',
         'memory-ceiling-match-visible-without-queue-budget-visibility',
         'memory-ceiling-visible-without-queue-budget-visibility',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         'queue-headroom-visible-without-queue-budget-visibility',
         'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
         'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -7652,6 +7653,7 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rol
         'queue-memory-ceiling-does-not-match-queue-budget',
         'memory-ceiling-match-visible-without-queue-budget-visibility',
         'memory-ceiling-visible-without-queue-budget-visibility',
+        'staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint',
         'queue-headroom-visible-without-queue-budget-visibility',
         'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
         'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
@@ -7688,7 +7690,44 @@ test('guarded benchmark carries hidden queue-budget visibility blockers into rol
   assert.ok(blockers.includes('queue-headroom-visible-without-queue-budget-visibility'));
   assert.ok(blockers.includes('receipt-cursor-memory-headroom-visible-without-queue-budget-visibility'));
   assert.ok(blockers.includes('receipt-cursor-queue-slack-visible-without-queue-budget-visibility'));
+  assert.ok(
+    blockers.includes('staging-disk-headroom-visible-without-visible-receipt-cursor-pause-footprint'),
+  );
   assert.ok(blockers.includes('backpressure-evidence-incomplete'));
+  assert.deepEqual(
+    details.rejectedFastPaths.map((entry) => ({
+      id: entry.id,
+      rejectedGate: entry.rejectedGate,
+      blockerRefs: entry.blockerRefs,
+    })),
+    [
+      {
+        id: 'compressed-remote-index-and-cached-row-batch-receipts-skips-release-bundle-commit-after-pause-and-backpressure',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-backpressure',
+          'queue-pause-without-resource-headroom-safe-receipt-cursor-slack',
+          'queue-pause-without-consistent-receipt-cursor-slack',
+          'queue-pause-without-memory-safe-receipt-cursor-slack',
+        ],
+      },
+      {
+        id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+        rejectedGate: 'recovery',
+        blockerRefs: [
+          'queue-budget-not-visible',
+          'memory-ceiling-match-visible-without-queue-budget-visibility',
+          'memory-ceiling-visible-without-queue-budget-visibility',
+          'queue-headroom-visible-without-queue-budget-visibility',
+          'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+          'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+        ],
+      },
+    ],
+  );
+  assert.deepEqual(details.rejectedFastPathGateSummary, [
+    { rejectedGate: 'recovery', count: 2 },
+  ]);
 });
 
 test('guarded benchmark carries hidden raw memory-ceiling visibility blockers into rollout summaries under visible production capability evidence', () => {

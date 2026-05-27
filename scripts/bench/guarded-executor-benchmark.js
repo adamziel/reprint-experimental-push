@@ -104,6 +104,17 @@ const ROLLOUT_REJECTED_FAST_PATH_SPECS = Object.freeze([
       'receipt-cursor-queue-slack-visible-without-memory-headroom-visibility',
     ]),
   }),
+  Object.freeze({
+    id: 'cached-receipt-cursor-and-queue-budget-match-skips-backpressure-pause-after-retry',
+    blockerRefs: Object.freeze([
+      'queue-budget-not-visible',
+      'memory-ceiling-match-visible-without-queue-budget-visibility',
+      'memory-ceiling-visible-without-queue-budget-visibility',
+      'queue-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-memory-headroom-visible-without-queue-budget-visibility',
+      'receipt-cursor-queue-slack-visible-without-queue-budget-visibility',
+    ]),
+  }),
 ]);
 
 export class BenchmarkClaimError extends Error {
