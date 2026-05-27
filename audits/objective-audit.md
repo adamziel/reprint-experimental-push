@@ -2,43 +2,54 @@
 
 ## Verdict
 
-- Audited commit: `4a8447f5074873b27d90c91b35ea0bc11f62c911` (`Preserve explicit auth session expiry markers`)
-- Previous audited reliable head: `5be6341164ce667bd026b2e4ae92bc10f688b431`
+- Audited commit: `e9c9e36980b738f584eadf113ff5599ce885cd39` (`Fail closed on stale-claim lifecycle drift`)
+- Previous audited reliable head: `4a8447f5074873b27d90c91b35ea0bc11f62c911`
+- Latest reliable diff reviewed: `4a8447f5074873b27d90c91b35ea0bc11f62c911..e9c9e36980b738f584eadf113ff5599ce885cd39`
+- Current critic head: `b65ef92b468745ef9baba7c12b5bc65938b2a977`
+- Critic verdict: `0/4`
 - Release-gate verdict: `0/4`
 - The project is **not yet releasable as a production WordPress push path**.
 
-- Audit time: 2026-05-27 06:45:37 CEST (+0200)
+- Audit time: 2026-05-27 06:51:25 CEST (+0200)
 - Fresh remote heads re-polled at audit time:
-  - `origin/lane/reliable-executor` -> `4a8447f5074873b27d90c91b35ea0bc11f62c911` (`Preserve explicit auth session expiry markers`)
-  - `origin/lane/critic` -> `9093d1da917c335b121fcc5fe13605a4e1049cf6`
-  - `origin/lane/independent-auditor` -> `21452583f2632d5321b2e39fd7cf809cb27b48de`
-  - `origin/lane/progress-publisher` -> `facd9c627ef8cbbc04aa96dd5e3208230649ace1`
-  - `origin/main` -> `10af6be1c44773652e774b5812f9139a68bef51a`
+  - `origin/lane/reliable-executor` -> `e9c9e36980b738f584eadf113ff5599ce885cd39` (`Fail closed on stale-claim lifecycle drift`)
+  - `origin/lane/critic` -> `b65ef92b468745ef9baba7c12b5bc65938b2a977` (`Classify reliable head e9c9e369`)
+  - `origin/lane/independent-auditor` -> `2a5dc60ad1f22c07572674c70ad92b73db0d8beb` (`Audit reliable head 4a8447f5`)
+  - `origin/lane/progress-publisher` -> `facd9c627ef8cbbc04aa96dd5e3208230649ace1` (`Refresh public progress for 5be63411`)
+  - `origin/main` -> `10af6be1c44773652e774b5812f9139a68bef51a` (`Refresh live progress page`)
 
 ## Evidence Table
 
 | Requirement | Current proof | Missing proof | Verdict impact |
 | --- | --- | --- | --- |
-| Explicit auth/session expiry markers | `4a8447f5` preserves explicit expired markers and field evidence in auth/session lifecycle summaries, with coverage that distinguishes expired and rotated observations from preserved reads. | A production-owned real endpoint proving the same lifecycle evidence on the actual checked release path. | Blocked |
-| Release-boundary auth/session lifecycle accounting | `5be63411` still preserves the prior hardening: lifecycle summary failure checks are limited to observations up to the selected release-boundary read. | A production-owned real endpoint proving that boundary on the actual release path, not only the production-shaped proof surface. | Blocked |
-| Checked journal claim-key coherence | `c2288a42` still preserves the prior hardening: writer leases and nested lease-fence writer leases must carry the same claim key hash as the active journal claim. | A production-owned real endpoint proving the same claim-key coherence in durable journal ownership outside Playground/package scaffolding. | Blocked |
-| Replay auth-session equivalence | `bc467993` still preserves the prior hardening: replay equivalence compares revoked, cleaned-up, rotated, preserved, and expired auth-session lifecycle bits, and fails closed on `authSessionPreserved` drift. | A production-owned real endpoint proving replay preserves auth/session lifecycle state across the actual release boundary. | Blocked |
-| Checked durable-journal proof requirement | `6734e836` still preserves the prior hardening: the checked release path requires `checkedDurableJournalBoundarySatisfied()` when production auth/session checking is enabled, so weak `/db-journal` evidence no longer satisfies the path. | A production-owned real endpoint proving the same checked durable-journal boundary outside Playground/package scaffolding. | Blocked |
-| Checked release auth/session read | `ef5e52ce` still preserves the prior hardening: auth/session lifecycle summaries prefer `journal` or `replay` reads over later recovery-inspect observations. | A production-owned real endpoint proving the same release-boundary auth/session read outside Playground/package scaffolding. | Blocked |
-| Durable restart-readable journal ownership | The prior checked journal contract now includes claim-key coherence, but this head does not move durable journal ownership onto a real endpoint. | Durable journal ownership with lease-fenced restart-readable behavior outside Playground/package-only scaffolding. | Blocked |
-| Production auth/session lifecycle | The commit improves lifecycle proof shape, but it does not create production auth/session issuance/readback on a real source boundary. | A checked real-endpoint command proving the same executable path mints and later reads back a live auth session on the actual production source boundary. | Blocked |
-| Apply-time revalidation before first mutation | The explicit live proof still asserts apply revalidation, but this commit does not move that proof onto a production-owned source endpoint. | A checked real-endpoint proof showing that same apply-time revalidation happens before the first mutation on the production-owned boundary. | Blocked |
-| Evidence quality | The diff adds coverage for explicit expired boolean markers and status-only rotated markers in production-shaped auth/session lifecycle summaries. | Production ownership of the source route, auth session, durable journal, and replay evidence remains unproven. | Support-only |
+| Stale-claim lifecycle drift refusal | `e9c9e369` hardens `summarizeAuthSessionLifecycle()` and `durableJournalClaimContractMatches()` so inconsistent stale-claim status, event, and lifecycle flags fail closed instead of looking coherent (`src/authenticated-http-push-client.js`, `src/recovery-journal.js`). | One production-owned real Reprint endpoint proving the same stale-claim lifecycle on the checked release path instead of mocked production-shaped responses. | Support-only |
+| Checked stale-claim regression coverage | `e9c9e369` adds a production-shaped client test that fabricates `/recovery/inspect` and `/db-journal` responses where `claim.status` and `claim.activeClaimEvent` say stale rejection but `claim.staleClaimRejected` stays `false`; the verifier still returns `DURABLE_JOURNAL_NOT_PROVEN` (`test/authenticated-http-push-client.test.js`). | Live endpoint evidence, not mocked fetch fixtures, showing the real boundary rejects the same drift before mutation. | Support-only |
+| Checked journal claim contract | `e9c9e369` extends the checked journal contract so `status`, `activeClaimEvent`, and `staleClaimRejected` must agree before the durable-journal boundary can count as satisfied (`test/recovery-journal.test.js`). | Durable restart-readable journal ownership with lease fencing proven on the real endpoint boundary. | Support-only |
+| Live auth/session issuance and readback | The new commit only inspects and summarizes more lifecycle metadata in production-shaped evidence. It does not mint or read back a live auth/session from a production-owned Reprint endpoint. | A checked real-endpoint run proving live auth/session issuance, preserved readback, and lifecycle ownership on that same boundary. | Blocked |
+| Durable restart-readable journal ownership | The new commit strengthens internal claim-shape validation, but it still relies on packaged production-shaped/lab-scoped journal evidence. | Durable restart-readable journal ownership with lease fencing on the production-owned boundary. | Blocked |
+| Preserved rejected-remote evidence | The new tests exercise replayed apply and stale-claim metadata drift, but they do not prove rejected-remote evidence preservation on the real endpoint. | Real boundary evidence that rejected remote state is preserved and auditable end to end. | Blocked |
+| Apply-time revalidation before first mutation | The client still refuses inconsistent checked metadata, but this commit does not add production proof that the same boundary revalidates before the first mutation. | Real-endpoint apply-time revalidation before first mutation on the same production-owned boundary. | Blocked |
+| Evidence quality | The commit is hardening of proof shape and fail-closed contracts. It is not a new production mutation slice. | Production ownership of the source route, auth/session lifecycle, journal storage, rejected-remote evidence, and first-mutation revalidation. | Support-only |
 
 ## Release Blockers
 
-1. `4a8447f5` is material proof-shape hardening because explicit expired markers survive lifecycle summarization and are distinguished from preserved release-boundary reads.
-2. The proof still depends on production-shaped helper surfaces rather than one production-owned source boundary on the real Reprint endpoint.
-3. There is still no checked real-endpoint command proving production-owned auth/session issuance and readback on the actual source boundary.
-4. The durable-journal path still lacks live production-owned restart-readable storage and lease-fenced replay evidence on the release boundary.
+1. `e9c9e369` is good fail-closed hardening, but it is still proof-shape hardening around production-shaped mocked responses and contract checks.
+2. The checked path remains production-shaped/lab-scoped scaffolding rather than a proven production-owned Reprint endpoint boundary.
+3. There is still no checked live run proving auth/session issuance and later readback on that same boundary.
+4. There is still no checked live run proving durable restart-readable journal ownership with lease fencing on that same boundary.
+5. There is still no checked live run proving preserved rejected-remote evidence plus apply-time revalidation before the first mutation on that same boundary.
+
+## Critic Alignment
+
+The current critic verdict at `b65ef92b468745ef9baba7c12b5bc65938b2a977` matches this audit: `e9c9e369` improves fail-closed stale-claim lifecycle accounting, but it does not move the release gates because the proof still stops at production-shaped verifier scaffolding instead of a production-owned endpoint.
 
 ## Next Primitive
 
-The next exact production primitive remains one checked live release command on the real Reprint endpoint that shows the exact live `REPRINT_PUSH_SOURCE_URL`, the same auth-session source command at issuance and readback, durable-journal `ownsJournal: true` plus `restartReadable: true` under lease-fenced ownership, preserved rejected-remote evidence, and apply-time revalidation before the first mutation.
+The next exact production primitive remains one checked live release command on the real Reprint endpoint that proves all of the following together on the same boundary:
 
-The next focused regression test should fail unless one real-endpoint proof artifact contains all of those fields together.
+1. live auth/session issuance and readback
+2. durable restart-readable journal ownership with lease fencing
+3. preserved rejected-remote evidence
+4. apply-time revalidation before the first mutation
+
+Until that exists, the release-gate verdict stays `0/4`.
