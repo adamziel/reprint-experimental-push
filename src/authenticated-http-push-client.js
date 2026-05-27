@@ -406,6 +406,9 @@ export async function runAuthenticatedHttpPush({
     ? resolveObservedProductionAuthIdentityDrift(preflightAuthEnvelope, apply)
     : null;
   const applyLifecycleTerminationDrift = resolveObservedAuthSessionLifecycleTerminationSummary(summary);
+  const applyObservedAuthLifecycleFlagDrift = requireProductionAuthSession
+    ? null
+    : resolveObservedAuthSessionLifecycleFlagDrift(apply);
   const applyAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   if (apply.status !== 200 || apply.body?.ok !== true) {
     summary.code = apply.body?.code || 'APPLY_FAILED';
@@ -452,6 +455,12 @@ export async function runAuthenticatedHttpPush({
   if (applyAuthEnvelopeDrift) {
     summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
     summary.authSession = applyAuthEnvelopeDrift;
+    setDurableJournalBoundary(summary, 'apply');
+    return summary;
+  }
+  if (applyObservedAuthLifecycleFlagDrift) {
+    summary.code = 'AUTH_SESSION_LIFECYCLE_DRIFT';
+    summary.authSession = applyObservedAuthLifecycleFlagDrift;
     setDurableJournalBoundary(summary, 'apply');
     return summary;
   }
