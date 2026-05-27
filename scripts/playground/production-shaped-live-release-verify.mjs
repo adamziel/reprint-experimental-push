@@ -6,20 +6,30 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
+import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-production-plugin-source-command.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
 const remoteBaseFixturePath = path.join(repoRoot, 'fixtures/playground/remote-base.blueprint.json');
 const serverStartupTimeoutMs = 30_000;
-const innerVerifyTimeoutMs = 90_000;
 const readinessProbeIntervalMs = 500;
 
 const credentials = {
   username: releaseVerifyFixtureCredentials.username,
   applicationPassword: releaseVerifyFixtureCredentials.applicationPassword,
 };
+const packagedBoundaryRequested = shouldRequestPackagedProductionPluginAuthSession({
+  requireProductionAuthSession: process.env.REPRINT_PUSH_REQUIRE_PRODUCTION_AUTH_SESSION === '1',
+  authSessionSourceCommand: process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '',
+  liveSourceUrl: process.env.REPRINT_PUSH_SOURCE_URL || process.env.REPRINT_PUSH_REMOTE_URL || '',
+  username: process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '',
+  applicationPassword: process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '',
+  fixtureUsername: credentials.username,
+  fixtureApplicationPassword: credentials.applicationPassword,
+});
+const innerVerifyTimeoutMs = packagedBoundaryRequested ? 180_000 : 90_000;
 
-await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
+if (packagedBoundaryRequested) {
   const verify = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
     cwd: repoRoot,
     encoding: 'utf8',
@@ -28,12 +38,6 @@ await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteSe
     maxBuffer: 1024 * 1024 * 20,
     env: {
       ...process.env,
-      REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
-      REPRINT_PUSH_USERNAME: credentials.username,
-      REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
-      REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
       NODE_NO_WARNINGS: '1',
     },
   });
@@ -44,7 +48,34 @@ await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteSe
   assert.equal(verify.error, undefined, verify.error?.stack || verify.stderr || verify.stdout);
   assert.equal(verify.signal, null, verify.stderr || verify.stdout);
   assert.equal(verify.status, 0, verify.stderr || verify.stdout);
-});
+} else {
+  await withPlaygroundServer('remote-base', remoteBaseFixturePath, async (remoteServer) => {
+    const verify = spawnSync(process.execPath, ['scripts/playground/production-shaped-release-verify.mjs'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      timeout: innerVerifyTimeoutMs,
+      killSignal: 'SIGKILL',
+      maxBuffer: 1024 * 1024 * 20,
+      env: {
+        ...process.env,
+        REPRINT_PUSH_SOURCE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_REMOTE_URL: remoteServer.baseUrl,
+        REPRINT_PUSH_USERNAME: credentials.username,
+        REPRINT_PUSH_APPLICATION_PASSWORD: credentials.applicationPassword,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_USER: credentials.username,
+        REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD: credentials.applicationPassword,
+        NODE_NO_WARNINGS: '1',
+      },
+    });
+
+    process.stdout.write(verify.stdout || '');
+    process.stderr.write(verify.stderr || '');
+
+    assert.equal(verify.error, undefined, verify.error?.stack || verify.stderr || verify.stdout);
+    assert.equal(verify.signal, null, verify.stderr || verify.stdout);
+    assert.equal(verify.status, 0, verify.stderr || verify.stdout);
+  });
+}
 
 async function withPlaygroundServer(name, blueprintPath, run) {
   const server = await startPlaygroundServer(name, blueprintPath);

@@ -12,7 +12,11 @@ const packageJson = readJson('package.json');
 const protocolReadme = fs.readFileSync(path.join(repoRoot, 'fixtures/protocol/README.md'), 'utf8');
 const protocolDocs = fs.readFileSync(path.join(repoRoot, 'docs/protocol.md'), 'utf8');
 const executorDocs = fs.readFileSync(path.join(repoRoot, 'docs/executor.md'), 'utf8');
-const verifyReleaseTimeoutMs = 150_000;
+// The checked release entrypoint now proves the packaged production-plugin
+// boundary end-to-end, including driver guards and recovery proof, so the
+// fixture budget must cover the full bounded release path instead of the older
+// shorter live-only wrapper.
+const verifyReleaseTimeoutMs = 300_000;
 const verifyReleaseSpawnOptions = {
   cwd: repoRoot,
   encoding: 'utf8',
@@ -4605,7 +4609,7 @@ test('push fixture index keeps the production proof bundle grouped around the ne
   assert.ok(readme.includes('pull-to-push bridge proofs'));
 });
 
-test('verify:release stays pinned to the checked release entrypoint and proves the live release boundary', () => {
+test('verify:release stays pinned to the checked release entrypoint and proves the packaged release boundary', () => {
   const proof = runVerifyReleaseWithRetry({
     NODE_NO_WARNINGS: '1',
   }, { retries: 1 });
@@ -4613,11 +4617,12 @@ test('verify:release stays pinned to the checked release entrypoint and proves t
   assert.equal(proof.status, 0, proof.stderr);
   assert.match(proof.stdout, /"ok": true/);
   assert.match(proof.stdout, /"preflight": \{\s*"status": 200,\s*"authSessionType": "production-auth-session"/);
+  assert.match(proof.stdout, /"routeProfile": \{\s*"profile": "production-shaped"[\s\S]*"labBacked": false/);
   assert.match(proof.stdout, /"releaseProof": \{\s*"ok": true,\s*"mode": "apply"/);
   assert.match(proof.stdout, /"durableJournal": \{\s*"proof": \{\s*"status": 0,\s*"journal": \{/);
   assert.match(
     proof.stdout,
-    /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "LIVE_RELEASE_BOUNDARY_OK"/,
+    /"boundary": \{\s*"firstRemainingProductionBoundary": null,\s*"status": "checked",\s*"verdict": "PACKAGED_RELEASE_BOUNDARY_OK"/,
   );
   assert.match(proof.stdout, /"checkedAccepted": true/);
 });
