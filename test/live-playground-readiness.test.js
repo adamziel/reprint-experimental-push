@@ -343,6 +343,40 @@ test('packaged preflight retryability follows the freshest startup probe context
     }),
     true,
   );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        timedOut: true,
+      },
+    }),
+    true,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      packagedStartup: true,
+      indexProbe: {
+        timedOut: true,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+    }),
+    false,
+  );
+  assert.equal(
+    packagedProductionPluginPreflightTerminal(labAuthRequiredPreflight, {
+      indexProbe: {
+        timedOut: true,
+      },
+    }),
+    true,
+  );
 
   assert.equal(
     packagedProductionPluginPreflightRetryable(labAuthRequiredPreflight, {
