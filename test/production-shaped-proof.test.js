@@ -1194,6 +1194,30 @@ test('production-shaped release verify can force a matching non-local production
   );
 });
 
+test('production-shaped release verify preserves an explicit matching non-local live source URL unless source override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+  assert.deepEqual(
+    resolveAuthSessionSourceCredentials(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp',
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    },
+  );
+});
+
 test('auth-session source metadata drift fails closed on production-source warnings', () => {
   assert.deepEqual(
     describeAuthSessionSourceMetadataDrift({
@@ -1471,6 +1495,37 @@ test('production-shaped release verify keeps explicit direct credentials ahead o
     ),
     {
       liveSourceUrl: 'http://127.0.0.1:8080',
+      username: 'trusted-runtime-username',
+      applicationPassword: 'trusted-runtime-password',
+      credentials: {
+        username: 'trusted-runtime-username',
+        password: 'trusted-runtime-password',
+      },
+    },
+  );
+});
+
+test('production-shaped release verify request state preserves an explicit matching non-local live source URL before source override is required', () => {
+  const source = {
+    ok: true,
+    sourceUrl: 'https://example.test/wp/?session=1#preserved',
+    username: 'reprint_push_admin',
+    applicationPassword: 'reprint-push-admin-app-password',
+  };
+
+  assert.deepEqual(
+    resolveAuthSessionRequestState(
+      {
+        liveSourceUrl: 'https://example.test/wp',
+        username: 'trusted-runtime-username',
+        applicationPassword: 'trusted-runtime-password',
+        fallbackUsername: 'stale-fallback-username',
+        fallbackApplicationPassword: 'stale-fallback-password',
+      },
+      source,
+    ),
+    {
+      liveSourceUrl: 'https://example.test/wp',
       username: 'trusted-runtime-username',
       applicationPassword: 'trusted-runtime-password',
       credentials: {
