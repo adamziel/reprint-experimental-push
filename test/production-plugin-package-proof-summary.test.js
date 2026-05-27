@@ -3639,6 +3639,192 @@ test('plugin-driver proof summary attach helper repairs stale receipt-registrati
   assert.equal(repairedProof.modeProof?.requestedSatisfied, false);
 });
 
+test('plugin-driver proof summary attach helper repairs stale release alias scenario statuses when the nested mode proof is current', () => {
+  const fullReleaseSelection = new Set([
+    'driver-release-proof',
+    ...scenarioGroups['driver-release-proof'],
+  ]);
+  const rawSummary = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: Array.from(fullReleaseSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverMutationProofOnly'],
+    selectedScenarios: ['driverMutationProofOnly'],
+    resolvedMode: 'driverMutationProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedStatus: 'passed',
+    requestedScenarioStatuses: {
+      driverMutationProofOnly: 'passed',
+    },
+    requestedConcreteScenarios: ['core-package-routes'],
+    requestedConcreteScenarioStatuses: {
+      'core-package-routes': 'passed',
+    },
+    requestedScenariosSatisfied: true,
+    requestedConcreteScenariosSatisfied: true,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverMutationProofOnly'],
+    selectedScenarios: ['driverMutationProofOnly'],
+    resolvedMode: 'driverMutationProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.deepEqual(
+    repairedProof.requestedScenarioStatuses,
+    repairedProof.modeProof?.requestedScenarioStatuses,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarios,
+    repairedProof.modeProof?.requestedConcreteScenarios,
+  );
+  assert.deepEqual(
+    repairedProof.requestedConcreteScenarioStatuses,
+    repairedProof.modeProof?.requestedConcreteScenarioStatuses,
+  );
+  assert.equal(repairedProof.requestedStatus, undefined);
+  assert.equal(repairedProof.requestedScenariosSatisfied, false);
+  assert.equal(
+    repairedProof.requestedConcreteScenariosSatisfied,
+    repairedProof.modeProof?.requestedConcreteScenariosSatisfied,
+  );
+  assert.deepEqual(repairedProof.modeProof?.requestedScenarioStatuses, {
+    'driver-release-proof': 'missing',
+  });
+  assert.equal(repairedProof.modeProof?.requestedStatus, 'missing');
+  assert.equal(repairedProof.modeProof?.requestedScenariosSatisfied, false);
+});
+
+test('plugin-driver proof summary attach helper repairs stale release alias requestedSatisfied when the nested mode proof is current', () => {
+  const fullReleaseSelection = new Set([
+    'driver-release-proof',
+    ...scenarioGroups['driver-release-proof'],
+  ]);
+  const rawSummary = {
+    mode: 'driverReleaseProof',
+    canonicalMode: 'driver-release-proof',
+    requestedScenarios: ['driver-release-proof'],
+    selectedScenarios: Array.from(fullReleaseSelection).sort(),
+    routes: {
+      namespace: 'reprint/v1',
+      profile: 'production-shaped',
+      labNamespaceDisabled: true,
+      authBootstrapDisabled: true,
+      labBacked: false,
+    },
+    cli: {
+      ok: true,
+    },
+    final: {
+      finalMatchesLocal: true,
+    },
+    driverDeleteGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverUpdateValidationGuard: {
+      dryRunRejectedCode: 'INVALID_PLAN',
+    },
+    driverReceiptPlanBindingGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptExpiryGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_EXPIRED',
+    },
+    driverReceiptIdentityGuard: {
+      applyRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRotatedCredentialGuard: {
+      rotatedCredentialRejectedCode: 'AUTH_RECEIPT_MISMATCH',
+    },
+    driverReceiptRevokedCredentialGuard: {
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+    },
+    driverDeleteApply: {
+      deletedAfterApply: true,
+    },
+  };
+
+  const currentProof = resolveProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverMutationProofOnly'],
+    selectedScenarios: ['driverMutationProofOnly'],
+    resolvedMode: 'driverMutationProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+  rawSummary.modeProof = currentProof.modeProof;
+  rawSummary.pluginDriverProof = {
+    ...currentProof,
+    requestedSatisfied: true,
+    modeProof: {
+      ...currentProof.modeProof,
+    },
+  };
+
+  const repairedProof = attachProductionPluginPackagePluginDriverProof(rawSummary, {
+    requestedScenarios: ['driverMutationProofOnly'],
+    selectedScenarios: ['driverMutationProofOnly'],
+    resolvedMode: 'driverMutationProofOnly',
+    canonicalMode: 'driver-release-proof',
+  });
+
+  assert.notEqual(repairedProof, currentProof);
+  assert.equal(repairedProof, rawSummary.pluginDriverProof);
+  assert.equal(rawSummary.modeProof, repairedProof.modeProof);
+  assert.equal(repairedProof.requestedSatisfied, undefined);
+  assert.equal(repairedProof.modeProof?.requestedSatisfied, false);
+});
+
 test('plugin-driver proof summary rebuilds a mismatched attached pluginDriverProof for the requested alias', () => {
   const rawSummary = {
     mode: 'driverMutationProof',
