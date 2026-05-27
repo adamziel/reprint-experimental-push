@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPushPlan } from '../../src/planner.js';
 import { digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -25,6 +26,10 @@ const fixtures = {
   local: 'fixtures/playground/local-edited.blueprint.json',
   remoteChanged: 'fixtures/playground/remote-changed.blueprint.json',
 };
+const unfilteredGraphResourceKeys = [
+  'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+  'row:["wp_posts","ID:2001"]',
+];
 
 const snapshots = Object.fromEntries(
   Object.entries(fixtures).map(([name, fixture]) => [
@@ -32,7 +37,13 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
-const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const readyLocalSnapshot = snapshots.local;
+const readyPlan = createPushPlan({
+  base: snapshots.base,
+  local: readyLocalSnapshot,
+  remote: snapshots.base,
+});
+assertUnfilteredReadyPlan(readyPlan, 'authenticated CLI push smoke ready plan');
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-cli-push-'));
 const basePath = path.join(tmpDir, 'base.json');
@@ -551,13 +562,36 @@ function snapshotWithPostTitle(snapshot, title) {
   return next;
 }
 
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
+function assertUnfilteredReadyPlan(plan, label) {
+  if (plan.status !== 'ready') {
+    throw new Error(`${label} must be ready with the full local snapshot; refusing to run a filtered smoke.\n${
+      JSON.stringify(planReadinessDiagnostic(plan), null, 2)
+    }`);
   }
-  return next;
+
+  const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  for (const resourceKey of unfilteredGraphResourceKeys) {
+    assert.ok(mutationKeys.has(resourceKey), `${label} missing unfiltered graph mutation ${resourceKey}`);
+  }
+}
+
+function planReadinessDiagnostic(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutationKeys: plan.mutations.map((mutation) => mutation.resourceKey),
+    blockers: plan.blockers.map((blocker) => ({
+      class: blocker.class,
+      resourceKey: blocker.resourceKey,
+      reason: blocker.reason,
+      resolutionPolicy: blocker.resolutionPolicy,
+      references: (blocker.references || []).map((reference) => ({
+        relationshipKey: reference.relationshipKey,
+        targetResourceKey: reference.targetResourceKey,
+        targetSupport: reference.targetSupport,
+      })),
+    })),
+  };
 }
 
 function visibleSurface(snapshot) {

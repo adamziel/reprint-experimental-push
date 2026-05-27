@@ -42,6 +42,10 @@ const fixtures = {
   local: 'fixtures/playground/local-edited.blueprint.json',
   remoteChanged: 'fixtures/playground/remote-changed.blueprint.json',
 };
+const unfilteredGraphResourceKeys = [
+  'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
+  'row:["wp_posts","ID:2001"]',
+];
 
 const snapshots = Object.fromEntries(
   Object.entries(fixtures).map(([name, fixture]) => [
@@ -49,7 +53,7 @@ const snapshots = Object.fromEntries(
     exportSnapshot(name, path.join(repoRoot, fixture)),
   ]),
 );
-const readyLocalSnapshot = withoutUnmappedGraphPostmeta(snapshots.local);
+const readyLocalSnapshot = snapshots.local;
 
 const readyPlan = createPushPlan({
   base: snapshots.base,
@@ -58,7 +62,7 @@ const readyPlan = createPushPlan({
   now: fixedNow,
 });
 
-assert.equal(readyPlan.status, 'ready');
+assertUnfilteredReadyPlan(readyPlan, 'authenticated HTTP push smoke ready plan');
 assert.equal(readyPlan.summary.conflicts, 0);
 assert.equal(readyPlan.summary.blockers, 0);
 assertReadyPlanResources(readyPlan);
@@ -1284,13 +1288,36 @@ function assertVisibleSurfaceNotEqual(actual, expected, label) {
   assert.notEqual(digest(visibleSurface(actual)), digest(visibleSurface(expected)), `${label} mismatch`);
 }
 
-function withoutUnmappedGraphPostmeta(snapshot) {
-  const next = JSON.parse(JSON.stringify(snapshot));
-  delete next.db?.wp_postmeta?.['post_id:2001:meta_key:_reprint_push_forms_schema'];
-  if (next.db?.wp_postmeta && Object.keys(next.db.wp_postmeta).length === 0) {
-    delete next.db.wp_postmeta;
+function assertUnfilteredReadyPlan(plan, label) {
+  if (plan.status !== 'ready') {
+    throw new Error(`${label} must be ready with the full local snapshot; refusing to run a filtered smoke.\n${
+      JSON.stringify(planReadinessDiagnostic(plan), null, 2)
+    }`);
   }
-  return next;
+
+  const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  for (const resourceKey of unfilteredGraphResourceKeys) {
+    assert.ok(mutationKeys.has(resourceKey), `${label} missing unfiltered graph mutation ${resourceKey}`);
+  }
+}
+
+function planReadinessDiagnostic(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutationKeys: plan.mutations.map((mutation) => mutation.resourceKey),
+    blockers: plan.blockers.map((blocker) => ({
+      class: blocker.class,
+      resourceKey: blocker.resourceKey,
+      reason: blocker.reason,
+      resolutionPolicy: blocker.resolutionPolicy,
+      references: (blocker.references || []).map((reference) => ({
+        relationshipKey: reference.relationshipKey,
+        targetResourceKey: reference.targetResourceKey,
+        targetSupport: reference.targetSupport,
+      })),
+    })),
+  };
 }
 
 function visibleSurface(snapshot) {
@@ -1308,6 +1335,7 @@ function assertReadyPlanResources(plan) {
     'row:["wp_options","option_name:reprint_push_forms_fixture"]',
     'row:["wp_options","option_name:reprint_push_plugin_payload"]',
     'row:["wp_postmeta","post_id:1001:meta_key:_reprint_push_forms_schema"]',
+    'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]',
     'row:["wp_posts","ID:1001"]',
     'row:["wp_posts","ID:2001"]',
   ];
