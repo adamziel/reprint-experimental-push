@@ -3913,6 +3913,26 @@ test('packaged release verifier readiness helper fails closed when signed prefli
       },
     },
     {
+      label: 'cleaned-up auth session flag',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias auth session flag',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
+      },
+    },
+    {
       label: 'expired auth session',
       session: {
         id: 'session_123',
@@ -8225,6 +8245,26 @@ test('packaged production plugin smoke readiness helper fails closed when signed
         status: 'cleaned_up',
         type: 'production-auth-session',
         expiresAt: '2099-01-01T00:00:00Z',
+      },
+    },
+    {
+      label: 'cleaned-up auth session flag',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanedUp: true,
+      },
+    },
+    {
+      label: 'cleanup alias auth session flag',
+      session: {
+        id: 'session_123',
+        status: 'active',
+        type: 'production-auth-session',
+        expiresAt: '2099-01-01T00:00:00Z',
+        cleanup: true,
       },
     },
     {
