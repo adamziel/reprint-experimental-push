@@ -13276,6 +13276,36 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
   });
 });
 
+test('checked db journal attachment fails closed on conflicting accepted inline writer-lease claim identity instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.writerLease.claimId = 'conflicting-active-claim-id';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline writer-lease claim-key hash instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.writerLease.claimKeyHash = 'conflicting-active-claim-key-hash';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.writerLease, inlineJournal.writerLease);
+});
+
 test('checked db journal attachment fails closed on conflicting accepted inline top-level lease-fence flags instead of silently normalizing them', { skip: !hasPhp }, () => {
   const result = runAttachCheckedDbJournalContract(
     {
@@ -13759,6 +13789,36 @@ test('checked db journal attachment fails closed on conflicting accepted inline 
       staleClaimRejected: false,
     },
   });
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline nested writer-lease claim identity instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.leaseFence.writerLease.claimId = 'conflicting-nested-active-claim-id';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
+});
+
+test('checked db journal attachment fails closed on conflicting accepted inline nested writer-lease claim-key hash instead of silently normalizing it', { skip: !hasPhp }, () => {
+  const inlineJournal = buildAcceptedInlineDbJournal();
+  inlineJournal.leaseFence.writerLease.claimKeyHash = 'conflicting-nested-active-claim-key-hash';
+
+  const result = runAttachCheckedDbJournalContract(
+    { ok: true, dbJournal: inlineJournal },
+    buildCheckedDbJournalSummary(),
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.dbJournal.acceptedOnCheckedBoundary, false);
+  assert.deepEqual(parsed.dbJournal.leaseFence, inlineJournal.leaseFence);
 });
 
 test('checked db journal attachment fails closed on missing accepted inline ownership restart readability instead of backfilling it from checked evidence', { skip: !hasPhp }, () => {
