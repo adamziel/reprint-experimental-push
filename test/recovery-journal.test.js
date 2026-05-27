@@ -1481,6 +1481,7 @@ test('production recovery journal compatibility overload supports reliable relea
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: false,
+    claimHash: recoveryClaimHash(claimId),
   });
   assert.deepEqual(inspection.journal.leaseFenceContract, {
     boundary: 'filesystem-compare-rename',
@@ -1507,6 +1508,7 @@ test('production recovery journal compatibility overload supports reliable relea
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: false,
+    claimHash: recoveryClaimHash(claimId),
   });
 
   assert.throws(() => {
@@ -4482,6 +4484,7 @@ test('production recovery journal consumption surfaces stale claim advancement a
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: true,
+    claimHash: recoveryClaimHash('claim-2'),
   });
 });
 
@@ -4659,6 +4662,7 @@ test('production recovery journal records stale-claim rejection evidence before 
     monotonicSequence: true,
     restartReadable: true,
     staleClaimRejected: true,
+    claimHash: recoveryClaimHash('claim-active'),
   });
 
   const persisted = readRecoveryJournal(filePath);

@@ -1,37 +1,56 @@
 No Data Loss Recovery handoff:
 
-- Timestamp: 2026-05-27 07:07:04 CEST (+0200)
-- Branch head at handoff: `d35f6cb42922e68ab612095861fe5b8270c29002`
+- Timestamp: 2026-05-27 10:38:34 CEST (+0200)
+- Branch head at handoff: `4fbd06759`
 
 What changed:
 
-- Tightened the shared checked durable-journal matcher in [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js) so `checkedDurableJournalBoundarySatisfied()` now requires an explicit `ownership.supportedSurface === 'production-recovery-journal-adapter'` marker before the checked boundary can stay green.
-- Surfaced that same checked adapter marker from `productionRecoverySupportReport()` in [src/apply.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js), so downstream release-path consumers see the supported surface on the checked-boundary proof instead of inferring it indirectly from missing-dependency state.
-- Added focused regression coverage in [test/recovery-journal.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/recovery-journal.test.js) and [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js) covering the satisfied packaged/live checked contracts and the missing supported-surface drift path.
+- Fixed a real recovery-branch contract drift in `src/recovery-journal.js` instead of leaving another no-op handoff.
+- `fileLeaseFenceContract(...)` now carries the active `claimHash` through the restart-readable writer-lease contract and nested lease-fence envelope, so the release-consumer and stale-claim takeover surfaces stay internally consistent.
+- `classifyRecoveryJournalClaims(...)` now fails closed on a stale-claim lease/hash mismatch before the weaker lease-id mismatch path, matching the intended recovery-claim fence semantics.
+- Updated the recovery-journal tests to assert the tightened `claimHash` contract on `writerLeaseContract` / `leaseFence.writerLease` across the restart-readable, compatibility-overload, stale-claim takeover, and stale-claim rejection paths.
 
 Changed files:
 
-- [src/apply.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/apply.js)
-- [src/recovery-journal.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/src/recovery-journal.js)
-- [test/push-planner.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/push-planner.test.js)
-- [test/recovery-journal.test.js](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/test/recovery-journal.test.js)
-- [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/cycle-20260525-mainwindows-2349/no-data-loss-recovery/.lane-output/final.md)
+- `src/recovery-journal.js`
+- `test/recovery-journal.test.js`
+- `.lane-output/final.md`
 
 Commands:
 
-- `timeout 60s node --test --test-name-pattern "checked durable journal boundary accepts the packaged production journal scope|checked durable journal boundary accepts the explicit packaged recovery journal scope|checked durable journal boundary accepts the explicit live recovery journal scope" test/recovery-journal.test.js`
-- `timeout 60s node --test --test-name-pattern "surfaces a satisfied checked durable-journal boundary when the inspected lease fence matches the packaged production contract|keeps checked boundary closed when production adapter markers drift from the surfaced checked contract" test/push-planner.test.js`
-- `git diff --check -- src/apply.js src/recovery-journal.js test/recovery-journal.test.js test/push-planner.test.js`
+- `git status --short --branch`
+- `git ls-remote origin refs/heads/lane/reliable-executor refs/heads/lane/no-data-loss-recovery refs/heads/lane/durable-journal refs/heads/lane/auth-session`
+- `git log --oneline --decorate -12 origin/lane/no-data-loss-recovery`
+- `git show --stat --summary 09b4d9d15`
+- `git show --stat --summary e9a7b19ac`
+- `timeout 60s node --test --test-name-pattern="production recovery journal adapter is restart-readable and release-path compatible|production recovery journal consumption surfaces stale claim advancement after a fenced takeover|production recovery journal consumption fails closed when stale claim advancement lease id diverges from its claim hash" test/recovery-journal.test.js`
+- `timeout 60s node --test --test-name-pattern="checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence|production recovery journal adapter is restart-readable and release-path compatible|production recovery journal consumption surfaces stale claim advancement after a fenced takeover|production recovery journal consumption fails closed when stale claim advancement lease id diverges from its claim hash" test/recovery-journal.test.js`
+- `timeout 60s node --test --test-name-pattern="production recovery journal compatibility overload supports reliable release consumer shape|production recovery journal records stale-claim rejection evidence before a stale writer can reopen the active claim" test/recovery-journal.test.js`
+- `timeout 60s node --test test/recovery-journal.test.js`
+- `git diff --check`
+- `date '+%Y-%m-%d %H:%M:%S %Z (%z)'`
+
+Verification:
+
+- `timeout 60s node --test test/recovery-journal.test.js` passed `153/153`.
+- The previously failing recovery-owned cases are now green:
+  - `production recovery journal adapter is restart-readable and release-path compatible`
+  - `production recovery journal compatibility overload supports reliable release consumer shape`
+  - `production recovery journal consumption surfaces stale claim advancement after a fenced takeover`
+  - `production recovery journal records stale-claim rejection evidence before a stale writer can reopen the active claim`
+  - `production recovery journal consumption fails closed when stale claim advancement lease id diverges from its claim hash`
+  - `checked durable journal boundary stays closed until stale-claim rejection is proven on the lease fence`
 
 Push result:
 
-- Code/tests committed locally in `d35f6cb42`; push is the next lane action.
+- Pending commit/push from this lane after the handoff file update.
 
 Worktree status:
 
-- Dirty tracked files at handoff time: `.lane-output/final.md` only
+- `## lane/no-data-loss-recovery-work...origin/lane/no-data-loss-recovery`
+- Modified: `src/recovery-journal.js`, `test/recovery-journal.test.js`, `.lane-output/final.md`
 
 Next supervisor nudge:
 
-- Reliable and durable-journal consumers can now require the explicit checked `supportedSurface` marker instead of accepting a claim/lease-clean boundary proof that omits the adapter surface.
-- The next recovery-owned patch should only happen if reliable still exposes a restart-readable production-journal consumer gap after this checked-surface guard lands.
+- Have `main:reliable-exec` rebase or cherry-pick this recovery-owned claim-fencing contract fix if its release-verifier branch is still carrying `src/recovery-journal.js` drift.
+- Keep the next reliable-owned pass on the remaining checked release boundary: production auth/session lifecycle, preserved-remote retry, or deeper production durable-journal storage semantics beyond the now-stabilized recovery contract.

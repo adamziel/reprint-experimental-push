@@ -759,6 +759,7 @@ export function openProductionRecoveryJournal(filePathOrOptions, options = {}) {
       const inspection = readRecoveryJournal(journal.filePath);
       const inspectionRecords = Array.isArray(inspection.records) ? inspection.records : [];
       const writerLeaseContract = fileLeaseFenceContract({
+        claimHash,
         fsyncEvidence: inspectionRecords.every((record) => record?.fsync?.requested === true),
         monotonicSequence: inspectionRecords.every((record, index) => record?.sequence === index + 1),
         restartReadable: inspection.integrity?.status === 'ok',
@@ -875,6 +876,7 @@ export function consumeProductionRecoveryJournal(options) {
   const fsyncEvidence = records.every((record) => record?.fsync?.requested === true);
   const restartReadable = inspection.integrity?.status === 'ok';
   const leaseFenceContract = fileLeaseFenceContract({
+    claimHash: claimId ? recoveryClaimHash(claimId) : null,
     fsyncEvidence,
     monotonicSequence,
     restartReadable,
@@ -1022,6 +1024,7 @@ export function describeProductionRecoveryJournal(writer) {
 }
 
 function fileLeaseFenceContract({
+  claimHash = null,
   fsyncEvidence,
   monotonicSequence,
   restartReadable,
@@ -1035,6 +1038,7 @@ function fileLeaseFenceContract({
     monotonicSequence,
     restartReadable,
     staleClaimRejected,
+    ...(typeof claimHash === 'string' ? { claimHash } : {}),
   });
 }
 
@@ -2493,16 +2497,16 @@ export function classifyRecoveryJournalClaims(records) {
     if (
       Object.hasOwn(record, 'claimLease')
       && isValidProductionWriterLease(record.claimLease)
-      && record.claimId !== record.claimLease.id
+      && record.claimHash !== recoveryClaimHash(record.claimLease.id)
     ) {
-      return blockedClaimState(record, 'Recovery claim record claim id must match the persisted lease identity.');
+      return blockedClaimState(record, 'Recovery claim record claim lease must match the persisted active claim hash.');
     }
     if (
       Object.hasOwn(record, 'claimLease')
       && isValidProductionWriterLease(record.claimLease)
-      && record.claimHash !== recoveryClaimHash(record.claimId)
+      && record.claimId !== record.claimLease.id
     ) {
-      return blockedClaimState(record, 'Recovery claim record claim lease must match the persisted active claim hash.');
+      return blockedClaimState(record, 'Recovery claim record claim id must match the persisted lease identity.');
     }
 
     previousActiveClaimHash = record.claimHash;
