@@ -165,6 +165,7 @@ export async function runAuthenticatedHttpPush({
     return summary;
   }
   const preflightAuthEnvelope = {
+    userId: normalizeObservedAuthIdentityUserId(preflight.body?.auth?.identity?.userId),
     userLogin: preflight.body.auth?.identity?.userLogin,
     sessionId: preflight.body.auth?.session?.id,
     sessionType: preflight.body.auth?.session?.type,
@@ -518,6 +519,18 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const dryRunIdentityUserIdDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityUserIdDrift(preflightAuthEnvelope, dryRun)
+    : null;
+  if (dryRunIdentityUserIdDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...dryRunIdentityUserIdDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const dryRunSessionIdentityDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, dryRun)
     : null;
@@ -751,6 +764,18 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const applyIdentityUserIdDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityUserIdDrift(preflightAuthEnvelope, apply)
+    : null;
+  if (applyIdentityUserIdDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...applyIdentityUserIdDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const applySessionIdentityDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, apply)
     : null;
@@ -966,6 +991,18 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  const recoveryInspectIdentityUserIdDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityUserIdDrift(preflightAuthEnvelope, recoveryInspect)
+    : null;
+  if (recoveryInspectIdentityUserIdDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...recoveryInspectIdentityUserIdDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const recoveryInspectSessionIdentityDrift = requireProductionAuthSession
@@ -1203,6 +1240,18 @@ export async function runAuthenticatedHttpPush({
     };
     return summary;
   }
+  const replayIdentityUserIdDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityUserIdDrift(preflightAuthEnvelope, replay)
+    : null;
+  if (replayIdentityUserIdDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...replayIdentityUserIdDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
+    return summary;
+  }
   const replaySessionIdentityDrift = requireProductionAuthSession
     ? resolveProductionAuthSessionIdentityDrift(preflightAuthEnvelope, replay)
     : null;
@@ -1399,6 +1448,18 @@ export async function runAuthenticatedHttpPush({
       verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
       authSession: summary.authSession,
     };
+    return summary;
+  }
+  const dbJournalIdentityUserIdDrift = requireProductionAuthSession
+    ? resolveProductionAuthSessionIdentityUserIdDrift(preflightAuthEnvelope, dbJournal)
+    : null;
+  if (dbJournalIdentityUserIdDrift) {
+    summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+    summary.authSession = {
+      ...dbJournalIdentityUserIdDrift,
+      verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+    };
+    setProductionAuthSessionBoundary(summary);
     return summary;
   }
   const dbJournalSessionIdentityDrift = requireProductionAuthSession
@@ -2901,6 +2962,29 @@ function resolveProductionAuthSessionIdentityContinuityDrift(expected, response)
   }
 
   return observedUserLogin;
+}
+
+function resolveProductionAuthSessionIdentityUserIdDrift(expected, response) {
+  const expectedUserId = normalizeObservedAuthIdentityUserId(expected?.userId);
+  if (!expectedUserId) {
+    return null;
+  }
+
+  const session = response?.body?.auth?.session;
+  if (session?.type !== 'production-auth-session') {
+    return null;
+  }
+
+  const observedUserId = normalizeObservedAuthIdentityUserId(response?.body?.auth?.identity?.userId);
+  if (observedUserId === expectedUserId) {
+    return null;
+  }
+
+  return {
+    field: 'auth.identity.userId',
+    required: expectedUserId,
+    observed: observedUserId || 'missing-user-id',
+  };
 }
 
 function resolveProductionAuthSessionIdentityDrift(expected, response) {
