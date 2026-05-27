@@ -3,6 +3,66 @@
 Fetched reliable ref today:
 
 - `origin/lane/reliable-executor` resolves to
+  `d9ec5130979968098ac7b16b93220bd0d3fdbe38`
+  (`Preserve live source in release wrapper`).
+
+Previous classified reliable head: `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
+(`Narrow packaged driver proof helper`).
+
+Verdict for `d9ec5130979968098ac7b16b93220bd0d3fdbe38`: `0/4`
+
+Reason:
+
+- The `66afff2b..d9ec5130` diff stays wrapper-side and verifier-side. It edits
+  only
+  `scripts/playground/production-shaped-live-release-verify-lib.js`,
+  `scripts/playground/production-shaped-live-release-verify.mjs`, and
+  `test/production-shaped-proof.test.js`.
+- The new helper layer does one useful thing: it preserves a caller-provided
+  live `REPRINT_PUSH_SOURCE_URL`,
+  `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND`, and matching credentials through
+  the top-level checked-boundary branch, instead of silently replacing them
+  with the wrapper's local `remote-base` source.
+- But the retained reliable evidence for `d9ec5130` is still limited to
+  `node --check` on the touched files, one focused
+  `timeout 60s ... node --test --test-name-pattern='production-shaped live release verify preserves explicit checked-boundary env instead of synthesizing a local source|production-shaped live release verify retries transient apply revalidation timeouts after the apply step starts'`
+  run, and `git diff --check`.
+- That focused test only proves helper/env resolution: the checked verifier env
+  and apply-revalidation env both keep the explicit source URL and explicit
+  auth-session source command. It does not execute one production-owned,
+  non-lab-backed checked release boundary against the real Reprint endpoint.
+- Reliable's own retained handoff says the same thing directly: classify
+  `d9ec51309` as "a wrapper-layer checked-boundary fix" and then use this
+  preserved wrapper path to attack the remaining real-source gate dependency,
+  because the patch "still does not prove the missing production-owned
+  non-lab-backed real-endpoint boundary by itself."
+- So no supervised release gate closes here. The branch still lacks one
+  rerunnable checked release command on the same live
+  `REPRINT_PUSH_SOURCE_URL` that mints and rereads a live auth session,
+  persists it in durable restart-readable journal storage with lease-fenced
+  ownership, preserves the rejected remote evidence for audit, and performs
+  apply-time revalidation before the first mutation on that same real
+  boundary.
+- The verdict therefore remains `0/4`: `d9ec5130` removes a wrapper
+  substitution bug that previously blocked real-source proof through this path,
+  but it does not itself supply that proof.
+
+Next exact reliable-owned primitive:
+
+- Run the top-level
+  `scripts/playground/production-shaped-live-release-verify.mjs` checked
+  boundary through this preserved explicit-source path against one
+  production-owned, non-lab-backed real Reprint endpoint, with the exact live
+  `REPRINT_PUSH_SOURCE_URL` and exact
+  `REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND` visible in the same executable
+  command so the run mints and rereads the live auth session from durable
+  lease-fenced journal storage, preserves the rejected remote for audit, and
+  performs apply-time revalidation before the first mutation on that same
+  boundary.
+
+Fetched reliable ref today:
+
+- `origin/lane/reliable-executor` resolves to
   `66afff2b1da3e83018f04d9ece3e42d46cab7f92`
   (`Narrow packaged driver proof helper`).
 
