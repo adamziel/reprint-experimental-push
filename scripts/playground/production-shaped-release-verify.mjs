@@ -954,7 +954,14 @@ try {
         );
         assert.equal(durableJournalSummary.journal?.ownership?.ownsJournal, true);
         assert.equal(durableJournalSummary.journal?.ownership?.restartReadable, true);
+        assert.equal(durableJournalSummary.journal?.writerLease?.strategy, 'claim-fenced-single-writer');
+        assert.equal(durableJournalSummary.journal?.writerLease?.fsyncEvidence, true);
+        assert.equal(durableJournalSummary.journal?.writerLease?.storageGuard, 'wpdb-single-statement-cas');
+        assert.equal(durableJournalSummary.journal?.storageGuard?.boundary, 'wpdb-single-statement-cas');
+        assert.equal(durableJournalSummary.journal?.storageGuard?.operation, 'update');
+        assert.equal(durableJournalSummary.journal?.storageGuard?.outcome, 'applied');
         assert.equal(durableJournalSummary.leaseFence?.boundary, 'wpdb-single-statement-cas');
+        assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
         assert.equal(durableJournalSummary.leaseFence?.claimKeyUnique, true);
         assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
         assert.equal(durableJournalSummary.leaseFence?.restartReadable, true);
@@ -967,7 +974,11 @@ try {
         );
         assert.equal(durableJournalSummary.journal?.ownership?.ownsJournal, true);
         assert.equal(durableJournalSummary.journal?.ownership?.restartReadable, true);
+        assert.equal(durableJournalSummary.journal?.writerLease?.strategy, 'claim-fenced-single-writer');
+        assert.equal(durableJournalSummary.journal?.writerLease?.fsyncEvidence, true);
+        assert.equal(durableJournalSummary.journal?.writerLease?.storageGuard, 'wpdb-single-statement-cas');
         assert.equal(durableJournalSummary.leaseFence?.boundary, 'wpdb-single-statement-cas');
+        assert.equal(durableJournalSummary.leaseFence?.fsyncEvidence, true);
         assert.equal(durableJournalSummary.leaseFence?.claimKeyUnique, true);
         assert.equal(durableJournalSummary.leaseFence?.monotonicSequence, true);
         assert.equal(durableJournalSummary.leaseFence?.restartReadable, true);

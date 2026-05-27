@@ -77,22 +77,53 @@ export function openRecoveryJournal(filePath, options = {}) {
 }
 
 export function checkedDurableJournalBoundarySatisfied(dbJournal) {
+  const trustedScope = /(packaged production plugin|checked live production-shaped)(?: recovery)? journal surface/i;
   const leaseFenceBoundary = dbJournal?.leaseFence?.boundary;
   const writerLease = dbJournal?.writerLease;
   const nestedWriterLease = dbJournal?.leaseFence?.writerLease;
   const productionAdapter = dbJournal?.ownership?.productionAdapter;
-  return /(packaged production plugin|checked live production-shaped)(?: recovery)? journal surface/i.test(dbJournal?.scope || '')
+  const storageGuard = dbJournal?.storageGuard;
+
+  return trustedScope.test(dbJournal?.scope || '')
     && dbJournal?.ownership?.ownsJournal === true
     && dbJournal?.ownership?.restartReadable === true
     && productionAdapter === 'wpdb-single-statement-cas'
+    && durableJournalWriterLeaseMatchesBoundary(writerLease, productionAdapter)
+    && durableJournalWriterLeaseMatchesBoundary(nestedWriterLease, productionAdapter)
     && leaseFenceBoundary === 'wpdb-single-statement-cas'
     && writerLease?.storageGuard === leaseFenceBoundary
     && nestedWriterLease?.storageGuard === leaseFenceBoundary
     && productionAdapter === leaseFenceBoundary
+    && dbJournal?.leaseFence?.fsyncEvidence === true
     && dbJournal?.leaseFence?.claimKeyUnique === true
     && dbJournal?.leaseFence?.monotonicSequence === true
     && dbJournal?.leaseFence?.restartReadable === true
-    && dbJournal?.leaseFence?.staleClaimRejected === true;
+    && dbJournal?.leaseFence?.staleClaimRejected === true
+    && durableJournalStorageGuardMatchesBoundary(storageGuard, productionAdapter);
+}
+
+function durableJournalWriterLeaseMatchesBoundary(writerLease, boundary) {
+  if (!writerLease || typeof writerLease !== 'object') {
+    return false;
+  }
+
+  return writerLease.strategy === 'claim-fenced-single-writer'
+    && writerLease.claimKeyUnique === true
+    && writerLease.fsyncEvidence === true
+    && writerLease.storageGuard === boundary
+    && writerLease.monotonicSequence === true
+    && writerLease.restartReadable === true
+    && writerLease.staleClaimRejected === true;
+}
+
+function durableJournalStorageGuardMatchesBoundary(storageGuard, boundary) {
+  if (storageGuard == null) {
+    return true;
+  }
+
+  return storageGuard.boundary === boundary
+    && storageGuard.operation === 'update'
+    && storageGuard.outcome === 'applied';
 }
 
 export function openProductionRecoveryJournal(options) {
