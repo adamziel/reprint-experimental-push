@@ -1,19 +1,19 @@
 # Critic Verdict
 
-Current reliable head: `4c4e769f903e6b00cbf6a0ddf50a0a993302d741`
-(`Fail closed on unchecked auth metadata drift`).
+Current reliable head: `349826d919f747c8a3d207a8f39faf9c67e9fa92`
+(`Fail closed on stale auth session summaries`).
 
 Verdict: `0/4`
 
 Reason:
 
-- This head adds fail-closed checks for unchecked auth metadata drift in the
-  production-shaped push client and extends the playground auth-session
-  lifecycle verifier to treat `warning` and `playgroundFallback` as identity
-  inputs. The new tests exercise malformed auth metadata at dry-run, apply,
-  recovery-inspect, replay, and journal readback and confirm the client stops
-  before proceeding when those fields drift.
-- That is support-only hardening, not proof of the production-owned real
+- This head adds fail-closed checks for stale auth-session lifecycle summary
+  fields in the production-shaped push client and extends the playground
+  auth/session lifecycle verifier with stale-issued, stale-read, and missing
+  preserved-phase coverage. The new tests exercise malformed auth metadata at
+  dry-run, apply, recovery-inspect, replay, and journal readback and confirm
+  the client stops before proceeding when those summary fields drift.
+- That is still support-only hardening, not proof of the production-owned real
   Reprint endpoint boundary. The evidence still comes from mocked or
   production-shaped flows rather than live auth/session issuance and readback,
   durable restart-readable journal ownership with lease fencing, preserved
