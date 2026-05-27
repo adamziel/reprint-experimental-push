@@ -578,6 +578,48 @@ the consolidated artifact set does not contain `audits/critic-reorg-v2-20260527.
 These are support, audit-refresh, or test-hardening facts only. They do not
 move release gates.
 
+## Follow-Up Artifact-Only Head Refresh 18:40
+
+Commands:
+
+```bash
+git fetch --all --prune
+git for-each-ref --sort=refname --format='%(refname:short) %(objectname:short) %(committerdate:iso8601) %(subject)' \
+  refs/remotes/origin/supervisor/release-boundary-consolidated-20260527 \
+  refs/remotes/origin/lane/auth-session-boundary-v2-20260527 \
+  refs/remotes/origin/lane/durable-journal-boundary-v2-20260527 \
+  refs/remotes/origin/lane/apply-revalidation-boundary-v2-20260527 \
+  refs/remotes/origin/lane/plugin-driver-boundary-v2-20260527 \
+  refs/remotes/origin/lane/topology-verifier-v2-20260527
+git diff --stat origin/supervisor/release-boundary-consolidated-20260527..origin/lane/auth-session-boundary-v2-20260527
+git diff --stat origin/supervisor/release-boundary-consolidated-20260527..origin/lane/durable-journal-boundary-v2-20260527
+git diff --stat origin/supervisor/release-boundary-consolidated-20260527..origin/lane/apply-revalidation-boundary-v2-20260527
+```
+
+Current remote artifact heads after the push:
+
+| Ref | Head | Status |
+| --- | --- | --- |
+| `origin/supervisor/release-boundary-consolidated-20260527` | `8d9a53f88` | Unchanged since the 18:38 verifier run |
+| `origin/lane/auth-session-boundary-v2-20260527` | `cfca3e0ff` | Advanced remote v2 support branch |
+| `origin/lane/durable-journal-boundary-v2-20260527` | `d47e9f9bc` | Advanced remote v2 support branch |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | `72cdb2e92` | Advanced remote v2 support branch |
+| `origin/lane/plugin-driver-boundary-v2-20260527` | `0473cebc8` | Unchanged since 18:38 |
+| `origin/lane/topology-verifier-v2-20260527` | `605881b87` | Unchanged since 18:38 |
+
+Artifact-only diff notes against the consolidated release branch:
+
+| Branch | Diff stat | Verdict impact |
+| --- | --- | --- |
+| `origin/lane/auth-session-boundary-v2-20260527` | 3 files, 113 insertions, 8 deletions | Support/test-hardening only; not integrated into the release verifier run |
+| `origin/lane/durable-journal-boundary-v2-20260527` | 3 files, 33 insertions, 16 deletions | Support/test-hardening only; not integrated into the release verifier run |
+| `origin/lane/apply-revalidation-boundary-v2-20260527` | 3 files, 127 insertions, 11 deletions | Support/test-hardening only; not integrated into the release verifier run |
+
+The release-state evidence remains the clean detached verifier run from
+consolidated head `8d9a53f88`; it exited `1` with
+`REPRINT_PUSH_LIVE_SOURCE_REQUIRED` and release movement `0/4`. These support
+branch refreshes do not provide a real live `REPRINT_PUSH_SOURCE_URL` command.
+
 ## Blocker
 
 The consolidated branch requested by `NEXT_TASKS.md` now exists remotely at
