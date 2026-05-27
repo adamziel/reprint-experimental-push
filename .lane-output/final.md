@@ -1,37 +1,30 @@
-2026-05-27 06:21:18 CEST (+0200)
+2026-05-27 07:45:04 CEST (+0200)
 
 Changed files:
-- [scripts/playground/push-db-journal-lib.php](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/scripts/playground/push-db-journal-lib.php)
-- [scripts/playground/push-remote-rest-plugin.php](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/scripts/playground/push-remote-rest-plugin.php)
 - [test/push-remote-rest-plugin.test.js](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/test/push-remote-rest-plugin.test.js)
 - [.lane-output/final.md](/home/claude/reprint-experimental-push-lanes/reorg-20260526-code/durable-journal-code/.lane-output/final.md)
 
-This pass closed a checked stale-claim lineage hole on the PHP side. The producer-side checked-boundary matcher in `push-db-journal-lib.php` now requires `claimId` parity for both `stale-claim-rejected` and `stale-claim-abandoned` latest rows, and the REST attachment guard in `push-remote-rest-plugin.php` now fails closed when accepted inline stale-claim latest rows omit or diverge from checked `claimId` / cursor lineage instead of backfilling them from checked evidence.
+This pass closed the remaining checked-summary omission gap for accepted `writerLease` booleans on the producer-side merge path. The JS/PHP harness now proves both recovery-inspect evidence and checked DB-journal attachment fail closed when authoritative checked summaries drop accepted top-level or nested `leaseFence.writerLease` fields `claimKeyUnique`, `fsyncEvidence`, `monotonicSequence`, `restartReadable`, or `staleClaimRejected`.
 
 Commands run:
 ```bash
 git status --short --branch
-grep -RInE "claimId|claimKeyHash|previousClaimId|writerLease|leaseFence" scripts/playground/push-db-journal-lib.php scripts/playground/push-remote-rest-plugin.php src/recovery-journal.js test/push-remote-rest-plugin.test.js test/recovery-journal.test.js
-php -l scripts/playground/push-db-journal-lib.php
-php -l scripts/playground/push-remote-rest-plugin.php
 node --check test/push-remote-rest-plugin.test.js
-timeout 120s node --test --test-name-pattern='checked db journal attachment fails closed when stale-claim rejected latest row omits accepted claim identity|checked db journal attachment fails closed when stale-claim abandoned latest row diverges from accepted previous claim identity|checked db journal attachment fails closed when stale-claim row omits request hash' test/push-remote-rest-plugin.test.js
-git diff --check -- scripts/playground/push-db-journal-lib.php scripts/playground/push-remote-rest-plugin.php test/push-remote-rest-plugin.test.js
+timeout 120s node --test --test-name-pattern='checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease claim-key uniqueness|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease fsync evidence|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease monotonic sequencing|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease restart readability|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted writer-lease stale-claim rejection flag|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease claim-key uniqueness|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease fsync evidence|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease monotonic sequencing|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease restart readability|checked recovery inspect evidence fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease stale-claim rejection flag|checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease claim-key uniqueness|checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease fsync evidence|checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease monotonic sequencing|checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease restart readability|checked db journal attachment fails closed when authoritative checked summaries omit accepted writer-lease stale-claim rejection flag|checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease claim-key uniqueness|checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease fsync evidence|checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease monotonic sequencing|checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease restart readability|checked db journal attachment fails closed when authoritative checked summaries omit accepted nested lease-fence writer-lease stale-claim rejection flag' test/push-remote-rest-plugin.test.js
+git diff --check -- test/push-remote-rest-plugin.test.js
+git add test/push-remote-rest-plugin.test.js
+git commit -m "Cover checked writer-lease omission drift"
+git push origin HEAD:lane/durable-journal-code-20260526-1859
 date '+%Y-%m-%d %H:%M:%S %Z (%z)'
+git rev-parse --short=9 HEAD
+git status --short --branch
 ```
 
-Verification result:
-- `php -l scripts/playground/push-db-journal-lib.php` passed.
-- `php -l scripts/playground/push-remote-rest-plugin.php` passed.
-- `node --check test/push-remote-rest-plugin.test.js` passed.
-- The focused `timeout 120s node --test ... test/push-remote-rest-plugin.test.js` slice passed `3/3`.
-- `git diff --check -- scripts/playground/push-db-journal-lib.php scripts/playground/push-remote-rest-plugin.php test/push-remote-rest-plugin.test.js` passed.
-
 Push result:
-- Pending commit/push for this pass.
+- `570199052` (`Cover checked writer-lease omission drift`) pushed to `origin/lane/durable-journal-code-20260526-1859`.
 
 Worktree status:
-- Branch `lane/durable-journal-code-20260526-1859` has tracked changes in the three lane-owned files above plus this handoff.
+- Clean on `lane/durable-journal-code-20260526-1859`.
 
 Next supervisor nudge:
-- Reliable can now consume a stricter checked stale-claim merge surface once this patch is pushed: accepted inline DB-journal latest rows can no longer drop or drift `claimId` on rejected/abandoned stale-claim evidence while still inheriting the checked boundary. Send this lane back only if another checked merge path still backfills stale-claim identity or if reliable exposes a deeper recovery-owned claim-coherence gap.
+- Have `main:reliable-exec` consume `570199052` with the recent checked-journal omission fences. The producer-side checked contract now explicitly rejects authoritative checked summaries that preserve acceptance while dropping any accepted top-level or nested writer-lease uniqueness, fsync, monotonic-sequence, restart-readability, or stale-claim-rejection evidence on the release-path recovery journal surface.
