@@ -9,6 +9,7 @@ import {
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
   checkedDurableJournalBoundarySatisfied,
+  productionRecoveryJournalInspectionSurfaceIsPresent,
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
@@ -385,25 +386,25 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.consumed, true);
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
   assert.deepEqual(inspection.journal.ownership, {
     ownsJournal: true,
     restartReadable: true,
-    productionAdapter: 'openProductionRecoveryJournal',
-    supportedSurface: 'production-recovery-journal-adapter',
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
   });
   assert.deepEqual(inspection.journal.storageGuard, {
     boundary: 'filesystem-compare-rename',
     operation: 'update',
     outcome: 'applied',
   });
-  assert.equal(inspection.journal.claim?.status, 'stale-claim-rejected');
+  assert.equal(inspection.journal.claim?.status, 'advanced');
   assert.equal(inspection.journal.claim?.activeClaimId, activeClaimId);
-  assert.equal(inspection.journal.claim?.activeClaimKeyHash, recoveryClaimHash(activeClaimId));
-  assert.equal(inspection.journal.claim?.activeClaimEvent, 'recovery-claim-opened');
-  assert.equal(inspection.journal.claim?.staleClaimRejected, true);
+  assert.equal(inspection.journal.claim?.activeClaimHash, recoveryClaimHash(activeClaimId));
+  assert.equal(inspection.journal.claim?.type, 'recovery-claim-opened');
   assert.equal(inspection.journal.writerLease?.strategy, 'claim-fenced-single-writer');
   assert.equal(inspection.journal.writerLease?.claimId, activeClaimId);
-  assert.equal(inspection.journal.writerLease?.claimKeyHash, recoveryClaimHash(activeClaimId));
+  assert.equal(inspection.journal.writerLease?.claimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.writerLease?.claimKeyUnique, true);
   assert.equal(inspection.journal.writerLease?.fsyncEvidence, true);
   assert.equal(inspection.journal.writerLease?.storageGuard, 'filesystem-compare-rename');
@@ -418,9 +419,11 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.leaseFence?.staleClaimRejected, true);
   assert.equal(inspection.journal.leaseFence?.writerLease?.claimId, activeClaimId);
   assert.equal(
-    inspection.journal.leaseFence?.writerLease?.claimKeyHash,
+    inspection.journal.leaseFence?.writerLease?.claimHash,
     recoveryClaimHash(activeClaimId),
   );
+  assert.deepEqual(inspection.claim, inspection.journal.claim);
+  assert.deepEqual(inspection.leaseFence, inspection.journal.leaseFence);
   assert.equal(inspection.leaseFence.storageGuard, 'filesystem-compare-rename');
   assert.equal(inspection.leaseFence.staleClaimRejected, true);
 });

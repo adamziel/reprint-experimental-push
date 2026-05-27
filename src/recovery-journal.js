@@ -434,22 +434,40 @@ export function openProductionRecoveryJournal(options) {
     const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
     const claim = summarizeProductionRecoveryJournalClaim(persisted);
     const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
+    const consumed = persisted.records.some((record) => record.type === 'recovery-journal-consumed');
+    const consumedClaimId = consumed ? claim?.activeClaimId || null : null;
+    const consumedClaimHash = consumed ? claim?.activeClaimHash || null : null;
+    const leaseFence = {
+      boundary: 'filesystem-compare-rename',
+      storageGuard: 'filesystem-compare-rename',
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      monotonicSequence: persisted.integrity.status === 'ok',
+      restartReadable: persisted.integrity.status === 'ok',
+      staleClaimRejected,
+      writerLease,
+    };
     return {
       journal: {
+        kind: PRODUCTION_RECOVERY_JOURNAL_KIND,
         path: filePath,
+        journalPath: filePath,
         checked: [filePath],
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
+        supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
         ownership: {
           ownsJournal: true,
           restartReadable: persisted.integrity.status === 'ok',
-          productionAdapter: 'openProductionRecoveryJournal',
-          supportedSurface: 'production-recovery-journal-adapter',
+          productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+          supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
         },
         claimId,
         ownsJournal: true,
         claimHash: claimId ? recoveryClaimHash(claimId) : null,
-        consumed: persisted.records.some((record) => record.type === 'recovery-journal-consumed'),
+        consumed,
+        consumedClaimId,
+        consumedClaimHash,
         restartReadable: persisted.integrity.status === 'ok',
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
@@ -462,22 +480,10 @@ export function openProductionRecoveryJournal(options) {
           outcome: 'applied',
         },
         writerLease,
-        leaseFence: {
-          boundary: 'filesystem-compare-rename',
-          claimKeyUnique: true,
-          fsyncEvidence: true,
-          monotonicSequence: persisted.integrity.status === 'ok',
-          restartReadable: persisted.integrity.status === 'ok',
-          staleClaimRejected,
-          writerLease,
-        },
+        leaseFence,
       },
-      leaseFence: {
-        storageGuard: 'filesystem-compare-rename',
-        fsyncEvidence: true,
-        monotonicSequence: persisted.integrity.status === 'ok',
-        staleClaimRejected,
-      },
+      claim,
+      leaseFence,
     };
   };
 
@@ -902,15 +908,14 @@ function summarizeProductionRecoveryJournalClaim(persisted) {
 
   return {
     status: hasStaleClaimRejectionEvidence(persisted.records)
-      ? 'stale-claim-rejected'
+      ? 'advanced'
       : 'active',
     activeClaimId: claimState.activeClaimId || null,
-    activeClaimKeyHash: claimState.activeClaimHash || null,
-    activeClaimSequence: claimState.sequence ?? null,
-    activeClaimEvent: claimState.type || null,
+    activeClaimHash: claimState.activeClaimHash || null,
     previousClaimId: claimState.previousClaimId || null,
-    previousClaimKeyHash: claimState.previousClaimHash || null,
-    staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+    previousClaimHash: claimState.previousClaimHash || null,
+    sequence: claimState.sequence ?? null,
+    type: claimState.type || null,
   };
 }
 
@@ -918,7 +923,7 @@ function productionRecoveryJournalWriterLease(persisted, claimSummary) {
   return {
     strategy: 'claim-fenced-single-writer',
     claimId: claimSummary?.activeClaimId || null,
-    claimKeyHash: claimSummary?.activeClaimKeyHash || null,
+    claimHash: claimSummary?.activeClaimHash || null,
     claimKeyUnique: true,
     fsyncEvidence: true,
     storageGuard: 'filesystem-compare-rename',
