@@ -6425,6 +6425,62 @@ test('production auth/session lifecycle summary fails closed when direct revoked
   );
 });
 
+test('production auth/session lifecycle summary fails closed when direct revoked summary has no matching revoked observation', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    revoked: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      revoked: true,
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-revoked-summary',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct expired summary carries stale lifecycle fields', () => {
   const summary = {
     issued: {
@@ -6634,6 +6690,61 @@ test('production auth/session lifecycle summary fails closed when direct cleaned
   );
 });
 
+test('production auth/session lifecycle summary fails closed when direct cleaned-up summary has no matching cleanup observation', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    cleanedUp: {
+      step: 'cleanup',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      cleanedUp: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'unrevoked',
+      observed: 'stale-cleaned-up-summary',
+    },
+  );
+});
+
 test('production auth/session lifecycle summary fails closed when direct rotated summary carries stale lifecycle fields', () => {
   const summary = {
     issued: {
@@ -6676,6 +6787,62 @@ test('production auth/session lifecycle summary fails closed when direct rotated
         status: 'active',
         expiresAt: '2099-01-01T00:00:00Z',
         preserved: true,
+      },
+      {
+        step: 'journal',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: true,
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    evaluateProductionAuthSessionLifecycleSummary(summary),
+    {
+      ok: false,
+      required: 'preserved read',
+      observed: 'stale-rotated-summary',
+    },
+  );
+});
+
+test('production auth/session lifecycle summary fails closed when direct rotated summary has no matching rotated observation', () => {
+  const summary = {
+    issued: {
+      step: 'preflight',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+    },
+    read: {
+      step: 'journal',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      preserved: true,
+    },
+    rotated: {
+      step: 'apply',
+      id: 'session-01',
+      type: 'production-auth-session',
+      status: 'active',
+      expiresAt: '2099-01-01T00:00:00Z',
+      rotated: true,
+      preserved: true,
+    },
+    observations: [
+      {
+        step: 'preflight',
+        id: 'session-01',
+        type: 'production-auth-session',
+        status: 'active',
+        expiresAt: '2099-01-01T00:00:00Z',
+        preserved: false,
       },
       {
         step: 'journal',
