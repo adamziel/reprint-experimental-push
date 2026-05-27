@@ -185,8 +185,18 @@ function rebindPackagedProductionPluginSourceCommandSourceUrl(command, runtimeSo
   }
 
   const reboundCommand = normalizedCommand.replace(
-    /\bREPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='[^']*'/,
-    `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='${runtimeSourceUrl}'`,
+    /\bREPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=(?:'[^']*'|"[^"]*"|[^\s]+)/,
+    (match) => {
+      if (match.includes("='")) {
+        return `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL='${runtimeSourceUrl}'`;
+      }
+
+      if (match.includes('="')) {
+        return `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL="${runtimeSourceUrl}"`;
+      }
+
+      return `REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=${runtimeSourceUrl}`;
+    },
   );
   return reboundCommand === normalizedCommand ? '' : reboundCommand;
 }

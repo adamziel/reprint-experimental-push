@@ -2990,6 +2990,54 @@ test('packaged production plugin runtime source binding preserves malformed auth
   }));
 });
 
+test('packaged production plugin runtime source binding rebinds double-quoted prior commands', () => {
+  const staleCommand = 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL="http://127.0.0.1:8080" custom-source-command';
+
+  assert.deepEqual(
+    bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource: {
+        ok: false,
+        error: 'missing auth session source',
+      },
+      authSessionSourceCommand: staleCommand,
+      runtimeSourceUrl: 'http://127.0.0.1:49152',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSource: {
+        ok: false,
+        error: 'missing auth session source',
+      },
+      authSessionSourceCommand: 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL="http://127.0.0.1:49152" custom-source-command',
+    },
+  );
+});
+
+test('packaged production plugin runtime source binding rebinds unquoted prior commands', () => {
+  const staleCommand = 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=http://127.0.0.1:8080 custom-source-command';
+
+  assert.deepEqual(
+    bindPackagedProductionPluginRuntimeSource({
+      sourceUrl: 'http://127.0.0.1:8080',
+      authSessionSource: {
+        ok: false,
+        error: 'missing auth session source',
+      },
+      authSessionSourceCommand: staleCommand,
+      runtimeSourceUrl: 'http://127.0.0.1:49152',
+    }),
+    {
+      sourceUrl: 'http://127.0.0.1:49152',
+      authSessionSource: {
+        ok: false,
+        error: 'missing auth session source',
+      },
+      authSessionSourceCommand: 'REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 REPRINT_PUSH_SOURCE_COMMAND_SOURCE_URL=http://127.0.0.1:49152 custom-source-command',
+    },
+  );
+});
+
 test('packaged production plugin runtime source binding drops malformed prior commands', () => {
   assert.deepEqual(
     bindPackagedProductionPluginRuntimeSource({
