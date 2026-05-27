@@ -2941,8 +2941,24 @@ test('packaged readiness timeout fallback classifies global WordPress versus pac
     /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
+    smokeSource,
+    /const malformedTimeoutFallbackPreflightBody =[\s\S]*?preflightProbe\.parsedBody === null[\s\S]*?!packagedProductionPluginReadinessBodyRetryable\([\s\S]*?preflightProbe\.status,[\s\S]*?preflightProbe\.body \|\| ''[\s\S]*?\)/s,
+  );
+  assert.match(
+    smokeSource,
+    /preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+  );
+  assert.match(
     verifierSource,
     /preflight became terminal while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
+  );
+  assert.match(
+    verifierSource,
+    /const malformedTimeoutFallbackPreflightBody =[\s\S]*?preflightProbe\.parsedBody === null[\s\S]*?!packagedProductionPluginReadinessBodyRetryable\([\s\S]*?preflightProbe\.status,[\s\S]*?preflightProbe\.body \|\| ''[\s\S]*?\)/s,
+  );
+  assert.match(
+    verifierSource,
+    /preflight returned an invalid readiness body while the snapshot probe timed out[\s\S]*?packagedProductionPluginPreflightTerminalContext\([\s\S]*?childPid:\s*child\.pid\s*\?\?\s*null[\s\S]*?timeoutFallback:\s*true[\s\S]*?\)/s,
   );
   assert.match(
     smokeSource,

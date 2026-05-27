@@ -2115,9 +2115,17 @@ async function waitForPackagedProductionPluginServer(child, baseUrl, getOutput) 
           }
           if (preflightProbe.terminal) {
             lastError = error;
+            const malformedTimeoutFallbackPreflightBody =
+              preflightProbe.parsedBody === null
+              && !packagedProductionPluginReadinessBodyRetryable(
+                preflightProbe.status,
+                preflightProbe.body || '',
+              );
             await throwPlaygroundReadinessFailure(
               child,
-              `Packaged production plugin preflight became terminal while the snapshot probe timed out at ${baseUrl}`,
+              malformedTimeoutFallbackPreflightBody
+                ? `Packaged production plugin preflight returned an invalid readiness body while the snapshot probe timed out at ${baseUrl}`
+                : `Packaged production plugin preflight became terminal while the snapshot probe timed out at ${baseUrl}`,
               lastError,
               lastProbes,
               getOutput(),
