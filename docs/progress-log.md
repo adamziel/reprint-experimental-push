@@ -3,22 +3,21 @@
 This log records evidence present in this repository. Public status should use
 release gates and named evidence gaps rather than stale percentage estimates.
 
-# 2026-05-27 - Public Status Audit 10:45:44
+# 2026-05-27 - Public Status Audit 10:50:29
 
-<a id="2026-05-27-public-status-audit-104544"></a>
+<a id="2026-05-27-public-status-audit-105029"></a>
 
 - Refreshed [progress.html](../progress.html) to keep the current reliable
-  head `e4486374ac0c4de784e103bfbdff6d6054933873` visible on the public
+  head `405d464a2b00df1f3712eac57f5f463918f6b760` visible on the public
   status surface for the active supervision cycle.
-- Release gates remain `0/4`. The latest reliable head mirrors and validates
-  a production recovery journal surface in checked support code, but it still
-  does not prove the missing production-owned source mutation boundary on the
-  real Reprint endpoint.
-- Critic `fdef98f9` and independent auditor `0dffb5f7` both keep
-  `e4486374` at `0/4` because this is recovery-journal surface hardening, not
-  live production auth/session issuance, durable restart-readable journal
-  ownership, plugin-driver ownership, preserved rejected remote evidence, and
-  apply-time revalidation before first mutation on the same boundary.
+- Release gates remain `0/4`. The latest reliable head is still checked-path
+  support evidence, not the missing production-owned source mutation boundary
+  on the real Reprint endpoint.
+- The missing primitive is still one checked live command that proves
+  auth/session issuance and readback, durable restart-readable journal
+  ownership with lease fencing, plugin-driver ownership, preserved rejected
+  remote evidence, and apply-time revalidation before first mutation on the
+  same boundary.
 - Evidence trail: [progress.html](../progress.html),
   [objective audit](../audits/objective-audit.md),
   [critic audit](../audits/critic.md),
