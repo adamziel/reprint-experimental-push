@@ -4992,7 +4992,15 @@ test('keeps custom taxonomy graph surfaces blocked as plugin-owned or ambiguous'
   assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
   assert.match(taxonomyBlocker.reason, /unsupported taxonomy graph surface product_cat/);
   assert.equal(relationshipBlocker.references[0].targetSupport.supported, false);
+  assert.equal(relationshipBlocker.references[0].targetSupport.className, 'stale-wordpress-graph-identity');
+  assert.match(taxonomyBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(taxonomyBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(taxonomyBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.match(relationshipBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(taxonomyBlocker.change.local, 'value'), false);
+  assert.equal(Object.hasOwn(relationshipBlocker.references[0].targetChange.local, 'value'), false);
   assert.equal(blockerJson.includes('local-private-product-term'), false);
+  assert.equal(blockerJson.includes('local-private-product'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
