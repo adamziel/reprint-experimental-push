@@ -22,6 +22,10 @@ policy to keep at least five developer workers active, plus a critic and a
 progress reporter, and to replenish completed or dead developer sessions with
 new checklist work.
 
+The orchestrator should avoid long sleep-based monitoring loops. When the team
+is busy, it should inspect tmux panes and process state, review lane outputs,
+critique evidence, report progress, or prepare the next bounded worker task.
+
 Operational note: in this sandbox build, `ao acknowledge`, `ao report`,
 `ao status`, `ao session`, and `ao send` can hang. Supervision should use tmux
 and process inspection plus bounded `ao spawn` for new lanes. Hung AO lifecycle
