@@ -24,6 +24,7 @@ const scenarioFamilies = Object.freeze([
   'large-ready-plan-tier',
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-plugin-metadata',
   'independent-local-and-remote',
   'direct-row-conflict',
   'local-delete',
@@ -79,6 +80,7 @@ const readyPreservingFamilies = new Set([
   'large-ready-plan-tier',
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-plugin-metadata',
   'independent-local-and-remote',
   'local-delete',
   'same-independent-content',
@@ -411,6 +413,15 @@ const scenarioFamilyBuilders = {
     ensurePostExists(remote, postId);
     remote.db.wp_posts[`ID:${postId}`].post_title = `Remote editorial ${allocator.next()}`;
     tags.add('remote-preserve');
+  },
+  'remote-only-plugin-metadata': ({ remote, allocator, tags }) => {
+    remote.plugins['reprint-push-forms-fixture'] = {
+      version: `1.${allocator.next()}.0`,
+      active: false,
+      channel: `remote-metadata-${allocator.next()}`,
+    };
+    tags.add('remote-preserve');
+    tags.add('plugin-metadata-preserve');
   },
   'independent-local-and-remote': ({ local, remote, allocator, tags }) => {
     const localPath = allocator.filePath('independent-local');

@@ -947,6 +947,40 @@ test('preserves remote-only plugin changes', () => {
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
 });
 
+test('RPP-0206 preserves remote-only plugin metadata while applying independent local changes', () => {
+  const base = baseSite();
+  const local = baseSite();
+  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  const remote = baseSite();
+  remote.plugins.forms = {
+    version: '1.2.3',
+    active: false,
+    updateChannel: 'remote-only-channel',
+  };
+
+  const plan = planFor(base, local, remote);
+  const pluginDecision = decisionFor(plan, 'plugin:forms');
+  const localMutation = mutationFor(plan, 'file:index.php');
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(localMutation.action, 'put');
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginDecision.change.remoteChange, 'update');
+  assert.equal(mutationFor(plan, 'plugin:forms'), undefined);
+  assert.equal(
+    plan.preconditions.some((precondition) => precondition.resourceKey === 'plugin:forms'),
+    false,
+  );
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.files['index.php'], '<?php echo "local ordinary edit";');
+  assert.deepEqual(result.site.plugins.forms, {
+    version: '1.2.3',
+    active: false,
+    updateChannel: 'remote-only-channel',
+  });
+});
+
 test('combines local ordinary changes while preserving remote-only plugin changes', () => {
   const base = baseSite();
   const local = baseSite();
