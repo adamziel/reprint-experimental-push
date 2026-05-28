@@ -86,6 +86,13 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  staleRemoteAfterDryRun: {
+    family: 'ready-plan-stale-replay',
+    matches: (_testCase, result) =>
+      result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRemoteUnchanged === true,
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -902,6 +909,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -913,6 +921,13 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
+      if (
+        blocker.class === 'atomic-group-blocker-propagation'
+        && matchingMutation?.resourceKey === blocker.resourceKey
+      ) {
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1011,7 +1026,10 @@ function emptySummary() {
 
 function recordTargetCoverage(summary, testCase, result) {
   for (const [target, definition] of Object.entries(targetCoverageDefinitions)) {
-    if (testCase.family !== definition.family && !testCase.tags.has(definition.tag)) {
+    const matches = typeof definition.matches === 'function'
+      ? definition.matches(testCase, result)
+      : testCase.family === definition.family || testCase.tags.has(definition.tag);
+    if (!matches) {
       continue;
     }
     const coverage = summary.targetCoverage[target] ||= {

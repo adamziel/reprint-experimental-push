@@ -49,7 +49,8 @@ The default generated run covers:
   delete mixes with ready and conflicting outcomes, directory descendant
   conflicts with per-tier target counts, file type-swap cases with ready and
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
-  outcomes plus stale replay rejection before mutation, `wp_posts`
+  outcomes plus stale replay rejection before mutation, stale remote after
+  dry-run target counts across ready plans, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
@@ -70,6 +71,12 @@ create the term and taxonomy row in one plan and reject a stale replay before
 mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
+
+The `staleRemoteAfterDryRun` target coverage records every ready generated plan
+that has a mutation-bearing dry-run plan and rejects replay against a stale
+remote before any mutation is applied. Its per-tier counts make the live-remote
+precondition coverage visible instead of relying only on the global ready-plan
+invariant.
 
 At the time this note was added, the summary command reported:
 
@@ -99,6 +106,25 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "staleRemoteAfterDryRun": {
+      "family": "ready-plan-stale-replay",
+      "total": 189,
+      "perTier": {
+        "0": 18,
+        "1": 21,
+        "2": 21,
+        "3": 20,
+        "4": 21,
+        "5": 21,
+        "6": 20,
+        "7": 19,
+        "8": 14,
+        "9": 14
+      },
+      "statuses": {
+        "ready": 189
       }
     },
     "wpPostsCreateUpdateDelete": {

@@ -355,3 +355,43 @@ function nonReadyTargetCount(coverage) {
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
 }
+
+test('RPP-0137 stale remote after dry-run target exposes per-tier ready counts', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.staleRemoteAfterDryRun;
+
+  assert.ok(coverage, 'missing stale remote after dry-run target coverage');
+  assert.equal(coverage.family, 'ready-plan-stale-replay');
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.ok(coverage.total > 0, 'target should count ready dry-run plans with stale replay guards');
+
+  const targetCasesByTier = new Map();
+  for (const testCase of generatePushHarnessCases()) {
+    const result = validateGeneratedCase(testCase);
+    if (
+      result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRemoteUnchanged === true
+    ) {
+      targetCasesByTier.set(testCase.tier, (targetCasesByTier.get(testCase.tier) || 0) + 1);
+      assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+      assert.ok(result.preconditions > 0, `${testCase.id} should carry live-remote preconditions`);
+    }
+  }
+
+  assert.equal(
+    [...targetCasesByTier.values()].reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  for (let tier = 0; tier <= 9; tier++) {
+    assert.equal(coverage.perTier[tier], targetCasesByTier.get(tier));
+  }
+});
