@@ -15,7 +15,10 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
-import { parseProductionPluginPackageSelectedScenarios } from './production-plugin-package-scenarios.js';
+import {
+  buildArbitraryPluginFixturePackageProof,
+  parseProductionPluginPackageSelectedScenarios,
+} from './production-plugin-package-scenarios.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -92,6 +95,7 @@ const driverFixture = {
   pluginOwner: 'driver-fixture',
   resourceKey: 'row:["wp_reprint_push_driver_fixture","entry_id:1"]',
 };
+const driverFixturePrivatePayloadValue = 'rpp-0440-arbitrary-plugin-private-payload';
 const packagedDriverRegistryGuardScriptPath = path.join(tmpDir, 'packaged-driver-registry-guards.php');
 let packagedDriverRegistryGuardResults = null;
 
@@ -293,6 +297,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     routes: {},
     cli: {},
     driverReceiptRevokedCredentialGuard: {},
+    arbitraryPluginFixturePackageProof: null,
     final: {},
   };
 
@@ -475,6 +480,8 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
       assert.equal(allowedEntry.driver, driverFixture.driver);
       assert.equal(allowedEntry.table, driverFixture.table);
       assert.equal(allowedEntry.pluginOwner, driverFixture.pluginOwner);
+      const baseDriverRow = remoteSnapshot.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'];
+      assert.equal(baseDriverRow?.payload?.private_note, driverFixturePrivatePayloadValue);
       const driverLocalUpdateSnapshot = deepClone(remoteSnapshot.body.snapshot);
       driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.mode = 'local-update';
       driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'].payload.version = 2;
@@ -539,20 +546,23 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
       const afterRevokedCredentialReject = await rotatedClient.get('/snapshot');
       assert.equal(afterRevokedCredentialReject.status, 200);
       assert.equal(afterRevokedCredentialReject.body?.ok, true);
+      const afterRejectedDriverRow = afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'];
       assert.equal(
-        afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.updated_marker,
+        afterRejectedDriverRow?.updated_marker,
         'base',
         'revoked-credential packaged apply still mutated the remote snapshot',
       );
       assert.deepEqual(
-        afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.payload,
+        afterRejectedDriverRow?.payload,
         {
           owner: driverFixture.pluginOwner,
           mode: 'base',
           version: 1,
+          private_note: driverFixturePrivatePayloadValue,
         },
         'revoked-credential packaged apply changed the arbitrary driver payload',
       );
+      assert.equal(digest(afterRejectedDriverRow), digest(baseDriverRow));
 
       summary.driverReceiptRevokedCredentialGuard = {
         resourceKey: driverFixtureResourceKey,
@@ -561,10 +571,23 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
         revokeDeleted: revokeResponse.body?.deleted === true,
         applyRejectedCode: revokedCredentialApply.body?.code,
         applyRejectedMessage: revokedCredentialApply.body?.message,
-        rowRetainedAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'] !== undefined,
-        updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.updated_marker,
-        payloadModeAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.payload?.mode,
+        rowRetainedAfterReject: afterRejectedDriverRow !== undefined,
+        updatedMarkerAfterReject: afterRejectedDriverRow?.updated_marker,
+        payloadModeAfterReject: afterRejectedDriverRow?.payload?.mode,
       };
+      summary.arbitraryPluginFixturePackageProof = buildArbitraryPluginFixturePackageProof({
+        resourceKey: driverFixtureResourceKey,
+        driver: driverFixture.driver,
+        table: driverFixture.table,
+        pluginOwner: driverFixture.pluginOwner,
+        baseRow: baseDriverRow,
+        localRow: driverLocalUpdateSnapshot.db[driverFixtureTableKey]['entry_id:1'],
+        afterRejectedRow: afterRejectedDriverRow,
+        planMutation: updatePlan.mutations[0],
+        dryRunReceipt: updateDryRun.body?.receipt,
+        rejectedApply: revokedCredentialApply,
+        privateValueProbe: driverFixturePrivatePayloadValue,
+      });
         },
       );
     });
@@ -682,7 +705,13 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     };
   });
 
-  console.log(JSON.stringify(summary, null, 2));
+  const redactedSummary = JSON.stringify(summary, null, 2);
+  assert.equal(
+    redactedSummary.includes(driverFixturePrivatePayloadValue),
+    false,
+    'packaged arbitrary plugin fixture proof leaked a raw plugin-owned private value',
+  );
+  console.log(redactedSummary);
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 }
@@ -898,7 +927,7 @@ function writeDriverFixtureBlueprint(
       'global $wpdb;',
       '$table = $wpdb->prefix . \'reprint_push_driver_fixture\';',
       '$wpdb->query(\'CREATE TABLE \' . $table . \' (entry_id bigint(20) unsigned NOT NULL, payload_json longtext NOT NULL, updated_marker varchar(32) NOT NULL, PRIMARY KEY (entry_id)) \' . $wpdb->get_charset_collate());',
-      '$payload = wp_json_encode(array(\'owner\' => \'driver-fixture\', \'mode\' => \'base\', \'version\' => 1));',
+      '$payload = wp_json_encode(array(\'owner\' => \'driver-fixture\', \'mode\' => \'base\', \'version\' => 1, \'private_note\' => \'' + driverFixturePrivatePayloadValue + '\'));',
       '$wpdb->replace($table, array(\'entry_id\' => 1, \'payload_json\' => $payload, \'updated_marker\' => \'base\'), array(\'%d\', \'%s\', \'%s\'));',
     ].join(' '),
   });

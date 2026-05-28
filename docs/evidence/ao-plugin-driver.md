@@ -36,3 +36,16 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+
+## RPP-0440 arbitrary plugin fixture package, variant 2
+
+Focused proof added a package-smoke alias, `arbitrary-plugin-fixture-package`, that expands to the packaged arbitrary driver receipt guard. The smoke fixture now seeds a plugin-owned private payload probe, plans an update through the arbitrary plugin-owned row driver, then rejects apply with a revoked credential and proves the remote row hash is preserved.
+
+Evidence status: local Playground packaged-plugin proof only; it is not production-backed and keeps the release gate at NO-GO. The emitted `arbitraryPluginFixturePackageProof` is hash-only (`rawValuesIncluded: false`) and records row, mutation, receipt, refusal-message, and private-probe hashes without raw plugin-owned private values.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0440|arbitrary plugin fixture package|scenario groups|unknown plugin-driver' test/production-plugin-package-scenarios.test.js
+REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=arbitrary-plugin-fixture-package node ./scripts/playground/production-plugin-package-smoke.mjs
+```
