@@ -1221,6 +1221,145 @@ test('RPP-0217 conflict plans refuse apply before mutation with stable evidence'
   assert.equal(remote.db.wp_posts['ID:1'].post_title, privateConflictValues[1]);
 });
 
+test('RPP-0229 conflict evidence serializes hash-only conflict refusals', () => {
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const conflictResourceKey = 'row:["wp_posts","ID:1"]';
+  const privateValues = [
+    'rpp0229-base-confidential-row-title',
+    'rpp0229-local-confidential-row-title',
+    'rpp0229-remote-confidential-row-title',
+    '<?php echo "rpp0229-local-confidential-file";',
+  ];
+  base.db.wp_posts['ID:1'].post_title = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  remote.db.wp_posts['ID:1'].post_title = privateValues[2];
+  local.files['index.php'] = privateValues[3];
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const firstJournal = [];
+  const secondJournal = [];
+  const trapJournal = (events) => ({
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+  const hashOnlyConflictEvidence = (plan, error) => ({
+    status: plan.status,
+    summary: plan.summary,
+    emitted: plannerSummaryCounts(plan),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      baseHash: conflict.baseHash,
+      localHash: conflict.localHash,
+      remoteHash: conflict.remoteHash,
+      change: {
+        localChange: conflict.change.localChange,
+        remoteChange: conflict.change.remoteChange,
+        base: {
+          state: conflict.change.base.state,
+          hash: conflict.change.base.hash,
+        },
+        local: {
+          state: conflict.change.local.state,
+          hash: conflict.change.local.hash,
+        },
+        remote: {
+          state: conflict.change.remote.state,
+          hash: conflict.change.remote.hash,
+        },
+      },
+      conflictHash: sha256Evidence({
+        resourceKey: conflict.resourceKey,
+        class: conflict.class,
+        resolutionPolicy: conflict.resolutionPolicy,
+        baseHash: conflict.baseHash,
+        localHash: conflict.localHash,
+        remoteHash: conflict.remoteHash,
+      }),
+    })),
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    applyRefusal: {
+      code: error.code,
+      status: error.details.status,
+      detailsHash: sha256Evidence(error.details),
+    },
+  });
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0229 conflict evidence redaction');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'RPP-0229 summary evidence should be deterministic',
+  );
+  assert.equal(firstPlan.conflicts[0].class, 'row-conflict');
+  assert.equal(firstPlan.conflicts[0].resourceKey, conflictResourceKey);
+  assert.equal(firstPlan.conflicts[0].resolutionPolicy, 'preserve-remote-and-stop');
+  assert.deepEqual(Object.keys(firstPlan.conflicts[0].change.base).sort(), ['hash', 'state']);
+  assert.deepEqual(Object.keys(firstPlan.conflicts[0].change.local).sort(), ['hash', 'state']);
+  assert.deepEqual(Object.keys(firstPlan.conflicts[0].change.remote).sort(), ['hash', 'state']);
+  assert.match(firstPlan.conflicts[0].baseHash, /^[a-f0-9]{64}$/);
+  assert.match(firstPlan.conflicts[0].localHash, /^[a-f0-9]{64}$/);
+  assert.match(firstPlan.conflicts[0].remoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(mutationFor(firstPlan, conflictResourceKey), undefined);
+  assert.equal(mutationFor(firstPlan, 'file:index.php').action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  const beforeRemote = JSON.stringify(remote);
+  const firstError = captureError(() => applyPlan(remote, firstPlan, {
+    durableJournal: trapJournal(firstJournal),
+  }));
+  const secondError = captureError(() => applyPlan(cloneJson(remote), secondPlan, {
+    durableJournal: trapJournal(secondJournal),
+  }));
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.equal(firstError.code, 'PLAN_NOT_READY');
+  assert.deepEqual(firstError.details, { status: 'conflict' });
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.deepEqual(firstJournal, [], 'conflict apply should reject before durable journal evidence');
+  assert.deepEqual(secondJournal, [], 'conflict replay should reject before durable journal evidence');
+
+  const serializedEvidence = JSON.stringify(hashOnlyConflictEvidence(firstPlan, firstError));
+  const replaySerializedEvidence = JSON.stringify(hashOnlyConflictEvidence(secondPlan, secondError));
+  assert.equal(serializedEvidence, replaySerializedEvidence);
+  for (const conflict of JSON.parse(serializedEvidence).conflicts) {
+    assert.match(conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(serializedEvidence.includes(privateValue), false, `RPP-0229 evidence leaked ${privateValue}`);
+    assert.equal(JSON.stringify(firstPlan.conflicts).includes(privateValue), false, `RPP-0229 conflict leaked ${privateValue}`);
+    assert.equal(JSON.stringify(firstError.details).includes(privateValue), false, `RPP-0229 refusal leaked ${privateValue}`);
+  }
+});
+
 test('classifies plugin-owned data conflicts separately from generic rows', () => {
   const base = baseSite();
   const local = baseSite();
