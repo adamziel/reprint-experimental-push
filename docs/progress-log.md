@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 09:53 CEST.
+- Last update: 2026-05-28 09:56 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `165031908` (`test: prove importer exporter identity map`).
+  `5fcd3008e` (`docs: refresh progress for rpp-0340`); newest behavioral proof
+  remains `165031908` (`test: prove importer exporter identity map`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -286,11 +287,17 @@ linked implementation artifacts.
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+  `rpp-29`, `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`; integrator `rpp-28`;
+  queue `rpp-35`; critics `rpp-31` and `rpp-37`; progress reporter `rpp-36`;
+  visible supervisor `rpp-orchestrator`; and local lifecycle/dashboard sessions
+  `rpp-ao-lifecycle` plus `rpp-ao-web`.
+- Post-`RPP-0340` heartbeat: origin/lane is `5fcd3008e`, checklist truth is
+  126 checked and 874 open, and release remains **NO-GO**. Counted integrated
+  work includes `RPP-0058`, `RPP-0233`, `RPP-0062`, and `RPP-0340`. `RPP-0064`
+  and active developer branches remain uncounted until lane integration; visible
+  active work includes `rpp-24`/`RPP-0148`, `rpp-25`/`RPP-0066`,
+  `rpp-29`/`RPP-0238`, `rpp-30`/`RPP-0344`, `rpp-32`/`RPP-0460`,
+  `rpp-33`/`RPP-0149`, and `rpp-34`/`RPP-0461`.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
@@ -319,6 +326,10 @@ linked implementation artifacts.
   evidence manifest
   generation, artifact redaction scan over evidence/report paths, and
   `git diff --check`.
+- Post-`RPP-0340` progress verification reruns checklist completion lint,
+  artifact redaction scan over `docs/evidence`, `audits`, and `progress.html`,
+  focused progress HTML tests, local-link sanity for `progress.html`, and
+  `git diff --check` before commit.
 - Release posture: final release remains **NO-GO**. This update makes tracking
   stricter and integrates fail-closed/local audit surfaces; it does not supply
   external production WordPress, production credentials, final release gate
