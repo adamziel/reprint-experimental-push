@@ -145,10 +145,12 @@ keeps generated comment/commentmeta row values out of the summary evidence.
 
 The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 `wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create
-the term and termmeta row in one plan and reject stale replays before mutation;
-stale cases keep the term in the base, drift that term remotely, and require
-the new termmeta reference to fail closed instead of overwriting the drifted
-remote.
+the term and termmeta row in one plan, preserve unplanned remote resources, and
+reject stale replays before mutation; stale cases keep the term in the base,
+drift that term remotely, and require the new termmeta reference to fail closed
+instead of overwriting the drifted remote. RPP-0131 keeps the current 510-case
+run and proves one ready terms/termmeta graph case in every tier plus stale
+non-ready graph references in tiers 0 through 8.
 
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready

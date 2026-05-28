@@ -1577,15 +1577,16 @@ function assertUsermetaGraphRawValuesAbsent(testCase, shape, redactedJson) {
 }
 
 
-test('RPP-0111 wp_terms/wp_termmeta graph target exposes ready and stale coverage', () => {
+test('RPP-0111/RPP-0131 wp_terms/wp_termmeta graph target exposes per-tier ready and stale coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.wpTermsTermmetaGraph;
 
   assert.ok(coverage, 'missing wp_terms/wp_termmeta graph target coverage');
   assert.equal(coverage.family, 'wp-terms-termmeta-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-terms-termmeta-graph']);
-  assert.ok(coverage.statuses.ready > 0, 'target should include ready term/termmeta graph cases');
-  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.equal(coverage.total, 19, 'target should include ready cases for every tier plus stale cases through tier 8');
+  assert.equal(coverage.statuses.ready, 10, 'target should include one ready terms/termmeta graph per tier');
+  assert.equal(nonReadyTargetCount(coverage), 9, 'target should include stale terms/termmeta graph cases through tier 8');
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -1600,26 +1601,37 @@ test('RPP-0111 wp_terms/wp_termmeta graph target exposes ready and stale coverag
   );
 
   const cases = generatePushHarnessCases();
-  const readyCase = cases.find((testCase) => testCase.family === 'wp-terms-termmeta-graph-ready');
-  const staleCase = cases.find((testCase) => testCase.family === 'wp-terms-termmeta-graph-stale');
+  const readyCases = cases.filter((testCase) => testCase.family === 'wp-terms-termmeta-graph-ready');
+  const staleCases = cases.filter((testCase) => testCase.family === 'wp-terms-termmeta-graph-stale');
 
-  assert.ok(readyCase, 'missing ready wp_terms/wp_termmeta graph case');
-  assert.ok(staleCase, 'missing stale wp_terms/wp_termmeta graph case');
-  assertTermTermmetaGraphShape(readyCase, { staleTarget: false });
-  assertTermTermmetaGraphShape(staleCase, { staleTarget: true });
+  assert.equal(readyCases.length, 10, 'missing one ready wp_terms/wp_termmeta graph case per tier');
+  assert.equal(staleCases.length, 9, 'missing stale wp_terms/wp_termmeta graph cases through tier 8');
+  assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8]);
 
-  const ready = validateGeneratedCase(readyCase);
-  const stale = validateGeneratedCase(staleCase);
+  for (const readyCase of readyCases) {
+    assertTermTermmetaGraphShape(readyCase, { staleTarget: false });
 
-  assert.equal(ready.status, 'ready');
-  assert.ok(ready.mutations >= 2, 'ready graph should create term and termmeta rows');
-  assert.equal(ready.applied, true, 'ready term/termmeta graph should apply through the harness');
-  assert.equal(ready.staleReplayRejected, true, 'ready term/termmeta graph should reject stale replay');
-  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
-  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
-  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
-  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
-  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+    const ready = validateGeneratedCase(readyCase);
+
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 2, `${readyCase.id} should create term and termmeta rows`);
+    assert.equal(ready.applied, true, `${readyCase.id} should apply through the harness`);
+    assert.equal(ready.unplannedRemotePreserved, true, `${readyCase.id} should preserve unplanned remote data`);
+    assert.equal(ready.staleReplayRejected, true, `${readyCase.id} should reject stale replay`);
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, `${readyCase.id} stale replay must fail before mutation`);
+  }
+
+  for (const staleCase of staleCases) {
+    assertTermTermmetaGraphShape(staleCase, { staleTarget: true });
+
+    const stale = validateGeneratedCase(staleCase);
+
+    assert.notEqual(stale.status, 'ready', `${staleCase.id} should not be ready`);
+    assert.ok(stale.blockers >= 1, `${staleCase.id} should record a graph identity blocker`);
+    assert.equal(stale.applied, false, `${staleCase.id} must not apply mutations`);
+  }
 });
 
 function assertTermTermmetaGraphShape(testCase, { staleTarget }) {
