@@ -10,7 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
-import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -26,6 +26,17 @@ function captureError(fn) {
     return error;
   }
   assert.fail('Expected function to throw');
+}
+
+function claimFencedDurableJournal(events) {
+  return {
+    claimFenced: true,
+    claimHash: 'e'.repeat(64),
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  };
 }
 
 const requiredFamilies = [
@@ -224,6 +235,40 @@ test('RPP-0233 generated ready fixtures reject forged localHash evidence', () =>
       );
     }
   }
+});
+
+test('RPP-0238 generated ready fixtures reject forged or stale precondition evidence', () => {
+  const firstEvidence = generatedForgedReadyPlanDefenseEvidence();
+  const replayEvidence = generatedForgedReadyPlanDefenseEvidence();
+  const aggregate = aggregateGeneratedForgedReadyPlanDefenseEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0238 test/generated-push-harness.test.js',
+    caveat: 'Generated local planner/apply proof only; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated forged-ready evidence changed between runs');
+  assert.ok(aggregate.totalReadyCases >= 4, 'generated proof should cover multiple ready fixture families');
+  assert.ok(aggregate.totalForgedInvariantRefusals > 0, 'generated proof must include forged invariant refusals');
+  assert.equal(aggregate.totalAppliedMutations, 0, 'forged ready refusals must not report applied mutations');
+  assert.equal(aggregate.totalDurableMutationEvents, 0, 'forged ready refusals must not write mutation journal events');
+  assert.equal(
+    aggregate.issueCodes.MISSING_LIVE_REMOTE_PRECONDITION,
+    aggregate.totalReadyCases,
+    'every generated ready case should reject missing live preconditions',
+  );
+  assert.equal(
+    aggregate.issueCodes.PRECONDITION_HASH_MISMATCH,
+    aggregate.totalReadyCases,
+    'every generated ready case should reject mismatched precondition hashes',
+  );
+  assert.equal(aggregate.staleRefusalCodes.PRECONDITION_FAILED, aggregate.totalReadyCases);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated row mix'), false);
+  assert.equal(evidenceText.includes('confidential'), false);
+  assert.equal(evidenceText.includes('payload'), false);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -508,6 +553,171 @@ function generatedPlannerSummaryEvidence() {
   });
 }
 
+function generatedForgedReadyPlanDefenseEvidence() {
+  const selectedFamilies = [
+    'local-file-update',
+    'file-create-update-delete-mix-ready',
+    'row-create-update-delete-mix-ready',
+    'wp-posts-create-update-delete-ready',
+    'supported-plugin-option',
+  ];
+  const cases = generatePushHarnessCases();
+
+  return selectedFamilies.map((family) => {
+    const testCase = cases.find((entry) => entry.family === family);
+    assert.ok(testCase, `missing generated ${family} case`);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assert.equal(plan.status, 'ready', `${family} should be ready`);
+    assert.ok(plan.mutations.length > 0, `${family} should emit at least one mutation`);
+    const target = plan.mutations[0];
+    const targetPrecondition = plan.preconditions.find(
+      (precondition) => precondition.mutationId === target.id,
+    );
+    assert.ok(targetPrecondition, `${family} missing target precondition`);
+
+    const forgedCases = [
+      {
+        name: 'missing-precondition',
+        expectedIssueCode: 'MISSING_LIVE_REMOTE_PRECONDITION',
+        forge(forged) {
+          forged.preconditions = forged.preconditions.filter(
+            (precondition) => precondition.mutationId !== target.id,
+          );
+        },
+      },
+      {
+        name: 'precondition-hash-mismatch',
+        expectedIssueCode: 'PRECONDITION_HASH_MISMATCH',
+        forge(forged) {
+          forged.preconditions.find(
+            (precondition) => precondition.mutationId === target.id,
+          ).expectedHash = differentHash(target.remoteBeforeHash);
+        },
+      },
+    ].map((forgedCase) =>
+      generatedForgedReadyInvariantRefusal(testCase, plan, forgedCase),
+    );
+    const staleAttempt = generatedForgedReadyStaleAttempt(testCase, plan, target);
+    const evidence = {
+      id: testCase.id,
+      tier: testCase.tier,
+      family: testCase.family,
+      tags: [...testCase.tags].sort(),
+      status: plan.status,
+      summary: plan.summary,
+      plannedMutations: plan.mutations.length,
+      plannedPreconditions: plan.preconditions.length,
+      mutationHashes: plan.mutations.map((mutation) => ({
+        id: mutation.id,
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        plannedValueHash: digest(deserializeResourceValue(mutation.value)),
+      })),
+      forgedCases,
+      staleAttempt,
+    };
+    const evidenceText = JSON.stringify(evidence);
+
+    for (const mutation of plan.mutations) {
+      assert.equal(
+        evidenceText.includes(JSON.stringify(mutation.value)),
+        false,
+        `${family} generated RPP-0238 evidence leaked mutation payload for ${mutation.resourceKey}`,
+      );
+    }
+
+    return evidence;
+  });
+}
+
+function generatedForgedReadyInvariantRefusal(testCase, plan, forgedCase) {
+  const forged = cloneJson(plan);
+  forgedCase.forge(forged);
+  const remote = cloneJson(testCase.remote);
+  const beforeRemoteHash = digest(remote);
+  const journalEvents = [];
+  let appliedMutationCount = 0;
+  const error = captureError(() => {
+    const result = applyPlan(remote, forged, {
+      durableJournal: claimFencedDurableJournal(journalEvents),
+    });
+    appliedMutationCount = result.appliedMutations;
+  });
+  const issueCodes = error.details.issues.map((issue) => issue.code).sort();
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} ${forgedCase.name} should throw`);
+  assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION', `${testCase.id} ${forgedCase.name} code changed`);
+  assert.ok(
+    issueCodes.includes(forgedCase.expectedIssueCode),
+    `${testCase.id} ${forgedCase.name} missing ${forgedCase.expectedIssueCode}`,
+  );
+  assert.equal(digest(remote), beforeRemoteHash, `${testCase.id} ${forgedCase.name} mutated remote`);
+  assert.equal(appliedMutationCount, 0, `${testCase.id} ${forgedCase.name} reported applied mutations`);
+  assert.deepEqual(journalEvents, [], `${testCase.id} ${forgedCase.name} wrote durable journal events`);
+
+  return {
+    name: forgedCase.name,
+    code: error.code,
+    issueCodes,
+    detailsHash: `sha256:${digest(error.details)}`,
+    appliedMutationCount,
+    durableJournalEventCount: journalEvents.length,
+    durableMutationEventCount: journalEvents.filter((event) => event.type.includes('mutation')).length,
+  };
+}
+
+function generatedForgedReadyStaleAttempt(testCase, plan, target) {
+  const staleRemote = cloneJson(testCase.remote);
+  setResource(staleRemote, target.resource, deserializeResourceValue(target.value));
+  const beforeRemoteHash = digest(staleRemote);
+  const journalEvents = [];
+  let appliedMutationCount = 0;
+  const error = captureError(() => {
+    const result = applyPlan(staleRemote, plan, {
+      durableJournal: claimFencedDurableJournal(journalEvents),
+    });
+    appliedMutationCount = result.appliedMutations;
+  });
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale ready apply should throw`);
+  assert.equal(error.code, 'PRECONDITION_FAILED', `${testCase.id} stale ready code changed`);
+  assert.equal(digest(staleRemote), beforeRemoteHash, `${testCase.id} stale ready apply mutated remote`);
+  assert.equal(appliedMutationCount, 0, `${testCase.id} stale ready apply reported applied mutations`);
+  assert.equal(
+    journalEvents.filter((event) => event.type.includes('mutation')).length,
+    0,
+    `${testCase.id} stale ready apply wrote mutation journal events`,
+  );
+  assert.equal(
+    journalEvents.filter((event) => event.type === 'target-planned').length,
+    0,
+    `${testCase.id} stale ready apply wrote target-planned journal events`,
+  );
+
+  return {
+    code: error.code,
+    resourceKey: error.details.resourceKey,
+    expectedHash: error.details.expectedHash,
+    actualHash: error.details.actualHash,
+    detailsHash: `sha256:${digest(error.details)}`,
+    beforeRemoteHash: `sha256:${beforeRemoteHash}`,
+    afterRemoteHash: `sha256:${digest(staleRemote)}`,
+    appliedMutationCount,
+    durableJournalEventCount: journalEvents.length,
+    durableMutationEventCount: journalEvents.filter((event) => event.type.includes('mutation')).length,
+    targetPlannedEventCount: journalEvents.filter((event) => event.type === 'target-planned').length,
+  };
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -516,6 +726,51 @@ function emittedPlannerCounts(plan) {
     blockers: plan.blockers.length,
     atomicGroups: plan.atomicGroups.length,
   };
+}
+
+function aggregateGeneratedForgedReadyPlanDefenseEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalReadyCases++;
+      aggregate.totalPlannedMutations += entry.plannedMutations;
+      aggregate.totalPlannedPreconditions += entry.plannedPreconditions;
+      aggregate.totalAppliedMutations += entry.staleAttempt.appliedMutationCount;
+      aggregate.totalDurableMutationEvents += entry.staleAttempt.durableMutationEventCount;
+      incrementCount(aggregate.families, entry.family);
+      incrementCount(aggregate.staleRefusalCodes, entry.staleAttempt.code);
+      for (const forgedCase of entry.forgedCases) {
+        aggregate.totalForgedInvariantRefusals++;
+        aggregate.totalAppliedMutations += forgedCase.appliedMutationCount;
+        aggregate.totalDurableMutationEvents += forgedCase.durableMutationEventCount;
+        for (const issueCode of forgedCase.issueCodes) {
+          incrementCount(aggregate.issueCodes, issueCode);
+        }
+      }
+      return aggregate;
+    },
+    {
+      totalReadyCases: 0,
+      totalPlannedMutations: 0,
+      totalPlannedPreconditions: 0,
+      totalForgedInvariantRefusals: 0,
+      totalAppliedMutations: 0,
+      totalDurableMutationEvents: 0,
+      families: {},
+      issueCodes: {},
+      staleRefusalCodes: {},
+    },
+  );
+
+  return {
+    ...aggregate,
+    families: sortStringObject(aggregate.families),
+    issueCodes: sortStringObject(aggregate.issueCodes),
+    staleRefusalCodes: sortStringObject(aggregate.staleRefusalCodes),
+  };
+}
+
+function differentHash(hash) {
+  return hash === '0'.repeat(64) ? '1'.repeat(64) : '0'.repeat(64);
 }
 
 function aggregateGeneratedPlannerEvidence(evidence) {
