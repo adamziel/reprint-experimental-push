@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0076.
+Primary checklist range: RPP-0001 through RPP-0077.
 
 ## What changed
 
@@ -67,6 +67,7 @@ Primary checklist range: RPP-0001 through RPP-0076.
 | RPP-0070 | Evidence toward variant-4 same source URL identity proof now runs the release-gate CLI with drifted and matching final-release fixtures, asserting exact `SAME_SOURCE_IDENTITY_REQUIRED` recovery-source drift evidence, held marker, `NO-GO`, redaction, and `mutationAttempted: false` while the matching proof remains held by provenance. |
 | RPP-0071 through RPP-0072 | Evidence toward focused preflight route identity and dry-run route eligibility regressions now proves exact final evidence before provenance, fail-closed wrong-route and ineligible-route negative fixtures, redacted credential output, held markers, and `mutationAttempted: false`. |
 | RPP-0073 through RPP-0076 | Evidence toward focused apply route pre-mutation, journal read-only, recovery inspect read-only, and releaseMovement summary regressions now proves positive and fail-closed paths, exact named codes and status markers, scenario matrices where required, and `mutationAttempted: false`. |
+| RPP-0077 | Evidence toward focused tmux stdout proof status marker regression now proves malformed markers fail with `TMUX_STATUS_MARKER_REQUIRED`, exact valid release-ready markers are emitted on stdout, gate evidence is exact, and `mutationAttempted: false`. |
 
 ## Focused verification
 
@@ -117,6 +118,15 @@ Observed status: pass, 4 tests. This checks RPP-0073 through RPP-0076 with
 focused apply route pre-mutation, journal route read-only, recovery inspect
 read-only, and releaseMovement summary evidence; final release remains
 `NO-GO`.
+
+Focused tmux stdout marker regression refresh:
+
+```sh
+node --test test/release-gate-tmux-status-marker-focused-regression.test.js
+```
+
+Observed status: pass, 1 test. This checks RPP-0077 with malformed and exact
+tmux-visible final marker paths; final release remains `NO-GO`.
 
 Progress HTML release timestamp proof:
 

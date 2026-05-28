@@ -6,20 +6,26 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 20:44 CEST.
+- Last update: 2026-05-28 20:48 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 208
-  items checked and leaves 792 open.
-- Checked slices: 76 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 209
+  items checked and leaves 791 open.
+- Checked slices: 77 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
   yet.
+- Focused tmux stdout marker refresh: the current lane now contains
+  `test/release-gate-tmux-status-marker-focused-regression.test.js` for
+  `RPP-0077`. The command
+  `node --test test/release-gate-tmux-status-marker-focused-regression.test.js`
+  passed 1/1, proving malformed marker refusal and exact final marker stdout
+  evidence with `mutationAttempted: false`. Final release remains `NO-GO`.
 - Manage_options variant-2 refresh: the current lane now contains an explicit
   negative/positive scenario matrix for `RPP-0029` in
   `test/release-gate-manage-options-capability-regression.test.js`. The

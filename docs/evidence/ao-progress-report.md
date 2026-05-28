@@ -1,4 +1,4 @@
-# AO Progress Report - 2026-05-28 20:44 CEST
+# AO Progress Report - 2026-05-28 20:48 CEST
 
 Status: **NO-GO for final release**.
 
@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 208 are
-  checked from integrated evidence and 792 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 209 are
+  checked from integrated evidence and 791 remain open.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -35,6 +35,10 @@ progress.
   covering apply route pre-mutation, journal route read-only, recovery inspect
   read-only, and releaseMovement summary proof while final release remains
   **NO-GO**.
+- A focused tmux stdout marker refresh now checks `RPP-0077`.
+  `node --test test/release-gate-tmux-status-marker-focused-regression.test.js`
+  passed 1/1, proving malformed marker refusal and exact final marker stdout
+  evidence while final release remains **NO-GO**.
 - Session/rpp cleanup now checks `RPP-0156` by integrating the branch-local
   generated-harness atomic plugin install stack proof. The current lane exposes
   `atomicPluginInstallStack` target coverage across all 10 tiers, including
@@ -928,7 +932,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 76 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 77 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 34 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
@@ -941,7 +945,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0076`.
+- Release gates: `RPP-0001` through `RPP-0077`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
   `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`,
@@ -974,6 +978,7 @@ Checked IDs in this report are:
 
 ## Checked Commands
 
+- `node --test test/release-gate-tmux-status-marker-focused-regression.test.js` — 1 pass / 0 fail for the RPP-0077 focused tmux stdout proof marker regression.
 - `node --test test/release-gate-manage-options-capability-regression.test.js` — 3 pass / 0 fail for the RPP-0029 manage_options variant-2 scenario matrix plus RPP-0069 regression coverage.
 - `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.
