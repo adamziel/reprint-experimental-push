@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, RPP-0058, and RPP-0062
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, RPP-0058, RPP-0062, and RPP-0066
 
 ## What changed
 
@@ -55,14 +55,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0051 | Evidence toward variant-3 preflight route identity proof now generates matching and mismatched final-release fixtures, asserts exact route identity evidence on the matching fixture, and proves wrong preflight route evidence exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, held marker, and `mutationAttempted: false`. |
 | RPP-0058 | Evidence toward variant-3 progress.html release timestamp now generates valid and invalid timestamp fixtures, links the focused command and observed `pass` status to the current progress proof timestamp, preserves `NO-GO`, and asserts exact timestamp-gate evidence with `mutationAttempted: false`. |
 | RPP-0062 | Evidence toward variant-4 missing `REPRINT_PUSH_LOCAL_URL` coverage now runs the release-gate CLI with every other final-release gate supplied, asserting exit `1`, exact `REPRINT_PUSH_LOCAL_URL_REQUIRED` reason/evidence, `NO-GO`, redaction, and `mutationAttempted: false`. |
+| RPP-0066 | Evidence toward variant-4 auth source command readback drift now runs the release-gate CLI with every other final-release gate supplied, asserting exit `1`, exact `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED` reason/evidence, final held marker, `NO-GO`, redaction, and `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/release-gate-missing-local-url-regression.test.js test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-auth-source-readback-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 39 tests.
+Observed status: pass, 41 tests.
 
 Progress HTML release timestamp proof:
 
@@ -106,12 +107,19 @@ Missing local URL regression proof:
 - Observed status: `pass`; generated fixture supplies source URL, remote-changed URL, credentials, and every non-topology final-release gate while leaving `REPRINT_PUSH_LOCAL_URL` empty.
 - Evidence link: the checked command exits `1` with `REPRINT_PUSH_LOCAL_URL_REQUIRED`, `finalGates: "19/20"`, exact `local-url` reason/evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_LOCAL_URL_REQUIRED]`, `NO-GO`, redacted credential output, and `mutationAttempted: false`.
 
+Auth source command readback drift regression proof:
+
+- Command: `node --test test/release-gate-auth-source-readback-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; generated fixture supplies source, local, remote-changed, credential, and every non-auth-readback final-release gate while readback returns a forged source URL.
+- Evidence link: the checked command exits `1` with `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, `finalGates: "19/20"`, exact `auth-source-readback` reason/evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED]`, `NO-GO`, redacted credential output, and `mutationAttempted: false`.
+
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
 - Packaged fallback and wrong remote alias each keep `releaseMovement.allowed: false` with `finalGates: "19/20"` when all other final evidence is present.
 - Missing/failed auth, route, read-only, operator-proof, and verifier-failure evidence is named per gate and keeps `releaseMovement.allowed: false`.
 - Auth source command readback drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED` and records `mutationAttempted: false`.
+- Auth source command readback drift regression coverage now records a final-release fixture where every other gate is supplied but readback drifts to a forged source URL; the checked CLI exits nonzero with `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, exact `auth-source-readback` reason/evidence, `NO-GO`, redacted credentials, and `mutationAttempted: false`.
 - Application Password binding drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `APPLICATION_PASSWORD_BINDING_REQUIRED`, exact binding evidence, and `mutationAttempted: false`.
 - Same source URL identity drift has variant-2 release-gate and CLI coverage: both paths preserve exact drift evidence, the CLI emits a final bracketed `[release-gates-ci:held ... reason=SAME_SOURCE_IDENTITY_REQUIRED]` marker, and no mutation attempt is recorded.
 - Generated same source URL identity coverage now records a matching final-release source path with a release-ready final bracketed marker and a drifted apply-source fixture that fails closed at `same-source-identity` only, with `SAME_SOURCE_IDENTITY_REQUIRED`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]` marker, exact evidence, and `mutationAttempted: false`.
