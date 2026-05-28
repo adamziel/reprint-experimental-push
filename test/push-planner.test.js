@@ -1874,6 +1874,139 @@ test('allows plugin-owned custom table rows with explicit driver table policy', 
   assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
 });
 
+test('RPP-0463 custom table allowlist exact match stays row owner driver and table bound', () => {
+  const allowedResourceKey = 'row:["wp_reprint_push_driver_fixture","entry_id:1"]';
+  const wrongOwnerResourceKey = 'row:["wp_reprint_push_driver_fixture","entry_id:2"]';
+  const wrongTableResourceKey = 'row:["wp_reprint_push_driver_fixture_shadow","entry_id:1"]';
+  const privateValues = [
+    'rpp0463-package-version-secret',
+    'rpp0463-plugin-file-secret',
+    'rpp0463-base-allowed-secret',
+    'rpp0463-local-allowed-secret',
+    'rpp0463-local-wrong-owner-secret',
+    'rpp0463-local-wrong-table-secret',
+  ];
+  const base = baseSite();
+  base.plugins['driver-fixture'] = { version: '1.0.0-rpp0463-package-version-secret', active: true };
+  base.files[pluginMainFile('driver-fixture')] = '<?php /* rpp0463-plugin-file-secret */';
+  base.db.wp_reprint_push_driver_fixture = {
+    'entry_id:1': {
+      entry_id: 1,
+      payload: { owner: 'driver-fixture', mode: 'base', token: 'rpp0463-base-allowed-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'driver-fixture',
+    },
+    'entry_id:2': {
+      entry_id: 2,
+      payload: { owner: 'driver-fixture', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'driver-fixture',
+    },
+  };
+  base.db.wp_reprint_push_driver_fixture_shadow = {
+    'entry_id:1': {
+      entry_id: 1,
+      payload: { owner: 'driver-fixture', mode: 'base' },
+      updated_marker: 'base',
+      __pluginOwner: 'driver-fixture',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_reprint_push_driver_fixture['entry_id:1'].payload = {
+    owner: 'driver-fixture',
+    mode: 'local-allowed',
+    token: 'rpp0463-local-allowed-secret',
+  };
+  local.db.wp_reprint_push_driver_fixture['entry_id:1'].updated_marker = 'local-allowed';
+  local.db.wp_reprint_push_driver_fixture['entry_id:2'].payload = {
+    owner: 'driver-fixture',
+    mode: 'local-wrong-owner',
+    token: 'rpp0463-local-wrong-owner-secret',
+  };
+  local.db.wp_reprint_push_driver_fixture['entry_id:2'].updated_marker = 'local-wrong-owner';
+  local.db.wp_reprint_push_driver_fixture_shadow['entry_id:1'].payload = {
+    owner: 'driver-fixture',
+    mode: 'local-wrong-table',
+    token: 'rpp0463-local-wrong-table-secret',
+  };
+  local.db.wp_reprint_push_driver_fixture_shadow['entry_id:1'].updated_marker = 'local-wrong-table';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(allowedResourceKey, 'driver-fixture', 'fixture-arbitrary-plugin-table', {
+        table: 'wp_reprint_push_driver_fixture',
+        supportsDelete: false,
+      }),
+      allowedPluginOwnedResource(wrongOwnerResourceKey, 'other-driver-fixture', 'fixture-arbitrary-plugin-table', {
+        table: 'wp_reprint_push_driver_fixture',
+        supportsDelete: false,
+      }),
+      allowedPluginOwnedResource(wrongTableResourceKey, 'driver-fixture', 'fixture-arbitrary-plugin-table', {
+        table: 'wp_reprint_push_driver_fixture',
+        supportsDelete: false,
+      }),
+    ),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const allowedMutation = mutationFor(plan, allowedResourceKey);
+  const wrongOwnerBlocker = plan.blockers.find((blocker) => blocker.resourceKey === wrongOwnerResourceKey);
+  const wrongTableBlocker = plan.blockers.find((blocker) => blocker.resourceKey === wrongTableResourceKey);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.mutations.length, 1);
+  assert.equal(plan.blockers.length, 2);
+  assert.ok(allowedMutation, 'exact allowlist row should still plan a mutation');
+  assert.equal(allowedMutation.pluginOwnedResource.pluginOwner, 'driver-fixture');
+  assert.equal(allowedMutation.pluginOwnedResource.driver, 'fixture-arbitrary-plugin-table');
+  assert.equal(allowedMutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(allowedMutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
+  assert.equal(allowedMutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
+  assert.match(allowedMutation.pluginOwnedResource.auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+  assert.equal(mutationFor(plan, wrongOwnerResourceKey), undefined);
+  assert.equal(mutationFor(plan, wrongTableResourceKey), undefined);
+
+  assert.equal(wrongOwnerBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(wrongOwnerBlocker.pluginOwner, 'driver-fixture');
+  assert.equal(wrongOwnerBlocker.driver, null);
+  assert.equal(wrongTableBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(wrongTableBlocker.pluginOwner, 'driver-fixture');
+  assert.equal(wrongTableBlocker.driver, 'fixture-arbitrary-plugin-table');
+
+  const evidence = {
+    evidenceScope: 'local-focused',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    accepted: {
+      resourceKey: allowedMutation.resourceKey,
+      pluginOwner: allowedMutation.pluginOwnedResource.pluginOwner,
+      driver: allowedMutation.pluginOwnedResource.driver,
+      auditEvidence: allowedMutation.pluginOwnedResource.auditEvidence,
+      ownerContextHash: digest(allowedMutation.pluginOwnedResource.ownerContext),
+    },
+    refused: [wrongOwnerBlocker, wrongTableBlocker].map((blocker) => ({
+      resourceKey: blocker.resourceKey,
+      pluginOwner: blocker.pluginOwner,
+      driver: blocker.driver,
+      class: blocker.class,
+      baseHash: blocker.baseHash,
+      localHash: blocker.localHash,
+      remoteHash: blocker.remoteHash,
+      changeHash: digest(blocker.change),
+    })),
+  };
+  const evidenceJson = JSON.stringify(evidence);
+  for (const privateValue of privateValues) {
+    assert.equal(evidenceJson.includes(privateValue), false, `RPP-0463 evidence leaked ${privateValue}`);
+  }
+
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remote), remoteBefore, 'blocked exact-match proof mutated the remote snapshot');
+});
+
 test('fixture forms lab table requires exact driver and active fixture plugin evidence', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();

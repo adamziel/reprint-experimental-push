@@ -76,6 +76,27 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0463 custom table allowlist exact-match regression
+
+RPP-0463 adds local focused evidence that arbitrary plugin-owned custom table
+support remains bound to an exact resource key, plugin owner, driver, and table.
+The proof plans one `fixture-arbitrary-plugin-table` mutation for the exact
+`wp_reprint_push_driver_fixture` row named in policy, while an adjacent row with
+a wrong-owner policy and a shadow-table row with a wrong-table policy both stay
+blocked with no mutation.
+
+The evidence envelope records only planner hashes, driver audit evidence,
+owner-context hashes, and blocker hashes. Fixture package versions, plugin file
+content, and private row payload tokens are asserted absent from the evidence.
+This is local focused support evidence, not production-backed proof, and the
+release posture remains `NO-GO`.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0463|allows plugin-owned custom table rows with explicit driver table policy' test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +110,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0463 — custom table allowlist exact-match regression: the arbitrary
+  fixture table accepts only the exact row/owner/driver/table policy and blocks
+  adjacent wrong-owner or wrong-table rows with redacted local evidence.
