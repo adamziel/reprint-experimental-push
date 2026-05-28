@@ -1,7 +1,7 @@
 # AO critic live roster 9 evidence
 
 Timestamp: 2026-05-28T05:16:39+02:00
-Lane head inspected: `2864ad636` on `origin/lane/evidence-integration-20260527`
+Lane head inspected: `3f371fd87` on `origin/lane/evidence-integration-20260527`
 Critic branch: `session/rpp-31-critic-live-roster-9`
 
 ## Release status
@@ -19,8 +19,8 @@ Evidence from this critic pass:
 
 - Integrated lane evidence in this pass: `RPP-0036`, `RPP-0210`, and `RPP-0037`.
 - Queued or active refs with direct merge conflicts: `RPP-0038`, `RPP-0211`, `RPP-0212`, `RPP-0310`, `RPP-0311`, and `RPP-0315`.
-- Queued or active refs clean one-by-one by merge-tree: `RPP-0109`, `RPP-0110`, `RPP-0111`, `RPP-0414`, `RPP-0415`, `RPP-0416`, `RPP-0417`, and `RPP-0418`.
-- Branch-local / pushed-only work must not be counted as integrated; active panes had already moved on to `RPP-0112`, `RPP-0039`, `RPP-0212`, `RPP-0315`, and `RPP-0418` states.
+- Queued or active refs clean one-by-one by merge-tree: `RPP-0109`, `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0414`, `RPP-0415`, `RPP-0416`, `RPP-0417`, and `RPP-0418`.
+- Branch-local / pushed-only work must not be counted as integrated; active panes had already moved on to `RPP-0113`, `RPP-0039`, `RPP-0213`, `RPP-0316`, and `RPP-0419` states.
 
 ## Read-only / focused checks
 
