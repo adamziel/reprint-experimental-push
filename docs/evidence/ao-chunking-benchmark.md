@@ -75,6 +75,6 @@ node scripts/bench/guarded-executor-benchmark.js --profile=unit --file-bytes=104
 git diff --check
 ```
 
-Result: 5 guarded benchmark tests passed, the CLI report emitted `resources`,
-`rolloutSafetyGates`, `timings`, and `throughput` in that order, and
-`git diff --check` passed.
+Result: 6 guarded benchmark tests passed, including the CLI regression that
+parses the benchmark command output and asserts `resources`, `rolloutSafetyGates`,
+`timings`, and `throughput` appear in that order. `git diff --check` passed.

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -200,6 +201,37 @@ test('production claim gate fails closed if benchmark evidence is tampered', { c
   assert.ok(
     productionThroughputBlockers(missingGraphIdentity).includes('wordpress-graph-identity-evidence-not-proven'),
   );
+});
+
+test('CLI benchmark reports runtime resources and rollout gates before throughput', { concurrency: false }, () => {
+  const stdout = execFileSync(process.execPath, [
+    'scripts/bench/guarded-executor-benchmark.js',
+    '--profile=unit',
+    '--file-bytes=1048576',
+    '--chunk-size-bytes=262144',
+    '--row-count=8',
+    '--row-payload-bytes=64',
+    `--temp-dir=${tempBenchmarkDir()}`,
+  ], {
+    cwd: path.resolve(new URL('..', import.meta.url).pathname),
+    encoding: 'utf8',
+  });
+  const report = JSON.parse(stdout);
+  const rootKeys = Object.keys(report);
+
+  assert.ok(rootKeys.indexOf('resources') < rootKeys.indexOf('rolloutSafetyGates'));
+  assert.ok(rootKeys.indexOf('rolloutSafetyGates') < rootKeys.indexOf('timings'));
+  assert.ok(rootKeys.indexOf('timings') < rootKeys.indexOf('throughput'));
+  assert.equal(typeof report.timings.stageFileMs, 'number');
+  assert.equal(typeof report.timings.planMs, 'number');
+  assert.equal(typeof report.timings.applyMs, 'number');
+  assert.equal(typeof report.timings.totalMs, 'number');
+  assert.equal(report.resources.transfer.chunkReceipts, report.shape.chunkCount);
+  assert.equal(report.resources.transfer.resourceKey, report.shape.largeUploadResourceKey);
+  assert.equal(report.rolloutSafetyGates.summary.passed, 7);
+  assert.equal(report.rolloutSafetyGates.summary.blocked, 3);
+  assert.equal(report.rolloutSafetyGates.summary.failed, 0);
+  assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
 test('rollout safety gates are named before speed claims', { concurrency: false }, () => {
