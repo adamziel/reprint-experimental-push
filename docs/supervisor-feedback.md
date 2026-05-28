@@ -1,9 +1,41 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 02:43 CEST
+Last updated: 2026-05-28 03:02 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 03:02 CEST - Release Gate Evaluator Observed
+
+- Going well: after rebasing onto the latest integration branch, this lane
+  verified the new fail-closed release-gate evaluator with `node --check` and
+  `node --test test/release-gates.test.js` (8/8).
+- Not going well: the evaluator is support evidence. It proves exact reporting
+  and fail-closed behavior, not Docker/external WordPress readiness. Release
+  verdict remains `0/4`.
+- Progress change: no readiness movement; progress surfaces now cite the
+  integrated evaluator and keep final release held.
+- Next nudge: wire release-gate evaluator output into production-backed
+  `verify:release` only when the live source/local/changed URLs and credentials
+  exist.
+
+## 2026-05-28 03:00 CEST - AO Helper Correction
+
+- Going well: the lane stopped relying on AO lifecycle helpers and recorded the
+  correction in the progress report, log, feedback, and page using normal repo
+  commands only.
+- Not going well: this does not create new runtime, recovery, graph, plugin,
+  rollback, benchmark, or CI release proof. Release verdict remains `0/4`.
+- Progress change: no readiness movement; the improvement is operational audit
+  clarity.
+- Next nudge: keep using stdout-tagged repo commands, commit/push concrete
+  evidence, and do not wait on `ao acknowledge`, `ao report`, `ao status`, or
+  `ao session`.
+
+| Lane | Nudge |
+| --- | --- |
+| Progress reporter | Avoid AO lifecycle helpers; document evidence through repo-visible files and checked commands. |
+| Audit and critic | Keep release movement tied to production-backed proof, not orchestration state. |
 
 ## 2026-05-28 02:53 CEST - Progress Reporter Release Hold Snapshot
 

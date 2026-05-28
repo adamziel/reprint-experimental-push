@@ -4,10 +4,18 @@ Status: **NO-GO for final release**. This report summarizes evidence already
 present on the integration branch and the currently available AO worker outputs
 without moving any release gate from support-only/local-candidate status.
 
+## Supervisor correction - 2026-05-28 03:00 CEST
+
+The supervisor clarified that AO lifecycle helper commands can hang in this
+environment. This lane will not run `ao acknowledge`, `ao report`, `ao status`,
+`ao session`, or related AO helper waits again. Evidence gathering continues
+with normal repository commands only: `git`, `grep`, `sed`, `node`, `npm`, and
+focused validation scripts.
+
 ## Scope inspected
 
 - Integration branch: `lane/evidence-integration-20260527` at commit
-  `5c9433c4d` (`Keep AO supervision active`).
+  `243dfe777` (`Add fail-closed release gate evaluator`).
 - Release gate file: `.agents/RELEASE_GATES.md`, currently
   `release_verdict: 0/4`; GATE-1 through GATE-4 remain `support_only`.
 - Completion tracker: `docs/reprint-push-completion-checklist.md` contains
@@ -27,6 +35,13 @@ as **not yet counted** toward release readiness.
 
 ## Verified integrated progress
 
+- The fail-closed release-gate evaluator is integrated:
+  `docs/evidence/ao-release-gates.md`, `src/release-gates.js`, and
+  `test/release-gates.test.js`. Focused checks passed on this lane with
+  `node --check src/release-gates.js`,
+  `node --check test/release-gates.test.js`, and
+  `node --test test/release-gates.test.js` (8/8). This is support evidence
+  for exact fail-closed gate reporting, not final production release proof.
 - The generated push harness is integrated and documented: 360 deterministic
   cases, 10 complexity tiers, 203 ready cases, 129 conflict cases, 28 blocked
   cases, and tier-9 ready/apply coverage. It is model coverage, not external
@@ -72,6 +87,13 @@ rollout. No release percentage moves in this report.
 
 ## RPP items with new evidence
 
+- `RPP-0937`: the integrated fail-closed evaluator and this report reinforce
+  that release-gate status moves only with production-backed evidence; local
+  candidate and support evidence remain explicitly non-release.
+- `RPP-0949`: supervisor correction is now recorded as an
+  operator/support constraint: do not wait on hanging AO lifecycle helpers; use
+  normal repo commands and keep release evidence separate from orchestration
+  state. This is documentation evidence only.
 - `RPP-0940` / `RPP-0945`: dated go/no-go record now names the remaining risks
   instead of inflating readiness. Evidence is this file plus the matching
   progress-log and progress-page refresh.
@@ -93,3 +115,10 @@ that is not present in this task.
 - `grep -nE '^`release_verdict`|^Status:|Last refreshed:' .agents/RELEASE_GATES.md`
 - Sibling worktree status and `.lane-output/final.md` inspection loops for
   `rpp-1` through `rpp-8`.
+- 2026-05-28 03:00 correction pass: `git status --short --branch`, `sed`,
+  `grep`, Python link/report validation, and `git diff --check`; no AO
+  lifecycle helper commands were used.
+- 2026-05-28 03:02 release-gate evaluator check:
+  `node --check src/release-gates.js`,
+  `node --check test/release-gates.test.js`, and
+  `node --test test/release-gates.test.js` passed 8/8.

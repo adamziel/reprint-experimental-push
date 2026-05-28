@@ -4,6 +4,47 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Integrated Release Gate Evaluator Observed
+
+- Last update: 2026-05-28 03:02 CEST.
+- New integrated worker evidence observed after rebasing onto
+  `origin/lane/evidence-integration-20260527` at `243dfe777`:
+  `docs/evidence/ao-release-gates.md`, `src/release-gates.js`, and
+  `test/release-gates.test.js`.
+- Focused checks passed on this lane:
+  `node --check src/release-gates.js`,
+  `node --check test/release-gates.test.js`, and
+  `node --test test/release-gates.test.js` (8 tests).
+- Evidence meaning: the evaluator gives exact fail-closed releaseMovement and
+  candidateMovement summaries for missing source/local/remote URLs, packaged
+  fallback rejection, wrong remote alias, auth source readback drift, missing
+  production credentials, local-candidate-only evidence, and tmux-style status
+  markers.
+- Release posture: this is support evidence for RPP release-gate reporting; it
+  does not move `.agents/RELEASE_GATES.md` from `release_verdict: 0/4` because
+  Docker/external source proof and final production evidence are still missing.
+- RPP evidence strengthened but not completed in this report: `RPP-0937`,
+  `RPP-0940`, `RPP-0945`, and `RPP-0953`.
+- Percent movement: none.
+
+## 2026-05-28 - AO Lifecycle Helper Correction
+
+- Last update: 2026-05-28 03:00 CEST.
+- Supervisor correction: `ao acknowledge`, `ao report`, `ao status`,
+  `ao session`, and related AO lifecycle helper waits can hang in this
+  environment and must not be used by this lane again.
+- Progress reporting will continue with normal repository commands only:
+  `git`, `grep`, `sed`, `node`, `npm`, focused validation scripts, and checked
+  command output.
+- Evidence update: `docs/evidence/ao-progress-report.md`, this log,
+  `docs/supervisor-feedback.md`, and `progress.html` now carry the no-helper
+  operating constraint while keeping release readiness at `0/4`.
+- RPP evidence strengthened but not completed: `RPP-0937`, `RPP-0940`,
+  `RPP-0945`, and `RPP-0953` now have clearer support/operator and go/no-go
+  documentation. The checklist remains unchecked because the production-backed
+  proof and publish/CI proof are still missing.
+- Percent movement: none.
+
 ## 2026-05-28 - AO Progress Report Release Hold
 
 - Last update: 2026-05-28 02:53 CEST.

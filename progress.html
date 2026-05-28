@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; the AO progress report and supervision handoff now separate integrated proof from available but unintegrated worker output. The branch still includes the 1000-item checklist, 360-case generated harness, and Brewcommerce-derived local production graph, journal, auth/session, and release-state plugin-driver evidence. Final release remains held for Docker or external production WordPress, broader graph/plugin-driver proof, rollback or repair, and benchmark rollout.</p>
-        <time class="update-stamp" datetime="2026-05-28T02:53:00+02:00">Last updated: May 28, 2026, 02:53 CEST</time>
+        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; the AO progress report now records the supervisor correction to avoid hanging AO lifecycle helpers, and the latest integrated branch adds a fail-closed release-gate evaluator. The branch still includes the 1000-item checklist, 360-case generated harness, and Brewcommerce-derived local production graph, journal, auth/session, and release-state plugin-driver evidence. Final release remains held for Docker or external production WordPress, broader graph/plugin-driver proof, rollback or repair, and benchmark rollout.</p>
+        <time class="update-stamp" datetime="2026-05-28T03:02:00+02:00">Last updated: May 28, 2026, 03:02 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Targeted journal tests passing</span>
           <span class="pill">Complex local candidate proof</span>
@@ -515,6 +515,9 @@
           <span class="pill">AO handoff integrated</span>
           <span class="pill">Release verdict 0/4</span>
           <span class="pill">Worker output not counted yet</span>
+          <span class="pill">No AO lifecycle helpers</span>
+          <span class="pill">Release gate evaluator integrated</span>
+          <span class="pill">8 gate tests pass</span>
           <span class="pill">Final release requires external proof</span>
         </div>
       </div>
@@ -585,11 +588,11 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The progress report now links a dated AO evidence snapshot and integrated handoff while separating integrated proof from available but unintegrated worker output.</span></li>
-            <li><strong>Still strong</strong><span>The integrated branch retains the 360-case harness, local graph/journal receipts, and the narrow 22-mutation release-state plugin-driver proof.</span></li>
+            <li><strong>Going well</strong><span>The progress report now links the no-AO-helper correction and the integrated fail-closed release-gate evaluator evidence.</span></li>
+            <li><strong>Still strong</strong><span>The integrated branch retains the 360-case harness, local graph/journal receipts, the 22-mutation release-state plugin-driver proof, and 8 passing release-gate evaluator tests.</span></li>
             <li><strong>Not yet done</strong><span>Release verdict stays 0/4. Docker/external runtime, broader graph/plugin drivers, rollback/repair, benchmark rollout, and CI release gating remain required.</span></li>
             <li><strong>Progress change</strong><span>No readiness percentage movement from this report; it improves audit clarity only.</span></li>
-            <li><strong>Next nudge</strong><span>Count worker output only after it is committed, pushed, and checked on the release path.</span></li>
+            <li><strong>Next nudge</strong><span>Use normal repo commands only; count worker output only after it is committed, pushed, and checked on the release path.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -599,6 +602,9 @@
           <ul class="link-list">
             <li><a href="docs/evidence/ao-progress-report.md">AO progress report</a></li>
             <li><a href="docs/evidence/ao-supervision-handoff.md">AO supervision handoff</a></li>
+            <li><a href="docs/evidence/ao-release-gates.md">AO release-gates evidence</a></li>
+            <li><a href="src/release-gates.js">Release-gate evaluator</a></li>
+            <li><a href="test/release-gates.test.js">Release-gate evaluator tests</a></li>
             <li><a href="scripts/playground/local-production-release-verify.mjs">Local production release verifier</a></li>
             <li><a href="docs/reprint-push-completion-checklist.md">1000-item completion checklist</a></li>
             <li><a href="scripts/harness/generated-push-cases.js">Generated push harness</a></li>
@@ -640,7 +646,8 @@
             <div class="proof-item"><span class="status">Covered locally</span><p>The graph identity smokes map a real Playground post/postmeta author identity, a same-plan featured-image attachment plus `_thumbnail_id` closure, a same-plan category taxonomy closure, a same-plan post-parent page closure, and a same-plan comment/commentmeta closure, while menu/navigation and arbitrary taxonomy/comment surfaces remain fail-closed.</p></div>
             <div class="proof-item"><span class="status">Local candidate</span><p>The release-state plugin-driver proof carries `row:["wp_reprint_push_release_state","state_id:1"]` through exact owner/driver allowlist matching, live precondition, apply revalidation, durable journal, remote-drift conflict preservation, and replay/recovery evidence.</p></div>
             <div class="proof-item"><span class="status">Support proof</span><p>Production-shaped plugin-driver tests reject unknown plugin-owned resources, mismatched owner/driver allowlists, direct `active_plugins` mutations, and unowned serialized option mutations before they can be counted as safe broader plugin-driver evidence.</p></div>
-            <div class="proof-item"><span class="status">Report</span><p>`docs/evidence/ao-progress-report.md` records a 2026-05-28 no-go decision, sibling worker-output inspection, and the current release hold list without moving any gate.</p></div>
+            <div class="proof-item"><span class="status">Support proof</span><p>`src/release-gates.js` and `test/release-gates.test.js` now provide exact fail-closed releaseMovement/candidateMovement summaries; the focused test passes 8/8 but does not move final release readiness.</p></div>
+            <div class="proof-item"><span class="status">Report</span><p>`docs/evidence/ao-progress-report.md` records a 2026-05-28 no-go decision, sibling worker-output inspection, the no-AO-helper correction, and the current release hold list without moving any gate.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Docker or external WordPress runtime with the same durable journal and credential lifecycle evidence.</p></div>
             <div class="proof-item"><span class="status">Held</span><p>Full Brewcommerce/WooCommerce import booted four sites but needs another checked run after the source auth/session preflight timeout.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>General plugin drivers, broader WordPress graph surfaces, external runtime crash durability, and rollback.</p></div>
