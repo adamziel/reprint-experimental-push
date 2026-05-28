@@ -2,11 +2,11 @@
 
 Date: 2026-05-28
 Lane: critic-live-roster-5
-Latest inspected lane head: `0dc2b2c9d` on `origin/lane/evidence-integration-20260527`
+Latest inspected lane head: `e6601f78c` on `origin/lane/evidence-integration-20260527`
 
 ## Release status
 
-**NO-GO.** The current lane still blocks release movement.
+**NO-GO.** The latest lane includes Docker artifact support and AO lifecycle watchdog docs, but release movement is still blocked.
 
 Observed lightweight command results:
 
@@ -28,13 +28,17 @@ Observed lightweight command results:
   "checklistCompletionLint": {
     "exit": 0,
     "riskyClaims": 0,
-    "checkedIds": 87,
-    "uncheckedIds": 913
+    "checkedIds": 88,
+    "uncheckedIds": 912
   },
   "artifactRedactionScan": {
     "exit": 0,
-    "scannedFiles": 35,
+    "scannedFiles": 36,
     "rejectedFiles": 0
+  },
+  "dockerArtifactFocusedTest": {
+    "exit": 0,
+    "tests": 10
   }
 }
 ```
@@ -43,20 +47,18 @@ Observed lightweight command results:
 
 | Candidate | Status from critic refresh |
 | --- | --- |
-| RPP-0102 / `892eed724` | Clean merge-tree; recommended next. Generated-harness-only scope, focused tests reported by worker as 3 passing. |
-| RPP-0027 / `2b2c55553` | Merge-tree conflicts with integrated RPP-0026 release-gate doc/test changes. Needs manual preservation of both proofs. |
-| RPP-0203 / `bd502f747` | Clean merge-tree now; focused-only planner/generated evidence. Recheck after generated-harness integrations. |
-| RPP-0303 / `db614dbda` | Clean merge-tree now; overlaps generated-harness files and graph evidence. Recheck after RPP-0102. |
-| RPP-32 / `dcfc23022` | Clean merge-tree; support artifact remains fail-closed on missing Docker CLI, not release-ready evidence. |
-| Docs refresh / `1365239c8` | Stale and conflicting; superseded by integrated lane `0dc2b2c9d` progress docs. |
+| RPP-0103 / `866767ef3` | Newly pushed, clean merge-tree, generated-harness scope. Recommended next if focused tests remain clean. |
+| RPP-0028 / `75b9b21a2` | Clean merge-tree, narrow release-gate proof scope, no checklist count changes. |
+| RPP-0204 / `2ed048ffd` | Clean merge-tree, focused planner/generated evidence, already includes the Docker-artifact lane in its merge ref. |
+| RPP-0306 / `decb779f6` | Clean merge-tree and fresh base, but overlaps generated-harness files with RPP-0103/RPP-0204. |
+| RPP-0401 / `519b41c6e` | Clean merge-tree plugin-driver API candidate; replay from latest lane before integration. |
+| RPP-0203 / `bd502f747` | Stale; merge-tree reports `changed in both` for `test/generated-push-harness.test.js`. |
+| RPP-0303 / `db614dbda` | Stale; merge-tree reports generated-harness doc/code/test conflicts. |
+| RPP-32 artifact / `dcfc23022` | Patch-equivalent content is now integrated as `912bdfbd4`; do not merge the stale branch ref. |
 
-## Checklist/overclaim finding
+## Recommendation
 
-The official lane now reports 87 checked and 913 open RPP items. The checklist linter passes with no risky claims. Candidate branches should not edit checklist counts unless exact integrated evidence closes an item. The stale progress branch should not be integrated because it conflicts with and predates the official 87/913 progress refresh.
-
-## Recommended next action
-
-Integrate RPP-0102 next from latest lane by cherry-pick/rebase, run generated-harness focused checks plus `git diff --check`, then reassess RPP-0203 and RPP-0303 because generated-harness files are active. Keep RPP-0027 for a careful manual merge after that, and keep RPP-32 as support evidence only.
+Next integrate **RPP-0103** from latest lane, then re-evaluate RPP-0028/RPP-0204/RPP-0306/RPP-0401. Keep RPP-0203 and RPP-0303 held until manual generated-harness conflict resolution.
 
 ## Evidence boundaries
 
