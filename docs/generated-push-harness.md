@@ -150,10 +150,12 @@ remote.
 
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready
-cases create the user and usermeta row in one plan and reject stale replays
-before mutation; stale cases keep the user in the base, drift that user
-remotely, and require the new usermeta reference to fail closed instead of
-overwriting the drifted remote.
+cases create the user and usermeta row in one plan, preserve unplanned remote
+resources, and reject stale replays before mutation; stale cases keep the user
+in the base, drift that user remotely, and require the new usermeta reference to
+fail closed instead of overwriting the drifted remote. RPP-0129 also keeps
+private user password, activation-token, and usermeta payload values out of
+summary and planner evidence by checking only redacted hashes and metadata.
 
 The `rowCreateUpdateDeleteMix` target coverage records per-tier counts for the
 generic row create/update/delete surface. Ready cases create, update, and delete

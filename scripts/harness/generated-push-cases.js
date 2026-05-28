@@ -1703,6 +1703,10 @@ function addWpUsersUsermetaGraph(local, remote, allocator, tags, { staleTarget, 
   const usermetaRowId = `umeta_id:${metaId}`;
   const user = makeUser(userId, {
     display_name: `Generated graph user ${userId}`,
+    user_pass: `generated-private-user-pass-${userId}`,
+    user_activation_key: `generated-private-user-token-${userId}`,
+    user_registered: '2026-05-28 00:00:00',
+    user_status: 0,
   });
 
   if (staleTarget) {
@@ -1710,8 +1714,9 @@ function addWpUsersUsermetaGraph(local, remote, allocator, tags, { staleTarget, 
     setRow(local, 'wp_users', userRowId, user);
     setRow(remote, 'wp_users', userRowId, {
       ...user,
-      user_email: `remote-stale-generated-user-${userId}@example.test`,
+      user_email: `remote-private-user-${userId}@example.test`,
       display_name: `Remote stale graph user ${userId}`,
+      user_activation_key: `remote-private-user-token-${userId}`,
     });
   } else {
     setRow(local, 'wp_users', userRowId, user);
@@ -1721,12 +1726,17 @@ function addWpUsersUsermetaGraph(local, remote, allocator, tags, { staleTarget, 
     umeta_id: metaId,
     user_id: userId,
     meta_key: `_generated_usermeta_graph_${metaId}`,
-    meta_value: `generated usermeta graph ${metaId}`,
+    meta_value: {
+      public_label: `generated usermeta graph ${metaId}`,
+      private_token: `local-private-usermeta-token-${metaId}`,
+      private_notes: `local-private-usermeta-notes-${metaId}`,
+    },
   });
 
   tags.add('wp-users-usermeta-graph');
   tags.add('wp-users-create');
   tags.add('wp-usermeta-create');
+  tags.add('usermeta-user-graph');
   tags.add('user-meta-graph');
   tags.add('same-plan-graph');
 
