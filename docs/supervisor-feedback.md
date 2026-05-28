@@ -1,9 +1,24 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 03:22 CEST
+Last updated: 2026-05-28 03:27 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 03:27 CEST - Checklist Starts Tracking Verified Completion
+
+- Going well: the 1000-item checklist now has 81 verified items checked and 919
+  open. The report no longer treats the tracker as an all-unchecked inventory.
+- Also integrated: `rpp-22` landed the critic continuation, fail-closed Docker
+  local-production harness, and evidence coverage manifest.
+- Current AO shape: tmux now shows sessions through `rpp-27`. Developer
+  capacity remains above five, `rpp-23` is the critic lane, `rpp-26` is the
+  replacement progress reporter, and `rpp-orchestrator` is still supervising.
+- Not yet done: no production-topology or release-ops checklist items are
+  checked. Docker proof is fail-closed because Docker is unavailable in this
+  sandbox, not a production pass.
+- Next nudge: let `rpp-25` finish checklist completion lint and reconcile
+  `rpp-11` through `rpp-14` plus `rpp-19` one safe branch at a time.
 
 ## 2026-05-28 03:22 CEST - Supervision Handoff Refreshed; Release Still Held
 

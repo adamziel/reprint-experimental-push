@@ -3,6 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
+- Verified complete: 81.
+- Remaining open: 919.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -10,31 +12,31 @@ This is the near-to-far completion tracker for turning Reprint push into a fully
 
 Focus: make the existing release verdict auditable and fail-closed.
 
-- [ ] RPP-0001 (Near / release-gates) Implement missing REPRINT_PUSH_SOURCE_URL gate, variant 1. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0002 (Near / release-gates) Implement missing REPRINT_PUSH_LOCAL_URL gate, variant 1. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0003 (Near / release-gates) Implement missing REPRINT_PUSH_REMOTE_CHANGED_URL gate, variant 1. Success: progress report links the command and observed status.
-- [ ] RPP-0004 (Near / release-gates) Implement packaged fallback rejection, variant 1. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0005 (Near / release-gates) Implement wrong remote alias rejection, variant 1. Success: tmux-visible run prints a final bracketed status marker.
-- [ ] RPP-0006 (Near / release-gates) Implement auth source command readback drift, variant 1. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0007 (Near / release-gates) Implement missing production secret gate, variant 1. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0008 (Near / release-gates) Implement Application Password credential binding, variant 1. Success: progress report links the command and observed status.
-- [ ] RPP-0009 (Near / release-gates) Implement manage_options capability proof, variant 1. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0010 (Near / release-gates) Implement same source URL identity proof, variant 1. Success: tmux-visible run prints a final bracketed status marker.
-- [ ] RPP-0011 (Near / release-gates) Implement preflight route identity proof, variant 1. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0012 (Near / release-gates) Implement dry-run route eligibility proof, variant 1. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0013 (Near / release-gates) Implement apply route pre-mutation proof, variant 1. Success: progress report links the command and observed status.
-- [ ] RPP-0014 (Near / release-gates) Implement journal route read-only proof, variant 1. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0015 (Near / release-gates) Implement recovery inspect read-only proof, variant 1. Success: tmux-visible run prints a final bracketed status marker.
-- [ ] RPP-0016 (Near / release-gates) Implement releaseMovement allowed/denied summary, variant 1. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0017 (Near / release-gates) Implement tmux stdout proof status marker, variant 1. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0018 (Near / release-gates) Implement progress.html release timestamp, variant 1. Success: progress report links the command and observed status.
-- [ ] RPP-0019 (Near / release-gates) Implement .agents/RELEASE_GATES.md status row, variant 1. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0020 (Near / release-gates) Implement verify:release nonzero failure reason, variant 1. Success: tmux-visible run prints a final bracketed status marker.
-- [ ] RPP-0021 (Near / release-gates) Prove missing REPRINT_PUSH_SOURCE_URL gate, variant 2. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0022 (Near / release-gates) Prove missing REPRINT_PUSH_LOCAL_URL gate, variant 2. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0023 (Near / release-gates) Prove missing REPRINT_PUSH_REMOTE_CHANGED_URL gate, variant 2. Success: progress report links the command and observed status.
-- [ ] RPP-0024 (Near / release-gates) Prove packaged fallback rejection, variant 2. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0025 (Near / release-gates) Prove wrong remote alias rejection, variant 2. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0001 (Near / release-gates) Implement missing REPRINT_PUSH_SOURCE_URL gate, variant 1. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0002 (Near / release-gates) Implement missing REPRINT_PUSH_LOCAL_URL gate, variant 1. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0003 (Near / release-gates) Implement missing REPRINT_PUSH_REMOTE_CHANGED_URL gate, variant 1. Success: progress report links the command and observed status.
+- [x] RPP-0004 (Near / release-gates) Implement packaged fallback rejection, variant 1. Success: scenario matrix records the negative and positive path.
+- [x] RPP-0005 (Near / release-gates) Implement wrong remote alias rejection, variant 1. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0006 (Near / release-gates) Implement auth source command readback drift, variant 1. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0007 (Near / release-gates) Implement missing production secret gate, variant 1. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0008 (Near / release-gates) Implement Application Password credential binding, variant 1. Success: progress report links the command and observed status.
+- [x] RPP-0009 (Near / release-gates) Implement manage_options capability proof, variant 1. Success: scenario matrix records the negative and positive path.
+- [x] RPP-0010 (Near / release-gates) Implement same source URL identity proof, variant 1. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0011 (Near / release-gates) Implement preflight route identity proof, variant 1. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0012 (Near / release-gates) Implement dry-run route eligibility proof, variant 1. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0013 (Near / release-gates) Implement apply route pre-mutation proof, variant 1. Success: progress report links the command and observed status.
+- [x] RPP-0014 (Near / release-gates) Implement journal route read-only proof, variant 1. Success: scenario matrix records the negative and positive path.
+- [x] RPP-0015 (Near / release-gates) Implement recovery inspect read-only proof, variant 1. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0016 (Near / release-gates) Implement releaseMovement allowed/denied summary, variant 1. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0017 (Near / release-gates) Implement tmux stdout proof status marker, variant 1. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0018 (Near / release-gates) Implement progress.html release timestamp, variant 1. Success: progress report links the command and observed status.
+- [x] RPP-0019 (Near / release-gates) Implement .agents/RELEASE_GATES.md status row, variant 1. Success: scenario matrix records the negative and positive path.
+- [x] RPP-0020 (Near / release-gates) Implement verify:release nonzero failure reason, variant 1. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0021 (Near / release-gates) Prove missing REPRINT_PUSH_SOURCE_URL gate, variant 2. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0022 (Near / release-gates) Prove missing REPRINT_PUSH_LOCAL_URL gate, variant 2. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0023 (Near / release-gates) Prove missing REPRINT_PUSH_REMOTE_CHANGED_URL gate, variant 2. Success: progress report links the command and observed status.
+- [x] RPP-0024 (Near / release-gates) Prove packaged fallback rejection, variant 2. Success: scenario matrix records the negative and positive path.
+- [x] RPP-0025 (Near / release-gates) Prove wrong remote alias rejection, variant 2. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0026 (Near / release-gates) Prove auth source command readback drift, variant 2. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0027 (Near / release-gates) Prove missing production secret gate, variant 2. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0028 (Near / release-gates) Prove Application Password credential binding, variant 2. Success: progress report links the command and observed status.
@@ -325,40 +327,40 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 
 Focus: replace narrow stable-ID graph cases with general identity mapping.
 
-- [ ] RPP-0301 (Mid / graph-identity) Implement post_parent page hierarchy, variant 1. Success: mapper rewrites or proves stable identity for the target.
+- [x] RPP-0301 (Mid / graph-identity) Implement post_parent page hierarchy, variant 1. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0302 (Mid / graph-identity) Implement featured image attachment reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0303 (Mid / graph-identity) Implement post author reference, variant 1. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0304 (Mid / graph-identity) Implement postmeta post_id reference, variant 1. Success: local production verifier carries the target through apply.
-- [ ] RPP-0305 (Mid / graph-identity) Implement comment post reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
+- [x] RPP-0304 (Mid / graph-identity) Implement postmeta post_id reference, variant 1. Success: local production verifier carries the target through apply.
+- [x] RPP-0305 (Mid / graph-identity) Implement comment post reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0306 (Mid / graph-identity) Implement comment parent thread reference, variant 1. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0307 (Mid / graph-identity) Implement comment user reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0308 (Mid / graph-identity) Implement commentmeta comment reference, variant 1. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0309 (Mid / graph-identity) Implement category term taxonomy reference, variant 1. Success: local production verifier carries the target through apply.
 - [ ] RPP-0310 (Mid / graph-identity) Implement post_tag taxonomy reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0311 (Mid / graph-identity) Implement custom taxonomy fail-closed reference, variant 1. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0312 (Mid / graph-identity) Implement termmeta term reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
-- [ ] RPP-0313 (Mid / graph-identity) Implement term relationship object reference, variant 1. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0314 (Mid / graph-identity) Implement term relationship taxonomy reference, variant 1. Success: local production verifier carries the target through apply.
+- [x] RPP-0312 (Mid / graph-identity) Implement termmeta term reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0313 (Mid / graph-identity) Implement term relationship object reference, variant 1. Success: generated harness includes ready and stale cases.
+- [x] RPP-0314 (Mid / graph-identity) Implement term relationship taxonomy reference, variant 1. Success: local production verifier carries the target through apply.
 - [ ] RPP-0315 (Mid / graph-identity) Implement nav menu item fail-closed reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0316 (Mid / graph-identity) Implement wp_navigation fail-closed reference, variant 1. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0317 (Mid / graph-identity) Implement serialized block reference detection, variant 1. Success: unsupported target fails closed with hash-only evidence.
-- [ ] RPP-0318 (Mid / graph-identity) Implement GUID and slug collision handling, variant 1. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0319 (Mid / graph-identity) Implement cross-table create batch mapping, variant 1. Success: local production verifier carries the target through apply.
-- [ ] RPP-0320 (Mid / graph-identity) Implement production importer/exporter identity map, variant 1. Success: docs state remaining unmapped WordPress surfaces.
-- [ ] RPP-0321 (Mid / graph-identity) Prove post_parent page hierarchy, variant 2. Success: mapper rewrites or proves stable identity for the target.
+- [x] RPP-0318 (Mid / graph-identity) Implement GUID and slug collision handling, variant 1. Success: generated harness includes ready and stale cases.
+- [x] RPP-0319 (Mid / graph-identity) Implement cross-table create batch mapping, variant 1. Success: local production verifier carries the target through apply.
+- [x] RPP-0320 (Mid / graph-identity) Implement production importer/exporter identity map, variant 1. Success: docs state remaining unmapped WordPress surfaces.
+- [x] RPP-0321 (Mid / graph-identity) Prove post_parent page hierarchy, variant 2. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0322 (Mid / graph-identity) Prove featured image attachment reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0323 (Mid / graph-identity) Prove post author reference, variant 2. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0324 (Mid / graph-identity) Prove postmeta post_id reference, variant 2. Success: local production verifier carries the target through apply.
-- [ ] RPP-0325 (Mid / graph-identity) Prove comment post reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
+- [x] RPP-0324 (Mid / graph-identity) Prove postmeta post_id reference, variant 2. Success: local production verifier carries the target through apply.
+- [x] RPP-0325 (Mid / graph-identity) Prove comment post reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0326 (Mid / graph-identity) Prove comment parent thread reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0327 (Mid / graph-identity) Prove comment user reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0328 (Mid / graph-identity) Prove commentmeta comment reference, variant 2. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0329 (Mid / graph-identity) Prove category term taxonomy reference, variant 2. Success: local production verifier carries the target through apply.
 - [ ] RPP-0330 (Mid / graph-identity) Prove post_tag taxonomy reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0331 (Mid / graph-identity) Prove custom taxonomy fail-closed reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0332 (Mid / graph-identity) Prove termmeta term reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
-- [ ] RPP-0333 (Mid / graph-identity) Prove term relationship object reference, variant 2. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0334 (Mid / graph-identity) Prove term relationship taxonomy reference, variant 2. Success: local production verifier carries the target through apply.
+- [x] RPP-0332 (Mid / graph-identity) Prove termmeta term reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0333 (Mid / graph-identity) Prove term relationship object reference, variant 2. Success: generated harness includes ready and stale cases.
+- [x] RPP-0334 (Mid / graph-identity) Prove term relationship taxonomy reference, variant 2. Success: local production verifier carries the target through apply.
 - [ ] RPP-0335 (Mid / graph-identity) Prove nav menu item fail-closed reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0336 (Mid / graph-identity) Prove wp_navigation fail-closed reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
 - [ ] RPP-0337 (Mid / graph-identity) Prove serialized block reference detection, variant 2. Success: unsupported target fails closed with hash-only evidence.
@@ -431,17 +433,17 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 Focus: generalize plugin-owned mutation safety beyond release-state rows.
 
 - [ ] RPP-0401 (Mid / plugin-driver) Implement driver registration API, variant 1. Success: focused test proves exact driver behavior.
-- [ ] RPP-0402 (Mid / plugin-driver) Implement driver owner identity binding, variant 1. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0403 (Mid / plugin-driver) Implement custom table allowlist exact match, variant 1. Success: local production proof carries one real mutation through apply.
-- [ ] RPP-0404 (Mid / plugin-driver) Implement wp_options driver semantics, variant 1. Success: remote drift preserves plugin-owned remote data.
+- [x] RPP-0402 (Mid / plugin-driver) Implement driver owner identity binding, variant 1. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0403 (Mid / plugin-driver) Implement custom table allowlist exact match, variant 1. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0404 (Mid / plugin-driver) Implement wp_options driver semantics, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0405 (Mid / plugin-driver) Implement wp_postmeta driver semantics, variant 1. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0406 (Mid / plugin-driver) Implement wp_termmeta driver semantics, variant 1. Success: focused test proves exact driver behavior.
 - [ ] RPP-0407 (Mid / plugin-driver) Implement wp_usermeta driver semantics, variant 1. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0408 (Mid / plugin-driver) Implement serialized option validator, variant 1. Success: local production proof carries one real mutation through apply.
-- [ ] RPP-0409 (Mid / plugin-driver) Implement plugin activation dependency validator, variant 1. Success: remote drift preserves plugin-owned remote data.
-- [ ] RPP-0410 (Mid / plugin-driver) Implement plugin update dependency validator, variant 1. Success: release gate notes whether evidence is local or production-backed.
+- [x] RPP-0408 (Mid / plugin-driver) Implement serialized option validator, variant 1. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0409 (Mid / plugin-driver) Implement plugin activation dependency validator, variant 1. Success: remote drift preserves plugin-owned remote data.
+- [x] RPP-0410 (Mid / plugin-driver) Implement plugin update dependency validator, variant 1. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0411 (Mid / plugin-driver) Implement plugin uninstall/delete refusal, variant 1. Success: focused test proves exact driver behavior.
-- [ ] RPP-0412 (Mid / plugin-driver) Implement direct active_plugins mutation refusal, variant 1. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0412 (Mid / plugin-driver) Implement direct active_plugins mutation refusal, variant 1. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0413 (Mid / plugin-driver) Implement owner context stale plugin file refusal, variant 1. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0414 (Mid / plugin-driver) Implement owner context stale metadata refusal, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0415 (Mid / plugin-driver) Implement remote plugin removal refusal, variant 1. Success: release gate notes whether evidence is local or production-backed.
@@ -451,17 +453,17 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0419 (Mid / plugin-driver) Implement driver audit evidence redaction, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0420 (Mid / plugin-driver) Implement arbitrary plugin fixture package, variant 1. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0421 (Mid / plugin-driver) Prove driver registration API, variant 2. Success: focused test proves exact driver behavior.
-- [ ] RPP-0422 (Mid / plugin-driver) Prove driver owner identity binding, variant 2. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0423 (Mid / plugin-driver) Prove custom table allowlist exact match, variant 2. Success: local production proof carries one real mutation through apply.
-- [ ] RPP-0424 (Mid / plugin-driver) Prove wp_options driver semantics, variant 2. Success: remote drift preserves plugin-owned remote data.
+- [x] RPP-0422 (Mid / plugin-driver) Prove driver owner identity binding, variant 2. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0423 (Mid / plugin-driver) Prove custom table allowlist exact match, variant 2. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0424 (Mid / plugin-driver) Prove wp_options driver semantics, variant 2. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0425 (Mid / plugin-driver) Prove wp_postmeta driver semantics, variant 2. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0426 (Mid / plugin-driver) Prove wp_termmeta driver semantics, variant 2. Success: focused test proves exact driver behavior.
 - [ ] RPP-0427 (Mid / plugin-driver) Prove wp_usermeta driver semantics, variant 2. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0428 (Mid / plugin-driver) Prove serialized option validator, variant 2. Success: local production proof carries one real mutation through apply.
-- [ ] RPP-0429 (Mid / plugin-driver) Prove plugin activation dependency validator, variant 2. Success: remote drift preserves plugin-owned remote data.
-- [ ] RPP-0430 (Mid / plugin-driver) Prove plugin update dependency validator, variant 2. Success: release gate notes whether evidence is local or production-backed.
+- [x] RPP-0428 (Mid / plugin-driver) Prove serialized option validator, variant 2. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0429 (Mid / plugin-driver) Prove plugin activation dependency validator, variant 2. Success: remote drift preserves plugin-owned remote data.
+- [x] RPP-0430 (Mid / plugin-driver) Prove plugin update dependency validator, variant 2. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0431 (Mid / plugin-driver) Prove plugin uninstall/delete refusal, variant 2. Success: focused test proves exact driver behavior.
-- [ ] RPP-0432 (Mid / plugin-driver) Prove direct active_plugins mutation refusal, variant 2. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0432 (Mid / plugin-driver) Prove direct active_plugins mutation refusal, variant 2. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0433 (Mid / plugin-driver) Prove owner context stale plugin file refusal, variant 2. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0434 (Mid / plugin-driver) Prove owner context stale metadata refusal, variant 2. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0435 (Mid / plugin-driver) Prove remote plugin removal refusal, variant 2. Success: release gate notes whether evidence is local or production-backed.
@@ -539,17 +541,17 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [ ] RPP-0502 (Mid-Far / executor-auth) Implement production snapshot hashes route, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0503 (Mid-Far / executor-auth) Implement production dry-run route, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0504 (Mid-Far / executor-auth) Implement production apply route, variant 1. Success: apply revalidates the live source before mutation.
-- [ ] RPP-0505 (Mid-Far / executor-auth) Implement production journal route, variant 1. Success: verify:release includes the route evidence in one summary.
-- [ ] RPP-0506 (Mid-Far / executor-auth) Implement production recovery inspect route, variant 1. Success: real endpoint test runs against a live URL.
+- [x] RPP-0505 (Mid-Far / executor-auth) Implement production journal route, variant 1. Success: verify:release includes the route evidence in one summary.
+- [x] RPP-0506 (Mid-Far / executor-auth) Implement production recovery inspect route, variant 1. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0507 (Mid-Far / executor-auth) Implement production recovery mutate route, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0508 (Mid-Far / executor-auth) Implement short-lived push session issue, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0509 (Mid-Far / executor-auth) Implement session source URL binding, variant 1. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0510 (Mid-Far / executor-auth) Implement session user identity binding, variant 1. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0511 (Mid-Far / executor-auth) Implement Application Password integration, variant 1. Success: real endpoint test runs against a live URL.
-- [ ] RPP-0512 (Mid-Far / executor-auth) Implement request signature canonicalization, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0513 (Mid-Far / executor-auth) Implement nonce replay store, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0512 (Mid-Far / executor-auth) Implement request signature canonicalization, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
+- [x] RPP-0513 (Mid-Far / executor-auth) Implement nonce replay store, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0514 (Mid-Far / executor-auth) Implement receipt expiry validation, variant 1. Success: apply revalidates the live source before mutation.
-- [ ] RPP-0515 (Mid-Far / executor-auth) Implement idempotency key requirement, variant 1. Success: verify:release includes the route evidence in one summary.
+- [x] RPP-0515 (Mid-Far / executor-auth) Implement idempotency key requirement, variant 1. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0516 (Mid-Far / executor-auth) Implement same-key same-body replay, variant 1. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0517 (Mid-Far / executor-auth) Implement same-key different-body conflict, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0518 (Mid-Far / executor-auth) Implement capability downgrade rejection, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
@@ -559,17 +561,17 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [ ] RPP-0522 (Mid-Far / executor-auth) Prove production snapshot hashes route, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0523 (Mid-Far / executor-auth) Prove production dry-run route, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0524 (Mid-Far / executor-auth) Prove production apply route, variant 2. Success: apply revalidates the live source before mutation.
-- [ ] RPP-0525 (Mid-Far / executor-auth) Prove production journal route, variant 2. Success: verify:release includes the route evidence in one summary.
-- [ ] RPP-0526 (Mid-Far / executor-auth) Prove production recovery inspect route, variant 2. Success: real endpoint test runs against a live URL.
+- [x] RPP-0525 (Mid-Far / executor-auth) Prove production journal route, variant 2. Success: verify:release includes the route evidence in one summary.
+- [x] RPP-0526 (Mid-Far / executor-auth) Prove production recovery inspect route, variant 2. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0527 (Mid-Far / executor-auth) Prove production recovery mutate route, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0528 (Mid-Far / executor-auth) Prove short-lived push session issue, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0529 (Mid-Far / executor-auth) Prove session source URL binding, variant 2. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0530 (Mid-Far / executor-auth) Prove session user identity binding, variant 2. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0531 (Mid-Far / executor-auth) Prove Application Password integration, variant 2. Success: real endpoint test runs against a live URL.
-- [ ] RPP-0532 (Mid-Far / executor-auth) Prove request signature canonicalization, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0533 (Mid-Far / executor-auth) Prove nonce replay store, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0532 (Mid-Far / executor-auth) Prove request signature canonicalization, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
+- [x] RPP-0533 (Mid-Far / executor-auth) Prove nonce replay store, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0534 (Mid-Far / executor-auth) Prove receipt expiry validation, variant 2. Success: apply revalidates the live source before mutation.
-- [ ] RPP-0535 (Mid-Far / executor-auth) Prove idempotency key requirement, variant 2. Success: verify:release includes the route evidence in one summary.
+- [x] RPP-0535 (Mid-Far / executor-auth) Prove idempotency key requirement, variant 2. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0536 (Mid-Far / executor-auth) Prove same-key same-body replay, variant 2. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0537 (Mid-Far / executor-auth) Prove same-key different-body conflict, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0538 (Mid-Far / executor-auth) Prove capability downgrade rejection, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
@@ -642,10 +644,10 @@ Focus: prove production crash safety, replay, and repair semantics.
 
 - [ ] RPP-0601 (Far / recovery) Implement journal table schema migration, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0602 (Far / recovery) Implement journal ownership record, variant 1. Success: journal rows are durable after process restart.
-- [ ] RPP-0603 (Far / recovery) Implement single-writer lease claim, variant 1. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0604 (Far / recovery) Implement stale claim rejection, variant 1. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0603 (Far / recovery) Implement single-writer lease claim, variant 1. Success: retry does not overwrite preserved remote changes.
+- [x] RPP-0604 (Far / recovery) Implement stale claim rejection, variant 1. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0605 (Far / recovery) Implement claim expiry policy, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0606 (Far / recovery) Implement journal pagination, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0606 (Far / recovery) Implement journal pagination, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0607 (Far / recovery) Implement restart-readable open state, variant 1. Success: journal rows are durable after process restart.
 - [ ] RPP-0608 (Far / recovery) Implement restart-readable staged state, variant 1. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0609 (Far / recovery) Implement restart-readable committed state, variant 1. Success: lease owner identity is visible in audit evidence.
@@ -653,19 +655,19 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [ ] RPP-0611 (Far / recovery) Implement new remote recovery classification, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0612 (Far / recovery) Implement blocked recovery classification, variant 1. Success: journal rows are durable after process restart.
 - [ ] RPP-0613 (Far / recovery) Implement unknown drift classification, variant 1. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0614 (Far / recovery) Implement same-key replay after commit, variant 1. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0614 (Far / recovery) Implement same-key replay after commit, variant 1. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0615 (Far / recovery) Implement same-key replay after rejection, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0616 (Far / recovery) Implement different-body idempotency conflict, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0617 (Far / recovery) Implement process kill before first mutation, variant 1. Success: journal rows are durable after process restart.
-- [ ] RPP-0618 (Far / recovery) Implement process kill mid mutation set, variant 1. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0619 (Far / recovery) Implement missing commit finalization, variant 1. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0618 (Far / recovery) Implement process kill mid mutation set, variant 1. Success: retry does not overwrite preserved remote changes.
+- [x] RPP-0619 (Far / recovery) Implement missing commit finalization, variant 1. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0620 (Far / recovery) Implement manual recovery audit export, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0621 (Far / recovery) Prove journal table schema migration, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0622 (Far / recovery) Prove journal ownership record, variant 2. Success: journal rows are durable after process restart.
-- [ ] RPP-0623 (Far / recovery) Prove single-writer lease claim, variant 2. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0624 (Far / recovery) Prove stale claim rejection, variant 2. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0623 (Far / recovery) Prove single-writer lease claim, variant 2. Success: retry does not overwrite preserved remote changes.
+- [x] RPP-0624 (Far / recovery) Prove stale claim rejection, variant 2. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0625 (Far / recovery) Prove claim expiry policy, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0626 (Far / recovery) Prove journal pagination, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0626 (Far / recovery) Prove journal pagination, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0627 (Far / recovery) Prove restart-readable open state, variant 2. Success: journal rows are durable after process restart.
 - [ ] RPP-0628 (Far / recovery) Prove restart-readable staged state, variant 2. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0629 (Far / recovery) Prove restart-readable committed state, variant 2. Success: lease owner identity is visible in audit evidence.
@@ -673,7 +675,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [ ] RPP-0631 (Far / recovery) Prove new remote recovery classification, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0632 (Far / recovery) Prove blocked recovery classification, variant 2. Success: journal rows are durable after process restart.
 - [ ] RPP-0633 (Far / recovery) Prove unknown drift classification, variant 2. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0634 (Far / recovery) Prove same-key replay after commit, variant 2. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0634 (Far / recovery) Prove same-key replay after commit, variant 2. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0635 (Far / recovery) Prove same-key replay after rejection, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0636 (Far / recovery) Prove different-body idempotency conflict, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0637 (Far / recovery) Prove process kill before first mutation, variant 2. Success: journal rows are durable after process restart.
@@ -750,9 +752,9 @@ Focus: make large safe pushes practical and measurable.
 - [ ] RPP-0703 (Far / storage-performance) Implement transaction boundary policy, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0704 (Far / storage-performance) Implement filesystem compare-and-rename write, variant 1. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0705 (Far / storage-performance) Implement filesystem fsync evidence, variant 1. Success: fast-path lane updates only after correctness gates hold.
-- [ ] RPP-0706 (Far / storage-performance) Implement large upload chunk manifest, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
-- [ ] RPP-0707 (Far / storage-performance) Implement chunk hash verification, variant 1. Success: guarded writes reject stale storage state.
-- [ ] RPP-0708 (Far / storage-performance) Implement chunk resume after interruption, variant 1. Success: chunk transfer resumes without duplicate mutation work.
+- [x] RPP-0706 (Far / storage-performance) Implement large upload chunk manifest, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
+- [x] RPP-0707 (Far / storage-performance) Implement chunk hash verification, variant 1. Success: guarded writes reject stale storage state.
+- [x] RPP-0708 (Far / storage-performance) Implement chunk resume after interruption, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0709 (Far / storage-performance) Implement chunk replay idempotency, variant 1. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0710 (Far / storage-performance) Implement parallel snapshot hashing, variant 1. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0711 (Far / storage-performance) Implement remote hash pagination, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
@@ -764,15 +766,15 @@ Focus: make large safe pushes practical and measurable.
 - [ ] RPP-0717 (Far / storage-performance) Implement memory ceiling proof, variant 1. Success: guarded writes reject stale storage state.
 - [ ] RPP-0718 (Far / storage-performance) Implement timeout budget proof, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0719 (Far / storage-performance) Implement progress reporting for long pushes, variant 1. Success: large-site run finishes inside documented budgets.
-- [ ] RPP-0720 (Far / storage-performance) Implement rollout threshold configuration, variant 1. Success: fast-path lane updates only after correctness gates hold.
+- [x] RPP-0720 (Far / storage-performance) Implement rollout threshold configuration, variant 1. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0721 (Far / storage-performance) Prove MySQL compare-and-swap write guard, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0722 (Far / storage-performance) Prove SQLite compare-and-swap write guard, variant 2. Success: guarded writes reject stale storage state.
 - [ ] RPP-0723 (Far / storage-performance) Prove transaction boundary policy, variant 2. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0724 (Far / storage-performance) Prove filesystem compare-and-rename write, variant 2. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0725 (Far / storage-performance) Prove filesystem fsync evidence, variant 2. Success: fast-path lane updates only after correctness gates hold.
-- [ ] RPP-0726 (Far / storage-performance) Prove large upload chunk manifest, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
-- [ ] RPP-0727 (Far / storage-performance) Prove chunk hash verification, variant 2. Success: guarded writes reject stale storage state.
-- [ ] RPP-0728 (Far / storage-performance) Prove chunk resume after interruption, variant 2. Success: chunk transfer resumes without duplicate mutation work.
+- [x] RPP-0726 (Far / storage-performance) Prove large upload chunk manifest, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
+- [x] RPP-0727 (Far / storage-performance) Prove chunk hash verification, variant 2. Success: guarded writes reject stale storage state.
+- [x] RPP-0728 (Far / storage-performance) Prove chunk resume after interruption, variant 2. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0729 (Far / storage-performance) Prove chunk replay idempotency, variant 2. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0730 (Far / storage-performance) Prove parallel snapshot hashing, variant 2. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0731 (Far / storage-performance) Prove remote hash pagination, variant 2. Success: benchmark command reports runtime, resources, and pass/fail gates.
