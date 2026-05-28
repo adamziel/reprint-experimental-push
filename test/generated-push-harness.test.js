@@ -61,6 +61,14 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'wp-terms-termmeta-graph',
+  'wp-terms-termmeta-graph-target',
+  'wp-terms-termmeta-graph-ready',
+  'wp-terms-termmeta-graph-stale',
+  'wp-terms-termmeta-remote-drift',
+  'wp-terms-graph',
+  'wp-termmeta-graph',
+  'termmeta-term-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -347,6 +355,96 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
     );
+  }
+}
+
+test('RPP-0131 wp_terms and wp_termmeta graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermsTermmetaGraph;
+
+  assert.ok(coverage, 'missing wp_terms/wp_termmeta graph target coverage');
+  assert.equal(coverage.family, 'wp-terms-termmeta-graph');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-terms-termmeta-graph-target']);
+  assert.deepEqual(coverage.statuses, { blocked: 5, ready: 5 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('Generated wp_termmeta graph'), false);
+  assert.equal(summaryEvidence.includes('Remote stale wp_terms termmeta graph target'), false);
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'wp-terms-termmeta-graph');
+  const readyCases = cases.filter((testCase) => testCase.tags.has('wp-terms-termmeta-graph-ready'));
+  const staleCases = cases.filter((testCase) => testCase.tags.has('wp-terms-termmeta-graph-stale'));
+
+  assert.equal(cases.length, 10, 'one wp_terms/wp_termmeta graph case should appear per tier');
+  assert.equal(readyCases.length, 5, 'even tiers should produce ready termmeta graph cases');
+  assert.equal(staleCases.length, 5, 'odd tiers should produce stale termmeta graph cases');
+
+  for (const readyCase of readyCases) {
+    assertTermsTermmetaGraphShape(readyCase, { staleTarget: false });
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 2, 'ready graph should create term and termmeta rows');
+    assert.equal(ready.applied, true, 'ready wp_terms/wp_termmeta graph should apply');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready graph should preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready graph should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const staleCase of staleCases) {
+    assertTermsTermmetaGraphShape(staleCase, { staleTarget: true });
+    const stale = validateGeneratedCase(staleCase);
+    assert.notEqual(stale.status, 'ready', 'stale termmeta graph should not be ready');
+    assert.ok(stale.blockers >= 1, 'stale termmeta graph should record a graph identity blocker');
+    assert.equal(stale.applied, false, 'stale termmeta graph must not apply mutations');
+  }
+});
+
+function assertTermsTermmetaGraphShape(testCase, { staleTarget }) {
+  const termRows = Object.entries(testCase.local.db.wp_terms)
+    .filter(([, row]) => row.name.startsWith('Generated wp_terms termmeta graph target '));
+  const termmetaRows = Object.entries(testCase.local.db.wp_termmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_termmeta[id]
+      && row.meta_value.startsWith('Generated wp_termmeta graph '));
+
+  assert.equal(termRows.length, 1, `${testCase.id} should carry one target term`);
+  assert.equal(termmetaRows.length, 1, `${testCase.id} should create one termmeta row`);
+
+  const [termRowId, term] = termRows[0];
+  const [termmetaRowId, termmeta] = termmetaRows[0];
+
+  assert.equal(termmeta.term_id, term.term_id, `${testCase.id} termmeta should reference the target term`);
+  assert.equal(testCase.base.db.wp_termmeta[termmetaRowId], undefined);
+  assert.equal(testCase.remote.db.wp_termmeta[termmetaRowId], undefined);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_terms[termRowId], `${testCase.id} stale target should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale local target should match base`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_terms[termRowId], undefined);
+    assert.equal(testCase.remote.db.wp_terms[termRowId], undefined);
   }
 }
 
