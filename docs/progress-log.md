@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 13:04 CEST.
+- Last update: 2026-05-28 13:19 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `43d18cd6` (tree-unchanged ancestry merge of `origin/session/rpp-16`).
+  `793c2a7d` (tree-unchanged normal ancestry merge of `origin/session/rpp-5`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -24,6 +24,15 @@ linked implementation artifacts.
   `npm run publish:progress-page` after validated lane pushes that change
   `progress.html`. The publisher copies only `progress.html` to existing
   `main`, creates no PR, and creates no new branch.
+- Ancestry backlog reduction: `793c2a7d` normal-merged
+  `origin/session/rpp-5` after `git merge-tree --write-tree` showed the merge
+  result matched the current lane tree. This records the already-represented
+  executor auth/lease read-only inspect branch ancestry without moving
+  checklist counts. Validation passed with
+  `node --test --test-name-pattern 'read-only|journal inspect|recovery inspect' test/authenticated-http-push-client.test.js`
+  (19/19), `node --test test/authenticated-http-push-client.test.js`
+  (127/127), checklist lint, artifact redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
   evidence coverage manifest. The Docker harness is fail-closed in this sandbox
