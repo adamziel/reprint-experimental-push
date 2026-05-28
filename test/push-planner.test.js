@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { applyPlan, PushPlanError } from '../src/apply.js';
+import { findEvidenceRedactionIssues, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import {
   appendRecoveryClaimOpened,
@@ -3312,6 +3313,116 @@ test('RPP-0219 redacts raw plan refusal and journal evidence while preserving ha
   });
   for (const rawValue of rawValues) {
     assert.equal(serializedEvidence.includes(rawValue), false, `evidence leaked ${rawValue}`);
+  }
+});
+
+test('RPP-0239 redacts raw plan refusal and journal evidence with hash-only utility', () => {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    'rpp0239-local-private-file-content',
+    'rpp0239-local-private-post-title',
+    'rpp0239-private-option-mode',
+    'rpp0239-private-option-token',
+    'rpp0239-private-option-cookie',
+    'rpp0239-stale-remote-private-file',
+  ];
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value = {
+    mode: privateValues[2],
+    token: privateValues[3],
+    cookie: privateValues[4],
+  };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  const readyPlan = planFor(base, local, remote);
+  const staleRemote = cloneJson(remote);
+  staleRemote.files['index.php'] = privateValues[5];
+  const staleJournalEvents = [];
+  const staleDurableJournal = {
+    claimFenced: true,
+    claimHash: 'f'.repeat(64),
+    appendEvent(type, payload) {
+      staleJournalEvents.push({ type, payload });
+      return { sequence: staleJournalEvents.length, type, ...payload };
+    },
+  };
+  const staleBeforeHash = digest(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, readyPlan, {
+    durableJournal: staleDurableJournal,
+  }));
+  const journalRemote = cloneJson(remote);
+  const journalError = captureError(() => applyPlan(journalRemote, readyPlan, {
+    failAfterStaging: true,
+  }));
+  const journal = journalError.details.recovery.artifacts.journal;
+  const rawEvidence = {
+    command: 'node --test --test-name-pattern=RPP-0239 test/push-planner.test.js',
+    caveat: 'Focused local planner/apply evidence only; release remains gated separately.',
+    plan: readyPlan,
+    staleRefusal: {
+      code: staleError.code,
+      details: staleError.details,
+      detailsHash: sha256Evidence(staleError.details),
+      remoteBeforeHash: staleBeforeHash,
+      remoteAfterHash: digest(staleRemote),
+      durableJournalEventTypes: staleJournalEvents.map((event) => event.type),
+      durableMutationEvents: staleJournalEvents.filter((event) => event.type.includes('mutation')).length,
+      durableTargetEvents: staleJournalEvents.filter((event) => event.type === 'target-planned').length,
+    },
+    journalFailure: {
+      code: journalError.code,
+      detailsHash: sha256Evidence(journalError.details),
+      journal,
+    },
+  };
+  const rawSerializedEvidence = JSON.stringify(rawEvidence);
+  const redactedEvidence = redactEvidence(rawEvidence);
+  const redactedSerializedEvidence = JSON.stringify({
+    ...redactedEvidence,
+    evidenceHash: sha256Evidence(redactedEvidence),
+  });
+
+  assert.equal(readyPlan.status, 'ready');
+  assertPlannerSummaryMatchesEvidence(readyPlan, 'RPP-0239 raw-value redaction ready plan');
+  assert.equal(readyPlan.mutations.length, 3);
+  assert.ok(findEvidenceRedactionIssues(rawEvidence).length > 0, 'raw evidence should expose redaction issues');
+  assert.deepEqual(findEvidenceRedactionIssues(redactedEvidence), []);
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.equal(digest(staleRemote), staleBeforeHash);
+  assert.equal(rawEvidence.staleRefusal.durableMutationEvents, 0);
+  assert.equal(rawEvidence.staleRefusal.durableTargetEvents, 0);
+  assert.ok(journalError instanceof PushPlanError);
+  assert.equal(journalError.code, 'INJECTED_FAILURE_AFTER_STAGING');
+  assert.equal(journal.status, 'staged');
+  for (const mutation of redactedEvidence.plan.mutations) {
+    assert.equal(mutation.value.redacted, true);
+    assert.equal(mutation.value.reason, 'raw-site-value-field');
+    assert.match(mutation.value.sha256, /^[a-f0-9]{64}$/);
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+  }
+  for (const entry of redactedEvidence.journalFailure.journal.entries) {
+    assert.equal(entry.beforeValue.redacted, true);
+    assert.equal(entry.afterValue.redacted, true);
+    assert.match(entry.beforeHash, /^[a-f0-9]{64}$/);
+    assert.match(entry.afterHash, /^[a-f0-9]{64}$/);
+  }
+  for (const rawValue of privateValues.slice(0, 5)) {
+    assert.equal(rawSerializedEvidence.includes(rawValue), true, `test fixture failed to include ${rawValue}`);
+  }
+  for (const rawValue of privateValues) {
+    assert.equal(redactedSerializedEvidence.includes(rawValue), false, `RPP-0239 evidence leaked ${rawValue}`);
+    assert.equal(JSON.stringify(staleError.details).includes(rawValue), false, `stale details leaked ${rawValue}`);
+    assert.equal(JSON.stringify(journalError.details).includes(rawValue), false, `journal details leaked ${rawValue}`);
   }
 });
 
