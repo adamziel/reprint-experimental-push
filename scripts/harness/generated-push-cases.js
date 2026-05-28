@@ -86,6 +86,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  fileCreateUpdateDeleteMix: {
+    family: 'file-create-update-delete-mix-ready',
+    tag: 'file-create-update-delete-mix',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -519,8 +523,8 @@ const scenarioFamilyBuilders = {
     tags.add('expected-conflict');
     tags.add('delete-edit');
   },
-  'file-create-update-delete-mix-ready': ({ local, allocator, tags }) => {
-    addFileCreateUpdateDeleteMix(local, null, allocator, tags, {
+  'file-create-update-delete-mix-ready': ({ local, remote, allocator, tags }) => {
+    addFileCreateUpdateDeleteMix(local, remote, allocator, tags, {
       conflict: false,
       prefix: 'ready-file-mix',
     });
@@ -1102,10 +1106,15 @@ function addFileCreateUpdateDeleteMix(local, remote, allocator, tags, { conflict
   const deletePath = updatePath.endsWith('shared-1.txt')
     ? 'wp-content/uploads/shared-2.txt'
     : 'wp-content/uploads/shared-1.txt';
+  const remoteOnlyPath = allocator.filePath(`${prefix}-remote-only`);
 
   local.files[createPath] = `generated file mix create ${allocator.next()}`;
   local.files[updatePath] = `generated file mix update ${allocator.next()}`;
   delete local.files[deletePath];
+  if (remote) {
+    remote.files[remoteOnlyPath] = `remote-only file mix preserve ${allocator.next()}`;
+    tags.add('remote-preserve');
+  }
 
   tags.add('file-create-update-delete-mix');
   tags.add('file-create');

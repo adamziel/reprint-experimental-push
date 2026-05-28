@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -9,7 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
-import { digest } from '../src/stable-json.js';
+import { deepClone, digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
 
@@ -151,6 +152,159 @@ test('RPP-0101 generated harness emits ready and non-ready file create/update/de
   assert.ok(nonReady.conflicts >= 1, 'non-ready mix should expose a file conflict');
   assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
 });
+
+test('RPP-0141 file create/update/delete mix target exposes ready and non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileCreateUpdateDeleteMix;
+
+  assert.ok(coverage, 'missing file create/update/delete mix target coverage');
+  assert.equal(coverage.family, 'file-create-update-delete-mix-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-create-update-delete-mix']);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.perTier).every((count) => count === 2),
+    true,
+    'file CUD target should emit one ready and one non-ready case per tier',
+  );
+  assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(report).includes('generated file mix'), false);
+  assert.equal(JSON.stringify(report).includes('remote-only file mix preserve'), false);
+
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'file-create-update-delete-mix-ready');
+  const conflictCases = cases.filter((testCase) => testCase.family === 'file-create-update-delete-mix-conflict');
+
+  assert.equal(readyCases.length, 10, 'one ready file CUD case should appear per tier');
+  assert.equal(conflictCases.length, 10, 'one non-ready file CUD case should appear per tier');
+
+  for (const readyCase of readyCases) {
+    const shape = assertFileCreateUpdateDeleteMixShape(readyCase, { conflict: false });
+    const result = validateGeneratedCase(readyCase);
+    const plan = createGeneratedPlan(readyCase);
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+    const remoteOnlyResourceKey = `file:${shape.remoteOnlyPath}`;
+    const keepRemoteDecision = plan.decisions.find((decision) =>
+      decision.resourceKey === remoteOnlyResourceKey && decision.decision === 'keep-remote');
+
+    assert.equal(result.status, 'ready');
+    assert.equal(result.applied, true, `${readyCase.id} should apply planned file CUD work`);
+    assert.equal(result.unplannedRemotePreserved, true, `${readyCase.id} should preserve unplanned remote content`);
+    assert.equal(result.staleReplayRejected, true, `${readyCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${readyCase.id} stale replay must fail before mutation`);
+    assert.equal(plan.status, 'ready');
+    assert.ok(mutationKeys.has(`file:${shape.createPath}`), `${readyCase.id} should plan file create`);
+    assert.ok(mutationKeys.has(`file:${shape.updatePath}`), `${readyCase.id} should plan file update`);
+    assert.ok(mutationKeys.has(`file:${shape.deletePath}`), `${readyCase.id} should plan file delete`);
+    assert.equal(mutationKeys.has(remoteOnlyResourceKey), false, `${readyCase.id} remote-only file must not mutate`);
+    assert.ok(keepRemoteDecision, `${readyCase.id} should record hash-only keep-remote evidence`);
+    assert.match(keepRemoteDecision.remoteHash, /^[a-f0-9]{64}$/);
+    assert.equal(
+      JSON.stringify(keepRemoteDecision).includes(shape.remoteOnlyValue),
+      false,
+      `${readyCase.id} keep-remote evidence should not include raw remote-only file content`,
+    );
+
+    const applied = applyPlan(deepClone(readyCase.remote), plan);
+    assert.equal(applied.site.files[shape.createPath], readyCase.local.files[shape.createPath]);
+    assert.equal(applied.site.files[shape.updatePath], readyCase.local.files[shape.updatePath]);
+    assert.equal(Object.hasOwn(applied.site.files, shape.deletePath), false);
+    assert.equal(
+      applied.site.files[shape.remoteOnlyPath],
+      readyCase.remote.files[shape.remoteOnlyPath],
+      `${readyCase.id} apply must preserve remote-only file exactly`,
+    );
+  }
+
+  for (const conflictCase of conflictCases) {
+    const shape = assertFileCreateUpdateDeleteMixShape(conflictCase, { conflict: true });
+    const result = validateGeneratedCase(conflictCase);
+    const plan = createGeneratedPlan(conflictCase);
+    const updateResourceKey = `file:${shape.updatePath}`;
+
+    assert.equal(result.status, 'conflict');
+    assert.ok(result.conflicts >= 1, `${conflictCase.id} should expose a file conflict`);
+    assert.equal(result.applied, false, `${conflictCase.id} non-ready file CUD case must not apply`);
+    assert.equal(plan.status, 'conflict');
+    assert.equal(
+      plan.mutations.some((mutation) => mutation.resourceKey === updateResourceKey),
+      false,
+      `${conflictCase.id} must not plan a mutation for the conflicted file`,
+    );
+    assert.ok(
+      plan.conflicts.some((conflict) => conflict.resourceKey === updateResourceKey),
+      `${conflictCase.id} should report the concurrent file update as a conflict`,
+    );
+    assert.equal(
+      JSON.stringify(plan.conflicts).includes(shape.conflictRemoteValue),
+      false,
+      `${conflictCase.id} conflict evidence should stay hash-only`,
+    );
+  }
+});
+
+function assertFileCreateUpdateDeleteMixShape(testCase, { conflict }) {
+  const created = Object.entries(testCase.local.files)
+    .filter(([path, value]) =>
+      !Object.hasOwn(testCase.base.files, path)
+      && !Object.hasOwn(testCase.remote.files, path)
+      && String(value).startsWith('generated file mix create '));
+  const updated = Object.entries(testCase.local.files)
+    .filter(([path, value]) =>
+      Object.hasOwn(testCase.base.files, path)
+      && Object.hasOwn(testCase.remote.files, path)
+      && String(value).startsWith('generated file mix update '));
+  const deleted = Object.entries(testCase.base.files)
+    .filter(([path]) =>
+      (path === 'wp-content/uploads/shared-1.txt' || path === 'wp-content/uploads/shared-2.txt')
+      && !Object.hasOwn(testCase.local.files, path)
+      && Object.hasOwn(testCase.remote.files, path));
+  const remoteOnly = Object.entries(testCase.remote.files)
+    .filter(([path, value]) =>
+      !Object.hasOwn(testCase.base.files, path)
+      && !Object.hasOwn(testCase.local.files, path)
+      && String(value).startsWith('remote-only file mix preserve '));
+
+  assert.equal(created.length, 1, `${testCase.id} should create one file`);
+  assert.equal(updated.length, 1, `${testCase.id} should update one file`);
+  assert.equal(deleted.length, 1, `${testCase.id} should delete one file`);
+  assert.equal(remoteOnly.length, 1, `${testCase.id} should carry one remote-only preservation file`);
+
+  const updatePath = updated[0][0];
+  const conflictRemoteValue = testCase.remote.files[updatePath];
+
+  if (conflict) {
+    assert.match(String(conflictRemoteValue), /^remote concurrent file mix update /);
+  } else {
+    assert.deepEqual(conflictRemoteValue, testCase.base.files[updatePath]);
+  }
+
+  return {
+    createPath: created[0][0],
+    updatePath,
+    deletePath: deleted[0][0],
+    remoteOnlyPath: remoteOnly[0][0],
+    remoteOnlyValue: remoteOnly[0][1],
+    conflictRemoteValue,
+  };
+}
+
+function createGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+}
 
 test('RPP-0102 directory descendant conflict exposes per-tier target counts', () => {
   const report = runGeneratedPushHarness();
