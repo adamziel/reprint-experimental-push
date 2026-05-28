@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:11 CEST
+Last updated: 2026-05-28 05:21 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:21 CEST - RPP-0037 Integrated
+
+- Going well: integration is now at `2864ad636`, adding `RPP-0037` tmux stdout
+  proof status marker coverage. The fixture-backed CLI proof asserts the final
+  bracketed marker is emitted on stdout, preserves exact marker evidence for
+  `tmux-status-marker`, records no mutation attempt, and remains `NO-GO`
+  without provenance.
+- Checklist movement: 102 verified items checked and 898 open. New check since
+  the prior feedback entry: `RPP-0037`.
+- Verification: release-gate focused tests pass 28/28, checklist lint reports
+  102 checked / 898 open with 0 risky claims, artifact redaction scans the
+  touched docs with 0 rejected files, release gates still fail closed as
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue with `RPP-0310`, `RPP-0414`, and newer completed
+  branches one at a time from the latest lane head.
 
 ## 2026-05-28 05:11 CEST - RPP-0036 and RPP-0210 Integrated
 

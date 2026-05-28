@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:11 CEST.
+- Last update: 2026-05-28 05:21 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `137ae0102` (`test: prove planner summary count consistency`).
+  `2864ad636` (`test: prove tmux status marker gate`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 101
-  items complete and leaves 899 open.
-- Checked slices: 34 release-gate foundation items, 15 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 102
+  items complete and leaves 898 open.
+- Checked slices: 35 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 5 generated
   harness items, and 2 merge-invariant items. No release-ops items are checked
@@ -90,7 +90,7 @@ linked implementation artifacts.
   web child wedged and was restarted in tmux.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
-  with 27 passing
+  with 28 passing
   release-gate tests, `node --test test/push-planner.test.js` with 89 passing
   planner tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
