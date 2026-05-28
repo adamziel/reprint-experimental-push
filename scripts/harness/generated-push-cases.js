@@ -47,6 +47,8 @@ const scenarioFamilies = Object.freeze([
   'delete-edit-conflict',
   'file-create-update-delete-mix-ready',
   'file-create-update-delete-mix-conflict',
+  'file-type-swap-ready',
+  'file-type-swap-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -66,6 +68,7 @@ const readyPreservingFamilies = new Set([
   'remote-delete-local-unchanged',
   'local-create',
   'file-create-update-delete-mix-ready',
+  'file-type-swap-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -506,6 +509,20 @@ const scenarioFamilyBuilders = {
     addFileCreateUpdateDeleteMix(local, remote, allocator, tags, {
       conflict: true,
       prefix: 'conflict-file-mix',
+    });
+    tags.add('expected-conflict');
+  },
+  'file-type-swap-ready': ({ base, local, remote, allocator, tags }) => {
+    addFileTypeSwap(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-type-swap',
+    });
+    tags.add('ready-candidate');
+  },
+  'file-type-swap-conflict': ({ base, local, remote, allocator, tags }) => {
+    addFileTypeSwap(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-type-swap',
     });
     tags.add('expected-conflict');
   },
@@ -1031,6 +1048,24 @@ function addFileCreateUpdateDeleteMix(local, remote, allocator, tags, { conflict
 
   if (conflict && remote) {
     remote.files[updatePath] = `remote concurrent file mix update ${allocator.next()}`;
+  }
+}
+
+function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const path = `wp-content/uploads/${prefix}-${allocator.next()}`;
+  base.files[path] = { type: 'directory' };
+  local.files[path] = { type: 'file', content: `local type swap ${allocator.next()}` };
+  remote.files[path] = { type: 'directory' };
+
+  tags.add('file-type-swap');
+  tags.add('file-topology');
+  tags.add('type-change');
+
+  if (conflict) {
+    remote.files[`${path}/remote-descendant.txt`] = `remote descendant for type swap ${allocator.next()}`;
+    tags.add('type-swap-conflict');
+  } else {
+    tags.add('type-swap-ready');
   }
 }
 
