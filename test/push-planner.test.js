@@ -1460,6 +1460,70 @@ test('fixture forms lab table requires exact driver and active fixture plugin ev
   assert.equal(changedPluginPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
 });
 
+test('RPP-0438 driver apply validation hook carries one valid fixture mutation through apply', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local-secret';
+  local.db.wp_reprint_push_forms_lab['id:1'].updated_marker = 'local-secret-marker';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const remote = JSON.parse(JSON.stringify(base));
+  const ready = planFor(base, local, remote);
+  const validationEvidence = [];
+
+  const result = applyPlan(remote, ready, {
+    beforeMutation({ mutation, mutationIndex, driverApplyValidation }) {
+      assert.equal(mutationIndex, 1);
+      assert.equal(mutation.resourceKey, resourceKey);
+      validationEvidence.push(driverApplyValidation);
+    },
+  });
+  const evidence = validationEvidence[0];
+  const evidenceJson = JSON.stringify(evidence);
+  const journalJson = JSON.stringify(result.journal);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.db.wp_reprint_push_forms_lab['id:1'].payload.mode, 'local-secret');
+  assert.equal(validationEvidence.length, 1);
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED');
+  assert.equal(evidence.operation, 'driver-apply-validation');
+  assert.equal(evidence.outcome, 'accepted');
+  assert.equal(evidence.resourceKey, resourceKey);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'fixture-forms-lab-table');
+  assert.equal(evidence.resource.table, 'wp_reprint_push_forms_lab');
+  assert.equal(evidence.planned.state, 'present');
+  assert.match(evidence.planned.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.remote.state, 'present');
+  assert.match(evidence.remote.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.driverEvidence.source, 'live-remote');
+  assert.equal(evidence.driverEvidence.resourceKey, 'plugin:reprint-push-forms-fixture');
+  assert.match(evidence.driverEvidence.baseHash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.driverEvidence.baseHash, evidence.driverEvidence.remoteHash);
+  assert.equal(result.journal.entries.length, 1);
+  assert.equal(result.journal.entries[0].beforeValue.redacted, true);
+  assert.equal(result.journal.entries[0].afterValue.redacted, true);
+  assert.equal(evidenceJson.includes('local-secret'), false);
+  assert.equal(evidenceJson.includes('base-secret'), false);
+  assert.equal(journalJson.includes('local-secret'), false);
+  assert.equal(journalJson.includes('base-secret'), false);
+});
+
 test('fixture forms lab table delete remains blocked without driver delete opt-in', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();
@@ -1539,6 +1603,65 @@ test('executor rejects forged ready custom table plans without valid fixture dri
   assert.ok(stalePluginError instanceof PushPlanError);
   assert.equal(stalePluginError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
   assert.equal(JSON.stringify(stalePluginRemote), stalePluginBefore);
+});
+
+test('RPP-0438 driver apply validation fails closed before mutation with redacted evidence', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'base-secret' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = 'local-secret';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+    ),
+  };
+  const ready = planFor(base, local, JSON.parse(JSON.stringify(base)));
+  const forged = tamperReadyPlan(ready, (plan) => {
+    const mutation = mutationFor(plan, resourceKey);
+    mutation.pluginOwnedResource.driverEvidence.remoteHash = '0'.repeat(64);
+  });
+  const remote = JSON.parse(JSON.stringify(base));
+  const before = JSON.stringify(remote);
+  let hookCalls = 0;
+
+  const error = captureError(() => applyPlan(remote, forged, {
+    beforeMutation() {
+      hookCalls++;
+    },
+  }));
+  const evidence = error.details.applyValidationEvidence;
+  const evidenceJson = JSON.stringify(evidence);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(hookCalls, 0);
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(evidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED');
+  assert.equal(evidence.operation, 'driver-apply-validation');
+  assert.equal(evidence.outcome, 'refused-before-mutation');
+  assert.equal(evidence.resourceKey, resourceKey);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'fixture-forms-lab-table');
+  assert.equal(evidence.planned.state, 'present');
+  assert.match(evidence.planned.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.remote.state, 'present');
+  assert.match(evidence.remote.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.driverEvidence.state, 'present');
+  assert.equal(evidence.driverEvidence.remoteHash, '0'.repeat(64));
+  assert.equal(evidenceJson.includes('local-secret'), false);
+  assert.equal(evidenceJson.includes('base-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('local-secret'), false);
+  assert.equal(JSON.stringify(error.details).includes('base-secret'), false);
 });
 
 test('fixture forms lab table journal redacts raw payload values', () => {
