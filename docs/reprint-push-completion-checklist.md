@@ -69,7 +69,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [ ] RPP-0055 (Near / release-gates) Add generated coverage for recovery inspect read-only proof, variant 3. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0056 (Near / release-gates) Add generated coverage for releaseMovement allowed/denied summary, variant 3. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0057 (Near / release-gates) Add generated coverage for tmux stdout proof status marker, variant 3. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0058 (Near / release-gates) Add generated coverage for progress.html release timestamp, variant 3. Success: progress report links the command and observed status.
+- [x] RPP-0058 (Near / release-gates) Add generated coverage for progress.html release timestamp, variant 3. Success: progress report links the command and observed status.
 - [ ] RPP-0059 (Near / release-gates) Add generated coverage for .agents/RELEASE_GATES.md status row, variant 3. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0060 (Near / release-gates) Add generated coverage for verify:release nonzero failure reason, variant 3. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0061 (Near / release-gates) Add focused regression coverage for missing REPRINT_PUSH_SOURCE_URL gate, variant 4. Success: checked command exits with the named code and no mutation attempt.

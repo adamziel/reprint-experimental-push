@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 07:30 CEST.
+- Last update: 2026-05-28 09:24 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `ca47c11b1` (`test: prove generated planner summary counts`).
+  `cb6c29f31` (`test: add progress timestamp generated coverage`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 122
-  items complete and leaves 878 open.
-- Checked slices: 40 release-gate foundation items, 16 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 123
+  items complete and leaves 877 open.
+- Checked slices: 41 release-gate foundation items, 16 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 10 merge-invariant items. No release-ops items are checked
@@ -107,6 +107,17 @@ linked implementation artifacts.
   provenance, and the mismatched route fixture fails closed with
   `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact route evidence, held marker, and
   `mutationAttempted: false`.
+- Generated progress-timestamp continuation: `cb6c29f31` integrated
+  `RPP-0058` progress.html release timestamp generated coverage. Focused
+  command:
+  `node --test test/release-gate-progress-release-timestamp-generated.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  (31 passing release-gate tests). The broader release-gate suite with
+  generated same-source, generated preflight, status-row, verify-release, and
+  progress timestamp coverage passes 37/37. The generated fixtures link the
+  focused command and observed `pass` status to
+  `progress.html#release-proof-timestamp`, reject invalid timestamp evidence
+  with `PROGRESS_RELEASE_TIMESTAMP_REQUIRED`, preserve exact timestamp-gate
+  evidence, and keep final release `NO-GO` without provenance.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner

@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 07:30 CEST
+Last updated: 2026-05-28 09:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 09:24 CEST - RPP-0058 Integrated
+
+- Going well: integration is now at `cb6c29f31`, adding `RPP-0058`
+  generated progress.html release timestamp coverage. The generated fixtures
+  link the focused command and observed `pass` status to
+  `progress.html#release-proof-timestamp`, prove invalid timestamp evidence
+  fails closed with `PROGRESS_RELEASE_TIMESTAMP_REQUIRED`, and preserve exact
+  timestamp-gate evidence without mutation.
+- Checklist movement: 123 verified items checked and 877 open. New check since
+  the prior feedback entry: `RPP-0058`.
+- Verification: focused RPP-0058 release-gate/progress timestamp validation
+  passes 31/31, the broader generated release-gate suite passes 37/37,
+  checklist lint reports 123 checked / 877 open with 0 risky claims, artifact
+  redaction scans evidence and reporting surfaces with 0 rejected files,
+  release remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 07:30 CEST - RPP-0230 Integrated
 
