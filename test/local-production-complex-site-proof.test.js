@@ -5,6 +5,7 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
+  buildCrossTableCreateBatchMappingProof,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
   findReleaseVerifierSummary,
@@ -284,6 +285,64 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphCountsPresent, true);
   assert.equal(proof.invariants.commentGraphPlanned, true);
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
+});
+
+test('complex-site graph proof applies cross-table create batches through mapped targets', () => {
+  const source = syntheticComplexSnapshot('source', smallShape);
+  const localEdited = withCrossTableCreateBatchMappingFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'local-edited',
+  );
+  const targetRemote = withCrossTableCreateBatchMappingFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'target-remote',
+  );
+  const staleRemote = withCrossTableCreateBatchMappingFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'stale-remote',
+  );
+
+  const proof = buildCrossTableCreateBatchMappingProof({
+    sourceSnapshot: source,
+    localEditedSnapshot: localEdited,
+    targetRemoteSnapshot: targetRemote,
+    staleRemoteSnapshot: staleRemote,
+  });
+  const proofJson = JSON.stringify(proof);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.match(proof.noGoCaveat, /NO-GO/);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.crossTableSourcePosts, 0);
+  assert.equal(proof.counts.localEdited.crossTableSourcePosts, 1);
+  assert.equal(proof.counts.localEdited.crossTableSourceRelationships, 1);
+  assert.equal(proof.counts.targetRemote.crossTableTargetPosts, 1);
+  assert.equal(proof.deterministicMapping.action, 'rewrite-dependent-create-batch-to-preserved-remote-targets');
+  assert.equal(proof.appliedEvidence.childPostParent, 75801);
+  assert.equal(proof.appliedEvidence.postmetaPostId, 75801);
+  assert.equal(proof.appliedEvidence.commentPostId, 75801);
+  assert.equal(proof.appliedEvidence.relationshipObjectId, 75801);
+  assert.equal(proof.appliedEvidence.relationshipTermTaxonomyId, 75821);
+  assert.equal(proof.appliedEvidence.termmetaTermId, 75811);
+  assert.equal(proof.invariants.sourceIdentitiesMappedNotMutated, true);
+  assert.equal(proof.invariants.mappedMutationsPlanned, true);
+  assert.equal(proof.invariants.rewrittenResourceKeysUsed, true);
+  assert.equal(proof.invariants.rewriteEvidenceCoversCrossTableReferences, true);
+  assert.equal(proof.invariants.applyCarriesTargetIds, true);
+  assert.equal(proof.invariants.readyEvidenceHashOnly, true);
+  assert.equal(proof.invariants.stalePlanFailsClosed, true);
+  assert.equal(proof.invariants.staleEvidenceHashOnly, true);
+  assert.equal(proof.invariants.evidenceRedactsRawValues, true);
+  assert.equal(proof.rewriteEvidence.some((entry) =>
+    entry.rewrites.some((rewrite) => rewrite.relationshipType === 'term-relationship-taxonomy')), true);
+  assert.equal(proof.staleBlockerEvidence.some((entry) =>
+    entry.class === 'stale-wordpress-graph-identity'), true);
+  assert.equal(proofJson.includes('Local Private RPP-0339 Parent'), false);
+  assert.equal(proofJson.includes('Remote Private RPP-0339 Target'), false);
+  assert.equal(proofJson.includes('Stale Remote Private RPP-0339 Target'), false);
+  assert.equal(proofJson.includes('local-private-rpp-0339-meta'), false);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -633,6 +692,113 @@ function syntheticComplexSnapshot(variant, shape) {
   };
 
   return snapshot;
+}
+
+function withCrossTableCreateBatchMappingFixture(snapshot, variant) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  next.db.wp_terms = next.db.wp_terms || {};
+  next.db.wp_term_taxonomy = next.db.wp_term_taxonomy || {};
+  next.db.wp_term_relationships = next.db.wp_term_relationships || {};
+  next.db.wp_termmeta = next.db.wp_termmeta || {};
+  next.db.wp_comments = next.db.wp_comments || {};
+
+  if (variant === 'local-edited') {
+    next.meta.wordpressGraphIdentityMap = {
+      rows: [
+        { table: 'wp_posts', localId: 'ID:74801', remoteId: 'ID:75801' },
+        { table: 'wp_terms', localId: 'term_id:74811', remoteId: 'term_id:75811' },
+        { table: 'wp_term_taxonomy', localId: 'term_taxonomy_id:74821', remoteId: 'term_taxonomy_id:75821' },
+      ],
+    };
+    next.db.wp_posts['ID:74801'] = {
+      ID: 74801,
+      post_title: 'Local Private RPP-0339 Parent',
+      post_name: 'rpp-0339-cross-table-parent',
+      post_content: 'local-private-rpp-0339-parent-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    next.db.wp_posts['ID:74802'] = {
+      ID: 74802,
+      post_title: 'Local Private RPP-0339 Child',
+      post_name: 'rpp-0339-cross-table-child',
+      post_content: 'local-private-rpp-0339-child-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 74801,
+      post_author: 0,
+    };
+    next.db.wp_postmeta['post_id:74801:meta_key:_rpp_0339_cross_table_flag'] = {
+      post_id: 74801,
+      meta_key: '_rpp_0339_cross_table_flag',
+      meta_value: 'local-private-rpp-0339-meta',
+    };
+    next.db.wp_comments['comment_ID:74831'] = {
+      comment_ID: 74831,
+      comment_post_ID: 74801,
+      comment_author: 'RPP 0339 Comment',
+      comment_content: 'local-private-rpp-0339-comment',
+      comment_parent: 0,
+      user_id: 0,
+    };
+    next.db.wp_terms['term_id:74811'] = {
+      term_id: 74811,
+      name: 'Local Private RPP-0339 Term',
+      slug: 'rpp-0339-cross-table-term',
+      term_group: 0,
+    };
+    next.db.wp_term_taxonomy['term_taxonomy_id:74821'] = {
+      term_taxonomy_id: 74821,
+      term_id: 74811,
+      taxonomy: 'category',
+      description: 'Local private RPP-0339 taxonomy',
+      parent: 0,
+      count: 1,
+    };
+    next.db.wp_term_relationships['object_id:74801|term_taxonomy_id:74821'] = {
+      object_id: 74801,
+      term_taxonomy_id: 74821,
+      term_order: 0,
+    };
+    next.db.wp_termmeta['meta_id:74841'] = {
+      meta_id: 74841,
+      term_id: 74811,
+      meta_key: '_rpp_0339_cross_table_term_flag',
+      meta_value: 'local-private-rpp-0339-termmeta',
+    };
+  }
+
+  if (variant === 'target-remote' || variant === 'stale-remote') {
+    const stale = variant === 'stale-remote';
+    next.db.wp_posts['ID:75801'] = {
+      ID: 75801,
+      post_title: stale ? 'Stale Remote Private RPP-0339 Target' : 'Local Private RPP-0339 Parent',
+      post_name: 'rpp-0339-cross-table-parent',
+      post_content: stale ? 'stale-remote-rpp-0339-target-body' : 'local-private-rpp-0339-parent-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    next.db.wp_terms['term_id:75811'] = {
+      term_id: 75811,
+      name: stale ? 'Stale Remote Private RPP-0339 Term' : 'Local Private RPP-0339 Term',
+      slug: 'rpp-0339-cross-table-term',
+      term_group: 0,
+    };
+    next.db.wp_term_taxonomy['term_taxonomy_id:75821'] = {
+      term_taxonomy_id: 75821,
+      term_id: 75811,
+      taxonomy: 'category',
+      description: stale ? 'Stale remote private RPP-0339 taxonomy' : 'Local private RPP-0339 taxonomy',
+      parent: 0,
+      count: 1,
+    };
+  }
+
+  return next;
 }
 
 function syntheticReleaseSummary(mutations, options = {}) {

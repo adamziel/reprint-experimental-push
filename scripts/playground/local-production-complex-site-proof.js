@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
 import { deserializeResourceValue, resourceHash } from '../../src/resources.js';
 
@@ -87,6 +88,50 @@ const commentGraphResourceKeys = Object.freeze([
   commentGraphParentResourceKey,
   commentGraphChildResourceKey,
   commentGraphMetaResourceKey,
+]);
+const crossTableSourcePostId = 74801;
+const crossTableChildPostId = 74802;
+const crossTableTargetPostId = 75801;
+const crossTableSourceTermId = 74811;
+const crossTableTargetTermId = 75811;
+const crossTableSourceTaxonomyId = 74821;
+const crossTableTargetTaxonomyId = 75821;
+const crossTableCommentId = 74831;
+const crossTableTermMetaId = 74841;
+const crossTableMetaKey = '_rpp_0339_cross_table_flag';
+const crossTableSourcePostResourceKey = `row:["wp_posts","ID:${crossTableSourcePostId}"]`;
+const crossTableChildPostResourceKey = `row:["wp_posts","ID:${crossTableChildPostId}"]`;
+const crossTableTargetPostResourceKey = `row:["wp_posts","ID:${crossTableTargetPostId}"]`;
+const crossTableSourceTermResourceKey = `row:["wp_terms","term_id:${crossTableSourceTermId}"]`;
+const crossTableTargetTermResourceKey = `row:["wp_terms","term_id:${crossTableTargetTermId}"]`;
+const crossTableSourceTaxonomyResourceKey = `row:["wp_term_taxonomy","term_taxonomy_id:${crossTableSourceTaxonomyId}"]`;
+const crossTableTargetTaxonomyResourceKey = `row:["wp_term_taxonomy","term_taxonomy_id:${crossTableTargetTaxonomyId}"]`;
+const crossTableCommentResourceKey = `row:["wp_comments","comment_ID:${crossTableCommentId}"]`;
+const crossTableTermMetaResourceKey = `row:["wp_termmeta","meta_id:${crossTableTermMetaId}"]`;
+const crossTableSourcePostmetaResourceKey = `row:["wp_postmeta","post_id:${crossTableSourcePostId}:meta_key:${crossTableMetaKey}"]`;
+const crossTableTargetPostmetaResourceKey = `row:["wp_postmeta","post_id:${crossTableTargetPostId}:meta_key:${crossTableMetaKey}"]`;
+const crossTableSourceRelationshipResourceKey = `row:["wp_term_relationships","object_id:${crossTableSourcePostId}|term_taxonomy_id:${crossTableSourceTaxonomyId}"]`;
+const crossTableTargetRelationshipResourceKey = `row:["wp_term_relationships","object_id:${crossTableTargetPostId}|term_taxonomy_id:${crossTableTargetTaxonomyId}"]`;
+const crossTableMappedMutationResourceKeys = Object.freeze([
+  crossTableChildPostResourceKey,
+  crossTableTargetPostmetaResourceKey,
+  crossTableCommentResourceKey,
+  crossTableTargetRelationshipResourceKey,
+  crossTableTermMetaResourceKey,
+]);
+const crossTablePrivateTokens = Object.freeze([
+  'Local Private RPP-0339 Parent',
+  'Local Private RPP-0339 Child',
+  'Local Private RPP-0339 Term',
+  'Remote Private RPP-0339 Target',
+  'Remote Private RPP-0339 Term',
+  'Stale Remote Private RPP-0339 Target',
+  'Stale Remote Private RPP-0339 Term',
+  'local-private-rpp-0339-parent-body',
+  'local-private-rpp-0339-child-body',
+  'local-private-rpp-0339-meta',
+  'local-private-rpp-0339-comment',
+  'local-private-rpp-0339-termmeta',
 ]);
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
@@ -763,6 +808,115 @@ export function buildPluginDriverBoundaryEvidence({
   };
 }
 
+export function buildCrossTableCreateBatchMappingProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  targetRemoteSnapshot,
+  staleRemoteSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(targetRemoteSnapshot, 'targetRemoteSnapshot is required');
+  assert.ok(staleRemoteSnapshot, 'staleRemoteSnapshot is required');
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: targetRemoteSnapshot,
+    now: proofNow,
+  });
+  const applied = readyPlan.status === 'ready'
+    ? applyPlan(targetRemoteSnapshot, readyPlan).site
+    : null;
+  const stalePlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: staleRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const mappedMutations = crossTableMappedMutationResourceKeys
+    .map((resourceKey) => readyMutations.find((mutation) => mutation.resourceKey === resourceKey) || null);
+  const staleBlockerEvidence = hashOnlyCrossTableBlockerEvidence(stalePlan.blockers || []);
+  const rewriteEvidence = hashOnlyCrossTableRewriteEvidence(mappedMutations.filter(Boolean));
+  const appliedEvidence = hashOnlyCrossTableAppliedEvidence(applied);
+  const evidenceJson = JSON.stringify({ rewriteEvidence, appliedEvidence, staleBlockerEvidence });
+  const rewriteTypes = rewriteEvidence.flatMap((entry) =>
+    entry.rewrites.map((rewrite) => rewrite.relationshipType));
+
+  const invariants = {
+    sourceStartsWithoutMappedRows: summarizeComplexSnapshot(sourceSnapshot).crossTableSourcePosts === 0
+      && summarizeComplexSnapshot(sourceSnapshot).crossTableTargetPosts === 0,
+    localCarriesCreateBatch: summarizeComplexSnapshot(localEditedSnapshot).crossTableSourcePosts >= 1
+      && summarizeComplexSnapshot(localEditedSnapshot).crossTableSourceTerms >= 1
+      && summarizeComplexSnapshot(localEditedSnapshot).crossTableSourceTaxonomies >= 1
+      && summarizeComplexSnapshot(localEditedSnapshot).crossTableSourceRelationships >= 1,
+    targetRemoteCarriesPreservedRows: summarizeComplexSnapshot(targetRemoteSnapshot).crossTableTargetPosts >= 1
+      && summarizeComplexSnapshot(targetRemoteSnapshot).crossTableTargetTerms >= 1
+      && summarizeComplexSnapshot(targetRemoteSnapshot).crossTableTargetTaxonomies >= 1,
+    readyPlanReady: readyPlan.status === 'ready',
+    sourceIdentitiesMappedNotMutated: !readyMutations.some((mutation) =>
+      [
+        crossTableSourcePostResourceKey,
+        crossTableSourceTermResourceKey,
+        crossTableSourceTaxonomyResourceKey,
+      ].includes(mutation.resourceKey)),
+    mappedMutationsPlanned: mappedMutations.every(Boolean),
+    rewrittenResourceKeysUsed: !readyMutations.some((mutation) =>
+      [
+        crossTableSourcePostmetaResourceKey,
+        crossTableSourceRelationshipResourceKey,
+      ].includes(mutation.resourceKey)),
+    rewriteEvidenceCoversCrossTableReferences: [
+      'post-parent',
+      'postmeta-post',
+      'comment-post',
+      'term-relationship-object',
+      'term-relationship-taxonomy',
+      'termmeta-term',
+    ].every((relationshipType) => rewriteTypes.includes(relationshipType)),
+    applyCarriesTargetIds: appliedEvidence?.childPostParent === crossTableTargetPostId
+      && appliedEvidence?.postmetaPostId === crossTableTargetPostId
+      && appliedEvidence?.commentPostId === crossTableTargetPostId
+      && appliedEvidence?.relationshipObjectId === crossTableTargetPostId
+      && appliedEvidence?.relationshipTermTaxonomyId === crossTableTargetTaxonomyId
+      && appliedEvidence?.termmetaTermId === crossTableTargetTermId,
+    readyEvidenceHashOnly: crossTableEvidenceIsHashOnly({ rewriteEvidence, appliedEvidence }),
+    stalePlanFailsClosed: stalePlan.status === 'blocked',
+    staleEvidenceHashOnly: crossTableEvidenceIsHashOnly({ staleBlockerEvidence }),
+    evidenceRedactsRawValues: !crossTablePrivateTokens.some((token) => evidenceJson.includes(token)),
+  };
+
+  return {
+    type: 'cross-table-create-batch-mapping',
+    runtime: 'local-playground-wordpress',
+    releaseReady: false,
+    noGoCaveat: 'Local proof only; release remains NO-GO until required production observations are integrated.',
+    deterministicMapping: {
+      sourcePostResourceKey: crossTableSourcePostResourceKey,
+      targetPostResourceKey: crossTableTargetPostResourceKey,
+      sourceTermResourceKey: crossTableSourceTermResourceKey,
+      targetTermResourceKey: crossTableTargetTermResourceKey,
+      sourceTaxonomyResourceKey: crossTableSourceTaxonomyResourceKey,
+      targetTaxonomyResourceKey: crossTableTargetTaxonomyResourceKey,
+      action: 'rewrite-dependent-create-batch-to-preserved-remote-targets',
+    },
+    counts: {
+      source: summarizeComplexSnapshot(sourceSnapshot),
+      localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+      targetRemote: summarizeComplexSnapshot(targetRemoteSnapshot),
+      staleRemote: summarizeComplexSnapshot(staleRemoteSnapshot),
+    },
+    readyPlan: summarizePlan(readyPlan),
+    stalePlan: summarizePlan(stalePlan),
+    rewriteEvidence,
+    appliedEvidence,
+    staleBlockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function findReleaseVerifierSummary(output) {
   const objects = extractJsonObjects(output);
   return [...objects].reverse().find((object) =>
@@ -794,6 +948,128 @@ function pluginDriverStateEvidence(snapshot) {
     updatedMarker: row?.updated_marker || null,
     proofMarker: row?.payload?.releaseBoundaryProof || null,
   };
+}
+
+function hashOnlyCrossTableRewriteEvidence(mutations) {
+  return mutations.map((mutation) => ({
+    resourceKey: mutation.resourceKey,
+    action: mutation.action || null,
+    baseHash: mutation.baseHash || null,
+    remoteBeforeHash: mutation.remoteBeforeHash || null,
+    localHash: mutation.localHash || null,
+    rewrites: (mutation.wordpressGraphIdentity?.rewrites || []).map((rewrite) => ({
+      relationshipKey: rewrite.relationshipKey || null,
+      relationshipType: rewrite.relationshipType || null,
+      sourceResourceKey: rewrite.sourceResourceKey || null,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey || null,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+      targetResourceKey: rewrite.targetResourceKey || null,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+      targetRemoteHash: rewrite.targetRemoteHash || null,
+    })),
+  }));
+}
+
+function hashOnlyCrossTableAppliedEvidence(snapshot) {
+  if (!snapshot) {
+    return null;
+  }
+  const posts = snapshot?.db?.wp_posts || {};
+  const postmeta = snapshot?.db?.wp_postmeta || {};
+  const comments = snapshot?.db?.wp_comments || {};
+  const relationships = snapshot?.db?.wp_term_relationships || {};
+  const termmeta = snapshot?.db?.wp_termmeta || {};
+  return {
+    targetPostResourceKey: crossTableTargetPostResourceKey,
+    targetPostHash: rowHash(snapshot, 'wp_posts', `ID:${crossTableTargetPostId}`),
+    childPostResourceKey: crossTableChildPostResourceKey,
+    childPostHash: rowHash(snapshot, 'wp_posts', `ID:${crossTableChildPostId}`),
+    childPostParent: Number(posts[`ID:${crossTableChildPostId}`]?.post_parent),
+    postmetaResourceKey: crossTableTargetPostmetaResourceKey,
+    postmetaHash: rowHash(snapshot, 'wp_postmeta', `post_id:${crossTableTargetPostId}:meta_key:${crossTableMetaKey}`),
+    postmetaPostId: Number(postmeta[`post_id:${crossTableTargetPostId}:meta_key:${crossTableMetaKey}`]?.post_id),
+    commentResourceKey: crossTableCommentResourceKey,
+    commentHash: rowHash(snapshot, 'wp_comments', `comment_ID:${crossTableCommentId}`),
+    commentPostId: Number(comments[`comment_ID:${crossTableCommentId}`]?.comment_post_ID),
+    relationshipResourceKey: crossTableTargetRelationshipResourceKey,
+    relationshipHash: rowHash(snapshot, 'wp_term_relationships', `object_id:${crossTableTargetPostId}|term_taxonomy_id:${crossTableTargetTaxonomyId}`),
+    relationshipObjectId: Number(relationships[`object_id:${crossTableTargetPostId}|term_taxonomy_id:${crossTableTargetTaxonomyId}`]?.object_id),
+    relationshipTermTaxonomyId: Number(relationships[`object_id:${crossTableTargetPostId}|term_taxonomy_id:${crossTableTargetTaxonomyId}`]?.term_taxonomy_id),
+    termmetaResourceKey: crossTableTermMetaResourceKey,
+    termmetaHash: rowHash(snapshot, 'wp_termmeta', `meta_id:${crossTableTermMetaId}`),
+    termmetaTermId: Number(termmeta[`meta_id:${crossTableTermMetaId}`]?.term_id),
+  };
+}
+
+function hashOnlyCrossTableBlockerEvidence(blockers) {
+  const relevantResourceKeys = new Set([
+    crossTableSourcePostResourceKey,
+    crossTableSourceTermResourceKey,
+    crossTableSourceTaxonomyResourceKey,
+    crossTableChildPostResourceKey,
+    crossTableSourcePostmetaResourceKey,
+    crossTableCommentResourceKey,
+    crossTableSourceRelationshipResourceKey,
+    crossTableTermMetaResourceKey,
+  ]);
+  return blockers
+    .filter((blocker) => relevantResourceKeys.has(blocker.resourceKey))
+    .map((blocker) => ({
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class || null,
+      reason: blocker.reason || null,
+      baseHash: blocker.baseHash || null,
+      localHash: blocker.localHash || null,
+      remoteHash: blocker.remoteHash || null,
+      references: (blocker.references || []).map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+        targetSupported: reference.targetSupport ? reference.targetSupport.supported === true : null,
+        targetClass: reference.targetSupport?.className || null,
+      })),
+    }));
+}
+
+function crossTableEvidenceIsHashOnly(evidence) {
+  const json = JSON.stringify(evidence);
+  const hashValues = [];
+  collectHashValues(evidence, hashValues);
+  return hashValues.every((hash) => /^[a-f0-9]{64}$/.test(hash))
+    && !crossTablePrivateTokens.some((token) => json.includes(token));
+}
+
+function collectHashValues(value, hashes) {
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectHashValues(entry, hashes));
+    return;
+  }
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry == null) {
+      continue;
+    }
+    if (key.toLowerCase().endsWith('hash') && typeof entry === 'string') {
+      hashes.push(entry);
+      continue;
+    }
+    collectHashValues(entry, hashes);
+  }
+}
+
+function rowHash(snapshot, table, id) {
+  return resourceHash(snapshot, {
+    type: 'row',
+    table,
+    id,
+    key: `row:${JSON.stringify([table, id])}`,
+  });
 }
 
 export function extractJsonObjects(output) {
@@ -892,6 +1168,33 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === commentGraphMetaId
       && Number(row?.comment_id) === commentGraphChildId
       && String(row?.meta_key || '') === commentGraphMetaKey).length,
+    crossTableSourcePosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === crossTableSourcePostId
+      && Number(row?.post_parent) === 0).length,
+    crossTableChildPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === crossTableChildPostId
+      && Number(row?.post_parent) === crossTableSourcePostId).length,
+    crossTableTargetPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === crossTableTargetPostId
+      && Number(row?.post_parent) === 0).length,
+    crossTableSourceTerms: Object.values(terms).filter((row) =>
+      Number(row?.term_id) === crossTableSourceTermId).length,
+    crossTableTargetTerms: Object.values(terms).filter((row) =>
+      Number(row?.term_id) === crossTableTargetTermId).length,
+    crossTableSourceTaxonomies: Object.values(termTaxonomy).filter((row) =>
+      Number(row?.term_taxonomy_id) === crossTableSourceTaxonomyId
+      && Number(row?.term_id) === crossTableSourceTermId
+      && String(row?.taxonomy || '') === 'category').length,
+    crossTableTargetTaxonomies: Object.values(termTaxonomy).filter((row) =>
+      Number(row?.term_taxonomy_id) === crossTableTargetTaxonomyId
+      && Number(row?.term_id) === crossTableTargetTermId
+      && String(row?.taxonomy || '') === 'category').length,
+    crossTableSourceRelationships: Object.values(termRelationships).filter((row) =>
+      Number(row?.object_id) === crossTableSourcePostId
+      && Number(row?.term_taxonomy_id) === crossTableSourceTaxonomyId).length,
+    crossTableTargetRelationships: Object.values(termRelationships).filter((row) =>
+      Number(row?.object_id) === crossTableTargetPostId
+      && Number(row?.term_taxonomy_id) === crossTableTargetTaxonomyId).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,

@@ -11,13 +11,15 @@ Lane: graph-identity
 - Adds fail-closed post GUID and `post_type` + `post_name` collision detection when a local post would duplicate a different remote post without an explicit proven identity map.
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
+- Adds local-production apply proof for cross-table create batches that use an explicit identity map. The proof rewrites child post, postmeta, comment, term relationship, and termmeta references to preserved remote post/term/taxonomy targets, applies the plan locally, and records only resource keys plus hashes/target IDs while stale remote targets fail closed.
 
 ## Verification commands
 
 - `node --check scripts/playground/local-production-complex-site-proof.js`, `node --check scripts/docker/production-complex-site-harness.mjs`, `node --check test/local-production-complex-site-proof.test.js`, and `node --check test/push-planner.test.js` — passed for the RPP-0310 proof changes.
-- `node --test test/local-production-complex-site-proof.test.js` — passed (17 tests), including post_tag release-evidence carry-through and fail-closed mutation checks.
-- `node --test test/push-planner.test.js` — passed (90 tests), including same-plan `post_tag` taxonomy closure.
+- `node --test test/local-production-complex-site-proof.test.js` — passed (18 tests), including post_tag release-evidence carry-through, fail-closed mutation checks, and cross-table create batch mapping through apply.
+- `node --test test/push-planner.test.js` — passed (101 tests), including same-plan `post_tag` taxonomy closure and explicit identity-map cross-table reference rewrites.
 - `node --test test/graph-mapping-inventory.test.js` — passed (2 tests).
+- `node --test test/local-production-complex-site-proof.test.js test/push-planner.test.js test/graph-mapping-inventory.test.js` — passed (121 tests), including the cross-table create batch apply proof.
 - `node --test test/generated-push-harness.test.js` — passed (6 generated harness tests covering 300+ cases).
 - `npm run bench:graph-mapping-inventory` — passed and emitted `identityMapCapabilities` with explicit map table suffixes and fail-closed collision surfaces.
 
@@ -27,6 +29,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 
 - Supported core post-object taxonomy surfaces are `category`, `post_tag`, and `post_format`; RPP-0310 adds local-production release evidence for `post_tag` specifically.
 - `nav_menu` taxonomy, custom/plugin taxonomy rows such as `product_cat`, menu item graph metadata, and unsupported post graph rows such as `nav_menu_item`, `revision`, and `wp_navigation` remain intentionally unmapped until an explicit owner/driver or identity-map proof exists.
+- Cross-table create batch mapping remains bounded to explicit identity-map rows whose remote targets are present and equivalent after rewriting; stale or non-equivalent targets stay blocked and release remains NO-GO until required production observations are integrated.
 - Those unmapped surfaces continue to stop as `stale-wordpress-graph-identity` blockers with hash-only change evidence; the existing planner tests assert private term names/slugs are not leaked in blocker JSON for unsupported taxonomy surfaces.
 
 ## RPP items with new evidence
@@ -39,3 +42,4 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 - RPP-0313 / RPP-0333 and RPP-0314 / RPP-0334: term relationship `object_id` and `term_taxonomy_id` references, including compound row IDs, are rewritten to mapped remote post/taxonomy identities.
 - RPP-0318: GUID and slug collision handling now fails closed without explicit identity-map evidence.
 - RPP-0319 / RPP-0320: cross-table create/reference batches can carry an importer/exporter identity map while preserving remote target rows and recording hash-only rewrite evidence.
+- RPP-0339: cross-table create batch mapping now has local-production apply proof for mapped post, term, and term taxonomy targets with hash-only rewrite/apply evidence and stale-target fail-closed coverage.
