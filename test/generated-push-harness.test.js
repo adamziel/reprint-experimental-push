@@ -124,6 +124,52 @@ test('RPP-0101 generated harness emits ready and non-ready file create/update/de
   assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
 });
 
+test('RPP-0121 file create/update/delete mix target emits ready and non-ready variant coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileCreateUpdateDeleteMix;
+
+  assert.ok(coverage, 'missing file create/update/delete mix target coverage');
+  assert.equal(coverage.family, 'file-create-update-delete-mix-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-create-update-delete-mix']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready file mix cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready file mix cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'file-create-update-delete-mix-ready');
+  const nonReadyCase = cases.find((testCase) => testCase.family === 'file-create-update-delete-mix-conflict');
+
+  assert.ok(readyCase, 'missing ready file create/update/delete mix case');
+  assert.ok(nonReadyCase, 'missing non-ready file create/update/delete mix case');
+  assertFileCreateUpdateDeleteMixShape(readyCase);
+  assertFileCreateUpdateDeleteMixShape(nonReadyCase);
+
+  const ready = validateGeneratedCase(readyCase);
+  const nonReady = validateGeneratedCase(nonReadyCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready file mix should create, update, and delete files');
+  assert.equal(ready.applied, true, 'ready file mix should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready file mix should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready file mix should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(nonReady.status, 'conflict');
+  assert.ok(nonReady.conflicts >= 1, 'non-ready file mix should expose a file conflict');
+  assert.equal(nonReady.applied, false, 'non-ready file mix must not apply mutations');
+});
+
 test('RPP-0102 directory descendant conflict exposes per-tier target counts', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.directoryDescendantConflict;
@@ -354,4 +400,21 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function assertFileCreateUpdateDeleteMixShape(testCase) {
+  const createFiles = Object.entries(testCase.local.files)
+    .filter(([path, value]) => !testCase.base.files[path]
+      && String(value).startsWith('generated file mix create '));
+  const updateFiles = Object.entries(testCase.local.files)
+    .filter(([path, value]) => testCase.base.files[path]
+      && String(value).startsWith('generated file mix update '));
+  const deleteFiles = Object.keys(testCase.base.files)
+    .filter((path) => String(testCase.base.files[path]).startsWith('base shared ')
+      && !testCase.local.files[path]
+      && testCase.remote.files[path]);
+
+  assert.equal(createFiles.length, 1, `${testCase.id} should create one file`);
+  assert.equal(updateFiles.length, 1, `${testCase.id} should update one file`);
+  assert.equal(deleteFiles.length, 1, `${testCase.id} should delete one file`);
 }
