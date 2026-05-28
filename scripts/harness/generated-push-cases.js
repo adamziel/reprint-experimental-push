@@ -1127,6 +1127,7 @@ function assertPlanContract(testCase, plan) {
   assert.equal(plan.summary.conflicts, plan.conflicts.length, `${testCase.id} conflict summary mismatch`);
   assert.equal(plan.summary.blockers, plan.blockers.length, `${testCase.id} blocker summary mismatch`);
   assert.equal(plan.summary.atomicGroups, plan.atomicGroups.length, `${testCase.id} atomic summary mismatch`);
+  assertMutationPreconditionOneToOne(testCase, plan);
   assert.equal(
     plan.status,
     plan.conflicts.length > 0 ? 'conflict' : plan.blockers.length > 0 ? 'blocked' : 'ready',
@@ -1198,6 +1199,47 @@ function assertPlanContract(testCase, plan) {
   }
 }
 
+function assertMutationPreconditionOneToOne(testCase, plan) {
+  assert.equal(
+    plan.preconditions.length,
+    plan.mutations.length,
+    `${testCase.id} precondition count must match mutation count`,
+  );
+  const mutationById = new Map();
+  for (const mutation of plan.mutations) {
+    assert.equal(
+      mutationById.has(mutation.id),
+      false,
+      `${testCase.id} duplicate mutation id ${mutation.id}`,
+    );
+    mutationById.set(mutation.id, mutation);
+  }
+
+  const preconditionByMutationId = new Map();
+  for (const precondition of plan.preconditions) {
+    assert.equal(
+      preconditionByMutationId.has(precondition.mutationId),
+      false,
+      `${testCase.id} duplicate precondition for ${precondition.mutationId}`,
+    );
+    preconditionByMutationId.set(precondition.mutationId, precondition);
+    const mutation = mutationById.get(precondition.mutationId);
+    assert.ok(mutation, `${testCase.id} orphan precondition ${precondition.mutationId}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.deepEqual(precondition.resource, mutation.resource);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(precondition.expectedHash, resourceHash(testCase.remote, mutation.resource));
+    assert.equal(precondition.checkedAgainst, 'live-remote');
+  }
+
+  for (const mutation of plan.mutations) {
+    assert.ok(
+      preconditionByMutationId.has(mutation.id),
+      `${testCase.id} missing precondition for ${mutation.id}`,
+    );
+  }
+}
+
 function assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, resultSite, mutationKeys) {
   for (const resource of enumerateResources(testCase.base, testCase.local, testCase.remote, resultSite)) {
     const resultHash = resourceHash(resultSite, resource);
@@ -1262,6 +1304,7 @@ function recordSummary(summary, testCase, result) {
   summary.totalConflicts += result.conflicts;
   summary.totalBlockers += result.blockers;
   summary.totalDecisions += result.decisions;
+  summary.totalPreconditions += result.preconditions;
 }
 
 function emptySummary() {
@@ -1282,6 +1325,7 @@ function emptySummary() {
     totalConflicts: 0,
     totalBlockers: 0,
     totalDecisions: 0,
+    totalPreconditions: 0,
   };
 }
 
