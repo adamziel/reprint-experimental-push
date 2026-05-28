@@ -52,6 +52,24 @@ This evidence does not broaden accepted plugin-owned resources. The fixture
 driver still requires exact owner, table, positive id row, active unchanged
 driver plugin evidence, and no delete mutation.
 
+## Generated Driver Owner Identity Binding
+
+RPP-0442 adds generated support-only coverage for plugin-driver owner identity
+binding. The deterministic matrix covers exact owner acceptance, wrong owner
+policy refusal, missing owner policy refusal, local row owner drift rejected at
+apply validation, and stale live owner metadata refusal.
+
+The generated validator proves fail-closed behavior before mutation for blocked
+plans and apply-time owner drift, and asserts that generated private row tokens
+do not appear in blocker, error, journal, or proof evidence. Each case records
+a stable proof hash over redacted owner/driver evidence.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0442' test/generated-push-harness.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -62,3 +80,6 @@ driver plugin evidence, and no delete mutation.
 - RPP-0438 — driver apply validation hook: accepted fixture driver evidence
   carries one real mutation through apply, and forged driver evidence fails
   closed before mutation.
+- RPP-0442 — generated driver owner identity binding: supported exact owner
+  proof applies, wrong/missing owner policy and stale owner metadata block, and
+  planned owner drift fails closed at apply with redacted evidence.

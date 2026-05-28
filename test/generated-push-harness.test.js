@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generateDriverOwnerIdentityBindingCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
+  validateDriverOwnerIdentityBindingCase,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 
@@ -102,6 +104,52 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0442 generated driver owner identity binding covers supported and fail-closed variants', () => {
+  const cases = generateDriverOwnerIdentityBindingCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'supported-exact-owner-policy',
+    'unsupported-wrong-policy-owner',
+    'unsupported-missing-owner-policy',
+    'unsupported-local-owner-drift',
+    'unsupported-stale-owner-context',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('driver-owner-identity-binding')), true);
+  assert.equal(
+    cases.filter((testCase) => testCase.tags.has('driver-owner-identity-supported')).length,
+    1,
+  );
+  assert.equal(
+    cases.filter((testCase) => testCase.tags.has('driver-owner-identity-unsupported')).length,
+    4,
+  );
+
+  const results = cases.map(validateDriverOwnerIdentityBindingCase);
+  const resultsByVariant = Object.fromEntries(
+    results.map((result) => [result.variant, result]),
+  );
+
+  assert.deepEqual(
+    Object.fromEntries(results.map((result) => [result.variant, result.outcome])),
+    {
+      'supported-exact-owner-policy': 'ready',
+      'unsupported-wrong-policy-owner': 'planner-blocked',
+      'unsupported-missing-owner-policy': 'planner-blocked',
+      'unsupported-local-owner-drift': 'apply-refused',
+      'unsupported-stale-owner-context': 'planner-blocked',
+    },
+  );
+  assert.equal(resultsByVariant['supported-exact-owner-policy'].applied, true);
+  assert.equal(resultsByVariant['supported-exact-owner-policy'].mutations, 1);
+  assert.equal(resultsByVariant['unsupported-wrong-policy-owner'].status, 'blocked');
+  assert.equal(resultsByVariant['unsupported-missing-owner-policy'].status, 'blocked');
+  assert.equal(resultsByVariant['unsupported-local-owner-drift'].status, 'ready');
+  assert.equal(resultsByVariant['unsupported-stale-owner-context'].status, 'blocked');
+  for (const result of results) {
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
