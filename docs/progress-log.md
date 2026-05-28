@@ -4,6 +4,25 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Progress Refresh From 67d50f384
+
+- Last update: 2026-05-28 06:09 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` through
+  `67d50f384` (`docs: refresh progress for driver registration proof`), with
+  underlying `RPP-0421` proof at `78323671d`.
+- Checklist status: 110 checked / 890 open. New movement since `3bd9dc676`:
+  `RPP-0421` is integrated; `RPP-0040` remains integrated from `87f53b06f`.
+- Remaining queued/session-only, not counted: `RPP-0041`, `RPP-0042`,
+  `RPP-0043`, `RPP-0044`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0322`,
+  `RPP-0323`, and `RPP-0425`.
+- Active in-flight work, not counted: `RPP-0045`, `RPP-0117`, `RPP-0116`,
+  `RPP-0220`, `RPP-0326`, `RPP-0426`, and `RPP-0427`.
+- Verification for this refresh: `node --test test/playground-snapshot-lib.test.js`
+  passes 4/4, focused progress HTML/release-gate tests pass 30/30, checklist
+  completion lint reports 110 checked / 890 open with 0 risky claims, artifact
+  redaction scan rejects 0 files, and `git diff --check` is clean.
+- Release posture: final release remains **NO-GO**.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 06:04 CEST.

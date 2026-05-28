@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:04 CEST
+Last updated: 2026-05-28 06:09 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:09 CEST - RPP-0421 Lane Refresh
+
+- Going well: `origin/lane/evidence-integration-20260527` advanced to
+  `67d50f384`; the underlying `RPP-0421` driver registration API proof is
+  integrated at `78323671d`. `RPP-0040` remains integrated.
+- Checklist movement: 110 verified items checked and 890 open. `RPP-0421` is
+  no longer queued/session-only; release remains `NO-GO`.
+- Still not counted: queued/session-only `RPP-0041`, `RPP-0042`, `RPP-0043`,
+  `RPP-0044`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0322`, `RPP-0323`,
+  and `RPP-0425`; active `RPP-0045`, `RPP-0117`, `RPP-0116`, `RPP-0220`,
+  `RPP-0326`, `RPP-0426`, and `RPP-0427`.
+- Verification: `node --test test/playground-snapshot-lib.test.js` passes
+  4/4, focused progress HTML/release-gate tests pass 30/30, checklist
+  completion lint reports 110 checked / 890 open with 0 risky claims, artifact
+  redaction scan rejects 0 files, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from `67d50f384`, refetch
+  before push, and keep branch-local work out of readiness scoring.
 
 ## 2026-05-28 06:04 CEST - RPP-0421 Integrated
 
