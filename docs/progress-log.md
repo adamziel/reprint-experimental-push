@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 14:37 CEST.
+- Last update: 2026-05-28 14:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `787ac659` (ours ancestry merge of `origin/session/rpp-24-provenance-gate`).
+  `7df3a73f` (ours ancestry merge of
+  `origin/session/rpp-24-rpp-0101-generated-harness`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -261,6 +262,19 @@ linked implementation artifacts.
   test/release-evidence-provenance.test.js test/release-gate-cli.test.js
   test/release-gates.test.js` (36/36), checklist lint, artifact redaction scan
   (67 files), a current fail-closed release-gate status check
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
+  gates), and `git diff --check` for the worktree and merge diff.
+- Ancestry backlog reduction: `7df3a73f` used
+  `git merge -s ours --no-ff
+  origin/session/rpp-24-rpp-0101-generated-harness` after verifying
+  `git log --right-only --cherry-pick
+  HEAD...origin/session/rpp-24-rpp-0101-generated-harness` was empty. This
+  preserves the already-represented `RPP-0101` generated file create/update/delete
+  harness branch ancestry (`da7ee6f70`) without moving checklist counts or tree
+  content. Validation succeeded with `node --check
+  scripts/harness/generated-push-cases.js`, `node --test
+  test/generated-push-harness.test.js` (12/12), checklist lint, artifact
+  redaction scan (67 files), a current fail-closed release-gate status check
   (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
   gates), and `git diff --check` for the worktree and merge diff.
 - `rpp-28` then landed recovery repair, release-gate CI checks, evidence
