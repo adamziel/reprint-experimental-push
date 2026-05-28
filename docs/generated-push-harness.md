@@ -71,6 +71,11 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `staleRemoteAfterDryRun` target coverage records per-tier counts for ready
+plans whose live-remote preconditions reject a stale remote replay before any
+mutation. Zero-mutation ready plans are excluded because there is no planned
+target to drift after dry-run.
+
 At the time this note was added, the summary command reported:
 
 ```json
@@ -99,6 +104,25 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "staleRemoteAfterDryRun": {
+      "family": "ready-plan-stale-remote-after-dry-run",
+      "total": 189,
+      "perTier": {
+        "0": 18,
+        "1": 21,
+        "2": 21,
+        "3": 20,
+        "4": 21,
+        "5": 21,
+        "6": 20,
+        "7": 19,
+        "8": 14,
+        "9": 14
+      },
+      "statuses": {
+        "ready": 189
       }
     },
     "wpPostsCreateUpdateDelete": {

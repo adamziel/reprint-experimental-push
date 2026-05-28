@@ -94,6 +94,13 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  staleRemoteAfterDryRun: {
+    family: 'ready-plan-stale-remote-after-dry-run',
+    matches: (_testCase, result) => result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true,
+  },
 });
 
 export function generatePushHarnessCases({
@@ -1011,7 +1018,10 @@ function emptySummary() {
 
 function recordTargetCoverage(summary, testCase, result) {
   for (const [target, definition] of Object.entries(targetCoverageDefinitions)) {
-    if (testCase.family !== definition.family && !testCase.tags.has(definition.tag)) {
+    const matchesTarget = typeof definition.matches === 'function'
+      ? definition.matches(testCase, result)
+      : testCase.family === definition.family || testCase.tags.has(definition.tag);
+    if (!matchesTarget) {
       continue;
     }
     const coverage = summary.targetCoverage[target] ||= {
