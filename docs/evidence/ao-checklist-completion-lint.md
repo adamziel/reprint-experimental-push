@@ -40,9 +40,9 @@ Observed local repository lint summary from the standalone linter:
 {
   "ok": true,
   "riskyClaims": 0,
-  "scannedFiles": 29,
-  "checkedIds": 85,
-  "uncheckedIds": 915,
+  "scannedFiles": 33,
+  "checkedIds": 87,
+  "uncheckedIds": 913,
   "reasonCodes": []
 }
 ```
