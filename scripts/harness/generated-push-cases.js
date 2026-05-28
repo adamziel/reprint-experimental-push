@@ -86,6 +86,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  fileTypeSwap: {
+    family: 'file-type-swap-ready',
+    tag: 'file-type-swap',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',

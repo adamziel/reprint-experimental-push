@@ -176,6 +176,52 @@ test('RPP-0103 generated harness emits ready and non-ready file type-swap cases'
   assert.equal(nonReady.applied, false, 'non-ready type-swap must not apply mutations');
 });
 
+test('RPP-0123 file type-swap target exposes ready preservation and explicit conflicts', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileTypeSwap;
+
+  assert.ok(coverage, 'missing file type-swap target coverage');
+  assert.equal(coverage.family, 'file-type-swap-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-type-swap']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready file type-swap cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready file type-swap cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'file-type-swap-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'file-type-swap-conflict');
+
+  assert.ok(readyCase, 'missing ready file type-swap case');
+  assert.ok(conflictCase, 'missing conflict file type-swap case');
+  assertFileTypeSwapShape(readyCase, { conflict: false });
+  assertFileTypeSwapShape(conflictCase, { conflict: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready file type-swap should plan at least one mutation');
+  assert.equal(ready.applied, true, 'ready file type-swap should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready file type-swap must preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready file type-swap should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'conflict file type-swap should expose topology conflict');
+  assert.equal(conflict.applied, false, 'conflict file type-swap must not apply mutations');
+});
+
 test('RPP-0104 generated harness emits row create/update/delete mix with stale replay guard', () => {
   const cases = generatePushHarnessCases();
   const readyCase = cases.find((testCase) => testCase.family === 'row-create-update-delete-mix-ready');
@@ -354,4 +400,22 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function assertFileTypeSwapShape(testCase, { conflict }) {
+  const swapEntries = Object.entries(testCase.base.files)
+    .filter(([path, value]) => path.includes(conflict ? '/conflict-type-swap-' : '/ready-type-swap-')
+      && value?.type === 'directory');
+
+  assert.equal(swapEntries.length, 1, `${testCase.id} should start with one directory swap target`);
+
+  const [path] = swapEntries[0];
+  assert.deepEqual(testCase.base.files[path], { type: 'directory' });
+  assert.deepEqual(testCase.remote.files[path], { type: 'directory' });
+  assert.equal(testCase.local.files[path]?.type, 'file', `${testCase.id} local target should become a file`);
+  assert.match(testCase.local.files[path]?.content, /^local type swap /);
+
+  const remoteDescendants = Object.keys(testCase.remote.files)
+    .filter((remotePath) => remotePath.startsWith(`${path}/`));
+  assert.equal(remoteDescendants.length, conflict ? 1 : 0, `${testCase.id} remote descendant shape mismatch`);
 }

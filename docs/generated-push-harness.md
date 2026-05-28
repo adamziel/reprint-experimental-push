@@ -47,9 +47,9 @@ The default generated run covers:
 - local edits, remote-only edits, independent merge, same independent content,
   deletes, delete/edit conflicts, file topology conflicts, file create/update/
   delete mixes with ready and conflicting outcomes, directory descendant
-  conflicts with per-tier target counts, file type-swap cases with ready and
-  conflicting outcomes, row create/update/delete mixes with ready and conflicting
-  outcomes plus stale replay rejection before mutation, `wp_posts`
+  conflicts with per-tier target counts, file type-swap cases with per-tier
+  target counts plus ready/conflict outcomes, row create/update/delete mixes
+  with ready and conflicting outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
@@ -63,6 +63,11 @@ The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
+
+The `fileTypeSwap` target coverage records per-tier counts for file topology
+type swaps. Ready cases replace an empty directory with the planned file value
+and preserve unplanned remote resources; conflict cases add a remote descendant
+under the directory and refuse apply.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
@@ -99,6 +104,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "fileTypeSwap": {
+      "family": "file-type-swap-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
