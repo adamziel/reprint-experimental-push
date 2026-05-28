@@ -35,6 +35,8 @@ const scenarioFamilies = Object.freeze([
   'file-topology-conflict',
   'directory-descendant-conflict',
   'same-plan-post-parent-graph',
+  'same-plan-post-author-graph',
+  'stale-post-author-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -86,6 +88,7 @@ const readyPreservingFamilies = new Set([
   'same-independent-content',
   'supported-plugin-option',
   'same-plan-post-parent-graph',
+  'same-plan-post-author-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
   'supported-forms-lab-table',
@@ -248,6 +251,7 @@ export function runGeneratedPushHarness(options = {}) {
         Object.fromEntries(Object.entries(tiers).sort(([left], [right]) => Number(left) - Number(right))),
       ]),
   );
+  summary.statusByFeatureFamily = sortNestedStatusCounts(summary.statusByFeatureFamily);
   summary.tiers = Object.fromEntries(
     Object.entries(summary.tiers).sort(([left], [right]) => Number(left) - Number(right)),
   );
@@ -544,6 +548,28 @@ const scenarioFamilyBuilders = {
       meta_value: 'local-stale-reference',
     });
     tags.add('stale-graph');
+  },
+  'same-plan-post-author-graph': ({ local, allocator, tags }) => {
+    const userId = allocator.graphId();
+    const postId = allocator.graphId();
+    setRow(local, 'wp_users', `ID:${userId}`, makeUser(userId));
+    setRow(local, 'wp_posts', `ID:${postId}`, makePost(postId, `Generated author post ${postId}`, {
+      post_author: userId,
+    }));
+    tags.add('same-plan-graph');
+    tags.add('post-author-graph');
+    tags.add('post-author-ready');
+  },
+  'stale-post-author-graph': ({ local, remote, allocator, tags }) => {
+    const userId = allocator.graphId();
+    const postId = allocator.graphId();
+    setRow(remote, 'wp_users', `ID:${userId}`, makeUser(userId));
+    setRow(local, 'wp_posts', `ID:${postId}`, makePost(postId, `Generated stale author post ${postId}`, {
+      post_author: userId,
+    }));
+    tags.add('stale-graph');
+    tags.add('post-author-graph');
+    tags.add('post-author-stale');
   },
   'same-plan-taxonomy-graph': ({ local, allocator, tags }) => {
     const termId = allocator.graphId();
@@ -1299,8 +1325,10 @@ function recordSummary(summary, testCase, result) {
   summary.statusByTier[result.status] ||= {};
   increment(summary.statusByTier[result.status], testCase.tier);
   increment(summary.featureFamilies, testCase.family);
+  incrementStatus(summary.statusByFeatureFamily, testCase.family, result.status);
   for (const tag of testCase.tags) {
     increment(summary.featureFamilies, tag);
+    incrementStatus(summary.statusByFeatureFamily, tag, result.status);
   }
   recordTargetCoverage(summary, testCase, result);
   summary.maxResourceCount = Math.max(summary.maxResourceCount, result.resourceCount);
@@ -1323,6 +1351,7 @@ function emptySummary() {
     minCasesRequired: MIN_GENERATED_PUSH_CASES,
     statuses: {},
     statusByTier: {},
+    statusByFeatureFamily: {},
     tiers: {},
     featureFamilies: {},
     targetCoverage: {},
@@ -2304,6 +2333,22 @@ function assertUniqueIds(caseId, label, values) {
 
 function increment(object, key) {
   object[String(key)] = (object[String(key)] || 0) + 1;
+}
+
+function incrementStatus(target, family, status) {
+  target[family] ||= {};
+  increment(target[family], status);
+}
+
+function sortNestedStatusCounts(target) {
+  return Object.fromEntries(
+    Object.entries(target)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([family, statuses]) => [
+        family,
+        Object.fromEntries(Object.entries(statuses).sort(([left], [right]) => left.localeCompare(right))),
+      ]),
+  );
 }
 
 function randomInt(rng, min, maxExclusive) {
