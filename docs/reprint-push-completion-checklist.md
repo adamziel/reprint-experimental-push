@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 100.
-- Remaining open: 900.
+- Verified complete: 101.
+- Remaining open: 899.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -231,7 +231,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0207 (Near-Mid / merge-invariants) Implement local plugin data with stale owner context, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0208 (Near-Mid / merge-invariants) Implement unknown plugin-owned resource refusal, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0209 (Near-Mid / merge-invariants) Implement conflict evidence hash redaction, variant 1. Success: scenario matrix row names the behavior and command.
-- [ ] RPP-0210 (Near-Mid / merge-invariants) Implement planner summary count consistency, variant 1. Success: progress log records the command and caveat.
+- [x] RPP-0210 (Near-Mid / merge-invariants) Implement planner summary count consistency, variant 1. Success: progress log records the command and caveat.
 - [ ] RPP-0211 (Near-Mid / merge-invariants) Implement mutation/precondition one-to-one mapping, variant 1. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0212 (Near-Mid / merge-invariants) Implement remoteBeforeHash correctness, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0213 (Near-Mid / merge-invariants) Implement localHash correctness, variant 1. Success: no raw private value appears in serialized plan evidence.

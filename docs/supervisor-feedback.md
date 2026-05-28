@@ -1,27 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:14 CEST
+Last updated: 2026-05-28 05:11 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-28 05:14 CEST - RPP-0036 Integrated
+## 2026-05-28 05:11 CEST - RPP-0036 and RPP-0210 Integrated
 
-- Going well: integration is now at `4a5367b39`, adding `RPP-0036`
-  releaseMovement allowed/denied summary proof with denied source-identity
-  drift, allowed final-release fixtures, exact summary-gate evidence, named
-  exit codes, and no mutation attempt from `check-release-gates`.
-- Checklist movement: 100 verified items checked and 900 open. New check since
-  the prior feedback entry: `RPP-0036`.
-- Verification: release-gate focused tests pass 27/27, checklist lint reports
-  100 checked / 900 open with 0 risky claims, artifact redaction scans the
-  touched docs with 0 rejected files, release gates still fail closed as
-  `NO-GO`, and `git diff --check` is clean.
-- Current nudge: continue with `RPP-0210` next if clean, then `RPP-0310`,
-  `RPP-0414`, and the near release-gate `RPP-0037` branch one at a time from
-  the latest lane head.
+- Going well: integration is now at `137ae0102`, after `4a5367b39` added
+  `RPP-0036` releaseMovement allowed/denied summary proof and `137ae0102`
+  added `RPP-0210` planner summary count consistency. The planner proof covers
+  ready, conflict, blocked, and atomic fixtures, compares `plan.summary` with
+  emitted evidence counts, and keeps the caveat explicit: this is local Node
+  planner evidence, not final production release proof.
+- Checklist movement: 101 verified items checked and 899 open. New checks
+  since the prior feedback entry: `RPP-0036` and `RPP-0210`.
+- Verification: release-gate focused tests pass 27/27, focused planner tests
+  pass 89/89, checklist lint reports 101 checked / 899 open with 0 risky
+  claims, artifact redaction scans the evidence/report surface with 0 rejected
+  files, and `git diff --check` is clean.
+- Current nudge: continue with `RPP-0037`, `RPP-0310`, `RPP-0414`, and
+  `RPP-0109` one at a time from the latest lane head.
 
-## 2026-05-28 05:12 CEST - RPP-0035 Integrated
+## 2026-05-28 05:10 CEST - RPP-0035 Integrated
 
 - Going well: integration is now at `f051dc124`, adding
   `RPP-0035` recovery inspect read-only proof with final bracketed status

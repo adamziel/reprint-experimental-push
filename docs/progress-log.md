@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:14 CEST.
+- Last update: 2026-05-28 05:11 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `4a5367b39` (`test: prove release movement summary gate`).
+  `137ae0102` (`test: prove planner summary count consistency`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 100
-  items complete and leaves 900 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 101
+  items complete and leaves 899 open.
 - Checked slices: 34 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 5 generated
-  harness items, and 1 merge-invariant item. No release-ops items are checked
+  harness items, and 2 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -68,12 +68,16 @@ linked implementation artifacts.
   inspect read-only proof with final bracketed status markers, stable recovery
   row counts, exact `RECOVERY_INSPECT_READ_ONLY_REQUIRED` evidence for the
   negative path, and no mutation attempt from the release-gates CLI.
-- ReleaseMovement summary continuation: `4a5367b39` integrated `RPP-0036`
-  releaseMovement allowed/denied summary proof with denied source-identity
-  drift and allowed final-release fixtures, exact summary-gate evidence, named
-  exit codes, and no mutation attempt from the release-gates CLI.
+- Release-movement continuation: `4a5367b39` integrated `RPP-0036`
+  releaseMovement allowed/denied summary proof with exact summary evidence,
+  named exit codes, and no mutation attempt.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
+- Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
+  summary count consistency. The focused local Node proof checks ready,
+  conflict, blocked, and atomic fixtures, verifies `plan.summary` against the
+  emitted mutations, decisions, conflicts, blockers, and atomic groups, and
+  records the caveat that this is not final production release evidence.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
@@ -87,7 +91,8 @@ linked implementation artifacts.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 27 passing
-  release-gate tests, the `rpp-28`
+  release-gate tests, `node --test test/push-planner.test.js` with 89 passing
+  planner tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js` with 6 passing tests,
   evidence manifest
