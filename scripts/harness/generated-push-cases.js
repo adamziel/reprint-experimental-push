@@ -94,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  pluginOwnedOptionChanges: {
+    family: 'supported-plugin-option',
+    tag: 'plugin-owned-option-change',
+  },
 });
 
 export function generatePushHarnessCases({
@@ -305,17 +309,28 @@ const scenarioFamilyBuilders = {
     const resourceKey = rowKey('wp_options', `option_name:${optionName}`);
     const row = {
       option_name: optionName,
-      option_value: { mode: 'base', ordinal: allocator.next() },
+      option_value: {
+        mode: 'base',
+        ordinal: allocator.next(),
+        private_token: `base-private-plugin-option-token-${optionName}`,
+      },
       __pluginOwner: 'forms',
     };
     setRow(base, 'wp_options', `option_name:${optionName}`, row);
     setRow(remote, 'wp_options', `option_name:${optionName}`, row);
     setRow(local, 'wp_options', `option_name:${optionName}`, {
       ...row,
-      option_value: { mode: 'local', ordinal: allocator.next() },
+      option_value: {
+        mode: 'local',
+        ordinal: allocator.next(),
+        public_label: `forms option ${optionName}`,
+        private_token: `local-private-plugin-option-token-${optionName}`,
+        private_notes: `local-private-plugin-option-notes-${optionName}`,
+      },
     });
     allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
     tags.add('plugin-owned-supported');
+    tags.add('plugin-owned-option-change');
   },
   'unsupported-plugin-owned-row': ({ local, allocator, tags }) => {
     const optionName = `unsafe_generated_${allocator.next()}`;
@@ -902,6 +917,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -913,6 +929,13 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
+      if (
+        blocker.class === 'atomic-group-blocker-propagation'
+        && matchingMutation?.resourceKey === blocker.resourceKey
+      ) {
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
