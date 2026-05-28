@@ -61,6 +61,7 @@ export async function runAuthenticatedHttpPush({
   authSessionSource = null,
   requestTimeoutMs = 10_000,
   now = new Date(),
+  readOnlyInspectRequests = false,
 }) {
   const resolvedSource = resolveAuthenticatedHttpPushSource({
     sourceUrl,
@@ -113,6 +114,7 @@ export async function runAuthenticatedHttpPush({
     idempotencyConflict: null,
     after: null,
     dbJournal: null,
+    inspectAuthMode: readOnlyInspectRequests ? 'read-only-session-bound' : 'legacy-idempotency-bound',
     authSessionLifecycleTrace: [],
     retryAttempts: 1,
     readRetryEvidence: {},
@@ -853,10 +855,12 @@ export async function runAuthenticatedHttpPush({
     recoveryInspect = await client.signedPost(withAuthSessionDrift('/recovery/inspect'), {
       plan,
       receipt: dryRun.body.receipt,
-    }, {
+    }, readOnlyInspectOptions({
       session,
       idempotencyKey,
-    });
+      readOnlyInspectRequests,
+      retryable: true,
+    }));
   } catch (error) {
     captureTransportFailure(summary, 'recoveryInspect', error, 'RECOVERY_INSPECT_FAILED', 'recovery-inspect');
     return summary;
@@ -1386,6 +1390,7 @@ export async function runAuthenticatedHttpPush({
       plan,
       session,
       idempotencyKey,
+      readOnlyInspectRequests,
       withAuthSessionDrift,
     });
   } catch (error) {
@@ -1954,12 +1959,18 @@ export function authenticatedHttpClient({
     },
     signedGet(pathSuffix, options = {}) {
       const pathname = `${profile.namespacePath}${pathSuffix}`;
+      if (options.readOnly === true) {
+        assertReadOnlySignedRequestOptions(pathname, options);
+      }
       return requestJsonRaw(
         baseUrl,
         'GET',
         pathname,
         undefined,
-        () => signedRequestHeaders(credential, 'GET', pathname, '', options),
+        ({ attempt } = {}) => signedRequestHeaders(credential, 'GET', pathname, '', {
+          ...options,
+          attempt,
+        }),
         requestTimeoutMs,
         {
           retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
@@ -1970,16 +1981,24 @@ export function authenticatedHttpClient({
     signedPost(pathSuffix, body, options = {}) {
       const pathname = `${profile.namespacePath}${pathSuffix}`;
       const rawBody = JSON.stringify(body);
-      assertMutatingRequestOptions(pathname, options);
+      const readOnlyInspect = options.readOnly === true;
+      if (readOnlyInspect) {
+        assertReadOnlySignedPostOptions(pathname, options);
+      } else {
+        assertMutatingRequestOptions(pathname, options);
+      }
       return requestJsonRaw(
         baseUrl,
         'POST',
         pathname,
         rawBody,
-        () => signedRequestHeaders(credential, 'POST', pathname, rawBody, options),
+        ({ attempt } = {}) => signedRequestHeaders(credential, 'POST', pathname, rawBody, {
+          ...options,
+          attempt,
+        }),
         requestTimeoutMs,
         {
-          retryable: options.retryable === true || options.idempotencyKey !== undefined,
+          retryable: options.retryable === true || (!readOnlyInspect && options.idempotencyKey !== undefined),
         },
       );
     },
@@ -2452,14 +2471,16 @@ async function fetchDbJournalReadback(client, {
   plan,
   session,
   idempotencyKey,
+  readOnlyInspectRequests = false,
   withAuthSessionDrift = (pathname) => pathname,
 }) {
   const requestedLimit = dbJournalReadbackLimitForPlan(plan);
-  const firstPage = await client.signedGet(withAuthSessionDrift(`/db-journal?limit=${requestedLimit}`), {
+  const firstPage = await client.signedGet(withAuthSessionDrift(`/db-journal?limit=${requestedLimit}`), readOnlyInspectOptions({
     session,
     idempotencyKey,
     retryable: true,
-  });
+    readOnlyInspectRequests,
+  }));
   if (firstPage.status !== 200 || firstPage.body?.ok !== true) {
     return firstPage;
   }
@@ -2476,11 +2497,12 @@ async function fetchDbJournalReadback(client, {
   ) {
     const page = await client.signedGet(
       withAuthSessionDrift(`/db-journal?limit=${maximumDbJournalReadbackLimit}&beforeSequence=${nextBeforeSequence}`),
-      {
+      readOnlyInspectOptions({
         session,
         idempotencyKey,
         retryable: true,
-      },
+        readOnlyInspectRequests,
+      }),
     );
     pages.push(page);
     if (page.status !== 200 || page.body?.ok !== true) {
@@ -2500,6 +2522,27 @@ async function fetchDbJournalReadback(client, {
   }
 
   return combineDbJournalReadbackPages(pages, { requestedLimit });
+}
+
+function readOnlyInspectOptions({
+  session,
+  idempotencyKey,
+  retryable = false,
+  readOnlyInspectRequests = false,
+}) {
+  if (readOnlyInspectRequests) {
+    return {
+      session,
+      readOnly: true,
+      ...(retryable ? { retryable: true } : {}),
+    };
+  }
+
+  return {
+    session,
+    idempotencyKey,
+    ...(retryable ? { retryable: true } : {}),
+  };
 }
 
 function combineDbJournalReadbackPages(pages, {
@@ -4140,7 +4183,7 @@ function sleep(ms) {
 function signedRequestHeaders(credential, method, pathname, rawBody, options = {}) {
   const contentHash = sha256Hex(rawBody);
   const timestamp = options.timestamp || currentSignedTimestamp();
-  const nonce = options.nonce || nextSignedNonce('cli-push');
+  const nonce = signedNonceForAttempt(options);
   const signingKey = labSigningKey(credential);
   const authString = `${nonce}${timestamp}${contentHash}`;
   const canonical = pushCanonicalString({
@@ -4167,6 +4210,19 @@ function signedRequestHeaders(credential, method, pathname, rawBody, options = {
   }
 
   return headers;
+}
+
+function signedNonceForAttempt(options = {}) {
+  const attempt = Number.isInteger(options.attempt) && options.attempt > 0
+    ? options.attempt
+    : 1;
+  if (options.nonce && attempt === 1) {
+    return options.nonce;
+  }
+  if (options.nonce && attempt > 1) {
+    return nextSignedNonce(`${options.nonce}-retry-${attempt}`);
+  }
+  return nextSignedNonce('cli-push');
 }
 
 function pushCanonicalString({ method, pathname, contentHash, session, idempotencyKey }) {
@@ -4255,6 +4311,28 @@ function authHeaders(credential) {
   };
 }
 
+function assertReadOnlySignedRequestOptions(pathname, options) {
+  if (options.idempotencyKey !== undefined) {
+    throw new Error(`Read-only signed request must not carry push idempotencyKey: ${pathname}`);
+  }
+  if (isReadOnlySessionBoundPath(pathname) && (options.session === undefined || options.session === '')) {
+    throw new Error(`Missing push session for read-only signed request: ${pathname}`);
+  }
+  if (options.session !== undefined && options.session !== '' && !isValidPushSession(options.session)) {
+    throw new Error(`Invalid push session for read-only signed request: ${pathname}`);
+  }
+}
+
+function assertReadOnlySignedPostOptions(pathname, options) {
+  if (!isReadOnlyRecoveryInspectPath(pathname)) {
+    throw new Error(`Read-only signed POST is only supported for recovery inspect: ${pathname}`);
+  }
+  if (options.session === undefined || options.session === '') {
+    throw new Error(`Missing push session for read-only signed request: ${pathname}`);
+  }
+  assertReadOnlySignedRequestOptions(pathname, options);
+}
+
 function assertMutatingRequestOptions(pathname, options) {
   if (options.session === undefined || options.session === '') {
     throw new Error(`Missing push session for mutating request: ${pathname}`);
@@ -4273,6 +4351,20 @@ function assertMutatingRequestOptions(pathname, options) {
 function isValidPushSession(session) {
   return /^psh_[A-Za-z0-9_-]{8,}$/.test(session)
     || /^[A-Za-z0-9_-]{32,160}$/.test(session);
+}
+
+function isReadOnlyRecoveryInspectPath(pathname) {
+  const [pathOnly] = String(pathname || '').split('?', 1);
+  return pathOnly.endsWith('/recovery/inspect');
+}
+
+function isReadOnlyJournalInspectPath(pathname) {
+  const [pathOnly] = String(pathname || '').split('?', 1);
+  return pathOnly.endsWith('/db-journal');
+}
+
+function isReadOnlySessionBoundPath(pathname) {
+  return isReadOnlyRecoveryInspectPath(pathname) || isReadOnlyJournalInspectPath(pathname);
 }
 
 function hmacHex(key, data) {

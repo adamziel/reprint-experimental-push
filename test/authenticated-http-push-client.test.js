@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
 import {
   authenticatedHttpClient,
   dbJournalReadbackLimitForPlan,
@@ -18,6 +19,11 @@ const credential = {
 };
 
 const trustedDbJournalScope = 'checked live production-shaped journal surface; not local Playground fixture only';
+const emptyBodySha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+function hmacHex(key, data) {
+  return createHmac('sha256', key).update(data, 'utf8').digest('hex');
+}
 
 test('db journal readback window scales with mutation count', () => {
   assert.equal(dbJournalReadbackLimitForPlan({ mutations: [] }), 80);
@@ -502,7 +508,7 @@ test('authenticated push client signs mutating requests when session and idempot
       requestTimeoutMs: 1_000,
     });
 
-    const proof = await client.signedPost('/recovery/inspect', { plan: { id: 'plan-01' } }, {
+    const proof = await client.signedPost('/apply', { plan: { id: 'plan-01' } }, {
       session: 'psh_01j00000000000000000000000',
       idempotencyKey: 'idem-01',
     });
@@ -521,7 +527,80 @@ test('authenticated push client signs mutating requests when session and idempot
   }
 });
 
-test('authenticated push client signs journal inspect reads when session and idempotency are present', async () => {
+test('authenticated push client signs recovery inspect as a read-only session-bound request', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential,
+      routeProfile: 'production-shaped',
+      requestTimeoutMs: 1_000,
+    });
+
+    const proof = await client.signedPost('/recovery/inspect', { plan: { id: 'plan-01' } }, {
+      session: 'psh_01j00000000000000000000000',
+      readOnly: true,
+      retryable: true,
+    });
+
+    assert.equal(proof.status, 200);
+    assert.deepEqual(proof.body, { ok: true });
+    assert.equal(proof.request.retryable, true);
+    assert.equal(seen.length, 1);
+    const headerEntries = Object.entries(seen[0].options.headers).reduce((acc, [key, value]) => {
+      acc[key.toLowerCase()] = value;
+      return acc;
+    }, {});
+    assert.match(headerEntries['x-reprint-push-session'], /^psh_/);
+    assert.equal(headerEntries['x-reprint-push-idempotency-key'], undefined);
+    assert.equal(typeof headerEntries['x-reprint-push-signature'], 'string');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('authenticated push client rejects mutating idempotency keys on read-only inspect requests', () => {
+  const client = authenticatedHttpClient({
+    sourceUrl: 'http://127.0.0.1:8080',
+    credential,
+    routeProfile: 'production-shaped',
+    requestTimeoutMs: 1,
+  });
+
+  assert.throws(
+    () => client.signedPost('/recovery/inspect', { plan: { id: 'plan-01' } }, {
+      session: 'psh_01j00000000000000000000000',
+      readOnly: true,
+      idempotencyKey: 'idem-read-only-inspect',
+    }),
+    /Read-only signed request must not carry push idempotencyKey: \/wp-json\/reprint\/v1\/push\/recovery\/inspect/,
+  );
+  assert.throws(
+    () => client.signedGet('/db-journal?limit=80', {
+      session: 'psh_01j00000000000000000000000',
+      readOnly: true,
+      idempotencyKey: 'idem-read-only-journal',
+    }),
+    /Read-only signed request must not carry push idempotencyKey: \/wp-json\/reprint\/v1\/push\/db-journal\?limit=80/,
+  );
+  assert.throws(
+    () => client.signedGet('/db-journal?limit=80', {
+      readOnly: true,
+    }),
+    /Missing push session for read-only signed request: \/wp-json\/reprint\/v1\/push\/db-journal\?limit=80/,
+  );
+});
+
+test('authenticated push client signs journal inspect reads without a mutating idempotency key', async () => {
   const originalFetch = global.fetch;
   const seen = [];
   global.fetch = async (url, options) => {
@@ -542,7 +621,7 @@ test('authenticated push client signs journal inspect reads when session and ide
 
     const proof = await client.signedGet('/db-journal?limit=80', {
       session: 'psh_01j00000000000000000000000',
-      idempotencyKey: 'idem-01',
+      readOnly: true,
       retryable: true,
     });
 
@@ -554,8 +633,54 @@ test('authenticated push client signs journal inspect reads when session and ide
       return acc;
     }, {});
     assert.match(headerEntries['x-reprint-push-session'], /^psh_/);
-    assert.equal(headerEntries['x-reprint-push-idempotency-key'], 'idem-01');
-    assert.equal(headerEntries['x-auth-content-hash'], 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+    assert.equal(headerEntries['x-reprint-push-idempotency-key'], undefined);
+    assert.equal(headerEntries['x-auth-content-hash'], emptyBodySha256);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('authenticated push client canonicalizes signed query strings before HMAC signing', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential,
+      routeProfile: 'production-shaped',
+      requestTimeoutMs: 1_000,
+    });
+    const session = 'psh_01j00000000000000000000000';
+    const fixedSignatureOptions = {
+      session,
+      timestamp: '1716500000',
+      nonce: 'cli-push-fixed-canonicalization',
+    };
+
+    await client.signedGet('/db-journal?z=1&a=2', fixedSignatureOptions);
+    await client.signedGet('/db-journal?a=2&z=1', fixedSignatureOptions);
+
+    const signatures = seen.map(({ options }) => options.headers['X-Reprint-Push-Signature']);
+    assert.equal(signatures[0], signatures[1]);
+    const signingKey = hmacHex(credential.password, `reprint-push-lab-v1\n${credential.username}`);
+    const expectedCanonical = [
+      'REPRINT-PUSH-LAB-V1',
+      'GET',
+      '/wp-json/reprint/v1/push/db-journal',
+      'a=2&z=1',
+      emptyBodySha256,
+      session,
+      '',
+    ].join('\n');
+    assert.equal(signatures[0], hmacHex(signingKey, expectedCanonical));
   } finally {
     global.fetch = originalFetch;
   }
@@ -677,6 +802,52 @@ test('authenticated push client retries idempotent signed posts after a transien
     assert.notEqual(seen[0].options.headers['X-Auth-Nonce'], seen[1].options.headers['X-Auth-Nonce']);
     assert.equal(seen[0].options.headers['X-Reprint-Push-Idempotency-Key'], 'idem-01-timeout');
     assert.equal(seen[1].options.headers['X-Reprint-Push-Idempotency-Key'], 'idem-01-timeout');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('authenticated push client retries read-only signed recovery inspect with a regenerated nonce', async () => {
+  const originalFetch = global.fetch;
+  const seen = [];
+  let attempt = 0;
+  global.fetch = async (url, options) => {
+    seen.push({ url: String(url), options });
+    attempt += 1;
+    if (attempt === 1) {
+      const error = new TypeError('fetch failed');
+      error.code = 'ECONNRESET';
+      throw error;
+    }
+    return new Response(JSON.stringify({ ok: true, attempt }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  try {
+    const client = authenticatedHttpClient({
+      sourceUrl: 'http://127.0.0.1:8080',
+      credential,
+      routeProfile: 'production-shaped',
+      requestTimeoutMs: 1_000,
+    });
+
+    const proof = await client.signedPost('/recovery/inspect', { plan: { id: 'plan-01' } }, {
+      session: 'psh_01j00000000000000000000000',
+      readOnly: true,
+      retryable: true,
+      nonce: 'cli-push-fixed-recovery-inspect',
+      timestamp: '1716500000',
+    });
+
+    assert.equal(proof.status, 200);
+    assert.deepEqual(proof.body, { ok: true, attempt: 2 });
+    assert.equal(seen.length, 2);
+    assert.equal(seen[0].options.headers['X-Auth-Nonce'], 'cli-push-fixed-recovery-inspect');
+    assert.match(seen[1].options.headers['X-Auth-Nonce'], /^cli-push-fixed-recovery-inspect-retry-2-/);
+    assert.equal(seen[0].options.headers['X-Reprint-Push-Idempotency-Key'], undefined);
+    assert.equal(seen[1].options.headers['X-Reprint-Push-Idempotency-Key'], undefined);
   } finally {
     global.fetch = originalFetch;
   }
