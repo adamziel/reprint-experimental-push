@@ -171,6 +171,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'file-create-update-delete-mix-ready',
     tag: 'file-create-update-delete-mix',
   },
+  rowCreateUpdateDeleteMix: {
+    family: 'row-create-update-delete-mix-ready',
+    tag: 'row-create-update-delete-mix',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -1813,8 +1817,10 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
   const createId = allocator.graphId();
   const updateId = allocator.graphId();
   const deleteId = allocator.graphId();
+  const remoteOnlyId = allocator.graphId();
   const updateRowId = `ID:${updateId}`;
   const deleteRowId = `ID:${deleteId}`;
+  const remoteOnlyRowId = `ID:${remoteOnlyId}`;
   const updateBase = makePost(updateId, `Base row mix update ${updateId}`);
   const deleteBase = makePost(deleteId, `Base row mix delete ${deleteId}`);
 
@@ -1831,11 +1837,16 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
     post_title: `Generated row mix update ${prefix} ${allocator.next()}`,
   });
   deleteRow(local, 'wp_posts', deleteRowId);
+  setRow(remote, 'wp_posts', remoteOnlyRowId, makePost(
+    remoteOnlyId,
+    `Remote-only row mix preserve ${remoteOnlyId}`,
+  ));
 
   tags.add('row-create-update-delete-mix');
   tags.add('row-create');
   tags.add('row-update');
   tags.add('row-delete');
+  tags.add('remote-preserve');
 
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
