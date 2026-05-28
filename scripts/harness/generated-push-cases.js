@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'comment-user-graph-ready',
+  'comment-user-graph-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,8 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'comment-user-graph-ready',
+  'comment-user-graph-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  commentUserGraph: {
+    family: 'comment-user-graph-ready',
+    tag: 'comment-user-graph',
   },
 });
 
@@ -595,6 +603,14 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
+  },
+  'comment-user-graph-ready': ({ local, allocator, tags }) => {
+    addCommentUserGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'comment-user-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addCommentUserGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1277,6 +1293,52 @@ function addCommentGraph(local, allocator) {
     comment_parent: parentId,
     user_id: 1,
   }));
+}
+
+function addCommentUserGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const userId = allocator.graphId();
+  const commentId = allocator.graphId();
+  const userRowId = `ID:${userId}`;
+  const commentRowId = `comment_ID:${commentId}`;
+  const user = {
+    ...makeUser(userId),
+    user_login: `comment-user-target-${userId}`,
+    user_email: `comment-user-target-${userId}@example.test`,
+    display_name: `Generated comment user target ${userId}`,
+  };
+
+  if (staleTarget) {
+    setRow(base, 'wp_users', userRowId, user);
+    setRow(local, 'wp_users', userRowId, user);
+    setRow(remote, 'wp_users', userRowId, {
+      ...user,
+      user_email: `remote-stale-comment-user-private-${userId}@example.test`,
+      display_name: `Remote stale comment user ${userId}`,
+    });
+  } else {
+    setRow(local, 'wp_users', userRowId, user);
+  }
+
+  setRow(local, 'wp_comments', commentRowId, makeComment(commentId, {
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: userId,
+    comment_content: `comment-user-reference-${commentId}`,
+  }));
+
+  tags.add('comment-user-graph');
+  tags.add('comment-user');
+  tags.add('same-plan-graph');
+  tags.add('wp-comments-create');
+  tags.add('wp-users-create');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('comment-user-stale-target');
+    tags.add('wp-users-remote-drift');
+  } else {
+    tags.add('comment-user-ready');
+  }
 }
 
 function addTaxonomyGraph(local, allocator) {

@@ -91,6 +91,15 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'comment-user-graph-ready',
+  'comment-user-graph-stale',
+  'comment-user-graph',
+  'comment-user',
+  'comment-user-ready',
+  'comment-user-stale-target',
+  'wp-comments-create',
+  'wp-users-create',
+  'wp-users-remote-drift',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -510,6 +519,131 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0347 generated harness emits comment user ready and stale graph cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.commentUserGraph;
+
+  assert.ok(coverage, 'missing comment user graph target coverage');
+  assert.equal(coverage.family, 'comment-user-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['comment-user-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready comment user graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready comment user graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'comment-user-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'comment-user-graph-stale');
+
+  assert.ok(readyCase, 'missing ready comment user graph case');
+  assert.ok(staleCase, 'missing stale comment user graph case');
+
+  const readyShape = assertCommentUserGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertCommentUserGraphShape(staleCase, { staleTarget: true });
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const userMutation = readyPlan.mutations.find(
+    (mutation) => mutation.resourceKey === readyShape.userResourceKey,
+  );
+  const commentMutation = readyPlan.mutations.find(
+    (mutation) => mutation.resourceKey === readyShape.commentResourceKey,
+  );
+  const plannedComment = deserializeResourceValue(commentMutation.value);
+  const staleBlocker = stalePlan.blockers.find(
+    (blocker) => blocker.resourceKey === staleShape.commentResourceKey,
+  );
+  const staleReference = staleBlocker?.references?.find(
+    (reference) => reference.relationshipType === 'comment-user',
+  );
+  const stalePlanJson = JSON.stringify(stalePlan);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true);
+  assert.equal(ready.staleReplayRejected, true);
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.ok(userMutation, 'ready plan should create the user target');
+  assert.ok(commentMutation, 'ready plan should create the comment reference');
+  assert.equal(plannedComment.user_id, readyShape.userId);
+
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale comment user graph should record a graph blocker');
+  assert.equal(stale.applied, false, 'stale comment user graph must not apply mutations');
+  assert.ok(staleBlocker, 'stale plan should block the comment user reference');
+  assert.equal(staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(staleReference, 'stale blocker should include the user_id reference');
+  assert.equal(staleReference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(staleReference.targetResourceKey, staleShape.userResourceKey);
+  assert.equal(staleReference.targetChange.remoteChange, 'update');
+  assert.match(staleReference.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.match(staleReference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(staleReference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.equal(stalePlanJson.includes('Generated comment user target'), false);
+  assert.equal(stalePlanJson.includes('Remote stale comment user'), false);
+  assert.equal(stalePlanJson.includes('remote-stale-comment-user-private'), false);
+  assert.equal(stalePlanJson.includes('comment-user-reference'), false);
+});
+
+function assertCommentUserGraphShape(testCase, { staleTarget }) {
+  const commentRows = Object.entries(testCase.local.db.wp_comments)
+    .filter(([, row]) => String(row.comment_content || '').startsWith('comment-user-reference-'));
+
+  assert.equal(commentRows.length, 1, `${testCase.id} should create one comment user reference row`);
+
+  const [commentRowId, commentRow] = commentRows[0];
+  const userId = Number(commentRow.user_id);
+  const userRowId = `ID:${userId}`;
+  const user = testCase.local.db.wp_users[userRowId];
+
+  assert.ok(Number.isSafeInteger(userId), `${testCase.id} user_id should be numeric`);
+  assert.equal(commentRowId, `comment_ID:${commentRow.comment_ID}`);
+  assert.ok(user, `${testCase.id} missing local user target ${userRowId}`);
+  assert.equal(user.ID, userId);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_users[userRowId], `${testCase.id} stale user should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_users[userRowId],
+      testCase.base.db.wp_users[userRowId],
+      `${testCase.id} stale user should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_users[userRowId], undefined);
+    assert.equal(testCase.remote.db.wp_users[userRowId], undefined);
+  }
+
+  return {
+    userId,
+    userResourceKey: generatedRowResourceKey('wp_users', userRowId),
+    commentResourceKey: generatedRowResourceKey('wp_comments', commentRowId),
+  };
+}
+
+function generatedRowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
 }
 
 function nonReadyTargetCount(coverage) {
