@@ -1,4 +1,4 @@
-import { ABSENT, deepClone } from './stable-json.js';
+import { ABSENT, deepClone, digest } from './stable-json.js';
 import {
   deserializeResourceValue,
   enumerateResources,
@@ -60,14 +60,93 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     remote,
     intents,
   });
+  const wordpressGraphIdentityMap = buildWordPressGraphIdentityMap({ base, local, remote });
 
-  for (const resource of resources) {
-    const baseValue = getResource(base, resource);
-    const localValue = getResource(local, resource);
-    const remoteValue = getResource(remote, resource);
-    const baseHash = resourceHash(base, resource);
-    const localHash = resourceHash(local, resource);
-    const remoteHash = resourceHash(remote, resource);
+  for (const sourceResource of resources) {
+    const sourceBaseValue = getResource(base, sourceResource);
+    const sourceLocalValue = getResource(local, sourceResource);
+    const sourceRemoteValue = getResource(remote, sourceResource);
+    const sourceBaseHash = resourceHash(base, sourceResource);
+    const sourceLocalHash = resourceHash(local, sourceResource);
+    const sourceRemoteHash = resourceHash(remote, sourceResource);
+    const mappedIdentity = wordpressGraphIdentityMap.bySourceKey.get(sourceResource.key);
+    if (sourceLocalHash !== sourceBaseHash && mappedIdentity) {
+      if (!mappedIdentity.usable) {
+        addWordPressGraphIdentityBlocker(plan, {
+          resource: sourceResource,
+          support: mappedIdentity.support,
+          baseValue: sourceBaseValue,
+          localValue: sourceLocalValue,
+          remoteValue: sourceRemoteValue,
+          baseHash: sourceBaseHash,
+          localHash: sourceLocalHash,
+          remoteHash: sourceRemoteHash,
+        });
+        continue;
+      }
+      plan.decisions.push({
+        id: `decision-${plan.decisions.length + 1}`,
+        resource: sourceResource,
+        resourceKey: sourceResource.key,
+        decision: 'map-local-identity-to-remote',
+        reason: 'Local WordPress graph identity is mapped to a proven remote row; preserving the remote row and rewriting dependent references.',
+        baseHash: sourceBaseHash,
+        localHash: sourceLocalHash,
+        remoteHash: sourceRemoteHash,
+        targetResource: mappedIdentity.targetResource,
+        targetResourceKey: mappedIdentity.targetResource.key,
+        targetRemoteHash: mappedIdentity.targetRemoteHash,
+        identityMapSource: mappedIdentity.source,
+        change: changeEvidence(
+          sourceResource,
+          sourceBaseValue,
+          sourceLocalValue,
+          sourceRemoteValue,
+          sourceBaseHash,
+          sourceLocalHash,
+          sourceRemoteHash,
+        ),
+      });
+      continue;
+    }
+
+    const graphIdentityCollision = wordpressGraphIdentityMap.collisionsByResourceKey.get(sourceResource.key);
+    if (sourceLocalHash !== sourceBaseHash && graphIdentityCollision) {
+      addWordPressGraphIdentityBlocker(plan, {
+        resource: sourceResource,
+        support: graphIdentityCollision,
+        baseValue: sourceBaseValue,
+        localValue: sourceLocalValue,
+        remoteValue: sourceRemoteValue,
+        baseHash: sourceBaseHash,
+        localHash: sourceLocalHash,
+        remoteHash: sourceRemoteHash,
+      });
+      continue;
+    }
+
+    const graphIdentityRewrite = rewriteWordPressGraphMutation({
+      resource: sourceResource,
+      localValue: sourceLocalValue,
+      identityMap: wordpressGraphIdentityMap,
+    });
+    const resource = graphIdentityRewrite.resource;
+    const localValue = graphIdentityRewrite.localValue;
+    const baseValue = graphIdentityRewrite.resource.key === sourceResource.key
+      ? sourceBaseValue
+      : getResource(base, resource);
+    const remoteValue = graphIdentityRewrite.resource.key === sourceResource.key
+      ? sourceRemoteValue
+      : getResource(remote, resource);
+    const baseHash = graphIdentityRewrite.resource.key === sourceResource.key
+      ? sourceBaseHash
+      : resourceHash(base, resource);
+    const localHash = graphIdentityRewrite.rewrites.length === 0
+      ? sourceLocalHash
+      : digest(localValue);
+    const remoteHash = graphIdentityRewrite.resource.key === sourceResource.key
+      ? sourceRemoteHash
+      : resourceHash(remote, resource);
     const owner = pluginOwnerFor(resource, baseValue, localValue, remoteValue);
     const change = changeEvidence(
       resource,
@@ -191,6 +270,8 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         base,
         local,
         remote,
+        identityMap: wordpressGraphIdentityMap,
+        identityRewrites: graphIdentityRewrite.rewrites,
       });
       if (!graphIdentitySupport.supported) {
         addWordPressGraphIdentityBlocker(plan, {
@@ -217,8 +298,15 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         localHash,
         changeKind: change.localChange,
         change,
-        atomicGroupId: intentByResource.get(resource.key) || null,
+        atomicGroupId: intentByResource.get(resource.key) || intentByResource.get(sourceResource.key) || null,
       };
+      if (graphIdentityRewrite.rewrites.length > 0) {
+        mutation.wordpressGraphIdentity = {
+          sourceResource: sourceResource.key === resource.key ? null : sourceResource,
+          sourceResourceKey: sourceResource.key === resource.key ? null : sourceResource.key,
+          rewrites: graphIdentityRewrite.rewrites,
+        };
+      }
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
         mutation.pluginOwnedResource = {
@@ -989,6 +1077,522 @@ const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set([
   'menu_item_parent',
 ]);
 
+export const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = Object.freeze([
+  'posts',
+  'users',
+  'comments',
+  'terms',
+  'term_taxonomy',
+  'site',
+  'blogs',
+]);
+
+export const WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES = Object.freeze([
+  'wp_posts.guid',
+  'wp_posts.post_type+post_name',
+]);
+
+const WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = new Set(
+  SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+);
+
+function buildWordPressGraphIdentityMap({ base, local, remote }) {
+  const identityMap = {
+    entries: [],
+    bySourceKey: new Map(),
+    byTargetKey: new Map(),
+    collisionsByResourceKey: new Map(),
+  };
+
+  const entries = [
+    ...wordpressGraphIdentityMapEntriesFromSnapshot(base, 'base-snapshot.meta'),
+    ...wordpressGraphIdentityMapEntriesFromSnapshot(local, 'local-snapshot.meta'),
+    ...wordpressGraphIdentityMapEntriesFromSnapshot(remote, 'remote-snapshot.meta'),
+  ];
+  const sourceCounts = countBy(entries, (entry) => entry.sourceResource.key);
+  const targetCounts = countBy(entries, (entry) => entry.targetResource.key);
+  for (const entry of entries) {
+    identityMap.bySourceKey.set(entry.sourceResource.key, entry);
+  }
+  identityMap.byTargetKey = new Map();
+
+  for (const entry of entries) {
+    const duplicateSupport = duplicateWordPressGraphIdentityMapSupport(entry, sourceCounts, targetCounts);
+    const support = duplicateSupport || validateWordPressGraphIdentityMapEntry(entry, {
+      base,
+      local,
+      remote,
+      identityMap,
+    });
+    const mapping = {
+      ...entry,
+      usable: support.supported,
+      support,
+      sourceBaseHash: resourceHash(base, entry.sourceResource),
+      sourceLocalHash: resourceHash(local, entry.sourceResource),
+      sourceRemoteHash: resourceHash(remote, entry.sourceResource),
+      targetBaseHash: resourceHash(base, entry.targetResource),
+      targetLocalHash: resourceHash(local, entry.targetResource),
+      targetRemoteHash: resourceHash(remote, entry.targetResource),
+    };
+    identityMap.entries.push(mapping);
+    identityMap.bySourceKey.set(mapping.sourceResource.key, mapping);
+    if (!identityMap.byTargetKey.has(mapping.targetResource.key)) {
+      identityMap.byTargetKey.set(mapping.targetResource.key, []);
+    }
+    identityMap.byTargetKey.get(mapping.targetResource.key).push(mapping);
+  }
+
+  addWordPressGraphNaturalIdentityCollisions(identityMap, { base, local, remote });
+  return identityMap;
+}
+
+function wordpressGraphIdentityMapEntriesFromSnapshot(snapshot, source) {
+  const maps = [
+    snapshot?.meta?.wordpressGraphIdentityMap,
+    snapshot?.meta?.graphIdentityMap,
+    snapshot?.meta?.pushIdentityMap,
+  ];
+  return maps.flatMap((map, index) =>
+    normalizeWordPressGraphIdentityMap(map, `${source}.identityMap[${index}]`));
+}
+
+function normalizeWordPressGraphIdentityMap(map, source) {
+  if (!map) {
+    return [];
+  }
+  if (Array.isArray(map)) {
+    return map
+      .map((entry, index) => normalizeWordPressGraphIdentityMapEntry(entry, `${source}.rows[${index}]`))
+      .filter(Boolean);
+  }
+  if (Array.isArray(map.rows)) {
+    return map.rows
+      .map((entry, index) => normalizeWordPressGraphIdentityMapEntry(entry, `${source}.rows[${index}]`))
+      .filter(Boolean);
+  }
+  if (Array.isArray(map.resources)) {
+    return map.resources
+      .map((entry, index) => normalizeWordPressGraphIdentityMapEntry(entry, `${source}.resources[${index}]`))
+      .filter(Boolean);
+  }
+  if (typeof map === 'object') {
+    return Object.entries(map)
+      .map(([sourceResourceKey, target], index) =>
+        normalizeWordPressGraphIdentityMapEntry({
+          sourceResourceKey,
+          targetResourceKey: typeof target === 'string' ? target : target?.targetResourceKey,
+          targetResource: typeof target === 'object' ? target?.targetResource : null,
+          remoteResource: typeof target === 'object' ? target?.remoteResource : null,
+          remote: typeof target === 'object' ? target?.remote : null,
+          to: typeof target === 'object' ? target?.to : null,
+          target: typeof target === 'object' ? target?.target : null,
+          table: typeof target === 'object' ? target?.table : null,
+          remoteId: typeof target === 'object' ? target?.remoteId : null,
+          targetId: typeof target === 'object' ? target?.targetId : null,
+          toId: typeof target === 'object' ? target?.toId : null,
+        }, `${source}.entry[${index}]`))
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeWordPressGraphIdentityMapEntry(entry, source) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const sourceResource = normalizeWordPressGraphIdentityMapResource(
+    entry.sourceResource
+      || entry.localResource
+      || entry.fromResource
+      || entry.sourceResourceKey
+      || entry.localResourceKey
+      || entry.fromResourceKey
+      || entry.local
+      || entry.from,
+    entry.table || entry.sourceTable || entry.localTable || entry.fromTable,
+    entry.localId || entry.sourceId || entry.fromId,
+  );
+  const targetResource = normalizeWordPressGraphIdentityMapResource(
+    entry.targetResource
+      || entry.remoteResource
+      || entry.toResource
+      || entry.targetResourceKey
+      || entry.remoteResourceKey
+      || entry.toResourceKey
+      || entry.remote
+      || entry.to
+      || entry.target,
+    entry.table || entry.targetTable || entry.remoteTable || entry.toTable,
+    entry.remoteId || entry.targetId || entry.toId,
+  );
+  if (
+    !sourceResource
+    || !targetResource
+    || sourceResource.type !== 'row'
+    || targetResource.type !== 'row'
+    || sourceResource.key === targetResource.key
+  ) {
+    return null;
+  }
+  const sourcePrimaryValue = wordpressGraphResourcePrimaryInteger(sourceResource);
+  const targetPrimaryValue = wordpressGraphResourcePrimaryInteger(targetResource);
+  if (sourcePrimaryValue == null || targetPrimaryValue == null) {
+    return null;
+  }
+  return {
+    source,
+    sourceResource,
+    targetResource,
+    sourcePrimaryValue,
+    targetPrimaryValue,
+  };
+}
+
+function normalizeWordPressGraphIdentityMapResource(resource, fallbackTable, fallbackId) {
+  if (typeof resource === 'string' && resource.startsWith('row:')) {
+    return parseWordPressGraphRowResourceKey(resource);
+  }
+  if (resource && typeof resource === 'object') {
+    if (resource.type === 'row' && resource.table && resource.id) {
+      return rowResource(resource.table, resource.id);
+    }
+    if (typeof resource.resourceKey === 'string') {
+      return parseWordPressGraphRowResourceKey(resource.resourceKey);
+    }
+    if (typeof resource.key === 'string') {
+      return parseWordPressGraphRowResourceKey(resource.key);
+    }
+    if (resource.table && (resource.id || resource.rowId)) {
+      return rowResource(resource.table, resource.id || resource.rowId);
+    }
+  }
+  if (fallbackTable && fallbackId) {
+    return rowResource(fallbackTable, fallbackId);
+  }
+  return null;
+}
+
+function parseWordPressGraphRowResourceKey(resourceKey) {
+  if (typeof resourceKey !== 'string' || !resourceKey.startsWith('row:')) {
+    return null;
+  }
+  try {
+    const [table, id] = JSON.parse(resourceKey.slice('row:'.length));
+    if (typeof table === 'string' && typeof id === 'string') {
+      return rowResource(table, id);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function rowResource(table, id) {
+  return {
+    type: 'row',
+    table,
+    id,
+    key: `row:${JSON.stringify([table, id])}`,
+  };
+}
+
+function countBy(values, keyFn) {
+  const counts = new Map();
+  for (const value of values) {
+    const key = keyFn(value);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return counts;
+}
+
+function duplicateWordPressGraphIdentityMapSupport(entry, sourceCounts, targetCounts) {
+  const duplicateSource = sourceCounts.get(entry.sourceResource.key) > 1;
+  const duplicateTarget = targetCounts.get(entry.targetResource.key) > 1;
+  if (!duplicateSource && !duplicateTarget) {
+    return null;
+  }
+  return {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph identity map for ${entry.sourceResource.key} is ambiguous because ${duplicateSource ? 'the source row' : 'the target row'} appears in multiple mappings.`,
+    references: [
+      wordpressGraphIdentityMapReferenceEvidence(entry, {
+        className: 'ambiguous-wordpress-graph-identity-map',
+      }),
+    ],
+  };
+}
+
+function validateWordPressGraphIdentityMapEntry(entry, { base, local, remote, identityMap }) {
+  const sourceSuffix = wordpressGraphTableSuffix(entry.sourceResource.table);
+  const targetSuffix = wordpressGraphTableSuffix(entry.targetResource.table);
+  if (
+    !sourceSuffix
+    || !targetSuffix
+    || sourceSuffix !== targetSuffix
+    || !WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES.has(sourceSuffix)
+  ) {
+    return wordpressGraphIdentityMapUnsupported(entry, 'uses an unsupported graph identity map table surface');
+  }
+
+  const sourceLocalValue = getResource(local, entry.sourceResource);
+  const sourceRemoteValue = getResource(remote, entry.sourceResource);
+  const targetRemoteValue = getResource(remote, entry.targetResource);
+  if (sourceLocalValue === ABSENT) {
+    return wordpressGraphIdentityMapUnsupported(entry, 'does not have a local source row to map');
+  }
+  if (sourceRemoteValue !== ABSENT) {
+    return wordpressGraphIdentityMapUnsupported(entry, 'would leave a same-id remote source row ambiguous');
+  }
+  if (targetRemoteValue === ABSENT) {
+    return wordpressGraphIdentityMapUnsupported(entry, 'does not have a remote target row to preserve');
+  }
+  if (!wordpressGraphRowsEquivalentUnderIdentityMap({
+    sourceResource: entry.sourceResource,
+    targetResource: entry.targetResource,
+    sourceValue: sourceLocalValue,
+    targetValue: targetRemoteValue,
+    identityMap,
+  })) {
+    return wordpressGraphIdentityMapUnsupported(entry, 'points at a remote target row that is not equivalent after identity rewriting');
+  }
+  return {
+    supported: true,
+    references: [
+      wordpressGraphIdentityMapReferenceEvidence(entry, {
+        targetBaseHash: resourceHash(base, entry.targetResource),
+        targetLocalHash: resourceHash(local, entry.targetResource),
+        targetRemoteHash: resourceHash(remote, entry.targetResource),
+      }),
+    ],
+  };
+}
+
+function wordpressGraphIdentityMapUnsupported(entry, reason) {
+  return {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph identity map for ${entry.sourceResource.key} ${reason}.`,
+    references: [
+      wordpressGraphIdentityMapReferenceEvidence(entry, {
+        className: 'unsupported-wordpress-graph-identity-map',
+      }),
+    ],
+  };
+}
+
+function wordpressGraphIdentityMapReferenceEvidence(entry, extra = {}) {
+  return {
+    relationshipKey: 'wordpress-identity-map.target',
+    relationshipType: 'identity-map-target',
+    sourceResourceKey: entry.sourceResource.key,
+    targetResourceKey: entry.targetResource.key,
+    targetTable: entry.targetResource.table,
+    targetId: entry.targetResource.id,
+    identityMapSource: entry.source,
+    ...extra,
+  };
+}
+
+function wordpressGraphRowsEquivalentUnderIdentityMap({
+  sourceResource,
+  targetResource,
+  sourceValue,
+  targetValue,
+  identityMap,
+}) {
+  return digest(normalizeWordPressGraphRowForIdentityComparison(sourceResource, sourceValue, identityMap))
+    === digest(normalizeWordPressGraphRowForIdentityComparison(targetResource, targetValue, identityMap));
+}
+
+function normalizeWordPressGraphRowForIdentityComparison(resource, value, identityMap) {
+  if (!value || value === ABSENT || typeof value !== 'object') {
+    return value;
+  }
+  const normalized = deepClone(value);
+  const mapping = identityMap.bySourceKey.get(resource.key);
+  const suffix = wordpressGraphTableSuffix(resource.table);
+  const primaryField = suffix ? wordpressGraphPrimaryIdField(suffix) : null;
+  if (
+    mapping
+    && primaryField
+    && normalizePositiveInteger(normalized[primaryField]) === mapping.sourcePrimaryValue
+  ) {
+    normalized[primaryField] = preserveWordPressGraphIdScalarType(
+      normalized[primaryField],
+      mapping.targetPrimaryValue,
+    );
+  }
+
+  for (const reference of wordpressGraphReferences(resource, normalized)) {
+    const referenceMapping = identityMap.bySourceKey.get(reference.targetResourceKey);
+    if (!referenceMapping) {
+      continue;
+    }
+    normalized[reference.field] = preserveWordPressGraphIdScalarType(
+      normalized[reference.field],
+      referenceMapping.targetPrimaryValue,
+    );
+  }
+  return normalized;
+}
+
+function addWordPressGraphNaturalIdentityCollisions(identityMap, { base, local, remote }) {
+  for (const [table, rows] of Object.entries(local?.db || {})) {
+    if (wordpressGraphTableSuffix(table) !== 'posts') {
+      continue;
+    }
+    for (const [id, localValue] of Object.entries(rows || {})) {
+      const resource = rowResource(table, id);
+      if (
+        resourceHash(local, resource) === resourceHash(base, resource)
+        || identityMap.bySourceKey.has(resource.key)
+      ) {
+        continue;
+      }
+      const collision = wordpressGraphPostIdentityCollision(resource, localValue, remote);
+      if (collision) {
+        identityMap.collisionsByResourceKey.set(resource.key, collision);
+      }
+    }
+  }
+}
+
+function wordpressGraphPostIdentityCollision(resource, localValue, remote) {
+  if (!localValue || localValue === ABSENT || typeof localValue !== 'object') {
+    return null;
+  }
+  const identityKeys = wordpressGraphPostNaturalIdentityKeys(localValue);
+  if (identityKeys.length === 0) {
+    return null;
+  }
+  const matches = [];
+  for (const [remoteId, remoteValue] of Object.entries(remote?.db?.[resource.table] || {})) {
+    const remoteResource = rowResource(resource.table, remoteId);
+    if (remoteResource.key === resource.key) {
+      continue;
+    }
+    const remoteKeys = wordpressGraphPostNaturalIdentityKeys(remoteValue);
+    const matchingKinds = identityKeys
+      .filter((identityKey) => remoteKeys.some((remoteKey) => remoteKey.key === identityKey.key))
+      .map((identityKey) => identityKey.kind);
+    if (matchingKinds.length > 0) {
+      matches.push({ resource: remoteResource, kinds: matchingKinds });
+    }
+  }
+  if (matches.length === 0) {
+    return null;
+  }
+  const identityKinds = [...new Set(matches.flatMap((match) => match.kinds))].sort();
+  return {
+    supported: false,
+    className: 'stale-wordpress-graph-identity',
+    reason: `WordPress graph mutation ${resource.key} collides with existing remote post identity (${identityKinds.join(', ')}) without a proven identity map.`,
+    references: matches.map((match) => ({
+      relationshipKey: 'wp_posts.identity',
+      relationshipType: 'post-natural-identity-collision',
+      sourceResourceKey: resource.key,
+      targetResourceKey: match.resource.key,
+      targetTable: match.resource.table,
+      targetId: match.resource.id,
+      identityKinds: match.kinds,
+      targetRemoteHash: resourceHash(remote, match.resource),
+    })),
+  };
+}
+
+function wordpressGraphPostNaturalIdentityKeys(value) {
+  if (!value || typeof value !== 'object') {
+    return [];
+  }
+  const keys = [];
+  const guid = nonEmptyString(value.guid);
+  if (guid) {
+    keys.push({ kind: 'guid', key: `guid:${guid}` });
+  }
+  const postType = nonEmptyString(value.post_type);
+  const postName = nonEmptyString(value.post_name);
+  if (postType && postName) {
+    keys.push({ kind: 'post_type+post_name', key: `post_type:${postType}:post_name:${postName}` });
+  }
+  return keys;
+}
+
+function nonEmptyString(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function rewriteWordPressGraphMutation({ resource, localValue, identityMap }) {
+  if (resource.type !== 'row' || localValue === ABSENT || !localValue || typeof localValue !== 'object') {
+    return { resource, localValue, rewrites: [] };
+  }
+  const rewrittenValue = deepClone(localValue);
+  const rewrites = [];
+  const rewriteByField = new Map();
+  for (const reference of wordpressGraphReferences(resource, rewrittenValue)) {
+    const mapping = identityMap.bySourceKey.get(reference.targetResourceKey);
+    if (!mapping?.usable) {
+      continue;
+    }
+    rewrittenValue[reference.field] = preserveWordPressGraphIdScalarType(
+      rewrittenValue[reference.field],
+      mapping.targetPrimaryValue,
+    );
+    rewriteByField.set(reference.field, mapping.targetPrimaryValue);
+    rewrites.push({
+      relationshipKey: reference.relationshipKey,
+      relationshipType: reference.relationshipType,
+      field: reference.field,
+      sourceTargetResourceKey: mapping.sourceResource.key,
+      targetResourceKey: mapping.targetResource.key,
+      identityMapSource: mapping.source,
+      sourceTargetLocalHash: mapping.sourceLocalHash,
+      targetRemoteHash: mapping.targetRemoteHash,
+    });
+  }
+  if (rewrites.length === 0) {
+    return { resource, localValue, rewrites: [] };
+  }
+  const rewrittenResource = rewriteWordPressGraphResourceId(resource, rewriteByField);
+  return {
+    resource: rewrittenResource,
+    localValue: rewrittenValue,
+    rewrites: rewrites.map((rewrite) => ({
+      ...rewrite,
+      sourceResourceKey: resource.key,
+      rewrittenResourceKey: rewrittenResource.key,
+    })),
+  };
+}
+
+function rewriteWordPressGraphResourceId(resource, rewriteByField) {
+  const suffix = wordpressGraphTableSuffix(resource.table);
+  if (suffix === 'postmeta' && rewriteByField.has('post_id')) {
+    const match = /^post_id:(\d+):meta_key:(.+)$/.exec(resource.id);
+    if (match) {
+      return rowResource(resource.table, `post_id:${rewriteByField.get('post_id')}:meta_key:${match[2]}`);
+    }
+  }
+  if (suffix === 'term_relationships') {
+    const match = /^object_id:(\d+)\|term_taxonomy_id:(\d+)$/.exec(resource.id);
+    if (match) {
+      const objectId = rewriteByField.get('object_id') || Number.parseInt(match[1], 10);
+      const termTaxonomyId = rewriteByField.get('term_taxonomy_id') || Number.parseInt(match[2], 10);
+      return rowResource(resource.table, `object_id:${objectId}|term_taxonomy_id:${termTaxonomyId}`);
+    }
+  }
+  return resource;
+}
+
+function preserveWordPressGraphIdScalarType(previousValue, nextValue) {
+  return typeof previousValue === 'string' ? String(nextValue) : nextValue;
+}
+
 function wordpressGraphIdentitySupport({
   resource,
   localValue,
@@ -996,6 +1600,8 @@ function wordpressGraphIdentitySupport({
   base,
   local,
   remote,
+  identityMap,
+  identityRewrites = [],
 }) {
   return wordpressGraphResourceSupport({
     resource,
@@ -1004,6 +1610,8 @@ function wordpressGraphIdentitySupport({
     base,
     local,
     remote,
+    identityMap,
+    identityRewrites,
     seen: new Set([resource.key]),
   });
 }
@@ -1015,10 +1623,17 @@ function wordpressGraphResourceSupport({
   base,
   local,
   remote,
+  identityMap,
+  identityRewrites = [],
   seen,
 }) {
   if (resource.type !== 'row' || localValue === ABSENT) {
     return { supported: true };
+  }
+
+  const mappedIdentity = identityMap?.bySourceKey?.get(resource.key);
+  if (mappedIdentity && !mappedIdentity.usable) {
+    return mappedIdentity.support;
   }
 
   const surfaceSupport = wordpressGraphSurfaceSupport(resource, localValue);
@@ -1032,7 +1647,17 @@ function wordpressGraphResourceSupport({
   }
 
   const unsafeReferences = references
-    .map((reference) => wordpressGraphReferenceEvidence(reference, resources, base, local, remote, seen))
+    .map((reference) =>
+      wordpressGraphReferenceEvidence(
+        reference,
+        resources,
+        base,
+        local,
+        remote,
+        seen,
+        identityMap,
+        identityRewrites,
+      ))
     .filter(Boolean)
     .filter((reference) => isUnsafeWordPressGraphReference(reference));
 
@@ -1103,6 +1728,10 @@ function isUnsafeWordPressGraphReference(reference) {
   }
 
   if (isSafeSamePlanWordPressGraphReference(reference)) {
+    return false;
+  }
+
+  if (reference.identityRewrite) {
     return false;
   }
 
@@ -1192,6 +1821,7 @@ function wordpressGraphReferences(resource, value) {
     references.push({
       relationshipKey: `${resource.table}.${field}`,
       relationshipType,
+      field,
       sourceResourceKey: resource.key,
       sourceTable: resource.table,
       sourceRowId: resource.id,
@@ -1369,9 +1999,21 @@ function wordpressGraphReferences(resource, value) {
   return references;
 }
 
-function wordpressGraphReferenceEvidence(reference, resources, base, local, remote, seen = new Set()) {
+function wordpressGraphReferenceEvidence(
+  reference,
+  resources,
+  base,
+  local,
+  remote,
+  seen = new Set(),
+  identityMap = null,
+  identityRewrites = [],
+) {
   const target = resources.find((candidate) => candidate.key === reference.targetResourceKey)
     || reference.targetResource;
+  const identityRewrite = identityRewrites.find((rewrite) =>
+    rewrite.relationshipKey === reference.relationshipKey
+    && rewrite.targetResourceKey === target.key);
   const baseValue = getResource(base, target);
   const localValue = getResource(local, target);
   const remoteValue = getResource(remote, target);
@@ -1386,7 +2028,8 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
       resources,
       base,
       local,
-      remote,
+    remote,
+      identityMap,
       seen: new Set([...seen, target.key]),
     });
 
@@ -1400,6 +2043,17 @@ function wordpressGraphReferenceEvidence(reference, resources, base, local, remo
     targetResourceKey: target.key,
     targetTable: target.table,
     targetId: target.id,
+    ...(identityRewrite ? {
+      identityRewrite: {
+        relationshipKey: identityRewrite.relationshipKey,
+        relationshipType: identityRewrite.relationshipType,
+        sourceTargetResourceKey: identityRewrite.sourceTargetResourceKey,
+        targetResourceKey: identityRewrite.targetResourceKey,
+        identityMapSource: identityRewrite.identityMapSource,
+        sourceTargetLocalHash: identityRewrite.sourceTargetLocalHash,
+        targetRemoteHash: identityRewrite.targetRemoteHash,
+      },
+    } : {}),
     targetBaseHash,
     targetLocalHash,
     targetRemoteHash,
@@ -1473,6 +2127,23 @@ function wordpressGraphPrimaryIdField(suffix) {
     return 'term_taxonomy_id';
   }
   return 'id';
+}
+
+function wordpressGraphResourcePrimaryInteger(resource) {
+  if (resource?.type !== 'row') {
+    return null;
+  }
+  const suffix = wordpressGraphTableSuffix(resource.table);
+  if (!suffix) {
+    return null;
+  }
+  const idField = wordpressGraphPrimaryIdField(suffix);
+  const match = new RegExp(`^${escapeRegExp(idField)}:([1-9]\\d*)$`).exec(resource.id);
+  return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function normalizePositiveInteger(value) {

@@ -32,6 +32,23 @@ test('graph mapping inventory emits the expected machine-readable shape', { conc
     'termmeta-term',
     'usermeta-user',
   ]);
+  assert.deepEqual(inventory.identityMapCapabilities, {
+    explicitMapTableSuffixes: [
+      'posts',
+      'users',
+      'comments',
+      'terms',
+      'term_taxonomy',
+      'site',
+      'blogs',
+    ],
+    failClosedCollisionSurfaces: [
+      'wp_posts.guid',
+      'wp_posts.post_type+post_name',
+    ],
+    rewritesRequireEquivalentRemoteTarget: true,
+    rewritesRecordHashOnlyEvidence: true,
+  });
   assert.deepEqual(inventory.mappedFamilyCounters, {
     totalFamilies: 7,
     mappedFamilies: 6,
