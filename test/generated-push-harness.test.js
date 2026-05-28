@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan, PushPlanError } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
+import { deepClone, digest } from '../src/stable-json.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -63,6 +67,10 @@ const requiredFamilies = [
   'term-taxonomy-term-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
+  'plugin-owned-custom-table-ready',
+  'plugin-owned-custom-table-stale',
+  'plugin-owned-custom-table',
+  'custom-table-remote-preserve',
   'same-plan-graph',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
@@ -323,6 +331,83 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
   assert.equal(stale.applied, false, 'stale graph must not apply mutations');
 });
 
+test('RPP-0115 plugin-owned custom-table target records ready and stale no-overwrite coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedCustomTable;
+
+  assert.ok(coverage, 'missing plugin-owned custom-table target coverage');
+  assert.equal(coverage.family, 'plugin-owned-custom-table-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready plugin-owned custom-table cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready custom-table cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'plugin-owned-custom-table-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'plugin-owned-custom-table-stale');
+
+  assert.ok(readyCase, 'missing ready plugin-owned custom-table case');
+  assert.ok(staleCase, 'missing stale plugin-owned custom-table case');
+  assertPluginOwnedCustomTableShape(readyCase, { staleRemote: false });
+  assertPluginOwnedCustomTableShape(staleCase, { staleRemote: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true, 'ready plugin-owned custom-table case should apply');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready custom-table apply should preserve unplanned remote rows');
+  assert.equal(ready.staleReplayRejected, true, 'ready custom-table plan should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale custom-table case should not be ready');
+  assert.ok(stale.conflicts >= 1, 'stale custom-table case should record a remote conflict');
+  assert.equal(stale.applied, false, 'stale custom-table case must not apply mutations');
+
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const customTableMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resource?.type === 'row'
+    && mutation.resource.table === 'wp_reprint_push_forms_lab'
+    && mutation.pluginOwnedResource?.driver === 'fixture-forms-lab-table');
+
+  assert.ok(customTableMutation, 'ready case should carry a forms-lab custom-table mutation');
+  assert.equal(customTableMutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(customTableMutation.pluginOwnedResource.driverEvidence.source, 'live-remote');
+
+  const remoteOnlyRowId = customTableRemoteOnlyRowId(readyCase);
+  const applied = applyPlan(deepClone(readyCase.remote), readyPlan);
+  assert.deepEqual(
+    applied.site.db.wp_reprint_push_forms_lab[remoteOnlyRowId],
+    readyCase.remote.db.wp_reprint_push_forms_lab[remoteOnlyRowId],
+    'ready custom-table apply must preserve the unplanned remote-only row',
+  );
+
+  const driftedRemote = deepClone(readyCase.remote);
+  driftedRemote.db.wp_reprint_push_forms_lab[customTableMutation.resource.id].payload.mode =
+    'remote-stale-after-ready-plan';
+  const before = digest(driftedRemote);
+  const error = captureError(() => applyPlan(driftedRemote, readyPlan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(digest(driftedRemote), before, 'custom-table stale replay must fail before mutation');
+});
+
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
   const termRows = Object.entries(testCase.local.db.wp_terms)
     .filter(([id, row]) => !testCase.base.db.wp_terms[id]
@@ -350,8 +435,64 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
   }
 }
 
+function assertPluginOwnedCustomTableShape(testCase, { staleRemote }) {
+  assert.ok(testCase.tags.has('plugin-owned-custom-table'));
+  assert.ok(testCase.tags.has('custom-table-remote-preserve'));
+
+  const changedRows = Object.entries(testCase.local.db.wp_reprint_push_forms_lab)
+    .filter(([id, row]) => testCase.base.db.wp_reprint_push_forms_lab[id]
+      && row.payload?.mode === 'local-plugin-owned-custom-table');
+  const remoteOnlyRows = Object.entries(testCase.remote.db.wp_reprint_push_forms_lab)
+    .filter(([id, row]) => !testCase.base.db.wp_reprint_push_forms_lab[id]
+      && !testCase.local.db.wp_reprint_push_forms_lab[id]
+      && row.payload?.mode === 'remote-only-unplanned');
+
+  assert.equal(changedRows.length, 1, `${testCase.id} should update one forms-lab row`);
+  assert.equal(remoteOnlyRows.length, 1, `${testCase.id} should include one unplanned remote-only forms-lab row`);
+
+  const [changedRowId] = changedRows[0];
+  const allowed = testCase.local.meta.pluginOwnedResources.allowedResources.find((entry) =>
+    entry.resourceKey === `row:${JSON.stringify(['wp_reprint_push_forms_lab', changedRowId])}`);
+  assert.ok(allowed, `${testCase.id} should include explicit custom-table driver policy`);
+  assert.equal(allowed.pluginOwner, 'forms');
+  assert.equal(allowed.driver, 'fixture-forms-lab-table');
+  assert.equal(allowed.table, 'wp_reprint_push_forms_lab');
+
+  if (staleRemote) {
+    assert.equal(
+      testCase.remote.db.wp_reprint_push_forms_lab[changedRowId].payload.mode,
+      'remote-stale-plugin-owned-custom-table',
+      `${testCase.id} should drift the planned custom-table row remotely`,
+    );
+  } else {
+    assert.deepEqual(
+      testCase.remote.db.wp_reprint_push_forms_lab[changedRowId],
+      testCase.base.db.wp_reprint_push_forms_lab[changedRowId],
+      `${testCase.id} ready custom-table row should have an unchanged remote precondition`,
+    );
+  }
+}
+
+function customTableRemoteOnlyRowId(testCase) {
+  const row = Object.entries(testCase.remote.db.wp_reprint_push_forms_lab)
+    .find(([id, value]) => !testCase.base.db.wp_reprint_push_forms_lab[id]
+      && !testCase.local.db.wp_reprint_push_forms_lab[id]
+      && value.payload?.mode === 'remote-only-unplanned');
+  assert.ok(row, `${testCase.id} missing remote-only custom-table row`);
+  return row[0];
+}
+
 function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected operation to throw');
 }

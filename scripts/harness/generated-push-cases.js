@@ -13,7 +13,7 @@ import {
 } from '../../src/resources.js';
 
 export const MIN_GENERATED_PUSH_CASES = 300;
-export const DEFAULT_GENERATED_PUSH_CASES = 360;
+export const DEFAULT_GENERATED_PUSH_CASES = 370;
 export const DEFAULT_GENERATED_PUSH_SEED = 0x52706e74;
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'plugin-owned-custom-table-ready',
+  'plugin-owned-custom-table-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,7 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'plugin-owned-custom-table-ready',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +96,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  pluginOwnedCustomTable: {
+    family: 'plugin-owned-custom-table-ready',
+    tag: 'plugin-owned-custom-table',
   },
 });
 
@@ -596,6 +603,14 @@ const scenarioFamilyBuilders = {
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
   },
+  'plugin-owned-custom-table-ready': ({ base, local, remote, allocator, tags }) => {
+    addPluginOwnedCustomTableChange(base, local, remote, allocator, tags, { staleRemote: false });
+    tags.add('ready-candidate');
+  },
+  'plugin-owned-custom-table-stale': ({ base, local, remote, allocator, tags }) => {
+    addPluginOwnedCustomTableChange(base, local, remote, allocator, tags, { staleRemote: true });
+    tags.add('expected-conflict');
+  },
 };
 
 function buildBaseSite(index, tier) {
@@ -671,6 +686,10 @@ function addGeneratedComplexity({
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
+    if (family === 'plugin-owned-custom-table-ready') {
+      addPluginOwnedCustomTableReadyComplexityOperation({ rng, base, local, remote, allocator, tags, index: i });
+      continue;
+    }
     if (preserveReady) {
       addReadyPreservingComplexityOperation({ tier, rng, base, local, remote, allocator, tags, index: i });
       continue;
@@ -868,6 +887,53 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function addPluginOwnedCustomTableReadyComplexityOperation({
+  rng,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+  index,
+}) {
+  const choice = randomInt(rng, 0, 4);
+  if (choice === 0) {
+    const path = allocator.filePath(`custom-table-ready-update-${index}`);
+    base.files[path] = `base custom-table ready ${index}`;
+    local.files[path] = `local custom-table ready ${index}-${allocator.next()}`;
+    remote.files[path] = base.files[path];
+    tags.add('bulk-local-update');
+    return;
+  }
+  if (choice === 1) {
+    const path = allocator.filePath(`custom-table-ready-create-${index}`);
+    local.files[path] = `custom-table ready create ${index}-${allocator.next()}`;
+    tags.add('local-create');
+    return;
+  }
+  if (choice === 2) {
+    const optionName = `forms_custom_table_ready_${allocator.next()}`;
+    const resourceKey = rowKey('wp_options', `option_name:${optionName}`);
+    const row = {
+      option_name: optionName,
+      option_value: { mode: 'base', customTableReady: true },
+      __pluginOwner: 'forms',
+    };
+    setRow(base, 'wp_options', `option_name:${optionName}`, row);
+    setRow(local, 'wp_options', `option_name:${optionName}`, {
+      ...row,
+      option_value: { mode: 'local-custom-table-ready', index },
+    });
+    setRow(remote, 'wp_options', `option_name:${optionName}`, row);
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    tags.add('plugin-owned-supported');
+    return;
+  }
+  addCommentGraph(local, allocator);
+  tags.add('same-plan-graph');
+  tags.add('comment-graph');
 }
 
 function assertPlanContract(testCase, plan) {
@@ -1248,6 +1314,67 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
   }
+}
+
+function addPluginOwnedCustomTableChange(base, local, remote, allocator, tags, { staleRemote }) {
+  const id = allocator.formsLabId();
+  const remoteOnlyId = allocator.formsLabId();
+  const rowId = `id:${id}`;
+  const remoteOnlyRowId = `id:${remoteOnlyId}`;
+  const resourceKey = rowKey('wp_reprint_push_forms_lab', rowId);
+  const row = {
+    id,
+    form_slug: `generated-custom-table-${id}`,
+    payload: {
+      owner: 'forms',
+      mode: 'base',
+      variant: 'rpp-0115',
+      token: `custom-table-${id}`,
+    },
+    updated_marker: `base-${id}`,
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_reprint_push_forms_lab', rowId, row);
+  setRow(local, 'wp_reprint_push_forms_lab', rowId, {
+    ...row,
+    payload: {
+      ...row.payload,
+      mode: 'local-plugin-owned-custom-table',
+      ordinal: allocator.next(),
+    },
+    updated_marker: `local-${id}`,
+  });
+  setRow(remote, 'wp_reprint_push_forms_lab', rowId, staleRemote
+    ? {
+      ...row,
+      payload: {
+        ...row.payload,
+        mode: 'remote-stale-plugin-owned-custom-table',
+        ordinal: allocator.next(),
+      },
+      updated_marker: `remote-stale-${id}`,
+    }
+    : row);
+  setRow(remote, 'wp_reprint_push_forms_lab', remoteOnlyRowId, {
+    id: remoteOnlyId,
+    form_slug: `generated-custom-table-remote-only-${remoteOnlyId}`,
+    payload: {
+      owner: 'forms',
+      mode: 'remote-only-unplanned',
+      variant: 'rpp-0115',
+      token: `custom-table-remote-only-${remoteOnlyId}`,
+    },
+    updated_marker: `remote-only-${remoteOnlyId}`,
+    __pluginOwner: 'forms',
+  });
+  allowPluginOwned(local, resourceKey, 'forms', 'fixture-forms-lab-table', {
+    table: 'wp_reprint_push_forms_lab',
+  });
+
+  tags.add('plugin-owned-custom-table');
+  tags.add('forms-lab-supported');
+  tags.add('custom-table-remote-preserve');
 }
 
 function addCommentGraph(local, allocator) {

@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+fixtures. The current default is 370 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 37 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 360 total cases;
-- 10 tiers, 36 cases per tier;
+- 370 total cases;
+- 10 tiers, 37 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -53,8 +53,10 @@ The default generated run covers:
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
-  plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
+  plugin owner-context drift, plugin-owned forms-lab custom-table row updates
+  with ready/stale outcomes plus unplanned remote-row preservation, supported
+  forms-lab custom-table rows, forms-lab delete refusal, atomic plugin install
+  ready and missing-dependency paths,
   same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
   stale graph references.
 
@@ -71,15 +73,22 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `pluginOwnedCustomTable` target coverage records per-tier counts for
+`wp_reprint_push_forms_lab` rows owned by the `forms` plugin and guarded by the
+`fixture-forms-lab-table` driver. Ready cases update one planned forms-lab row,
+carry live remote driver evidence, and preserve an unplanned remote-only row in
+the same custom table. Stale cases concurrently drift the planned row remotely
+and remain non-ready, so the remote value is not overwritten.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
-  "totalCases": 360,
+  "totalCases": 370,
   "statuses": {
     "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "conflict": 151,
+    "ready": 195
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -99,6 +108,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "pluginOwnedCustomTable": {
+      "family": "plugin-owned-custom-table-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -138,8 +167,8 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 3,
-        "conflict": 8,
-        "ready": 9
+        "conflict": 7,
+        "ready": 10
       }
     }
   },
@@ -158,12 +187,16 @@ At the time this note was added, the summary command reported:
     "wp-term-taxonomy-graph-stale": 10,
     "wp-term-taxonomy-create": 20,
     "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "wp-terms-remote-drift": 10,
+    "plugin-owned-custom-table": 20,
+    "plugin-owned-custom-table-ready": 10,
+    "plugin-owned-custom-table-stale": 10,
+    "custom-table-remote-preserve": 20
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 69,
+  "maxMutationCount": 44,
+  "maxReadyResourceCount": 69,
+  "maxReadyMutationCount": 44
 }
 ```
 
