@@ -129,9 +129,10 @@ the harness, and preserve every unplanned remote resource.
 The `wpPostmetaCreateUpdateDelete` target coverage records per-tier counts for
 the `wp_postmeta` create/update/delete surface. Its invariant is that ready
 cases apply only the planned postmeta create, update, and delete while
-preserving every unplanned remote resource; stale replays fail before mutation,
-and concurrent remote edits to the updated postmeta row remain `conflict` and
-refuse apply.
+preserving every unplanned remote resource; every ready case rejects stale
+replay before mutation, and concurrent remote edits to the updated postmeta row
+remain `conflict` and refuse apply so local postmeta plans cannot overwrite
+newer remote rows.
 
 The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
 generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
@@ -198,9 +199,9 @@ At the time this note was added, the summary command reported:
   "totalCases": 510,
   "minCasesRequired": 300,
   "statuses": {
-    "blocked": 37,
-    "conflict": 204,
-    "ready": 269
+    "blocked": 38,
+    "conflict": 187,
+    "ready": 285
   },
   "statusByTier": {
     "blocked": {
@@ -213,7 +214,7 @@ At the time this note was added, the summary command reported:
       "6": 1,
       "7": 1,
       "8": 1,
-      "9": 1
+      "9": 2
     },
     "conflict": {
       "0": 14,
@@ -224,8 +225,8 @@ At the time this note was added, the summary command reported:
       "5": 21,
       "6": 22,
       "7": 21,
-      "8": 30,
-      "9": 29
+      "8": 22,
+      "9": 20
     },
     "ready": {
       "0": 29,
@@ -236,8 +237,8 @@ At the time this note was added, the summary command reported:
       "5": 29,
       "6": 28,
       "7": 29,
-      "8": 20,
-      "9": 21
+      "8": 28,
+      "9": 29
     }
   },
   "tiers": {
@@ -419,8 +420,7 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 8,
-        "conflict": 1,
+        "blocked": 9,
         "ready": 9
       }
     },
@@ -440,8 +440,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 11,
-        "ready": 9
+        "conflict": 10,
+        "ready": 10
       }
     },
     "fileCreateUpdateDeleteMix": {
@@ -519,8 +519,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 10,
-        "ready": 8
+        "conflict": 9,
+        "ready": 9
       }
     },
     "rowCreateUpdateDeleteMix": {
@@ -539,8 +539,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 11,
-        "ready": 9
+        "conflict": 10,
+        "ready": 10
       }
     },
     "sameIndependentContent": {
@@ -559,13 +559,12 @@ At the time this note was added, the summary command reported:
         "9": 1
       },
       "statuses": {
-        "conflict": 1,
-        "ready": 9
+        "ready": 10
       }
     },
     "staleRemoteAfterDryRun": {
       "family": "ready-plan-stale-remote-after-dry-run",
-      "total": 268,
+      "total": 284,
       "perTier": {
         "0": 28,
         "1": 28,
@@ -575,11 +574,11 @@ At the time this note was added, the summary command reported:
         "5": 29,
         "6": 28,
         "7": 29,
-        "8": 20,
-        "9": 21
+        "8": 28,
+        "9": 29
       },
       "statuses": {
-        "ready": 268
+        "ready": 284
       }
     },
     "wpCommentsCommentmetaGraph": {
@@ -599,8 +598,8 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 3,
-        "conflict": 8,
-        "ready": 9
+        "conflict": 7,
+        "ready": 10
       }
     },
     "wpOptionsScalarChanges": {
@@ -639,8 +638,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 11,
-        "ready": 9
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostmetaCreateUpdateDelete": {
@@ -659,8 +658,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 11,
-        "ready": 9
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -742,20 +741,20 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 3,
-        "conflict": 7,
-        "ready": 8
+        "conflict": 6,
+        "ready": 9
       }
     }
   },
-  "maxResourceCount": 73,
+  "maxResourceCount": 74,
   "maxMutationCount": 46,
-  "maxReadyResourceCount": 73,
+  "maxReadyResourceCount": 74,
   "maxReadyMutationCount": 46,
   "maxComplexityScore": 89,
   "totalMutations": 7214,
-  "totalConflicts": 527,
+  "totalConflicts": 509,
   "totalBlockers": 513,
-  "totalDecisions": 1265
+  "totalDecisions": 1384
 }
 ```
 

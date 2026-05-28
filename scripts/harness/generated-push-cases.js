@@ -989,10 +989,12 @@ function addReadyPreservingComplexityOperation({
     return;
   }
   if (choice === 1) {
-    const postId = allocator.postId();
-    ensurePostExists(base, postId);
-    ensurePostExists(local, postId);
-    ensurePostExists(remote, postId);
+    const postId = allocator.graphId();
+    const rowId = `ID:${postId}`;
+    const row = makePost(postId, `Ready remote preserve base ${postId}`);
+    setRow(base, 'wp_posts', rowId, row);
+    setRow(local, 'wp_posts', rowId, row);
+    setRow(remote, 'wp_posts', rowId, row);
     remote.db.wp_posts[`ID:${postId}`].post_title = `Remote ready preserve ${allocator.next()}`;
     tags.add('bulk-remote-preserve');
     return;
@@ -1045,10 +1047,12 @@ function addReadyPreservingComplexityOperation({
     tags.add('local-create');
     return;
   }
-  const postId = allocator.postId();
-  ensurePostExists(base, postId);
-  ensurePostExists(local, postId);
-  ensurePostExists(remote, postId);
+  const postId = allocator.graphId();
+  const rowId = `ID:${postId}`;
+  const row = makePost(postId, `Ready same content base ${postId}`);
+  setRow(base, 'wp_posts', rowId, row);
+  setRow(local, 'wp_posts', rowId, row);
+  setRow(remote, 'wp_posts', rowId, row);
   const title = `Ready same content ${allocator.next()}`;
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
