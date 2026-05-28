@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:40 CEST.
+- Last update: 2026-05-28 06:44 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `85682de19` (`fix: fail closed plugin delete mutations`).
+  `7ac6d62bd` (`docs: refresh progress for plugin delete refusal`). The newest
+  behavioral proof on the lane is `85682de19` (`fix: fail closed plugin delete
+  mutations`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -178,12 +180,21 @@ linked implementation artifacts.
   `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
-- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
+- Current AO team from tmux includes active developers `rpp-24`/`RPP-0124`,
+  `rpp-25`/`RPP-0051`, `rpp-29`/`RPP-0225`, `rpp-30`/`RPP-0330`,
+  `rpp-32`/`RPP-0438`, `rpp-33`/`RPP-0125`, and `rpp-34`/`RPP-0437`;
+  integrator `rpp-28`/`RPP-0221`; critics `rpp-31` and `rpp-37`; queue
+  `rpp-35`; progress reporter `rpp-36`; visible supervisor `rpp-orchestrator`;
+  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`; and
   `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
   web child wedged and was restarted in tmux.
+- Queue heartbeat from lane truth: origin/lane is `7ac6d62bd`, with 115 checked
+  and 885 open. `RPP-0431` is integrated. `RPP-0221` is active in `rpp-28`,
+  and visible refs or local branches for `RPP-0041`-`RPP-0051`, `RPP-0113`-
+  `RPP-0125`, `RPP-0216`, `RPP-0221`-`RPP-0225`, `RPP-0315`, `RPP-0322`,
+  `RPP-0323`, `RPP-0326`-`RPP-0330`, `RPP-0415`-`RPP-0420`, `RPP-0425`-
+  `RPP-0427`, and `RPP-0433`-`RPP-0438` remain queued/session-only and are not
+  counted until origin/lane moves again.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing

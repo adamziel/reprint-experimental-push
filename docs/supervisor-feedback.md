@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:40 CEST
+Last updated: 2026-05-28 06:44 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:44 CEST - Live Team Heartbeat After RPP-0431
+
+- Going well: origin/lane is `7ac6d62bd`; `RPP-0431` is integrated from lane
+  truth, giving 115 verified items checked, 885 open, and release status
+  `NO-GO`.
+- Queue separation: `RPP-0221` is active in `rpp-28` and not lane-counted.
+  Active or queued branch-local work for `RPP-0041`-`RPP-0051`, `RPP-0113`-
+  `RPP-0125`, `RPP-0216`, `RPP-0221`-`RPP-0225`, `RPP-0315`, `RPP-0322`,
+  `RPP-0323`, `RPP-0326`-`RPP-0330`, `RPP-0415`-`RPP-0420`, `RPP-0425`-
+  `RPP-0427`, and `RPP-0433`-`RPP-0438` remains session-only.
+- Live roster: active developers are `rpp-24`/`RPP-0124`, `rpp-25`/`RPP-0051`,
+  `rpp-29`/`RPP-0225`, `rpp-30`/`RPP-0330`, `rpp-32`/`RPP-0438`,
+  `rpp-33`/`RPP-0125`, and `rpp-34`/`RPP-0437`; integrator is
+  `rpp-28`/`RPP-0221`; queue is `rpp-35`; critics are `rpp-31` and `rpp-37`;
+  progress is `rpp-36`; lifecycle/dashboard panes remain visible locally.
+- Current nudge: keep refreshing only from origin/lane movement; do not count
+  `RPP-0221` or any other branch-local proof until it lands on the lane.
 
 ## 2026-05-28 06:40 CEST - RPP-0431 Integrated
 
