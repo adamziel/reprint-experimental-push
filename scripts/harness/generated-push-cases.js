@@ -28,6 +28,8 @@ const scenarioFamilies = Object.freeze([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'wp-options-serialized-ready',
+  'wp-options-serialized-conflict',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
@@ -65,6 +67,7 @@ const readyPreservingFamilies = new Set([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'wp-options-serialized-ready',
   'same-plan-post-parent-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -85,6 +88,10 @@ const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  wpOptionsSerializedOption: {
+    family: 'wp-options-serialized-ready',
+    tag: 'wp-options-serialized',
   },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
@@ -316,6 +323,20 @@ const scenarioFamilyBuilders = {
     });
     allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
     tags.add('plugin-owned-supported');
+  },
+  'wp-options-serialized-ready': ({ base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready',
+    });
+    tags.add('ready-candidate');
+  },
+  'wp-options-serialized-conflict': ({ base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict',
+    });
+    tags.add('expected-conflict');
   },
   'unsupported-plugin-owned-row': ({ local, allocator, tags }) => {
     const optionName = `unsafe_generated_${allocator.next()}`;
@@ -1141,6 +1162,56 @@ function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefi
   }
 }
 
+function addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const optionName = `reprint_push_serialized_${prefix}_${allocator.next()}`;
+  const remoteOnlyOptionName = `reprint_push_serialized_remote_only_${prefix}_${allocator.next()}`;
+  const rowId = `option_name:${optionName}`;
+  const remoteOnlyRowId = `option_name:${remoteOnlyOptionName}`;
+  const baseRow = {
+    option_name: optionName,
+    option_value: makeSerializedOptionPayload({
+      mode: 'base',
+      ordinal: allocator.next(),
+      privateToken: `base-private-serialized-${allocator.next()}`,
+    }),
+    autoload: 'no',
+  };
+
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: makeSerializedOptionPayload({
+      mode: 'local',
+      ordinal: allocator.next(),
+      privateToken: `local-private-serialized-${allocator.next()}`,
+    }),
+  });
+  setRow(remote, 'wp_options', rowId, baseRow);
+  setRow(remote, 'wp_options', remoteOnlyRowId, {
+    option_name: remoteOnlyOptionName,
+    option_value: makeSerializedOptionPayload({
+      mode: 'remote-only',
+      ordinal: allocator.next(),
+      privateToken: `remote-only-private-serialized-${allocator.next()}`,
+    }),
+    autoload: 'no',
+  });
+
+  tags.add('wp-options-serialized');
+  tags.add('wp-options-update');
+  tags.add('serialized-option');
+  tags.add('private-option-value');
+  tags.add('remote-preserve');
+
+  if (conflict) {
+    remote.db.wp_options[rowId].option_value = makeSerializedOptionPayload({
+      mode: 'remote-conflict',
+      ordinal: allocator.next(),
+      privateToken: `remote-conflict-private-serialized-${allocator.next()}`,
+    });
+  }
+}
+
 function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { conflict, prefix }) {
   const createId = allocator.graphId();
   const updateId = allocator.graphId();
@@ -1336,6 +1407,21 @@ function makePost(id, title, extra = {}) {
     post_author: 1,
     ...extra,
   };
+}
+
+function makeSerializedOptionPayload({ mode, ordinal, privateToken }) {
+  const entries = [
+    `${phpSerializedString('mode')}${phpSerializedString(mode)}`,
+    `${phpSerializedString('ordinal')}i:${ordinal};`,
+    `${phpSerializedString('private_token')}${phpSerializedString(privateToken)}`,
+    `${phpSerializedString('enabled')}b:1;`,
+  ];
+  return `a:${entries.length}:{${entries.join('')}}`;
+}
+
+function phpSerializedString(value) {
+  const string = String(value);
+  return `s:${string.length}:"${string}";`;
 }
 
 function makeUser(id) {

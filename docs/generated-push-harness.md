@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 37 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -49,7 +49,8 @@ The default generated run covers:
   delete mixes with ready and conflicting outcomes, directory descendant
   conflicts with per-tier target counts, file type-swap cases with ready and
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
-  outcomes plus stale replay rejection before mutation, `wp_posts`
+  outcomes plus stale replay rejection before mutation, serialized `wp_options`
+  changes with redacted/hash-only private option payload evidence, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
@@ -57,6 +58,14 @@ The default generated run covers:
   delete refusal, atomic plugin install ready and missing-dependency paths,
   same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
   stale graph references.
+
+The `wpOptionsSerializedOption` target coverage records per-tier counts for
+serialized `wp_options` row updates. Ready cases update one PHP-serialized
+private option value, preserve an unrelated remote-only serialized option with
+hash-only `keep-remote` evidence, and reject stale replay before mutation.
+Non-ready cases refuse apply before mutation; the conflict family drifts the
+same serialized option remotely while tests redact the raw serialized payloads
+and private tokens.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -77,9 +86,9 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "blocked": 20,
+    "conflict": 152,
+    "ready": 188
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -101,8 +110,8 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
-    "wpPostsCreateUpdateDelete": {
-      "family": "wp-posts-create-update-delete-ready",
+    "wpOptionsSerializedOption": {
+      "family": "wp-options-serialized-ready",
       "total": 20,
       "perTier": {
         "0": 2,
@@ -110,6 +119,26 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 12,
+        "ready": 8
+      }
+    },
+    "wpPostsCreateUpdateDelete": {
+      "family": "wp-posts-create-update-delete-ready",
+      "total": 18,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 1,
+        "4": 1,
         "5": 2,
         "6": 2,
         "7": 2,
@@ -118,16 +147,16 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10,
-        "ready": 10
+        "ready": 8
       }
     },
     "wpTermTaxonomyGraph": {
       "family": "wp-term-taxonomy-graph-ready",
-      "total": 20,
+      "total": 18,
       "perTier": {
         "0": 2,
-        "1": 2,
-        "2": 2,
+        "1": 1,
+        "2": 1,
         "3": 2,
         "4": 2,
         "5": 2,
@@ -137,33 +166,39 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 8,
+        "blocked": 2,
+        "conflict": 7,
         "ready": 9
       }
     }
   },
   "featureFamilies": {
-    "file-type-swap": 20,
-    "file-type-swap-ready": 10,
-    "file-type-swap-conflict": 10,
-    "row-create-update-delete-mix": 20,
-    "row-create-update-delete-mix-ready": 10,
-    "row-create-update-delete-mix-conflict": 10,
-    "wp-posts-create-update-delete": 20,
-    "wp-posts-create-update-delete-ready": 10,
-    "wp-posts-create-update-delete-conflict": 10,
-    "wp-term-taxonomy-graph": 20,
-    "wp-term-taxonomy-graph-ready": 10,
-    "wp-term-taxonomy-graph-stale": 10,
-    "wp-term-taxonomy-create": 20,
-    "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "file-type-swap": 18,
+    "file-type-swap-ready": 9,
+    "file-type-swap-conflict": 9,
+    "row-create-update-delete-mix": 18,
+    "row-create-update-delete-mix-ready": 9,
+    "row-create-update-delete-mix-conflict": 9,
+    "private-option-value": 20,
+    "serialized-option": 20,
+    "wp-options-serialized": 20,
+    "wp-options-serialized-ready": 10,
+    "wp-options-serialized-conflict": 10,
+    "wp-options-update": 20,
+    "wp-posts-create-update-delete": 18,
+    "wp-posts-create-update-delete-ready": 9,
+    "wp-posts-create-update-delete-conflict": 9,
+    "wp-term-taxonomy-graph": 18,
+    "wp-term-taxonomy-graph-ready": 9,
+    "wp-term-taxonomy-graph-stale": 9,
+    "wp-term-taxonomy-create": 18,
+    "wp-terms-create": 18,
+    "wp-terms-remote-drift": 9
   },
   "maxResourceCount": 68,
   "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxReadyResourceCount": 66,
+  "maxReadyMutationCount": 42
 }
 ```
 
