@@ -36,6 +36,7 @@ const scenarioFamilies = Object.freeze([
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'wp-comments-commentmeta-graph-stale',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpCommentsCommentmetaGraph: {
+    family: 'same-plan-comment-graph',
+    tag: 'wp-comments-commentmeta-graph',
   },
 });
 
@@ -407,28 +412,13 @@ const scenarioFamilyBuilders = {
     tags.add('same-plan-graph');
     tags.add('taxonomy-graph');
   },
-  'same-plan-comment-graph': ({ local, allocator, tags }) => {
-    const parentId = allocator.graphId();
-    const childId = allocator.graphId();
-    const metaId = allocator.graphId();
-    setRow(local, 'wp_comments', `comment_ID:${parentId}`, makeComment(parentId, {
-      comment_post_ID: 1,
-      comment_parent: 0,
-      user_id: 1,
-    }));
-    setRow(local, 'wp_comments', `comment_ID:${childId}`, makeComment(childId, {
-      comment_post_ID: 1,
-      comment_parent: parentId,
-      user_id: 1,
-    }));
-    setRow(local, 'wp_commentmeta', `meta_id:${metaId}`, {
-      meta_id: metaId,
-      comment_id: childId,
-      meta_key: '_generated_comment_marker',
-      meta_value: `comment-marker-${metaId}`,
-    });
-    tags.add('same-plan-graph');
-    tags.add('comment-graph');
+  'same-plan-comment-graph': ({ base, local, remote, allocator, tags }) => {
+    addWpCommentsCommentmetaGraph(base, local, remote, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-comments-commentmeta-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpCommentsCommentmetaGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
@@ -1261,6 +1251,57 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   if (staleTarget) {
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
+  }
+}
+
+function addWpCommentsCommentmetaGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const parentId = allocator.graphId();
+  const childId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const childRowId = `comment_ID:${childId}`;
+  const metaRowId = `meta_id:${metaId}`;
+  const parentComment = makeComment(parentId, {
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: 1,
+    comment_content: `Generated graph parent comment ${parentId}`,
+  });
+  const childComment = makeComment(childId, {
+    comment_post_ID: 1,
+    comment_parent: staleTarget ? 0 : parentId,
+    user_id: 1,
+    comment_content: `Generated graph child comment ${childId}`,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_comments', childRowId, childComment);
+    setRow(local, 'wp_comments', childRowId, childComment);
+    setRow(remote, 'wp_comments', childRowId, {
+      ...childComment,
+      comment_content: `Remote stale graph child comment ${childId}`,
+    });
+  } else {
+    setRow(local, 'wp_comments', `comment_ID:${parentId}`, parentComment);
+    setRow(local, 'wp_comments', childRowId, childComment);
+  }
+
+  setRow(local, 'wp_commentmeta', metaRowId, {
+    meta_id: metaId,
+    comment_id: childId,
+    meta_key: '_generated_comment_marker',
+    meta_value: `private-comment-marker-${metaId}`,
+  });
+
+  tags.add('same-plan-graph');
+  tags.add('comment-graph');
+  tags.add('wp-comments-commentmeta-graph');
+  tags.add('wp-commentmeta-create');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wp-comments-remote-drift');
+  } else {
+    tags.add('wp-comments-create');
   }
 }
 

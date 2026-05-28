@@ -9,6 +9,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
@@ -55,6 +56,11 @@ const requiredFamilies = [
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'wp-comments-commentmeta-graph-stale',
+  'wp-comments-commentmeta-graph',
+  'wp-comments-create',
+  'wp-commentmeta-create',
+  'wp-comments-remote-drift',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -510,6 +516,192 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0150 wp_comments and wp_commentmeta graph target exposes ready and non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpCommentsCommentmetaGraph;
+
+  assert.ok(coverage, 'missing wp_comments/wp_commentmeta graph target coverage');
+  assert.equal(coverage.family, 'same-plan-comment-graph');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-comments-commentmeta-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_comments/wp_commentmeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready stale graph cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(report).includes('private-comment-marker-'), false);
+  assert.equal(JSON.stringify(report).includes('Remote stale graph child comment'), false);
+
+  const cases = generatePushHarnessCases();
+  const targetCases = cases.filter((testCase) => testCase.tags.has('wp-comments-commentmeta-graph'));
+  const readyFamilyCases = cases.filter((testCase) => testCase.family === 'same-plan-comment-graph');
+  const staleFamilyCases = cases.filter((testCase) => testCase.family === 'wp-comments-commentmeta-graph-stale');
+  const plannedCases = targetCases.map((testCase) => ({
+    testCase,
+    plan: createGeneratedPlan(testCase),
+    shape: assertCommentsCommentmetaGraphShape(testCase, {
+      staleTarget: testCase.family === 'wp-comments-commentmeta-graph-stale',
+    }),
+  }));
+  const readyCases = plannedCases.filter(({ plan }) => plan.status === 'ready');
+  const nonReadyCases = plannedCases.filter(({ plan }) => plan.status !== 'ready');
+
+  assert.equal(readyFamilyCases.length, 10, 'expected one ready comment/commentmeta graph case per tier');
+  assert.equal(staleFamilyCases.length, 10, 'expected one stale comment/commentmeta graph case per tier');
+  assert.equal(readyCases.length, coverage.statuses.ready, 'ready comment/commentmeta count should match summary');
+  assert.equal(nonReadyCases.length, nonReadyTargetCount(coverage), 'non-ready comment/commentmeta count should match summary');
+
+  for (const { testCase: readyCase, plan, shape } of readyCases) {
+    const result = validateGeneratedCase(readyCase);
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+    const commentResourceKey = rowResourceKey('wp_comments', shape.commentRowId);
+    const commentmetaResourceKey = rowResourceKey('wp_commentmeta', shape.commentmetaRowId);
+
+    assert.equal(plan.status, 'ready');
+    assert.equal(result.status, 'ready');
+    assert.ok(mutationKeys.has(commentResourceKey), `${readyCase.id} should plan wp_comments create`);
+    assert.ok(mutationKeys.has(commentmetaResourceKey), `${readyCase.id} should plan wp_commentmeta create`);
+    assert.equal(result.applied, true, `${readyCase.id} should apply planned comment graph work`);
+    assert.equal(result.unplannedRemotePreserved, true, `${readyCase.id} should preserve unrelated remote data`);
+    assert.equal(result.staleReplayRejected, true, `${readyCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${readyCase.id} stale replay must fail before mutation`);
+
+    const applied = applyPlan(cloneJson(readyCase.remote), plan);
+    assert.deepEqual(applied.site.db.wp_comments[shape.commentRowId], readyCase.local.db.wp_comments[shape.commentRowId]);
+    assert.deepEqual(
+      applied.site.db.wp_commentmeta[shape.commentmetaRowId],
+      readyCase.local.db.wp_commentmeta[shape.commentmetaRowId],
+    );
+    assertCommentsCommentmetaEvidenceRedacted(readyCase, plan, shape);
+  }
+
+  for (const { testCase: nonReadyCase, plan, shape } of nonReadyCases) {
+    const result = validateGeneratedCase(nonReadyCase);
+    const commentmetaResourceKey = rowResourceKey('wp_commentmeta', shape.commentmetaRowId);
+    const remoteBefore = cloneJson(nonReadyCase.remote);
+    const beforeHash = digest(remoteBefore);
+    const error = captureError(() => applyPlan(remoteBefore, plan));
+
+    assert.notEqual(plan.status, 'ready');
+    assert.notEqual(result.status, 'ready');
+    assert.equal(result.applied, false, `${nonReadyCase.id} stale graph must not apply`);
+    assert.ok(error instanceof PushPlanError, `${nonReadyCase.id} non-ready plan should refuse`);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remoteBefore), beforeHash, `${nonReadyCase.id} refusal must happen before mutation`);
+    assert.ok(
+      plan.blockers.some((blocker) => blocker.resourceKey === commentmetaResourceKey),
+      `${nonReadyCase.id} should block the commentmeta row that references stale wp_comments`,
+    );
+    assert.equal(
+      plan.mutations.some((mutation) => mutation.resourceKey === commentmetaResourceKey),
+      false,
+      `${nonReadyCase.id} must not plan a mutation for the stale commentmeta row`,
+    );
+    assert.equal(
+      JSON.stringify(plan.blockers).includes(shape.remoteComment.comment_content),
+      false,
+      `${nonReadyCase.id} blocker evidence should stay hash-only`,
+    );
+    assertCommentsCommentmetaEvidenceRedacted(nonReadyCase, plan, shape);
+  }
+});
+
+function assertCommentsCommentmetaGraphShape(testCase, { staleTarget }) {
+  assert.ok(testCase.tags.has('same-plan-graph'));
+  assert.ok(testCase.tags.has('comment-graph'));
+  assert.ok(testCase.tags.has('wp-comments-commentmeta-graph'));
+  assert.ok(testCase.tags.has('wp-commentmeta-create'));
+
+  const commentmetaRows = Object.entries(testCase.local.db.wp_commentmeta)
+    .filter(([id, row]) =>
+      !testCase.base.db.wp_commentmeta[id]
+      && row.meta_key === '_generated_comment_marker'
+      && String(row.meta_value).startsWith('private-comment-marker-'));
+
+  assert.equal(commentmetaRows.length, 1, `${testCase.id} should create one wp_commentmeta row`);
+
+  const commentId = commentmetaRows[0][1].comment_id;
+  const commentRowId = `comment_ID:${commentId}`;
+  const localComment = testCase.local.db.wp_comments[commentRowId];
+  const remoteComment = testCase.remote.db.wp_comments[commentRowId];
+  const baseComment = testCase.base.db.wp_comments[commentRowId];
+
+  assert.ok(localComment, `${testCase.id} should have a local wp_comments target`);
+  assert.equal(localComment.comment_content, `Generated graph child comment ${commentId}`);
+
+  if (staleTarget) {
+    assert.ok(baseComment, `${testCase.id} stale target should exist in base`);
+    assert.ok(remoteComment, `${testCase.id} stale target should exist remotely`);
+    assert.notDeepEqual(remoteComment, baseComment, `${testCase.id} stale target should drift remotely`);
+    assert.equal(remoteComment.comment_content, `Remote stale graph child comment ${commentId}`);
+    assert.ok(testCase.tags.has('stale-graph'));
+    assert.ok(testCase.tags.has('wp-comments-remote-drift'));
+  } else {
+    assert.equal(baseComment, undefined, `${testCase.id} ready target should not exist in base`);
+    assert.equal(remoteComment, undefined, `${testCase.id} ready target should not exist remotely`);
+    assert.ok(testCase.tags.has('wp-comments-create'));
+  }
+
+  return {
+    commentRowId,
+    commentmetaRowId: commentmetaRows[0][0],
+    localComment,
+    remoteComment,
+    baseComment,
+    commentmetaRow: commentmetaRows[0][1],
+  };
+}
+
+function createGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+}
+
+function rowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
+}
+
+function assertCommentsCommentmetaEvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawCommentGraphProbe: {
+      value: {
+        localComment: shape.localComment,
+        remoteComment: shape.remoteComment,
+        baseComment: shape.baseComment,
+        commentmeta: shape.commentmetaRow,
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw comment graph evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only comment values`);
+  assert.equal(serialized.includes('private-comment-marker-'), false, `${testCase.id} leaked raw commentmeta value`);
+  assert.equal(serialized.includes('Generated graph child comment'), false, `${testCase.id} leaked raw comment content`);
+  assert.equal(serialized.includes('Remote stale graph child comment'), false, `${testCase.id} leaked remote comment drift`);
 }
 
 function nonReadyTargetCount(coverage) {

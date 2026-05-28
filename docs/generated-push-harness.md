@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 36 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -55,8 +55,8 @@ The default generated run covers:
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
   delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  same-plan post-parent, taxonomy, comment, and usermeta graph closures, stale
+  commentmeta-to-comment references, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -71,15 +71,22 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
+generated `wp_comments` rows and their `wp_commentmeta` relationships. Ready
+cases create the comment and commentmeta row in one plan and reject stale replay
+before mutation. Stale cases keep the comment in the base, drift that comment
+remotely, and require the new commentmeta reference to refuse before mutation
+with redacted/hash-only evidence.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "blocked": 22,
+    "conflict": 152,
+    "ready": 186
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -101,6 +108,27 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
+    "wpCommentsCommentmetaGraph": {
+      "family": "same-plan-comment-graph",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 2,
+        "conflict": 8,
+        "ready": 10
+      }
+    },
     "wpPostsCreateUpdateDelete": {
       "family": "wp-posts-create-update-delete-ready",
       "total": 20,
@@ -117,8 +145,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 10,
-        "ready": 10
+        "conflict": 11,
+        "ready": 9
       }
     },
     "wpTermTaxonomyGraph": {
@@ -137,9 +165,9 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
+        "blocked": 2,
         "conflict": 8,
-        "ready": 9
+        "ready": 10
       }
     }
   },
@@ -150,6 +178,12 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
+    "wp-comments-commentmeta-graph": 20,
+    "same-plan-comment-graph": 10,
+    "wp-comments-commentmeta-graph-stale": 10,
+    "wp-commentmeta-create": 20,
+    "wp-comments-create": 10,
+    "wp-comments-remote-drift": 10,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
@@ -160,10 +194,10 @@ At the time this note was added, the summary command reported:
     "wp-terms-create": 20,
     "wp-terms-remote-drift": 10
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 70,
+  "maxMutationCount": 45,
+  "maxReadyResourceCount": 70,
+  "maxReadyMutationCount": 45
 }
 ```
 
