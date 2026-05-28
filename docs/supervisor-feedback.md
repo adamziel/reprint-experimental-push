@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:30 CEST
+Last updated: 2026-05-28 05:36 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:36 CEST - RPP-0038 Integrated
+
+- Going well: integration is now at `0f3b2e4af`, adding `RPP-0038`
+  progress.html release timestamp evidence on top of the latest `RPP-0112`
+  lane. The focused proof links `progress.html#release-proof-timestamp`, exact
+  timestamp evidence, observed test status, and release-gate report evidence
+  while keeping the release verdict held at `NO-GO` and mutation-free.
+- Checklist movement: 106 verified items checked and 894 open. New check since
+  the prior feedback entry: `RPP-0038`.
+- Verification: progress timestamp/release-gate focused tests pass 29/29,
+  checklist lint reports 106 checked / 894 open with 0 risky claims, artifact
+  redaction scans the touched docs with 0 rejected files, release gates still
+  fail closed as `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue with the next safe queued candidate one at a time
+  from the latest lane head; `RPP-0039` remains the next near release-gate
+  candidate if it dry-runs cleanly.
 
 ## 2026-05-28 05:30 CEST - RPP-0112 Integrated
 

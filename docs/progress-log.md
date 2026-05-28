@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:30 CEST.
+- Last update: 2026-05-28 05:36 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `63840e538` (`feat: add wp term taxonomy graph harness coverage`).
+  `0f3b2e4af` (`test: prove progress html release timestamp`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 105
-  items complete and leaves 895 open.
-- Checked slices: 35 release-gate foundation items, 16 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 106
+  items complete and leaves 894 open.
+- Checked slices: 36 release-gate foundation items, 16 graph identity items,
   15 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 2 merge-invariant items. No release-ops items are checked
@@ -74,6 +74,11 @@ linked implementation artifacts.
 - Tmux-status continuation: `2864ad636` integrated `RPP-0037` tmux stdout
   proof status marker coverage with exact final bracketed marker evidence and
   no mutation attempt from the release-gates CLI.
+- Progress timestamp continuation: `0f3b2e4af` integrated `RPP-0038`
+  progress.html release timestamp proof. The focused Node test links
+  `progress.html#release-proof-timestamp`, exact timestamp evidence, observed
+  test status, and release-gate report evidence while keeping release status
+  `NO-GO` and mutation-free.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
@@ -112,7 +117,8 @@ linked implementation artifacts.
   with 28 passing
   release-gate tests, `node --test test/push-planner.test.js` with 90 passing
   planner tests, `node --test test/plugin-owner-context-metadata-refusal.test.js`
-  with 3 passing tests, the `rpp-28`
+  with 3 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  with 29 passing tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js` with 7 passing tests,
   evidence manifest
