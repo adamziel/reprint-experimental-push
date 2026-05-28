@@ -23,9 +23,10 @@ progress reporter, and to replenish completed or dead developer sessions with
 new checklist work.
 
 Operational note: in this sandbox build, `ao acknowledge`, `ao report`,
-`ao status`, and `ao session` can hang. Supervision should use tmux and process
-inspection plus bounded `ao spawn` for new lanes. Hung AO lifecycle helper child
-processes may be killed, but active coding sessions should stay alive.
+`ao status`, `ao session`, and `ao send` can hang. Supervision should use tmux
+and process inspection plus bounded `ao spawn` for new lanes. Hung AO lifecycle
+helper child processes may be killed, but active coding sessions should stay
+alive.
 
 No remote tunnels are allowed. Use loopback services and the sandbox-provided
 8080 ingress only.

@@ -52,9 +52,9 @@ projects:
       and one progress reporter. If a developer finishes or exits, spawn the
       next worker from the earliest useful unchecked RPP item.
       In this sandbox build, AO lifecycle/status helper commands can hang:
-      avoid ao acknowledge, ao report, ao status, and ao session for worker
-      activity. Supervise with tmux list-sessions, tmux capture-pane, ps, git
-      worktree list, and bounded ao spawn commands instead.
+      avoid ao acknowledge, ao report, ao status, ao session, and ao send for
+      worker activity. Supervise with tmux list-sessions, tmux capture-pane, ps,
+      git worktree list, and bounded ao spawn commands instead.
       Keep panes stdout-auditable. Before long commands, print a one-line lane,
       intent, and command marker. Do not leave workers idle at prompts while
       release work remains.
