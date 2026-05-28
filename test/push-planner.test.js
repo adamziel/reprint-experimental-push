@@ -1188,6 +1188,105 @@ test('RPP-0215 keep-remote decisions are deterministic hash-only evidence', () =
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, privateValues[2]);
 });
 
+test('RPP-0235 keep-remote decisions preserve remote with hash-only evidence', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    'remote-private-rpp0235-index-content',
+    '9.9.9-rpp0235-private-version',
+    'Remote private RPP-0235 title',
+    'local-private-rpp0235-theme-edit',
+  ];
+  const localMutationKey = 'file:wp-content/themes/theme/style.css';
+  const keepRemoteKeys = [
+    'file:index.php',
+    'plugin:forms',
+    'row:["wp_posts","ID:1"]',
+  ];
+
+  local.files['wp-content/themes/theme/style.css'] = privateValues[3];
+  remote.files['index.php'] = privateValues[0];
+  remote.plugins.forms = { version: privateValues[1], active: false };
+  remote.db.wp_posts['ID:1'].post_title = privateValues[2];
+
+  const firstPlan = planFor(base, local, remote);
+  const replayPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const evidence = {
+    command: 'node --test --test-name-pattern=RPP-0235 test/push-planner.test.js',
+    caveat: 'Focused local planner/apply proof; release remains gated separately.',
+    status: firstPlan.status,
+    summary: firstPlan.summary,
+    emitted: plannerSummaryCounts(firstPlan),
+    keepRemote: keepRemoteKeys.map((resourceKey) => {
+      const decision = decisionFor(firstPlan, resourceKey);
+      return {
+        resourceKey,
+        decision: decision.decision,
+        baseHash: decision.baseHash,
+        remoteHash: decision.remoteHash,
+        localChange: decision.change.localChange,
+        remoteChange: decision.change.remoteChange,
+        baseState: decision.change.base.state,
+        localState: decision.change.local.state,
+        remoteState: decision.change.remote.state,
+      };
+    }),
+    mutationKeys: firstPlan.mutations.map((mutation) => mutation.resourceKey),
+    preconditionKeys: firstPlan.preconditions.map((precondition) => precondition.resourceKey),
+  };
+  const evidenceText = JSON.stringify({
+    ...evidence,
+    evidenceHash: sha256Evidence(evidence),
+  });
+
+  assert.equal(firstPlan.status, 'ready');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0235 keep-remote invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 3,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(replayPlan),
+    'keep-remote proof should be deterministic across replayed planning inputs',
+  );
+  assert.equal(mutationFor(firstPlan, localMutationKey).action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  for (const resourceKey of keepRemoteKeys) {
+    const decision = decisionFor(firstPlan, resourceKey);
+    assert.equal(decision.decision, 'keep-remote');
+    assert.equal(decision.change.localChange, 'unchanged');
+    assert.equal(decision.change.remoteChange, 'update');
+    assert.match(decision.baseHash, /^[a-f0-9]{64}$/);
+    assert.match(decision.remoteHash, /^[a-f0-9]{64}$/);
+    assert.equal(decision.change.local.hash, decision.baseHash);
+    assert.equal(decision.change.remote.hash, decision.remoteHash);
+    assert.equal(mutationFor(firstPlan, resourceKey), undefined, `${resourceKey} emitted a mutation`);
+    assert.equal(
+      firstPlan.preconditions.some((precondition) => precondition.resourceKey === resourceKey),
+      false,
+      `${resourceKey} emitted a precondition`,
+    );
+  }
+
+  for (const privateValue of privateValues) {
+    assert.equal(evidenceText.includes(privateValue), false, `keep-remote evidence leaked ${privateValue}`);
+  }
+
+  const result = applyPlan(remote, firstPlan);
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.files['wp-content/themes/theme/style.css'], privateValues[3]);
+  assert.equal(result.site.files['index.php'], privateValues[0]);
+  assert.deepEqual(result.site.plugins.forms, { version: privateValues[1], active: false });
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, privateValues[2]);
+});
+
 test('blocks local plugin metadata changes when remote plugin files changed', () => {
   const base = baseSite();
   const local = baseSite();
