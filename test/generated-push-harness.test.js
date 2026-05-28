@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -8,6 +10,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+
+const fixedNow = new Date('2026-05-28T00:00:00.000Z');
 
 const requiredFamilies = [
   'local-file-update',
@@ -102,6 +106,59 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0221 generated harness preserves independent local files and remote rows', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.independentLocalFileRemoteRow;
+
+  assert.ok(coverage, 'missing independent local file plus remote row target coverage');
+  assert.equal(coverage.family, 'independent-local-and-remote');
+  assert.equal(coverage.total, report.summary.featureFamilies['independent-local-and-remote']);
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'independent-local-and-remote')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated independent local/remote case');
+  assert.ok(generatedCase.tags.has('independent-merge'));
+
+  const { filePath, fileValue, rowId, rowTitle } = generatedIndependentLocalRemoteTargets(generatedCase);
+  const fileKey = `file:${filePath}`;
+  const rowKey = `row:["wp_posts","${rowId}"]`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedNow,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const fileMutation = plan.mutations.find((mutation) => mutation.resourceKey === fileKey);
+  const rowDecision = plan.decisions.find((decision) => decision.resourceKey === rowKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === fileKey);
+  const evidence = JSON.stringify(hashOnlyGeneratedPlanEvidence(plan));
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(validation.status, 'ready');
+  assert.equal(validation.applied, true);
+  assert.equal(validation.unplannedRemotePreserved, true);
+  assert.ok(fileMutation, `${generatedCase.id} missing local file mutation`);
+  assert.equal(fileMutation.action, 'put');
+  assert.equal(rowDecision?.decision, 'keep-remote');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === rowKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === rowKey), false);
+  assert.equal(precondition?.expectedHash, fileMutation.remoteBeforeHash);
+  assert.equal(evidence.includes(fileValue), false, 'hash-only generated evidence leaked local file value');
+  assert.equal(evidence.includes(rowTitle), false, 'hash-only generated evidence leaked remote row value');
+
+  const result = applyPlan(cloneJson(generatedCase.remote), plan);
+  assert.equal(result.site.files[filePath], fileValue);
+  assert.equal(result.site.db.wp_posts[rowId].post_title, rowTitle);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -354,4 +411,66 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function generatedIndependentLocalRemoteTargets(testCase) {
+  const fileEntry = Object.entries(testCase.local.files)
+    .find(([, value]) => typeof value === 'string' && value.startsWith('independent local '));
+  const rowEntry = Object.entries(testCase.remote.db.wp_posts)
+    .find(([, row]) => row.post_title?.startsWith('Independent remote '));
+
+  assert.ok(fileEntry, `${testCase.id} missing generated independent local file`);
+  assert.ok(rowEntry, `${testCase.id} missing generated independent remote row`);
+
+  return {
+    filePath: fileEntry[0],
+    fileValue: fileEntry[1],
+    rowId: rowEntry[0],
+    rowTitle: rowEntry[1].post_title,
+  };
+}
+
+function hashOnlyGeneratedPlanEvidence(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
 }

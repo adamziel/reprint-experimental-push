@@ -82,6 +82,10 @@ const readyPreservingFamilies = new Set([
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
+  independentLocalFileRemoteRow: {
+    family: 'independent-local-and-remote',
+    tag: 'independent-merge',
+  },
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
