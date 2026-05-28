@@ -89,6 +89,7 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validatePreconditions(remote, plan);
+  validateSupportedPluginContextMutations(plan);
   validateSupportedPluginOwnedMutations(remote, plan);
   try {
     recordDurablePlanOpened(durableJournal, remote, plan, {
@@ -199,6 +200,26 @@ export function applyPlan(remote, plan, options = {}) {
       },
     },
   };
+}
+
+function validateSupportedPluginContextMutations(plan) {
+  for (const mutation of plan.mutations || []) {
+    const plannedValue = deserializeResourceValue(mutation.value);
+    if (mutation.resource?.type !== 'plugin' || plannedValue !== ABSENT) {
+      continue;
+    }
+
+    throw new PushPlanError(
+      'UNSUPPORTED_PLUGIN_DELETE',
+      `Refusing to apply unsupported plugin uninstall/delete mutation ${mutation.resourceKey}.`,
+      {
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+        pluginOwner: mutation.resource.name,
+        requiredDriver: 'plugin-delete',
+      },
+    );
+  }
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {

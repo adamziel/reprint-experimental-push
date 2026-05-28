@@ -15,6 +15,7 @@ import {
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -170,6 +171,10 @@ function pluginOwnedResourcePolicy(...allowedResources) {
       allowedResources,
     },
   };
+}
+
+function sha256Evidence(value) {
+  return `sha256:${digest(value)}`;
 }
 
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
@@ -668,6 +673,113 @@ test('combines local ordinary changes while preserving remote-only plugin change
   assert.equal(result.site.plugins.forms.version, '1.1.0');
   assert.equal(result.site.plugins.forms.active, false);
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
+});
+
+test('proves plugin uninstall/delete mutations fail closed without an explicit delete driver', () => {
+  const plugin = pluginResource('forms');
+  const pluginSecret = 'forms-delete-private-version-rpp-0431';
+  const base = baseSite();
+  base.plugins.forms = { version: pluginSecret, active: true };
+  const local = cloneJson(base);
+  delete local.plugins.forms;
+  const remote = cloneJson(base);
+
+  const blockedPlan = planFor(base, local, remote);
+  const blocker = blockedPlan.blockers.find((entry) => entry.resourceKey === plugin.key);
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(blockedPlan.status, 'blocked');
+  assert.equal(blockedPlan.summary.mutations, 0);
+  assert.equal(mutationFor(blockedPlan, plugin.key), undefined);
+  assert.equal(blocker.class, 'unsupported-plugin-delete');
+  assert.equal(blocker.resource.type, 'plugin');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.requiredDriver, 'plugin-delete');
+  assert.match(blocker.reason, /explicit plugin delete driver/);
+  assert.equal(blocker.change.localChange, 'delete');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assert.equal(blockerJson.includes(pluginSecret), false);
+
+  const forgedPlan = tamperReadyPlan(blockedPlan, (plan) => {
+    plan.mutations = [
+      {
+        id: 'mutation-forged-plugin-delete',
+        resource: plugin,
+        resourceKey: plugin.key,
+        action: 'delete',
+        value: { absent: true },
+        remoteBeforeHash: resourceHash(remote, plugin),
+        baseHash: resourceHash(base, plugin),
+        localHash: resourceHash(local, plugin),
+        changeKind: 'delete',
+        change: {
+          localChange: 'delete',
+          remoteChange: 'unchanged',
+        },
+      },
+    ];
+    plan.preconditions = [
+      {
+        mutationId: 'mutation-forged-plugin-delete',
+        resource: plugin,
+        resourceKey: plugin.key,
+        expectedHash: resourceHash(remote, plugin),
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    plan.summary.mutations = 1;
+    plan.summary.decisions = 0;
+  });
+  const beforeApply = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forgedPlan));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_DELETE');
+  assert.deepEqual(error.details, {
+    mutationId: 'mutation-forged-plugin-delete',
+    resourceKey: plugin.key,
+    pluginOwner: 'forms',
+    requiredDriver: 'plugin-delete',
+  });
+  assert.equal(JSON.stringify(remote), beforeApply);
+
+  const evidence = {
+    rpp: 'RPP-0431',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    explicitDeleteDriverPresent: false,
+    planRefusal: {
+      status: blockedPlan.status,
+      class: blocker.class,
+      resourceKey: blocker.resourceKey,
+      pluginOwner: blocker.pluginOwner,
+      requiredDriver: blocker.requiredDriver,
+      blockerHash: sha256Evidence(blocker),
+    },
+    applyRefusal: {
+      code: error.code,
+      detailsHash: sha256Evidence(error.details),
+    },
+    hashes: {
+      basePluginHash: `sha256:${resourceHash(base, plugin)}`,
+      localAbsentHash: `sha256:${resourceHash(local, plugin)}`,
+      remotePluginHash: `sha256:${resourceHash(remote, plugin)}`,
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    planRefusal: evidence.planRefusal,
+    applyRefusal: evidence.applyRefusal,
+    hashes: evidence.hashes,
+    explicitDeleteDriverPresent: evidence.explicitDeleteDriverPresent,
+  });
+
+  assert.match(evidence.planRefusal.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.applyRefusal.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.hashes.basePluginHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.hashes.localAbsentHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.hashes.remotePluginHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(evidence).includes(pluginSecret), false);
 });
 
 test('RPP-0215 keep-remote decisions are deterministic hash-only evidence', () => {
