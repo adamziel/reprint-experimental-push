@@ -57,6 +57,10 @@ const requiredFamilies = [
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'wp-term-taxonomy-graph',
+  'wp-options-scalar-changes',
+  'wp-options-scalar',
+  'wp-options-scalar-ready',
+  'wp-options-scalar-stale',
   'wp-terms-create',
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
@@ -348,6 +352,86 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0125 generated harness emits deterministic ready and stale wp_options scalar changes', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsScalarChanges;
+
+  assert.ok(coverage, 'missing wp_options scalar target coverage');
+  assert.equal(coverage.family, 'wp-options-scalar-changes');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-scalar']);
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(Object.values(coverage.perTier), Array(10).fill(1));
+  assert.equal(coverage.statuses.ready, 5, 'target should include deterministic ready scalar cases');
+  assert.equal(coverage.statuses.conflict, 5, 'target should include deterministic stale scalar cases');
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'wp-options-scalar-changes');
+  const readyCase = cases.find((testCase) => testCase.tags.has('wp-options-scalar-ready'));
+  const staleCase = cases.find((testCase) => testCase.tags.has('wp-options-scalar-stale'));
+
+  assert.equal(cases.length, 10, 'wp_options scalar family should be emitted once per tier');
+  assert.ok(readyCase, 'missing ready wp_options scalar change case');
+  assert.ok(staleCase, 'missing stale wp_options scalar change case');
+  assertWpOptionsScalarShape(readyCase, { stale: false });
+  assertWpOptionsScalarShape(staleCase, { stale: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready wp_options scalar case should plan the option update');
+  assert.equal(ready.applied, true, 'ready wp_options scalar case should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready scalar apply should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready scalar case should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(stale.status, 'conflict');
+  assert.ok(stale.conflicts >= 1, 'stale scalar remote drift should conflict');
+  assert.equal(stale.applied, false, 'stale wp_options scalar case must not apply mutations');
+});
+
+function assertWpOptionsScalarShape(testCase, { stale }) {
+  const scalarRows = Object.entries(testCase.local.db.wp_options)
+    .filter(([rowId, row]) => rowId.startsWith('option_name:rpp_scalar_')
+      && row.option_name.startsWith('rpp_scalar_'));
+
+  assert.equal(scalarRows.length, 1, `${testCase.id} should seed one scalar option target`);
+
+  const [rowId, localRow] = scalarRows[0];
+  const baseRow = testCase.base.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(baseRow, `${testCase.id} should have a base scalar option`);
+  assert.ok(remoteRow, `${testCase.id} should have a remote scalar option`);
+  assertScalarOptionValue(baseRow.option_value, `${testCase.id} base option_value`);
+  assertScalarOptionValue(localRow.option_value, `${testCase.id} local option_value`);
+  assertScalarOptionValue(remoteRow.option_value, `${testCase.id} remote option_value`);
+  assert.notDeepEqual(localRow.option_value, baseRow.option_value, `${testCase.id} should change the option locally`);
+
+  if (stale) {
+    assert.notDeepEqual(
+      remoteRow.option_value,
+      baseRow.option_value,
+      `${testCase.id} stale scalar option should drift remotely`,
+    );
+    assert.notDeepEqual(
+      remoteRow.option_value,
+      localRow.option_value,
+      `${testCase.id} stale scalar option should not match the local value`,
+    );
+    return;
+  }
+
+  assert.deepEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} ready remote should match base`);
+}
+
+function assertScalarOptionValue(value, label) {
+  assert.ok(['boolean', 'number', 'string'].includes(typeof value), `${label} should be scalar`);
 }
 
 function nonReadyTargetCount(coverage) {

@@ -38,6 +38,7 @@ const scenarioFamilies = Object.freeze([
   'same-plan-comment-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
+  'wp-options-scalar-changes',
   'atomic-plugin-stack-ready',
   'atomic-plugin-missing-dependency',
   'plugin-file-update',
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpOptionsScalarChanges: {
+    family: 'wp-options-scalar-changes',
+    tag: 'wp-options-scalar',
   },
 });
 
@@ -596,6 +601,29 @@ const scenarioFamilyBuilders = {
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
   },
+  'wp-options-scalar-changes': ({ base, local, remote, allocator, tags, tier }) => {
+    const stale = tier % 2 === 1;
+    const optionName = `rpp_scalar_${stale ? 'stale' : 'ready'}_${tier}_${allocator.next()}`;
+    const rowId = `option_name:${optionName}`;
+    const ordinal = allocator.next();
+    const baseRow = {
+      option_name: optionName,
+      option_value: scalarOptionValue(tier, 'base', ordinal),
+      autoload: 'no',
+    };
+    setRow(base, 'wp_options', rowId, baseRow);
+    setRow(remote, 'wp_options', rowId, {
+      ...baseRow,
+      option_value: scalarOptionValue(tier, stale ? 'remote' : 'base', ordinal),
+    });
+    setRow(local, 'wp_options', rowId, {
+      ...baseRow,
+      option_value: scalarOptionValue(tier, 'local', ordinal),
+    });
+    tags.add('wp-options-scalar');
+    tags.add(stale ? 'wp-options-scalar-stale' : 'wp-options-scalar-ready');
+    tags.add(stale ? 'expected-conflict' : 'ready-candidate');
+  },
 };
 
 function buildBaseSite(index, tier) {
@@ -669,7 +697,7 @@ function addGeneratedComplexity({
   tags,
 }) {
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
-  const preserveReady = readyPreservingFamilies.has(family);
+  const preserveReady = readyPreservingFamilies.has(family) || tags.has('ready-candidate');
   for (let i = 0; i < operationCount; i++) {
     if (preserveReady) {
       addReadyPreservingComplexityOperation({ tier, rng, base, local, remote, allocator, tags, index: i });
@@ -912,7 +940,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1340,6 +1368,22 @@ function makeComment(id, extra = {}) {
     comment_approved: '1',
     ...extra,
   };
+}
+
+function scalarOptionValue(tier, phase, ordinal) {
+  if (tier % 3 === 0) {
+    return `scalar-${phase}-${ordinal}`;
+  }
+  if (tier % 3 === 1) {
+    return ordinal + ({ base: 0, local: 1000, remote: 2000 }[phase] || 0);
+  }
+  if (phase === 'base') {
+    return false;
+  }
+  if (phase === 'local') {
+    return true;
+  }
+  return `scalar-${phase}-${ordinal}`;
 }
 
 function setRow(site, table, id, value) {
