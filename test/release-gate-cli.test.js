@@ -83,6 +83,68 @@ function completeEvidence(scope) {
   };
 }
 
+function operatorProofProvenanceRows(overrides = {}) {
+  const rowsById = {
+    'release-gate:tmux-status-marker': {
+      evidenceId: 'release-gate:tmux-status-marker',
+      rppId: 'RPP-0017',
+      sourceKind: 'operator-production',
+      artifactPath: 'docs/evidence/release/tmux-status-marker.ndjson',
+      observedAt: '2026-05-27T23:30:00.000Z',
+      command: 'tmux capture-pane -pt release-gates',
+      status: 'checked-passed',
+      subjectHash: 'sha256:1111111111111111111111111111111111111111111111111111111111111111',
+      operatorScope: 'final-release',
+      productionRequired: true,
+    },
+    'release-gate:progress-release-timestamp': {
+      evidenceId: 'release-gate:progress-release-timestamp',
+      rppId: 'RPP-0018',
+      sourceKind: 'operator-production',
+      artifactPath: 'docs/evidence/release/progress-timestamp.json',
+      observedAt: '2026-05-27T23:31:00.000Z',
+      command: 'node scripts/release/read-progress-timestamp.mjs',
+      status: 'checked-passed',
+      subjectHash: 'sha256:2222222222222222222222222222222222222222222222222222222222222222',
+      operatorScope: 'final-release',
+      productionRequired: true,
+    },
+    'release-gate:agents-release-gates-row': {
+      evidenceId: 'release-gate:agents-release-gates-row',
+      rppId: 'RPP-0019',
+      sourceKind: 'operator-production',
+      artifactPath: 'docs/evidence/release/agents-release-gates-row.json',
+      observedAt: '2026-05-27T23:32:00.000Z',
+      command: 'cat .agents/RELEASE_GATES.md',
+      status: 'checked-passed',
+      subjectHash: 'sha256:3333333333333333333333333333333333333333333333333333333333333333',
+      operatorScope: 'final-release',
+      productionRequired: true,
+    },
+    'release-gate:verify-release-failure-reason': {
+      evidenceId: 'release-gate:verify-release-failure-reason',
+      rppId: 'RPP-0020',
+      sourceKind: 'operator-production',
+      artifactPath: 'docs/evidence/release/verify-release-failure-reason.json',
+      observedAt: '2026-05-27T23:33:00.000Z',
+      command: 'npm run verify:release',
+      status: 'checked-failed',
+      subjectHash: 'sha256:4444444444444444444444444444444444444444444444444444444444444444',
+      operatorScope: 'final-release',
+      productionRequired: true,
+    },
+  };
+
+  for (const [evidenceId, rowOverrides] of Object.entries(overrides)) {
+    rowsById[evidenceId] = {
+      ...rowsById[evidenceId],
+      ...rowOverrides,
+    };
+  }
+
+  return Object.keys(rowsById).sort().map((evidenceId) => rowsById[evidenceId]);
+}
+
 test('release gate CLI is wired as a local CI-style package script', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
 
@@ -134,7 +196,7 @@ test('release gate CLI does not inflate complete local candidate evidence into r
   );
 });
 
-test('release gate CLI exits zero only when final release evidence satisfies every gate', () => {
+test('release gate CLI keeps synthetic final release evidence at NO-GO without provenance', () => {
   const evidenceFile = writeEvidence({
     scope: 'final-release',
     evidence: completeEvidence('final-release'),
@@ -142,12 +204,102 @@ test('release gate CLI exits zero only when final release evidence satisfies eve
   const result = runGate(['--evidence-file', evidenceFile], releaseEnv());
   const report = parseReport(result);
 
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.releaseStatus, 'NO-GO');
+  assert.equal(report.status, 'release-ready');
+  assert.equal(report.releaseMovement.allowed, true);
+  assert.equal(report.primaryFailureBucket, 'provenance');
+  assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
+  assert.equal(report.releaseEvidenceProvenance.required, true);
+  assert.equal(report.releaseEvidenceProvenance.ready, false);
+  assert.deepEqual(report.releaseEvidenceProvenance.requiredEvidenceIds, [
+    'release-gate:tmux-status-marker',
+    'release-gate:progress-release-timestamp',
+    'release-gate:agents-release-gates-row',
+    'release-gate:verify-release-failure-reason',
+  ]);
+  assert.deepEqual(
+    report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance').gates.map((gate) => [
+      gate.id,
+      gate.code,
+    ]),
+    [
+      ['release-gate:tmux-status-marker', 'PRODUCTION_EVIDENCE_REQUIRED'],
+      ['release-gate:progress-release-timestamp', 'PRODUCTION_EVIDENCE_REQUIRED'],
+      ['release-gate:agents-release-gates-row', 'PRODUCTION_EVIDENCE_REQUIRED'],
+      ['release-gate:verify-release-failure-reason', 'PRODUCTION_EVIDENCE_REQUIRED'],
+    ],
+  );
+});
+
+test('release gate CLI keeps stale or local-only production-required provenance at NO-GO', () => {
+  const evidenceFile = writeEvidence({
+    scope: 'final-release',
+    evidence: completeEvidence('final-release'),
+    releaseEvidenceProvenance: {
+      maxEvidenceAgeHours: 24,
+      evidenceRows: operatorProofProvenanceRows({
+        'release-gate:tmux-status-marker': {
+          sourceKind: 'local-playground',
+          operatorScope: 'local-candidate',
+        },
+        'release-gate:progress-release-timestamp': {
+          observedAt: '2026-05-26T23:59:59.000Z',
+        },
+      }),
+    },
+  });
+  const result = runGate(['--evidence-file', evidenceFile], releaseEnv());
+  const report = parseReport(result);
+  const provenanceBucket = report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance');
+
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.releaseStatus, 'NO-GO');
+  assert.equal(report.releaseMovement.allowed, true);
+  assert.equal(report.primaryFailureBucket, 'provenance');
+  assert.equal(report.primaryFailureCode, 'PRODUCTION_SOURCE_REQUIRED');
+  assert.deepEqual(
+    provenanceBucket.gates.map((gate) => [gate.id, gate.code]),
+    [
+      ['release-gate:tmux-status-marker', 'PRODUCTION_SOURCE_REQUIRED'],
+      ['release-gate:progress-release-timestamp', 'OBSERVED_AT_STALE'],
+    ],
+  );
+  assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
+    total: 4,
+    accepted: 2,
+    rejected: 2,
+  });
+});
+
+test('release gate CLI exits zero only when final release evidence and provenance satisfy every gate', () => {
+  const evidenceFile = writeEvidence({
+    scope: 'final-release',
+    evidence: completeEvidence('final-release'),
+    releaseEvidenceProvenance: {
+      maxEvidenceAgeHours: 24,
+      evidenceRows: operatorProofProvenanceRows(),
+    },
+  });
+  const result = runGate(['--evidence-file', evidenceFile], releaseEnv());
+  const report = parseReport(result);
+
   assert.equal(result.status, 0, result.stdout);
   assert.equal(report.ok, true);
   assert.equal(report.exitCode, 0);
+  assert.equal(report.releaseStatus, 'GO');
   assert.equal(report.status, 'release-ready');
   assert.equal(report.releaseMovement.allowed, true);
   assert.equal(report.releaseMovement.gates, '20/20');
   assert.deepEqual(report.missingProductionEvidenceBuckets, []);
   assert.equal(report.primaryFailureCode, null);
+  assert.equal(report.releaseEvidenceProvenance.required, true);
+  assert.equal(report.releaseEvidenceProvenance.ready, true);
+  assert.deepEqual(report.releaseEvidenceProvenance.summary.productionRequired, {
+    total: 4,
+    accepted: 4,
+    rejected: 0,
+  });
 });

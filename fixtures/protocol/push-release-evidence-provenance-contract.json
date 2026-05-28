@@ -238,6 +238,7 @@
       "accepted": 2,
       "rejected": 6
     },
+    "requiredProductionEvidenceIds": [],
     "counts": {
       "total": 10,
       "accepted": 3,

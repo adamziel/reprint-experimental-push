@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   RELEASE_EVIDENCE_PROVENANCE_CONTRACT,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES,
+  releaseGateProvenanceRequirements,
   validateReleaseEvidenceProvenance,
 } from '../src/release-evidence-provenance.js';
 
@@ -161,4 +162,92 @@ test('multi-failure placeholder rows keep reason code order deterministic', () =
   ]);
   assert.equal(summary.ok, false);
   assert.equal(summary.releaseReady, false);
+});
+
+test('missing required production evidence rows fail closed with deterministic synthetic rejections', () => {
+  const summary = validateReleaseEvidenceProvenance({
+    referenceNow: fixture.referenceNow,
+    requiredProductionEvidence: [
+      {
+        evidenceId: 'release-gate:tmux-status-marker',
+        rppId: 'RPP-0017',
+      },
+      {
+        evidenceId: 'release-gate:progress-release-timestamp',
+        rppId: 'RPP-0018',
+      },
+    ],
+    evidenceRows: [
+      {
+        evidenceId: 'release-gate:tmux-status-marker',
+        rppId: 'RPP-0017',
+        sourceKind: 'operator-production',
+        artifactPath: 'docs/evidence/release/tmux-status-marker.ndjson',
+        observedAt: '2026-05-28T10:30:00.000Z',
+        command: 'tmux capture-pane -pt release-gates',
+        status: 'checked-passed',
+        subjectHash: 'sha256:1111111111111111111111111111111111111111111111111111111111111111',
+        operatorScope: 'final-release',
+      },
+    ],
+  });
+
+  assert.equal(summary.ok, false);
+  assert.equal(summary.releaseReady, false);
+  assert.deepEqual(summary.acceptedEvidenceIds, ['release-gate:tmux-status-marker']);
+  assert.deepEqual(summary.rejectedEvidence, [
+    {
+      evidenceId: 'release-gate:progress-release-timestamp',
+      rppId: 'RPP-0018',
+      productionRequired: true,
+      reasonCodes: ['PRODUCTION_EVIDENCE_REQUIRED'],
+    },
+  ]);
+  assert.deepEqual(summary.productionRequired, {
+    total: 2,
+    accepted: 1,
+    rejected: 1,
+  });
+});
+
+test('release gate provenance adapter selects operator proof gates in stable RPP order', () => {
+  const requirements = releaseGateProvenanceRequirements({
+    gates: [
+      {
+        id: 'progress-release-timestamp',
+        rpp: 'RPP-0018',
+        title: 'progress.html release timestamp',
+        category: 'operator-proof',
+      },
+      {
+        id: 'source-url',
+        rpp: 'RPP-0001',
+        title: 'REPRINT_PUSH_SOURCE_URL gate',
+        category: 'topology',
+      },
+      {
+        id: 'tmux-status-marker',
+        rpp: 'RPP-0017',
+        title: 'tmux stdout proof status marker',
+        category: 'operator-proof',
+      },
+    ],
+  });
+
+  assert.deepEqual(requirements, [
+    {
+      evidenceId: 'release-gate:tmux-status-marker',
+      rppId: 'RPP-0017',
+      gateId: 'tmux-status-marker',
+      title: 'tmux stdout proof status marker',
+      productionRequired: true,
+    },
+    {
+      evidenceId: 'release-gate:progress-release-timestamp',
+      rppId: 'RPP-0018',
+      gateId: 'progress-release-timestamp',
+      title: 'progress.html release timestamp',
+      productionRequired: true,
+    },
+  ]);
 });

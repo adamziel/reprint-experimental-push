@@ -4,6 +4,10 @@ import path from 'node:path';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 import {
+  releaseGateProvenanceRequirements,
+  validateReleaseEvidenceProvenance,
+} from '../../src/release-evidence-provenance.js';
+import {
   evaluateReleaseGates,
   formatReleaseGateStatusMarker,
   releaseGateSummary,
@@ -58,9 +62,18 @@ export function runReleaseGateCli(argv = [], options = {}) {
       packagedFallback,
       now: parsed.now || options.now || new Date(),
     });
-    const missingProductionEvidenceBuckets = releaseEvidenceBuckets(evaluation);
+    const provenance = evaluateReleaseEvidenceProvenanceForCli(evidencePayload, evaluation, {
+      now: parsed.now || options.now || new Date(),
+    });
+    const releaseGateBuckets = releaseEvidenceBuckets(evaluation);
+    const provenanceBuckets = provenanceEvidenceBuckets(provenance);
+    const missingProductionEvidenceBuckets = [
+      ...releaseGateBuckets,
+      ...provenanceBuckets,
+    ];
     const primaryFailure = missingProductionEvidenceBuckets[0]?.gates[0] || null;
-    const exitCode = evaluation.releaseMovement?.allowed === true ? 0 : 1;
+    const exitCode = evaluation.releaseMovement?.allowed === true && provenance.ready === true ? 0 : 1;
+    const releaseStatus = exitCode === 0 ? 'GO' : 'NO-GO';
 
     return {
       exitCode,
@@ -69,6 +82,7 @@ export function runReleaseGateCli(argv = [], options = {}) {
         command: 'check-release-gates',
         ok: exitCode === 0,
         exitCode,
+        releaseStatus,
         primaryFailureCode: primaryFailure?.code || null,
         primaryFailureBucket: primaryFailure?.bucket || null,
         status: evaluation.status,
@@ -80,6 +94,7 @@ export function runReleaseGateCli(argv = [], options = {}) {
         totals: evaluation.totals,
         statusMarker: formatReleaseGateStatusMarker(evaluation, { label: 'release-gates-ci' }),
         missingProductionEvidenceBuckets,
+        releaseEvidenceProvenance: provenance,
         summary: releaseGateSummary(evaluation),
         evaluation,
       },
@@ -184,6 +199,122 @@ function releaseEvidenceBuckets(evaluation) {
   return buckets;
 }
 
+function evaluateReleaseEvidenceProvenanceForCli(evidencePayload, evaluation, options = {}) {
+  const payload = resolveProvenancePayload(evidencePayload);
+  const releaseGateReady = evaluation.releaseMovement?.allowed === true;
+  const requiredProductionEvidence = releaseGateReady
+    ? releaseGateProvenanceRequirements(evaluation)
+    : [];
+  const provenanceInput = {
+    ...payload,
+    requiredProductionEvidence: [
+      ...arrayValue(payload.requiredProductionEvidence),
+      ...requiredProductionEvidence,
+    ],
+  };
+  const summary = validateReleaseEvidenceProvenance(provenanceInput, {
+    now: firstDefined(payload.referenceNow, payload.now, options.now),
+  });
+  const required = releaseGateReady || hasProvenancePayload(evidencePayload);
+  const ready = required ? summary.releaseReady === true : true;
+
+  return {
+    required,
+    ready,
+    requiredEvidenceIds: summary.requiredProductionEvidenceIds,
+    summary,
+  };
+}
+
+function provenanceEvidenceBuckets(provenance) {
+  if (!provenance.required || provenance.ready === true) {
+    return [];
+  }
+
+  const rejectedEvidence = provenance.summary?.rejectedEvidence || [];
+  const gates = rejectedEvidence.length > 0
+    ? rejectedEvidence.map((entry) => provenanceRejectedEvidenceGate(entry))
+    : [
+      {
+        bucket: 'provenance',
+        id: 'release-evidence-provenance',
+        rpp: '',
+        title: 'Release evidence provenance',
+        status: 'missing',
+        code: 'PRODUCTION_EVIDENCE_REQUIRED',
+        reason: 'Production-scoped release evidence provenance is required before release movement.',
+        required: provenance.requiredEvidenceIds,
+        observed: 'missing-production-evidence-provenance',
+        scope: 'missing',
+      },
+    ];
+
+  return [
+    {
+      bucket: 'provenance',
+      gateCount: gates.length,
+      gates,
+    },
+  ];
+}
+
+function provenanceRejectedEvidenceGate(entry) {
+  const code = entry.reasonCodes?.[0] || 'PRODUCTION_EVIDENCE_REQUIRED';
+  return {
+    bucket: 'provenance',
+    id: entry.evidenceId,
+    rpp: entry.rppId,
+    title: 'Release evidence provenance',
+    status: 'failed',
+    code,
+    reason: provenanceReason(code),
+    required: 'fresh operator production evidence provenance',
+    observed: entry.reasonCodes,
+    evidenceKey: entry.evidenceId,
+    scope: entry.productionRequired ? 'final-release' : 'local-candidate',
+  };
+}
+
+function provenanceReason(code) {
+  switch (code) {
+    case 'PRODUCTION_EVIDENCE_REQUIRED':
+      return 'Production-scoped release evidence provenance is required before release movement.';
+    case 'OBSERVED_AT_REQUIRED':
+      return 'Release evidence provenance is missing an observedAt timestamp.';
+    case 'OBSERVED_AT_STALE':
+      return 'Release evidence provenance is stale for the configured release window.';
+    case 'PRODUCTION_SOURCE_REQUIRED':
+      return 'Production-required release evidence must come from operator production provenance.';
+    case 'SUBJECT_HASH_REQUIRED':
+      return 'Release evidence provenance must include a subject hash.';
+    case 'ARTIFACT_PATH_RAW_URL':
+      return 'Release evidence artifact references must be repository-relative paths, not raw URLs.';
+    case 'ARTIFACT_PATH_SECRET_LIKE':
+      return 'Release evidence artifact references must not contain secret-looking values.';
+    case 'COMMAND_STATUS_UNCHECKED':
+      return 'Release evidence provenance must include a checked command status.';
+    default:
+      return 'Release evidence provenance failed validation.';
+  }
+}
+
+function resolveProvenancePayload(evidencePayload) {
+  if (!isPlainObject(evidencePayload)) {
+    return {};
+  }
+  for (const key of ['releaseEvidenceProvenance', 'evidenceProvenance', 'provenance']) {
+    if (isPlainObject(evidencePayload[key])) {
+      return evidencePayload[key];
+    }
+  }
+  return {};
+}
+
+function hasProvenancePayload(evidencePayload) {
+  const payload = resolveProvenancePayload(evidencePayload);
+  return Object.keys(payload).length > 0;
+}
+
 function readJsonFile(filePath) {
   try {
     const source = fs.readFileSync(filePath, 'utf8');
@@ -228,6 +359,16 @@ function firstDefined(...values) {
     }
   }
   return undefined;
+}
+
+function arrayValue(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value === undefined || value === null) {
+    return [];
+  }
+  return [value];
 }
 
 function cliErrorReport(error) {
