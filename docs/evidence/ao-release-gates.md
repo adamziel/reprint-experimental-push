@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, RPP-0058, RPP-0062, RPP-0067, and RPP-0070
+Primary checklist range: RPP-0001 through RPP-0028, plus RPP-0030 through RPP-0061, plus RPP-0062 through RPP-0070. RPP-0029 remains open until a variant-2 manage_options scenario-matrix proof is linked.
 
 ## What changed
 
@@ -39,6 +39,7 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0020 | `verify-release-failure-reason` gate requires nonzero `verify:release` failure evidence with a named reason. |
 | RPP-0021 through RPP-0025 | Variant-2 proof coverage is represented by the same reusable evaluator and focused tests for missing source/local/remote, packaged fallback rejection, and wrong remote alias rejection. |
 | RPP-0026 | Evidence toward variant-2 auth source command readback drift now runs the `check-release-gates` command from a fixture evidence file and asserts exit `1`, `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, exact drift evidence, and `mutationAttempted: false`. |
+| RPP-0027 | Evidence toward variant-2 missing production secret proof now runs `check-release-gates` with live source/local/remote topology present, omits production credentials and auth-session source evidence, and asserts exact `REPRINT_PUSH_SECRET_REQUIRED` evidence before mutation. |
 | RPP-0028 | Evidence toward variant-2 Application Password credential binding now runs `check-release-gates` from a fixture evidence file and asserts exit `1`, `APPLICATION_PASSWORD_BINDING_REQUIRED`, exact binding-drift evidence, and `mutationAttempted: false`. |
 | RPP-0030 | Evidence toward variant-2 same source URL identity now records exact same-source drift evidence and proves the final bracketed status marker reports `SAME_SOURCE_IDENTITY_REQUIRED`; the CLI path exits `1` with `mutationAttempted: false`. |
 | RPP-0031 | Evidence toward variant-2 preflight route identity now runs `check-release-gates` from a fixture evidence file and asserts exit `1`, `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact wrong-route evidence, and `mutationAttempted: false`. |
@@ -51,11 +52,17 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0038 | Evidence toward variant-2 progress.html release timestamp now links the progress page, focused proof command, observed status, exact timestamp evidence, and `NO-GO` release status without moving release readiness. |
 | RPP-0039 | Evidence toward variant-2 `.agents/RELEASE_GATES.md` status row now parses the generated status row and runs negative/positive `check-release-gates` scenarios: dishonest `release_verdict: 4/4` evidence fails, while the generated `0/4` row remains honest `NO-GO`. |
 | RPP-0040 | Evidence toward variant-2 `verify:release` failure reason now runs the checked `npm run verify:release` missing-source path, asserts exit `1`, final `[verify-release:held ...]` marker, exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` evidence, and `mutationAttempted: false`; the release-gate CLI preserves that evidence while release remains `NO-GO` without provenance. |
+| RPP-0041 through RPP-0049 | Evidence toward variant-3 generated release-gate coverage now includes missing source, missing local, missing changed-remote, packaged fallback, wrong remote alias, auth source readback drift, missing production secret, Application Password binding, and manage_options fixtures. Each generated fixture asserts the named failure or positive scenario, exact evidence shape, and mutation-free release-gate behavior. |
 | RPP-0050 | Evidence toward variant-3 same source URL identity proof now generates matching and drifted final-release fixtures, asserts the release-ready final bracketed marker for the matching source path, and proves apply-source drift exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`, exact identity evidence, held marker, and `mutationAttempted: false`. |
 | RPP-0051 | Evidence toward variant-3 preflight route identity proof now generates matching and mismatched final-release fixtures, asserts exact route identity evidence on the matching fixture, and proves wrong preflight route evidence exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, held marker, and `mutationAttempted: false`. |
+| RPP-0052 through RPP-0057 | Evidence toward variant-3 generated dry-run, apply, journal, recovery-inspect, releaseMovement, and tmux-status proof now covers positive and negative generated fixtures with named reason codes, bracketed markers where required, exact evidence objects, and `mutationAttempted: false`. |
 | RPP-0058 | Evidence toward variant-3 progress.html release timestamp now generates valid and invalid timestamp fixtures, links the focused command and observed `pass` status to the current progress proof timestamp, preserves `NO-GO`, and asserts exact timestamp-gate evidence with `mutationAttempted: false`. |
+| RPP-0059 through RPP-0060 | Evidence toward generated status-row and verify:release failure coverage now rejects dishonest `.agents/RELEASE_GATES.md` rows, preserves the honest `NO-GO` path, requires a nonzero verifier result with a final marker, and fails closed on forged zero-exit evidence. |
+| RPP-0061 | Evidence toward focused missing source URL regression now runs the checked command with all other final-release evidence present, asserts exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` evidence, redaction, `NO-GO`, and no mutation attempt. |
 | RPP-0062 | Evidence toward variant-4 missing `REPRINT_PUSH_LOCAL_URL` coverage now runs the release-gate CLI with every other final-release gate supplied, asserting exit `1`, exact `REPRINT_PUSH_LOCAL_URL_REQUIRED` reason/evidence, `NO-GO`, redaction, and `mutationAttempted: false`. |
+| RPP-0063 through RPP-0066 | Evidence toward focused missing changed-remote, packaged fallback, wrong remote alias, and auth source readback regressions now runs release-gate CLI fixtures with every unrelated gate supplied, asserting exact named reasons, held markers or scenario matrices where required, redaction, and `mutationAttempted: false`. |
 | RPP-0067 | Evidence toward variant-4 missing production secret coverage now runs the release-gate CLI with source/local/remote URLs and every other final-release gate supplied, asserting exit `1`, exact `REPRINT_PUSH_SECRET_REQUIRED` reason/evidence, final held marker, `NO-GO`, redaction, and `mutationAttempted: false`. |
+| RPP-0068 through RPP-0069 | Evidence toward focused Application Password binding and manage_options regressions now proves both fail-closed negative fixtures and positive gate-satisfied paths while the overall release remains `NO-GO` without production provenance. |
 | RPP-0070 | Evidence toward variant-4 same source URL identity proof now runs the release-gate CLI with drifted and matching final-release fixtures, asserting exact `SAME_SOURCE_IDENTITY_REQUIRED` recovery-source drift evidence, held marker, `NO-GO`, redaction, and `mutationAttempted: false` while the matching proof remains held by provenance. |
 
 ## Focused verification
@@ -65,6 +72,17 @@ node --test test/release-gate-same-source-identity-regression.test.js test/relea
 ```
 
 Observed status: pass, 43 tests.
+
+Expanded release-gate evidence-count refresh:
+
+```sh
+node --test test/release-gates.test.js test/release-gate-source-url-generated.test.js test/release-gate-local-url-generated.test.js test/release-gate-remote-changed-url-generated.test.js test/release-gate-packaged-fallback-generated.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-gate-auth-source-readback-generated.test.js test/release-gate-missing-production-secret-generated.test.js test/release-gate-application-password-binding-generated.test.js test/release-gate-manage-options-generated.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gate-apply-route-pre-mutation-generated.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-recovery-inspect-read-only-generated.test.js test/release-gate-release-movement-summary-generated.test.js test/release-gate-tmux-status-marker-generated.test.js test/release-gate-status-row-generated.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 72 tests. This refresh checks RPP-0027, RPP-0041
+through RPP-0049, RPP-0052 through RPP-0057, RPP-0059 through RPP-0061,
+RPP-0063 through RPP-0066, and RPP-0068 through RPP-0069 from evidence already
+present in the current lane; final release remains `NO-GO`.
 
 Progress HTML release timestamp proof:
 
