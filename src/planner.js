@@ -2199,6 +2199,11 @@ function pluginContextMutationSupport({
     className: 'stale-plugin-owner-context',
     reason: `Plugin context resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
+    ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
   };
 }
 
@@ -2242,6 +2247,11 @@ function pluginOwnedOwnerContextSupport({
     className: 'stale-plugin-owner-context',
     reason: `Plugin-owned resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
+    ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
   };
 }
 
@@ -2288,6 +2298,30 @@ function isPluginOwnerContextResource(resource, owner) {
   return resource.type === 'file' && pluginOwnerFor(resource) === owner;
 }
 
+function stalePluginMetadataOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
+  const pluginMetadataContexts = staleContext.filter((context) => context.type === 'plugin');
+  if (pluginMetadataContexts.length === 0) {
+    return null;
+  }
+  return {
+    reasonCode: 'STALE_PLUGIN_METADATA_OWNER_CONTEXT',
+    operation: 'refuse-before-mutation',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    stalePluginMetadataResourceKeys: pluginMetadataContexts.map((context) => context.resourceKey).sort(),
+    context: pluginMetadataContexts
+      .map((context) => ({
+        resourceKey: context.resourceKey,
+        baseHash: context.baseHash,
+        localHash: context.localHash,
+        remoteHash: context.remoteHash,
+        localChange: context.change.localChange,
+        remoteChange: context.change.remoteChange,
+      }))
+      .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey)),
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2320,6 +2354,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
@@ -2355,6 +2390,7 @@ function addPluginContextBlocker(plan, {
     resourceKey: resource.key,
     pluginOwner: owner,
     ownerContext: support.ownerContext || [],
+    ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
