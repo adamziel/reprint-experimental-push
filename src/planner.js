@@ -30,6 +30,8 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const WP_POSTMETA_PLUGIN_DATA_DRIVERS = new Set(['wp-postmeta', 'wp-post-meta']);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -459,6 +461,35 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      if (WP_POSTMETA_PLUGIN_DATA_DRIVERS.has(supported.driver)) {
+        const driverEvidence = wpPostmetaDriverEvidence({
+          resource,
+          owner,
+          base,
+          local,
+          remote,
+          policySource: supported.source,
+          evidenceScope: supported.evidenceScope,
+        });
+        if (!driverEvidence.supported) {
+          return {
+            supported: false,
+            className: 'unsupported-plugin-owned-resource',
+            driver: supported.driver,
+            policySource: supported.source,
+            reason: driverEvidence.reason,
+            driverEvidence,
+          };
+        }
+        return {
+          supported: true,
+          driver: supported.driver,
+          policySource: supported.source,
+          supportsDelete: supported.supportsDelete === true,
+          driverEvidence,
+        };
+      }
+
       return {
         supported: true,
         driver: supported.driver,
@@ -469,25 +500,172 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
   };
 }
 
+function wpPostmetaDriverEvidence({ resource, owner, base, local, remote, policySource, evidenceScope }) {
+  const releaseGateEvidenceScope = evidenceScope || 'local-candidate';
+  const unsupported = (reason, extra = {}) => ({
+    supported: false,
+    driver: 'wp-postmeta',
+    table: 'wp_postmeta',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    policySource,
+    evidenceScope: releaseGateEvidenceScope,
+    releaseGateEvidenceScope,
+    reason,
+    ...extra,
+  });
+
+  if (resource.type !== 'row' || resource.table !== 'wp_postmeta') {
+    return unsupported('wp_postmeta driver only supports wp_postmeta row resources.');
+  }
+
+  const rowId = parseWpPostmetaResourceId(resource.id);
+  if (!rowId.supported) {
+    return unsupported(rowId.reason);
+  }
+
+  const rowValues = [
+    ['base', getResource(base, resource)],
+    ['local', getResource(local, resource)],
+    ['remote', getResource(remote, resource)],
+  ].filter(([, value]) => value !== ABSENT);
+  if (rowValues.length === 0) {
+    return unsupported('wp_postmeta driver requires at least one concrete postmeta row value.');
+  }
+
+  for (const [source, value] of rowValues) {
+    const support = validateWpPostmetaDriverValue(value, {
+      owner,
+      rowId,
+      source,
+    });
+    if (!support.supported) {
+      return unsupported(support.reason, { rowId: resource.id, rowIdKind: rowId.kind });
+    }
+  }
+
+  const localValue = getResource(local, resource);
+  const concreteValue = localValue !== ABSENT
+    ? localValue
+    : rowValues.find(([source]) => source === 'remote')?.[1] || rowValues[0][1];
+  return {
+    supported: true,
+    driver: 'wp-postmeta',
+    table: 'wp_postmeta',
+    resourceKey: resource.key,
+    rowId: resource.id,
+    rowIdKind: rowId.kind,
+    postId: normalizePositiveInteger(concreteValue.post_id),
+    metaKey: concreteValue.meta_key,
+    pluginOwner: owner,
+    policySource,
+    evidenceScope: releaseGateEvidenceScope,
+    releaseGateEvidenceScope,
+  };
+}
+
+function parseWpPostmetaResourceId(id) {
+  const raw = String(id || '');
+  const metaId = raw.match(/^meta_id:([1-9]\d*)$/);
+  if (metaId) {
+    return {
+      supported: true,
+      kind: 'meta_id',
+      metaId: Number.parseInt(metaId[1], 10),
+    };
+  }
+  const postIdAndMetaKey = raw.match(/^post_id:([1-9]\d*):meta_key:(.+)$/);
+  if (postIdAndMetaKey && postIdAndMetaKey[2].trim() !== '') {
+    return {
+      supported: true,
+      kind: 'post_id_meta_key',
+      postId: Number.parseInt(postIdAndMetaKey[1], 10),
+      metaKey: postIdAndMetaKey[2],
+    };
+  }
+  return {
+    supported: false,
+    reason: 'wp_postmeta driver requires row id meta_id:<positive-int> or post_id:<positive-int>:meta_key:<key>.',
+  };
+}
+
+function validateWpPostmetaDriverValue(value, { owner, rowId, source }) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      supported: false,
+      reason: `wp_postmeta driver requires ${source} row value to be an object.`,
+    };
+  }
+  if (value.__pluginOwner !== owner) {
+    return {
+      supported: false,
+      reason: `wp_postmeta driver requires ${source} row owner to match plugin policy owner.`,
+    };
+  }
+  const postId = normalizePositiveInteger(value.post_id);
+  if (!postId) {
+    return {
+      supported: false,
+      reason: `wp_postmeta driver requires ${source} row post_id to be a positive integer.`,
+    };
+  }
+  if (typeof value.meta_key !== 'string' || value.meta_key.trim() === '') {
+    return {
+      supported: false,
+      reason: `wp_postmeta driver requires ${source} row meta_key to be a non-empty string.`,
+    };
+  }
+  if (rowId.kind === 'meta_id' && normalizePositiveInteger(value.meta_id) !== rowId.metaId) {
+    return {
+      supported: false,
+      reason: `wp_postmeta driver requires ${source} row meta_id to match the resource id.`,
+    };
+  }
+  if (rowId.kind === 'post_id_meta_key' && (postId !== rowId.postId || value.meta_key !== rowId.metaKey)) {
+    return {
+      supported: false,
+      reason: `wp_postmeta driver requires ${source} row post_id and meta_key to match the resource id.`,
+    };
+  }
+  return { supported: true };
+}
+
 function pluginOwnedPolicyEntriesFromSnapshot(snapshot, source) {
-  return normalizePluginOwnedPolicy(snapshot?.meta?.pushPolicy, source)
-    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.resourcePolicy, source))
-    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.pluginOwnedResources, source));
+  const evidenceScope = pluginOwnedSnapshotEvidenceScope(snapshot);
+  return normalizePluginOwnedPolicy(snapshot?.meta?.pushPolicy, source, { evidenceScope })
+    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.resourcePolicy, source, { evidenceScope }))
+    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.pluginOwnedResources, source, { evidenceScope }));
 }
 
 function pluginOwnedPolicyEntriesFromIntent(intent) {
   const source = `push-intent:${intent.id || 'unlabeled'}`;
-  return normalizePluginOwnedPolicy(intent.resourcePolicy, source)
-    .concat(normalizePluginOwnedPolicy(intent.pushPolicy, source))
-    .concat(normalizePluginOwnedPolicy(intent.pluginOwnedResources, source));
+  const evidenceScope = normalizePluginDriverEvidenceScope(
+    intent.evidenceScope
+      || intent.releaseGateEvidenceScope
+      || intent.releaseEvidenceScope
+      || intent.operatorScope,
+  );
+  return normalizePluginOwnedPolicy(intent.resourcePolicy, source, { evidenceScope })
+    .concat(normalizePluginOwnedPolicy(intent.pushPolicy, source, { evidenceScope }))
+    .concat(normalizePluginOwnedPolicy(intent.pluginOwnedResources, source, { evidenceScope }));
 }
 
-function normalizePluginOwnedPolicy(policy, source) {
+function normalizePluginOwnedPolicy(policy, source, defaults = {}) {
   if (!policy || typeof policy !== 'object') {
     return [];
   }
 
   const pluginOwnedResources = policy.pluginOwnedResources || policy;
+  const evidenceScope = normalizePluginDriverEvidenceScope(
+    policy.evidenceScope
+      || policy.releaseGateEvidenceScope
+      || policy.releaseEvidenceScope
+      || policy.operatorScope
+      || pluginOwnedResources.evidenceScope
+      || pluginOwnedResources.releaseGateEvidenceScope
+      || pluginOwnedResources.releaseEvidenceScope
+      || pluginOwnedResources.operatorScope,
+  ) || defaults.evidenceScope || 'local-candidate';
   const allowedResources = normalizeAllowedResources(
     pluginOwnedResources.allowedResources
       || pluginOwnedResources.allowed
@@ -495,7 +673,7 @@ function normalizePluginOwnedPolicy(policy, source) {
   );
 
   return allowedResources
-    .map((entry) => normalizePluginOwnedPolicyEntry(entry, source))
+    .map((entry) => normalizePluginOwnedPolicyEntry(entry, source, { evidenceScope }))
     .filter((entry) => entry.resourceKey && entry.pluginOwner);
 }
 
@@ -512,12 +690,12 @@ function normalizeAllowedResources(allowedResources) {
   }));
 }
 
-function normalizePluginOwnedPolicyEntry(entry, source) {
+function normalizePluginOwnedPolicyEntry(entry, source, defaults = {}) {
   if (typeof entry === 'string') {
-    return { resourceKey: entry, source };
+    return { resourceKey: entry, source, evidenceScope: defaults.evidenceScope || 'local-candidate' };
   }
   if (!entry || typeof entry !== 'object') {
-    return { source };
+    return { source, evidenceScope: defaults.evidenceScope || 'local-candidate' };
   }
   return {
     resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
@@ -525,8 +703,55 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
     table: entry.table || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    evidenceScope: normalizePluginDriverEvidenceScope(
+      entry.evidenceScope
+        || entry.releaseGateEvidenceScope
+        || entry.releaseEvidenceScope
+        || entry.operatorScope
+        || entry.sourceKind,
+    ) || defaults.evidenceScope || 'local-candidate',
     source,
   };
+}
+
+function pluginOwnedSnapshotEvidenceScope(snapshot) {
+  const meta = snapshot?.meta || {};
+  return normalizePluginDriverEvidenceScope(
+    meta.evidenceScope
+      || meta.releaseGateEvidenceScope
+      || meta.releaseEvidenceScope
+      || meta.operatorScope
+      || meta.sourceKind
+      || meta.source,
+  ) || 'local-candidate';
+}
+
+function normalizePluginDriverEvidenceScope(value) {
+  const scope = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!scope) {
+    return null;
+  }
+  if ([
+    'production-backed',
+    'final-release',
+    'production-release',
+    'live-production',
+    'operator-production',
+    'production-run',
+    'release-operator',
+  ].includes(scope)) {
+    return 'production-backed';
+  }
+  if ([
+    'local-candidate',
+    'local-playground',
+    'wordpress-playground',
+    'fixture',
+    'generated-placeholder',
+  ].includes(scope)) {
+    return 'local-candidate';
+  }
+  return 'local-candidate';
 }
 
 function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
@@ -2311,6 +2536,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.driverEvidence ? { driverEvidence: support.driverEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,

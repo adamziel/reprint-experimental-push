@@ -36,3 +36,19 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+
+## RPP-0405 wp_postmeta driver semantics — 2026-05-28
+
+The planner now treats `wp-postmeta` / `wp-post-meta` as a shape-checked plugin-owned driver instead of a table-only allowlist. A supported row must be a `wp_postmeta` row whose resource id is either `meta_id:<positive-int>` or `post_id:<positive-int>:meta_key:<key>`, whose concrete base/local/remote row values keep `post_id`, `meta_key`, and `__pluginOwner` aligned with the policy.
+
+Driver evidence attached to the mutation or fail-closed blocker records only deterministic release-gate fields: driver, table, resource key, row id kind, post id, meta key, plugin owner, policy source, and `releaseGateEvidenceScope`. It deliberately omits raw `meta_value` payloads. Explicit production-backed policy metadata (`evidenceScope: "production-backed"`, or equivalent final/live production scope) is surfaced as `releaseGateEvidenceScope: "production-backed"`; otherwise the scope remains `local-candidate`.
+
+Focused verification:
+
+```sh
+node --check src/planner.js
+node --check test/plugin-driver-postmeta-semantics.test.js
+node --test test/plugin-driver-postmeta-semantics.test.js
+```
+
+No checklist state was changed by this branch. Release remains NO-GO unless the production-backed release gates pass.
