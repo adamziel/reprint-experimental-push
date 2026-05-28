@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:18 CEST
+Last updated: 2026-05-28 10:27 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:27 CEST - RPP-0240 Integrated
+
+- Going well: integration is now at `4b1d16b6c`, adding `RPP-0240` atomic
+  group blocker propagation variant 2 coverage. The focused planner proof and
+  generated harness proof both show group-level atomic blockers propagate to
+  every grouped mutation and that apply refuses before durable journal events
+  or target mutation with hash-only/redacted evidence.
+- Checklist movement: 130 verified items checked and 870 open. New check since
+  the prior feedback entry: `RPP-0240`.
+- Verification: focused RPP-0240 planner validation passes 1/1, focused
+  generated validation passes 1/1, the full touched planner/generated suite
+  passes 115/115, checklist lint reports 130 checked / 870 open with 0 risky
+  claims, artifact redaction scans evidence and reporting surfaces with 0
+  rejected files, release remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 10:18 CEST - RPP-0461 Integrated
 

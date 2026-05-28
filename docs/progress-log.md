@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:18 CEST.
+- Last update: 2026-05-28 10:27 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `955ea001b` (`test: prove driver registration regression`).
+  `4b1d16b6c` (`test: prove atomic blocker propagation`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 129
-  items complete and leaves 871 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 130
+  items complete and leaves 870 open.
 - Checked slices: 43 release-gate foundation items, 17 graph identity items,
   20 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 12 merge-invariant items. No release-ops items are checked
+  harness items, and 13 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -247,6 +247,18 @@ linked implementation artifacts.
   journal events or target mutation while keeping refusal evidence hash-only
   and redacted. Caveat: this is deterministic local planner/generated evidence,
   not final production release proof.
+- Atomic-group blocker variant continuation: `4b1d16b6c` integrated
+  `RPP-0240` atomic group blocker propagation variant 2. Focused commands:
+  `node --test --test-name-pattern=RPP-0240 test/push-planner.test.js` and
+  `node --test --test-name-pattern=RPP-0240 test/generated-push-harness.test.js`
+  (1 passing proof each), plus
+  `node --test test/generated-push-harness.test.js test/push-planner.test.js`
+  (115 passing planner/generated tests). The focused planner proof and
+  generated harness proof both show atomic group blockers propagate to every
+  grouped mutation, then `applyPlan()` refuses before durable journal events or
+  target mutation while evidence remains hash-only/redacted. Caveat: this is
+  deterministic local planner/generated evidence, not final production release
+  proof.
 - Stale plugin metadata owner continuation: `43beb7c9c` integrated
   `RPP-0414` stale plugin metadata owner context refusal. Focused planner
   tests reject stale plugin-owned row and plugin file mutations before mutation

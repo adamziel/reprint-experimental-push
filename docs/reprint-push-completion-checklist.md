@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 129.
-- Remaining open: 871.
+- Verified complete: 130.
+- Remaining open: 870.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -261,7 +261,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0237 (Near-Mid / merge-invariants) Prove conflict plan apply refusal, variant 2. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0238 (Near-Mid / merge-invariants) Prove forged ready plan defense, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0239 (Near-Mid / merge-invariants) Prove redacted raw value evidence, variant 2. Success: scenario matrix row names the behavior and command.
-- [ ] RPP-0240 (Near-Mid / merge-invariants) Prove atomic group blocker propagation, variant 2. Success: progress log records the command and caveat.
+- [x] RPP-0240 (Near-Mid / merge-invariants) Prove atomic group blocker propagation, variant 2. Success: progress log records the command and caveat.
 - [ ] RPP-0241 (Near-Mid / merge-invariants) Add generated coverage for independent local file plus remote row edit, variant 3. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0242 (Near-Mid / merge-invariants) Add generated coverage for independent local row plus remote file edit, variant 3. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0243 (Near-Mid / merge-invariants) Add generated coverage for local delete versus remote edit, variant 3. Success: no raw private value appears in serialized plan evidence.
