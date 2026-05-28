@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0089, plus RPP-0092.
+Primary checklist range: RPP-0001 through RPP-0090, plus RPP-0092.
 
 ## What changed
 
@@ -80,6 +80,7 @@ Primary checklist range: RPP-0001 through RPP-0089, plus RPP-0092.
 | RPP-0087 | Evidence toward release verifier missing production secret carry-through now emits `REPRINT_PUSH_SECRET_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts a partial Application Password value, and proves the release-gate CLI preserves the exact `production-secret` gate evidence. |
 | RPP-0088 | Evidence toward release verifier Application Password credential binding carry-through now emits `APPLICATION_PASSWORD_BINDING_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts the checked and source-command credentials, and proves the release-gate CLI preserves the exact `application-password-binding` gate evidence. |
 | RPP-0089 | Evidence toward release verifier manage_options capability carry-through now emits `MANAGE_OPTIONS_CAPABILITY_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts the source-command credential, preserves the source command readback URL, and proves the release-gate CLI preserves the exact `manage-options-capability` gate evidence. |
+| RPP-0090 | Evidence toward release verifier same-source identity carry-through now emits `SAME_SOURCE_IDENTITY_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts credentials, carries exact `sourceIdentity` evidence into release gates, and preserves the matching same-source positive path. |
 | RPP-0092 | Evidence toward release verifier dry-run route eligibility carry-through now emits `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts credentials, carries exact `dryRunRouteEligibility` evidence into release gates, and preserves the eligible positive path. |
 
 ## Focused verification
@@ -348,6 +349,21 @@ the final held marker.
 
 - Command: `node --test test/release-verifier-manage-options-carry-through-focused-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-manage-options-generated.test.js test/release-verifier-application-password-binding-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=MANAGE_OPTIONS_CAPABILITY_REQUIRED mutationAttempted=false]`; manage-options gate: `MANAGE_OPTIONS_CAPABILITY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=MANAGE_OPTIONS_CAPABILITY_REQUIRED]`.
+
+Release verifier same-source identity carry-through refresh:
+
+```sh
+node --test test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-gate-same-source-identity-regression.test.js test/release-gate-same-source-generated.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 37 tests. This checks RPP-0090 by running the checked
+`npm run verify:release` path with source/local/changed URLs, checked
+credentials, and route source identity drift evidence after rebasing over the
+dry-run route hook. The verifier exits `1`, prints
+`[verify-release:held exit=1 reason=SAME_SOURCE_IDENTITY_REQUIRED mutationAttempted=false]`, records the same-source identity boundary before live verifier startup, redacts credential values, and the release-gate CLI preserves the exact `sourceIdentity` evidence with the final held marker.
+
+- Command: `node --test test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-gate-same-source-identity-regression.test.js test/release-gate-same-source-generated.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=SAME_SOURCE_IDENTITY_REQUIRED mutationAttempted=false]`; same-source gate: `SAME_SOURCE_IDENTITY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]`.
 
 Release verifier dry-run route eligibility carry-through refresh:
 

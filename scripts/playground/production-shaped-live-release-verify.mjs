@@ -35,6 +35,21 @@ const explicitLiveSourceUrl = configuredLiveSourceUrl;
 const explicitApplyRevalidationSourceUrl = process.env.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL || '';
 const explicitLiveRemoteChangedUrl = process.env.REPRINT_PUSH_REMOTE_CHANGED_URL || '';
 const explicitLiveLocalUrl = process.env.REPRINT_PUSH_LOCAL_URL || '';
+const explicitRouteSourceUrls = {
+  preflight: firstNonEmptyEnv('REPRINT_PUSH_PREFLIGHT_SOURCE_URL', 'REPRINT_PUSH_PREFLIGHT_ROUTE_SOURCE_URL'),
+  dryRun: firstNonEmptyEnv(
+    'REPRINT_PUSH_DRY_RUN_SOURCE_URL',
+    'REPRINT_PUSH_DRY_RUN_ROUTE_SOURCE_URL',
+    'REPRINT_PUSH_DRYRUN_SOURCE_URL',
+  ),
+  apply: firstNonEmptyEnv('REPRINT_PUSH_APPLY_SOURCE_URL', 'REPRINT_PUSH_APPLY_ROUTE_SOURCE_URL'),
+  journal: firstNonEmptyEnv('REPRINT_PUSH_JOURNAL_SOURCE_URL', 'REPRINT_PUSH_JOURNAL_ROUTE_SOURCE_URL'),
+  recovery: firstNonEmptyEnv(
+    'REPRINT_PUSH_RECOVERY_SOURCE_URL',
+    'REPRINT_PUSH_RECOVERY_INSPECT_SOURCE_URL',
+    'REPRINT_PUSH_RECOVERY_INSPECT_ROUTE_SOURCE_URL',
+  ),
+};
 const explicitLiveUsername = process.env.REPRINT_PUSH_USERNAME || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_USER || '';
 const explicitLiveApplicationPassword =
   process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '';
@@ -83,6 +98,10 @@ if (applicationPasswordBindingBlocker) {
 const manageOptionsCapabilityBlocker = resolveManageOptionsCapabilityBlocker(checkedExplicitAuthSessionSource);
 if (manageOptionsCapabilityBlocker) {
   emitManageOptionsCapabilityGateAndExit(manageOptionsCapabilityBlocker);
+}
+const sameSourceIdentityBlocker = resolveSameSourceIdentityBlocker();
+if (sameSourceIdentityBlocker) {
+  emitSameSourceIdentityGateAndExit(sameSourceIdentityBlocker);
 }
 const dryRunRouteEligibilityBlocker = resolveDryRunRouteEligibilityBlocker(checkedExplicitAuthSessionSource);
 if (dryRunRouteEligibilityBlocker) {
@@ -222,6 +241,16 @@ function resolveReleaseTopologyBlocker() {
 function positiveIntegerEnv(name, fallback) {
   const value = Number.parseInt(process.env[name] || '', 10);
   return Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+function firstNonEmptyEnv(...names) {
+  for (const name of names) {
+    const value = process.env[name] || '';
+    if (String(value).trim()) {
+      return value;
+    }
+  }
+  return '';
 }
 
 function resolveApplyRevalidationAuthEnv({
@@ -758,6 +787,69 @@ function resolveManageOptionsCapabilityBlocker(authSessionSource) {
   };
 }
 
+function resolveSameSourceIdentityBlocker() {
+  const explicitRouteSourceUrlPresent = Object.values(explicitRouteSourceUrls)
+    .some((value) => String(value || '').trim());
+  if (!explicitLiveSourceUrl || !explicitRouteSourceUrlPresent) {
+    return null;
+  }
+
+  const sourceIdentity = buildSameSourceIdentityEvidence();
+  if (sourceIdentity.ok === true && sourceIdentity.same === true && sourceIdentity.sameSource === true) {
+    return null;
+  }
+
+  return {
+    sourceIdentity,
+  };
+}
+
+function buildSameSourceIdentityEvidence() {
+  const expectedSourceUrl = explicitLiveSourceUrl;
+  const routeSourceUrls = {
+    preflight: explicitRouteSourceUrls.preflight || expectedSourceUrl,
+    dryRun: explicitRouteSourceUrls.dryRun || expectedSourceUrl,
+    apply: explicitRouteSourceUrls.apply || expectedSourceUrl,
+    journal: explicitRouteSourceUrls.journal || expectedSourceUrl,
+    recovery: explicitRouteSourceUrls.recovery || expectedSourceUrl,
+  };
+  const drift = Object.entries(routeSourceUrls)
+    .find(([, routeSourceUrl]) => !sameReleaseTopologyUrl(routeSourceUrl, expectedSourceUrl));
+  const same = !drift;
+
+  return {
+    ok: same,
+    same,
+    sameSource: same,
+    observed: same ? 'same-source-url' : sourceIdentityDriftObserved(drift[0], drift[1]),
+    expectedSourceUrl,
+    preflightSourceUrl: routeSourceUrls.preflight,
+    dryRunSourceUrl: routeSourceUrls.dryRun,
+    applySourceUrl: routeSourceUrls.apply,
+    journalSourceUrl: routeSourceUrls.journal,
+    recoverySourceUrl: routeSourceUrls.recovery,
+    routePrefix: '/wp-json/reprint-push/v1',
+    checkedRoutes: ['preflight', 'dry-run', 'apply', 'journal', 'recovery-inspect'],
+    scope: 'final-release',
+    required: ['preflight, dry-run, apply, and recovery use the same source URL'],
+  };
+}
+
+function sourceIdentityDriftObserved(route, observedSourceUrl) {
+  const routeLabel = route === 'dryRun'
+    ? 'dry-run'
+    : route === 'recovery'
+      ? 'recovery-inspect'
+      : route;
+  let sourceLabel = 'other-source';
+  if (sameReleaseTopologyUrl(observedSourceUrl, explicitLiveRemoteChangedUrl)) {
+    sourceLabel = 'remote-changed-source';
+  } else if (sameReleaseTopologyUrl(observedSourceUrl, explicitLiveLocalUrl)) {
+    sourceLabel = 'local-edited-site';
+  }
+  return `${routeLabel}-used-${sourceLabel}`;
+}
+
 function resolveDryRunRouteEligibilityBlocker(authSessionSource) {
   if (!dryRunRouteEligibilityFailureRequested()) {
     return null;
@@ -999,6 +1091,61 @@ function emitManageOptionsCapabilityGateAndExit(blocker) {
       verify: {
         topology: { sourceUrl: explicitLiveSourceUrl },
         authSessionSource: authSessionSourceSummary,
+      },
+      applyRevalidation: null,
+      releaseMovement,
+    }),
+    releaseMovement,
+  }, statusMarker);
+  process.exit(exitCode);
+}
+
+function emitSameSourceIdentityGateAndExit(blocker) {
+  const exitCode = 1;
+  const reason = 'SAME_SOURCE_IDENTITY_REQUIRED';
+  const sameSourceReason = 'Source URL identity drifted across the checked release path.';
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason: sameSourceReason,
+  };
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason });
+
+  emitVerifyReleaseFailurePayload({
+    ok: false,
+    statusMarker,
+    mutationAttempted: false,
+    topology: {
+      sourceUrl: explicitLiveSourceUrl,
+      remoteBase: null,
+      remoteChanged: null,
+      localEdited: null,
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'same source URL identity on the checked live release path',
+      status: 'blocked',
+      verdict: reason,
+      sourceIdentity: blocker.sourceIdentity,
+    },
+    preflight: {
+      status: 0,
+      authSessionType: blocker.sourceIdentity.observed,
+      routeProfile: 'production-shaped',
+      session: {
+        id: '',
+        type: blocker.sourceIdentity.observed,
+      },
+    },
+    releaseProof: {
+      ok: false,
+      status: exitCode,
+      code: reason,
+    },
+    sourceIdentity: blocker.sourceIdentity,
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: {
+        topology: { sourceUrl: explicitLiveSourceUrl },
+        sourceIdentity: blocker.sourceIdentity,
       },
       applyRevalidation: null,
       releaseMovement,

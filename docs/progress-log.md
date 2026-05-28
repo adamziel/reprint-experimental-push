@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 22:56 CEST.
+- Last update: 2026-05-28 22:59 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 222
-  items checked and leaves 778 open.
-- Checked slices: 90 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 223
+  items checked and leaves 777 open.
+- Checked slices: 91 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -151,6 +151,16 @@ linked implementation artifacts.
   verifier server, redacts the credential, preserves `sourceCommandReadbackUrl`,
   and carries exact `manage-options-capability` evidence plus the final held
   marker. Final release remains `NO-GO`.
+- Release verifier same-source identity carry-through refresh: the current lane
+  now contains
+  `test/release-verifier-same-source-carry-through-focused-regression.test.js`
+  for `RPP-0090`. The command
+  `node --test test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-gate-same-source-identity-regression.test.js test/release-gate-same-source-generated.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 37/37 after rebasing over the dry-run carry-through verifier hook,
+  proving the checked verifier emits `SAME_SOURCE_IDENTITY_REQUIRED`, exits
+  before verifier startup or mutation, redacts credentials, carries exact
+  `sourceIdentity` evidence into release gates, and keeps the matching
+  same-source path held at `NO-GO` without final production provenance.
 - Release verifier dry-run route eligibility carry-through refresh: the current
   lane now contains
   `test/release-verifier-dry-run-route-carry-through-focused-regression.test.js`
