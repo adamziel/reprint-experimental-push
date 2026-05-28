@@ -12,6 +12,7 @@ export const complexSiteFixtureShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  customTaxonomyFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -61,6 +62,20 @@ const taxonomyGraphResourceKeys = Object.freeze([
   taxonomyGraphRelationshipResourceKey,
   taxonomyGraphTermMetaResourceKey,
 ]);
+const customTaxonomyGraphPostId = 71003;
+const customTaxonomyGraphTermId = 72951;
+const customTaxonomyGraphTermTaxonomyId = 72961;
+const customTaxonomyGraphTermName = 'Local Private Product Category Fail Closed';
+const customTaxonomyGraphTermSlug = 'local-private-product-category-fail-closed';
+const customTaxonomyGraphTaxonomy = 'product_cat';
+const customTaxonomyGraphTermResourceKey = `row:["wp_terms","term_id:${customTaxonomyGraphTermId}"]`;
+const customTaxonomyGraphTaxonomyResourceKey = `row:["wp_term_taxonomy","term_taxonomy_id:${customTaxonomyGraphTermTaxonomyId}"]`;
+const customTaxonomyGraphRelationshipResourceKey = `row:["wp_term_relationships","object_id:${customTaxonomyGraphPostId}|term_taxonomy_id:${customTaxonomyGraphTermTaxonomyId}"]`;
+const customTaxonomyGraphResourceKeys = Object.freeze([
+  customTaxonomyGraphTermResourceKey,
+  customTaxonomyGraphTaxonomyResourceKey,
+  customTaxonomyGraphRelationshipResourceKey,
+]);
 const commentGraphPostId = 71001;
 const commentGraphParentId = 72801;
 const commentGraphChildId = 72802;
@@ -86,6 +101,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     remoteDriftFiles: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_FILES, complexSiteFixtureShape.remoteDriftFiles),
     featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
     taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
+    customTaxonomyFailClosed: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_CUSTOM_TAXONOMY_FAIL_CLOSED_PROOF === '1',
     postParentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF === '1',
     commentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF === '1',
   });
@@ -105,6 +121,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_remote_drift_files = ${positiveInt(shape.remoteDriftFiles)};`,
     `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
     `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
+    `$complex_custom_taxonomy_fail_closed = ${shape.customTaxonomyFailClosed ? 'true' : 'false'};`,
     `$complex_post_parent_graph = ${shape.postParentGraph ? 'true' : 'false'};`,
     `$complex_comment_graph = ${shape.commentGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
@@ -159,6 +176,15 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  $wpdb->replace($wpdb->term_relationships, array('object_id'=>$taxonomy_post_id,'term_taxonomy_id'=>$taxonomy_term_taxonomy_id,'term_order'=>0), array('%d','%d','%d'));",
     `  $wpdb->replace($wpdb->termmeta, array('meta_id'=>$taxonomy_termmeta_id,'term_id'=>$taxonomy_term_id,'meta_key'=>${phpString(taxonomyGraphMetaKey)},'meta_value'=>'local-taxonomy-graph'), array('%d','%d','%s','%s'));`,
     "  clean_term_cache(array($taxonomy_term_id), 'category');",
+    "}",
+    "if ($complex_custom_taxonomy_fail_closed && $complex_is_local) {",
+    `  $custom_taxonomy_post_id = ${customTaxonomyGraphPostId};`,
+    `  $custom_taxonomy_term_id = ${customTaxonomyGraphTermId};`,
+    `  $custom_taxonomy_term_taxonomy_id = ${customTaxonomyGraphTermTaxonomyId};`,
+    `  $wpdb->replace($wpdb->terms, array('term_id'=>$custom_taxonomy_term_id,'name'=>${phpString(customTaxonomyGraphTermName)},'slug'=>${phpString(customTaxonomyGraphTermSlug)},'term_group'=>0), array('%d','%s','%s','%d'));`,
+    `  $wpdb->replace($wpdb->term_taxonomy, array('term_taxonomy_id'=>$custom_taxonomy_term_taxonomy_id,'term_id'=>$custom_taxonomy_term_id,'taxonomy'=>${phpString(customTaxonomyGraphTaxonomy)},'description'=>'Unsupported custom taxonomy graph fixture must fail closed.','parent'=>0,'count'=>1), array('%d','%d','%s','%s','%d','%d'));`,
+    "  $wpdb->replace($wpdb->term_relationships, array('object_id'=>$custom_taxonomy_post_id,'term_taxonomy_id'=>$custom_taxonomy_term_taxonomy_id,'term_order'=>0), array('%d','%d','%d'));",
+    `  clean_term_cache(array($custom_taxonomy_term_id), ${phpString(customTaxonomyGraphTaxonomy)});`,
     "}",
     "if ($complex_comment_graph && $complex_is_local) {",
     `  $comment_post_id = ${commentGraphPostId};`,
@@ -423,6 +449,89 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildCustomTaxonomyFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+  shape = complexSiteFixtureShape,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: sourceSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteChangedSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const taxonomyBlocker = readyPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === customTaxonomyGraphTaxonomyResourceKey) || null;
+  const relationshipBlocker = readyPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === customTaxonomyGraphRelationshipResourceKey) || null;
+  const blockerEvidence = [taxonomyBlocker, relationshipBlocker]
+    .filter(Boolean)
+    .map(hashOnlyWordPressGraphBlockerEvidence);
+  const blockerEvidenceJson = JSON.stringify(blockerEvidence);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    customTaxonomyCountsPresent: counts.localEdited.customTaxonomyGraphTerms >= 1
+      && counts.localEdited.customTaxonomyGraphTaxonomies >= 1
+      && counts.localEdited.customTaxonomyGraphRelationships >= 1,
+    plannerFailsClosed: readyPlan.status === 'blocked',
+    releaseMovementPrevented: readyPlan.status !== 'ready',
+    customTaxonomyBlocked: taxonomyBlocker?.class === 'stale-wordpress-graph-identity'
+      && taxonomyBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(taxonomyBlocker?.reason || '').includes(`unsupported taxonomy graph surface ${customTaxonomyGraphTaxonomy}`),
+    relationshipInheritsCustomTaxonomyBlocker: relationshipBlocker?.class === 'stale-wordpress-graph-identity'
+      && relationshipBlocker?.references?.[0]?.relationshipKey === 'wp_term_relationships.term_taxonomy_id'
+      && relationshipBlocker?.references?.[0]?.targetResourceKey === customTaxonomyGraphTaxonomyResourceKey
+      && relationshipBlocker?.references?.[0]?.targetSupport?.supported === false,
+    noCustomTaxonomyReferenceMutations: [
+      customTaxonomyGraphTaxonomyResourceKey,
+      customTaxonomyGraphRelationshipResourceKey,
+    ].every((resourceKey) => !readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+    blockerEvidenceIsHashOnly: blockerEvidence.every((blocker) =>
+      [blocker.baseHash, blocker.localHash, blocker.remoteHash].every(isSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) => isSha256Hex(blocker.change?.[slot]?.hash))),
+    blockerEvidenceRedactsRawValues: ![
+      customTaxonomyGraphTermName,
+      customTaxonomyGraphTermSlug,
+      'Unsupported custom taxonomy graph fixture must fail closed.',
+    ].some((privateValue) => blockerEvidenceJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'custom-taxonomy-fail-closed',
+    taxonomy: customTaxonomyGraphTaxonomy,
+    releaseReady: false,
+    resourceKeys: {
+      term: customTaxonomyGraphTermResourceKey,
+      termTaxonomy: customTaxonomyGraphTaxonomyResourceKey,
+      relationship: customTaxonomyGraphRelationshipResourceKey,
+      all: customTaxonomyGraphResourceKeys,
+    },
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    blockers: blockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -676,6 +785,41 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function hashOnlyWordPressGraphBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: blocker.change || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+        targetChange: reference.targetChange || null,
+        targetSupport: reference.targetSupport ? {
+          supported: reference.targetSupport.supported === true,
+          className: reference.targetSupport.className || null,
+          reason: reference.targetSupport.reason || null,
+        } : null,
+      }))
+      : [],
+  };
+}
+
+function isSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -771,6 +915,15 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === taxonomyGraphTermMetaId
       && Number(row?.term_id) === taxonomyGraphTermId
       && String(row?.meta_key || '') === taxonomyGraphMetaKey).length,
+    customTaxonomyGraphTerms: Object.values(terms).filter((row) =>
+      String(row?.slug || '') === customTaxonomyGraphTermSlug).length,
+    customTaxonomyGraphTaxonomies: Object.values(termTaxonomy).filter((row) =>
+      Number(row?.term_taxonomy_id) === customTaxonomyGraphTermTaxonomyId
+      && Number(row?.term_id) === customTaxonomyGraphTermId
+      && String(row?.taxonomy || '') === customTaxonomyGraphTaxonomy).length,
+    customTaxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
+      Number(row?.object_id) === customTaxonomyGraphPostId
+      && Number(row?.term_taxonomy_id) === customTaxonomyGraphTermTaxonomyId).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId

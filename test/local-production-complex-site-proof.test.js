@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
+  buildCustomTaxonomyFailClosedProof,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
@@ -19,6 +20,7 @@ const smallShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  customTaxonomyFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -57,6 +59,19 @@ test('complex-site seed PHP can add a taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add an unsupported custom taxonomy fail-closed fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    customTaxonomyFailClosed: true,
+  });
+
+  assert.match(php, /local-private-product-category-fail-closed/);
+  assert.match(php, /taxonomy'=>'product_cat'/);
+  assert.match(php, /Unsupported custom taxonomy graph fixture must fail closed/);
+  assert.match(php, /if \(\$complex_custom_taxonomy_fail_closed && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_custom_taxonomy_fail_closed = false/);
+});
+
 test('complex-site seed PHP can add a post parent graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -88,6 +103,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_CUSTOM_TAXONOMY_FAIL_CLOSED_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
@@ -97,6 +113,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.fileCount, 3);
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
+  assert.equal(shape.customTaxonomyFailClosed, true);
   assert.equal(shape.postParentGraph, true);
   assert.equal(shape.commentGraph, true);
 });
@@ -191,6 +208,37 @@ test('complex-site planner proof covers real taxonomy graph closure', () => {
   assert.equal(proof.invariants.taxonomyGraphCountsPresent, true);
   assert.equal(proof.invariants.taxonomyGraphPlanned, true);
   assert.equal(proof.invariants.taxonomyGraphHasLivePreconditions, true);
+});
+
+test('complex-site proof keeps unsupported custom taxonomy references fail-closed and hash-only', () => {
+  const graphShape = { ...smallShape, customTaxonomyFailClosed: true };
+  const proof = buildCustomTaxonomyFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    shape: graphShape,
+  });
+  const blockerJson = JSON.stringify(proof.blockers);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'blocked');
+  assert.equal(proof.resourceKeys.all.length, 3);
+  assert.equal(proof.counts.source.customTaxonomyGraphTaxonomies, 0);
+  assert.equal(proof.counts.localEdited.customTaxonomyGraphTerms, 1);
+  assert.equal(proof.counts.localEdited.customTaxonomyGraphTaxonomies, 1);
+  assert.equal(proof.counts.localEdited.customTaxonomyGraphRelationships, 1);
+  assert.equal(proof.invariants.customTaxonomyCountsPresent, true);
+  assert.equal(proof.invariants.plannerFailsClosed, true);
+  assert.equal(proof.invariants.releaseMovementPrevented, true);
+  assert.equal(proof.invariants.customTaxonomyBlocked, true);
+  assert.equal(proof.invariants.relationshipInheritsCustomTaxonomyBlocker, true);
+  assert.equal(proof.invariants.noCustomTaxonomyReferenceMutations, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.blockerEvidenceRedactsRawValues, true);
+  assert.match(proof.blockers[0].reason, /unsupported taxonomy graph surface product_cat/);
+  assert.equal(blockerJson.includes('Local Private Product Category Fail Closed'), false);
+  assert.equal(blockerJson.includes('local-private-product-category-fail-closed'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -435,6 +483,28 @@ function syntheticComplexSnapshot(variant, shape) {
       term_id: 72901,
       meta_key: 'reprint_push_taxonomy_fixture',
       meta_value: 'local-taxonomy-graph',
+    };
+  }
+
+  if (shape.customTaxonomyFailClosed && local) {
+    snapshot.db.wp_terms['term_id:72951'] = {
+      term_id: 72951,
+      name: 'Local Private Product Category Fail Closed',
+      slug: 'local-private-product-category-fail-closed',
+      term_group: 0,
+    };
+    snapshot.db.wp_term_taxonomy['term_taxonomy_id:72961'] = {
+      term_taxonomy_id: 72961,
+      term_id: 72951,
+      taxonomy: 'product_cat',
+      description: 'Unsupported custom taxonomy graph fixture must fail closed.',
+      parent: 0,
+      count: 1,
+    };
+    snapshot.db.wp_term_relationships['object_id:71003|term_taxonomy_id:72961'] = {
+      object_id: 71003,
+      term_taxonomy_id: 72961,
+      term_order: 0,
     };
   }
 
