@@ -913,6 +913,14 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      if (blocker.class === 'atomic-group-blocker-propagation') {
+        assert.equal(
+          mutationKeys.has(blocker.resourceKey),
+          true,
+          `${testCase.id} propagation blocker should reference an emitted grouped mutation ${blocker.resourceKey}`,
+        );
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,

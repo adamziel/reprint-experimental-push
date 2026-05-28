@@ -8,6 +8,10 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+import { digest } from '../src/stable-json.js';
+
+const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
 
 const requiredFamilies = [
   'local-file-update',
@@ -102,6 +106,30 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0230 generated planner summary counts match emitted evidence deterministically', () => {
+  const firstEvidence = generatedPlannerSummaryEvidence();
+  const replayEvidence = generatedPlannerSummaryEvidence();
+  const report = runGeneratedPushHarness();
+  const aggregate = aggregateGeneratedPlannerEvidence(firstEvidence);
+  const reportTotals = reportPlannerSummaryTotals(report.summary);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0230 test/generated-push-harness.test.js',
+    caveat: 'Local deterministic Node generated-harness proof; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated planner summary evidence changed between runs');
+  assert.deepEqual(
+    reportComparablePlannerSummaryTotals(aggregate),
+    reportTotals,
+    'generated report totals diverged from emitted planner evidence',
+  );
+  assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -354,4 +382,137 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function generatedPlannerSummaryEvidence() {
+  return generatePushHarnessCases().map((testCase) => {
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const emitted = emittedPlannerCounts(plan);
+
+    assert.deepEqual(plan.summary, emitted, `${testCase.id} summary totals mismatch`);
+    assert.equal(
+      plan.status,
+      plan.conflicts.length > 0 ? 'conflict' : plan.blockers.length > 0 ? 'blocked' : 'ready',
+      `${testCase.id} status does not match emitted conflict/blocker evidence`,
+    );
+
+    return {
+      id: testCase.id,
+      tier: testCase.tier,
+      family: testCase.family,
+      tags: [...testCase.tags].sort(),
+      status: plan.status,
+      summary: plan.summary,
+      emitted,
+      preconditions: plan.preconditions.length,
+    };
+  });
+}
+
+function emittedPlannerCounts(plan) {
+  return {
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    conflicts: plan.conflicts.length,
+    blockers: plan.blockers.length,
+    atomicGroups: plan.atomicGroups.length,
+  };
+}
+
+function aggregateGeneratedPlannerEvidence(evidence) {
+  const aggregate = {
+    totalCases: evidence.length,
+    statuses: {},
+    statusByTier: {},
+    tiers: {},
+    featureFamilies: {},
+    totalMutations: 0,
+    totalConflicts: 0,
+    totalBlockers: 0,
+    totalDecisions: 0,
+    totalAtomicGroups: 0,
+    totalPreconditions: 0,
+  };
+
+  for (const entry of evidence) {
+    incrementCount(aggregate.statuses, entry.status);
+    aggregate.statusByTier[entry.status] ||= {};
+    incrementCount(aggregate.statusByTier[entry.status], entry.tier);
+    incrementCount(aggregate.tiers, entry.tier);
+    incrementCount(aggregate.featureFamilies, entry.family);
+    for (const tag of entry.tags) {
+      incrementCount(aggregate.featureFamilies, tag);
+    }
+    aggregate.totalMutations += entry.summary.mutations;
+    aggregate.totalConflicts += entry.summary.conflicts;
+    aggregate.totalBlockers += entry.summary.blockers;
+    aggregate.totalDecisions += entry.summary.decisions;
+    aggregate.totalAtomicGroups += entry.summary.atomicGroups;
+    aggregate.totalPreconditions += entry.preconditions;
+  }
+
+  return {
+    ...aggregate,
+    statuses: sortStringObject(aggregate.statuses),
+    statusByTier: sortNestedNumericObject(aggregate.statusByTier),
+    tiers: sortNumericObject(aggregate.tiers),
+    featureFamilies: sortStringObject(aggregate.featureFamilies),
+  };
+}
+
+function reportPlannerSummaryTotals(summary) {
+  return {
+    totalCases: summary.totalCases,
+    statuses: summary.statuses,
+    statusByTier: summary.statusByTier,
+    tiers: summary.tiers,
+    featureFamilies: summary.featureFamilies,
+    totalMutations: summary.totalMutations,
+    totalConflicts: summary.totalConflicts,
+    totalBlockers: summary.totalBlockers,
+    totalDecisions: summary.totalDecisions,
+  };
+}
+
+function reportComparablePlannerSummaryTotals(aggregate) {
+  return {
+    totalCases: aggregate.totalCases,
+    statuses: aggregate.statuses,
+    statusByTier: aggregate.statusByTier,
+    tiers: aggregate.tiers,
+    featureFamilies: aggregate.featureFamilies,
+    totalMutations: aggregate.totalMutations,
+    totalConflicts: aggregate.totalConflicts,
+    totalBlockers: aggregate.totalBlockers,
+    totalDecisions: aggregate.totalDecisions,
+  };
+}
+
+function incrementCount(object, key) {
+  object[key] = (object[key] || 0) + 1;
+}
+
+function sortNumericObject(object) {
+  return Object.fromEntries(
+    Object.entries(object).sort(([left], [right]) => Number(left) - Number(right)),
+  );
+}
+
+function sortStringObject(object) {
+  return Object.fromEntries(
+    Object.entries(object).sort(([left], [right]) => left.localeCompare(right)),
+  );
+}
+
+function sortNestedNumericObject(object) {
+  return Object.fromEntries(
+    Object.entries(object)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, value]) => [key, sortNumericObject(value)]),
+  );
 }
