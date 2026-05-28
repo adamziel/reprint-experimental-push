@@ -1,11 +1,11 @@
-# AO Progress Report - 2026-05-28 14:43 CEST
+# AO Progress Report - 2026-05-28 14:49 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`455912018` (ours ancestry merge of
-`origin/session/rpp-24-rpp-0102-directory-descendant-conflict`). It separates
+`5753933a` (ours ancestry merge of
+`origin/session/rpp-24-rpp-0103-file-type-swap-conflict`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -669,6 +669,13 @@ progress.
   test suite (12/12), checklist lint, artifact redaction scan,
   `git diff --check`, and a fail-closed release-gate check showing
   `releaseMovement.allowed: false`.
+- `5753933a` uses an ours ancestry merge for
+  `origin/session/rpp-24-rpp-0103-file-type-swap-conflict` after cherry-empty
+  verification. It preserves the `RPP-0103` generated file type-swap branch
+  (`866767ef3`) that is already represented in the integrated generated
+  harness. Validation succeeded with the generated harness test suite (12/12),
+  checklist lint, artifact redaction scan, `git diff --check`, and a
+  fail-closed release-gate check showing `releaseMovement.allowed: false`.
 - `fdb02ab6a` integrates the checklist completion linter from `rpp-25`.
   `scripts/release/checklist-completion-lint.mjs` scans the checklist,
   `docs/evidence/*.md`, `audits/*.md`, `docs/progress-log.md`,
@@ -874,7 +881,7 @@ branch.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | Root release provenance branch ancestry is preserved by `6194b0bd` and provenance-gate wiring ancestry by `787ac659`, and RPP-0101 generated-harness ancestry by `7df3a73f`, and RPP-0102 directory-descendant ancestry by `455912018`; `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible generated graph targets remain branch-local until tested and integrated. |
+| `rpp-24` | developer | Root release provenance branch ancestry is preserved by `6194b0bd` and provenance-gate wiring ancestry by `787ac659`, and RPP-0101 generated-harness ancestry by `7df3a73f`, and RPP-0102 directory-descendant ancestry by `455912018`, and RPP-0103 file type-swap ancestry by `5753933a`; `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible generated graph targets remain branch-local until tested and integrated. |
 | `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, and `RPP-0070` are integrated; newer release-gate proof candidates remain uncounted until integration. |
 | `rpp-26` | progress reporter | Monitoring after the lane advanced through `43d18cd6`. |
 | `rpp-28` | integrator | Integrated `rpp-1` release-gate branch ancestry, `rpp-2` recovery-journal branch ancestry, `rpp-3` graph-identity branch ancestry, `rpp-4` plugin-driver branch ancestry, `rpp-10` Docker local-production branch ancestry, `rpp-11` recovery-repair branch ancestry, `rpp-13` evidence-redaction branch ancestry, `rpp-14` protocol-compatibility branch ancestry, `rpp-15` critic-continuation audit branch ancestry, `rpp-16` progress-evidence branch ancestry, `rpp-17` auth/recovery reconciliation, checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`; now evaluating already-pushed branches one at a time under the integration-only freeze. |
