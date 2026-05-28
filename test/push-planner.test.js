@@ -2487,7 +2487,7 @@ test('allows plugin-owned postmeta-like rows with explicit push intent policy', 
   assert.equal(plan.atomicGroups[0].status, 'ready');
 });
 
-test('blocks unknown plugin-owned custom table rows without leaking values', () => {
+test('RPP-0208 blocks unknown plugin-owned custom table rows without leaking values', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
   base.db.wp_forms_entries = {
@@ -2504,15 +2504,57 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const blockerJson = JSON.stringify(blocker);
+  const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKey, resourceKey);
-  assert.equal(blockerJson.includes('base-private-entry'), false);
-  assert.equal(blockerJson.includes('local-private-entry'), false);
+  assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(planJson.includes('base-private-entry'), false);
+  assert.equal(planJson.includes('local-private-entry'), false);
+
+  const forged = tamperReadyPlan(plan, (copy) => {
+    const mutationId = 'mutation-forged-unknown-plugin-owned-resource';
+    copy.mutations = [
+      {
+        id: mutationId,
+        resource: blocker.resource,
+        resourceKey,
+        action: 'put',
+        value: { value: { entry_id: 9, __pluginOwner: 'forms' } },
+        remoteBeforeHash: blocker.remoteHash,
+        baseHash: blocker.baseHash,
+        localHash: blocker.localHash,
+        changeKind: 'update',
+        change: blocker.change,
+        pluginOwnedResource: { pluginOwner: 'forms', driver: null, policySource: 'forged-test' },
+      },
+    ];
+    copy.preconditions = [
+      {
+        mutationId,
+        resource: blocker.resource,
+        resourceKey,
+        expectedHash: blocker.remoteHash,
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    copy.summary.mutations = 1;
+  });
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+  const errorDetails = JSON.stringify(error.details);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(errorDetails.includes('base-private-entry'), false);
+  assert.equal(errorDetails.includes('local-private-entry'), false);
 });
 
 test('RPP-0228 refuses unknown plugin-owned resources before mutation with redacted evidence', () => {
