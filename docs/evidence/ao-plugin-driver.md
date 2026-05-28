@@ -76,6 +76,31 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0461 driver registration API focused regression
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0461|plugin-owned row driver registration API' test/playground-snapshot-lib.test.js
+```
+
+The RPP-0461 focused regression reuses the local PHP snapshot-library driver
+registry probe to prove exact registration behavior for the plugin-owned row
+driver API. It checks the built-in production release-state driver fields, a
+valid extension driver, lookup-by-name and lookup-by-table behavior, and the
+empty-list fallback when the registration filter returns a non-array value.
+
+The same proof asserts fail-closed registration for invalid entries (missing
+driver name, table, plugin owner, export/apply/validate callbacks) and ambiguous
+entries (duplicate driver name and duplicate table mapping). Failure evidence
+contains only exception class plus `sha256:` message hashes, and the focused
+accepted/refused proof envelope stores only `sha256:` hashes for accepted
+drivers, lookup proof, empty-list fallback, failure registrations, and the
+combined proof hash. Raw failure messages, callback names, and invalid duplicate
+table names are asserted absent from the focused evidence. This is local focused
+plugin-driver evidence only, not production-backed evidence, and the release gate
+remains NO-GO.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +114,5 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0461 — driver registration API focused regression: accepted registration
+  and invalid/ambiguous refusal evidence is hash-only, redacted, and local-only.
