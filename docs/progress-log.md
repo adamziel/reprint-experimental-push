@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 15:11 CEST.
+- Last update: 2026-05-28 15:14 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `7310b522` (ours ancestry merge of
-  `origin/session/rpp-25-rpp-0028-app-password`).
+  `2c6b4852` (ours ancestry merge of
+  `origin/session/rpp-25-rpp-0030-same-source`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -384,6 +384,18 @@ linked implementation artifacts.
   the already-represented `RPP-0028` Application Password binding gate branch
   ancestry (`75b9b21a`) without moving checklist counts or tree content.
   Validation succeeded with `node --test test/release-gates.test.js
+  test/release-gate-cli.test.js test/checklist-completion-lint.test.js`
+  (41/41), checklist lint, artifact redaction scan (67 files), a current
+  fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, 3/20 gates), and `git diff --check` for the
+  worktree and merge diff.
+- Ancestry backlog reduction: `2c6b4852` used
+  `git merge -s ours --no-ff origin/session/rpp-25-rpp-0030-same-source`
+  after verifying `git log --right-only --cherry-pick
+  HEAD...origin/session/rpp-25-rpp-0030-same-source` was empty. This preserves
+  the already-represented `RPP-0030` same-source identity gate branch ancestry
+  (`a3433efdd`) without moving checklist counts or tree content. Validation
+  succeeded with `node --test test/release-gates.test.js
   test/release-gate-cli.test.js test/checklist-completion-lint.test.js`
   (41/41), checklist lint, artifact redaction scan (67 files), a current
   fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
