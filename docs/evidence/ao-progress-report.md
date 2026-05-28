@@ -1,12 +1,12 @@
-# AO Progress Report - 2026-05-28 13:28 CEST
+# AO Progress Report - 2026-05-28 13:33 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`95d21c9d` (tree-unchanged normal ancestry merge of `origin/session/rpp-8`). It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`e6b5b6f7` (normal ancestry merge of `origin/session/rpp-23` critic
+continuation audit evidence). It separates committed proof from visible AO
+worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
@@ -18,6 +18,14 @@ progress.
   step. GitHub Pages serves from existing branch `main`, so after a validated
   lane push that changes `progress.html`, AO can copy only `progress.html` to
   `main` without creating a PR or a new branch.
+- `e6b5b6f7` integrates `origin/session/rpp-23` by adding
+  `audits/ao-critic-continuation-2-20260528.md` and
+  `docs/evidence/ao-critic-continuation-2.md`. The audit documents historical
+  red-suite observations from an older base and is counted only as
+  support-only critic evidence. Current validation passed with the docs/progress
+  suite (24/24), `node --test test/authenticated-http-push-client.test.js`
+  (127/127), checklist lint, artifact redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
 - `src/release-gates.js` and `test/release-gates.test.js` define and test 20
   fail-closed release-gate foundation checks. `ab0340786` extends the focused
   coverage to 11 tests and records `RPP-0008` through `RPP-0020` missing/failed
@@ -744,7 +752,8 @@ branch.
 | `rpp-34` | completed candidate | `RPP-0421` driver registration API proof, `RPP-0431` plugin uninstall/delete refusal, `RPP-0461` driver registration focused regression, and `RPP-0468` serialized option validator regression are integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
-| `rpp-10` through `rpp-23`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-10` through `rpp-22`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-23` | pushed audit branch | Critic-continuation-2 audit evidence is represented in the integration branch by `e6b5b6f7`; it remains support-only historical audit evidence and does not move final release readiness. |
 | `rpp-1` | pushed branch `b885aa8b9` | Release-gate extended coverage is represented in the integration branch by `ab0340786`; do not count additional branch-local state. |
 | `rpp-2` | pushed branch `5dc081ea9` | Recovery work is represented in the integration branch by `1362ccb6c`, with branch ancestry now preserved by `c1edc85a`; do not count additional branch-local state. |
 | `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`, with branch ancestry now preserved by `5773b093`; do not count additional branch-local state. |

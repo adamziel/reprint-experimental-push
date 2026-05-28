@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 13:28 CEST.
+- Last update: 2026-05-28 13:33 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `95d21c9d` (tree-unchanged normal ancestry merge of `origin/session/rpp-8`).
+  `e6b5b6f7` (normal ancestry merge of `origin/session/rpp-23` critic
+  continuation audit evidence).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -56,6 +57,17 @@ linked implementation artifacts.
   suite
   `node --test test/checklist-completion-lint.test.js test/artifact-redaction-scan.test.js test/progress-html-release-timestamp.test.js`
   (24/24), checklist lint, artifact redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
+- Audit backlog reduction: `e6b5b6f7` normal-merged
+  `origin/session/rpp-23`, adding the critic-continuation-2 audit artifacts
+  `audits/ao-critic-continuation-2-20260528.md` and
+  `docs/evidence/ao-critic-continuation-2.md`. The audit records historical
+  red-suite observations from an older base, so it is counted as support-only
+  critic evidence, not current release readiness. Current validation passed
+  with the docs/progress suite
+  `node --test test/checklist-completion-lint.test.js test/artifact-redaction-scan.test.js test/progress-html-release-timestamp.test.js`
+  (24/24), `node --test test/authenticated-http-push-client.test.js`
+  (127/127), checklist lint, artifact redaction scan, and
   `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
