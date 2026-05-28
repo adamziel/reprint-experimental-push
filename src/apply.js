@@ -11,6 +11,7 @@ import {
 import { readRecoveryJournal } from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
+const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
   ['reprint-push-atomic-dependent-fixture', ['reprint-push-atomic-dependency-fixture']],
   ['reprint-push-atomic-failing-fixture', ['reprint-push-atomic-dependency-fixture']],
@@ -1272,7 +1273,7 @@ function validatePreconditions(remote, plan) {
         `Remote changed since dry run for ${precondition.resourceKey}.`,
         {
           resourceKey: precondition.resourceKey,
-          expectedHash: precondition.expectedHash,
+          expectedHash: hashEvidenceForDetails(precondition.expectedHash),
           actualHash,
         },
       );
@@ -1327,6 +1328,23 @@ function validateReadyPlanEnvelope(plan) {
         actualResourceKey: mutation.resource.key,
       });
     }
+
+    const remoteBeforeHashState = hashEvidenceState(mutation.remoteBeforeHash);
+    if (remoteBeforeHashState === 'missing') {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_MISSING',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        remoteBeforeHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
+      });
+    } else if (remoteBeforeHashState === 'invalid') {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_INVALID',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        remoteBeforeHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
+      });
+    }
   }
 
   for (const precondition of preconditions) {
@@ -1373,13 +1391,31 @@ function validateReadyPlanEnvelope(plan) {
         actualResourceKey: precondition.resource.key,
       });
     }
+
+    const expectedHashState = hashEvidenceState(precondition.expectedHash);
+    if (expectedHashState === 'missing') {
+      issues.push({
+        code: 'PRECONDITION_HASH_MISSING',
+        mutationId,
+        resourceKey: mutation.resourceKey || precondition.resourceKey || null,
+        expectedHash: hashEvidenceForDetails(precondition.expectedHash),
+      });
+    } else if (expectedHashState === 'invalid') {
+      issues.push({
+        code: 'PRECONDITION_HASH_INVALID',
+        mutationId,
+        resourceKey: mutation.resourceKey || precondition.resourceKey || null,
+        expectedHash: hashEvidenceForDetails(precondition.expectedHash),
+      });
+    }
+
     if (precondition.expectedHash !== mutation.remoteBeforeHash) {
       issues.push({
         code: 'PRECONDITION_HASH_MISMATCH',
         mutationId,
         resourceKey: mutation.resourceKey || precondition.resourceKey || null,
-        expectedHash: mutation.remoteBeforeHash || null,
-        actualHash: precondition.expectedHash || null,
+        expectedHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
+        actualHash: hashEvidenceForDetails(precondition.expectedHash),
       });
     }
     if (precondition.checkedAgainst !== 'live-remote') {
@@ -1414,6 +1450,48 @@ function validateReadyPlanEnvelope(plan) {
       },
     );
   }
+}
+
+function hashEvidenceState(value) {
+  if (value === undefined || value === null || value === '') {
+    return 'missing';
+  }
+  if (typeof value !== 'string') {
+    return 'invalid';
+  }
+  return SHA256_HEX_PATTERN.test(value) ? 'hash' : 'invalid';
+}
+
+function hashEvidenceForDetails(value) {
+  const state = hashEvidenceState(value);
+  if (state === 'hash') {
+    return value;
+  }
+  if (state === 'missing') {
+    return { state };
+  }
+  return stripUndefined({
+    state,
+    sha256: digest(value),
+    valueType: valueType(value),
+    characterCount: typeof value === 'string' ? value.length : undefined,
+  });
+}
+
+function valueType(value) {
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (value === null) {
+    return 'null';
+  }
+  return typeof value;
+}
+
+function stripUndefined(object) {
+  return Object.fromEntries(
+    Object.entries(object).filter(([, value]) => value !== undefined),
+  );
 }
 
 function validateAtomicGroupDependencyPlan(remote, plan) {

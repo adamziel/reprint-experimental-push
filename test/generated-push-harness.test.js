@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan, PushPlanError } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
+import { resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -8,6 +13,19 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected function to throw');
+}
 
 const requiredFamilies = [
   'local-file-update',
@@ -102,6 +120,82 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0232 generated ready fixtures reject forged remoteBeforeHash evidence', () => {
+  const selectedFamilies = [
+    'file-create-update-delete-mix-ready',
+    'row-create-update-delete-mix-ready',
+    'wp-posts-create-update-delete-ready',
+    'supported-plugin-option',
+  ];
+  const cases = generatePushHarnessCases();
+
+  for (const family of selectedFamilies) {
+    const testCase = cases.find((entry) => entry.family === family);
+    assert.ok(testCase, `missing generated ${family} case`);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: new Date('2026-05-24T00:00:00.000Z'),
+    });
+
+    assert.equal(plan.status, 'ready', `${family} should be a ready fixture`);
+    assert.ok(plan.mutations.length > 0, `${family} should emit at least one mutation`);
+    for (const mutation of plan.mutations) {
+      assert.equal(
+        mutation.remoteBeforeHash,
+        resourceHash(testCase.remote, mutation.resource),
+        `${family} mutation ${mutation.resourceKey} remoteBeforeHash must match live remote`,
+      );
+    }
+
+    const target = plan.mutations[0];
+    const forged = cloneJson(plan);
+    forged.mutations.find((mutation) => mutation.id === target.id).remoteBeforeHash = 'f'.repeat(64);
+    const remote = cloneJson(testCase.remote);
+    const beforeRemoteHash = digest(remote);
+    const error = captureError(() => applyPlan(remote, forged));
+
+    assert.ok(error instanceof PushPlanError, `${family} forged remoteBeforeHash should reject`);
+    assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION');
+    assert.ok(
+      error.details.issues.some((issue) => issue.code === 'PRECONDITION_HASH_MISMATCH'),
+      `${family} should report a precondition/hash mismatch`,
+    );
+    assert.equal(digest(remote), beforeRemoteHash, `${family} forged plan mutated remote before refusal`);
+
+    const serializedEvidence = JSON.stringify({
+      family,
+      refusal: {
+        code: error.code,
+        details: error.details,
+        detailsHash: `sha256:${digest(error.details)}`,
+      },
+      mutations: plan.mutations.map((mutation) => ({
+        id: mutation.id,
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      })),
+      preconditions: plan.preconditions.map((precondition) => ({
+        mutationId: precondition.mutationId,
+        resourceKey: precondition.resourceKey,
+        expectedHash: precondition.expectedHash,
+        checkedAgainst: precondition.checkedAgainst,
+      })),
+    });
+    for (const mutation of plan.mutations) {
+      assert.equal(
+        serializedEvidence.includes(JSON.stringify(mutation.value)),
+        false,
+        `${family} hash-only evidence leaked mutation payload for ${mutation.resourceKey}`,
+      );
+    }
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

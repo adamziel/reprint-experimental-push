@@ -205,6 +205,70 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
   }
 }
 
+function rpp0232RemoteBeforeHashFixture() {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    '<?php echo "rpp0232-local-private-file";',
+    'rpp0232-local-private-row-title',
+    'rpp0232-local-private-option-mode',
+    'rpp0232-remote-private-stale-file',
+    'rpp0232-forged-raw-remote-before-hash',
+    'rpp0232-forged-raw-precondition-hash',
+  ];
+
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  return {
+    base,
+    local,
+    remote,
+    privateValues,
+    pluginOptionResourceKey,
+    mutationResourceKeys: [
+      'file:index.php',
+      pluginOptionResourceKey,
+      'row:["wp_posts","ID:1"]',
+    ],
+  };
+}
+
+function rpp0232HashOnlyEvidence(plan, error) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    refusal: error ? {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      detailsHash: sha256Evidence(error.details),
+    } : null,
+  };
+}
+
 function plannerSummaryCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -4021,6 +4085,123 @@ test('RPP-0218 forged and stale ready plans reject before mutation with redacted
   });
   for (const privateValue of privateValues) {
     assert.equal(refusalEvidence.includes(privateValue), false, `refusal evidence leaked ${privateValue}`);
+  }
+});
+
+test('RPP-0232 remoteBeforeHash correctness rejects forged or stale attempts with hash-only evidence', () => {
+  const fixture = rpp0232RemoteBeforeHashFixture();
+  const ready = planFor(fixture.base, fixture.local, fixture.remote);
+
+  assert.equal(ready.status, 'ready');
+  assert.deepEqual(ready.mutations.map((mutation) => mutation.resourceKey), fixture.mutationResourceKeys);
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+  assertPlannerSummaryMatchesEvidence(ready, 'RPP-0232 remoteBeforeHash ready plan');
+
+  for (const mutation of ready.mutations) {
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+    assert.equal(
+      mutation.remoteBeforeHash,
+      resourceHash(fixture.remote, mutation.resource),
+      `planner remoteBeforeHash must bind to live remote ${mutation.resourceKey}`,
+    );
+  }
+
+  const successful = applyPlan(cloneJson(fixture.remote), ready);
+  assert.equal(successful.appliedMutations, 3);
+  assert.equal(successful.site.files['index.php'], fixture.privateValues[0]);
+  assert.equal(successful.site.db.wp_posts['ID:1'].post_title, fixture.privateValues[1]);
+  assert.equal(
+    successful.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    fixture.privateValues[2],
+  );
+
+  const targetMutation = mutationFor(ready, 'file:index.php');
+  const targetPrecondition = ready.preconditions.find((entry) => entry.mutationId === targetMutation.id);
+  const wrongHash = '0'.repeat(64);
+  const cases = [
+    {
+      name: 'mutation hash forged away from matching precondition',
+      expectedCode: 'PLAN_INVARIANT_VIOLATION',
+      expectedIssueCodes: ['PRECONDITION_HASH_MISMATCH'],
+      forge(plan) {
+        mutationFor(plan, targetMutation.resourceKey).remoteBeforeHash = wrongHash;
+      },
+    },
+    {
+      name: 'mutation and precondition forged to a wrong hash',
+      expectedCode: 'PRECONDITION_FAILED',
+      forge(plan) {
+        const mutation = mutationFor(plan, targetMutation.resourceKey);
+        mutation.remoteBeforeHash = wrongHash;
+        plan.preconditions.find((entry) => entry.mutationId === mutation.id).expectedHash = wrongHash;
+      },
+      assertError(error) {
+        assert.equal(error.details.resourceKey, targetMutation.resourceKey);
+        assert.equal(error.details.expectedHash, wrongHash);
+        assert.equal(error.details.actualHash, targetPrecondition.expectedHash);
+      },
+    },
+    {
+      name: 'raw forged mutation remoteBeforeHash is redacted',
+      expectedCode: 'PLAN_INVARIANT_VIOLATION',
+      expectedIssueCodes: ['REMOTE_BEFORE_HASH_INVALID', 'PRECONDITION_HASH_MISMATCH'],
+      forge(plan) {
+        mutationFor(plan, targetMutation.resourceKey).remoteBeforeHash = fixture.privateValues[4];
+      },
+    },
+    {
+      name: 'raw forged precondition expectedHash is redacted',
+      expectedCode: 'PLAN_INVARIANT_VIOLATION',
+      expectedIssueCodes: ['PRECONDITION_HASH_INVALID', 'PRECONDITION_HASH_MISMATCH'],
+      forge(plan) {
+        const mutation = mutationFor(plan, targetMutation.resourceKey);
+        plan.preconditions.find((entry) => entry.mutationId === mutation.id).expectedHash = fixture.privateValues[5];
+      },
+    },
+    {
+      name: 'stale live remote fails the remoteBeforeHash boundary',
+      expectedCode: 'PRECONDITION_FAILED',
+      forge(_plan, remote) {
+        remote.files['index.php'] = fixture.privateValues[3];
+      },
+      assertError(error) {
+        assert.equal(error.details.resourceKey, targetMutation.resourceKey);
+        assert.equal(error.details.expectedHash, targetMutation.remoteBeforeHash);
+        assert.match(error.details.actualHash, /^[a-f0-9]{64}$/);
+        assert.notEqual(error.details.actualHash, targetMutation.remoteBeforeHash);
+      },
+    },
+  ];
+
+  for (const testCase of cases) {
+    const remote = cloneJson(fixture.remote);
+    const forged = tamperReadyPlan(ready, (plan) => testCase.forge(plan, remote));
+    const beforeRemote = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, forged));
+    const serializedEvidence = JSON.stringify(rpp0232HashOnlyEvidence(ready, error));
+
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, testCase.expectedCode, testCase.name);
+    assert.equal(JSON.stringify(remote), beforeRemote, `${testCase.name} mutated the remote before refusal`);
+    for (const issueCode of testCase.expectedIssueCodes || []) {
+      assert.ok(
+        error.details.issues.some((issue) => issue.code === issueCode),
+        `${testCase.name} missing ${issueCode}`,
+      );
+    }
+    testCase.assertError?.(error);
+    for (const privateValue of fixture.privateValues) {
+      assert.equal(
+        serializedEvidence.includes(privateValue),
+        false,
+        `${testCase.name} leaked private value ${privateValue}`,
+      );
+      assert.equal(
+        JSON.stringify(error.details).includes(privateValue),
+        false,
+        `${testCase.name} leaked private value in refusal details ${privateValue}`,
+      );
+    }
   }
 });
 
