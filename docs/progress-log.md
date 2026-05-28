@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:28 CEST.
-- Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `43beb7c9c` (`feat: add stale plugin metadata owner evidence`).
+- Last update: 2026-05-28 05:31 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` at
+  `19d9d8034` (`docs: refresh progress for stale plugin metadata proof`), with
+  latest proof commit `43beb7c9c` (`feat: add stale plugin metadata owner
+  evidence`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -93,6 +95,14 @@ linked implementation artifacts.
   `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
   `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
   web child wedged and was restarted in tmux.
+- Current queued/session-only branch audit after rebasing this progress lane to
+  `19d9d8034`: `RPP-0038`, `RPP-0039`, `RPP-0108`, `RPP-0109`, `RPP-0110`,
+  `RPP-0111`, `RPP-0112`, `RPP-0208`, `RPP-0209`, `RPP-0211`, `RPP-0212`,
+  `RPP-0213`, `RPP-0309`, `RPP-0311`, `RPP-0315`, `RPP-0316`, `RPP-0411`,
+  `RPP-0413`, `RPP-0415`, `RPP-0416`, `RPP-0417`, `RPP-0418`, and
+  `RPP-0419`. Active pane/local work observed for `RPP-0113`,
+  critic-live-roster-9 follow-up, and this progress refresh remains
+  branch-local and is not counted as integrated evidence.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing

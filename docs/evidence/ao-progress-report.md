@@ -1,12 +1,13 @@
-# AO Progress Report - 2026-05-28 05:28 CEST
+# AO Progress Report - 2026-05-28 05:31 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through
-`43beb7c9c` (`feat: add stale plugin metadata owner evidence`). It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`lane/evidence-integration-20260527` at `19d9d8034`
+(`docs: refresh progress for stale plugin metadata proof`), with latest proof
+commit `43beb7c9c` (`feat: add stale plugin metadata owner evidence`). It
+separates committed proof from visible AO worker output that is still
+branch-local or in progress.
 
 ## Integrated Evidence
 
@@ -279,20 +280,23 @@ here.
 ## Active AO Roster From tmux and Branch Inspection
 
 Integrated evidence is counted only from `lane/evidence-integration-20260527`.
-The following worker outputs are visible but are **not** counted as final release
-readiness until reviewed, tested, integrated, and pushed to the integration
-branch.
+The lane head is `19d9d8034`, with `RPP-0414` integrated and 104 checked / 896
+open. Current queued/session-only refs observed after the latest fetch include
+`RPP-0038` (`4392057ba7`), `RPP-0039` (`d6a719a86e`), `RPP-0108` (`28209dbd5f`), `RPP-0109` (`0e99a80a70`), `RPP-0110` (`fa4106c89a`), `RPP-0111` (`b1d7ffe1a3`), `RPP-0112` (`583733ef33`), `RPP-0208` (`7688d324bd`), `RPP-0209` (`a8bc03eb78`), `RPP-0211` (`b02859919b`), `RPP-0212` (`d7630ff27d`), `RPP-0213` (`deaa5c09c8`), `RPP-0309` (`0e2e31b881`), `RPP-0311` (`b9fae85448`), `RPP-0315` (`8ba54b8eda`), `RPP-0316` (`634a5ba185`), `RPP-0411` (`89ecee8610`), `RPP-0413` (`0573ca5d28`), `RPP-0415` (`92c3ea862e`), `RPP-0416` (`f77e9530c2`), `RPP-0417` (`b0d53218cb`), `RPP-0418` (`003228c1df`), and `RPP-0419` (`2fd1d2e8a`). Active pane/local work not counted includes `RPP-0113`,
+critic-live-roster-9 local follow-up, and this progress refresh. These worker
+outputs are visible but are **not** counted as final release readiness until
+reviewed, tested, integrated, and pushed to the integration branch.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | `RPP-0101` through `RPP-0104` and `RPP-0107` are integrated; `RPP-0106` remains pushed branch-local and not counted yet. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, and `RPP-0037` are integrated; current visible work is `RPP-0038` progress timestamp proof work. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `43beb7c9c`. |
+| `rpp-24` | developer | `RPP-0101` through `RPP-0104` and `RPP-0107` are integrated. `RPP-0108` through `RPP-0112` are queued/session-only; active `RPP-0113` has local changes and is not counted. |
+| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, and `RPP-0030` through `RPP-0037` are integrated. `RPP-0038` and `RPP-0039` are queued/session-only and not counted. |
+| `rpp-26` | progress reporter | Reset onto `19d9d8034` and refreshed only progress/reporting files; no checklist count changes beyond integrated lane truth. |
 | `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0207`, `RPP-0210`, `RPP-0310`, and `RPP-0414`; now evaluating the next completed branch one at a time. |
-| `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, and `RPP-0210` are represented by pushed or integrated evidence; current visible work is `RPP-0211` mutation/precondition mapping. |
-| `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `43beb7c9c`. |
-| `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
+| `rpp-29` | developer | `RPP-0207` and `RPP-0210` are integrated. `RPP-0208`, `RPP-0209`, `RPP-0211`, `RPP-0212`, and `RPP-0213` are queued/session-only and not counted. |
+| `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated. `RPP-0309`, `RPP-0311`, `RPP-0315`, and `RPP-0316` remain queued/session-only and not counted. |
+| `rpp-31` | critic | `rpp-31-critic-live-roster-9` is pushed and has local follow-up; critic notes do not move checklist counts. |
+| `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated. `RPP-0411`, `RPP-0413`, `RPP-0415`, `RPP-0416`, `RPP-0417`, `RPP-0418`, and `RPP-0419` are queued/session-only and not counted. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
 | `rpp-10` through `rpp-23`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
