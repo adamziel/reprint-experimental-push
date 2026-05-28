@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, and RPP-0040
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, and RPP-0045
 
 ## What changed
 
@@ -51,14 +51,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0038 | Evidence toward variant-2 progress.html release timestamp now links the progress page, focused proof command, observed status, exact timestamp evidence, and `NO-GO` release status without moving release readiness. |
 | RPP-0039 | Evidence toward variant-2 `.agents/RELEASE_GATES.md` status row now parses the generated status row and runs negative/positive `check-release-gates` scenarios: dishonest `release_verdict: 4/4` evidence fails, while the generated `0/4` row remains honest `NO-GO`. |
 | RPP-0040 | Evidence toward variant-2 `verify:release` failure reason now runs the checked `npm run verify:release` missing-source path, asserts exit `1`, final `[verify-release:held ...]` marker, exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` evidence, and `mutationAttempted: false`; the release-gate CLI preserves that evidence while release remains `NO-GO` without provenance. |
+| RPP-0045 | Evidence toward variant-3 wrong remote alias rejection now generates a final-release fixture with every other gate supplied, sets `REPRINT_PUSH_REMOTE_URL` to a mismatched alias, and asserts exit `1`, `REPRINT_PUSH_SOURCE_URL_MISMATCH`, exact alias evidence, final bracketed status marker, and `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-wrong-remote-alias-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 31 tests.
+Observed status: pass, 32 tests.
 
 Progress HTML release timestamp proof:
 
@@ -78,6 +79,12 @@ Verify release failure reason proof:
 - Observed status: `pass`; checked `npm run verify:release` missing-source path exits `1` and prints `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`.
 - Evidence link: the release-gate CLI preserves exact `verifyReleaseFailure` evidence with `mutationAttempted: false` and still reports `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied.
 
+Generated wrong remote alias proof:
+
+- Command: `node --test test/release-gate-wrong-remote-alias-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; generated fixture supplies every other final-release gate while setting `REPRINT_PUSH_REMOTE_URL` to a mismatched alias fixture value.
+- Evidence link: `check-release-gates` exits `1` with `REPRINT_PUSH_SOURCE_URL_MISMATCH`, `finalGates: "19/20"`, exact `remote-alias` evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH]`, and `mutationAttempted: false`.
+
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
@@ -96,6 +103,7 @@ Key assertions:
 - Progress.html release timestamp proof ties `progress.html#release-proof-timestamp` to exact `progressReleaseTimestamp` gate evidence; the focused command observes status `pass`, the page reports `NO-GO`, and the release-gate CLI records `mutationAttempted: false`.
 - `.agents/RELEASE_GATES.md` status row coverage now records a scenario matrix: the negative case rejects a dishonest `release_verdict: 4/4` row with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and the positive case accepts the generated `release_verdict: 0/4` row while the CLI remains `NO-GO` without provenance and records `mutationAttempted: false`.
 - `verify:release` failure reason has tmux-visible variant-2 coverage: the checked `npm run verify:release` missing-source path exits `1`, ends stdout with `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`, starts no Playground server, and feeds exact final-release evidence into `check-release-gates` without any mutation attempt; the CLI still exits `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied.
+- Generated wrong remote alias coverage now shows a final-release fixture with every other gate supplied still fails closed at `remote-alias` only, with `REPRINT_PUSH_SOURCE_URL_MISMATCH`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH]` marker, exact mismatched alias evidence, and `mutationAttempted: false`.
 - Complete local candidate evidence yields `candidateMovement.allowed: true`, `releaseMovement.allowed: false`, and `releaseMovement.gates: "candidate-for-review"`.
 - Complete final evidence yields `releaseMovement.allowed: true` and `releaseMovement.gates: "20/20"`.
 
