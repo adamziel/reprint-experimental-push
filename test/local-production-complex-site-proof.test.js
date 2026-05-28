@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
+  buildSerializedBlockReferenceFailClosedProof,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
@@ -20,6 +21,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  serializedBlockReferenceFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -71,6 +73,19 @@ test('complex-site seed PHP can add a post_tag taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_tag_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add a serialized block reference fail-closed fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    serializedBlockReferenceFailClosed: true,
+  });
+
+  assert.match(php, /reprint-push-serialized-block-reference-fail-closed/);
+  assert.match(php, /Local Private Serialized Block Caption/);
+  assert.match(php, /Private Serialized Block Link/);
+  assert.match(php, /if \(\$complex_serialized_block_reference_fail_closed && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_serialized_block_reference_fail_closed = false/);
+});
+
 test('complex-site seed PHP can add a post parent graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -103,6 +118,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SERIALIZED_BLOCK_REFERENCE_FAIL_CLOSED_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
@@ -113,6 +129,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
   assert.equal(shape.postTagTaxonomyGraph, true);
+  assert.equal(shape.serializedBlockReferenceFailClosed, true);
   assert.equal(shape.postParentGraph, true);
   assert.equal(shape.commentGraph, true);
 });
@@ -233,6 +250,35 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site proof keeps serialized block references fail-closed and hash-only', () => {
+  const graphShape = { ...smallShape, serializedBlockReferenceFailClosed: true };
+  const proof = buildSerializedBlockReferenceFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const blockerJson = JSON.stringify(proof.blocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'blocked');
+  assert.equal(proof.counts.source.serializedBlockReferencePosts, 0);
+  assert.equal(proof.counts.localEdited.serializedBlockReferencePosts, 1);
+  assert.equal(proof.invariants.serializedBlockCountsPresent, true);
+  assert.equal(proof.invariants.plannerFailsClosed, true);
+  assert.equal(proof.invariants.releaseMovementPrevented, true);
+  assert.equal(proof.invariants.serializedBlockReferenceBlocked, true);
+  assert.equal(proof.invariants.serializedBlockReferenceRecorded, true);
+  assert.equal(proof.invariants.noSerializedBlockMutation, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.blockerEvidenceRedactsRawValues, true);
+  assert.match(proof.blocker.reason, /unsupported serialized block references/);
+  assert.equal(blockerJson.includes('Reprint Push Serialized Block Reference Fail Closed'), false);
+  assert.equal(blockerJson.includes('Local Private Serialized Block Caption'), false);
+  assert.equal(blockerJson.includes('Private Serialized Block Link'), false);
+  assert.equal(blockerJson.includes('reprint-push-serialized-block-reference-fail-closed'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -473,6 +519,22 @@ function syntheticComplexSnapshot(variant, shape) {
       post_id: 71001,
       meta_key: '_thumbnail_id',
       meta_value: '71901',
+    };
+  }
+
+  if (shape.serializedBlockReferenceFailClosed && local) {
+    snapshot.db.wp_posts['ID:71981'] = {
+      ID: 71981,
+      post_title: 'Reprint Push Serialized Block Reference Fail Closed',
+      post_name: 'reprint-push-serialized-block-reference-fail-closed',
+      post_content: [
+        '<!-- wp:image {"id":71001,"caption":"Local Private Serialized Block Caption"} /-->',
+        '<!-- wp:navigation-link {"kind":"post-type","type":"post","id":71001,"label":"Private Serialized Block Link"} /-->',
+      ].join('\n'),
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
     };
   }
 

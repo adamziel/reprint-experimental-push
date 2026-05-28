@@ -13,6 +13,7 @@ export const complexSiteFixtureShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  serializedBlockReferenceFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -36,6 +37,14 @@ const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
 const featuredImageMetaKey = '_thumbnail_id';
 const featuredImageAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageAttachmentId}"]`;
 const featuredImageMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImagePostId}:meta_key:${featuredImageMetaKey}"]`;
+const serializedBlockReferencePostId = 71981;
+const serializedBlockReferenceSlug = 'reprint-push-serialized-block-reference-fail-closed';
+const serializedBlockReferenceTitle = 'Reprint Push Serialized Block Reference Fail Closed';
+const serializedBlockReferenceContent = [
+  '<!-- wp:image {"id":71001,"caption":"Local Private Serialized Block Caption"} /-->',
+  '<!-- wp:navigation-link {"kind":"post-type","type":"post","id":71001,"label":"Private Serialized Block Link"} /-->',
+].join('\n');
+const serializedBlockReferenceResourceKey = `row:["wp_posts","ID:${serializedBlockReferencePostId}"]`;
 const postParentGraphParentId = 71801;
 const postParentGraphChildId = 71802;
 const postParentGraphParentSlug = 'reprint-push-post-parent-graph-parent';
@@ -100,6 +109,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
     taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
     postTagTaxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF === '1',
+    serializedBlockReferenceFailClosed: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_SERIALIZED_BLOCK_REFERENCE_FAIL_CLOSED_PROOF === '1',
     postParentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF === '1',
     commentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF === '1',
   });
@@ -120,6 +130,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
     `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
     `$complex_post_tag_taxonomy_graph = ${shape.postTagTaxonomyGraph ? 'true' : 'false'};`,
+    `$complex_serialized_block_reference_fail_closed = ${shape.serializedBlockReferenceFailClosed ? 'true' : 'false'};`,
     `$complex_post_parent_graph = ${shape.postParentGraph ? 'true' : 'false'};`,
     `$complex_comment_graph = ${shape.commentGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
@@ -153,6 +164,12 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  if (is_wp_error($attachment_result)) { throw new RuntimeException($attachment_result->get_error_message()); }",
     "  add_post_meta((int) $attachment_result, 'reprint_push_fixture', 'complex-featured-image', true);",
     `  update_post_meta($featured_post_id, ${phpString(featuredImageMetaKey)}, (string) $attachment_id);`,
+    "}",
+    "if ($complex_serialized_block_reference_fail_closed && $complex_is_local) {",
+    `  $serialized_block_post_id = ${serializedBlockReferencePostId};`,
+    `  $serialized_block_result = wp_insert_post(array('import_id'=>$serialized_block_post_id,'post_title'=>${phpString(serializedBlockReferenceTitle)},'post_name'=>${phpString(serializedBlockReferenceSlug)},'post_content'=>${phpString(serializedBlockReferenceContent)},'post_status'=>'publish','post_type'=>'page','post_parent'=>0,'post_author'=>0));`,
+    "  if (is_wp_error($serialized_block_result)) { throw new RuntimeException($serialized_block_result->get_error_message()); }",
+    "  add_post_meta((int) $serialized_block_result, 'reprint_push_fixture', 'serialized-block-reference-fail-closed', true);",
     "}",
     "if ($complex_post_parent_graph && $complex_is_local) {",
     `  $parent_post_id = ${postParentGraphParentId};`,
@@ -478,6 +495,77 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildSerializedBlockReferenceFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: sourceSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteChangedSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const serializedBlocker = readyPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === serializedBlockReferenceResourceKey) || null;
+  const blockerEvidence = serializedBlocker
+    ? hashOnlyWordPressGraphBlockerEvidence(serializedBlocker)
+    : null;
+  const blockerEvidenceJson = JSON.stringify(blockerEvidence);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    serializedBlockCountsPresent: counts.source.serializedBlockReferencePosts === 0
+      && counts.localEdited.serializedBlockReferencePosts >= 1,
+    plannerFailsClosed: readyPlan.status === 'blocked',
+    releaseMovementPrevented: readyPlan.status !== 'ready',
+    serializedBlockReferenceBlocked: serializedBlocker?.class === 'stale-wordpress-graph-identity'
+      && serializedBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(serializedBlocker?.reason || '').includes('unsupported serialized block references'),
+    serializedBlockReferenceRecorded: serializedBlocker?.references?.[0]?.relationshipType === 'serialized-block-reference'
+      && serializedBlocker?.references?.[0]?.relationshipKey === 'wp_posts.post_content',
+    noSerializedBlockMutation: !readyMutations.some((mutation) =>
+      mutation.resourceKey === serializedBlockReferenceResourceKey),
+    blockerEvidenceIsHashOnly: Boolean(blockerEvidence)
+      && [blockerEvidence.baseHash, blockerEvidence.localHash, blockerEvidence.remoteHash].every(isSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) => isSha256Hex(blockerEvidence.change?.[slot]?.hash)),
+    blockerEvidenceRedactsRawValues: ![
+      serializedBlockReferenceTitle,
+      serializedBlockReferenceSlug,
+      serializedBlockReferenceContent,
+      'Local Private Serialized Block Caption',
+      'Private Serialized Block Link',
+    ].some((privateValue) => blockerEvidenceJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'serialized-block-reference-fail-closed',
+    releaseReady: false,
+    resourceKey: serializedBlockReferenceResourceKey,
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    blocker: blockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +862,38 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function hashOnlyWordPressGraphBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: blocker.change || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        field: reference.field || null,
+        referenceCount: Number.isInteger(reference.referenceCount) ? reference.referenceCount : null,
+        referenceAttributePaths: Array.isArray(reference.referenceAttributePaths)
+          ? [...reference.referenceAttributePaths]
+          : [],
+      }))
+      : [],
+  };
+}
+
+function isSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -848,6 +968,10 @@ export function summarizeComplexSnapshot(snapshot) {
     featuredImageMeta: Object.values(postmeta).filter((row) =>
       String(row?.meta_key || '') === featuredImageMetaKey
       && String(row?.meta_value || '') === String(featuredImageAttachmentId)).length,
+    serializedBlockReferencePosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === serializedBlockReferencePostId
+      && String(row?.post_type || '') === 'page'
+      && String(row?.post_name || '') === serializedBlockReferenceSlug).length,
     postParentGraphParents: Object.values(posts).filter((row) =>
       Number(row?.ID) === postParentGraphParentId
       && String(row?.post_name || '') === postParentGraphParentSlug

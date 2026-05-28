@@ -1086,6 +1086,20 @@ const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set([
   'menu_item_parent',
 ]);
 
+const SERIALIZED_BLOCK_REFERENCE_KEYS = new Set([
+  'attachmentId',
+  'attachment_id',
+  'id',
+  'ids',
+  'mediaId',
+  'media_id',
+  'pageId',
+  'page_id',
+  'postId',
+  'post_id',
+  'ref',
+]);
+
 export const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = Object.freeze([
   'posts',
   'users',
@@ -1698,6 +1712,18 @@ function wordpressGraphSurfaceSupport(resource, value) {
     };
   }
 
+  if (suffix === 'posts') {
+    const serializedBlockReferences = unsupportedSerializedBlockReferences(resource, value);
+    if (serializedBlockReferences.length > 0) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} contains unsupported serialized block references that require parser-aware identity mapping.`,
+        references: serializedBlockReferences,
+      };
+    }
+  }
+
   if (suffix === 'postmeta' && UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS.has(value.meta_key)) {
     return {
       supported: false,
@@ -1729,6 +1755,77 @@ function wordpressGraphSurfaceSupport(resource, value) {
   }
 
   return { supported: true };
+}
+
+function unsupportedSerializedBlockReferences(resource, value) {
+  const references = [];
+  for (const field of ['post_content', 'post_excerpt']) {
+    const content = value[field];
+    if (typeof content !== 'string' || !content.includes('<!-- wp:')) {
+      continue;
+    }
+    const blockReferences = serializedBlockReferenceHints(content);
+    if (blockReferences.length === 0) {
+      continue;
+    }
+    references.push({
+      relationshipKey: `${resource.table}.${field}`,
+      relationshipType: 'serialized-block-reference',
+      sourceResourceKey: resource.key,
+      sourceTable: resource.table,
+      sourceRowId: resource.id,
+      field,
+      referenceCount: blockReferences.length,
+      referenceAttributePaths: [...new Set(blockReferences.map((reference) => reference.path))].sort(),
+    });
+  }
+  return references;
+}
+
+function serializedBlockReferenceHints(content) {
+  const references = [];
+  const blockPattern = /<!--\s+wp:[^\s]+(?:\s+({.*?}))?\s*\/?-->/gs;
+  let match;
+  while ((match = blockPattern.exec(content)) !== null) {
+    if (!match[1]) {
+      continue;
+    }
+    let attrs;
+    try {
+      attrs = JSON.parse(match[1]);
+    } catch {
+      references.push({ path: 'unparseable' });
+      continue;
+    }
+    collectSerializedBlockReferenceHints(attrs, [], references);
+  }
+  return references;
+}
+
+function collectSerializedBlockReferenceHints(value, path, references) {
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) =>
+      collectSerializedBlockReferenceHints(entry, [...path, String(index)], references));
+    return;
+  }
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    const nextPath = [...path, key];
+    if (SERIALIZED_BLOCK_REFERENCE_KEYS.has(key) && serializedBlockReferenceValueLooksLikeId(entry)) {
+      references.push({ path: nextPath.join('.') });
+      continue;
+    }
+    collectSerializedBlockReferenceHints(entry, nextPath, references);
+  }
+}
+
+function serializedBlockReferenceValueLooksLikeId(value) {
+  if (normalizePositiveInteger(value) != null) {
+    return true;
+  }
+  return Array.isArray(value) && value.some((entry) => normalizePositiveInteger(entry) != null);
 }
 
 function isUnsafeWordPressGraphReference(reference) {
