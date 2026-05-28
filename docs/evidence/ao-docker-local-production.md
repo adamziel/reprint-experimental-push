@@ -1,11 +1,13 @@
 # Docker local production complex-site harness evidence
 
 Date: 2026-05-28
-Lane: `docker-local-production`
+Lane: `local-production-proof-artifact-refresh`
 
 ## What changed
 
-This lane adds `scripts/docker/production-complex-site-harness.mjs`, a local-only Docker proof wrapper for treating a complex disposable WordPress topology as production evidence when Docker is available. The harness is intentionally fail-closed when Docker is unavailable or when the generated topology violates the local-only policy.
+This lane maintains `scripts/docker/production-complex-site-harness.mjs`, a local-only Docker proof wrapper for treating a complex disposable WordPress topology as production-shaped evidence when Docker is available. The harness is intentionally fail-closed when Docker is unavailable or when the generated topology violates the local-only policy.
+
+The refresh adds a deterministic `release-gate-input.json` surface that can be passed directly to `scripts/release/check-release-gates.mjs` without external accounts. The artifact includes a canonical SHA-256 over the release-gate-relevant fields, a redacted/empty `env`, scoped `evidence`, and the release gate evaluator summary. A blocked Docker prerequisite remains a release **NO-GO**.
 
 ## Harness contract
 
@@ -31,6 +33,9 @@ When Docker is available, the wrapper writes a deterministic workdir with:
 - `compose.yml`
 - one seed PHP file per site
 - `docker-runner-planner-proof.mjs`
+
+The release evidence files are written to a persistent evidence directory, defaulting to `/tmp/reprint-docker-local-production-evidence-*`, so cleanup of the disposable Compose workdir does not remove the gate input:
+
 - `planner-proof.json`
 - `release-verify-output.txt`
 - `release-gate-input.json`
@@ -49,6 +54,8 @@ npm run verify:release:docker-local-production
 
 Observed status: `2`
 
+Observed artifact: `/tmp/reprint-docker-local-production-evidence-WWDomk/release-gate-input.json`
+
 Observed proof markers:
 
 ```text
@@ -57,8 +64,34 @@ Observed proof markers:
 "reason": "Docker is not installed or is not on PATH; the local production proof must fail closed before any mutation attempt."
 "acceptedForReleaseGate": false
 "failClosed": true
-"artifactFile": "/tmp/reprint-docker-local-production-*/release-gate-input.json"
+"scope": "missing"
+"artifactFile": "/tmp/reprint-docker-local-production-evidence-*/release-gate-input.json"
+"releaseGateEvaluation.primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"
+"releaseGateEvaluation.releaseMovement.allowed": false
+"evidence.verifyReleaseFailure.exitCode": 2
+"evidence.verifyReleaseFailure.reason": "DOCKER_CLI_MISSING"
 [RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]
+```
+
+Release-gate consumption check:
+
+```sh
+node ./scripts/release/check-release-gates.mjs \
+  --evidence-file /tmp/reprint-docker-local-production-evidence-WWDomk/release-gate-input.json \
+  --now 2026-05-28T00:00:00.000Z
+```
+
+Observed status: `1`
+
+Observed summary:
+
+```json
+{
+  "ok": false,
+  "primaryFailureCode": "REPRINT_PUSH_LIVE_SOURCE_REQUIRED",
+  "releaseAllowed": false,
+  "gateState": "held"
+}
 ```
 
 This is not a Docker WordPress release pass. It is concrete unavailable-capability evidence that the release gate blocks rather than silently falling back to a non-Docker proof.
@@ -72,7 +105,7 @@ node --check scripts/docker/production-complex-site-harness.mjs
 npm run test:docker:production-complex-site-harness
 ```
 
-Observed result: 9/9 tests passed.
+Observed result: 10/10 tests passed.
 
 Covered assertions:
 
@@ -85,6 +118,8 @@ Covered assertions:
 - validation rejects public/non-8080 ports and tunnel-shaped images
 - site seed PHP includes complex production fixtures and graph fixtures
 - fail-closed release gate input artifact records blocked Docker readiness
+- release gate input has a stable canonical digest across run-local paths
+- `check-release-gates` consumes the emitted artifact directly and stays held
 
 ## RPP coverage advanced
 

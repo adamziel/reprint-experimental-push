@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -9,8 +12,10 @@ import {
   renderComposeYaml,
   renderRunnerPlannerProofScript,
   renderSiteSeedPhp,
+  validateReleaseGateArtifact,
   validateTopologyPlan,
 } from '../scripts/docker/production-complex-site-harness.mjs';
+import { runReleaseGateCli } from '../scripts/release/check-release-gates.mjs';
 
 const graphEnv = Object.freeze({
   REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
@@ -178,6 +183,7 @@ test('Fail-closed release gate artifact is deterministic enough for audit input'
   const plan = buildDockerTopologyPlan({
     cwd: '/repo/reprint-push',
     workDir: '/tmp/reprint-docker-local-production-test',
+    evidenceDir: '/tmp/reprint-docker-local-production-evidence-test',
     env: graphEnv,
   });
   const probe = probeDockerPrerequisites({
@@ -187,15 +193,118 @@ test('Fail-closed release gate artifact is deterministic enough for audit input'
       stderr: '',
     }),
   });
-  const artifact = buildPrerequisiteGateArtifact({ probe, plan, status: 'blocked' });
+  const artifact = buildPrerequisiteGateArtifact({
+    probe,
+    plan,
+    status: 'blocked',
+    generatedAt: '2026-05-28T00:00:00.000Z',
+  });
 
+  assert.equal(artifact.schemaVersion, 1);
   assert.equal(artifact.acceptedForReleaseGate, false);
   assert.equal(artifact.failClosed, true);
+  assert.equal(artifact.scope, 'missing');
+  assert.deepEqual(artifact.env, {});
   assert.equal(artifact.topology.publishedPorts[0].hostPort, 8080);
   assert.equal(artifact.topology.validation.ok, true);
+  assert.equal(artifact.artifactFile, '/tmp/reprint-docker-local-production-evidence-test/release-gate-input.json');
+  assert.equal(artifact.evidence.dockerLocalProductionProof.ok, false);
+  assert.equal(artifact.evidence.dockerLocalProductionProof.code, 'DOCKER_CLI_MISSING');
+  assert.equal(artifact.evidence.dockerLocalProductionProof.externalAccountsRequired, false);
+  assert.equal(artifact.evidence.verifyReleaseFailure.exitCode, 2);
+  assert.equal(artifact.evidence.verifyReleaseFailure.reason, 'DOCKER_CLI_MISSING');
+  assert.equal(artifact.releaseGateEvaluation.ok, false);
+  assert.equal(artifact.releaseGateEvaluation.releaseMovement.allowed, false);
+  assert.equal(artifact.releaseGateEvaluation.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.match(
+    artifact.releaseGateEvaluation.statusMarker,
+    /^\[docker-local-production-release-gates:held final=\d+\/20 candidate=\d+\/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/,
+  );
+  assert.match(artifact.deterministic.canonicalSha256, /^[a-f0-9]{64}$/);
+  assert.deepEqual(validateReleaseGateArtifact(artifact), {
+    ok: true,
+    failures: [],
+    releaseGateEvaluation: artifact.releaseGateEvaluation,
+  });
   assert.ok(artifact.rppEvidence.advancedItems.some((item) => item.startsWith('RPP-0801')));
   assert.equal(artifact.rppEvidence.dockerWordPressReleaseReady, false);
   assert.equal(artifact.rppEvidence.dockerWordPressBlockedUntilPrerequisitesPass, true);
+});
+
+test('Release gate artifact is stable across run-local paths and can be consumed directly by the gate checker', () => {
+  const makeArtifact = (workDir, evidenceDir, checkedAt) => {
+    const plan = buildDockerTopologyPlan({
+      cwd: '/repo/reprint-push',
+      workDir,
+      evidenceDir,
+      env: graphEnv,
+    });
+    const probe = {
+      ok: false,
+      failClosed: true,
+      checkedAt,
+      checks: {
+        dockerCli: {
+          command: 'docker --version',
+          ok: false,
+          status: null,
+          signal: null,
+          stdout: '',
+          stderr: '',
+          missingExecutable: true,
+          error: { code: 'ENOENT', message: 'spawn docker ENOENT' },
+        },
+        dockerCompose: null,
+        dockerDaemon: null,
+      },
+      blocker: {
+        code: 'DOCKER_CLI_MISSING',
+        reason: 'Docker is not installed or is not on PATH; the local production proof must fail closed before any mutation attempt.',
+        detail: {
+          command: 'docker --version',
+          ok: false,
+          status: null,
+          signal: null,
+          stdout: '',
+          stderr: '',
+          missingExecutable: true,
+          error: { code: 'ENOENT', message: 'spawn docker ENOENT' },
+        },
+      },
+    };
+    return buildPrerequisiteGateArtifact({
+      probe,
+      plan,
+      status: 'blocked',
+      generatedAt: '2026-05-28T00:00:00.000Z',
+    });
+  };
+  const left = makeArtifact('/tmp/reprint-left-work', '/tmp/reprint-left-evidence', '2026-05-28T00:00:01.000Z');
+  const right = makeArtifact('/tmp/reprint-right-work', '/tmp/reprint-right-evidence', '2026-05-28T00:00:02.000Z');
+
+  assert.notEqual(left.artifactFile, right.artifactFile);
+  assert.equal(left.deterministic.canonicalSha256, right.deterministic.canonicalSha256);
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-gate-artifact-'));
+  const artifactFile = path.join(tempDir, 'release-gate-input.json');
+  fs.writeFileSync(artifactFile, `${JSON.stringify(left, null, 2)}\n`);
+  const result = runReleaseGateCli(['--evidence-file', artifactFile], {
+    cwd: '/repo/reprint-push',
+    env: {},
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.report.ok, false);
+  assert.equal(result.report.primaryFailureCode, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
+  assert.equal(result.report.releaseMovement.allowed, false);
+  assert.equal(result.report.gateState, 'held');
+  assert.ok(
+    result.report.evaluation.gates.some((gate) =>
+      gate.id === 'verify-release-failure-reason'
+      && gate.status === 'candidate'
+      && gate.evidence.exitCode === 2),
+  );
 });
 
 test('Runner planner proof script preserves the docker runtime and env-shaped complex fixture', () => {
