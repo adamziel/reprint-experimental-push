@@ -8,6 +8,7 @@ import {
   serializeResourceValue,
   setResource,
 } from './resources.js';
+import { validatePluginOwnedDriverPayload } from './plugin-driver-validators.js';
 import { readRecoveryJournal } from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
@@ -232,18 +233,27 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
     }
 
     const driver = mutation.pluginOwnedResource?.driver || null;
+    const driverPayloadSupport = validatePluginOwnedDriverPayload({
+      resource: mutation.resource,
+      driver,
+      value: plannedValue,
+    });
     const supported = mutation.pluginOwnedResource?.pluginOwner === owner
       && isActivePluginOwnerPresent(remote, owner, plan)
-      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue);
+      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue)
+      && driverPayloadSupport.supported;
     if (!supported) {
       throw new PushPlanError(
-        'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
-        `Refusing to apply unsupported plugin-owned resource ${mutation.resourceKey}.`,
+        driverPayloadSupport.supported ? 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE' : 'INVALID_PLUGIN_DRIVER_PAYLOAD',
+        driverPayloadSupport.supported
+          ? `Refusing to apply unsupported plugin-owned resource ${mutation.resourceKey}.`
+          : `Refusing to apply invalid plugin-owned resource payload ${mutation.resourceKey}.`,
         {
           mutationId: mutation.id,
           resourceKey: mutation.resourceKey,
           pluginOwner: owner,
           driver,
+          ...(driverPayloadSupport.reasonCode ? { reasonCode: driverPayloadSupport.reasonCode } : {}),
           applyValidationEvidence: pluginOwnedApplyValidationEvidence({
             remote,
             mutation,
@@ -252,6 +262,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
             plannedValue,
             remoteValue,
             outcome: 'refused-before-mutation',
+            driverPayloadValidationEvidence: driverPayloadSupport.evidence,
           }),
         },
       );
@@ -402,6 +413,7 @@ function pluginOwnedApplyValidationEvidence({
   plannedValue,
   remoteValue,
   outcome,
+  driverPayloadValidationEvidence = mutation.pluginOwnedResource?.driverPayloadValidationEvidence || null,
 }) {
   return {
     reasonCode: outcome === 'accepted'
@@ -424,6 +436,7 @@ function pluginOwnedApplyValidationEvidence({
       hash: resourceHash(remote, mutation.resource),
     },
     driverEvidence: pluginOwnedDriverEvidenceSummary(mutation.pluginOwnedResource?.driverEvidence),
+    driverPayloadValidationEvidence,
   };
 }
 
@@ -986,6 +999,11 @@ function driverApplyValidationHookEvidence(remote, mutation) {
     plannedValue,
     remoteValue,
     outcome: 'accepted',
+    driverPayloadValidationEvidence: validatePluginOwnedDriverPayload({
+      resource: mutation.resource,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      value: plannedValue,
+    }).evidence,
   });
 }
 

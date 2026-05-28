@@ -8,6 +8,7 @@ import {
   resourceHash,
   serializeResourceValue,
 } from './resources.js';
+import { validatePluginOwnedDriverPayload } from './plugin-driver-validators.js';
 
 const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
   'wp-option',
@@ -262,6 +263,32 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           });
           continue;
         }
+        const driverPayloadSupport = validatePluginOwnedDriverPayload({
+          resource,
+          driver: support.driver,
+          value: localValue,
+        });
+        if (!driverPayloadSupport.supported) {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support: {
+              ...support,
+              supported: false,
+              className: driverPayloadSupport.className,
+              reason: driverPayloadSupport.reason,
+              reasonCode: driverPayloadSupport.reasonCode,
+              driverPayloadValidationEvidence: driverPayloadSupport.evidence,
+            },
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
       }
 
       const graphIdentitySupport = wordpressGraphIdentitySupport({
@@ -317,6 +344,11 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           local,
           remote,
         });
+        const driverPayloadValidationEvidence = validatePluginOwnedDriverPayload({
+          resource,
+          driver: support.driver,
+          value: localValue,
+        }).evidence;
         mutation.pluginOwnedResource = {
           pluginOwner: owner,
           driver: support.driver,
@@ -324,6 +356,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           supportsDelete: support.supportsDelete,
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
+          ...(driverPayloadValidationEvidence ? { driverPayloadValidationEvidence } : {}),
           auditEvidence: pluginOwnedDriverAuditEvidence({
             resource,
             owner,
@@ -2428,6 +2461,8 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.reasonCode ? { reasonCode: support.reasonCode } : {}),
+    ...(support.driverPayloadValidationEvidence ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence } : {}),
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,

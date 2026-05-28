@@ -76,6 +76,32 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0448 serialized option validator, variant 3
+
+Focused local plugin-driver coverage now validates `wp-option` rows marked with
+`serialization: php-serialize` before they are planned/applied. A valid
+serialized plugin-owned option plans as one mutation, reaches the apply
+`beforeMutation` hook with accepted driver payload validation evidence, and
+commits through the local apply executor.
+
+Invalid serialized option payloads fail closed in both dry-run planning and
+forged ready-plan apply. The planner emits an
+`invalid-plugin-driver-payload` blocker with
+`INVALID_SERIALIZED_OPTION_PAYLOAD`, and apply refuses before the mutation hook
+with `INVALID_PLUGIN_DRIVER_PAYLOAD`.
+
+Evidence status: local plugin-driver node proof only; it is not
+production-backed and keeps the release gate at NO-GO. The proof records only
+`sha256:` hashes for the accepted mutation, payload validation evidence, apply
+hook evidence, journal entry, planner blocker, forged-apply refusal, and remote
+preservation; raw serialized option private values are not included.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0448|serialized option validator|plugin-owned option rows|driver apply validation' test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +115,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0448 — serialized option validator: valid plugin-owned serialized option
+  payloads carry one real mutation through apply, while invalid serialized
+  option payloads fail closed during planning and forged-plan apply.
