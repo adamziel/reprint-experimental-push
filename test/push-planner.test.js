@@ -681,23 +681,41 @@ test('plans local deletions only behind live remote preconditions', () => {
   assert.equal(Object.hasOwn(result.site.db.wp_posts, 'ID:1'), false);
 });
 
-test('stops a local deletion when the remote edited the same resource', () => {
+test('stops a local deletion when the remote edited the same resource without leaking private row values', () => {
   const base = baseSite();
-  const local = baseSite();
-  const remote = baseSite();
+  base.db.wp_posts['ID:1'].post_title = 'Base private title must stay out of evidence';
+  base.db.wp_posts['ID:1'].post_content = 'Base private body must stay out of evidence';
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
   delete local.db.wp_posts['ID:1'];
-  remote.db.wp_posts['ID:1'].post_title = 'Remote secret editorial update';
+  remote.db.wp_posts['ID:1'].post_title = 'Remote private editorial update must stay out of evidence';
+  remote.db.wp_posts['ID:1'].post_content = 'Remote private body must stay out of evidence';
 
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
+  const serializedPlan = JSON.stringify(plan);
 
   assert.equal(plan.status, 'conflict');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, 'row:["wp_posts","ID:1"]'), undefined);
   assert.equal(conflict.class, 'row-conflict');
   assert.equal(conflict.change.localChange, 'delete');
   assert.equal(conflict.change.remoteChange, 'update');
-  assert.equal(JSON.stringify(conflict).includes('Remote secret editorial update'), false);
+  assert.equal(conflict.change.base.state, 'present');
+  assert.equal(conflict.change.local.state, 'absent');
+  assert.equal(conflict.change.remote.state, 'present');
+  assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(conflict.change.remote.hash, /^[a-f0-9]{64}$/);
+  for (const rawValue of [
+    'Base private title must stay out of evidence',
+    'Base private body must stay out of evidence',
+    'Remote private editorial update must stay out of evidence',
+    'Remote private body must stay out of evidence',
+  ]) {
+    assert.equal(serializedPlan.includes(rawValue), false, rawValue);
+  }
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
-  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote secret editorial update');
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote private editorial update must stay out of evidence');
 });
 
 test('stops a local directory deletion that would remove a remote-only descendant', () => {
