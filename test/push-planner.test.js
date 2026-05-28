@@ -178,6 +178,17 @@ function sha256Evidence(value) {
   return `sha256:${digest(value)}`;
 }
 
+function assertSha256Evidence(value) {
+  assert.match(value, /^sha256:[a-f0-9]{64}$/);
+}
+
+function assertHashOnlyEvidenceRedacted(evidence, forbiddenValues) {
+  const serialized = JSON.stringify(evidence);
+  for (const value of forbiddenValues) {
+    assert.equal(serialized.includes(value), false, `hash-only evidence leaked ${value}`);
+  }
+}
+
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
 const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
 
@@ -3501,6 +3512,181 @@ test('fixture forms lab table requires exact driver and active fixture plugin ev
   const changedPluginPlan = planFor(base, local, changedPluginRemote);
   assert.equal(changedPluginPlan.status, 'blocked');
   assert.equal(changedPluginPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+});
+
+test('RPP-0457 generated driver dry-run validation hook accepts valid and refuses bad payload before mutation', () => {
+  const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
+  const resource = {
+    type: 'row',
+    table: 'wp_reprint_push_forms_lab',
+    id: 'id:1',
+    key: resourceKey,
+  };
+  const base = baseSite();
+  base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+  base.db.wp_reprint_push_forms_lab = {
+    'id:1': {
+      id: 1,
+      form_slug: 'contact',
+      payload: { owner: 'forms', mode: 'rpp0457-base-private' },
+      updated_marker: 'base',
+      __pluginOwner: 'forms',
+    },
+  };
+  const generatedCases = [
+    {
+      id: 'valid-payload-accepted',
+      outcome: 'accepted',
+      localMode: 'rpp0457-valid-local-private',
+      mutate(local) {
+        local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = this.localMode;
+        local.db.wp_reprint_push_forms_lab['id:1'].updated_marker = 'rpp0457-valid-marker-private';
+      },
+      expectedIssueCodes: [],
+    },
+    {
+      id: 'payload-owner-mismatch-refused',
+      outcome: 'refused-before-mutation',
+      localMode: 'rpp0457-owner-local-private',
+      mutate(local) {
+        local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = this.localMode;
+        local.db.wp_reprint_push_forms_lab['id:1'].payload.owner = 'rpp0457-private-owner-mismatch';
+      },
+      expectedIssueCodes: ['PAYLOAD_OWNER_MISMATCH'],
+    },
+    {
+      id: 'row-id-mismatch-refused',
+      outcome: 'refused-before-mutation',
+      localMode: 'rpp0457-id-local-private',
+      mutate(local) {
+        local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = this.localMode;
+        local.db.wp_reprint_push_forms_lab['id:1'].id = 2;
+      },
+      expectedIssueCodes: ['ROW_ID_MISMATCH'],
+    },
+  ];
+
+  const evidence = generatedCases.map((generatedCase) => {
+    const local = JSON.parse(JSON.stringify(base));
+    generatedCase.mutate(local);
+    local.meta = {
+      pushPolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table'),
+      ),
+    };
+    const remote = JSON.parse(JSON.stringify(base));
+    const remoteBeforeHash = sha256Evidence(remote);
+    const rowBeforeHash = sha256Evidence(resourceHash(remote, resource));
+    const plan = planFor(base, local, remote);
+    const forbiddenValues = [
+      'rpp0457-base-private',
+      generatedCase.localMode,
+      'rpp0457-valid-marker-private',
+      'rpp0457-private-owner-mismatch',
+    ];
+
+    if (generatedCase.outcome === 'accepted') {
+      const mutation = mutationFor(plan, resourceKey);
+      const dryRunEvidence = mutation.pluginOwnedResource.driverEvidence.dryRunValidationEvidence;
+      const result = applyPlan(remote, plan);
+      const proof = {
+        rpp: 'RPP-0457',
+        generatedCaseId: generatedCase.id,
+        evidenceSource: 'local-focused-plugin-driver-test',
+        productionBacked: false,
+        releaseGate: 'NO-GO',
+        rawValuesIncluded: false,
+        outcome: dryRunEvidence.outcome,
+        reasonCode: dryRunEvidence.reasonCode,
+        validationEvidenceHash: sha256Evidence(dryRunEvidence),
+        driverEvidenceHash: sha256Evidence(mutation.pluginOwnedResource.driverEvidence),
+        auditEvidenceHash: sha256Evidence(mutation.pluginOwnedResource.auditEvidence),
+        remoteBeforeHash,
+        remoteAfterHash: sha256Evidence(result.site),
+      };
+
+      assert.equal(plan.status, 'ready');
+      assert.equal(plan.summary.mutations, 1);
+      assert.equal(plan.blockers.length, 0);
+      assert.equal(mutation.pluginOwnedResource.driver, 'fixture-forms-lab-table');
+      assert.equal(dryRunEvidence.reasonCode, 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_ACCEPTED');
+      assert.equal(dryRunEvidence.operation, 'driver-dry-run-validation');
+      assert.equal(dryRunEvidence.outcome, 'accepted');
+      assert.deepEqual(dryRunEvidence.issueCodes, []);
+      assert.equal(dryRunEvidence.resourceKey, resourceKey);
+      assert.equal(dryRunEvidence.pluginOwner, 'forms');
+      assert.equal(dryRunEvidence.driver, 'fixture-forms-lab-table');
+      assert.equal(dryRunEvidence.rawValuesIncluded, false);
+      assert.match(dryRunEvidence.planned.hash, /^[a-f0-9]{64}$/);
+      assert.match(dryRunEvidence.base.hash, /^[a-f0-9]{64}$/);
+      assert.match(dryRunEvidence.remote.hash, /^[a-f0-9]{64}$/);
+      assert.equal(result.appliedMutations, 1);
+      assert.equal(result.site.db.wp_reprint_push_forms_lab['id:1'].payload.mode, generatedCase.localMode);
+      assertSha256Evidence(proof.validationEvidenceHash);
+      assertSha256Evidence(proof.driverEvidenceHash);
+      assertSha256Evidence(proof.auditEvidenceHash);
+      assertSha256Evidence(proof.remoteBeforeHash);
+      assertSha256Evidence(proof.remoteAfterHash);
+      assertHashOnlyEvidenceRedacted({ proof, dryRunEvidence }, forbiddenValues);
+      return proof;
+    }
+
+    const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+    const dryRunEvidence = blocker.driverDryRunValidationEvidence;
+    const error = captureError(() => applyPlan(remote, plan));
+    const proof = {
+      rpp: 'RPP-0457',
+      generatedCaseId: generatedCase.id,
+      evidenceSource: 'local-focused-plugin-driver-test',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      rawValuesIncluded: false,
+      outcome: dryRunEvidence.outcome,
+      reasonCode: dryRunEvidence.reasonCode,
+      issueCodes: dryRunEvidence.issueCodes,
+      blockerClass: blocker.class,
+      validationEvidenceHash: sha256Evidence(dryRunEvidence),
+      blockerHash: sha256Evidence(blocker),
+      remoteBeforeHash,
+      remoteAfterHash: sha256Evidence(remote),
+      rowBeforeHash,
+      rowAfterHash: sha256Evidence(resourceHash(remote, resource)),
+    };
+
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.summary.mutations, 0);
+    assert.equal(mutationFor(plan, resourceKey), undefined);
+    assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+    assert.equal(blocker.reason, 'Fixture forms lab table driver dry-run validation refused the planned row payload.');
+    assert.equal(dryRunEvidence.reasonCode, 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED');
+    assert.equal(dryRunEvidence.operation, 'driver-dry-run-validation');
+    assert.equal(dryRunEvidence.outcome, 'refused-before-mutation');
+    assert.equal(dryRunEvidence.rawValuesIncluded, false);
+    assert.deepEqual(dryRunEvidence.issueCodes, generatedCase.expectedIssueCodes);
+    assert.match(dryRunEvidence.planned.hash, /^[a-f0-9]{64}$/);
+    assert.match(dryRunEvidence.base.hash, /^[a-f0-9]{64}$/);
+    assert.match(dryRunEvidence.remote.hash, /^[a-f0-9]{64}$/);
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(proof.remoteBeforeHash, proof.remoteAfterHash);
+    assert.equal(proof.rowBeforeHash, proof.rowAfterHash);
+    assert.equal(remote.db.wp_reprint_push_forms_lab['id:1'].payload.mode, 'rpp0457-base-private');
+    assertSha256Evidence(proof.validationEvidenceHash);
+    assertSha256Evidence(proof.blockerHash);
+    assertSha256Evidence(proof.remoteBeforeHash);
+    assertSha256Evidence(proof.rowBeforeHash);
+    assertHashOnlyEvidenceRedacted({ proof, dryRunEvidence, blocker }, forbiddenValues);
+    return proof;
+  });
+
+  assert.deepEqual(
+    evidence.map((entry) => [entry.generatedCaseId, entry.reasonCode, entry.outcome]),
+    [
+      ['valid-payload-accepted', 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_ACCEPTED', 'accepted'],
+      ['payload-owner-mismatch-refused', 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED', 'refused-before-mutation'],
+      ['row-id-mismatch-refused', 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED', 'refused-before-mutation'],
+    ],
+  );
 });
 
 test('RPP-0438 driver apply validation hook carries one valid fixture mutation through apply', () => {
