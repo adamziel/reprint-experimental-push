@@ -1,4 +1,4 @@
-# AO Progress Report - 2026-05-28 20:48 CEST
+# AO Progress Report - 2026-05-28 20:57 CEST
 
 Status: **NO-GO for final release**.
 
@@ -39,6 +39,13 @@ progress.
   `node --test test/release-gate-tmux-status-marker-focused-regression.test.js`
   passed 1/1, proving malformed marker refusal and exact final marker stdout
   evidence while final release remains **NO-GO**.
+- Branch integration audit now reports zero unmerged `session/rpp*` refs across
+  the 842 local/remote refs inspected, and zero unmerged refs in the broader
+  `rpp|session` audit. The lane preserves the stale auth-session boundary/code
+  branch ancestry, keeps the corrected source-only release gate from
+  `auth-session-boundary-v2`, and adds packaged auth source candidate fallback
+  tests for malformed direct source URL handling. This does not move checklist
+  counts.
 - Session/rpp cleanup now checks `RPP-0156` by integrating the branch-local
   generated-harness atomic plugin install stack proof. The current lane exposes
   `atomicPluginInstallStack` target coverage across all 10 tiers, including

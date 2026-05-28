@@ -101,6 +101,42 @@ const liveCredentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
 };
+
+function parseFirstJsonObject(stdout) {
+  const text = String(stdout || '').trim();
+  const firstBrace = text.indexOf('{');
+  assert.notEqual(firstBrace, -1, `stdout did not contain JSON:\n${stdout}`);
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = firstBrace; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+    } else if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return JSON.parse(text.slice(firstBrace, index + 1));
+      }
+    }
+  }
+
+  throw new Error(`stdout JSON object was incomplete:\n${stdout}`);
+}
+
 const proofSubprocessTimeoutMs = 30_000;
 const packagedProofSubprocessTimeoutMs = 90_000;
 const proofSubprocessKillSignal = 'SIGTERM';
@@ -1209,7 +1245,7 @@ test('production-shaped release verify does not let REPRINT_PUSH_REMOTE_URL subs
 
   assertSpawnCompletedWithoutSpawnError(proof, 'remote-url-only checked release verify', releaseVerifyInnerTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
-  const summary = JSON.parse(proof.stdout);
+  const summary = parseFirstJsonObject(proof.stdout);
   assert.equal(summary.releaseProof?.code, 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED');
   assert.equal(summary.topology?.sourceUrl, '');
   assert.equal(summary.boundary?.authSession?.observed, 'missing-live-source');
@@ -1499,7 +1535,7 @@ test('production-shaped release verify requires an auth/session source command f
     releaseVerifyInnerTimeoutMs,
   );
   assert.equal(proof.status, 1, proof.stderr);
-  const summary = JSON.parse(proof.stdout);
+  const summary = parseFirstJsonObject(proof.stdout);
   assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
   assert.equal(
     summary.boundary?.liveAuthSessionSource?.observed,
@@ -1539,7 +1575,7 @@ test('production-shaped release verify rejects an auth/session source command fo
     releaseVerifyInnerTimeoutMs,
   );
   assert.equal(proof.status, 1, proof.stderr);
-  const summary = JSON.parse(proof.stdout);
+  const summary = parseFirstJsonObject(proof.stdout);
   assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
   assert.equal(summary.topology?.sourceUrl, 'http://127.0.0.1:65535');
   assert.equal(summary.boundary?.authSession?.observed, 'invalid-production-auth-session-source');
@@ -3289,6 +3325,7 @@ test('packaged production plugin readiness helper fails closed when timeout fall
 });
 
 test('packaged production plugin runtime source binding replaces the stale command source URL', () => {
+  const runtimeSourceUrl = 'http://127.0.0.1:49152';
   const bound = bindPackagedProductionPluginRuntimeSource({
     sourceUrl: 'http://127.0.0.1:8080',
     authSessionSource: {
@@ -3297,14 +3334,19 @@ test('packaged production plugin runtime source binding replaces the stale comma
       username: 'reprint_push_admin',
       applicationPassword: 'reprint-push-admin-app-password',
     },
-    runtimeSourceUrl: 'http://127.0.0.1:49152',
+    runtimeSourceUrl,
   });
 
   assert.deepEqual(bound, {
-    sourceUrl: 'http://127.0.0.1:49152',
+    sourceUrl: runtimeSourceUrl,
+    authSessionSourceCommand: `REPRINT_PUSH_PACKAGED_PRODUCTION_PLUGIN=1 ${buildAuthSessionSourceCommand({
+      sourceUrl: runtimeSourceUrl,
+      username: 'reprint_push_admin',
+      applicationPassword: 'reprint-push-admin-app-password',
+    })}`,
     authSessionSource: {
       ok: true,
-      sourceUrl: 'http://127.0.0.1:49152',
+      sourceUrl: runtimeSourceUrl,
       username: 'reprint_push_admin',
       applicationPassword: 'reprint-push-admin-app-password',
     },
@@ -6319,7 +6361,7 @@ test('production-shaped live release verify command fails closed instead of usin
 
   assertLiveReleaseVerifyProof(proof, 'live release verify wrapper', liveWrapperSubprocessTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
-  const summary = JSON.parse(proof.stdout);
+  const summary = parseFirstJsonObject(proof.stdout);
 
   assert.equal(summary.ok, false);
   assert.equal(summary.boundary?.firstRemainingProductionBoundary, 'explicit live production-owned release boundary');
@@ -6364,7 +6406,7 @@ test('production-shaped live release verify rejects a packaged fallback source e
 
   assertLiveReleaseVerifyProof(proof, 'packaged fallback live release verify wrapper', proofSubprocessTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
-  const summary = JSON.parse(proof.stdout);
+  const summary = parseFirstJsonObject(proof.stdout);
   assert.equal(summary.releaseProof?.code, 'REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED');
   assert.equal(summary.topologyEvidence?.topology?.packagedFallbackSource, true);
   assert.equal(summary.releaseMovement?.allowed, false);
@@ -6396,7 +6438,7 @@ test('production-shaped live release verify rejects mismatched source URL aliase
 
   assertLiveReleaseVerifyProof(proof, 'wrong source URL live release verify wrapper', proofSubprocessTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
-  const summary = JSON.parse(proof.stdout);
+  const summary = parseFirstJsonObject(proof.stdout);
   assert.equal(summary.releaseProof?.code, 'REPRINT_PUSH_SOURCE_URL_MISMATCH');
   assert.equal(summary.boundary?.liveSource?.observed, 'http://127.0.0.1:49199');
   assert.equal(summary.releaseMovement?.allowed, false);

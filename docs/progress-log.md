@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 20:48 CEST.
+- Last update: 2026-05-28 20:57 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
@@ -26,6 +26,13 @@ linked implementation artifacts.
   `node --test test/release-gate-tmux-status-marker-focused-regression.test.js`
   passed 1/1, proving malformed marker refusal and exact final marker stdout
   evidence with `mutationAttempted: false`. Final release remains `NO-GO`.
+- Branch integration audit: all 842 local/remote `session/rpp*` refs are now
+  ancestors of `lane/evidence-integration-20260527`. The broader
+  `rpp|session` audit also reports zero unmerged refs after preserving the
+  old auth-session boundary/code lane ancestry and carrying forward the
+  missing packaged auth source candidate fallback tests. Counts stay 209/791
+  because this was integration hygiene plus auth helper coverage, not a new
+  checklist slice.
 - Manage_options variant-2 refresh: the current lane now contains an explicit
   negative/positive scenario matrix for `RPP-0029` in
   `test/release-gate-manage-options-capability-regression.test.js`. The
