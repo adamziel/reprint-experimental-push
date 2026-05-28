@@ -254,6 +254,13 @@ latest graph/plugin/audit/auth commits are also covered by their integrated
 evidence documents; branch-local claims outside those commits are not counted
 here.
 
+Branch-local progress timestamp proof for `RPP-0038` remains support evidence
+toward the release-gate surface and does not move final release readiness:
+
+- Command: `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; progress.html release status: `NO-GO`; proof timestamp: `2026-05-28T03:18:00.000Z`.
+- Evidence target: `progress.html#release-proof-timestamp`; release remains held until production provenance is supplied.
+
 ## Active AO Roster From tmux and Branch Inspection
 
 Integrated evidence is counted only from `lane/evidence-integration-20260527`.
