@@ -53,6 +53,8 @@ const scenarioFamilies = Object.freeze([
   'row-create-update-delete-mix-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
+  'wp-term-taxonomy-graph-ready',
+  'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
 ]);
 
@@ -75,6 +77,7 @@ const readyPreservingFamilies = new Set([
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
+  'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -86,6 +89,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
+  },
+  wpTermTaxonomyGraph: {
+    family: 'wp-term-taxonomy-graph-ready',
+    tag: 'wp-term-taxonomy-graph',
   },
 });
 
@@ -567,6 +574,14 @@ const scenarioFamilyBuilders = {
       prefix: 'conflict-wp-posts',
     });
     tags.add('expected-conflict');
+  },
+  'wp-term-taxonomy-graph-ready': ({ local, allocator, tags }) => {
+    addWpTermTaxonomyGraph(local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-term-taxonomy-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
+    tags.add('expected-blocked');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
@@ -1186,6 +1201,52 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
+  const termId = allocator.graphId();
+  const taxonomyId = allocator.graphId();
+  const termRowId = `term_id:${termId}`;
+  const taxonomyRowId = `term_taxonomy_id:${taxonomyId}`;
+  const term = {
+    term_id: termId,
+    name: `Generated term taxonomy graph target ${termId}`,
+    slug: `generated-term-taxonomy-graph-${termId}`,
+    term_group: 0,
+  };
+
+  if (staleTarget) {
+    setRow(base, 'wp_terms', termRowId, term);
+    setRow(local, 'wp_terms', termRowId, term);
+    setRow(remote, 'wp_terms', termRowId, {
+      ...term,
+      name: `Remote stale term taxonomy graph target ${termId}`,
+      slug: `remote-stale-term-taxonomy-graph-${termId}`,
+    });
+  } else {
+    setRow(local, 'wp_terms', termRowId, term);
+  }
+
+  setRow(local, 'wp_term_taxonomy', taxonomyRowId, {
+    term_taxonomy_id: taxonomyId,
+    term_id: termId,
+    taxonomy: 'category',
+    description: `generated term taxonomy graph ${taxonomyId}`,
+    parent: 0,
+    count: 1,
+  });
+
+  tags.add('wp-term-taxonomy-graph');
+  tags.add('wp-terms-create');
+  tags.add('wp-term-taxonomy-create');
+  tags.add('term-taxonomy-term-graph');
+  tags.add('taxonomy-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wp-terms-remote-drift');
   }
 }
 
