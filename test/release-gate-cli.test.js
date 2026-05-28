@@ -342,6 +342,55 @@ test('release gate CLI fails closed on same source URL drift with final brackete
   });
 });
 
+test('release gate CLI emits tmux-visible proof status marker for RPP-0037', () => {
+  const tmuxMarker = '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]';
+  const evidenceFile = writeEvidence({
+    scope: 'final-release',
+    evidence: completeEvidence('final-release', {
+      tmuxStatusMarker: {
+        ok: true,
+        marker: tmuxMarker,
+        command: 'tmux capture-pane -pt release-gates',
+        scope: 'final-release',
+      },
+    }),
+  });
+  const result = runGate(['--evidence-file', evidenceFile, '--scope', 'final-release'], releaseEnv());
+  const report = parseReport(result);
+  const gate = report.evaluation.gates.find((entry) => entry.id === 'tmux-status-marker');
+
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.releaseStatus, 'NO-GO');
+  assert.equal(report.primaryFailureBucket, 'provenance');
+  assert.equal(report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
+  assert.equal(report.mutationAttempted, false);
+  assert.deepEqual(report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.equal(report.releaseMovement.allowed, true);
+  assert.equal(report.releaseMovement.finalGates, '20/20');
+  assert.equal(report.statusMarker, tmuxMarker);
+  assert.ok(result.stdout.includes(tmuxMarker), 'stdout should expose the final bracketed marker for tmux capture');
+  assert.deepEqual(gate, {
+    id: 'tmux-status-marker',
+    rpp: 'RPP-0017',
+    title: 'tmux stdout proof status marker',
+    category: 'operator-proof',
+    status: 'passed',
+    blocking: false,
+    code: 'OK',
+    reason: 'tmux stdout proof status marker is backed by final release evidence.',
+    evidence: {
+      required: 'final bracketed stdout status marker',
+      observed: tmuxMarker,
+      scope: 'final-release',
+      requiredScope: 'final-release',
+    },
+  });
+});
+
 test('release gate CLI exits zero only when final release evidence and provenance satisfy every gate', () => {
   const evidenceFile = writeEvidence({
     scope: 'final-release',
