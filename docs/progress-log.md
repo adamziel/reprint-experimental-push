@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 13:25 CEST.
+- Last update: 2026-05-28 13:28 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `bfb231b9` (tree-unchanged normal ancestry merge of `origin/session/rpp-7`).
+  `95d21c9d` (tree-unchanged normal ancestry merge of `origin/session/rpp-8`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -46,6 +46,14 @@ linked implementation artifacts.
   lane tree. This records the already-represented independent audit branch
   ancestry without moving checklist counts. Validation passed with the
   docs/progress suite
+  `node --test test/checklist-completion-lint.test.js test/artifact-redaction-scan.test.js test/progress-html-release-timestamp.test.js`
+  (24/24), checklist lint, artifact redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
+- Ancestry backlog reduction: `95d21c9d` normal-merged
+  `origin/session/rpp-8` after the dry merge-tree result matched the current
+  lane tree. This records the already-represented critic audit branch ancestry
+  without moving checklist counts. Validation passed with the docs/progress
+  suite
   `node --test test/checklist-completion-lint.test.js test/artifact-redaction-scan.test.js test/progress-html-release-timestamp.test.js`
   (24/24), checklist lint, artifact redaction scan, and
   `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
