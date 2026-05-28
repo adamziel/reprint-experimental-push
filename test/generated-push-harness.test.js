@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createPushPlan } from '../src/planner.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -93,4 +95,32 @@ test('RPP-0101 generated harness emits ready and non-ready file create/update/de
   assert.equal(nonReady.status, 'conflict');
   assert.ok(nonReady.conflicts >= 1, 'non-ready mix should expose a file conflict');
   assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
+});
+
+test('generated delete/edit conflicts keep serialized plan evidence hash-only', () => {
+  const testCase = generatePushHarnessCases()
+    .find((entry) => entry.family === 'delete-edit-conflict');
+  assert.ok(testCase, 'missing generated delete/edit conflict case');
+
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const conflict = plan.conflicts.find((entry) =>
+    entry.class === 'row-conflict'
+    && entry.change.localChange === 'delete'
+    && entry.change.remoteChange === 'update');
+  assert.ok(conflict, 'missing delete/update row conflict');
+
+  const [_table, rowId] = JSON.parse(conflict.resourceKey.slice('row:'.length));
+  const remoteTitle = testCase.remote.db.wp_posts[rowId].post_title;
+  const serializedPlan = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(serializedPlan.includes(remoteTitle), false);
+  assert.equal(serializedPlan.includes('Remote edit while local deletes'), false);
+  assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(conflict.change.remote.hash, /^[a-f0-9]{64}$/);
 });
