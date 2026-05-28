@@ -136,10 +136,12 @@ newer remote rows.
 
 The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
 generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
-Ready cases create the comment and commentmeta row in one plan and reject stale
-replays before mutation; stale cases keep the comment in the base, drift that
-comment remotely, and require the new commentmeta reference to fail closed
-instead of overwriting the drifted remote.
+Ready cases create the comment and commentmeta row in one plan, preserve
+unplanned remote resources, and reject stale replays before mutation; stale
+cases keep the comment in the base, drift that comment remotely, and require the
+new commentmeta reference to fail closed instead of overwriting the drifted
+remote. RPP-0130 proves the ready and stale target cases across every tier and
+keeps generated comment/commentmeta row values out of the summary evidence.
 
 The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 `wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create

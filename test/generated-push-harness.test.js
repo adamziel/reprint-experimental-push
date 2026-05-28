@@ -1315,49 +1315,58 @@ function assertWpPostmetaCreateUpdateDeleteShape(testCase, { conflict }) {
   );
 }
 
-test('RPP-0110 wp_comments/wp_commentmeta graph target exposes ready and stale coverage', () => {
+test('RPP-0110/RPP-0130 wp_comments/wp_commentmeta graph target exposes per-tier ready and stale coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.wpCommentsCommentmetaGraph;
 
   assert.ok(coverage, 'missing wp_comments/wp_commentmeta graph target coverage');
   assert.equal(coverage.family, 'wp-comments-commentmeta-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-comments-commentmeta-graph']);
-  assert.ok(coverage.statuses.ready > 0, 'target should include ready comment/commentmeta graph cases');
-  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.equal(coverage.total, 20, 'target should include ready and stale cases for every tier');
+  assert.equal(coverage.statuses.ready, 10, 'target should include one ready comment/commentmeta graph per tier');
+  assert.equal(nonReadyTargetCount(coverage), 10, 'target should include one stale comment/commentmeta graph per tier');
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   );
-  assert.equal(
-    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
-    coverage.total,
-  );
+  assert.deepEqual(Object.values(coverage.perTier), Array(10).fill(2));
   assert.equal(
     Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
     coverage.total,
   );
 
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('generated commentmeta graph '), false);
+  assert.equal(summaryEvidence.includes('Remote stale comment graph target'), false);
+
   const cases = generatePushHarnessCases();
-  const readyCase = cases.find((testCase) => testCase.family === 'wp-comments-commentmeta-graph-ready');
-  const staleCase = cases.find((testCase) => testCase.family === 'wp-comments-commentmeta-graph-stale');
+  const readyCases = cases.filter((testCase) => testCase.family === 'wp-comments-commentmeta-graph-ready');
+  const staleCases = cases.filter((testCase) => testCase.family === 'wp-comments-commentmeta-graph-stale');
 
-  assert.ok(readyCase, 'missing ready wp_comments/wp_commentmeta graph case');
-  assert.ok(staleCase, 'missing stale wp_comments/wp_commentmeta graph case');
-  assertCommentCommentmetaGraphShape(readyCase, { staleTarget: false });
-  assertCommentCommentmetaGraphShape(staleCase, { staleTarget: true });
+  assert.equal(readyCases.length, 10, 'missing one ready wp_comments/wp_commentmeta graph case per tier');
+  assert.equal(staleCases.length, 10, 'missing one stale wp_comments/wp_commentmeta graph case per tier');
+  assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-  const ready = validateGeneratedCase(readyCase);
-  const stale = validateGeneratedCase(staleCase);
+  for (const readyCase of readyCases) {
+    assertCommentCommentmetaGraphShape(readyCase, { staleTarget: false });
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 2, 'ready graph should create comment and commentmeta rows');
+    assert.equal(ready.applied, true, 'ready comment/commentmeta graph should apply through the harness');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready graph should preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready comment/commentmeta graph should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
 
-  assert.equal(ready.status, 'ready');
-  assert.ok(ready.mutations >= 2, 'ready graph should create comment and commentmeta rows');
-  assert.equal(ready.applied, true, 'ready comment/commentmeta graph should apply through the harness');
-  assert.equal(ready.staleReplayRejected, true, 'ready comment/commentmeta graph should reject stale replay');
-  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
-  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
-  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
-  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
-  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+  for (const staleCase of staleCases) {
+    assertCommentCommentmetaGraphShape(staleCase, { staleTarget: true });
+    const stale = validateGeneratedCase(staleCase);
+    assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
+    assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+    assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+  }
 });
 
 function assertCommentCommentmetaGraphShape(testCase, { staleTarget }) {
@@ -1371,20 +1380,33 @@ function assertCommentCommentmetaGraphShape(testCase, { staleTarget }) {
   assert.equal(commentRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one comment`);
   assert.equal(commentmetaRows.length, 1, `${testCase.id} should create one commentmeta row`);
 
+  const [commentmetaRowId, commentmetaRow] = commentmetaRows[0];
   const commentId = staleTarget
-    ? commentmetaRows[0][1].comment_id
+    ? commentmetaRow.comment_id
     : commentRows[0][1].comment_ID;
-  assert.equal(commentmetaRows[0][1].comment_id, commentId);
+  assert.equal(commentmetaRow.comment_id, commentId);
+  assert.equal(testCase.base.db.wp_commentmeta[commentmetaRowId], undefined);
+  assert.equal(testCase.remote.db.wp_commentmeta[commentmetaRowId], undefined);
 
   if (staleTarget) {
     const commentRowId = `comment_ID:${commentId}`;
     assert.ok(testCase.base.db.wp_comments[commentRowId], `${testCase.id} stale target should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_comments[commentRowId],
+      testCase.base.db.wp_comments[commentRowId],
+      `${testCase.id} stale target should be unchanged locally`,
+    );
     assert.notDeepEqual(
       testCase.remote.db.wp_comments[commentRowId],
       testCase.base.db.wp_comments[commentRowId],
       `${testCase.id} stale target should drift remotely`,
     );
+    return;
   }
+
+  const commentRowId = `comment_ID:${commentId}`;
+  assert.equal(testCase.base.db.wp_comments[commentRowId], undefined);
+  assert.equal(testCase.remote.db.wp_comments[commentRowId], undefined);
 }
 
 test('RPP-0109/RPP-0129 wp_users/wp_usermeta graph target exposes ready, stale, and redacted coverage', () => {
