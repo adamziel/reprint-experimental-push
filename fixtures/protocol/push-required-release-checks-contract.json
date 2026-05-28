@@ -1,0 +1,271 @@
+{
+  "contract_id": "push-required-release-checks-contract",
+  "schema_version": 1,
+  "purpose": "Standalone local release-movement contract: CI and release gates enumerate mandatory commands and evidence artifacts without depending on GitHub branch protection or external services.",
+  "summary_fields": [
+    "ok",
+    "releaseReady",
+    "requiredCount",
+    "passedCount",
+    "missingChecks",
+    "staleChecks",
+    "nonBlockingChecks"
+  ],
+  "release_movement_policy": {
+    "external_services": "not required",
+    "branch_protection": "not consulted",
+    "releaseReady": "true only when every blocking production-required check has a passed observation with the exact command, all mandatory artifacts, and a non-stale observedAt timestamp",
+    "stale_policy": "production-required observations fail closed when observedAt is missing, invalid, in the future, or older than staleAfterMs"
+  },
+  "checks": [
+    {
+      "id": "release-gates-evaluator",
+      "title": "Release gates evaluator contract",
+      "area": "release-gates",
+      "ownerScope": "release-gates",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/release-gates.test.js",
+      "artifacts": [
+        "src/release-gates.js",
+        "test/release-gates.test.js",
+        "docs/evidence/ao-release-gates.md"
+      ],
+      "staleAfterMs": 86400000
+    },
+    {
+      "id": "recovery-journal-proof",
+      "title": "Recovery journal durability and restart proof",
+      "area": "recovery-journal",
+      "ownerScope": "recovery",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/recovery-journal.test.js",
+      "artifacts": [
+        "src/recovery-journal.js",
+        "test/recovery-journal.test.js",
+        "docs/evidence/ao-journal-recovery.md",
+        "fixtures/protocol/push-production-journal-lease-recovery-inspect-contract.json"
+      ],
+      "staleAfterMs": 86400000
+    },
+    {
+      "id": "auth-inspect-proof",
+      "title": "Auth inspect and lease fencing proof",
+      "area": "auth-inspect",
+      "ownerScope": "auth",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/authenticated-http-push-client.test.js",
+      "artifacts": [
+        "src/authenticated-http-push-client.js",
+        "test/authenticated-http-push-client.test.js",
+        "docs/evidence/ao-executor-auth-leases.md",
+        "fixtures/protocol/push-auth-session-fencing-contract.json"
+      ],
+      "staleAfterMs": 43200000
+    },
+    {
+      "id": "graph-identity-proof",
+      "title": "Graph identity inventory proof",
+      "area": "graph-identity",
+      "ownerScope": "graph",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/graph-mapping-inventory.test.js",
+      "artifacts": [
+        "scripts/bench/graph-mapping-inventory.js",
+        "test/graph-mapping-inventory.test.js",
+        "docs/evidence/ao-graph-identity.md"
+      ],
+      "staleAfterMs": 604800000
+    },
+    {
+      "id": "plugin-driver-proof",
+      "title": "Plugin driver guard proof",
+      "area": "plugin-driver",
+      "ownerScope": "plugin-driver",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/production-plugin-package-scenarios.test.js",
+      "artifacts": [
+        "scripts/playground/production-plugin-package-scenarios.js",
+        "test/production-plugin-package-scenarios.test.js",
+        "plugins/reprint-push/reprint-push.php",
+        "docs/evidence/ao-plugin-driver.md"
+      ],
+      "staleAfterMs": 86400000
+    },
+    {
+      "id": "route-proof-contracts",
+      "title": "Route proof and push ladder contract",
+      "area": "route-proof",
+      "ownerScope": "routes",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/protocol-fixtures.test.js",
+      "artifacts": [
+        "fixtures/protocol/push-production-route-matrix-contract.json",
+        "fixtures/protocol/push-production-ladder-contract.json",
+        "docs/protocol.md",
+        "docs/executor.md"
+      ],
+      "staleAfterMs": 604800000
+    },
+    {
+      "id": "evidence-coverage-proof",
+      "title": "Evidence coverage generated harness proof",
+      "area": "evidence-coverage",
+      "ownerScope": "evidence",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/generated-push-harness.test.js",
+      "artifacts": [
+        "test/generated-push-harness.test.js",
+        "docs/generated-push-harness.md",
+        "docs/scenario-matrix.md"
+      ],
+      "staleAfterMs": 172800000
+    },
+    {
+      "id": "operator-proof",
+      "title": "Operator-visible release proof",
+      "area": "operator-proof",
+      "ownerScope": "operator",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/release-gates.test.js",
+      "artifacts": [
+        "docs/evidence/ao-release-gates.md",
+        "docs/evidence/ao-progress-report.md",
+        "progress.html"
+      ],
+      "staleAfterMs": 21600000
+    },
+    {
+      "id": "artifact-redaction-provenance-proof",
+      "title": "Artifact redaction and immutable provenance proof",
+      "area": "artifact-redaction-provenance",
+      "ownerScope": "artifact-integrity",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/push-planner.test.js",
+      "artifacts": [
+        "src/planner.js",
+        "test/push-planner.test.js",
+        "docs/scenario-matrix.md",
+        "fixtures/protocol/push-production-pull-bridge-contract.json"
+      ],
+      "staleAfterMs": 604800000
+    }
+  ],
+  "evaluation": {
+    "now": "2026-05-28T08:30:00.000Z"
+  },
+  "observations": {
+    "release-gates-evaluator": {
+      "status": "passed",
+      "command": "node --test test/release-gates.test.js",
+      "artifacts": [
+        "src/release-gates.js",
+        "test/release-gates.test.js",
+        "docs/evidence/ao-release-gates.md"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "recovery-journal-proof": {
+      "status": "passed",
+      "command": "node --test test/recovery-journal.test.js",
+      "artifacts": [
+        "src/recovery-journal.js",
+        "test/recovery-journal.test.js",
+        "docs/evidence/ao-journal-recovery.md",
+        "fixtures/protocol/push-production-journal-lease-recovery-inspect-contract.json"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "auth-inspect-proof": {
+      "status": "passed",
+      "command": "node --test test/authenticated-http-push-client.test.js",
+      "artifacts": [
+        "src/authenticated-http-push-client.js",
+        "test/authenticated-http-push-client.test.js",
+        "docs/evidence/ao-executor-auth-leases.md",
+        "fixtures/protocol/push-auth-session-fencing-contract.json"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "graph-identity-proof": {
+      "status": "passed",
+      "command": "node --test test/graph-mapping-inventory.test.js",
+      "artifacts": [
+        "scripts/bench/graph-mapping-inventory.js",
+        "test/graph-mapping-inventory.test.js",
+        "docs/evidence/ao-graph-identity.md"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "plugin-driver-proof": {
+      "status": "passed",
+      "command": "node --test test/production-plugin-package-scenarios.test.js",
+      "artifacts": [
+        "scripts/playground/production-plugin-package-scenarios.js",
+        "test/production-plugin-package-scenarios.test.js",
+        "plugins/reprint-push/reprint-push.php",
+        "docs/evidence/ao-plugin-driver.md"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "route-proof-contracts": {
+      "status": "passed",
+      "command": "node --test test/protocol-fixtures.test.js",
+      "artifacts": [
+        "fixtures/protocol/push-production-route-matrix-contract.json",
+        "fixtures/protocol/push-production-ladder-contract.json",
+        "docs/protocol.md",
+        "docs/executor.md"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "evidence-coverage-proof": {
+      "status": "passed",
+      "command": "node --test test/generated-push-harness.test.js",
+      "artifacts": [
+        "test/generated-push-harness.test.js",
+        "docs/generated-push-harness.md",
+        "docs/scenario-matrix.md"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "operator-proof": {
+      "status": "passed",
+      "command": "node --test test/release-gates.test.js",
+      "artifacts": [
+        "docs/evidence/ao-release-gates.md",
+        "docs/evidence/ao-progress-report.md",
+        "progress.html"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "artifact-redaction-provenance-proof": {
+      "status": "passed",
+      "command": "node --test test/push-planner.test.js",
+      "artifacts": [
+        "src/planner.js",
+        "test/push-planner.test.js",
+        "docs/scenario-matrix.md",
+        "fixtures/protocol/push-production-pull-bridge-contract.json"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    }
+  },
+  "expected_summary": {
+    "ok": true,
+    "releaseReady": true,
+    "requiredCount": 9,
+    "passedCount": 9,
+    "missingChecks": [],
+    "staleChecks": [],
+    "nonBlockingChecks": []
+  }
+}
