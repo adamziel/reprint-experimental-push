@@ -54,9 +54,9 @@ The default generated run covers:
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  delete refusal, atomic plugin install ready and missing-dependency paths with
+  per-tier target counts, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -71,6 +71,13 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `atomicPluginInstallStack` target coverage records per-tier counts for
+atomic plugin install intents. Ready cases install a dependency plugin, a
+dependent plugin, plugin files, and plugin-owned option data in one atomic
+group, preserve an unplanned remote-only file, and carry hash-only dependency
+evidence. Non-ready cases omit the required dependency plugin and refuse apply
+before any remote mutation.
+
 At the time this note was added, the summary command reported:
 
 ```json
@@ -82,6 +89,27 @@ At the time this note was added, the summary command reported:
     "ready": 192
   },
   "targetCoverage": {
+    "atomicPluginInstallStack": {
+      "family": "atomic-plugin-stack-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 3,
+        "conflict": 7,
+        "ready": 10
+      }
+    },
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
       "total": 10,
@@ -158,7 +186,11 @@ At the time this note was added, the summary command reported:
     "wp-term-taxonomy-graph-stale": 10,
     "wp-term-taxonomy-create": 20,
     "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "wp-terms-remote-drift": 10,
+    "atomic-plugin-install-stack": 20,
+    "atomic-plugin-stack-ready": 10,
+    "atomic-plugin-missing-dependency": 10,
+    "atomic-remote-preserve": 10
   },
   "maxResourceCount": 68,
   "maxMutationCount": 43,

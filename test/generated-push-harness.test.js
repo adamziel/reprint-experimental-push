@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createPushPlan } from '../src/planner.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -73,6 +75,8 @@ const requiredFamilies = [
   'expected-conflict',
   'atomic-ready',
   'atomic-blocked',
+  'atomic-plugin-install-stack',
+  'atomic-remote-preserve',
 ];
 
 test('generated push harness covers 300+ general cases from trivial to highly complex', () => {
@@ -323,6 +327,57 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
   assert.equal(stale.applied, false, 'stale graph must not apply mutations');
 });
 
+test('RPP-0116 atomic plugin install stack target emits ready and blocked hash-only cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.atomicPluginInstallStack;
+
+  assert.ok(coverage, 'missing atomic plugin install stack target coverage');
+  assert.equal(coverage.family, 'atomic-plugin-stack-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['atomic-plugin-install-stack']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready atomic plugin install cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include blocked atomic plugin install cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'atomic-plugin-stack-ready');
+  const blockedCase = cases.find((testCase) => testCase.family === 'atomic-plugin-missing-dependency');
+
+  assert.ok(readyCase, 'missing ready atomic plugin install case');
+  assert.ok(blockedCase, 'missing blocked atomic plugin install case');
+  assertAtomicPluginInstallStackShape(readyCase, { ready: true });
+  assertAtomicPluginInstallStackShape(blockedCase, { ready: false });
+
+  const ready = validateGeneratedCase(readyCase);
+  const blocked = validateGeneratedCase(blockedCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.atomicGroups, 1, 'ready case should emit one atomic group');
+  assert.ok(ready.mutations >= 5, 'ready atomic stack should plan dependency, dependent, and option resources');
+  assert.equal(ready.applied, true, 'ready atomic plugin stack should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready atomic stack should preserve unplanned remote resources');
+  assert.equal(ready.staleReplayRejected, true, 'ready atomic stack should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(blocked.status, 'blocked');
+  assert.equal(blocked.atomicGroups, 1, 'blocked case should still emit one atomic group');
+  assert.ok(blocked.blockers >= 1, 'blocked atomic stack should report a dependency blocker');
+  assert.equal(blocked.applied, false, 'blocked atomic stack must not apply mutations');
+
+  assertAtomicPluginInstallPlan(createGeneratedPlan(readyCase), { ready: true });
+  assertAtomicPluginInstallPlan(createGeneratedPlan(blockedCase), { ready: false });
+});
+
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
   const termRows = Object.entries(testCase.local.db.wp_terms)
     .filter(([id, row]) => !testCase.base.db.wp_terms[id]
@@ -348,6 +403,125 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+function assertAtomicPluginInstallStackShape(testCase, { ready }) {
+  const dependencyPlugin = 'reprint-push-atomic-dependency-fixture';
+  const dependentPlugin = 'reprint-push-atomic-dependent-fixture';
+  const intent = testCase.local.pushIntents?.[0];
+
+  assert.ok(testCase.tags.has('atomic-plugin-install-stack'));
+  assert.equal(intent?.kind, 'plugin-install');
+  assert.equal(intent?.requireAtomic, true);
+  assert.equal(intent?.dependencies?.plugins?.length, 1);
+
+  if (ready) {
+    const dependency = intent.dependencies.plugins[0];
+    assert.equal(dependency.name, dependencyPlugin);
+    assert.equal(dependency.version, '2.1.0');
+    assert.match(dependency.hash, /^[a-f0-9]{64}$/);
+    assert.equal(testCase.local.plugins[dependencyPlugin]?.active, true);
+    assert.equal(testCase.local.plugins[dependentPlugin]?.active, true);
+    assert.ok(intent.resources.includes(`file:${pluginMainFile(dependencyPlugin)}`));
+    assert.ok(intent.resources.includes(`file:${pluginMainFile(dependentPlugin)}`));
+    assert.ok(intent.resources.includes(`plugin:${dependencyPlugin}`));
+    assert.ok(intent.resources.includes(`plugin:${dependentPlugin}`));
+    assert.ok(intent.resources.includes('row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'));
+    assert.equal(remoteOnlyAtomicFiles(testCase).length, 1, `${testCase.id} should include one unplanned remote file`);
+    return;
+  }
+
+  assert.equal(intent.dependencies.plugins[0], dependencyPlugin);
+  assert.equal(testCase.local.plugins[dependencyPlugin], undefined);
+  assert.equal(testCase.remote.plugins[dependencyPlugin], undefined);
+  assert.ok(intent.resources.includes(`file:${pluginMainFile(dependentPlugin)}`));
+  assert.ok(intent.resources.includes(`plugin:${dependentPlugin}`));
+  assert.equal(intent.resources.includes(`plugin:${dependencyPlugin}`), false);
+}
+
+function assertAtomicPluginInstallPlan(plan, { ready }) {
+  const dependencyPlugin = 'reprint-push-atomic-dependency-fixture';
+  const dependentPlugin = 'reprint-push-atomic-dependent-fixture';
+  const group = plan.atomicGroups[0];
+
+  assert.equal(plan.atomicGroups.length, 1);
+  assert.equal(group.kind, 'plugin-install');
+  assert.equal(group.requireAtomic, true);
+  assert.deepEqual(group.dependencies.plugins, [dependencyPlugin]);
+  assert.equal(group.status, ready ? 'ready' : 'blocked');
+  assert.equal(group.dependencyRequirements.length, 1);
+  assertAtomicDependencyEvidenceIsHashOnly(group.dependencyRequirements[0]);
+
+  if (ready) {
+    const resourceKeys = plan.mutations.map((mutation) => mutation.resourceKey);
+    assert.equal(group.mutationIds.length, 5);
+    assert.ok(resourceKeys.includes(`file:${pluginMainFile(dependencyPlugin)}`));
+    assert.ok(resourceKeys.includes(`file:${pluginMainFile(dependentPlugin)}`));
+    assert.ok(resourceKeys.includes(`plugin:${dependencyPlugin}`));
+    assert.ok(resourceKeys.includes(`plugin:${dependentPlugin}`));
+    assert.ok(resourceKeys.includes('row:["wp_options","option_name:reprint_push_atomic_fixture_data"]'));
+    assert.equal(
+      plan.mutations.every((mutation) => mutation.atomicGroupId === group.id),
+      true,
+      'ready atomic install mutations should all belong to the same group',
+    );
+
+    const requirement = group.dependencyRequirements[0];
+    assert.equal(requirement.source, 'same-atomic-group');
+    assert.equal(requirement.expectedHash, requirement.plannedHash);
+
+    const optionMutation = plan.mutations.find((mutation) =>
+      mutation.resourceKey === 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]');
+    assert.equal(optionMutation.pluginOwnedResource.pluginOwner, dependentPlugin);
+    assert.equal(optionMutation.pluginOwnedResource.driver, 'wp-option');
+    return;
+  }
+
+  assert.equal(group.mutationIds.length, 2);
+  assert.equal(group.dependencyRequirements[0].source, 'missing-live-remote');
+  assert.equal(group.dependencyRequirements[0].resourceKey, `plugin:${dependencyPlugin}`);
+  assert.equal(plan.blockers[0].class, 'missing-plugin-dependency');
+  assert.equal(group.blockers[0].class, 'missing-plugin-dependency');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === `plugin:${dependencyPlugin}`),
+    false,
+    'blocked missing-dependency plan must not mutate the absent dependency',
+  );
+}
+
+function assertAtomicDependencyEvidenceIsHashOnly(requirement) {
+  for (const key of ['expectedHash', 'plannedHash', 'baseHash', 'remoteHash']) {
+    if (requirement[key] != null) {
+      assert.match(requirement[key], /^[a-f0-9]{64}$/, `${key} should be hash-only evidence`);
+    }
+  }
+
+  for (const forbidden of ['raw', 'value', 'plannedValue', 'baseValue', 'localValue', 'remoteValue']) {
+    assert.equal(
+      Object.hasOwn(requirement, forbidden),
+      false,
+      `atomic dependency evidence should not expose ${forbidden}`,
+    );
+  }
+}
+
+function createGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+}
+
+function remoteOnlyAtomicFiles(testCase) {
+  return Object.keys(testCase.remote.files)
+    .filter((path) => path.includes('/atomic-remote-only-'))
+    .filter((path) => !testCase.base.files[path] && !testCase.local.files[path]);
+}
+
+function pluginMainFile(name) {
+  return `wp-content/plugins/${name}/${name}.php`;
 }
 
 function nonReadyTargetCount(coverage) {

@@ -94,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  atomicPluginInstallStack: {
+    family: 'atomic-plugin-stack-ready',
+    tag: 'atomic-plugin-install-stack',
+  },
 });
 
 export function generatePushHarnessCases({
@@ -465,8 +469,11 @@ const scenarioFamilyBuilders = {
     });
     tags.add('forms-lab-delete-blocked');
   },
-  'atomic-plugin-stack-ready': ({ local, tags }) => {
+  'atomic-plugin-stack-ready': ({ local, remote, allocator, tags }) => {
     installAtomicStack(local);
+    remote.files[allocator.filePath('atomic-remote-only')] = `remote atomic preserve ${allocator.next()}`;
+    tags.add('atomic-plugin-install-stack');
+    tags.add('atomic-remote-preserve');
     tags.add('atomic-ready');
   },
   'atomic-plugin-missing-dependency': ({ local, tags }) => {
@@ -488,6 +495,7 @@ const scenarioFamilyBuilders = {
         dependencies: { plugins: [atomicDependencyPlugin] },
       },
     ];
+    tags.add('atomic-plugin-install-stack');
     tags.add('atomic-blocked');
   },
   'plugin-file-update': ({ local, allocator, tags }) => {
