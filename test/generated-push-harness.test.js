@@ -8,6 +8,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import { digest } from '../src/stable-json.js';
 
@@ -204,6 +205,70 @@ test('RPP-0103 generated harness emits ready and non-ready file type-swap cases'
   assert.equal(nonReady.applied, false, 'non-ready type-swap must not apply mutations');
 });
 
+test('RPP-0143 file type-swap target exposes deterministic safe and conflict coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileTypeSwap;
+
+  assert.ok(coverage, 'missing file type-swap target coverage');
+  assert.equal(coverage.family, 'file-type-swap-ready');
+  assert.equal(coverage.total, 20);
+  assert.equal(coverage.total, report.summary.featureFamilies['file-type-swap']);
+  assert.equal(report.summary.featureFamilies['file-type-swap-ready'], 10);
+  assert.equal(report.summary.featureFamilies['file-type-swap-conflict'], 10);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'file-type-swap-ready');
+  const conflictCases = cases.filter((testCase) => testCase.family === 'file-type-swap-conflict');
+
+  assert.equal(readyCases.length, 10, 'expected one ready file type-swap case per tier');
+  assert.equal(conflictCases.length, 10, 'expected one conflict file type-swap case per tier');
+
+  for (const readyCase of readyCases) {
+    assertFileTypeSwapShape(readyCase, { conflict: false });
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    assert.equal(plan.status, 'ready');
+    assertFileTypeSwapEvidenceRedacted(readyCase, plan);
+
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 1, 'ready file type-swap should plan at least one file mutation');
+    assert.equal(ready.applied, true, 'ready file type-swap should apply through the harness');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready file type-swap must preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready file type-swap should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const conflictCase of conflictCases) {
+    assertFileTypeSwapShape(conflictCase, { conflict: true });
+    const plan = createPushPlan({
+      base: conflictCase.base,
+      local: conflictCase.local,
+      remote: conflictCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    assert.equal(plan.status, 'conflict');
+    assert.ok(plan.conflicts.length >= 1, 'conflict file type-swap should expose topology evidence');
+    assertFileTypeSwapEvidenceRedacted(conflictCase, plan);
+
+    const conflict = validateGeneratedCase(conflictCase);
+    assert.equal(conflict.status, 'conflict');
+    assert.ok(conflict.conflicts >= 1, 'conflict file type-swap should expose a file topology conflict');
+    assert.equal(conflict.applied, false, 'conflict file type-swap must not apply mutations');
+    assert.equal(conflict.nonReadyRemoteUnchanged, true, 'conflict file type-swap must refuse before mutation');
+  }
+});
+
 test('RPP-0104 generated harness emits row create/update/delete mix with stale replay guard', () => {
   const cases = generatePushHarnessCases();
   const readyCase = cases.find((testCase) => testCase.family === 'row-create-update-delete-mix-ready');
@@ -382,6 +447,64 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function assertFileTypeSwapShape(testCase, { conflict }) {
+  const path = findFileTypeSwapPath(testCase, { conflict });
+  assert.deepEqual(testCase.base.files[path], { type: 'directory' });
+  assert.deepEqual(testCase.remote.files[path], { type: 'directory' });
+  assert.equal(testCase.local.files[path]?.type, 'file', `${testCase.id} local target should become a file`);
+  assert.match(testCase.local.files[path]?.content, /^local type swap /);
+
+  const remoteDescendants = Object.keys(testCase.remote.files)
+    .filter((remotePath) => remotePath.startsWith(`${path}/`));
+  assert.equal(remoteDescendants.length, conflict ? 1 : 0, `${testCase.id} remote descendant shape mismatch`);
+}
+
+function assertFileTypeSwapEvidenceRedacted(testCase, plan) {
+  const path = findFileTypeSwapPath(testCase, {
+    conflict: testCase.family === 'file-type-swap-conflict',
+  });
+  const remoteDescendantValues = Object.fromEntries(
+    Object.entries(testCase.remote.files)
+      .filter(([remotePath]) => remotePath.startsWith(`${path}/`)),
+  );
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawFileEvidenceProbe: {
+      value: testCase.local.files[path],
+      values: remoteDescendantValues,
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} evidence should include redaction marker`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  assert.equal(serialized.includes('local type swap '), false, `${testCase.id} leaked local file content`);
+  assert.equal(
+    serialized.includes('remote descendant for type swap '),
+    false,
+    `${testCase.id} leaked remote descendant content`,
+  );
+}
+
+function findFileTypeSwapPath(testCase, { conflict }) {
+  const swapEntries = Object.entries(testCase.base.files)
+    .filter(([path, value]) => path.includes(conflict ? '/conflict-type-swap-' : '/ready-type-swap-')
+      && value?.type === 'directory');
+
+  assert.equal(swapEntries.length, 1, `${testCase.id} should start with one directory swap target`);
+  return swapEntries[0][0];
 }
 
 function generatedPlannerSummaryEvidence() {

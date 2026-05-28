@@ -86,6 +86,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  fileTypeSwap: {
+    family: 'file-type-swap-ready',
+    tag: 'file-type-swap',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -204,6 +208,7 @@ export function validateGeneratedCase(testCase) {
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'PLAN_NOT_READY');
   assert.equal(digest(testCase.remote), before, `${testCase.id} mutated a non-ready remote`);
+  result.nonReadyRemoteUnchanged = true;
   result.applied = false;
   return result;
 }
