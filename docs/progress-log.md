@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 18:18 CEST.
+- Last update: 2026-05-28 18:28 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `d0c829d50` (normal merge of
-  `origin/session/rpp-33-rpp-0130-wp-comments-commentmeta-graph-v2`).
+  `c0115aa9f` (normal merge of
+  `origin/session/rpp-33-rpp-0131-wp-terms-termmeta-graph-v2`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 158
-  items complete and leaves 842 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 159
+  items complete and leaves 841 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 26 generated
+  7 chunking/performance items, 2 production-topology items, 27 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -1003,6 +1003,13 @@ linked implementation artifacts.
   creating the comment plus commentmeta row, preserving unplanned remote data,
   and rejecting stale replay before mutation while stale remote comment drift
   remains non-ready and refuses apply.
+- Generated wp_terms/termmeta continuation: `c0115aa9f` integrated `RPP-0131`
+  `wp_terms`/`wp_termmeta` graph target proof. The generated harness keeps the
+  510-case run and now proves one ready terms/termmeta graph case in every tier
+  plus stale non-ready graph references in tiers 0 through 8, with ready cases
+  creating the term plus termmeta row, preserving unplanned remote data, and
+  rejecting stale replay before mutation while stale remote term drift remains
+  non-ready and refuses apply.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
   same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for
