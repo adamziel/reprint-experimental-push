@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 11:57 CEST.
+- Last update: 2026-05-28 12:24 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `913f65771` (no-ff merge of `RPP-0228` unknown plugin-owned resource refusal evidence).
+  `e53a068ac` (no-ff merge of `origin/session/rpp-17` auth/recovery integration reconciliation).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -222,6 +222,12 @@ linked implementation artifacts.
   remote plugin-owned row unchanged, and serializes only deterministic
   hash/redacted evidence. Caveat: this is focused local planner/apply evidence,
   not final production plugin-driver proof.
+- Auth/recovery reconciliation: `e53a068ac` merged
+  `origin/session/rpp-17` with normal ancestry and no checklist-count change.
+  `node --test test/authenticated-http-push-client.test.js` passes 127/127.
+  The authenticated playground smoke still fails at the existing
+  `/db-journal` 401 assertion on both this head and a detached pre-merge lane,
+  so that smoke remains baseline follow-up rather than new release evidence.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
   summary count consistency. The focused local Node proof checks ready,
   conflict, blocked, and atomic fixtures, verifies `plan.summary` against the

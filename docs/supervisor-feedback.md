@@ -1,9 +1,23 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 11:57 CEST
+Last updated: 2026-05-28 12:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 12:24 CEST - RPP-17 Integrated
+
+- Going well: integration is now at `e53a068ac`, preserving ancestry for
+  `origin/session/rpp-17` and reconciling auth/recovery integration behavior.
+  The auth-client focused suite passes 127/127 after the merge.
+- Checklist movement: still 138 verified items checked and 862 open. This was
+  an ancestry/code reconciliation, not a new checklist completion.
+- Verification: checklist lint is clean, artifact redaction scan is clean, and
+  `git diff --check` is clean. The authenticated playground smoke still fails
+  at the same `/db-journal` 401 assertion on both this head and the detached
+  pre-merge lane, so it remains baseline follow-up.
+- Current nudge: continue the integration-only freeze and prefer already-pushed
+  candidates that reduce the remaining production-shaped proof failures.
 
 ## 2026-05-28 11:57 CEST - RPP-0228 Integrated
 
