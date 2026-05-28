@@ -1,9 +1,24 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:40 CEST
+Last updated: 2026-05-28 06:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:43 CEST - 7ac6d62bd Lane Refresh
+
+- Going well: authoritative lane truth is `7ac6d62bd`, with `RPP-0431`
+  integrated through the underlying proof commit `85682de19`. The checklist is
+  115 verified items checked and 885 open; release remains `NO-GO`.
+- Not counted: `RPP-0221` is active in `rpp-28` but remains branch-local and
+  session-only until tested, integrated, and pushed to
+  `lane/evidence-integration-20260527`.
+- Active roster: developers `rpp-24/RPP-0124`, `rpp-25/RPP-0051`,
+  `rpp-29/RPP-0225`, `rpp-30/RPP-0330`, `rpp-32/RPP-0438`,
+  `rpp-33/RPP-0125`, and `rpp-34/RPP-0437`; critics `rpp-31` and `rpp-37`;
+  queue `rpp-35`; progress reporter `rpp-26`.
+- Current nudge: keep progress surfaces tied to the latest remote lane head and
+  keep active or queued work out of readiness scoring.
 
 ## 2026-05-28 06:40 CEST - RPP-0431 Integrated
 
