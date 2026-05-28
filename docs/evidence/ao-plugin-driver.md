@@ -76,6 +76,33 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0460 generated arbitrary plugin fixture package coverage
+
+RPP-0460 adds generated local support evidence for arbitrary plugin fixture
+package handling. The supported generated fixture exports one
+`fixture-arbitrary-plugin-table` policy for
+`wp_reprint_push_driver_fixture`, owner `driver-fixture`, and
+`entry_id:1`; the planner accepts exactly one plugin-owned row mutation only
+when that explicit resource/owner/driver/table policy is present.
+
+Generated unsupported variants omit the policy, omit the arbitrary driver table
+binding, use the wrong owner, or use the wrong table. Each variant stays
+blocked with no mutation for the fixture row, and a non-ready apply attempt
+fails before changing the remote snapshot. The proof records only hashes for
+the plan outcome, blocker evidence, mutation evidence, audit evidence, and
+owner context; generated package versions, plugin file bodies, and row payload
+tokens are asserted absent from the evidence.
+
+Evidence status: this is `local-generated` support evidence, not
+production-backed proof of the packaged PHP driver runtime. It preserves the
+release posture at `NO-GO`.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0460|allows plugin-owned custom table rows with explicit driver table policy' test/generated-push-harness.test.js test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +116,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0460 — arbitrary plugin fixture package generated coverage: an arbitrary
+  fixture package row is planned only with explicit resource/owner/driver/table
+  policy; missing or malformed policy remains blocked with hash-only evidence.

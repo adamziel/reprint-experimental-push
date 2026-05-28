@@ -112,6 +112,16 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateArbitraryPluginFixturePackageCases() {
+  return [
+    'explicit-driver-table-policy-ready',
+    'missing-driver-policy-blocked',
+    'missing-driver-table-blocked',
+    'wrong-owner-policy-blocked',
+    'wrong-table-policy-blocked',
+  ].map((variant, index) => buildArbitraryPluginFixturePackageCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -208,6 +218,97 @@ export function validateGeneratedCase(testCase) {
   return result;
 }
 
+export function validateArbitraryPluginFixturePackageCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      status: plan.status,
+      mutation: mutation ? arbitraryPluginFixtureMutationEvidence(mutation) : null,
+      blocker: blocker ? arbitraryPluginFixtureBlockerEvidence(blocker) : null,
+    }),
+  };
+
+  assertArbitraryPluginFixtureRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'ready-with-explicit-policy') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.blockers.length, 0);
+    assert.equal(plan.conflicts.length, 0);
+    assert.equal(plan.mutations.length, 1);
+    assert.ok(mutation, `${testCase.id} should emit one arbitrary fixture package mutation`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.resourceKey, testCase.resourceKey);
+    assert.equal(mutation.resource.table, testCase.driverFixture.table);
+    assert.equal(mutation.resource.id, testCase.driverFixture.rowId);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.driverFixture.pluginOwner);
+    assert.equal(mutation.pluginOwnedResource.driver, testCase.driverFixture.driver);
+    assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
+    assert.equal(mutation.pluginOwnedResource.driverEvidence, undefined);
+    assert.equal(mutation.pluginOwnedResource.ownerContextRequired, true);
+    assert.ok(
+      mutation.pluginOwnedResource.ownerContext.some((context) =>
+        context.resourceKey === `plugin:${testCase.driverFixture.pluginOwner}`),
+      `${testCase.id} should bind the owner plugin metadata context`,
+    );
+    assert.ok(
+      mutation.pluginOwnedResource.ownerContext.some((context) =>
+        context.resourceKey === `file:${pluginMainFile(testCase.driverFixture.pluginOwner)}`),
+      `${testCase.id} should bind the owner plugin file context`,
+    );
+    assertArbitraryPluginFixtureAuditEvidence(mutation.pluginOwnedResource.auditEvidence, testCase);
+    assertArbitraryPluginFixtureRedacted(testCase, mutation.pluginOwnedResource);
+    result.outcome = 'accepted-explicit-driver-policy';
+    result.mutationEvidenceHash = digest(arbitraryPluginFixtureMutationEvidence(mutation));
+    result.auditEvidenceHash = digest(mutation.pluginOwnedResource.auditEvidence);
+    return result;
+  }
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutation, undefined);
+  assert.ok(blocker, `${testCase.id} should refuse the arbitrary fixture package row`);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, testCase.driverFixture.pluginOwner);
+  assert.equal(blocker.resourceKey, testCase.resourceKey);
+  if (testCase.expected.driver === null) {
+    assert.equal(blocker.driver, null);
+  } else {
+    assert.equal(blocker.driver, testCase.expected.driver);
+  }
+  assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
+  assertArbitraryPluginFixtureRedacted(testCase, blocker);
+
+  const remote = deepClone(testCase.remote);
+  const before = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remote), before, `${testCase.id} mutated remote state after refusal`);
+
+  result.outcome = 'refused-without-explicit-driver-policy';
+  result.rejectionCode = error.code;
+  result.blockerEvidenceHash = digest(arbitraryPluginFixtureBlockerEvidence(blocker));
+  return result;
+}
+
 function buildGeneratedCase({ index, tier, rng }) {
   const id = `generated-push-${String(index + 1).padStart(3, '0')}`;
   const family = scenarioFamilies[index % scenarioFamilies.length];
@@ -256,6 +357,119 @@ function buildGeneratedCase({ index, tier, rng }) {
     local,
     remote,
   };
+}
+
+function buildArbitraryPluginFixturePackageCase({ variant, index }) {
+  const driverFixture = {
+    driver: 'fixture-arbitrary-plugin-table',
+    pluginOwner: 'driver-fixture',
+    table: 'wp_reprint_push_driver_fixture',
+    rowId: 'entry_id:1',
+    resourceKey: rowKey('wp_reprint_push_driver_fixture', 'entry_id:1'),
+  };
+  const secrets = {
+    packageVersion: `rpp0460-package-version-secret-${index + 1}`,
+    pluginFile: `rpp0460-plugin-file-secret-${index + 1}`,
+    basePayload: `rpp0460-base-payload-secret-${index + 1}`,
+    localPayload: `rpp0460-local-payload-secret-${index + 1}`,
+  };
+  const base = buildBaseSite(4600 + index, 5);
+  base.plugins[driverFixture.pluginOwner] = {
+    version: `1.0.${index + 1}-${secrets.packageVersion}`,
+    active: true,
+  };
+  base.files[pluginMainFile(driverFixture.pluginOwner)] = `<?php /* ${secrets.pluginFile} */`;
+  setRow(base, driverFixture.table, driverFixture.rowId, {
+    entry_id: 1,
+    payload: {
+      owner: driverFixture.pluginOwner,
+      mode: 'base',
+      version: 1,
+      token: secrets.basePayload,
+    },
+    updated_marker: 'base',
+    __pluginOwner: driverFixture.pluginOwner,
+  });
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  setRow(local, driverFixture.table, driverFixture.rowId, {
+    entry_id: 1,
+    payload: {
+      owner: driverFixture.pluginOwner,
+      mode: 'local-generated-update',
+      version: 2,
+      token: secrets.localPayload,
+    },
+    updated_marker: 'local-generated-update',
+    __pluginOwner: driverFixture.pluginOwner,
+  });
+
+  const testCase = {
+    id: `rpp-0460-arbitrary-plugin-fixture-package-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'arbitrary-plugin-fixture-package-generated',
+    tags: new Set(['arbitrary-plugin-fixture-package-generated', 'plugin-owned-generated']),
+    resourceKey: driverFixture.resourceKey,
+    driverFixture,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {},
+  };
+
+  if (variant === 'explicit-driver-table-policy-ready') {
+    for (const site of [base, local, remote]) {
+      allowPluginOwned(site, driverFixture.resourceKey, driverFixture.pluginOwner, driverFixture.driver, {
+        table: driverFixture.table,
+        supportsDelete: false,
+      });
+    }
+    testCase.tags.add('arbitrary-plugin-explicit-policy');
+    testCase.expected.outcome = 'ready-with-explicit-policy';
+    return testCase;
+  }
+
+  testCase.expected.outcome = 'blocked-without-explicit-policy';
+  if (variant === 'missing-driver-policy-blocked') {
+    testCase.tags.add('arbitrary-plugin-missing-policy');
+    testCase.expected.driver = null;
+    return testCase;
+  }
+
+  if (variant === 'missing-driver-table-blocked') {
+    for (const site of [base, local, remote]) {
+      allowPluginOwned(site, driverFixture.resourceKey, driverFixture.pluginOwner, driverFixture.driver);
+    }
+    testCase.tags.add('arbitrary-plugin-missing-table-policy');
+    testCase.expected.driver = driverFixture.driver;
+    return testCase;
+  }
+
+  if (variant === 'wrong-owner-policy-blocked') {
+    for (const site of [base, local, remote]) {
+      allowPluginOwned(site, driverFixture.resourceKey, 'other-driver-fixture', driverFixture.driver, {
+        table: driverFixture.table,
+        supportsDelete: false,
+      });
+    }
+    testCase.tags.add('arbitrary-plugin-wrong-owner-policy');
+    testCase.expected.driver = null;
+    return testCase;
+  }
+
+  assert.equal(variant, 'wrong-table-policy-blocked');
+  for (const site of [base, local, remote]) {
+    allowPluginOwned(site, driverFixture.resourceKey, driverFixture.pluginOwner, driverFixture.driver, {
+      table: `${driverFixture.table}_other`,
+      supportsDelete: false,
+    });
+  }
+  testCase.tags.add('arbitrary-plugin-wrong-table-policy');
+  testCase.expected.driver = driverFixture.driver;
+  return testCase;
 }
 
 const scenarioFamilyBuilders = {
@@ -868,6 +1082,68 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function arbitraryPluginFixtureMutationEvidence(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    baseHash: mutation.baseHash,
+    localHash: mutation.localHash,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    pluginOwnedResource: {
+      pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+      driver: mutation.pluginOwnedResource?.driver,
+      policySource: mutation.pluginOwnedResource?.policySource,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete,
+      auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+        ? digest(mutation.pluginOwnedResource.auditEvidence)
+        : null,
+      ownerContextHash: digest(mutation.pluginOwnedResource?.ownerContext || []),
+      ownerContextResourceKeys: (mutation.pluginOwnedResource?.ownerContext || [])
+        .map((context) => context.resourceKey)
+        .sort(),
+      driverEvidenceState: mutation.pluginOwnedResource?.driverEvidence ? 'present' : 'absent',
+    },
+  };
+}
+
+function arbitraryPluginFixtureBlockerEvidence(blocker) {
+  return {
+    class: blocker.class,
+    resourceKey: blocker.resourceKey,
+    pluginOwner: blocker.pluginOwner,
+    driver: blocker.driver,
+    policySource: blocker.policySource,
+    reasonHash: digest(blocker.reason || ''),
+    baseHash: blocker.baseHash,
+    localHash: blocker.localHash,
+    remoteHash: blocker.remoteHash,
+    changeHash: digest(blocker.change || null),
+  };
+}
+
+function assertArbitraryPluginFixtureAuditEvidence(evidence, testCase) {
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.resourceKey, testCase.resourceKey);
+  assert.equal(evidence.pluginOwner, testCase.driverFixture.pluginOwner);
+  assert.equal(evidence.driver, testCase.driverFixture.driver);
+  assert.equal(evidence.supportsDelete, false);
+  assert.equal(evidence.driverEvidenceHash, undefined);
+  for (const key of ['baseHash', 'localHash', 'remoteHash', 'ownerContextHash']) {
+    assert.match(evidence[key], /^[a-f0-9]{64}$/);
+  }
+  assertArbitraryPluginFixtureRedacted(testCase, evidence);
+}
+
+function assertArbitraryPluginFixtureRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
+  }
 }
 
 function assertPlanContract(testCase, plan) {

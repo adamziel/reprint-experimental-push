@@ -5,8 +5,10 @@ import { applyPlan, PushPlanError } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generateArbitraryPluginFixturePackageCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
+  validateArbitraryPluginFixturePackageCase,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
@@ -223,6 +225,57 @@ test('RPP-0233 generated ready fixtures reject forged localHash evidence', () =>
         `${family} hash-only evidence leaked mutation payload for ${mutation.resourceKey}`,
       );
     }
+  }
+});
+
+test('RPP-0460 generated arbitrary plugin fixture package requires explicit redacted driver policy', () => {
+  const cases = generateArbitraryPluginFixturePackageCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'explicit-driver-table-policy-ready',
+    'missing-driver-policy-blocked',
+    'missing-driver-table-blocked',
+    'wrong-owner-policy-blocked',
+    'wrong-table-policy-blocked',
+  ]);
+  assert.equal(
+    cases.every((testCase) => testCase.tags.has('arbitrary-plugin-fixture-package-generated')),
+    true,
+  );
+  assert.equal(
+    cases.every((testCase) => testCase.resourceKey === 'row:["wp_reprint_push_driver_fixture","entry_id:1"]'),
+    true,
+  );
+
+  const results = cases.map(validateArbitraryPluginFixturePackageCase);
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+
+  assert.equal(
+    byVariant['explicit-driver-table-policy-ready'].outcome,
+    'accepted-explicit-driver-policy',
+  );
+  assert.equal(byVariant['explicit-driver-table-policy-ready'].status, 'ready');
+  assert.equal(byVariant['explicit-driver-table-policy-ready'].mutations, 1);
+  assert.match(byVariant['explicit-driver-table-policy-ready'].mutationEvidenceHash, /^[a-f0-9]{64}$/);
+  assert.match(byVariant['explicit-driver-table-policy-ready'].auditEvidenceHash, /^[a-f0-9]{64}$/);
+
+  for (const variant of [
+    'missing-driver-policy-blocked',
+    'missing-driver-table-blocked',
+    'wrong-owner-policy-blocked',
+    'wrong-table-policy-blocked',
+  ]) {
+    assert.equal(byVariant[variant].status, 'blocked');
+    assert.equal(byVariant[variant].outcome, 'refused-without-explicit-driver-policy');
+    assert.equal(byVariant[variant].rejectionCode, 'PLAN_NOT_READY');
+    assert.match(byVariant[variant].blockerEvidenceHash, /^[a-f0-9]{64}$/);
+  }
+
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
   }
 });
 
