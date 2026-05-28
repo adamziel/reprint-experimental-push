@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 14:16 CEST.
+- Last update: 2026-05-28 14:20 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `86875367` (ours ancestry merge of
-  `origin/session/rpp-18` evidence coverage manifest branch ancestry).
+  `9b197a01` (ours ancestry merge of
+  `origin/session/rpp-20` route proof matrix branch ancestry).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -199,6 +199,17 @@ linked implementation artifacts.
   checklist lint, artifact redaction scan, a current fail-closed
   release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
   `releaseMovement.allowed: false`), and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
+- Ancestry backlog reduction: `9b197a01` used
+  `git merge -s ours --no-ff origin/session/rpp-20` after verifying
+  `git log --right-only --cherry-pick HEAD...origin/session/rpp-20` was
+  empty. This preserves the already-represented route proof matrix branch
+  ancestry (`8f2770fec`) without moving checklist counts or tree content.
+  Validation passed with `node --test test/route-proof-matrix.test.js
+  test/progress-html-release-timestamp.test.js` (8/8), checklist lint,
+  artifact redaction scan, a current fail-closed release-gate status check
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`,
+  3/20 gates), and
   `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`

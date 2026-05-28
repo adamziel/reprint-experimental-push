@@ -1,11 +1,11 @@
-# AO Progress Report - 2026-05-28 14:16 CEST
+# AO Progress Report - 2026-05-28 14:20 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`86875367` (ours ancestry merge of
-`origin/session/rpp-18` evidence coverage manifest branch ancestry). It separates
+`9b197a01` (ours ancestry merge of
+`origin/session/rpp-20` route proof matrix branch ancestry). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -627,7 +627,9 @@ progress.
 - `a19deaf9e` integrates additional `rpp-28` work: recovery repair,
   release-gate CI command, evidence redaction, protocol compatibility, route
   proof matrix, and operator proof status. Most of that work is intentionally
-  still support evidence until wired into the production release path.
+  still support evidence until wired into the production release path. The
+  pushed `rpp-20` route proof matrix branch ancestry is now preserved by
+  `9b197a01` after cherry-empty verification.
 - `fdb02ab6a` integrates the checklist completion linter from `rpp-25`.
   `scripts/release/checklist-completion-lint.mjs` scans the checklist,
   `docs/evidence/*.md`, `audits/*.md`, `docs/progress-log.md`,
@@ -844,7 +846,8 @@ branch.
 | `rpp-34` | completed candidate | `RPP-0421` driver registration API proof, `RPP-0431` plugin uninstall/delete refusal, `RPP-0461` driver registration focused regression, and `RPP-0468` serialized option validator regression are integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
-| `rpp-10` through `rpp-17`, `rpp-19` through `rpp-22`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-10` through `rpp-17`, `rpp-19`, `rpp-21`, `rpp-22`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-20` | pushed branch `8f2770fec` | Route proof matrix is represented by `a19deaf9e`, with branch ancestry now preserved by `9b197a01`; do not count additional branch-local state. |
 | `rpp-18` | pushed branch `56a1e533b` | Evidence coverage manifest is represented by `bb6864a07`, with branch ancestry now preserved by `86875367`; do not count additional branch-local state. |
 | `rpp-23` | pushed audit branch | Critic-continuation-2 audit evidence is represented in the integration branch by `e6b5b6f7`; it remains support-only historical audit evidence and does not move final release readiness. |
 | `rpp-31` | pushed audit branch | Critic-continuation-3 audit evidence is represented in the integration branch by `f7cd2cef`; it remains support-only historical audit evidence and does not move final release readiness. |
