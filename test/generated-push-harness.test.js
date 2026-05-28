@@ -25,6 +25,7 @@ const requiredFamilies = [
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'stale-comment-parent-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -39,6 +40,9 @@ const requiredFamilies = [
   'file-create-update-delete-mix',
   'same-plan-user-meta-graph',
   'same-plan-graph',
+  'comment-parent-graph',
+  'comment-parent-ready',
+  'comment-parent-stale',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'file-topology',
@@ -125,4 +129,26 @@ test('RPP-0102 directory descendant conflict exposes per-tier target counts', ()
   assert.equal(result.status, 'conflict');
   assert.ok(result.conflicts > 0, 'directory descendant case must conflict');
   assert.equal(result.applied, false, 'directory descendant conflict must not apply mutations');
+});
+
+test('RPP-0306 generated harness emits ready and stale comment parent thread graph cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) =>
+    testCase.family === 'same-plan-comment-graph' && testCase.tags.has('comment-parent-ready'));
+  const staleCase = cases.find((testCase) => testCase.family === 'stale-comment-parent-graph');
+
+  assert.ok(readyCase, 'missing ready same-plan comment parent thread graph case');
+  assert.ok(staleCase, 'missing stale comment parent thread graph case');
+  assert.ok(readyCase.tags.has('comment-parent-graph'));
+  assert.ok(staleCase.tags.has('comment-parent-graph'));
+  assert.ok(staleCase.tags.has('comment-parent-stale'));
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready thread graph should create parent and child comments');
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale thread graph should expose a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale thread graph must not apply mutations');
 });

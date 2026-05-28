@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 27 scenario families, then add seeded variation so
+span 10 complexity tiers and 28 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -50,8 +50,9 @@ The default generated run covers:
   conflicts with per-tier target counts, supported and unsupported plugin-owned
   data, plugin owner-context drift, supported forms-lab custom-table rows,
   forms-lab delete refusal, atomic plugin install ready and missing-dependency
-  paths, same-plan post-parent, taxonomy, comment, and usermeta graph closures,
-  and stale graph references.
+  paths, same-plan post-parent, taxonomy, comment parent/thread, and usermeta
+  graph closures, stale comment parent thread blockers, and stale graph
+  references.
 
 At the time this note was added, the summary command reported:
 
@@ -59,9 +60,15 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 137,
-    "ready": 199
+    "blocked": 27,
+    "conflict": 145,
+    "ready": 188
+  },
+  "featureFamilies": {
+    "comment-parent-graph": 200,
+    "comment-parent-ready": 13,
+    "comment-parent-stale": 13,
+    "stale-comment-parent-graph": 13
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -75,8 +82,8 @@ At the time this note was added, the summary command reported:
         "4": 2,
         "5": 1,
         "6": 1,
-        "7": 2,
-        "8": 1,
+        "7": 1,
+        "8": 2,
         "9": 1
       },
       "statuses": {
@@ -84,10 +91,10 @@ At the time this note was added, the summary command reported:
       }
     }
   },
-  "maxResourceCount": 70,
+  "maxResourceCount": 68,
   "maxMutationCount": 45,
-  "maxReadyResourceCount": 70,
-  "maxReadyMutationCount": 45
+  "maxReadyResourceCount": 67,
+  "maxReadyMutationCount": 42
 }
 ```
 
