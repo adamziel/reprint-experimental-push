@@ -63,9 +63,11 @@ The default generated run covers:
   with per-tier target counts and ready/stale non-ready outcomes, `wp_users`
   + `wp_usermeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_term_taxonomy` graph cases with per-tier
-  target counts and ready/stale non-ready outcomes, plugin-owned `wp_options`
-  update cases with ready/conflict outcomes and stale replay rejection before
-  mutation, `wp_comments.user_id` author cases with
+  target counts and ready/stale non-ready outcomes, `wp_term_relationships`
+  graph cases with one target per tier, ready creates, stale taxonomy drift,
+  and redacted hash-only evidence, plugin-owned `wp_options` update cases with
+  ready/conflict outcomes and stale replay rejection before mutation,
+  `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
   supported forms-lab custom-table rows, forms-lab delete refusal, atomic plugin
@@ -177,6 +179,15 @@ all 10 tiers, including nine ready cases, nine stale non-ready cases, and
 hash-only redacted evidence for generated taxonomy descriptions and stale term
 drift values.
 
+The `wpTermRelationshipsGraph` target coverage records per-tier counts for
+generated `wp_term_relationships` rows and their `wp_term_taxonomy` targets.
+Ready cases create the term, taxonomy, and relationship in one plan, preserve
+unplanned remote resources, and reject stale replay before mutation; stale
+cases keep the term and taxonomy in the base, drift the taxonomy remotely, and
+require the new relationship row to fail closed instead of applying partial
+graph mutations. RPP-0133 keeps the current 510-case run and proves one
+relationship target in every tier: five ready cases, five stale blocked cases,
+and hash-only redacted evidence for generated relationship target values.
 
 The `pluginOwnedOptionChange` target coverage records per-tier counts for
 generated plugin-owned `wp_options` rows using the supported forms driver.
@@ -323,11 +334,11 @@ At the time this note was added, the summary command reported:
     "plugin-owned-unsupported": 81,
     "plugin-owner-context-drift": 10,
     "post-parent-graph": 10,
-    "ready-candidate": 146,
+    "ready-candidate": 151,
     "remote-delete": 10,
     "remote-delete-local-unchanged": 10,
     "remote-only-post-update": 10,
-    "remote-preserve": 30,
+    "remote-preserve": 40,
     "row-create": 30,
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-conflict": 10,
@@ -337,7 +348,7 @@ At the time this note was added, the summary command reported:
     "same-independent-content": 10,
     "same-independent-content-target": 10,
     "same-plan-comment-graph": 10,
-    "same-plan-graph": 441,
+    "same-plan-graph": 442,
     "same-plan-post-parent-graph": 10,
     "same-plan-taxonomy-graph": 10,
     "same-plan-user-meta-graph": 9,
@@ -352,7 +363,9 @@ At the time this note was added, the summary command reported:
     "stale-graph-reference": 10,
     "supported-forms-lab-table": 10,
     "supported-plugin-option": 10,
-    "taxonomy-graph": 282,
+    "taxonomy-graph": 284,
+    "term-relationship-object-graph": 10,
+    "term-relationship-taxonomy-graph": 10,
     "term-taxonomy-term-graph": 18,
     "termmeta-term-graph": 19,
     "tier-0": 51,
@@ -370,6 +383,7 @@ At the time this note was added, the summary command reported:
     "type-swap-ready": 10,
     "unsupported-plugin-owned-row": 10,
     "user-meta-graph": 27,
+    "usermeta-user-graph": 18,
     "wp-commentmeta-create": 20,
     "wp-comments-commentmeta-graph": 20,
     "wp-comments-commentmeta-graph-ready": 10,
@@ -396,6 +410,12 @@ At the time this note was added, the summary command reported:
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-delete": 20,
     "wp-posts-update": 20,
+    "wp-term-relationships-create": 10,
+    "wp-term-relationships-graph": 10,
+    "wp-term-relationships-graph-ready": 5,
+    "wp-term-relationships-graph-stale": 5,
+    "wp-term-relationships-graph-target": 10,
+    "wp-term-relationships-remote-drift": 5,
     "wp-term-taxonomy-create": 18,
     "wp-term-taxonomy-graph": 18,
     "wp-term-taxonomy-graph-ready": 9,
@@ -409,7 +429,6 @@ At the time this note was added, the summary command reported:
     "wp-usermeta-create": 18,
     "wp-users-create": 36,
     "wp-users-remote-drift": 18,
-    "usermeta-user-graph": 18,
     "wp-users-usermeta-graph": 18,
     "wp-users-usermeta-graph-ready": 9,
     "wp-users-usermeta-graph-stale": 9
@@ -693,6 +712,26 @@ At the time this note was added, the summary command reported:
         "ready": 10
       }
     },
+    "wpTermRelationshipsGraph": {
+      "family": "wp-term-relationships-graph",
+      "total": 10,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "blocked": 5,
+        "ready": 5
+      }
+    },
     "wpTermsTermmetaGraph": {
       "family": "wp-terms-termmeta-graph-ready",
       "total": 19,
@@ -761,11 +800,11 @@ At the time this note was added, the summary command reported:
   "maxMutationCount": 46,
   "maxReadyResourceCount": 74,
   "maxReadyMutationCount": 46,
-  "maxComplexityScore": 89,
-  "totalMutations": 7214,
+  "maxComplexityScore": 94,
+  "totalMutations": 7229,
   "totalConflicts": 509,
-  "totalBlockers": 513,
-  "totalDecisions": 1384
+  "totalBlockers": 518,
+  "totalDecisions": 1399
 }
 ```
 
