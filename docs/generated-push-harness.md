@@ -32,8 +32,8 @@ invariants:
   remote resource;
 - ready plans reject stale remotes before mutation;
 - non-ready plans refuse apply and leave the remote unchanged;
-- conflicts and blockers do not still carry mutations for the same blocked or
-  conflicted resource;
+- conflicts and non-propagated blockers do not still carry mutations for the
+  same blocked or conflicted resource;
 - plugin-owned mutations carry explicit owner and driver evidence.
 
 ## Current Coverage
@@ -51,12 +51,13 @@ The default generated run covers:
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
-  plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts,
+  ready/stale non-ready outcomes, stale replay rejection before mutation, and
+  hash-only/redacted evidence for private taxonomy descriptions, supported and
+  unsupported plugin-owned data, plugin owner-context drift, supported forms-lab
+  custom-table rows, forms-lab delete refusal, atomic plugin install ready and
+  missing-dependency paths, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -69,7 +70,8 @@ The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 create the term and taxonomy row in one plan and reject a stale replay before
 mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
-drifted remote.
+drifted remote. Private taxonomy descriptions and remote term drift values are
+kept out of reported evidence except for redacted hash metadata.
 
 At the time this note was added, the summary command reported:
 

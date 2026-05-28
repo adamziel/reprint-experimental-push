@@ -8,6 +8,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -278,7 +280,7 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
 }
 
-test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {
+test('RPP-0132 wp_term_taxonomy graph target exposes redacted per-tier ready and stale coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.wpTermTaxonomyGraph;
 
@@ -299,6 +301,8 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
     Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
     coverage.total,
   );
+  assert.equal(JSON.stringify(report).includes('local-private-term-taxonomy-description'), false);
+  assert.equal(JSON.stringify(report).includes('remote-private-term-taxonomy'), false);
 
   const cases = generatePushHarnessCases();
   const readyCase = cases.find((testCase) => testCase.family === 'wp-term-taxonomy-graph-ready');
@@ -306,8 +310,8 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
 
   assert.ok(readyCase, 'missing ready wp_term_taxonomy graph case');
   assert.ok(staleCase, 'missing stale wp_term_taxonomy graph case');
-  assertTermTaxonomyGraphShape(readyCase, { staleTarget: false });
-  assertTermTaxonomyGraphShape(staleCase, { staleTarget: true });
+  const readyShape = assertTermTaxonomyGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertTermTaxonomyGraphShape(staleCase, { staleTarget: true });
 
   const ready = validateGeneratedCase(readyCase);
   const stale = validateGeneratedCase(staleCase);
@@ -321,6 +325,9 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
   assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
   assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
   assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+
+  assertTermTaxonomyEvidenceRedacted(readyCase, readyShape);
+  assertTermTaxonomyEvidenceRedacted(staleCase, staleShape);
 });
 
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
@@ -329,7 +336,7 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       && row.name.startsWith('Generated term taxonomy graph target '));
   const termTaxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
     .filter(([id, row]) => !testCase.base.db.wp_term_taxonomy[id]
-      && row.description.startsWith('generated term taxonomy graph '));
+      && row.description.startsWith('local-private-term-taxonomy-description-'));
 
   assert.equal(termRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one term`);
   assert.equal(termTaxonomyRows.length, 1, `${testCase.id} should create one term_taxonomy row`);
@@ -346,6 +353,83 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.remote.db.wp_terms[termRowId],
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
+    );
+  }
+
+  return {
+    termRowId: `term_id:${termId}`,
+    taxonomyRowId: termTaxonomyRows[0][0],
+    termRow: testCase.local.db.wp_terms[`term_id:${termId}`],
+    remoteTermRow: testCase.remote.db.wp_terms[`term_id:${termId}`],
+    taxonomyRow: termTaxonomyRows[0][1],
+  };
+}
+
+function assertTermTaxonomyEvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const termResourceKey = `row:${JSON.stringify(['wp_terms', shape.termRowId])}`;
+  const taxonomyResourceKey = `row:${JSON.stringify(['wp_term_taxonomy', shape.taxonomyRowId])}`;
+  const relatedMutations = plan.mutations.filter((mutation) =>
+    mutation.resourceKey === termResourceKey || mutation.resourceKey === taxonomyResourceKey);
+  const relatedBlockers = plan.blockers.filter((blocker) =>
+    blocker.resourceKey === taxonomyResourceKey
+    || blocker.references?.some((reference) => reference.targetResourceKey === termResourceKey));
+  const relatedDecisions = plan.decisions.filter((decision) => decision.resourceKey === termResourceKey);
+
+  for (const mutation of relatedMutations) {
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+  }
+
+  if (plan.status === 'ready') {
+    assert.equal(relatedMutations.length, 2, `${testCase.id} should mutate term and term_taxonomy rows`);
+  } else {
+    assert.notEqual(plan.status, 'ready');
+    assert.ok(relatedBlockers.length >= 1, `${testCase.id} should have term_taxonomy graph blockers`);
+  }
+
+  const redacted = redactEvidence({
+    status: plan.status,
+    mutations: relatedMutations.map((mutation) => ({
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      change: mutation.change,
+      value: mutation.value,
+    })),
+    blockers: relatedBlockers,
+    decisions: relatedDecisions,
+  });
+  const redactedJson = JSON.stringify(redacted);
+
+  if (relatedMutations.length > 0) {
+    assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), 'mutation values should be redacted in evidence');
+    assert.ok(redactedJson.includes('sha256'), 'redacted mutation evidence should keep hashes');
+  }
+  assertTermTaxonomyRawValuesAbsent(testCase, shape, redactedJson);
+}
+
+function assertTermTaxonomyRawValuesAbsent(testCase, shape, redactedJson) {
+  const values = [
+    shape.remoteTermRow?.name,
+    shape.remoteTermRow?.slug,
+    shape.taxonomyRow.description,
+    'local-private-term-taxonomy-description',
+    'remote-private-term-taxonomy',
+  ].filter(Boolean).map(String);
+
+  for (const value of values) {
+    assert.equal(
+      redactedJson.includes(value),
+      false,
+      `${testCase.id} redacted evidence should not expose ${value}`,
     );
   }
 }

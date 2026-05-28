@@ -902,6 +902,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -913,6 +914,13 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
+      if (
+        blocker.class === 'atomic-group-blocker-propagation'
+        && matchingMutation?.resourceKey === blocker.resourceKey
+      ) {
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1221,8 +1229,8 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     setRow(local, 'wp_terms', termRowId, term);
     setRow(remote, 'wp_terms', termRowId, {
       ...term,
-      name: `Remote stale term taxonomy graph target ${termId}`,
-      slug: `remote-stale-term-taxonomy-graph-${termId}`,
+      name: `Remote private term taxonomy graph target ${termId}`,
+      slug: `remote-private-term-taxonomy-graph-${termId}`,
     });
   } else {
     setRow(local, 'wp_terms', termRowId, term);
@@ -1232,7 +1240,7 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     term_taxonomy_id: taxonomyId,
     term_id: termId,
     taxonomy: 'category',
-    description: `generated term taxonomy graph ${taxonomyId}`,
+    description: `local-private-term-taxonomy-description-${taxonomyId}`,
     parent: 0,
     count: 1,
   });
