@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, and RPP-0039
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, and RPP-0040
 
 ## What changed
 
@@ -11,6 +11,7 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 - Local candidate evidence can reach `candidate-for-review`, but `releaseMovement.allowed` stays `false` until every gate has `final-release` scope evidence.
 - Blocking gates name exact missing or failed evidence, including the required env key or evidence key.
 - Added `formatReleaseGateStatusMarker()` for a tmux-visible final bracketed status marker.
+- `verify:release` missing-source failure output now ends with a bracketed status marker that records the nonzero exit, named reason, and `mutationAttempted: false`.
 
 ## Covered RPP items with repository evidence
 
@@ -49,14 +50,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0037 | Evidence toward variant-2 tmux stdout proof status marker now runs `check-release-gates` with a final bracketed marker, asserts the marker is emitted on stdout, preserves exact tmux proof evidence, and records `mutationAttempted: false`. |
 | RPP-0038 | Evidence toward variant-2 progress.html release timestamp now links the progress page, focused proof command, observed status, exact timestamp evidence, and `NO-GO` release status without moving release readiness. |
 | RPP-0039 | Evidence toward variant-2 `.agents/RELEASE_GATES.md` status row now parses the generated status row and runs negative/positive `check-release-gates` scenarios: dishonest `release_verdict: 4/4` evidence fails, while the generated `0/4` row remains honest `NO-GO`. |
+| RPP-0040 | Evidence toward variant-2 `verify:release` failure reason now runs the checked `npm run verify:release` missing-source path, asserts exit `1`, final `[verify-release:held ...]` marker, exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` evidence, and `mutationAttempted: false`; the release-gate CLI preserves that evidence while release remains `NO-GO` without provenance. |
 
 ## Focused verification
 
 ```sh
-node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 30 tests.
+Observed status: pass, 31 tests.
 
 Progress HTML release timestamp proof:
 
@@ -69,6 +71,12 @@ Agents release-gates status row proof:
 - Command: `node --test test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; generated status row verdict: `0/4`; release status: `NO-GO`.
 - Evidence link: `.agents/RELEASE_GATES.md` remains honest fail-closed row evidence and dishonest `4/4` rows fail with `AGENTS_RELEASE_GATES_ROW_REQUIRED`.
+
+Verify release failure reason proof:
+
+- Command: `node --test test/verify-release-failure-reason.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; checked `npm run verify:release` missing-source path exits `1` and prints `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`.
+- Evidence link: the release-gate CLI preserves exact `verifyReleaseFailure` evidence with `mutationAttempted: false` and still reports `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied.
 
 Key assertions:
 
@@ -87,6 +95,7 @@ Key assertions:
 - Tmux stdout proof status marker has command-level variant-2 coverage: the fixture-backed `check-release-gates` run emits `[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]` on stdout, preserves exact marker evidence for `tmux-status-marker`, exits `NO-GO` without provenance, and records `mutationAttempted: false`.
 - Progress.html release timestamp proof ties `progress.html#release-proof-timestamp` to exact `progressReleaseTimestamp` gate evidence; the focused command observes status `pass`, the page reports `NO-GO`, and the release-gate CLI records `mutationAttempted: false`.
 - `.agents/RELEASE_GATES.md` status row coverage now records a scenario matrix: the negative case rejects a dishonest `release_verdict: 4/4` row with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and the positive case accepts the generated `release_verdict: 0/4` row while the CLI remains `NO-GO` without provenance and records `mutationAttempted: false`.
+- `verify:release` failure reason has tmux-visible variant-2 coverage: the checked `npm run verify:release` missing-source path exits `1`, ends stdout with `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`, starts no Playground server, and feeds exact final-release evidence into `check-release-gates` without any mutation attempt; the CLI still exits `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied.
 - Complete local candidate evidence yields `candidateMovement.allowed: true`, `releaseMovement.allowed: false`, and `releaseMovement.gates: "candidate-for-review"`.
 - Complete final evidence yields `releaseMovement.allowed: true` and `releaseMovement.gates: "20/20"`.
 
