@@ -1,9 +1,24 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:36 CEST
+Last updated: 2026-05-28 05:38 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:38 CEST - RPP-0039 Integrated
+
+- Going well: integration is now at `6035273b9`, adding `RPP-0039`
+  `.agents/RELEASE_GATES.md` status-row evidence. The parser treats the
+  generated `0/4` row as honest `NO-GO` evidence, rejects dishonest `4/4` rows
+  with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and keeps the CLI mutation-free.
+- Checklist movement: 107 verified items checked and 893 open. New check since
+  the prior feedback entry: `RPP-0039`.
+- Verification: combined release proof tests pass 30/30, checklist lint reports
+  107 checked / 893 open with 0 risky claims, artifact redaction scans the
+  touched docs with 0 rejected files, release gates still fail closed as
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue with the next safe queued candidate one at a time
+  from the latest lane head, skipping stale branches rather than forcing them.
 
 ## 2026-05-28 05:36 CEST - RPP-0038 Integrated
 
