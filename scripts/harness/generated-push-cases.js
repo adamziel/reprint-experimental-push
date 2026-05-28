@@ -94,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  atomicPluginInstallStack: {
+    family: 'atomic-plugin-stack-ready',
+    tag: 'atomic-plugin-install-stack-v3',
+  },
 });
 
 export function generatePushHarnessCases({
@@ -468,6 +472,8 @@ const scenarioFamilyBuilders = {
   'atomic-plugin-stack-ready': ({ local, tags }) => {
     installAtomicStack(local);
     tags.add('atomic-ready');
+    tags.add('atomic-plugin-install-stack-v3');
+    tags.add('atomic-plugin-stack-ready-v3');
   },
   'atomic-plugin-missing-dependency': ({ local, tags }) => {
     local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* generated dependent */';
@@ -489,6 +495,8 @@ const scenarioFamilyBuilders = {
       },
     ];
     tags.add('atomic-blocked');
+    tags.add('atomic-plugin-install-stack-v3');
+    tags.add('atomic-plugin-stack-missing-dependency-v3');
   },
   'plugin-file-update': ({ local, allocator, tags }) => {
     local.files['wp-content/plugins/forms/forms.php'] = `<?php /* local forms ${allocator.next()} */`;
@@ -1063,7 +1071,10 @@ function installAtomicStack(local) {
   };
   local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
     option_name: 'reprint_push_atomic_fixture_data',
-    option_value: { mode: 'generated-installed' },
+    option_value: {
+      mode: 'generated-installed',
+      privateInstallToken: 'private-atomic-plugin-install-stack-v3',
+    },
     __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [

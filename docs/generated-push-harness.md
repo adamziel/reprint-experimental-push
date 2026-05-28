@@ -54,8 +54,8 @@ The default generated run covers:
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
+  delete refusal, atomic plugin install ready and missing-dependency paths with
+  per-tier target counts, same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
   stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
@@ -71,6 +71,13 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `atomicPluginInstallStack` target coverage records per-tier counts for the
+atomic plugin install stack. Ready cases install dependency and dependent plugin
+files, plugin metadata, and plugin-owned option data inside one atomic group;
+the dependency proof is same-group and stale replay fails before mutation.
+Missing-dependency cases remain non-ready, propagate blockers to every group
+mutation, and keep private install option values hash-only/redacted.
+
 At the time this note was added, the summary command reported:
 
 ```json
@@ -82,6 +89,27 @@ At the time this note was added, the summary command reported:
     "ready": 192
   },
   "targetCoverage": {
+    "atomicPluginInstallStack": {
+      "family": "atomic-plugin-stack-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 3,
+        "conflict": 7,
+        "ready": 10
+      }
+    },
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
       "total": 10,
@@ -144,6 +172,11 @@ At the time this note was added, the summary command reported:
     }
   },
   "featureFamilies": {
+    "atomic-plugin-install-stack-v3": 20,
+    "atomic-plugin-stack-ready": 10,
+    "atomic-plugin-stack-ready-v3": 10,
+    "atomic-plugin-missing-dependency": 10,
+    "atomic-plugin-stack-missing-dependency-v3": 10,
     "file-type-swap": 20,
     "file-type-swap-ready": 10,
     "file-type-swap-conflict": 10,
