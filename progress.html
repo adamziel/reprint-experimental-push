@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-28T21:27:00+02:00">Last updated: May 28, 2026, 21:27 CEST</time>
+        <time class="update-stamp" datetime="2026-05-28T21:35:00+02:00">Last updated: May 28, 2026, 21:35 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>213</strong>
+        <strong>215</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>787</strong>
+        <strong>785</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -332,7 +332,7 @@
         <ul class="checklist">
           <li>
             <input type="checkbox" checked disabled aria-label="Release gates checked">
-            <span><strong>Fail-closed release gates</strong>81/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
+            <span><strong>Fail-closed release gates</strong>83/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
@@ -406,10 +406,12 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0081</span>
+        <span>RPP-0083</span>
       </div>
-      <p>The latest refresh checks release-verifier source URL carry-through: with local/changed URLs and credentials present but source empty, the verifier exits 1 before startup, carries the missing-source boundary into release-gate evidence, and keeps release NO-GO. Counts are now 213/787.</p>
+      <p>The latest refresh checks release-verifier changed-remote URL carry-through: with source/local URLs and credentials present but changed-remote empty, the verifier exits 1 before startup, carries the missing changed-remote boundary into release-gate evidence, and keeps release NO-GO. Counts are now 215/785.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">changed-remote carry-through: 36/36</span>
+        <span class="tag">local carry-through: 36/36</span>
         <span class="tag">source carry-through: 36/36</span>
         <span class="tag">verify marker: 35/35</span>
         <span class="tag">status row matrix: 34/34</span>
@@ -420,7 +422,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 36/36</span>
-        <span class="tag">checked goals: 213/1000</span>
+        <span class="tag">checked goals: 215/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

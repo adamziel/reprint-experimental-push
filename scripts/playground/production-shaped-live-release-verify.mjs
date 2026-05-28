@@ -157,25 +157,42 @@ function resolveReleaseTopologyBlocker() {
     };
   }
 
-  if (!explicitLiveRemoteChangedUrl || !explicitLiveLocalUrl) {
+  if (!explicitLiveRemoteChangedUrl) {
     return {
-      code: 'REPRINT_PUSH_TOPOLOGY_REQUIRED',
-      observed: !explicitLiveRemoteChangedUrl ? 'missing-remote-changed-source' : 'missing-local-edited-site',
-      reason: 'The release verifier requires explicit source, remote changed, and local edited URLs for GATE-3 topology proof.',
+      code: 'REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED',
+      observed: 'missing-remote-changed-source',
+      reason: 'REPRINT_PUSH_REMOTE_CHANGED_URL is required to prove stale remote replay fails before mutation.',
       boundary: {
         firstRemainingProductionBoundary: 'source/local/changed production topology',
         status: 'blocked',
-        verdict: 'REPRINT_PUSH_TOPOLOGY_REQUIRED',
+        verdict: 'REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED',
         topology: {
-          required: [
-            'REPRINT_PUSH_SOURCE_URL',
-            'REPRINT_PUSH_REMOTE_CHANGED_URL',
-            'REPRINT_PUSH_LOCAL_URL',
-          ],
+          required: 'REPRINT_PUSH_REMOTE_CHANGED_URL',
           observed: {
             sourceUrl: configuredLiveSourceUrl,
-            remoteChangedUrl: explicitLiveRemoteChangedUrl || '',
+            remoteChangedUrl: '',
             localUrl: explicitLiveLocalUrl || '',
+          },
+        },
+      },
+    };
+  }
+
+  if (!explicitLiveLocalUrl) {
+    return {
+      code: 'REPRINT_PUSH_LOCAL_URL_REQUIRED',
+      observed: 'missing-local-edited-site',
+      reason: 'REPRINT_PUSH_LOCAL_URL is required to prove the local edited site boundary.',
+      boundary: {
+        firstRemainingProductionBoundary: 'source/local/changed production topology',
+        status: 'blocked',
+        verdict: 'REPRINT_PUSH_LOCAL_URL_REQUIRED',
+        topology: {
+          required: 'REPRINT_PUSH_LOCAL_URL',
+          observed: {
+            sourceUrl: configuredLiveSourceUrl,
+            remoteChangedUrl: explicitLiveRemoteChangedUrl,
+            localUrl: '',
           },
         },
       },

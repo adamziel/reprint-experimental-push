@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0081.
+Primary checklist range: RPP-0001 through RPP-0083.
 
 ## What changed
 
@@ -72,6 +72,8 @@ Primary checklist range: RPP-0001 through RPP-0081.
 | RPP-0079 | Evidence toward focused `.agents/RELEASE_GATES.md` status row regression now records the scenario matrix: dishonest `release_verdict: 4/4` rows fail with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, while the honest `0/4` row passes the gate and release remains `NO-GO` without provenance. |
 | RPP-0080 | Evidence toward focused `verify:release` nonzero failure reason regression now proves the checked missing-source verifier exits `1`, emits `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`, avoids mutating verifier startup, preserves exact gate evidence, and rejects zero-exit forgery. |
 | RPP-0081 | Evidence toward release verifier missing `REPRINT_PUSH_SOURCE_URL` carry-through now runs the checked verifier with local/changed URLs and credentials present but source empty, asserts the final missing-source marker, exact live-source boundary evidence, no verifier startup or mutation, and release-gate preservation of the exact `source-url` evidence. |
+| RPP-0082 | Evidence toward release verifier missing `REPRINT_PUSH_LOCAL_URL` carry-through now emits the named verifier code `REPRINT_PUSH_LOCAL_URL_REQUIRED`, preserves exact local topology evidence before startup or mutation, redacts credentials, and proves the release-gate CLI keeps the exact `local-url` evidence with source and changed-remote gates passed. |
+| RPP-0083 | Evidence toward release verifier missing `REPRINT_PUSH_REMOTE_CHANGED_URL` carry-through now emits the named verifier code `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED`, preserves exact changed-remote topology evidence before startup or mutation, redacts credentials, and proves the release-gate CLI keeps the exact `remote-changed-url` evidence with source and local gates passed. |
 
 ## Focused verification
 
@@ -194,6 +196,42 @@ preserves the exact `source-url` evidence with `final=19/20`.
 
 - Command: `node --test test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-source-url-generated.test.js test/release-gate-verify-release-failure-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`; source gate: `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; release status: `NO-GO`.
+
+Release verifier missing local URL carry-through refresh:
+
+```sh
+node --test test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-local-url-generated.test.js test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 36 tests. This checks RPP-0082 by running the checked
+`npm run verify:release` path with source and changed-remote URLs plus
+credentials present while `REPRINT_PUSH_LOCAL_URL` is empty. The verifier exits
+`1`, prints
+`[verify-release:held exit=1 reason=REPRINT_PUSH_LOCAL_URL_REQUIRED mutationAttempted=false]`,
+records the exact missing local-edited-site topology blocker, starts no live
+verifier server, redacts credentials, and the release-gate CLI preserves the
+exact `local-url` evidence with source and changed-remote gates passed.
+
+- Command: `node --test test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-local-url-generated.test.js test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LOCAL_URL_REQUIRED mutationAttempted=false]`; local gate: `REPRINT_PUSH_LOCAL_URL_REQUIRED`; release status: `NO-GO`.
+
+Release verifier missing changed-remote URL carry-through refresh:
+
+```sh
+node --test test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-remote-changed-url-generated.test.js test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 36 tests. This checks RPP-0083 by running the checked
+`npm run verify:release` path with source and local URLs plus credentials
+present while `REPRINT_PUSH_REMOTE_CHANGED_URL` is empty. The verifier exits
+`1`, prints
+`[verify-release:held exit=1 reason=REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED mutationAttempted=false]`,
+records the exact missing changed-remote topology blocker, starts no live
+verifier server, redacts credentials, and the release-gate CLI preserves the
+exact `remote-changed-url` evidence with source and local gates passed.
+
+- Command: `node --test test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-remote-changed-url-generated.test.js test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED mutationAttempted=false]`; changed-remote gate: `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED`; release status: `NO-GO`.
 
 Progress HTML release timestamp proof:
 

@@ -1,4 +1,4 @@
-# AO Progress Report - 2026-05-28 21:27 CEST
+# AO Progress Report - 2026-05-28 21:35 CEST
 
 Status: **NO-GO for final release**.
 
@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 213 are
-  checked from integrated evidence and 787 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 215 are
+  checked from integrated evidence and 785 remain open.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -84,6 +84,35 @@ progress.
   `source-url` evidence with `final=19/20`.
   - Command: `node --test test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-source-url-generated.test.js test/release-gate-verify-release-failure-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`; source gate: `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; release status: `NO-GO`.
+- Release verifier missing local URL carry-through now checks `RPP-0082`.
+  `node --test
+  test/release-verifier-missing-local-url-carry-through-focused-regression.test.js
+  test/release-gate-missing-local-url-regression.test.js
+  test/release-gate-local-url-generated.test.js
+  test/release-verifier-missing-source-url-carry-through-focused-regression.test.js
+  test/release-gates.test.js test/release-gate-cli.test.js` passed 36/36,
+  proving the checked verifier emits `REPRINT_PUSH_LOCAL_URL_REQUIRED` with
+  source and changed-remote URLs plus credentials present while
+  `REPRINT_PUSH_LOCAL_URL` is empty, starts no live verifier server, redacts
+  credentials, and preserves exact release-gate `local-url` evidence with
+  source and changed-remote gates passed.
+  - Command: `node --test test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-local-url-generated.test.js test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LOCAL_URL_REQUIRED mutationAttempted=false]`; local gate: `REPRINT_PUSH_LOCAL_URL_REQUIRED`; release status: `NO-GO`.
+- Release verifier missing changed-remote URL carry-through now checks
+  `RPP-0083`. `node --test
+  test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js
+  test/release-gate-missing-remote-changed-url-regression.test.js
+  test/release-gate-remote-changed-url-generated.test.js
+  test/release-verifier-missing-local-url-carry-through-focused-regression.test.js
+  test/release-gates.test.js test/release-gate-cli.test.js` passed 36/36,
+  proving the checked verifier emits
+  `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED` with source and local URLs plus
+  credentials present while `REPRINT_PUSH_REMOTE_CHANGED_URL` is empty, starts
+  no live verifier server, redacts credentials, and preserves exact
+  release-gate `remote-changed-url` evidence with source and local gates
+  passed.
+  - Command: `node --test test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-remote-changed-url-generated.test.js test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED mutationAttempted=false]`; changed-remote gate: `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED`; release status: `NO-GO`.
 - Branch integration audit now reports zero unmerged refs across the freshly
   fetched `origin/session/rpp*` set: 397 checked, 0 unmerged. The broader
   local/remote `rpp`/session-like sweep checked 843 refs with 0 unmerged. The
@@ -984,7 +1013,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 81 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 83 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 34 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
@@ -997,7 +1026,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0081`.
+- Release gates: `RPP-0001` through `RPP-0083`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
   `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`,
@@ -1031,6 +1060,8 @@ Checked IDs in this report are:
 ## Checked Commands
 
 - `node --test test/release-gate-tmux-status-marker-focused-regression.test.js` — 1 pass / 0 fail for the RPP-0077 focused tmux stdout proof marker regression.
+- `node --test test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-remote-changed-url-generated.test.js test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 36 pass / 0 fail for the RPP-0083 release verifier missing changed-remote URL carry-through plus changed-remote/local-gate/release-gate/CLI coverage.
+- `node --test test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-local-url-generated.test.js test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 36 pass / 0 fail for the RPP-0082 release verifier missing local URL carry-through plus local/source-gate/release-gate/CLI coverage.
 - `node --test test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-source-url-generated.test.js test/release-gate-verify-release-failure-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 36 pass / 0 fail for the RPP-0081 release verifier missing source URL carry-through plus source-gate/release-gate/CLI coverage.
 - `node --test test/release-gate-verify-release-failure-focused-regression.test.js test/verify-release-failure-reason.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 35 pass / 0 fail for the RPP-0080 focused verify:release nonzero failure reason regression plus release-gate/CLI coverage.
 - `node --test test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 34 pass / 0 fail for the RPP-0079 focused `.agents/RELEASE_GATES.md` status row regression plus release-gate/CLI coverage.

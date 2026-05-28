@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 21:27 CEST.
+- Last update: 2026-05-28 21:35 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 213
-  items checked and leaves 787 open.
-- Checked slices: 81 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 215
+  items checked and leaves 785 open.
+- Checked slices: 83 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -61,6 +61,28 @@ linked implementation artifacts.
   the missing live-source boundary and topology blocker, starts no live verifier
   server, redacts credentials, and preserves the exact release-gate `source-url`
   evidence with `final=19/20`. Final release remains `NO-GO`.
+- Release verifier missing-local carry-through refresh: the current lane now
+  contains
+  `test/release-verifier-missing-local-url-carry-through-focused-regression.test.js`
+  for `RPP-0082`. The command
+  `node --test test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-local-url-generated.test.js test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 36/36, proving the checked verifier emits
+  `REPRINT_PUSH_LOCAL_URL_REQUIRED` with source and changed-remote URLs plus
+  credentials present while `REPRINT_PUSH_LOCAL_URL` is empty, starts no live
+  verifier server, redacts credentials, and preserves exact release-gate
+  `local-url` evidence with source and changed-remote gates passed. Final
+  release remains `NO-GO`.
+- Release verifier missing-changed-remote carry-through refresh: the current
+  lane now contains
+  `test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js`
+  for `RPP-0083`. The command
+  `node --test test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-remote-changed-url-generated.test.js test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 36/36, proving the checked verifier emits
+  `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED` with source and local URLs plus
+  credentials present while `REPRINT_PUSH_REMOTE_CHANGED_URL` is empty, starts
+  no live verifier server, redacts credentials, and preserves exact
+  release-gate `remote-changed-url` evidence with source and local gates
+  passed. Final release remains `NO-GO`.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also
