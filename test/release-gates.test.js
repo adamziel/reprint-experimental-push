@@ -1290,6 +1290,85 @@ test('source URL without production credentials fails at the explicit missing-se
   assert.equal(evaluation.releaseMovement.allowed, false);
 });
 
+test('check-release-gates command proves missing production secret before mutation for RPP-0027', () => {
+  const evidence = completeEvidence('final-release');
+  delete evidence.productionSecret;
+  const { dir, file } = writeReleaseGateEvidenceFixture({
+    scope: 'final-release',
+    env: releaseEnv(),
+    evidence,
+  });
+
+  const result = runReleaseGateCli([
+    '--evidence-file',
+    file,
+    '--scope',
+    'final-release',
+    '--now',
+    fixedNow.toISOString(),
+  ], {
+    cwd: dir,
+    env: {},
+    now: fixedNow,
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.report.ok, false);
+  assert.equal(result.report.releaseStatus, 'NO-GO');
+  assert.equal(result.report.primaryFailureBucket, 'auth');
+  assert.equal(result.report.primaryFailureCode, 'REPRINT_PUSH_SECRET_REQUIRED');
+  assert.equal(result.report.mutationAttempted, false);
+  assert.deepEqual(result.report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.equal(result.report.releaseMovement.allowed, false);
+  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
+    {
+      bucket: 'auth',
+      gateCount: 1,
+      gates: [
+        {
+          bucket: 'auth',
+          id: 'production-secret',
+          rpp: 'RPP-0007',
+          title: 'Missing production secret gate',
+          status: 'failed',
+          code: 'REPRINT_PUSH_SECRET_REQUIRED',
+          reason: 'A live source URL is present but production credentials or an auth session source command are missing.',
+          required: [
+            'REPRINT_PUSH_USERNAME + REPRINT_PUSH_APPLICATION_PASSWORD',
+            'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+          ],
+          observed: 'missing-production-credentials',
+          envKey: undefined,
+          evidenceKey: undefined,
+          scope: 'final-release',
+          requiredScope: undefined,
+        },
+      ],
+    },
+  ]);
+
+  const gate = gateById(result.report.evaluation, 'production-secret');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'REPRINT_PUSH_SECRET_REQUIRED');
+  assert.equal(
+    gate.reason,
+    'A live source URL is present but production credentials or an auth session source command are missing.',
+  );
+  assert.deepEqual(gate.evidence, {
+    required: [
+      'REPRINT_PUSH_USERNAME + REPRINT_PUSH_APPLICATION_PASSWORD',
+      'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+    ],
+    observed: 'missing-production-credentials',
+    sourceUrl,
+    scope: 'final-release',
+  });
+});
+
 
 test('remaining release gates name missing evidence keys and hold release movement', () => {
   const cases = [
