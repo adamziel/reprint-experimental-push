@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:39 CEST
+Last updated: 2026-05-28 10:49 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:49 CEST - RPP-0347 Integrated
+
+- Going well: integration is now at `a4260f8d8`, adding `RPP-0347` comment
+  user reference generated coverage. The proof emits ready and stale
+  comment-user graph fixtures, verifies stale remote user references block
+  before mutation, and keeps raw target labels out of serialized stale plan
+  evidence.
+- Checklist movement: 132 verified items checked and 868 open. New check since
+  the prior feedback entry: `RPP-0347`.
+- Verification: focused RPP-0347 generated-harness validation passes 1/1, the
+  full generated harness passes 12/12, focused graph checks pass 23/23,
+  checklist lint reports 132 checked / 868 open with 0 risky claims, artifact
+  redaction scans evidence and reporting surfaces with 0 rejected files, release
+  remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one already-pushed candidate at a time from the
+  latest lane head; under the integration-only freeze, push only the lane after
+  validation and do not push session branches.
 
 ## 2026-05-28 10:39 CEST - RPP-0070 Integrated
 

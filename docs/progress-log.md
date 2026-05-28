@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:39 CEST.
+- Last update: 2026-05-28 10:49 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `678255f0e` (`test: add same source identity regression`).
+  `a4260f8d8` (`test: add comment user generated coverage`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 131
-  items complete and leaves 869 open.
-- Checked slices: 44 release-gate foundation items, 17 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 132
+  items complete and leaves 868 open.
+- Checked slices: 44 release-gate foundation items, 18 graph identity items,
   20 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 13 merge-invariant items. No release-ops items are checked
@@ -158,6 +158,15 @@ linked implementation artifacts.
   rewrites dependent child post and postmeta rows to the imported remote target,
   blocks stale imported targets, records only hashes/resource keys/rewrite
   hashes, and leaves final release `NO-GO`.
+- Comment-user graph generated continuation: `a4260f8d8` integrated `RPP-0347`
+  comment user reference generated coverage. Focused command:
+  `node --test --test-name-pattern=RPP-0347 test/generated-push-harness.test.js`
+  (1 passing generated-harness test). The full generated harness passes 12/12,
+  and focused graph checks across `test/push-planner.test.js` and
+  `test/local-production-complex-site-proof.test.js` pass 23/23. The generated
+  proof emits ready and stale comment-user graph cases, blocks stale remote user
+  references before mutation, keeps raw target labels out of serialized stale
+  plan evidence, and leaves final release `NO-GO`.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
