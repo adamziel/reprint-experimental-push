@@ -145,6 +145,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-options-serialized-ready',
     tag: 'wp-options-serialized-change',
   },
+  sameIndependentContent: {
+    family: 'same-independent-content',
+    tag: 'same-independent-content-target',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
