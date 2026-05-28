@@ -91,9 +91,18 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.maxReadyResourceCount >= 45, 'ready cases need high-complexity resource surfaces');
   assert.ok(summary.maxReadyMutationCount >= 15, 'ready cases need substantial mutation plans');
   assert.ok(summary.totalMutations > summary.totalCases, 'harness should exercise more mutations than cases');
+  assert.equal(summary.totalPreconditions, summary.totalMutations);
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0211 generated cases keep mutation preconditions one-to-one', () => {
+  const report = runGeneratedPushHarness();
+
+  assert.equal(report.summary.totalCases, DEFAULT_GENERATED_PUSH_CASES);
+  assert.ok(report.summary.totalMutations > 0, 'generated harness must emit mutations');
+  assert.equal(report.summary.totalPreconditions, report.summary.totalMutations);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

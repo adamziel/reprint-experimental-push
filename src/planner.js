@@ -2596,9 +2596,43 @@ function removeUnsafeMutations(plan, unsafeMutationKeys) {
 }
 
 function enforceMutationPreconditionInvariant(plan) {
+  const mutationsById = new Map();
+  for (const mutation of plan.mutations) {
+    if (mutationsById.has(mutation.id)) {
+      plan.blockers.push({
+        id: `blocker-${mutation.id}-duplicate-mutation-id`,
+        class: 'planner-invariant-violation',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+        reason: 'Plan emitted duplicate mutation ids.',
+      });
+      continue;
+    }
+    mutationsById.set(mutation.id, mutation);
+  }
+
   const preconditionsByMutation = new Map();
   for (const precondition of plan.preconditions) {
+    if (preconditionsByMutation.has(precondition.mutationId)) {
+      plan.blockers.push({
+        id: `blocker-${precondition.mutationId}-duplicate-live-remote-precondition`,
+        class: 'planner-invariant-violation',
+        mutationId: precondition.mutationId,
+        resourceKey: precondition.resourceKey,
+        reason: 'Plan emitted duplicate live remote preconditions for a mutation.',
+      });
+      continue;
+    }
     preconditionsByMutation.set(precondition.mutationId, precondition);
+    if (!mutationsById.has(precondition.mutationId)) {
+      plan.blockers.push({
+        id: `blocker-${precondition.mutationId}-orphan-live-remote-precondition`,
+        class: 'planner-invariant-violation',
+        mutationId: precondition.mutationId,
+        resourceKey: precondition.resourceKey,
+        reason: 'Plan emitted a live remote precondition that does not map to a mutation.',
+      });
+    }
   }
 
   for (const mutation of plan.mutations) {

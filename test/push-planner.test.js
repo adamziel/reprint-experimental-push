@@ -191,6 +191,27 @@ function tamperReadyPlan(plan, mutate) {
 }
 
 function assertEveryMutationHasLiveRemotePrecondition(plan) {
+  assert.equal(plan.preconditions.length, plan.mutations.length, 'precondition count must match mutation count');
+  const mutationById = new Map();
+  for (const mutation of plan.mutations) {
+    assert.equal(mutationById.has(mutation.id), false, `duplicate mutation id ${mutation.id}`);
+    mutationById.set(mutation.id, mutation);
+  }
+  const preconditionByMutationId = new Map();
+  for (const precondition of plan.preconditions) {
+    assert.equal(
+      preconditionByMutationId.has(precondition.mutationId),
+      false,
+      `duplicate precondition for ${precondition.mutationId}`,
+    );
+    preconditionByMutationId.set(precondition.mutationId, precondition);
+    const mutation = mutationById.get(precondition.mutationId);
+    assert.ok(mutation, `orphan precondition for ${precondition.mutationId}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.deepEqual(precondition.resource, mutation.resource);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(precondition.checkedAgainst, 'live-remote');
+  }
   for (const mutation of plan.mutations) {
     const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
     assert.ok(precondition, `missing precondition for ${mutation.id}`);
@@ -199,6 +220,127 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
     assert.equal(precondition.checkedAgainst, 'live-remote');
   }
 }
+
+function rpp0211MixedResourceFixture() {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  const privateValues = [
+    'local-private-rpp0211-file-secret',
+    'Local private RPP-0211 title',
+    'local-private-rpp0211-option-mode',
+  ];
+
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  return {
+    base,
+    local,
+    remote,
+    privateValues,
+    mutationResourceKeys: [
+      'file:index.php',
+      pluginOptionResourceKey,
+      'row:["wp_posts","ID:1"]',
+    ],
+  };
+}
+
+test('RPP-0211 maps mixed resource mutations and preconditions one-to-one', () => {
+  const fixture = rpp0211MixedResourceFixture();
+  const plan = planFor(fixture.base, fixture.local, fixture.remote);
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.mutations.map((mutation) => mutation.resourceKey), fixture.mutationResourceKeys);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(cloneJson(fixture.remote), plan);
+  assert.equal(result.site.files['index.php'], fixture.privateValues[0]);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, fixture.privateValues[1]);
+  assert.equal(
+    result.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    fixture.privateValues[2],
+  );
+});
+
+test('RPP-0211 executor rejects forged mutation/precondition mappings before mutation', () => {
+  const fixture = rpp0211MixedResourceFixture();
+  const ready = planFor(fixture.base, fixture.local, fixture.remote);
+  const fileMutation = mutationFor(ready, 'file:index.php');
+  const filePrecondition = ready.preconditions.find((entry) => entry.mutationId === fileMutation.id);
+  const rowMutation = mutationFor(ready, 'row:["wp_posts","ID:1"]');
+
+  assert.equal(ready.status, 'ready');
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+
+  const cases = [
+    {
+      name: 'missing precondition',
+      forge(plan) {
+        plan.preconditions = plan.preconditions.filter((entry) => entry.mutationId !== fileMutation.id);
+      },
+      issueCode: 'PRECONDITION_MISSING',
+    },
+    {
+      name: 'duplicate precondition',
+      forge(plan) {
+        plan.preconditions.push(cloneJson(filePrecondition));
+      },
+      issueCode: 'PRECONDITION_DUPLICATE',
+    },
+    {
+      name: 'orphan precondition',
+      forge(plan) {
+        plan.preconditions.push({
+          ...cloneJson(filePrecondition),
+          mutationId: 'mutation-forged-rpp0211-orphan',
+        });
+      },
+      issueCode: 'PRECONDITION_ORPHAN',
+    },
+    {
+      name: 'wrong resource mapping',
+      forge(plan) {
+        const precondition = plan.preconditions.find((entry) => entry.mutationId === fileMutation.id);
+        precondition.resource = cloneJson(rowMutation.resource);
+        precondition.resourceKey = rowMutation.resourceKey;
+      },
+      issueCode: 'PRECONDITION_MUTATION_MISMATCH',
+    },
+    {
+      name: 'wrong expected hash',
+      forge(plan) {
+        const precondition = plan.preconditions.find((entry) => entry.mutationId === fileMutation.id);
+        precondition.expectedHash = '0'.repeat(64);
+      },
+      issueCode: 'PRECONDITION_MUTATION_MISMATCH',
+    },
+  ];
+
+  for (const testCase of cases) {
+    const forged = tamperReadyPlan(ready, testCase.forge);
+    const remote = cloneJson(fixture.remote);
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, forged));
+    const detailsJson = JSON.stringify(error.details);
+
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, 'PLAN_PRECONDITION_MISMATCH', testCase.name);
+    assert.ok(error.details.issues.some((issue) => issue.code === testCase.issueCode), testCase.name);
+    assert.equal(JSON.stringify(remote), before, testCase.name);
+    for (const privateValue of fixture.privateValues) {
+      assert.equal(detailsJson.includes(privateValue), false, `${testCase.name} leaked ${privateValue}`);
+    }
+  }
+});
 
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();

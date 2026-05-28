@@ -39,6 +39,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validateMutationPreconditionMapping(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
@@ -360,6 +361,119 @@ function validFixtureFormsLabTableEvidence(evidence, remote) {
       && resourceHash(remote, pluginResource) === evidence.remoteHash;
   }
   return false;
+}
+
+function validateMutationPreconditionMapping(plan) {
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
+  const mutationById = new Map();
+  const preconditionByMutationId = new Map();
+  const issues = [];
+
+  if (!Array.isArray(plan.mutations)) {
+    issues.push({ code: 'MUTATIONS_MISSING' });
+  }
+  if (!Array.isArray(plan.preconditions)) {
+    issues.push({ code: 'PRECONDITIONS_MISSING' });
+  }
+  if (mutations.length !== preconditions.length) {
+    issues.push({
+      code: 'PRECONDITION_COUNT_MISMATCH',
+      mutations: mutations.length,
+      preconditions: preconditions.length,
+    });
+  }
+
+  for (const mutation of mutations) {
+    if (!mutation || typeof mutation !== 'object' || !mutation.id) {
+      issues.push({
+        code: 'MUTATION_INVALID',
+        mutationId: mutation?.id || null,
+        resourceKey: mutation?.resourceKey || null,
+      });
+      continue;
+    }
+    if (mutationById.has(mutation.id)) {
+      issues.push({
+        code: 'MUTATION_DUPLICATE',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+      });
+      continue;
+    }
+    mutationById.set(mutation.id, mutation);
+  }
+
+  for (const precondition of preconditions) {
+    if (!precondition || typeof precondition !== 'object' || !precondition.mutationId) {
+      issues.push({
+        code: 'PRECONDITION_INVALID',
+        mutationId: precondition?.mutationId || null,
+        resourceKey: precondition?.resourceKey || null,
+      });
+      continue;
+    }
+    if (preconditionByMutationId.has(precondition.mutationId)) {
+      issues.push({
+        code: 'PRECONDITION_DUPLICATE',
+        mutationId: precondition.mutationId,
+        resourceKey: precondition.resourceKey || null,
+      });
+      continue;
+    }
+    preconditionByMutationId.set(precondition.mutationId, precondition);
+
+    const mutation = mutationById.get(precondition.mutationId);
+    if (!mutation) {
+      issues.push({
+        code: 'PRECONDITION_ORPHAN',
+        mutationId: precondition.mutationId,
+        resourceKey: precondition.resourceKey || null,
+      });
+      continue;
+    }
+
+    if (
+      precondition.resourceKey !== mutation.resourceKey
+      || precondition.expectedHash !== mutation.remoteBeforeHash
+      || precondition.checkedAgainst !== 'live-remote'
+      || resourceEvidenceHash(precondition.resource) !== resourceEvidenceHash(mutation.resource)
+    ) {
+      issues.push({
+        code: 'PRECONDITION_MUTATION_MISMATCH',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        preconditionResourceKey: precondition.resourceKey || null,
+        expectedHash: mutation.remoteBeforeHash || null,
+        preconditionHash: precondition.expectedHash || null,
+        checkedAgainst: precondition.checkedAgainst || null,
+        mutationResourceHash: resourceEvidenceHash(mutation.resource),
+        preconditionResourceHash: resourceEvidenceHash(precondition.resource),
+      });
+    }
+  }
+
+  for (const mutation of mutationById.values()) {
+    if (!preconditionByMutationId.has(mutation.id)) {
+      issues.push({
+        code: 'PRECONDITION_MISSING',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+      });
+    }
+  }
+
+  if (issues.length > 0) {
+    throw new PushPlanError(
+      'PLAN_PRECONDITION_MISMATCH',
+      'Plan mutations and live remote preconditions are not one-to-one.',
+      { issues },
+    );
+  }
+}
+
+function resourceEvidenceHash(resource) {
+  return resource && typeof resource === 'object' ? digest(resource) : null;
 }
 
 function prepareJournal(remote, plan, previousJournal) {
