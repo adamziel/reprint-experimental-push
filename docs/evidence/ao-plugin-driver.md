@@ -76,6 +76,33 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0462 driver owner identity binding focused regression
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0462|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0462 focused proof binds a plugin-owned `wp_options` mutation to the
+exact owner identity declared by driver policy. The accepted path requires owner
+`forms` with driver `wp-option`, applies one mutation, and stores only
+`sha256:` proof hashes for the plan summary, mutation owner/driver binding,
+driver audit envelope, and apply journal.
+
+Fail-closed variants cover both policy and replay drift. A policy entry for the
+same resource but owner `other-plugin` is treated as unsupported for the actual
+resource owner `forms`, emits no mutation, and refuses apply as a blocked plan.
+A forged ready plan whose mutation owner is changed after planning fails before
+mutation with `UNSUPPORTED_PLUGIN_OWNED_RESOURCE` and
+`PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED`; the remote row hash and full remote
+hash are unchanged. Raw plugin-owned values are asserted absent from the audit,
+blocker/refusal, and proof evidence.
+
+This is local focused plugin-driver evidence, not production-backed evidence.
+It preserves the release NO-GO caveat and does not widen accepted production
+plugin-driver resources.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +116,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0462 — driver owner identity binding: exact owner/driver binding
+  applies with hash-only audit evidence; mismatched policy owners and forged
+  ready-plan owners fail closed before mutation while preserving remote data.

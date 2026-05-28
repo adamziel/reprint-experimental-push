@@ -177,6 +177,10 @@ function sha256Evidence(value) {
   return `sha256:${digest(value)}`;
 }
 
+function assertSha256Evidence(value) {
+  assert.match(value, /^sha256:[a-f0-9]{64}$/);
+}
+
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
 const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
 
@@ -1718,6 +1722,205 @@ test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plug
   for (const rawValue of [baseSecret, localSecret, remoteDriftSecret]) {
     assert.equal(serializedAudit.includes(rawValue), false, `audit leaked ${rawValue}`);
     assert.equal(serializedEvidence.includes(rawValue), false, `evidence leaked ${rawValue}`);
+  }
+});
+
+test('RPP-0462 driver owner identity binding accepts exact owner and refuses mismatched or stale owner before mutation', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const resource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:forms_settings',
+    key: resourceKey,
+  };
+  const privateValues = [
+    'rpp0462-base-private-owner-binding',
+    'rpp0462-local-private-owner-binding',
+    'rpp0462-remote-private-owner-binding',
+  ];
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[0];
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[1];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = cloneJson(base);
+
+  const acceptedPlan = planFor(base, local, remote);
+  const acceptedMutation = mutationFor(acceptedPlan, resourceKey);
+  const acceptedAuditEvidence = acceptedMutation.pluginOwnedResource.auditEvidence;
+  const acceptedRemote = cloneJson(remote);
+  const acceptedResult = applyPlan(acceptedRemote, acceptedPlan);
+
+  assert.equal(acceptedPlan.status, 'ready');
+  assert.deepEqual(acceptedPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.equal(acceptedMutation.action, 'put');
+  assert.equal(acceptedMutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(acceptedMutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(acceptedMutation.pluginOwnedResource.ownerContextRequired, true);
+  assert.equal(acceptedAuditEvidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(acceptedAuditEvidence.format, 'hash-only');
+  assert.equal(acceptedAuditEvidence.rawValuesIncluded, false);
+  assert.equal(acceptedAuditEvidence.resourceKey, resourceKey);
+  assert.equal(acceptedAuditEvidence.pluginOwner, 'forms');
+  assert.equal(acceptedAuditEvidence.driver, 'wp-option');
+  assert.equal(acceptedAuditEvidence.baseHash, acceptedMutation.baseHash);
+  assert.equal(acceptedAuditEvidence.localHash, acceptedMutation.localHash);
+  assert.equal(acceptedAuditEvidence.remoteHash, acceptedMutation.remoteBeforeHash);
+  assert.match(acceptedAuditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+  assert.equal(acceptedResult.appliedMutations, 1);
+  assert.equal(
+    acceptedResult.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    privateValues[1],
+  );
+
+  const unsupportedLocal = cloneJson(base);
+  unsupportedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[1];
+  unsupportedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'other-plugin', 'wp-option'),
+    ),
+  };
+  const unsupportedRemote = cloneJson(base);
+  const unsupportedBeforeHash = sha256Evidence(unsupportedRemote);
+  const unsupportedRowBeforeHash = `sha256:${resourceHash(unsupportedRemote, resource)}`;
+  const unsupportedPlan = planFor(base, unsupportedLocal, unsupportedRemote);
+  const unsupportedBlocker = unsupportedPlan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const unsupportedError = captureError(() => applyPlan(unsupportedRemote, unsupportedPlan));
+
+  assert.equal(unsupportedPlan.status, 'blocked');
+  assert.equal(unsupportedPlan.summary.mutations, 0);
+  assert.equal(mutationFor(unsupportedPlan, resourceKey), undefined);
+  assert.equal(unsupportedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(unsupportedBlocker.pluginOwner, 'forms');
+  assert.equal(unsupportedBlocker.driver, null);
+  assert.equal(unsupportedBlocker.resourceKey, resourceKey);
+  assert.ok(unsupportedError instanceof PushPlanError);
+  assert.equal(unsupportedError.code, 'PLAN_NOT_READY');
+  assert.equal(unsupportedError.details.status, 'blocked');
+  assert.equal(sha256Evidence(unsupportedRemote), unsupportedBeforeHash);
+  assert.equal(`sha256:${resourceHash(unsupportedRemote, resource)}`, unsupportedRowBeforeHash);
+  assert.equal(
+    unsupportedRemote.db.wp_options['option_name:forms_settings'].option_value.mode,
+    privateValues[0],
+  );
+
+  const staleOwnerPlan = tamperReadyPlan(acceptedPlan, (plan) => {
+    mutationFor(plan, resourceKey).pluginOwnedResource.pluginOwner = 'other-plugin';
+  });
+  const staleOwnerRemote = cloneJson(remote);
+  const staleOwnerBeforeHash = sha256Evidence(staleOwnerRemote);
+  const staleOwnerRowBeforeHash = `sha256:${resourceHash(staleOwnerRemote, resource)}`;
+  const staleOwnerError = captureError(() => applyPlan(staleOwnerRemote, staleOwnerPlan));
+
+  assert.ok(staleOwnerError instanceof PushPlanError);
+  assert.equal(staleOwnerError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(staleOwnerError.details.resourceKey, resourceKey);
+  assert.equal(staleOwnerError.details.pluginOwner, 'forms');
+  assert.equal(staleOwnerError.details.driver, 'wp-option');
+  assert.equal(
+    staleOwnerError.details.applyValidationEvidence.reasonCode,
+    'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED',
+  );
+  assert.equal(staleOwnerError.details.applyValidationEvidence.outcome, 'refused-before-mutation');
+  assert.equal(staleOwnerError.details.applyValidationEvidence.pluginOwner, 'forms');
+  assert.equal(staleOwnerError.details.applyValidationEvidence.driver, 'wp-option');
+  assert.equal(staleOwnerError.details.applyValidationEvidence.resourceKey, resourceKey);
+  assert.equal(sha256Evidence(staleOwnerRemote), staleOwnerBeforeHash);
+  assert.equal(`sha256:${resourceHash(staleOwnerRemote, resource)}`, staleOwnerRowBeforeHash);
+  assert.equal(
+    staleOwnerRemote.db.wp_options['option_name:forms_settings'].option_value.mode,
+    privateValues[0],
+  );
+
+  const evidence = {
+    rpp: 'RPP-0462',
+    evidenceSource: 'local-focused-plugin-driver-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    accepted: {
+      planHash: sha256Evidence({ status: acceptedPlan.status, summary: acceptedPlan.summary }),
+      mutationHash: sha256Evidence({
+        resourceKey: acceptedMutation.resourceKey,
+        pluginOwner: acceptedMutation.pluginOwnedResource.pluginOwner,
+        driver: acceptedMutation.pluginOwnedResource.driver,
+        auditEvidence: acceptedAuditEvidence,
+      }),
+      auditEvidenceHash: sha256Evidence(acceptedAuditEvidence),
+      journalHash: sha256Evidence(acceptedResult.journal),
+    },
+    mismatchedOwnerPolicyRefusal: {
+      code: unsupportedError.code,
+      blockerHash: sha256Evidence(unsupportedBlocker),
+      detailsHash: sha256Evidence(unsupportedError.details),
+      rowHashBefore: unsupportedRowBeforeHash,
+      rowHashAfter: `sha256:${resourceHash(unsupportedRemote, resource)}`,
+      remoteHashBefore: unsupportedBeforeHash,
+      remoteHashAfter: sha256Evidence(unsupportedRemote),
+    },
+    staleOwnerApplyRefusal: {
+      code: staleOwnerError.code,
+      detailsHash: sha256Evidence(staleOwnerError.details),
+      applyValidationEvidenceHash: sha256Evidence(staleOwnerError.details.applyValidationEvidence),
+      rowHashBefore: staleOwnerRowBeforeHash,
+      rowHashAfter: `sha256:${resourceHash(staleOwnerRemote, resource)}`,
+      remoteHashBefore: staleOwnerBeforeHash,
+      remoteHashAfter: sha256Evidence(staleOwnerRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    accepted: evidence.accepted,
+    mismatchedOwnerPolicyRefusal: evidence.mismatchedOwnerPolicyRefusal,
+    staleOwnerApplyRefusal: evidence.staleOwnerApplyRefusal,
+  });
+
+  for (const value of [
+    evidence.accepted.planHash,
+    evidence.accepted.mutationHash,
+    evidence.accepted.auditEvidenceHash,
+    evidence.accepted.journalHash,
+    evidence.mismatchedOwnerPolicyRefusal.blockerHash,
+    evidence.mismatchedOwnerPolicyRefusal.detailsHash,
+    evidence.mismatchedOwnerPolicyRefusal.rowHashBefore,
+    evidence.mismatchedOwnerPolicyRefusal.rowHashAfter,
+    evidence.mismatchedOwnerPolicyRefusal.remoteHashBefore,
+    evidence.mismatchedOwnerPolicyRefusal.remoteHashAfter,
+    evidence.staleOwnerApplyRefusal.detailsHash,
+    evidence.staleOwnerApplyRefusal.applyValidationEvidenceHash,
+    evidence.staleOwnerApplyRefusal.rowHashBefore,
+    evidence.staleOwnerApplyRefusal.rowHashAfter,
+    evidence.staleOwnerApplyRefusal.remoteHashBefore,
+    evidence.staleOwnerApplyRefusal.remoteHashAfter,
+    evidence.proofHash,
+  ]) {
+    assertSha256Evidence(value);
+  }
+  assert.equal(
+    evidence.mismatchedOwnerPolicyRefusal.remoteHashAfter,
+    evidence.mismatchedOwnerPolicyRefusal.remoteHashBefore,
+  );
+  assert.equal(
+    evidence.staleOwnerApplyRefusal.remoteHashAfter,
+    evidence.staleOwnerApplyRefusal.remoteHashBefore,
+  );
+
+  const serializedEvidence = JSON.stringify(evidence);
+  const serializedAudit = JSON.stringify(acceptedAuditEvidence);
+  const serializedRefusals = JSON.stringify({ unsupportedBlocker, staleOwnerDetails: staleOwnerError.details });
+  for (const rawValue of privateValues) {
+    assert.equal(serializedEvidence.includes(rawValue), false, `RPP-0462 evidence leaked ${rawValue}`);
+    assert.equal(serializedAudit.includes(rawValue), false, `RPP-0462 audit leaked ${rawValue}`);
+    assert.equal(serializedRefusals.includes(rawValue), false, `RPP-0462 refusal leaked ${rawValue}`);
   }
 });
 
