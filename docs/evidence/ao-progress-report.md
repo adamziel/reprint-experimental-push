@@ -1,10 +1,10 @@
-# AO Progress Report - 2026-05-28 13:00 CEST
+# AO Progress Report - 2026-05-28 13:04 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`78f697ce` (tree-unchanged ancestry merge of `origin/session/rpp-15`). It separates
+`43d18cd6` (tree-unchanged ancestry merge of `origin/session/rpp-16`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -295,6 +295,12 @@ progress.
   leaves the tree unchanged while recording the already-represented critic
   continuation audit branch. The release-gate smoke suite passes 28/28, and
   the standard checklist, redaction, and first-parent diff checks are clean.
+- `43d18cd6` preserves ancestry for `origin/session/rpp-16`. Its right side is
+  cherry-equivalent to the lane, so the merge uses the `ours` strategy and
+  leaves the tree unchanged while recording the already-represented progress
+  evidence branch. The progress timestamp and release-gate suite passes 29/29,
+  and the standard checklist, redaction, and first-parent diff checks are
+  clean.
 - `22fa5b642` integrates `RPP-0229` conflict evidence hash redaction in
   `test/push-planner.test.js` and `docs/scenario-matrix.md`. The focused proof
   serializes direct row conflict evidence with resource keys, reason class,
@@ -703,11 +709,11 @@ branch.
 | --- | --- | --- |
 | `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
 | `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, and `RPP-0070` are integrated; newer release-gate proof candidates remain uncounted until integration. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `78f697ce`. |
-| `rpp-28` | integrator | Integrated `rpp-1` release-gate branch ancestry, `rpp-2` recovery-journal branch ancestry, `rpp-3` graph-identity branch ancestry, `rpp-4` plugin-driver branch ancestry, `rpp-10` Docker local-production branch ancestry, `rpp-11` recovery-repair branch ancestry, `rpp-13` evidence-redaction branch ancestry, `rpp-14` protocol-compatibility branch ancestry, `rpp-15` critic-continuation audit branch ancestry, `rpp-17` auth/recovery reconciliation, checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`; now evaluating already-pushed branches one at a time under the integration-only freeze. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced through `43d18cd6`. |
+| `rpp-28` | integrator | Integrated `rpp-1` release-gate branch ancestry, `rpp-2` recovery-journal branch ancestry, `rpp-3` graph-identity branch ancestry, `rpp-4` plugin-driver branch ancestry, `rpp-10` Docker local-production branch ancestry, `rpp-11` recovery-repair branch ancestry, `rpp-13` evidence-redaction branch ancestry, `rpp-14` protocol-compatibility branch ancestry, `rpp-15` critic-continuation audit branch ancestry, `rpp-16` progress-evidence branch ancestry, `rpp-17` auth/recovery reconciliation, checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`; now evaluating already-pushed branches one at a time under the integration-only freeze. |
 | `rpp-29` | developer | `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0237`, and `RPP-0240` are integrated; `RPP-0206` and newer branch-local work are not counted until tested and integrated. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence, `RPP-0340` production importer/exporter identity-map proof, and `RPP-0347` comment-user generated graph coverage are integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `78f697ce`. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after `43d18cd6`. |
 | `rpp-32` | developer | Docker/local-production release-gate artifact work, `RPP-0414` stale plugin metadata owner evidence, `RPP-0415` activation hook effects evidence, `RPP-0438` driver apply validation hook evidence, and `RPP-0439` driver audit evidence redaction are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
 | `rpp-34` | completed candidate | `RPP-0421` driver registration API proof, `RPP-0431` plugin uninstall/delete refusal, `RPP-0461` driver registration focused regression, and `RPP-0468` serialized option validator regression are integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
