@@ -76,6 +76,34 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0455 generated remote plugin removal refusal
+
+RPP-0455 adds generated local evidence for remote plugin removal handling. The
+matrix includes a dependency-backed plugin-owned `wp_options` update that
+applies one mutation while the `forms` plugin still exists on remote, plus two
+remote-removal variants where the plugin record is removed and where both the
+plugin record and plugin file are removed remotely.
+
+The remote-removal variants remain blocked with `missing-plugin-dependency`
+and atomic propagation blockers. The planner records `keep-remote` decisions
+for the removed plugin metadata and, when applicable, the removed plugin file.
+Apply refuses the blocked plan with `PLAN_NOT_READY` before applying the
+plugin-owned row mutation, leaving the remote plugin removal and remote
+plugin-owned data unchanged.
+
+Evidence status: this is `local-generated` support evidence, not
+production-backed proof. It keeps the release posture at `NO-GO`. The generated
+proof envelope records only resource keys, blocker classes, local-vs-production
+status, and hashes; generated plugin file/version and option tokens are asserted
+absent from proof, blocker, decision, audit, owner-context, and apply-error
+evidence.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0455|remote-only plugin removal|plugin-owned data' test/generated-push-harness.test.js test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +117,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0455 — remote plugin removal refusal: generated local evidence proves
+  missing remote plugin dependencies block before apply mutation, preserve
+  remote removal state, and remain explicitly non-production-backed.

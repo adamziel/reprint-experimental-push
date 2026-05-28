@@ -112,6 +112,14 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateRemotePluginRemovalRefusalCases() {
+  return [
+    'plugin-present-dependency-applies',
+    'remote-plugin-record-removed-refused',
+    'remote-plugin-and-file-removed-refused',
+  ].map((variant, index) => buildRemotePluginRemovalRefusalCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -208,6 +216,143 @@ export function validateGeneratedCase(testCase) {
   return result;
 }
 
+export function validateRemotePluginRemovalRefusalCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const dependencyBlocker = plan.blockers.find((entry) => entry.class === 'missing-plugin-dependency');
+  const propagationBlocker = plan.blockers.find((entry) =>
+    entry.class === 'atomic-group-blocker-propagation'
+    && entry.resourceKey === testCase.dataResourceKey);
+  const pluginDecision = plan.decisions.find((entry) => entry.resourceKey === testCase.pluginResourceKey);
+  const fileDecision = plan.decisions.find((entry) => entry.resourceKey === testCase.ownerFileResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      evidenceScope: 'local-generated',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      status: plan.status,
+      mutation: mutation ? remotePluginRemovalMutationSummary(mutation) : null,
+      blockers: plan.blockers.map(remotePluginRemovalBlockerSummary),
+      decisions: plan.decisions.map(remotePluginRemovalDecisionSummary),
+    }),
+  };
+
+  assertRemotePluginRemovalRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.blockers.length, 0);
+    assert.equal(plan.conflicts.length, 0);
+    assert.equal(plan.mutations.length, 1);
+    assert.ok(mutation, `${testCase.id} should emit one dependency-backed plugin-owned mutation`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(mutation.atomicGroupId, testCase.intentId);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assertRemotePluginRemovalAuditEvidence(mutation.pluginOwnedResource.auditEvidence);
+    assertRemotePluginRemovalRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+    for (const context of mutation.pluginOwnedResource.ownerContext) {
+      assertRemotePluginRemovalChangeHashEvidence(context.change);
+      assertRemotePluginRemovalRedacted(testCase, context);
+    }
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_options[testCase.dataRowId].option_value.mode,
+      testCase.expected.localMode,
+    );
+    assert.equal(
+      applied.site.db.wp_options[testCase.dataRowId].option_value.token,
+      testCase.expected.localToken,
+    );
+    assert.deepEqual(applied.site.plugins[testCase.plugin], testCase.expected.plugin);
+    assert.equal(applied.site.files[testCase.ownerFilePath], testCase.expected.ownerFileContents);
+    result.outcome = 'applied';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'refused-remote-plugin-removal');
+  assert.equal(plan.status, 'blocked');
+  assert.ok(mutation, `${testCase.id} should keep the planned row mutation in the blocked atomic group`);
+  assert.equal(mutation.atomicGroupId, testCase.intentId);
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assertRemotePluginRemovalAuditEvidence(mutation.pluginOwnedResource.auditEvidence);
+  assertRemotePluginRemovalRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+  assert.ok(dependencyBlocker, `${testCase.id} should expose a missing plugin dependency blocker`);
+  assert.equal(dependencyBlocker.groupId, testCase.intentId);
+  assert.equal(dependencyBlocker.plugin, testCase.plugin);
+  assert.ok(propagationBlocker, `${testCase.id} should propagate the dependency blocker to the mutation`);
+  assert.equal(propagationBlocker.groupId, testCase.intentId);
+  assert.equal(propagationBlocker.mutationId, mutation.id);
+  assert.ok(pluginDecision, `${testCase.id} should preserve remote plugin removal`);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginDecision.change.localChange, 'unchanged');
+  assert.equal(pluginDecision.change.remoteChange, 'delete');
+  assertRemotePluginRemovalChangeHashEvidence(pluginDecision.change);
+  assertRemotePluginRemovalRedacted(testCase, dependencyBlocker);
+  assertRemotePluginRemovalRedacted(testCase, propagationBlocker);
+  assertRemotePluginRemovalRedacted(testCase, pluginDecision);
+
+  if (testCase.expected.ownerFileRemoved) {
+    assert.ok(fileDecision, `${testCase.id} should preserve remote plugin file removal`);
+    assert.equal(fileDecision.decision, 'keep-remote');
+    assert.equal(fileDecision.change.localChange, 'unchanged');
+    assert.equal(fileDecision.change.remoteChange, 'delete');
+    assertRemotePluginRemovalChangeHashEvidence(fileDecision.change);
+    assertRemotePluginRemovalRedacted(testCase, fileDecision);
+  } else {
+    assert.equal(fileDecision, undefined);
+  }
+
+  for (const context of mutation.pluginOwnedResource.ownerContext) {
+    assertRemotePluginRemovalChangeHashEvidence(context.change);
+    assertRemotePluginRemovalRedacted(testCase, context);
+  }
+
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a blocked remote removal`);
+  assert.equal(Object.hasOwn(remote.plugins, testCase.plugin), false);
+  assert.equal(Object.hasOwn(remote.files, testCase.ownerFilePath), !testCase.expected.ownerFileRemoved);
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.mode,
+    testCase.expected.remoteMode,
+  );
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.token,
+    testCase.expected.remoteToken,
+  );
+  assertRemotePluginRemovalRedacted(testCase, error.details);
+  result.outcome = 'refused-remote-plugin-removal';
+  result.applied = false;
+  result.remotePreserved = true;
+  return result;
+}
+
 function buildGeneratedCase({ index, tier, rng }) {
   const id = `generated-push-${String(index + 1).padStart(3, '0')}`;
   const family = scenarioFamilies[index % scenarioFamilies.length];
@@ -256,6 +401,108 @@ function buildGeneratedCase({ index, tier, rng }) {
     local,
     remote,
   };
+}
+
+function buildRemotePluginRemovalRefusalCase({ variant, index }) {
+  const base = buildBaseSite(4550 + index, 4);
+  const plugin = 'forms';
+  const ownerFilePath = pluginMainFile(plugin);
+  const pluginResourceKey = `plugin:${plugin}`;
+  const ownerFileResourceKey = `file:${ownerFilePath}`;
+  const optionName = `rpp_0455_remote_plugin_removal_guard_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const intentId = `rpp-0455-update-forms-settings-${index + 1}`;
+  const secrets = {
+    baseFile: `rpp0455-base-plugin-file-secret-${index + 1}`,
+    pluginVersion: `rpp0455-plugin-version-secret-${index + 1}`,
+    baseOption: `rpp0455-base-option-secret-${index + 1}`,
+    localOption: `rpp0455-local-option-secret-${index + 1}`,
+  };
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base', token: secrets.baseOption },
+    __pluginOwner: plugin,
+  };
+
+  base.files[ownerFilePath] = `<?php /* ${secrets.baseFile} */`;
+  base.plugins[plugin] = { version: secrets.pluginVersion, active: true };
+  setRow(base, 'wp_options', dataRowId, baseRow);
+  allowPluginOwned(base, dataResourceKey, plugin, 'wp-option');
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  setRow(local, 'wp_options', dataRowId, {
+    ...baseRow,
+    option_value: { mode: 'local-plugin-data-update', token: secrets.localOption },
+  });
+  allowPluginOwned(local, dataResourceKey, plugin, 'wp-option');
+  allowPluginOwned(remote, dataResourceKey, plugin, 'wp-option');
+  local.pushIntents = [
+    {
+      id: intentId,
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [dataResourceKey],
+      dependencies: { plugins: [plugin] },
+      resourcePolicy: {
+        pluginOwnedResources: {
+          allowedResources: [
+            allowedPluginOwnedResource(dataResourceKey, plugin, 'wp-option'),
+          ],
+        },
+      },
+    },
+  ];
+
+  const testCase = {
+    id: `rpp-0455-remote-plugin-removal-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'remote-plugin-removal-refusal',
+    tags: new Set(['remote-plugin-removal-refusal', 'plugin-owned-generated']),
+    plugin,
+    intentId,
+    pluginResourceKey,
+    ownerFilePath,
+    ownerFileResourceKey,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'plugin-present-dependency-applies') {
+    testCase.tags.add('remote-plugin-present-applies');
+    testCase.expected = {
+      outcome: 'applied',
+      localMode: 'local-plugin-data-update',
+      localToken: secrets.localOption,
+      plugin: base.plugins[plugin],
+      ownerFileContents: base.files[ownerFilePath],
+    };
+    return testCase;
+  }
+
+  delete remote.plugins[plugin];
+  testCase.tags.add('remote-plugin-removal-refused');
+  if (variant === 'remote-plugin-and-file-removed-refused') {
+    delete remote.files[ownerFilePath];
+    testCase.tags.add('remote-plugin-file-removal-preserved');
+  } else {
+    assert.equal(variant, 'remote-plugin-record-removed-refused');
+    testCase.tags.add('remote-plugin-record-removal-preserved');
+  }
+  testCase.expected = {
+    outcome: 'refused-remote-plugin-removal',
+    ownerFileRemoved: variant === 'remote-plugin-and-file-removed-refused',
+    remoteMode: 'base',
+    remoteToken: secrets.baseOption,
+  };
+  return testCase;
 }
 
 const scenarioFamilyBuilders = {
@@ -868,6 +1115,81 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function remotePluginRemovalMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    atomicGroupId: mutation.atomicGroupId || null,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+    driver: mutation.pluginOwnedResource?.driver,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+    ownerContext: (mutation.pluginOwnedResource?.ownerContext || [])
+      .map((context) => ({
+        resourceKey: context.resourceKey,
+        baseHash: context.baseHash,
+        localHash: context.localHash,
+        remoteHash: context.remoteHash,
+        localChange: context.change.localChange,
+        remoteChange: context.change.remoteChange,
+      }))
+      .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey)),
+  };
+}
+
+function remotePluginRemovalBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    groupId: blocker.groupId || null,
+    plugin: blocker.plugin || null,
+    resourceKey: blocker.resourceKey || null,
+    mutationId: blocker.mutationId || null,
+    sourceBlockerIds: blocker.sourceBlockerIds || [],
+  };
+}
+
+function remotePluginRemovalDecisionSummary(decision) {
+  return {
+    decision: decision.decision,
+    resourceKey: decision.resourceKey,
+    localChange: decision.change.localChange,
+    remoteChange: decision.change.remoteChange,
+    baseHash: decision.change.base.hash,
+    localHash: decision.change.local.hash,
+    remoteHash: decision.change.remote.hash,
+  };
+}
+
+function assertRemotePluginRemovalAuditEvidence(evidence) {
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'wp-option');
+  assert.equal(evidence.supportsDelete, false);
+  for (const key of ['baseHash', 'localHash', 'remoteHash', 'ownerContextHash']) {
+    assert.match(evidence[key], /^[a-f0-9]{64}$/);
+  }
+}
+
+function assertRemotePluginRemovalChangeHashEvidence(change) {
+  assert.ok(change);
+  for (const side of ['base', 'local', 'remote']) {
+    assert.ok(['present', 'absent'].includes(change[side].state));
+    assert.match(change[side].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[side], 'value'), false);
+  }
+}
+
+function assertRemotePluginRemovalRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
+  }
 }
 
 function assertPlanContract(testCase, plan) {

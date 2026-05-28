@@ -5,8 +5,10 @@ import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
   generatePushHarnessCases,
+  generateRemotePluginRemovalRefusalCases,
   runGeneratedPushHarness,
   validateGeneratedCase,
+  validateRemotePluginRemovalRefusalCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
 import { digest } from '../src/stable-json.js';
@@ -130,6 +132,40 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0455 generated remote plugin removal refusal is local and redacted', () => {
+  const cases = generateRemotePluginRemovalRefusalCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'plugin-present-dependency-applies',
+    'remote-plugin-record-removed-refused',
+    'remote-plugin-and-file-removed-refused',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('remote-plugin-removal-refusal')), true);
+  assert.equal(cases.every((testCase) => testCase.pluginResourceKey === 'plugin:forms'), true);
+
+  const results = cases.map(validateRemotePluginRemovalRefusalCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'plugin-present-dependency-applies': 'applied',
+    'remote-plugin-record-removed-refused': 'refused-remote-plugin-removal',
+    'remote-plugin-and-file-removed-refused': 'refused-remote-plugin-removal',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['plugin-present-dependency-applies'].status, 'ready');
+  assert.equal(byVariant['plugin-present-dependency-applies'].appliedMutations, 1);
+  assert.equal(byVariant['remote-plugin-record-removed-refused'].status, 'blocked');
+  assert.equal(byVariant['remote-plugin-record-removed-refused'].remotePreserved, true);
+  assert.equal(byVariant['remote-plugin-and-file-removed-refused'].status, 'blocked');
+  assert.equal(byVariant['remote-plugin-and-file-removed-refused'].remotePreserved, true);
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
