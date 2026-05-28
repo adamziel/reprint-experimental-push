@@ -52,6 +52,30 @@ This evidence does not broaden accepted plugin-owned resources. The fixture
 driver still requires exact owner, table, positive id row, active unchanged
 driver plugin evidence, and no delete mutation.
 
+## RPP-0439 driver audit evidence redaction
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0439|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0439 proof adds hash-only driver audit evidence to plugin-owned
+mutations. The planner records the resource key, owner, driver, policy source,
+delete-support flag, base/local/remote hashes, owner-context hash, and optional
+driver-evidence hash under `mutation.pluginOwnedResource.auditEvidence`. It does
+not include raw row values.
+
+The focused proof plans a plugin-owned `wp_options` update and then applies the
+dry-run plan to a remote whose same plugin-owned row drifted after planning.
+Apply fails before mutation with `PRECONDITION_FAILED`, and the test asserts the
+remote plugin-owned row hash and full remote hash are identical before and after
+the failed apply. The proof evidence stores only `sha256:` hashes for the audit
+envelope, stale-apply details, row preservation, remote preservation, and the
+combined proof hash; it asserts base, local, and drifted remote private values
+do not appear in either audit JSON or proof JSON. This is local focused
+evidence, not production-backed evidence.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -62,3 +86,6 @@ driver plugin evidence, and no delete mutation.
 - RPP-0438 — driver apply validation hook: accepted fixture driver evidence
   carries one real mutation through apply, and forged driver evidence fails
   closed before mutation.
+- RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
+  hash-only driver audit evidence, and stale apply preserves drifted remote
+  plugin-owned data before mutation.
