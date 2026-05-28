@@ -5447,6 +5447,219 @@ test('RPP-0218 forged and stale ready plans reject before mutation with redacted
   }
 });
 
+test('RPP-0238 forged ready plans reject before mutation with hash-only evidence', () => {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    '<?php echo "local-private-rpp0238-file";',
+    'rpp0238-local-private-row-title',
+    'rpp0238-local-private-option-mode',
+    '<?php echo "rpp0238-stale-live-remote-file";',
+  ];
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  const ready = planFor(base, local, remote);
+  const targetMutation = mutationFor(ready, 'file:index.php');
+  const targetPrecondition = ready.preconditions.find(
+    (precondition) => precondition.mutationId === targetMutation.id,
+  );
+  const durableEventsFor = (events) => ({
+    claimFenced: true,
+    claimHash: 'd'.repeat(64),
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+  const hashOnlyEvidence = (name, plan, error, journalEvents, appliedMutationCount) => ({
+    name,
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: rpp0233HashFieldEvidence(mutation.localHash),
+      remoteBeforeHash: rpp0233HashFieldEvidence(mutation.remoteBeforeHash),
+      plannedValueHash: digest(deserializeMutationValue(mutation)),
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: rpp0233HashFieldEvidence(precondition.expectedHash),
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    refusal: {
+      code: error.code,
+      issueCodes: (error.details.issues || []).map((issue) => issue.code).sort(),
+      detailsHash: sha256Evidence(error.details),
+    },
+    journalEventTypes: journalEvents.map((event) => event.type),
+    durableJournalMutationEvents: journalEvents.filter((event) => event.type.includes('mutation')).length,
+    durableJournalTargetEvents: journalEvents.filter((event) => event.type === 'target-planned').length,
+    appliedMutationCount,
+  });
+
+  assert.equal(ready.status, 'ready');
+  assert.deepEqual(ready.summary, {
+    mutations: 3,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+  assertPlannerSummaryMatchesEvidence(ready, 'RPP-0238 ready baseline');
+
+  const forgedCases = [
+    {
+      name: 'missing live precondition',
+      issueCode: 'MISSING_LIVE_REMOTE_PRECONDITION',
+      forge(plan) {
+        plan.preconditions = plan.preconditions.filter(
+          (precondition) => precondition.mutationId !== targetMutation.id,
+        );
+      },
+    },
+    {
+      name: 'duplicate live precondition',
+      issueCode: 'DUPLICATE_LIVE_REMOTE_PRECONDITION',
+      forge(plan) {
+        plan.preconditions.push(cloneJson(targetPrecondition));
+      },
+    },
+    {
+      name: 'precondition without mutation',
+      issueCode: 'PRECONDITION_WITHOUT_MUTATION',
+      forge(plan) {
+        plan.mutations = plan.mutations.filter((mutation) => mutation.id !== targetMutation.id);
+      },
+    },
+    {
+      name: 'precondition hash mismatch',
+      issueCode: 'PRECONDITION_HASH_MISMATCH',
+      forge(plan) {
+        plan.preconditions.find(
+          (precondition) => precondition.mutationId === targetMutation.id,
+        ).expectedHash = '0'.repeat(64);
+      },
+    },
+    {
+      name: 'precondition not checked against live remote',
+      issueCode: 'PRECONDITION_NOT_LIVE_REMOTE',
+      forge(plan) {
+        plan.preconditions.find(
+          (precondition) => precondition.mutationId === targetMutation.id,
+        ).checkedAgainst = 'cached-remote';
+      },
+    },
+  ];
+
+  for (const testCase of forgedCases) {
+    const forged = tamperReadyPlan(ready, testCase.forge);
+    const applyRemote = cloneJson(remote);
+    const beforeRemoteHash = digest(applyRemote);
+    const journalEvents = [];
+    let appliedMutationCount = 0;
+    const error = captureError(() => {
+      const result = applyPlan(applyRemote, forged, {
+        durableJournal: durableEventsFor(journalEvents),
+      });
+      appliedMutationCount = result.appliedMutations;
+    });
+    const serializedEvidence = JSON.stringify({
+      ...hashOnlyEvidence(testCase.name, forged, error, journalEvents, appliedMutationCount),
+      evidenceHash: sha256Evidence(hashOnlyEvidence(testCase.name, forged, error, journalEvents, appliedMutationCount)),
+    });
+
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION', testCase.name);
+    assert.ok(
+      error.details.issues.some((issue) => issue.code === testCase.issueCode),
+      `${testCase.name} missing ${testCase.issueCode}`,
+    );
+    assert.equal(digest(applyRemote), beforeRemoteHash, `${testCase.name} mutated remote before refusal`);
+    assert.equal(appliedMutationCount, 0, `${testCase.name} reported applied mutations`);
+    assert.deepEqual(journalEvents, [], `${testCase.name} wrote durable journal evidence before refusal`);
+    for (const privateValue of privateValues) {
+      assert.equal(serializedEvidence.includes(privateValue), false, `${testCase.name} leaked ${privateValue}`);
+      assert.equal(JSON.stringify(error.details).includes(privateValue), false, `${testCase.name} leaked refusal details`);
+    }
+  }
+
+  const staleCases = [
+    {
+      name: 'stale live remote',
+      plan: ready,
+      remote() {
+        const staleRemote = cloneJson(remote);
+        staleRemote.files['index.php'] = privateValues[3];
+        return staleRemote;
+      },
+    },
+    {
+      name: 'forged stale remoteBeforeHash',
+      plan: tamperReadyPlan(ready, (plan) => {
+        const forgedMutation = mutationFor(plan, targetMutation.resourceKey);
+        const forgedPrecondition = plan.preconditions.find(
+          (precondition) => precondition.mutationId === forgedMutation.id,
+        );
+        forgedMutation.remoteBeforeHash = '0'.repeat(64);
+        forgedPrecondition.expectedHash = forgedMutation.remoteBeforeHash;
+      }),
+      remote() {
+        return cloneJson(remote);
+      },
+    },
+  ];
+
+  for (const testCase of staleCases) {
+    const applyRemote = testCase.remote();
+    const beforeRemoteHash = digest(applyRemote);
+    const journalEvents = [];
+    let appliedMutationCount = 0;
+    const error = captureError(() => {
+      const result = applyPlan(applyRemote, testCase.plan, {
+        durableJournal: durableEventsFor(journalEvents),
+      });
+      appliedMutationCount = result.appliedMutations;
+    });
+    const serializedEvidence = JSON.stringify({
+      ...hashOnlyEvidence(testCase.name, testCase.plan, error, journalEvents, appliedMutationCount),
+      evidenceHash: sha256Evidence(hashOnlyEvidence(testCase.name, testCase.plan, error, journalEvents, appliedMutationCount)),
+    });
+
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, 'PRECONDITION_FAILED', testCase.name);
+    assert.equal(digest(applyRemote), beforeRemoteHash, `${testCase.name} mutated remote before refusal`);
+    assert.equal(appliedMutationCount, 0, `${testCase.name} reported applied mutations`);
+    assert.equal(
+      journalEvents.filter((event) => event.type.includes('mutation')).length,
+      0,
+      `${testCase.name} wrote durable mutation journal evidence`,
+    );
+    assert.equal(
+      journalEvents.filter((event) => event.type === 'target-planned').length,
+      0,
+      `${testCase.name} wrote target-planned journal evidence before refusal`,
+    );
+    for (const privateValue of privateValues) {
+      assert.equal(serializedEvidence.includes(privateValue), false, `${testCase.name} leaked ${privateValue}`);
+      assert.equal(JSON.stringify(error.details).includes(privateValue), false, `${testCase.name} leaked refusal details`);
+    }
+  }
+});
+
 test('RPP-0233 localHash correctness rejects forged or stale evidence before mutation', () => {
   const fixture = rpp0233LocalHashFixture();
   const ready = planFor(fixture.base, fixture.local, fixture.remote);
