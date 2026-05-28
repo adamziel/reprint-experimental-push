@@ -4,6 +4,117 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Gate, Recovery, Chunk, Plugin, Audit, Graph, Auth, and Supervision Hold Refresh
+
+- Last update: 2026-05-28 03:22 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` at
+  `25c667cd4` (`Refresh AO supervision handoff`).
+- New integrated release-gate evidence: `ab0340786` extends
+  [docs/evidence/ao-release-gates.md](evidence/ao-release-gates.md) and
+  [test/release-gates.test.js](../test/release-gates.test.js) so the first 20
+  modeled gates now have 11 focused tests, including missing/failed auth,
+  route, read-only, operator-proof, timestamp, status-row, and nonzero
+  `verify:release` failure evidence.
+- New integrated recovery evidence:
+  [docs/evidence/ao-journal-recovery.md](evidence/ao-journal-recovery.md),
+  [src/recovery-journal.js](../src/recovery-journal.js),
+  [src/recovery-inspect.js](../src/recovery-inspect.js), and
+  [test/recovery-journal.test.js](../test/recovery-journal.test.js).
+  Recovery journals now have deterministic paged restart readback,
+  claim-scoped stale lease identity, append-only same-claim retry evidence, and
+  a fail-closed guard that refuses `journal-completed` after incomplete apply.
+- New integrated chunking evidence:
+  [docs/evidence/ao-chunking-benchmark.md](evidence/ao-chunking-benchmark.md),
+  [scripts/bench/guarded-executor-benchmark.js](../scripts/bench/guarded-executor-benchmark.js),
+  [test/guarded-executor-benchmark.test.js](../test/guarded-executor-benchmark.test.js),
+  and [docs/fast-paths.md](fast-paths.md). The benchmark names 10 rollout
+  safety gates before throughput; 7 pass in the lab model and 3 remain blocked
+  for production storage receipts, production row batch execution, and
+  production atomic group commit evidence.
+- New integrated plugin-driver evidence:
+  [docs/evidence/ao-plugin-driver.md](evidence/ao-plugin-driver.md) records
+  exact owner/driver/table binding for the production release-state row plus
+  fail-closed guards for arbitrary custom tables, serialized plugin-owned
+  options, direct activation/update, and direct `active_plugins` mutation.
+- New integrated audit evidence:
+  [docs/evidence/ao-independent-audit.md](evidence/ao-independent-audit.md),
+  [docs/evidence/ao-critic.md](evidence/ao-critic.md),
+  [audits/ao-independent-audit-20260528.md](../audits/ao-independent-audit-20260528.md),
+  and [audits/ao-critic-20260528.md](../audits/ao-critic-20260528.md). The
+  audits keep release at no-go, cite the fail-closed `verify:release` posture,
+  missing repo-local CI workflow, and red broader-suite/auth/plugin/snapshot
+  risks.
+- New integrated graph evidence:
+  [docs/evidence/ao-graph-identity.md](evidence/ao-graph-identity.md),
+  [src/planner.js](../src/planner.js),
+  [scripts/bench/graph-mapping-inventory.js](../scripts/bench/graph-mapping-inventory.js),
+  [test/push-planner.test.js](../test/push-planner.test.js), and
+  [test/graph-mapping-inventory.test.js](../test/graph-mapping-inventory.test.js)
+  add explicit identity-map rewrites and fail-closed collision handling for a
+  defined WordPress graph slice.
+- New integrated executor auth/lease evidence:
+  [docs/evidence/ao-executor-auth-leases.md](evidence/ao-executor-auth-leases.md),
+  [src/authenticated-http-push-client.js](../src/authenticated-http-push-client.js),
+  [test/authenticated-http-push-client.test.js](../test/authenticated-http-push-client.test.js),
+  [docs/protocol.md](protocol.md), and protocol fixtures prove idempotency-free
+  signed read-only journal/recovery inspect requests, canonical signed query
+  ordering, fresh retry nonces, and idempotency-bound mutation paths. The
+  evidence doc keeps broader authenticated-client production-shaped failures as
+  blockers rather than readiness evidence.
+- New integrated supervision evidence:
+  [docs/evidence/ao-supervision-handoff.md](evidence/ao-supervision-handoff.md)
+  now records the live `rpp-10` through `rpp-21` team, retired stale
+  `rpp-1` through `rpp-9` panes after pushed branch verification, and reiterates
+  no AO lifecycle helpers/no remote tunnels for this sandbox.
+- RPP evidence carried by the integrated commits includes `RPP-0008` through
+  `RPP-0020`, `RPP-0301`, `RPP-0304`, `RPP-0305`, `RPP-0312`, `RPP-0313`,
+  `RPP-0314`, `RPP-0318`, `RPP-0319`, `RPP-0320`, `RPP-0321`, `RPP-0324`,
+  `RPP-0325`, `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0402`, `RPP-0403`,
+  `RPP-0404`, `RPP-0408`, `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0422`,
+  `RPP-0423`, `RPP-0424`, `RPP-0428`, `RPP-0429`, `RPP-0430`,
+  `RPP-0432`, `RPP-0505`, `RPP-0506`, `RPP-0512`,
+  `RPP-0513`, `RPP-0515`, `RPP-0525`, `RPP-0526`, `RPP-0532`, `RPP-0533`,
+  `RPP-0535`, `RPP-0603`, `RPP-0604`, `RPP-0606`, `RPP-0614`,
+  `RPP-0618`, `RPP-0619`,
+  `RPP-0623`, `RPP-0624`, `RPP-0626`, `RPP-0634`, `RPP-0706`, `RPP-0707`,
+  `RPP-0708`, `RPP-0720`, `RPP-0726`, `RPP-0727`, `RPP-0728`, `RPP-0901`
+  through `RPP-0915`, `RPP-0921` through `RPP-0924`, `RPP-0926`, `RPP-0932`,
+  `RPP-0933`, and supervision-handoff evidence for the current active roster.
+- Progress-reporter verification passed:
+  `node --test test/release-gates.test.js`,
+  `node --test test/recovery-journal.test.js`,
+  `npm run test:recovery:file-journal`, and
+  `node --test test/guarded-executor-benchmark.test.js`,
+  `node --test test/graph-mapping-inventory.test.js test/generated-push-harness.test.js`,
+  `node --test test/push-planner.test.js`, targeted read-only authenticated-client checks,
+  `node --check src/authenticated-http-push-client.js`, and protocol fixture JSON parsing.
+- Checked results: release-gate evaluator 11 pass / 0 fail; recovery journal
+  tests 21 pass / 0 fail; file-journal restart smoke kept fail-after-2 in
+  `blocked-recovery` with 6 old / 2 new targets, replay applied 0 extra
+  mutations, and drift exposed 1 blocked-unknown target; guarded benchmark
+  tests 6 pass / 0 fail; graph inventory/generated harness checks 3 pass / 0 fail;
+  push planner checks 87 pass / 0 fail; targeted auth read-only inspect checks,
+  source syntax check, and protocol fixture JSON parsing passed.
+- Active AO roster from tmux: developer lanes `rpp-10` through `rpp-14` are
+  working on Docker/local production, rollback repair, release CI gates,
+  evidence redaction, and protocol compatibility; `rpp-15` is the critic;
+  `rpp-16` is this progress reporter; `rpp-17` through `rpp-21` are active
+  integration/route/operator-proof workers; `rpp-orchestrator` remains visible.
+  Remaining branch-local outputs are `rpp-9` prior progress evidence and
+  `rpp-18` evidence coverage manifest `56a1e533b`; `rpp-1` through `rpp-8` are
+  represented by integrated commits listed above.
+- Release posture: final release remains held. The new commits improve gate
+  precision, local recovery boundaries, benchmark safety gates, plugin-driver
+  support guards, audit visibility, graph identity mapping, read-only auth inspect coverage,
+  and supervision freshness, but
+  Docker/external WordPress durability, production credential lifecycle,
+  broader graph/plugin-driver semantics, rollback/repair completion, production
+  chunk receipts/executors, redaction, protocol compatibility, required CI
+  gates, broader production auth lifecycle fixes, and red-suite fixes still
+  require production-backed evidence.
+- Percent movement: no final readiness movement. This is integrated hardening
+  and progress-report freshness, not final production proof.
+
 ## 2026-05-28 - Release Gate Evaluator and AO Progress Hold
 
 - Last update: 2026-05-28 03:02 CEST.
