@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:58 CEST
+Last updated: 2026-05-28 06:04 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:04 CEST - RPP-0421 Integrated
+
+- Going well: integration is now at `78323671d`, adding `RPP-0421` driver
+  registration API proof. The focused PHP/Node probe proves the default
+  `reprint-push-release-state` driver, filter-registered extension driver,
+  lookup by name/table, non-array filter fallback, and fail-closed malformed
+  registration cases with hash-only error-message evidence.
+- Checklist movement: 110 verified items checked and 890 open. New check since
+  the prior feedback entry: `RPP-0421`.
+- Verification: `node --test test/playground-snapshot-lib.test.js` passes 4/4,
+  checklist lint reports 110 checked / 890 open with 0 risky claims, artifact
+  redaction scans evidence and reporting surfaces with 0 rejected files, release
+  remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 05:58 CEST - RPP-0040 Integrated
 
