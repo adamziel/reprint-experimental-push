@@ -1,9 +1,24 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:40 CEST
+Last updated: 2026-05-28 06:53 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:53 CEST - RPP-0050 Watch Heartbeat
+
+- Going well: origin/lane remains `7ac6d62bd` with `RPP-0431` integrated,
+  115 verified items checked, 885 open, and release status `NO-GO`.
+- Queue separation: `RPP-0050` integration is active/watch-only and not counted
+  on the lane yet. `RPP-0221`, `RPP-0222`, and `RPP-0223` are held by the
+  generated-harness invariant failure and are also not counted.
+- Live roster: developers remain above five active lanes: `rpp-24`/`RPP-0126`,
+  `rpp-25`/`RPP-0051`, `rpp-29`/`RPP-0226`, `rpp-30`/`RPP-0331`,
+  `rpp-32`/`RPP-0438`, `rpp-33`/`RPP-0127`, and `rpp-34`/`RPP-0439`; integrator
+  `rpp-28`; critics `rpp-31` and `rpp-37`; queue `rpp-35`; progress `rpp-36`;
+  lifecycle/dashboard panes remain visible locally.
+- Current nudge: refresh counts only from origin/lane movement; keep RPP-0050
+  and the held RPP-0221/RPP-0222/RPP-0223 sequence out of readiness scoring.
 
 ## 2026-05-28 06:40 CEST - RPP-0431 Integrated
 

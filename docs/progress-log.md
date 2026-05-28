@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:40 CEST.
+- Last update: 2026-05-28 06:53 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `85682de19` (`fix: fail closed plugin delete mutations`).
+  `7ac6d62bd` (`docs: refresh progress for plugin delete refusal`). The newest
+  behavioral proof on the lane is `85682de19` (`fix: fail closed plugin delete
+  mutations`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -178,12 +180,18 @@ linked implementation artifacts.
   `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
-- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+- Current AO team from tmux includes active developers `rpp-24`/`RPP-0126`,
+  `rpp-25`/`RPP-0051`, `rpp-29`/`RPP-0226`, `rpp-30`/`RPP-0331`,
+  `rpp-32`/`RPP-0438`, `rpp-33`/`RPP-0127`, and `rpp-34`/`RPP-0439`;
+  integrator `rpp-28` watching `RPP-0050` and holding `RPP-0221`/`RPP-0222`/
+  `RPP-0223` on generated-harness invariant failure; critics `rpp-31` and
+  `rpp-37`; queue `rpp-35`; progress reporter `rpp-36`; visible supervisor
+  `rpp-orchestrator`; `rpp-ao-lifecycle` lightweight registry watchdog PID
+  `2142025`; and `rpp-ao-web` serving the AO dashboard on local port 8080.
+- Queue heartbeat from lane truth: origin/lane remains `7ac6d62bd`, with 115
+  checked and 885 open. `RPP-0050` is active/watch-only, while `RPP-0221`,
+  `RPP-0222`, and `RPP-0223` are held by generated-harness invariant failure;
+  no branch-local item is counted until origin/lane moves.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
