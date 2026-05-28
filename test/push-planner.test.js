@@ -561,6 +561,54 @@ test('blocks plugin-owned data when owner plugin files changed only on remote', 
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('RPP-0207 executor rejects stale or forged plugin-owned data owner context', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-advanced';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const ready = planFor(base, local, baseSite());
+  const mutation = mutationFor(ready, resourceKey);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.ok(mutation.pluginOwnedResource.ownerContext.length > 0);
+  assert.equal(
+    mutation.pluginOwnedResource.ownerContext.some((context) =>
+      context.resourceKey === 'file:wp-content/plugins/forms/forms.php'),
+    true,
+  );
+
+  const staleRemote = baseSite();
+  staleRemote.files['wp-content/plugins/forms/forms.php'] = '<?php /* remote-private-forms-code */';
+  const staleBefore = JSON.stringify(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, ready));
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
+  assert.equal(staleError.details.resourceKey, resourceKey);
+  assert.equal(staleError.details.contextResourceKey, 'file:wp-content/plugins/forms/forms.php');
+  assert.equal(JSON.stringify(staleRemote), staleBefore);
+  assert.equal(JSON.stringify(staleError.details).includes('local-advanced'), false);
+  assert.equal(JSON.stringify(staleError.details).includes('remote-private-forms-code'), false);
+
+  const forged = tamperReadyPlan(ready, (plan) => {
+    delete mutationFor(plan, resourceKey).pluginOwnedResource.ownerContext;
+  });
+  const forgedRemote = baseSite();
+  const forgedBefore = JSON.stringify(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forged));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
+  assert.equal(forgedError.details.resourceKey, resourceKey);
+  assert.equal(JSON.stringify(forgedRemote), forgedBefore);
+});
+
 test('allows plugin-owned data when owner plugin context independently matches remote', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const base = baseSite();
