@@ -89,6 +89,11 @@ export function runReleaseGateCli(argv = [], options = {}) {
         gateState: evaluation.gateState,
         scope: evaluation.scope,
         generatedAt: evaluation.generatedAt,
+        mutationAttempted: false,
+        mutationPolicy: {
+          readOnly: true,
+          reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+        },
         releaseMovement: evaluation.releaseMovement,
         candidateMovement: evaluation.candidateMovement,
         totals: evaluation.totals,
