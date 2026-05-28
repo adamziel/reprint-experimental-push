@@ -7068,6 +7068,243 @@ test('blocks an atomic bundle when dependency activation does not match requirem
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('RPP-0470 plugin update dependency validator is hash-only and refuses before mutation', () => {
+  const dataResourceKey = 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]';
+  const dependencySecret = 'rpp0470-private-dependency-build-token';
+  const dependentSecret = 'rpp0470-private-dependent-release-note';
+  const localRowSecret = 'rpp0470-private-local-row-mode';
+  const staleRemoteRowSecret = 'rpp0470-private-stale-remote-row-mode';
+
+  const buildBase = () => {
+    const site = baseSite();
+    site.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency stable */';
+    site.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent stable */';
+    site.plugins[atomicDependencyPlugin] = {
+      version: '2.1.0',
+      active: true,
+      buildToken: dependencySecret,
+    };
+    site.plugins[atomicDependentPlugin] = {
+      version: '1.0.0',
+      active: true,
+      requires: [atomicDependencyPlugin],
+      releaseNote: 'base-release',
+    };
+    site.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+      option_name: 'reprint_push_atomic_fixture_data',
+      option_value: { mode: 'base-row' },
+      __pluginOwner: atomicDependentPlugin,
+    };
+    return site;
+  };
+
+  const base = buildBase();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const dependencyRemoteHash = resourceHash(remote, pluginResource(atomicDependencyPlugin));
+  local.plugins[atomicDependentPlugin] = {
+    ...local.plugins[atomicDependentPlugin],
+    version: '1.1.0',
+    releaseNote: dependentSecret,
+  };
+  local.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value = {
+    mode: localRowSecret,
+  };
+  local.pushIntents = [
+    {
+      id: 'rpp-0470-update-dependent-plugin',
+      kind: 'plugin-update',
+      requireAtomic: true,
+      resources: [
+        `plugin:${atomicDependentPlugin}`,
+        dataResourceKey,
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            expectedVersion: '2.1.0',
+            versionRange: '>=2.0.0 <3.0.0',
+            hash: dependencyRemoteHash,
+            active: true,
+          },
+        ],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(dataResourceKey, atomicDependentPlugin),
+      ),
+    },
+  ];
+
+  const plan = planFor(base, local, remote);
+  const group = plan.atomicGroups.find((entry) => entry.id === 'rpp-0470-update-dependent-plugin');
+  const requirement = group.dependencyRequirements[0];
+  const dataMutation = mutationFor(plan, dataResourceKey);
+  const pluginMutation = mutationFor(plan, `plugin:${atomicDependentPlugin}`);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(group.status, 'ready');
+  assert.equal(requirement.plugin, atomicDependencyPlugin);
+  assert.equal(requirement.source, 'live-remote');
+  assert.equal(requirement.expectedVersion, '2.1.0');
+  assert.equal(requirement.versionRange, '>=2.0.0 <3.0.0');
+  assert.equal(requirement.expectedHash, dependencyRemoteHash);
+  assert.equal(requirement.remoteHash, dependencyRemoteHash);
+  assert.match(requirement.baseHash, /^[a-f0-9]{64}$/);
+  assert.equal(dataMutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
+  assert.equal(dataMutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
+
+  const result = applyPlan(cloneJson(remote), plan);
+  assert.equal(result.site.plugins[atomicDependentPlugin].version, '1.1.0');
+  assert.equal(result.site.plugins[atomicDependentPlugin].releaseNote, dependentSecret);
+  assert.equal(result.site.plugins[atomicDependencyPlugin].buildToken, dependencySecret);
+  assert.equal(
+    result.site.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
+    localRowSecret,
+  );
+
+  const acceptedEvidence = {
+    rpp: 'RPP-0470',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    dependency: {
+      groupId: group.id,
+      plugin: requirement.plugin,
+      source: requirement.source,
+      expectedVersion: requirement.expectedVersion,
+      versionRange: requirement.versionRange,
+      expectedHashEvidence: sha256Evidence(requirement.expectedHash),
+      remoteHash: `sha256:${requirement.remoteHash}`,
+      requirementHash: sha256Evidence(requirement),
+    },
+    updateMutation: {
+      resourceKey: pluginMutation.resourceKey,
+      action: pluginMutation.action,
+      mutationHash: sha256Evidence({
+        resourceKey: pluginMutation.resourceKey,
+        action: pluginMutation.action,
+        localHash: pluginMutation.localHash,
+        remoteBeforeHash: pluginMutation.remoteBeforeHash,
+      }),
+    },
+    pluginOwnedData: {
+      resourceKey: dataMutation.resourceKey,
+      auditEvidenceHash: sha256Evidence(dataMutation.pluginOwnedResource.auditEvidence),
+      resultRowHash: `sha256:${resourceHash(result.site, dataMutation.resource)}`,
+    },
+  };
+  acceptedEvidence.proofHash = sha256Evidence({
+    dependency: acceptedEvidence.dependency,
+    updateMutation: acceptedEvidence.updateMutation,
+    pluginOwnedData: acceptedEvidence.pluginOwnedData,
+  });
+
+  assert.match(acceptedEvidence.dependency.expectedHashEvidence, /^sha256:[a-f0-9]{64}$/);
+  assert.match(acceptedEvidence.dependency.remoteHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(acceptedEvidence.pluginOwnedData.auditEvidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(acceptedEvidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+
+  const mismatchLocal = cloneJson(local);
+  mismatchLocal.pushIntents[0].dependencies.plugins[0].expectedVersion = '9.9.9';
+  const mismatchPlan = planFor(base, mismatchLocal, remote);
+  const mismatchBlocker = mismatchPlan.blockers.find((blocker) =>
+    blocker.class === 'incompatible-plugin-dependency-version');
+  assert.equal(mismatchPlan.status, 'blocked');
+  assert.equal(mismatchBlocker.plugin, atomicDependencyPlugin);
+
+  const unsupportedRangeLocal = cloneJson(local);
+  unsupportedRangeLocal.pushIntents[0].dependencies.plugins[0].versionRange = '^2.1.0';
+  const unsupportedRangePlan = planFor(base, unsupportedRangeLocal, remote);
+  const unsupportedRangeBlocker = unsupportedRangePlan.blockers.find((blocker) =>
+    blocker.class === 'unsupported-plugin-dependency-version-range');
+  assert.equal(unsupportedRangePlan.status, 'blocked');
+  assert.equal(unsupportedRangeBlocker.plugin, atomicDependencyPlugin);
+
+  const forgedPlans = [
+    {
+      label: 'version mismatch',
+      code: 'ATOMIC_GROUP_DEPENDENCY_VERSION_MISMATCH',
+      plan: tamperReadyPlan(plan, (copy) => {
+        copy.atomicGroups[0].dependencyRequirements[0].expectedVersion = '9.9.9';
+      }),
+    },
+    {
+      label: 'unsupported range',
+      code: 'ATOMIC_GROUP_DEPENDENCY_VERSION_RANGE_UNSUPPORTED',
+      plan: tamperReadyPlan(plan, (copy) => {
+        copy.atomicGroups[0].dependencyRequirements[0].versionRange = '^2.1.0';
+      }),
+    },
+  ];
+
+  const refusalEvidence = {};
+  for (const testCase of forgedPlans) {
+    const targetRemote = cloneJson(remote);
+    const before = JSON.stringify(targetRemote);
+    const error = captureError(() => applyPlan(targetRemote, testCase.plan));
+
+    assert.ok(error instanceof PushPlanError, testCase.label);
+    assert.equal(error.code, testCase.code, testCase.label);
+    assert.equal(JSON.stringify(targetRemote), before, testCase.label);
+    assert.equal(targetRemote.plugins[atomicDependentPlugin].version, '1.0.0', testCase.label);
+    assert.equal(
+      targetRemote.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
+      'base-row',
+      testCase.label,
+    );
+    refusalEvidence[testCase.label] = {
+      code: error.code,
+      detailsHash: sha256Evidence(error.details),
+    };
+  }
+
+  const staleRemote = cloneJson(remote);
+  staleRemote.plugins[atomicDependencyPlugin] = {
+    ...staleRemote.plugins[atomicDependencyPlugin],
+    version: '2.2.0',
+  };
+  staleRemote.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value = {
+    mode: staleRemoteRowSecret,
+  };
+  const staleRemoteBeforeHash = sha256Evidence(staleRemote);
+  const staleRowBeforeHash = resourceHash(staleRemote, dataMutation.resource);
+  const staleError = captureError(() => applyPlan(staleRemote, plan));
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'ATOMIC_GROUP_DEPENDENCY_STALE');
+  assert.equal(staleRemote.plugins[atomicDependentPlugin].version, '1.0.0');
+  assert.equal(
+    staleRemote.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
+    staleRemoteRowSecret,
+  );
+  assert.equal(resourceHash(staleRemote, dataMutation.resource), staleRowBeforeHash);
+  assert.equal(sha256Evidence(staleRemote), staleRemoteBeforeHash);
+
+  const combinedEvidence = {
+    accepted: acceptedEvidence,
+    refused: {
+      ...refusalEvidence,
+      stale: {
+        code: staleError.code,
+        detailsHash: sha256Evidence(staleError.details),
+        rowHashBefore: `sha256:${staleRowBeforeHash}`,
+        rowHashAfter: `sha256:${resourceHash(staleRemote, dataMutation.resource)}`,
+        remoteHashBefore: staleRemoteBeforeHash,
+        remoteHashAfter: sha256Evidence(staleRemote),
+      },
+    },
+  };
+  combinedEvidence.proofHash = sha256Evidence(combinedEvidence);
+
+  assert.equal(combinedEvidence.refused.stale.rowHashAfter, combinedEvidence.refused.stale.rowHashBefore);
+  assert.equal(combinedEvidence.refused.stale.remoteHashAfter, combinedEvidence.refused.stale.remoteHashBefore);
+  assert.match(combinedEvidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  const serializedEvidence = JSON.stringify(combinedEvidence);
+  for (const rawValue of [dependencySecret, dependentSecret, localRowSecret, staleRemoteRowSecret]) {
+    assert.equal(serializedEvidence.includes(rawValue), false, `RPP-0470 evidence leaked ${rawValue}`);
+  }
+});
+
 test('rejects apply when the remote changed after dry-run planning', () => {
   const base = baseSite();
   const local = baseSite();
