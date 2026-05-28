@@ -995,11 +995,33 @@ test('remote-only plugin removal blocks stale local dependency assumptions', () 
   ];
 
   const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const evidence = blocker.remotePluginRemovalRefusalEvidence;
+  const blockerJson = JSON.stringify(blocker);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(decisionFor(plan, 'plugin:forms').decision, 'keep-remote');
-  assert.equal(plan.blockers[0].class, 'missing-plugin-dependency');
-  assert.equal(plan.blockers[0].plugin, 'forms');
+  assert.equal(blocker.class, 'missing-plugin-dependency');
+  assert.equal(blocker.plugin, 'forms');
+  assert.equal(evidence.reasonCode, 'REMOTE_PLUGIN_REMOVAL_REFUSAL');
+  assert.equal(evidence.operation, 'refuse-before-mutation');
+  assert.equal(evidence.groupId, 'update-forms-settings');
+  assert.equal(evidence.plugin, 'forms');
+  assert.equal(evidence.resourceKey, 'plugin:forms');
+  assert.equal(evidence.dependencySource, 'atomic-push-intent');
+  assert.equal(evidence.local.label, 'local-snapshot-or-plan');
+  assert.equal(evidence.local.source, 'planner-decision');
+  assert.equal(evidence.local.state, 'present');
+  assert.equal(evidence.local.change, 'unchanged');
+  assert.match(evidence.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.production.label, 'live-production-remote');
+  assert.equal(evidence.production.source, 'live-remote');
+  assert.equal(evidence.production.state, 'absent');
+  assert.equal(evidence.production.change, 'delete');
+  assert.match(evidence.production.hash, /^[a-f0-9]{64}$/);
+  assert.match(evidence.baseHash, /^[a-f0-9]{64}$/);
+  assert.equal(blockerJson.includes('local-advanced'), false);
+  assert.equal(blockerJson.includes('forms 1.0'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(Object.hasOwn(remote.plugins, 'forms'), false);
 });

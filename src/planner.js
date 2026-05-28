@@ -675,6 +675,14 @@ function pluginDependencyEvidence(dependency, intent, plan, base, remote) {
     return {
       source: 'missing-live-remote',
       resourceKey: pluginResource.key,
+      remotePluginRemovalRefusalEvidence: remotePluginRemovalDependencyEvidence({
+        intent,
+        dependency,
+        pluginResource,
+        plan,
+        base,
+        remote,
+      }),
     };
   }
 
@@ -802,6 +810,16 @@ function evaluatePluginDependency({
       dependencyIndex,
       className: 'missing-plugin-dependency',
       reason: `Atomic push intent ${intent.id} requires plugin ${plugin}, but it is absent from the live remote.`,
+      extra: {
+        remotePluginRemovalRefusalEvidence: remotePluginRemovalDependencyEvidence({
+          intent,
+          dependency,
+          pluginResource,
+          plan,
+          base,
+          remote,
+        }),
+      },
     }));
     return blockers;
   }
@@ -2204,6 +2222,11 @@ function pluginContextMutationSupport({
       owner,
       staleContext,
     }),
+    remotePluginRemovalRefusalEvidence: remotePluginRemovalOwnerContextEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
   };
 }
 
@@ -2248,6 +2271,11 @@ function pluginOwnedOwnerContextSupport({
     reason: `Plugin-owned resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
     ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
+    remotePluginRemovalRefusalEvidence: remotePluginRemovalOwnerContextEvidence({
       resource,
       owner,
       staleContext,
@@ -2322,6 +2350,78 @@ function stalePluginMetadataOwnerContextRefusalEvidence({ resource, owner, stale
   };
 }
 
+function remotePluginRemovalOwnerContextEvidence({ resource, owner, staleContext }) {
+  const removalContexts = staleContext
+    .filter((context) => (context.type === 'plugin' || context.type === 'file')
+      && context.change.remoteChange === 'delete')
+    .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey));
+  if (removalContexts.length === 0) {
+    return null;
+  }
+  return {
+    reasonCode: 'REMOTE_PLUGIN_REMOVAL_REFUSAL',
+    operation: 'refuse-before-mutation',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    localLabel: 'local-snapshot-or-plan',
+    productionLabel: 'live-production-remote',
+    removedResourceKeys: removalContexts.map((context) => context.resourceKey),
+    context: removalContexts.map((context) => ({
+      resourceKey: context.resourceKey,
+      type: context.type,
+      baseHash: context.baseHash,
+      local: {
+        source: 'local-snapshot',
+        state: context.change.local.state,
+        hash: context.localHash,
+        change: context.change.localChange,
+      },
+      production: {
+        source: 'live-remote',
+        state: context.change.remote.state,
+        hash: context.remoteHash,
+        change: context.change.remoteChange,
+      },
+    })),
+  };
+}
+
+function remotePluginRemovalDependencyEvidence({
+  intent,
+  dependency,
+  pluginResource,
+  plan,
+  base,
+  remote,
+}) {
+  const decision = (plan.decisions || []).find((entry) => entry.resourceKey === pluginResource.key);
+  const baseHash = resourceHash(base, pluginResource);
+  const remoteHash = resourceHash(remote, pluginResource);
+  return {
+    reasonCode: 'REMOTE_PLUGIN_REMOVAL_REFUSAL',
+    operation: 'refuse-before-mutation',
+    groupId: intent.id,
+    plugin: dependency.name,
+    resourceKey: pluginResource.key,
+    dependencySource: 'atomic-push-intent',
+    local: {
+      source: decision ? 'planner-decision' : 'pull-base',
+      label: 'local-snapshot-or-plan',
+      state: decision?.change?.local?.state || 'present',
+      hash: decision?.localHash || baseHash,
+      change: decision?.change?.localChange || 'unchanged',
+    },
+    production: {
+      source: 'live-remote',
+      label: 'live-production-remote',
+      state: 'absent',
+      hash: remoteHash,
+      change: 'delete',
+    },
+    baseHash,
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2355,6 +2455,7 @@ function addPluginOwnedResourceBlocker(plan, {
     driver: support.driver || null,
     policySource: support.policySource || null,
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
+    ...(support.remotePluginRemovalRefusalEvidence ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
@@ -2391,6 +2492,7 @@ function addPluginContextBlocker(plan, {
     pluginOwner: owner,
     ownerContext: support.ownerContext || [],
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
+    ...(support.remotePluginRemovalRefusalEvidence ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,

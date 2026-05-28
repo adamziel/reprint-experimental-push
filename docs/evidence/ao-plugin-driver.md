@@ -29,6 +29,26 @@ The support-only package smoke alias proved fail-closed registration guards for 
 
 Non-claim: an over-broad full run of `node --test test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js` was stopped/failed after live Playground readiness timeouts in unrelated apply-revalidation smoke tests. It is not used as passing evidence for this lane.
 
+## Remote Plugin Removal Refusal
+
+RPP-0435 adds focused support-only evidence for the case where the local plan
+still expects an owner plugin but the live production remote has removed that
+plugin. The planner records `remotePluginRemovalRefusalEvidence` with reason
+code `REMOTE_PLUGIN_REMOVAL_REFUSAL`, explicit local-vs-production labels, and
+hash-only state for the removed plugin context. No plugin file contents,
+plugin-owned option values, or dependency payload values are included.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'remote plugin removal owner context|executor rejects remote plugin removal|remote-only plugin removal blocks stale local dependency assumptions' test/plugin-owner-context-metadata-refusal.test.js test/push-planner.test.js
+```
+
+This is a local-vs-production caveat only. It proves refusal/hold behavior for
+plugin-owned data and plugin dependency evidence when the production remote has
+removed the owner plugin; it does not broaden accepted plugin-owned data support
+or change release state.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -36,3 +56,6 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+- RPP-0435 — remote plugin removal refusal: local plugin-owned data and
+  plugin dependency plans are blocked or rejected before mutation when the live
+  production remote has removed the owner plugin.
