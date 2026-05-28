@@ -139,6 +139,13 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-option-change-ready',
     tag: 'plugin-owned-option-change',
   },
+  staleRemoteAfterDryRun: {
+    family: 'ready-plan-stale-remote-after-dry-run',
+    matches: (_testCase, result) => result.status === 'ready'
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true,
+  },
   commentUserGraph: {
     family: 'comment-user-graph-ready',
     tag: 'comment-user-graph',
@@ -1150,7 +1157,10 @@ function emptySummary() {
 
 function recordTargetCoverage(summary, testCase, result) {
   for (const [target, definition] of Object.entries(targetCoverageDefinitions)) {
-    if (testCase.family !== definition.family && !testCase.tags.has(definition.tag)) {
+    const matchesTarget = typeof definition.matches === 'function'
+      ? definition.matches(testCase, result)
+      : testCase.family === definition.family || testCase.tags.has(definition.tag);
+    if (!matchesTarget) {
       continue;
     }
     const coverage = summary.targetCoverage[target] ||= {

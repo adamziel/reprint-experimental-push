@@ -981,6 +981,52 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
 }
 
 
+test('RPP-0117 stale remote after dry-run target exposes per-tier ready replay rejection counts', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.staleRemoteAfterDryRun;
+
+  assert.ok(coverage, 'missing stale remote after dry-run target coverage');
+  assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run');
+  assert.equal(coverage.total, 256);
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+  assert.deepEqual(coverage.perTier, {
+    0: 25,
+    1: 28,
+    2: 28,
+    3: 28,
+    4: 28,
+    5: 28,
+    6: 28,
+    7: 28,
+    8: 20,
+    9: 15,
+  });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.ok(coverage.total < report.summary.statuses.ready, 'zero-mutation ready cases should not count');
+
+  const readyCase = generatePushHarnessCases()
+    .find((testCase) => {
+      const result = validateGeneratedCase(testCase);
+      return result.status === 'ready' && result.staleReplayRejected === true;
+    });
+
+  assert.ok(readyCase, 'missing ready case with stale remote replay rejection');
+  const result = validateGeneratedCase(readyCase);
+
+  assert.equal(result.status, 'ready');
+  assert.equal(result.staleReplayRejected, true);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true);
+});
+
+
 test('RPP-0114 plugin-owned option target exposes ready and conflict coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.pluginOwnedOptionChange;

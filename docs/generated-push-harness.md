@@ -129,6 +129,12 @@ Ready cases apply the local option update with owner/driver evidence and reject
 stale replays before mutation; conflict cases drift the same plugin-owned option
 remotely and must refuse apply without losing the remote value.
 
+
+The `staleRemoteAfterDryRun` target coverage records per-tier counts for ready
+plans whose live-remote preconditions reject a stale remote replay before any
+mutation. Zero-mutation ready plans are excluded because there is no planned
+target to drift after dry-run.
+
 The `commentUserGraph` target coverage records per-tier counts for generated
 `wp_comments.user_id` author references. Ready cases create the user and comment
 in one plan and reject a stale replay before mutation; stale cases keep the user
@@ -203,6 +209,25 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 10,
         "ready": 10
+      }
+    },
+    "staleRemoteAfterDryRun": {
+      "family": "ready-plan-stale-remote-after-dry-run",
+      "total": 256,
+      "perTier": {
+        "0": 25,
+        "1": 28,
+        "2": 28,
+        "3": 28,
+        "4": 28,
+        "5": 28,
+        "6": 28,
+        "7": 28,
+        "8": 20,
+        "9": 15
+      },
+      "statuses": {
+        "ready": 256
       }
     },
     "wpCommentsCommentmetaGraph": {
