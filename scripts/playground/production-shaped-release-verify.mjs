@@ -58,6 +58,7 @@ import {
   shouldUseProductionSnapshotExport,
 } from './production-shaped-live-release-verify-lib.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
+import { summarizeArbitraryPluginFixturePackageEvidence } from './production-plugin-package-scenarios.js';
 import {
   appendRecoveryClaimOpened,
   checkedDurableJournalBoundarySatisfied,
@@ -3390,12 +3391,15 @@ function summarizePackagedPluginDriverProof() {
       status: proof.status,
       mode: summary.mode || 'driver-guard-only',
       packagedRevokedCredentialGuard: summary.driverReceiptRevokedCredentialGuard || null,
+      arbitraryPluginFixturePackage: summary.arbitraryPluginFixturePackage
+        || summarizeArbitraryPluginFixturePackageEvidence(summary),
     };
   } catch (error) {
     return {
       status: 1,
       mode: 'driver-guard-only',
       packagedRevokedCredentialGuard: null,
+      arbitraryPluginFixturePackage: summarizeArbitraryPluginFixturePackageEvidence(),
       error: error instanceof Error ? error.message : String(error),
     };
   }
