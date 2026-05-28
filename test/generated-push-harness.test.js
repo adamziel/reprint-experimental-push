@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -9,9 +11,12 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 
+const fixedGeneratedNowForRpp0226 = new Date('2026-05-28T00:00:00.000Z');
+
 const requiredFamilies = [
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-plugin-metadata',
   'independent-local-and-remote',
   'direct-row-conflict',
   'local-delete',
@@ -102,6 +107,73 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+
+test('RPP-0226 generated remote-only plugin metadata is preserved with hash-only evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.remoteOnlyPluginMetadata;
+
+  assert.ok(coverage, 'missing remote-only plugin metadata target coverage');
+  assert.equal(coverage.family, 'remote-only-plugin-metadata');
+  assert.equal(coverage.total, report.summary.featureFamilies['remote-only-plugin-metadata']);
+  assert.ok(coverage.statuses.ready > 0, 'target coverage needs ready preservation cases');
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'remote-only-plugin-metadata')
+    .find((testCase) => createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedNowForRpp0226,
+    }).status === 'ready');
+  assert.ok(generatedCase, 'missing ready generated remote-only plugin metadata case');
+  assert.ok(generatedCase.tags.has('remote-plugin-metadata-preserve'));
+  assert.ok(generatedCase.tags.has('independent-merge'));
+
+  const {
+    pluginName,
+    pluginKey,
+    localPath,
+    localValue,
+    remoteVersion,
+    remotePrivateNote,
+  } = generatedRemoteOnlyPluginMetadataTargetsForRpp0226(generatedCase);
+  const localKey = `file:${localPath}`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedNowForRpp0226,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const pluginDecision = plan.decisions.find((entry) => entry.resourceKey === pluginKey);
+  const localMutation = plan.mutations.find((entry) => entry.resourceKey === localKey);
+  const evidenceJson = JSON.stringify(hashOnlyGeneratedPluginMetadataEvidenceForRpp0226(plan));
+  const result = applyPlan(cloneJsonForRpp0226(generatedCase.remote), plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(validation.status, 'ready');
+  assert.equal(validation.applied, true);
+  assert.equal(pluginDecision?.decision, 'keep-remote');
+  assert.equal(pluginDecision.change.remoteChange, 'update');
+  assert.equal(localMutation?.action, 'put');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === pluginKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === pluginKey), false);
+  assert.deepEqual(result.site.plugins[pluginName], generatedCase.remote.plugins[pluginName]);
+  assert.equal(result.site.files[localPath], localValue);
+  for (const rawValue of [localValue, remoteVersion, remotePrivateNote]) {
+    assert.equal(evidenceJson.includes(rawValue), false, `generated evidence leaked ${rawValue}`);
+    assert.equal(JSON.stringify(pluginDecision).includes(rawValue), false, `plugin decision leaked ${rawValue}`);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -354,4 +426,75 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function cloneJsonForRpp0226(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function generatedRemoteOnlyPluginMetadataTargetsForRpp0226(testCase) {
+  const pluginName = 'rpp0226-remote-metadata-fixture';
+  const pluginKey = `plugin:${pluginName}`;
+  const localEntry = Object.entries(testCase.local.files).find(([path, value]) => (
+    path.includes('rpp0226-plugin-metadata-local-')
+    && !Object.hasOwn(testCase.base.files, path)
+    && value.startsWith('local-private-rpp0226-generated-file-')
+  ));
+  assert.ok(localEntry, `${testCase.id} missing generated local fixture file`);
+  assert.deepEqual(testCase.base.plugins[pluginName], { version: '1.0.0', active: true });
+  assert.deepEqual(testCase.local.plugins[pluginName], { version: '1.0.0', active: true });
+  assert.ok(testCase.remote.plugins[pluginName].version.startsWith('remote-private-rpp0226-version-'));
+  assert.ok(testCase.remote.plugins[pluginName].privateNote.startsWith('remote-private-rpp0226-note-'));
+
+  return {
+    pluginName,
+    pluginKey,
+    localPath: localEntry[0],
+    localValue: localEntry[1],
+    remoteVersion: testCase.remote.plugins[pluginName].version,
+    remotePrivateNote: testCase.remote.plugins[pluginName].privateNote,
+  };
+}
+
+function hashOnlyGeneratedPluginMetadataEvidenceForRpp0226(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      change: conflict.change,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
 }

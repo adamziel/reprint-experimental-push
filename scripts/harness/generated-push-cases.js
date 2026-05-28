@@ -23,6 +23,7 @@ const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
 const scenarioFamilies = Object.freeze([
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-plugin-metadata',
   'independent-local-and-remote',
   'direct-row-conflict',
   'local-delete',
@@ -61,6 +62,7 @@ const scenarioFamilies = Object.freeze([
 const readyPreservingFamilies = new Set([
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-plugin-metadata',
   'independent-local-and-remote',
   'local-delete',
   'same-independent-content',
@@ -85,6 +87,10 @@ const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  remoteOnlyPluginMetadata: {
+    family: 'remote-only-plugin-metadata',
+    tag: 'remote-plugin-metadata-preserve',
   },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
@@ -269,6 +275,21 @@ const scenarioFamilyBuilders = {
     ensurePostExists(remote, postId);
     remote.db.wp_posts[`ID:${postId}`].post_title = `Remote editorial ${allocator.next()}`;
     tags.add('remote-preserve');
+  },
+  'remote-only-plugin-metadata': ({ base, local, remote, allocator, tags }) => {
+    const pluginName = 'rpp0226-remote-metadata-fixture';
+    const localPath = `wp-content/uploads/rpp0226-plugin-metadata-local-${allocator.next()}.txt`;
+    base.plugins[pluginName] = { version: '1.0.0', active: true };
+    local.plugins[pluginName] = { version: '1.0.0', active: true };
+    remote.plugins[pluginName] = {
+      version: `remote-private-rpp0226-version-${allocator.next()}`,
+      active: false,
+      privateNote: `remote-private-rpp0226-note-${allocator.next()}`,
+    };
+    local.files[localPath] = `local-private-rpp0226-generated-file-${allocator.next()}`;
+    tags.add('remote-preserve');
+    tags.add('remote-plugin-metadata-preserve');
+    tags.add('independent-merge');
   },
   'independent-local-and-remote': ({ local, remote, allocator, tags }) => {
     const localPath = allocator.filePath('independent-local');
@@ -913,6 +934,22 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      if (blocker.class === 'atomic-group-blocker-propagation') {
+        const propagatedMutation = plan.mutations.find((mutation) => (
+          mutation.id === blocker.mutationId
+          && mutation.resourceKey === blocker.resourceKey
+          && mutation.atomicGroupId === blocker.groupId
+        ));
+        assert.ok(
+          propagatedMutation,
+          `${testCase.id} propagated atomic blocker lacks matching audit mutation ${blocker.resourceKey}`,
+        );
+        assert.ok(
+          blocker.sourceBlockerIds?.length > 0,
+          `${testCase.id} propagated atomic blocker lacks source blockers ${blocker.resourceKey}`,
+        );
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,

@@ -257,6 +257,57 @@ function plannerSummaryEvidenceEnvelope(plan) {
   };
 }
 
+
+function hashOnlyPluginMetadataEvidenceForRpp0226(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      change: conflict.change,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+    atomicGroups: plan.atomicGroups.map((group) => ({
+      id: group.id,
+      status: group.status,
+      mutationIds: group.mutationIds,
+      conflicts: group.conflicts,
+      blockers: group.blockers.map((blocker) => blocker.id),
+    })),
+  };
+}
+
 function assertPlannerSummaryMatchesEvidence(plan, label) {
   assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
   assert.equal(
@@ -651,6 +702,60 @@ test('preserves remote-only plugin changes', () => {
   assert.equal(result.site.plugins.forms.version, '1.1.0');
   assert.equal(result.site.plugins.forms.active, false);
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms 1.1 */');
+});
+
+
+test('RPP-0226 preserves remote-only plugin metadata with redacted evidence', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateLocalFile = '<?php echo "local-private-rpp0226-independent-file";';
+  const privateRemoteVersion = 'remote-private-rpp0226-version-focused';
+  const privateRemoteNote = 'remote-private-rpp0226-note-focused';
+  local.files['index.php'] = privateLocalFile;
+  remote.plugins.forms = {
+    version: privateRemoteVersion,
+    active: false,
+    privateNote: privateRemoteNote,
+  };
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const pluginDecision = decisionFor(firstPlan, 'plugin:forms');
+  const localMutation = mutationFor(firstPlan, 'file:index.php');
+  const pluginPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === 'plugin:forms');
+  const evidence = hashOnlyPluginMetadataEvidenceForRpp0226(firstPlan);
+  const evidenceJson = JSON.stringify(evidence);
+  const result = applyPlan(cloneJson(remote), firstPlan);
+
+  assert.equal(firstPlan.status, 'ready');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0226 remote-only plugin metadata invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 1,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(evidence, hashOnlyPluginMetadataEvidenceForRpp0226(secondPlan));
+  assert.equal(pluginDecision?.decision, 'keep-remote');
+  assert.equal(pluginDecision.change.localChange, 'unchanged');
+  assert.equal(pluginDecision.change.remoteChange, 'update');
+  assert.match(pluginDecision.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(pluginDecision.remoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(mutationFor(firstPlan, 'plugin:forms'), undefined);
+  assert.equal(pluginPrecondition, undefined);
+  assert.equal(localMutation?.action, 'put');
+  assert.equal(localMutation.resourceKey, 'file:index.php');
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.files['index.php'], privateLocalFile);
+  assert.deepEqual(result.site.plugins.forms, remote.plugins.forms);
+
+  for (const rawValue of [privateLocalFile, privateRemoteVersion, privateRemoteNote]) {
+    assert.equal(evidenceJson.includes(rawValue), false, `proof evidence leaked ${rawValue}`);
+    assert.equal(JSON.stringify(pluginDecision).includes(rawValue), false, `plugin decision leaked ${rawValue}`);
+  }
 });
 
 test('combines local ordinary changes while preserving remote-only plugin changes', () => {
