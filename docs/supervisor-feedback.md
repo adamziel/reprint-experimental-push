@@ -1,9 +1,33 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 03:36 CEST
+Last updated: 2026-05-28 04:07 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 04:07 CEST - RPP-0026 and RPP-0101 Integrated
+
+- Going well: integration is now at `2f079e09f`, with checklist lint,
+  release-evidence provenance wiring, current-tree linter hardening, artifact
+  redaction scanning, required release checks reporting, `RPP-0101`
+  generated file create/update/delete coverage, and `RPP-0026` auth readback
+  drift coverage landed on the lane.
+- Checklist movement: 87 verified items checked and 913 open. New checks:
+  `RPP-0026` and `RPP-0101`. The new guardrails protect progress honesty and
+  artifact privacy; they do not by themselves close release-ops or
+  production-readiness items.
+- AO lifecycle: `rpp-ao-lifecycle` is visible in tmux, was restarted after an
+  OOM as PID `2140444` with a 6144 MB Node heap, and is registered in
+  `running.json`; the dashboard responds on local port 8080. `ao spawn`
+  successfully created `rpp-32`.
+- Current AO shape: active developers are `rpp-24`, `rpp-25`, `rpp-29`,
+  `rpp-30`, and `rpp-32`; `rpp-28` is the integrator, `rpp-31` is critic,
+  `rpp-26` is progress reporter, and `rpp-orchestrator` is supervising through
+  visible tmux panes.
+- Next nudge: keep integrating one completed branch at a time. Candidate work
+  still in flight includes `RPP-0102` generated harness expansion,
+  merge-invariant coverage, graph post-author evidence, auth/secret release
+  gate coverage, and local production artifact output.
 
 ## 2026-05-28 03:36 CEST - rpp-28 Integrated, AO Lifecycle Recreated
 
@@ -139,7 +163,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Lane | Nudge |
 | --- | --- |
 | Release gates | Start at `RPP-0001` and keep fail-closed release evidence exact. |
-| Generated harness | Convert `RPP-0101` onward into new generated families, not one-off fixtures. |
+| Generated harness | Convert `RPP-0102` onward into new generated families, not one-off fixtures. |
 | Invariants | Use `RPP-0201` onward as the broad no-overwrite checklist. |
 | Recovery | Do not mark durable recovery items complete until restart-readable production evidence exists. |
 | Audit and critic | Treat unchecked items as remaining work, even when adjacent local proofs are green. |

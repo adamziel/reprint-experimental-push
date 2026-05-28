@@ -89,5 +89,6 @@ Observed focused test status: `node --test test/required-release-checks.test.js`
 This contract and command provide evidence toward the earliest release-gate coverage items that need a machine-readable local command/artifact summary before release movement:
 
 - RPP-0041 through RPP-0060: generated release-gate coverage now has a standalone required-check matrix and fail-closed summary validation.
-- RPP-0056: the summary fields include explicit `releaseReady`/missing/stale accounting.
+- RPP-0056: the summary fields include explicit readiness-flag,
+  missing-check, and stale-check accounting.
 - RPP-0057 through RPP-0060: operator proof and `verify:release`-related evidence are enumerated as mandatory local artifacts/commands rather than external branch-protection state.

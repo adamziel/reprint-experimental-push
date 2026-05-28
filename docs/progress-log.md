@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 03:36 CEST.
+- Last update: 2026-05-28 04:07 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `a19deaf9e` plus the current checklist/progress update.
+  `2f079e09f` (`docs: update auth readback checklist totals`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 85
-  items complete and leaves 915 open.
-- Checked slices: 25 release-gate foundation items, 15 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 87
+  items complete and leaves 913 open.
+- Checked slices: 26 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, and 2 production-topology items. No release-ops
-  items are checked yet.
+  7 chunking/performance items, 2 production-topology items, and 1 generated
+  harness item. No release-ops items are checked yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
   evidence coverage manifest. The Docker harness is fail-closed in this sandbox
@@ -26,11 +26,28 @@ linked implementation artifacts.
   redaction, protocol compatibility, route proof matrix, and operator proof
   status on the integration branch. The checklist only moved for exact matches:
   `RPP-0613`, `RPP-0673`, `RPP-0801`, and `RPP-0820`.
-- Current AO team from tmux now extends through `rpp-31`, with a restarted
-  lifecycle supervisor and a freshly recreated `rpp-orchestrator`.
+- Additional integrated wave: `fdb02ab6a` added the checklist completion
+  linter, `9617ad4fc`/`bfcaa1216` added release evidence provenance and wired
+  it into release-gate CLI checks, `c22966b16` hardened the linter against the
+  current progress surfaces, and `6d6b2077c` added the artifact redaction
+  scanner. `a7d6facb9`/`5a636b8b2` then added the required release checks
+  contract and operator-runnable report command. `a0f650fb6` integrated
+  `RPP-0101`, proving a generated file create/update/delete mix with at least
+  one ready and one non-ready case. `281fcf797`/`2f079e09f` then integrated
+  command-level `RPP-0026` auth source readback drift evidence and updated the
+  checklist totals. These guardrails and harness additions do not change final
+  release readiness.
+- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
+  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
+  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`, and the
+  restarted `rpp-ao-lifecycle` process registered in `running.json` as PID
+  `2140444`.
 - Verification for this entry: checklist counts, focused Docker/evidence
-  manifest tests, `node --test test/release-gates.test.js`, the `rpp-28`
-  integrated focused test set, evidence manifest generation, and
+  manifest tests, `node --test test/release-gates.test.js` with 12 passing
+  release-gate tests, the `rpp-28`
+  integrated focused test set, provenance/linter/artifact focused tests,
+  `node --test test/generated-push-harness.test.js`, evidence manifest
+  generation, artifact redaction scan over evidence/report paths, and
   `git diff --check`.
 - Release posture: final release remains **NO-GO**. This update makes tracking
   stricter and integrates fail-closed/local audit surfaces; it does not supply
