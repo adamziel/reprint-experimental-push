@@ -177,6 +177,10 @@ function sha256Evidence(value) {
   return `sha256:${digest(value)}`;
 }
 
+function assertSha256Evidence(value) {
+  assert.match(value, /^sha256:[a-f0-9]{64}$/);
+}
+
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
 const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
 
@@ -1719,6 +1723,233 @@ test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plug
     assert.equal(serializedAudit.includes(rawValue), false, `audit leaked ${rawValue}`);
     assert.equal(serializedEvidence.includes(rawValue), false, `evidence leaked ${rawValue}`);
   }
+});
+
+test('RPP-0459 generated driver audit evidence stays redacted while stale drift preserves remote data', () => {
+  const generatedCases = [
+    {
+      id: 'wp-option-audit-redaction',
+      resourceKey: 'row:["wp_options","option_name:forms_settings"]',
+      resource: {
+        type: 'row',
+        table: 'wp_options',
+        id: 'option_name:forms_settings',
+        key: 'row:["wp_options","option_name:forms_settings"]',
+      },
+      driver: 'wp-option',
+      configure(base, local, driftedRemote, secrets) {
+        base.db.wp_options['option_name:forms_settings'].option_value.mode = secrets.base;
+        local.db.wp_options['option_name:forms_settings'].option_value.mode = secrets.local;
+        driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode = secrets.remote;
+      },
+    },
+    {
+      id: 'wp-postmeta-audit-redaction',
+      resourceKey: 'row:["wp_postmeta","meta_id:45"]',
+      resource: {
+        type: 'row',
+        table: 'wp_postmeta',
+        id: 'meta_id:45',
+        key: 'row:["wp_postmeta","meta_id:45"]',
+      },
+      driver: 'wp-postmeta',
+      configure(base, local, driftedRemote, secrets) {
+        base.db.wp_postmeta = {
+          'meta_id:45': {
+            meta_id: 45,
+            post_id: 1,
+            meta_key: '_forms_payload',
+            meta_value: secrets.base,
+            __pluginOwner: 'forms',
+          },
+        };
+        local.db.wp_postmeta = cloneJson(base.db.wp_postmeta);
+        driftedRemote.db.wp_postmeta = cloneJson(base.db.wp_postmeta);
+        local.db.wp_postmeta['meta_id:45'].meta_value = secrets.local;
+        driftedRemote.db.wp_postmeta['meta_id:45'].meta_value = secrets.remote;
+      },
+    },
+    {
+      id: 'wp-termmeta-audit-redaction',
+      resourceKey: 'row:["wp_termmeta","meta_id:8"]',
+      resource: {
+        type: 'row',
+        table: 'wp_termmeta',
+        id: 'meta_id:8',
+        key: 'row:["wp_termmeta","meta_id:8"]',
+      },
+      driver: 'wp-termmeta',
+      configure(base, local, driftedRemote, secrets) {
+        base.db.wp_terms = {
+          'term_id:3': {
+            term_id: 3,
+            name: 'Forms',
+            slug: 'forms',
+          },
+        };
+        base.db.wp_termmeta = {
+          'meta_id:8': {
+            meta_id: 8,
+            term_id: 3,
+            meta_key: '_forms_term_payload',
+            meta_value: secrets.base,
+            __pluginOwner: 'forms',
+          },
+        };
+        local.db.wp_terms = cloneJson(base.db.wp_terms);
+        driftedRemote.db.wp_terms = cloneJson(base.db.wp_terms);
+        local.db.wp_termmeta = cloneJson(base.db.wp_termmeta);
+        driftedRemote.db.wp_termmeta = cloneJson(base.db.wp_termmeta);
+        local.db.wp_termmeta['meta_id:8'].meta_value = secrets.local;
+        driftedRemote.db.wp_termmeta['meta_id:8'].meta_value = secrets.remote;
+      },
+    },
+    {
+      id: 'fixture-custom-table-audit-redaction',
+      resourceKey: 'row:["wp_reprint_push_forms_lab","id:1"]',
+      resource: {
+        type: 'row',
+        table: 'wp_reprint_push_forms_lab',
+        id: 'id:1',
+        key: 'row:["wp_reprint_push_forms_lab","id:1"]',
+      },
+      driver: 'fixture-forms-lab-table',
+      configure(base, local, driftedRemote, secrets) {
+        base.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+        base.db.wp_reprint_push_forms_lab = {
+          'id:1': {
+            id: 1,
+            form_slug: 'contact',
+            payload: { owner: 'forms', mode: secrets.base },
+            updated_marker: 'base',
+            __pluginOwner: 'forms',
+          },
+        };
+        local.plugins['reprint-push-forms-fixture'] = cloneJson(base.plugins['reprint-push-forms-fixture']);
+        driftedRemote.plugins['reprint-push-forms-fixture'] = cloneJson(base.plugins['reprint-push-forms-fixture']);
+        local.db.wp_reprint_push_forms_lab = cloneJson(base.db.wp_reprint_push_forms_lab);
+        driftedRemote.db.wp_reprint_push_forms_lab = cloneJson(base.db.wp_reprint_push_forms_lab);
+        local.db.wp_reprint_push_forms_lab['id:1'].payload.mode = secrets.local;
+        local.db.wp_reprint_push_forms_lab['id:1'].updated_marker = secrets.localMarker;
+        driftedRemote.db.wp_reprint_push_forms_lab['id:1'].payload.mode = secrets.remote;
+      },
+      expectsDriverEvidenceHash: true,
+    },
+  ];
+
+  const proofCases = generatedCases.map((generatedCase) => {
+    const secrets = {
+      base: `rpp0459-${generatedCase.id}-base-private`,
+      local: `rpp0459-${generatedCase.id}-local-private`,
+      localMarker: `rpp0459-${generatedCase.id}-local-marker-private`,
+      remote: `rpp0459-${generatedCase.id}-remote-private`,
+    };
+    const base = baseSite();
+    const local = cloneJson(base);
+    const driftedRemote = cloneJson(base);
+    generatedCase.configure(base, local, driftedRemote, secrets);
+    local.meta = {
+      pushPolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(generatedCase.resourceKey, 'forms', generatedCase.driver),
+      ),
+    };
+    const dryRunRemote = cloneJson(base);
+    const plan = planFor(base, local, dryRunRemote);
+    const mutation = mutationFor(plan, generatedCase.resourceKey);
+    const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
+    const rowBeforeHash = resourceHash(driftedRemote, generatedCase.resource);
+    const remoteBeforeHash = sha256Evidence(driftedRemote);
+    const error = captureError(() => applyPlan(driftedRemote, plan));
+    const proof = {
+      rpp: 'RPP-0459',
+      generatedCaseId: generatedCase.id,
+      evidenceSource: 'local-generated-plugin-driver-test',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      rawValuesIncluded: false,
+      audit: {
+        resourceKey: auditEvidence.resourceKey,
+        pluginOwner: auditEvidence.pluginOwner,
+        driver: auditEvidence.driver,
+        format: auditEvidence.format,
+        rawValuesIncluded: auditEvidence.rawValuesIncluded,
+        supportsDelete: auditEvidence.supportsDelete,
+        auditEvidenceHash: sha256Evidence(auditEvidence),
+        ownerContextHash: `sha256:${auditEvidence.ownerContextHash}`,
+        driverEvidenceHash: auditEvidence.driverEvidenceHash
+          ? `sha256:${auditEvidence.driverEvidenceHash}`
+          : null,
+      },
+      staleRemotePreservation: {
+        code: error.code,
+        detailsHash: sha256Evidence(error.details),
+        rowHashBefore: `sha256:${rowBeforeHash}`,
+        rowHashAfter: `sha256:${resourceHash(driftedRemote, generatedCase.resource)}`,
+        remoteHashBefore: remoteBeforeHash,
+        remoteHashAfter: sha256Evidence(driftedRemote),
+      },
+    };
+    proof.proofHash = sha256Evidence({
+      audit: proof.audit,
+      staleRemotePreservation: proof.staleRemotePreservation,
+    });
+
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.summary.mutations, 1);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource.driver, generatedCase.driver);
+    assert.equal(auditEvidence.schemaVersion, 1);
+    assert.equal(auditEvidence.evidenceSource, 'planner-plugin-driver-audit');
+    assert.equal(auditEvidence.format, 'hash-only');
+    assert.equal(auditEvidence.rawValuesIncluded, false);
+    assert.equal(auditEvidence.resourceKey, generatedCase.resourceKey);
+    assert.equal(auditEvidence.pluginOwner, 'forms');
+    assert.equal(auditEvidence.driver, generatedCase.driver);
+    assert.equal(auditEvidence.baseHash, mutation.baseHash);
+    assert.equal(auditEvidence.localHash, mutation.localHash);
+    assert.equal(auditEvidence.remoteHash, mutation.remoteBeforeHash);
+    assert.match(auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+    if (generatedCase.expectsDriverEvidenceHash) {
+      assert.match(auditEvidence.driverEvidenceHash, /^[a-f0-9]{64}$/);
+      assertSha256Evidence(proof.audit.driverEvidenceHash);
+    } else {
+      assert.equal(auditEvidence.driverEvidenceHash, undefined);
+      assert.equal(proof.audit.driverEvidenceHash, null);
+    }
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PRECONDITION_FAILED');
+    assert.equal(error.details.resourceKey, generatedCase.resourceKey);
+    assert.equal(error.details.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(error.details.actualHash, rowBeforeHash);
+    assert.equal(proof.staleRemotePreservation.rowHashAfter, proof.staleRemotePreservation.rowHashBefore);
+    assert.equal(proof.staleRemotePreservation.remoteHashAfter, proof.staleRemotePreservation.remoteHashBefore);
+    assertSha256Evidence(proof.audit.auditEvidenceHash);
+    assertSha256Evidence(proof.audit.ownerContextHash);
+    assertSha256Evidence(proof.staleRemotePreservation.detailsHash);
+    assertSha256Evidence(proof.staleRemotePreservation.rowHashBefore);
+    assertSha256Evidence(proof.staleRemotePreservation.remoteHashBefore);
+    assertSha256Evidence(proof.proofHash);
+
+    const serializedAudit = JSON.stringify(auditEvidence);
+    const serializedProof = JSON.stringify(proof);
+    for (const rawValue of Object.values(secrets)) {
+      assert.equal(serializedAudit.includes(rawValue), false, `audit leaked ${rawValue}`);
+      assert.equal(serializedProof.includes(rawValue), false, `proof leaked ${rawValue}`);
+    }
+
+    return proof;
+  });
+
+  assert.deepEqual(
+    proofCases.map((entry) => [entry.generatedCaseId, entry.audit.driver, entry.staleRemotePreservation.code]),
+    [
+      ['wp-option-audit-redaction', 'wp-option', 'PRECONDITION_FAILED'],
+      ['wp-postmeta-audit-redaction', 'wp-postmeta', 'PRECONDITION_FAILED'],
+      ['wp-termmeta-audit-redaction', 'wp-termmeta', 'PRECONDITION_FAILED'],
+      ['fixture-custom-table-audit-redaction', 'fixture-forms-lab-table', 'PRECONDITION_FAILED'],
+    ],
+  );
 });
 
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {

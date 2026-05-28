@@ -76,6 +76,31 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0459 generated driver audit evidence redaction
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0459|RPP-0439|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0459 generated proof expands the audit redaction surface across
+supported plugin drivers: `wp-option`, `wp-postmeta`, `wp-termmeta`, and the
+fixture custom-table driver. Each generated ready plan carries
+`mutation.pluginOwnedResource.auditEvidence` with only owner/driver labels,
+resource keys, delete-support flags, base/local/remote hashes, owner-context
+hashes, and fixture driver-evidence hashes when present.
+
+For each generated case, the proof applies the dry-run plan to a live remote
+where the same plugin-owned row drifted after planning. Apply fails before
+mutation with `PRECONDITION_FAILED`, and the row hash plus full remote hash are
+unchanged before and after the refusal. The evidence envelope stores only
+`sha256:` hashes for audit records, stale-apply details, row preservation,
+remote preservation, and the combined proof hash. Raw plugin-owned option,
+postmeta, termmeta, and fixture payload values are asserted absent from both
+audit JSON and proof JSON. This remains local generated plugin-driver evidence,
+not production-backed evidence, and the release gate remains NO-GO.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +114,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0459 — generated driver audit evidence redaction: option, postmeta,
+  termmeta, and fixture custom-table audit evidence stays hash-only while stale
+  remote drift preserves plugin-owned rows before mutation.
