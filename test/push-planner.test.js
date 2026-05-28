@@ -15,6 +15,7 @@ import {
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -170,6 +171,10 @@ function pluginOwnedResourcePolicy(...allowedResources) {
       allowedResources,
     },
   };
+}
+
+function sha256Evidence(value) {
+  return `sha256:${digest(value)}`;
 }
 
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
@@ -1145,6 +1150,159 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
 
   assert.equal(readyPlan.status, 'ready');
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
+});
+
+test('RPP-0436 plugin-owned delete support flag controls delete mutations with hash-only evidence', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const rowResource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:forms_settings',
+    key: resourceKey,
+  };
+  const privateOptionValue = 'delete-support-private-option-rpp-0436';
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'].option_value.mode = privateOptionValue;
+
+  const unsupportedLocal = cloneJson(base);
+  delete unsupportedLocal.db.wp_options['option_name:forms_settings'];
+  unsupportedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option', { supportsDelete: false }),
+    ),
+  };
+  const unsupportedRemote = cloneJson(base);
+  const unsupportedPlan = planFor(base, unsupportedLocal, unsupportedRemote);
+  const unsupportedBlocker = unsupportedPlan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(unsupportedPlan.status, 'blocked');
+  assert.equal(unsupportedPlan.summary.mutations, 0);
+  assert.equal(mutationFor(unsupportedPlan, resourceKey), undefined);
+  assert.equal(unsupportedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(unsupportedBlocker.driver, 'wp-option');
+  assert.equal(unsupportedBlocker.supportsDelete, false);
+  assert.match(unsupportedBlocker.reason, /does not support delete mutations/);
+  assert.equal(unsupportedBlocker.change.localChange, 'delete');
+  assert.equal(unsupportedBlocker.change.remoteChange, 'unchanged');
+
+  const supportedLocal = cloneJson(base);
+  delete supportedLocal.db.wp_options['option_name:forms_settings'];
+  supportedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option', { supportsDelete: true }),
+    ),
+  };
+  const supportedRemote = cloneJson(base);
+  const supportedPlan = planFor(base, supportedLocal, supportedRemote);
+  const supportedMutation = mutationFor(supportedPlan, resourceKey);
+  const supportedResult = applyPlan(supportedRemote, supportedPlan);
+
+  assert.equal(supportedPlan.status, 'ready');
+  assert.equal(supportedMutation.action, 'delete');
+  assert.equal(supportedMutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(supportedMutation.pluginOwnedResource.supportsDelete, true);
+  assert.equal(
+    Object.hasOwn(supportedResult.site.db.wp_options, 'option_name:forms_settings'),
+    false,
+  );
+  assert.equal(supportedResult.site.plugins.forms.active, true);
+
+  const forgedUnsupportedPlan = tamperReadyPlan(unsupportedPlan, (plan) => {
+    plan.mutations = [
+      {
+        id: 'mutation-forged-delete-without-support',
+        resource: rowResource,
+        resourceKey,
+        action: 'delete',
+        value: { absent: true },
+        remoteBeforeHash: resourceHash(unsupportedRemote, rowResource),
+        baseHash: resourceHash(base, rowResource),
+        localHash: resourceHash(unsupportedLocal, rowResource),
+        changeKind: 'delete',
+        change: {
+          localChange: 'delete',
+          remoteChange: 'unchanged',
+        },
+        pluginOwnedResource: {
+          pluginOwner: 'forms',
+          driver: 'wp-option',
+          policySource: 'local-snapshot',
+          supportsDelete: false,
+          ownerContext: unsupportedBlocker.ownerContext || [],
+          ownerContextRequired: false,
+        },
+      },
+    ];
+    plan.preconditions = [
+      {
+        mutationId: 'mutation-forged-delete-without-support',
+        resource: rowResource,
+        resourceKey,
+        expectedHash: resourceHash(unsupportedRemote, rowResource),
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    plan.summary.mutations = 1;
+    plan.summary.blockers = 0;
+  });
+  const forgedRemote = cloneJson(base);
+  const forgedRemoteBefore = JSON.stringify(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedUnsupportedPlan));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.deepEqual(forgedError.details, {
+    mutationId: 'mutation-forged-delete-without-support',
+    resourceKey,
+    pluginOwner: 'forms',
+    driver: 'wp-option',
+    supportsDelete: false,
+  });
+  assert.equal(JSON.stringify(forgedRemote), forgedRemoteBefore);
+
+  const evidence = {
+    rpp: 'RPP-0436',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    unsupportedDelete: {
+      status: unsupportedPlan.status,
+      blockerClass: unsupportedBlocker.class,
+      driver: unsupportedBlocker.driver,
+      supportsDelete: unsupportedBlocker.supportsDelete,
+      blockerHash: sha256Evidence(unsupportedBlocker),
+    },
+    supportedDelete: {
+      status: supportedPlan.status,
+      action: supportedMutation.action,
+      driver: supportedMutation.pluginOwnedResource.driver,
+      supportsDelete: supportedMutation.pluginOwnedResource.supportsDelete,
+      mutationHash: sha256Evidence(supportedMutation),
+      appliedRowHash: `sha256:${resourceHash(supportedResult.site, rowResource)}`,
+    },
+    forgedExecutorRefusal: {
+      code: forgedError.code,
+      detailsHash: sha256Evidence(forgedError.details),
+      remoteHashBefore: sha256Evidence(JSON.parse(forgedRemoteBefore)),
+      remoteHashAfter: sha256Evidence(forgedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    unsupportedDelete: evidence.unsupportedDelete,
+    supportedDelete: evidence.supportedDelete,
+    forgedExecutorRefusal: evidence.forgedExecutorRefusal,
+  });
+
+  assert.equal(
+    evidence.forgedExecutorRefusal.remoteHashAfter,
+    evidence.forgedExecutorRefusal.remoteHashBefore,
+  );
+  assert.match(evidence.unsupportedDelete.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.supportedDelete.mutationHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.supportedDelete.appliedRowHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.forgedExecutorRefusal.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(unsupportedBlocker).includes(privateOptionValue), false);
+  assert.equal(JSON.stringify(evidence).includes(privateOptionValue), false);
 });
 
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {

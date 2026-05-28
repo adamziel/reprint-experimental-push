@@ -211,9 +211,10 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
     }
 
     const driver = mutation.pluginOwnedResource?.driver || null;
+    const supportsDelete = mutation.pluginOwnedResource?.supportsDelete === true;
     const supported = mutation.pluginOwnedResource?.pluginOwner === owner
       && isActivePluginOwnerPresent(remote, owner, plan)
-      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue);
+      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue, supportsDelete);
     if (!supported) {
       throw new PushPlanError(
         'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
@@ -223,6 +224,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
           resourceKey: mutation.resourceKey,
           pluginOwner: owner,
           driver,
+          supportsDelete,
         },
       );
     }
@@ -267,7 +269,10 @@ function pluginOwnedOwner(value) {
   return value.__pluginOwner || null;
 }
 
-function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
+function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue, supportsDelete) {
+  if ((plannedValue === ABSENT || mutation.action === 'delete') && supportsDelete !== true) {
+    return false;
+  }
   if (driver === 'wp-option') {
     return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options';
   }

@@ -36,3 +36,31 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+
+## RPP-0436 driver delete support flag
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0436|plugin-owned option rows|fixture forms lab table delete|custom table plans' test/push-planner.test.js
+```
+
+The RPP-0436 proof covers the exact plugin-driver delete support flag contract:
+
+- a plugin-owned `wp_options` row delete with `supportsDelete: false` is blocked
+  before planning a mutation, preserving `driver: wp-option`,
+  `supportsDelete: false`, and a hash-only blocker;
+- the same delete with `supportsDelete: true` is ready, emits a delete mutation
+  whose plugin-owned metadata preserves `supportsDelete: true`, and applies by
+  removing only the planned row while keeping the owner plugin active;
+- a forged ready plan that carries a delete mutation with
+  `supportsDelete: false` is rejected before mutation with
+  `UNSUPPORTED_PLUGIN_OWNED_RESOURCE`, and the before/after remote hashes are
+  identical.
+
+The executor now also validates delete support from the mutation metadata, so a
+forged plan cannot bypass the planner's fail-closed delete-support check. The
+proof stores only `sha256:` hashes for the blocker, supported mutation,
+executor error details, remote preservation, applied absent row, and combined
+proof, and asserts the private option value is absent from both blocker and
+proof JSON. This is local focused evidence, not production-backed evidence.
