@@ -1,4 +1,16 @@
+const arbitraryPluginFixturePackageBoundary = Object.freeze({
+  plugin: 'driver-fixture/driver-fixture.php',
+  driver: 'fixture-arbitrary-plugin-table',
+  pluginOwner: 'driver-fixture',
+  table: 'wp_reprint_push_driver_fixture',
+  resourceKey: 'row:[\"wp_reprint_push_driver_fixture\",\"entry_id:1\"]',
+  scenario: 'driver-receipt-guards',
+});
+
 const scenarioGroups = {
+  'arbitrary-plugin-fixture-package': [
+    'driver-receipt-guards',
+  ],
   'driver-verifier-guards': [
     'driver-receipt-guards',
     'driver-missing-export-guard',
@@ -65,6 +77,48 @@ const knownScenarioNames = new Set([
   ...Object.keys(scenarioGroups),
 ]);
 
+export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
+  const guard = summary.driverReceiptRevokedCredentialGuard
+    || summary.packagedRevokedCredentialGuard
+    || {};
+  const rowRetainedAfterReject = guard.rowRetainedAfterReject === true;
+  const remoteDataPreserved = rowRetainedAfterReject
+    && guard.updatedMarkerAfterReject === 'base'
+    && guard.payloadModeAfterReject === 'base';
+  const applyRejectedCode = typeof guard.applyRejectedCode === 'string' && guard.applyRejectedCode
+    ? guard.applyRejectedCode
+    : null;
+  const checked = remoteDataPreserved && Boolean(applyRejectedCode);
+
+  return {
+    plugin: arbitraryPluginFixturePackageBoundary.plugin,
+    driver: arbitraryPluginFixturePackageBoundary.driver,
+    pluginOwner: arbitraryPluginFixturePackageBoundary.pluginOwner,
+    table: arbitraryPluginFixturePackageBoundary.table,
+    resourceKey: arbitraryPluginFixturePackageBoundary.resourceKey,
+    scenario: arbitraryPluginFixturePackageBoundary.scenario,
+    proofKind: 'arbitrary-plugin-fixture-package',
+    sourceKind: 'local-playground',
+    productionBacked: false,
+    supportOnly: true,
+    checked,
+    remoteDataPreserved,
+    acceptedForReleaseGate: false,
+    releaseGate: {
+      status: 'NO-GO',
+      verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      note: 'arbitrary plugin fixture package proof is local/support-only; production-backed release gate evidence is still required',
+    },
+    revokedCredentialGuard: {
+      resourceKey: typeof guard.resourceKey === 'string' ? guard.resourceKey : arbitraryPluginFixturePackageBoundary.resourceKey,
+      applyRejectedCode,
+      rowRetainedAfterReject,
+      updatedMarkerAfterReject: guard.updatedMarkerAfterReject || null,
+      payloadModeAfterReject: guard.payloadModeAfterReject || null,
+    },
+  };
+}
+
 export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
   const explicitArg = argv.find((arg) => arg.startsWith('--scenario='));
   const rawValue = explicitArg ? explicitArg.slice('--scenario='.length) : envValue;
@@ -90,4 +144,4 @@ export function parseProductionPluginPackageSelectedScenarios(argv, envValue) {
   return new Set(expandedNames);
 }
 
-export { scenarioGroups, scenarioNames };
+export { arbitraryPluginFixturePackageBoundary, scenarioGroups, scenarioNames };

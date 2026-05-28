@@ -15,7 +15,10 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
-import { parseProductionPluginPackageSelectedScenarios } from './production-plugin-package-scenarios.js';
+import {
+  parseProductionPluginPackageSelectedScenarios,
+  summarizeArbitraryPluginFixturePackageEvidence,
+} from './production-plugin-package-scenarios.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -293,6 +296,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     routes: {},
     cli: {},
     driverReceiptRevokedCredentialGuard: {},
+    arbitraryPluginFixturePackage: summarizeArbitraryPluginFixturePackageEvidence(),
     final: {},
   };
 
@@ -682,6 +686,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     };
   });
 
+  summary.arbitraryPluginFixturePackage = summarizeArbitraryPluginFixturePackageEvidence(summary);
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
