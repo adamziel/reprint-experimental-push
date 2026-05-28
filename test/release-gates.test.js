@@ -1,0 +1,270 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  RELEASE_GATE_DEFINITIONS,
+  evaluateReleaseGates,
+  formatReleaseGateStatusMarker,
+  releaseGateSummary,
+} from '../src/release-gates.js';
+
+const fixedNow = new Date('2026-05-28T00:00:00.000Z');
+const sourceUrl = 'https://source.example.test/push';
+const localUrl = 'https://local.example.test/push';
+const remoteChangedUrl = 'https://changed.example.test/push';
+
+function releaseEnv(overrides = {}) {
+  return {
+    REPRINT_PUSH_SOURCE_URL: sourceUrl,
+    REPRINT_PUSH_LOCAL_URL: localUrl,
+    REPRINT_PUSH_REMOTE_CHANGED_URL: remoteChangedUrl,
+    ...overrides,
+  };
+}
+
+function completeEvidence(scope = 'final-release', overrides = {}) {
+  return {
+    packagedFallback: { ok: true, observed: false, scope },
+    authSourceCommandReadback: {
+      ok: true,
+      issuedSourceUrl: sourceUrl,
+      readbackSourceUrl: sourceUrl,
+      command: 'node ./scripts/playground/auth-session-source-command.js',
+      scope,
+    },
+    productionSecret: { ok: true, present: true, observed: 'production-credential-present', scope },
+    applicationPasswordCredentialBinding: { ok: true, bound: true, observed: 'bound-to-source-url', scope },
+    manageOptionsCapability: { ok: true, hasManageOptions: true, observed: 'manage_options', scope },
+    sourceIdentity: { ok: true, same: true, observed: 'same-source-url', scope },
+    preflightRouteIdentity: { ok: true, sameRoute: true, observed: '/reprint-push/v1/preflight', scope },
+    dryRunRouteEligibility: { ok: true, eligible: true, observed: '/reprint-push/v1/dry-run', scope },
+    applyRoutePreMutation: { ok: true, preMutation: true, observed: 'rejected-before-mutation', scope },
+    journalRouteReadOnly: { ok: true, readOnly: true, observed: 'journal-read-only', scope },
+    recoveryInspectReadOnly: { ok: true, readOnly: true, observed: 'inspect-read-only', scope },
+    tmuxStatusMarker: {
+      ok: true,
+      marker: scope === 'final-release'
+        ? '[release-gates:release-ready final=20/20 candidate=20/20 reason=OK]'
+        : '[release-gates:candidate-for-review final=0/20 candidate=20/20 reason=LOCAL_CANDIDATE_EVIDENCE_ONLY]',
+      scope,
+    },
+    progressReleaseTimestamp: { iso: fixedNow.toISOString(), scope },
+    agentsReleaseGateStatusRow: { ok: true, present: true, state: scope, scope },
+    verifyReleaseFailure: {
+      ok: true,
+      exitCode: 1,
+      reason: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+      scope,
+    },
+    ...overrides,
+  };
+}
+
+function gateById(evaluation, id) {
+  const gate = evaluation.gates.find((entry) => entry.id === id);
+  assert.ok(gate, `missing gate ${id}`);
+  return gate;
+}
+
+test('release gate definitions are machine-readable and cover the near release-gate foundation items', () => {
+  assert.equal(RELEASE_GATE_DEFINITIONS.length, 20);
+  assert.deepEqual(
+    RELEASE_GATE_DEFINITIONS.slice(0, 5).map((gate) => gate.rpp),
+    ['RPP-0001', 'RPP-0002', 'RPP-0003', 'RPP-0004', 'RPP-0005'],
+  );
+  assert.deepEqual(
+    RELEASE_GATE_DEFINITIONS.slice(-5).map((gate) => gate.rpp),
+    ['RPP-0016', 'RPP-0017', 'RPP-0018', 'RPP-0019', 'RPP-0020'],
+  );
+});
+
+test('missing topology URLs fail closed with exact missing evidence objects', () => {
+  const evaluation = evaluateReleaseGates({
+    env: {},
+    evidence: {},
+    scope: 'final-release',
+    now: fixedNow,
+  });
+
+  assert.equal(evaluation.status, 'held');
+  assert.equal(evaluation.releaseMovement.allowed, false);
+  assert.equal(evaluation.releaseMovement.state, 'held');
+  assert.equal(evaluation.releaseMovement.reason, 'REPRINT_PUSH_SOURCE_URL is required before release gates can run preflight, dry-run, apply, or recovery.');
+
+  assert.deepEqual(gateById(evaluation, 'source-url').evidence, {
+    required: 'REPRINT_PUSH_SOURCE_URL',
+    observed: 'missing-live-source',
+    envKey: 'REPRINT_PUSH_SOURCE_URL',
+    scope: 'missing',
+  });
+  assert.deepEqual(gateById(evaluation, 'local-url').evidence, {
+    required: 'REPRINT_PUSH_LOCAL_URL',
+    observed: 'missing-local-edited-site',
+    envKey: 'REPRINT_PUSH_LOCAL_URL',
+    scope: 'missing',
+  });
+  assert.deepEqual(gateById(evaluation, 'remote-changed-url').evidence, {
+    required: 'REPRINT_PUSH_REMOTE_CHANGED_URL',
+    observed: 'missing-remote-changed-source',
+    envKey: 'REPRINT_PUSH_REMOTE_CHANGED_URL',
+    scope: 'missing',
+  });
+});
+
+test('packaged production-plugin fallback is rejected even when every other gate has evidence', () => {
+  const evaluation = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release'),
+    packagedFallback: true,
+    scope: 'final-release',
+    now: fixedNow,
+  });
+
+  const gate = gateById(evaluation, 'packaged-fallback');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED');
+  assert.deepEqual(gate.evidence, {
+    required: 'non-packaged REPRINT_PUSH_SOURCE_URL',
+    observed: 'packaged-production-plugin-fallback',
+    scope: 'final-release',
+  });
+  assert.equal(evaluation.releaseMovement.allowed, false);
+  assert.equal(evaluation.releaseMovement.finalGates, '19/20');
+  assert.equal(evaluation.releaseMovement.reason, 'Packaged production-plugin fallback is support evidence only and cannot move release gates.');
+});
+
+test('wrong remote alias rejection holds release movement without weakening other evidence', () => {
+  const evaluation = evaluateReleaseGates({
+    env: releaseEnv({ REPRINT_PUSH_REMOTE_URL: 'https://wrong.example.test/push/' }),
+    evidence: completeEvidence('final-release'),
+    scope: 'final-release',
+    now: fixedNow,
+  });
+
+  const gate = gateById(evaluation, 'remote-alias');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'REPRINT_PUSH_SOURCE_URL_MISMATCH');
+  assert.deepEqual(gate.evidence, {
+    required: sourceUrl,
+    observed: 'https://wrong.example.test/push/',
+    envKey: 'REPRINT_PUSH_REMOTE_URL',
+    sourceEnvKey: 'REPRINT_PUSH_SOURCE_URL',
+    scope: 'final-release',
+  });
+  assert.equal(evaluation.releaseMovement.allowed, false);
+  assert.equal(evaluation.releaseMovement.finalGates, '19/20');
+  assert.equal(evaluation.releaseMovement.missingEvidence.length, 1);
+});
+
+
+test('auth source command readback drift is a named blocking gate', () => {
+  const evaluation = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      authSourceCommandReadback: {
+        ok: false,
+        issuedSourceUrl: sourceUrl,
+        readbackSourceUrl: 'https://forged.example.test/push',
+        scope: 'final-release',
+      },
+    }),
+    scope: 'final-release',
+    now: fixedNow,
+  });
+
+  const gate = gateById(evaluation, 'auth-source-readback');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
+  assert.equal(gate.reason, 'Auth source command readback drifted from the checked live source URL.');
+  assert.deepEqual(gate.evidence, {
+    required: sourceUrl,
+    observed: 'https://forged.example.test/push',
+    issuedSourceUrl: sourceUrl,
+    readbackSourceUrl: 'https://forged.example.test/push',
+    scope: 'final-release',
+  });
+  assert.equal(evaluation.releaseMovement.allowed, false);
+});
+
+test('source URL without production credentials fails at the explicit missing-secret gate', () => {
+  const evidence = completeEvidence('final-release');
+  delete evidence.productionSecret;
+
+  const evaluation = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence,
+    scope: 'final-release',
+    now: fixedNow,
+  });
+
+  const gate = gateById(evaluation, 'production-secret');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'REPRINT_PUSH_SECRET_REQUIRED');
+  assert.equal(
+    gate.reason,
+    'A live source URL is present but production credentials or an auth session source command are missing.',
+  );
+  assert.deepEqual(gate.evidence, {
+    required: [
+      'REPRINT_PUSH_USERNAME + REPRINT_PUSH_APPLICATION_PASSWORD',
+      'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+    ],
+    observed: 'missing-production-credentials',
+    sourceUrl,
+    scope: 'final-release',
+  });
+  assert.equal(evaluation.releaseMovement.allowed, false);
+});
+
+test('local candidate evidence can be complete while final release readiness remains held', () => {
+  const candidate = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence: completeEvidence('local-candidate'),
+    scope: 'local-candidate',
+    now: fixedNow,
+  });
+
+  assert.equal(candidate.status, 'candidate-for-review');
+  assert.equal(candidate.candidateMovement.allowed, true);
+  assert.equal(candidate.candidateMovement.gates, '20/20');
+  assert.equal(candidate.releaseMovement.allowed, false);
+  assert.equal(candidate.releaseMovement.gates, 'candidate-for-review');
+  assert.equal(candidate.releaseMovement.finalGates, '0/20');
+  assert.equal(candidate.releaseMovement.candidateGates, '20/20');
+  assert.equal(
+    candidate.releaseMovement.reason,
+    'local candidate evidence is complete, but final release evidence is still required; release hold remains fail-closed',
+  );
+  assert.equal(candidate.releaseMovement.missingEvidence.length, 20);
+  assert.ok(candidate.releaseMovement.missingEvidence.every((entry) => entry.status === 'candidate'));
+
+  const final = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release'),
+    scope: 'final-release',
+    now: fixedNow,
+  });
+
+  assert.equal(final.status, 'release-ready');
+  assert.equal(final.releaseMovement.allowed, true);
+  assert.equal(final.releaseMovement.gates, '20/20');
+  assert.equal(final.releaseMovement.missingEvidence.length, 0);
+});
+
+test('status marker and summary expose a concise fail-closed machine-readable verdict', () => {
+  const evaluation = evaluateReleaseGates({
+    env: {},
+    evidence: {},
+    scope: 'final-release',
+    now: fixedNow,
+  });
+  const marker = formatReleaseGateStatusMarker(evaluation);
+  const summary = releaseGateSummary(evaluation);
+
+  assert.match(
+    marker,
+    /^\[release-gates:held final=\d+\/20 candidate=\d+\/20 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED\]$/,
+  );
+  assert.equal(summary.status, 'held');
+  assert.equal(summary.releaseMovement.allowed, false);
+  assert.ok(summary.missingEvidence.some((entry) => entry.rpp === 'RPP-0002'));
+});
