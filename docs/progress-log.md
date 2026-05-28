@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:58 CEST.
+- Last update: 2026-05-28 06:02 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `87f53b06f` (`test: prove verify release failure reason`).
+  `3bd9dc676` (`docs: refresh progress for verify release failure proof`). The newest
+  behavioral proof on the lane is `87f53b06f` (`test: prove verify release
+  failure reason`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -127,11 +129,20 @@ linked implementation artifacts.
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+  `rpp-29`, `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`, integrator `rpp-28`,
+  critics `rpp-31` and `rpp-37`, progress reporter `rpp-36`, integration-prep
+  `rpp-35`, visible supervisor `rpp-orchestrator`, `rpp-ao-lifecycle`
+  lightweight registry watchdog PID `2142025`, and `rpp-ao-web` serving the AO
+  dashboard on local port 8080.
+- Queued/session-only inventory from lane truth: integrated evidence is now
+  `3bd9dc676` with 109 checked and 891 open, including `RPP-0040`. Queued or
+  pushed session refs `RPP-0041` @ `746390195`, `RPP-0042` @ `50a4f74b1`,
+  `RPP-0043` @ `bd7eddedb`, `RPP-0113` @ `1428cfb9b`, `RPP-0216` @
+  `311d3b553`, `RPP-0217` @ `0353945a9`, `RPP-0218` @ `50b86455c`,
+  `RPP-0219` @ `5edc2c34f`, `RPP-0315` @ `aaa3328b3`, `RPP-0322` @
+  `6c54eea48`, and `RPP-0421` @ `e9c94906d` are not counted. Active local
+  branches `RPP-0044`, `RPP-0115`, `RPP-0323`, `RPP-0415`, and `RPP-0425` are
+  also not counted.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing

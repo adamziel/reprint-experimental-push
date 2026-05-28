@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:58 CEST
+Last updated: 2026-05-28 06:02 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:02 CEST - Queue Refresh After RPP-0040 Integration
+
+- Going well: origin/lane is confirmed at `3bd9dc676`, the progress-document
+  refresh on top of the `87f53b06f` `RPP-0040` verify-release failure proof.
+  The lane checklist reports 109 verified items checked and 891 open, and
+  release status remains `NO-GO`.
+- Queued/session-only separation: `RPP-0040` is now counted only because it is
+  integrated on origin/lane. `RPP-0041`, `RPP-0042`, `RPP-0043`, `RPP-0113`,
+  `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0315`, `RPP-0322`, and
+  `RPP-0421` have visible session refs; `RPP-0044`, `RPP-0115`, `RPP-0323`,
+  `RPP-0415`, and `RPP-0425` are active local branches. None of those move the
+  lane counts in this feedback entry.
+- Live roster: tmux shows developer work in `rpp-24`, `rpp-25`, `rpp-29`,
+  `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`, critic lanes `rpp-31` and
+  `rpp-37`, progress reporter `rpp-36`, integrator `rpp-28`, integration-prep
+  `rpp-35`, and the local AO lifecycle/web/supervisor panes.
+- Current nudge: keep integrating one tested candidate at a time from the latest
+  origin/lane head; if origin/lane moves again, refresh counts from the new
+  lane head before changing progress surfaces.
 
 ## 2026-05-28 05:58 CEST - RPP-0040 Integrated
 
