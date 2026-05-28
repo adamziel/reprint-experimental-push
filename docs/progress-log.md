@@ -6,7 +6,7 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 23:31 CEST.
+- Last update: 2026-05-28 23:33 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
@@ -159,6 +159,15 @@ linked implementation artifacts.
   the 620 deterministic generated cases, proving ready plus non-ready model
   evidence for plugin-owned custom-table changes with redacted custom-table
   payload metadata and a documented invariant/surface.
+- Auxiliary file-backed journal schema migration refresh: the current lane now
+  contains file-backed migration support and evidence toward `RPP-0601` in
+  `src/recovery-journal.js`, `test/recovery-journal.test.js`, and
+  `docs/evidence/rpp-0601-journal-table-schema-migration.md`. Validation
+  observed `node --test test/recovery-journal.test.js` at 22 pass / 0 fail,
+  `npm run test:recovery:file-journal` exit 0, and source/test syntax checks.
+  `RPP-0601` remains unchecked because the checklist success text requires
+  MySQL or SQLite-backed journal table migration proof. Counts stay 228/772;
+  final release remains `NO-GO`.
 - Focused plugin-driver registration API refresh: the current lane now contains
   `RPP-0401` evidence in `docs/evidence/rpp-0401-driver-registration-api.md`
   and `test/plugin-driver-registration-api.test.js`. The command `node

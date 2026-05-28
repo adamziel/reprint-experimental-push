@@ -1,8 +1,14 @@
-# RPP-0601 journal table schema migration evidence
+# RPP-0601 file-backed journal schema migration evidence
 
 Date: 2026-05-28
 Issue: RPP-0601
 Lane: journal-recovery
+
+## Integrator scope note
+
+This is auxiliary file-backed migration evidence toward `RPP-0601`. The
+`RPP-0601` checklist item remains unchecked because the checklist success
+wording requires a MySQL or SQLite-backed journal table migration test.
 
 ## Proof added
 
@@ -39,4 +45,6 @@ node --test test/recovery-journal.test.js
 npm run test:recovery:file-journal
 ```
 
-Both focused checks passed in this worktree after the migration patch.
+Integrator validation on the lane observed `node --test test/recovery-journal.test.js`
+at 22 pass / 0 fail and `npm run test:recovery:file-journal` exit 0 after the
+migration patch.

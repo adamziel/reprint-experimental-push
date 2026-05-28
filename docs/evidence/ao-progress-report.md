@@ -1,10 +1,10 @@
-# AO Progress Report - 2026-05-28 23:31 CEST
+# AO Progress Report - 2026-05-28 23:33 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0401 driver registration API
-plugin-driver refresh. It separates
+`lane/evidence-integration-20260527` through the current RPP-0601 auxiliary file-backed journal
+migration refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -13,6 +13,11 @@ progress.
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
   near-to-far `RPP-0001` through `RPP-1000` items. After this update, 228 are
   checked from integrated evidence and 772 remain open.
+- Auxiliary file-backed journal migration evidence was integrated toward
+  `RPP-0601`. `node --test test/recovery-journal.test.js` observed 22 pass /
+  0 fail, `npm run test:recovery:file-journal` exited 0, and syntax checks
+  held. `RPP-0601` remains unchecked because checklist success requires MySQL
+  or SQLite-backed journal table migration proof.
 - Focused plugin-driver registration API evidence now checks `RPP-0401`.
   `node --test --test-name-pattern 'RPP-0401|plugin-owned row driver
   registration API' test/plugin-driver-registration-api.test.js` passed 3/3,
@@ -1224,6 +1229,8 @@ Checked IDs in this report are:
 - `node --test test/release-gate-manage-options-capability-regression.test.js` — 3 pass / 0 fail for the RPP-0029 manage_options variant-2 scenario matrix plus RPP-0069 regression coverage.
 - `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.
+- `node --test test/recovery-journal.test.js` — 22 pass / 0 fail for RPP-0601 auxiliary file-backed journal schema migration plus existing recovery journal coverage; RPP-0601 remains unchecked pending MySQL or SQLite-backed table proof.
+- `npm run test:recovery:file-journal` — exit 0 for RPP-0601 auxiliary file-backed restart smoke; RPP-0601 remains unchecked pending MySQL or SQLite-backed table proof.
 - `node --test --test-name-pattern 'RPP-0401|plugin-owned row driver registration API' test/plugin-driver-registration-api.test.js` — 3 pass / 0 fail for RPP-0401 focused driver registration API behavior, fail-closed duplicate/malformed registration, lookup, and audit redaction evidence.
 - `node --test --test-name-pattern='RPP-0201|RPP-0221' test/push-planner.test.js test/generated-push-harness.test.js` — 3 pass / 0 fail for RPP-0201 focused/generated independent local-file plus remote-row merge invariant evidence and existing RPP-0221 regression coverage.
 - `node --test --test-name-pattern 'RPP-0115' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 37 full generated-harness passes / 0 fail for RPP-0115 plugin-owned custom-table variant-1 generated/model evidence.
