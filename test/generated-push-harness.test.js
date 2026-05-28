@@ -9,6 +9,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { enumerateResources, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -130,6 +131,78 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0234 generated already-in-sync decisions emit no mutations or preconditions', () => {
+  const cases = generatePushHarnessCases().filter((testCase) => testCase.tags.has('already-in-sync'));
+  const evidence = [];
+
+  assert.ok(cases.length > 0, 'missing generated already-in-sync cases');
+  for (const testCase of cases) {
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+    const preconditionKeys = new Set(plan.preconditions.map((precondition) => precondition.resourceKey));
+    const syncedResources = enumerateResources(testCase.base, testCase.local, testCase.remote)
+      .filter((resource) => {
+        const baseHash = resourceHash(testCase.base, resource);
+        const localHash = resourceHash(testCase.local, resource);
+        const remoteHash = resourceHash(testCase.remote, resource);
+        return localHash === remoteHash && localHash !== baseHash;
+      });
+
+    if (syncedResources.length === 0) {
+      continue;
+    }
+    for (const resource of syncedResources) {
+      const baseHash = resourceHash(testCase.base, resource);
+      const localHash = resourceHash(testCase.local, resource);
+      const decision = plan.decisions.find((entry) => entry.resourceKey === resource.key);
+
+      assert.equal(decision?.decision, 'already-in-sync', `${testCase.id} ${resource.key}`);
+      assert.equal(decision.baseHash, baseHash, `${testCase.id} ${resource.key} baseHash`);
+      assert.equal(decision.localHash, localHash, `${testCase.id} ${resource.key} localHash`);
+      assert.equal(mutationKeys.has(resource.key), false, `${testCase.id} mutated ${resource.key}`);
+      assert.equal(preconditionKeys.has(resource.key), false, `${testCase.id} preconditioned ${resource.key}`);
+    }
+
+    evidence.push({
+      id: testCase.id,
+      family: testCase.family,
+      status: plan.status,
+      summary: plan.summary,
+      syncedResources: syncedResources.map((resource) => {
+        const decision = plan.decisions.find((entry) => entry.resourceKey === resource.key);
+        return {
+          resourceKey: resource.key,
+          decision: decision.decision,
+          baseHash: decision.baseHash,
+          localHash: decision.localHash,
+          remoteHash: decision.change.remote.hash,
+          localChange: decision.change.localChange,
+          remoteChange: decision.change.remoteChange,
+        };
+      }),
+    });
+  }
+
+  assert.ok(evidence.length > 0, 'missing generated already-in-sync evidence');
+
+  const envelope = {
+    command: 'node --test --test-name-pattern=RPP-0234 test/generated-push-harness.test.js',
+    caveat: 'Generated local planner proof only; release remains gated separately.',
+    cases: evidence,
+    evidenceHash: `sha256:${digest(evidence)}`,
+  };
+  const serialized = JSON.stringify(envelope);
+
+  assert.match(envelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(serialized.includes('Shared independent'), false);
+  assert.equal(serialized.includes('Ready same content'), false);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

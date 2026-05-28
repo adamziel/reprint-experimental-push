@@ -257,6 +257,52 @@ function plannerSummaryEvidenceEnvelope(plan) {
   };
 }
 
+function rpp0234AlreadyInSyncEvidence(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      reason: decision.reason,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash,
+      remoteHash: decision.remoteHash || decision.localHash,
+      change: {
+        localChange: decision.change.localChange,
+        remoteChange: decision.change.remoteChange,
+        base: {
+          state: decision.change.base.state,
+          hash: decision.change.base.hash,
+        },
+        local: {
+          state: decision.change.local.state,
+          hash: decision.change.local.hash,
+        },
+        remote: {
+          state: decision.change.remote.state,
+          hash: decision.change.remote.hash,
+        },
+      },
+    })),
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+  };
+}
+
 function pluginOwnerContextHashEvidenceEnvelope(plan) {
   return {
     status: plan.status,
@@ -678,6 +724,75 @@ test('recognizes matching independent file edits as already in sync', () => {
   assert.equal(decision.decision, 'already-in-sync');
   assert.equal(decision.change.localChange, 'update');
   assert.equal(decision.change.remoteChange, 'update');
+});
+
+test('RPP-0234 already-in-sync decisions are hash-only and emit no mutations', () => {
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const alreadySyncResourceKeys = [
+    'file:index.php',
+    'plugin:forms',
+    'row:["wp_posts","ID:1"]',
+  ];
+  const privateValues = [
+    '<?php echo "rpp0234-shared-private-file";',
+    'rpp0234-shared-private-row-title',
+    'rpp0234-local-private-blogname-mutation',
+  ];
+
+  local.files['index.php'] = privateValues[0];
+  remote.files['index.php'] = privateValues[0];
+  local.plugins.forms = { version: '2.3.4', active: true };
+  remote.plugins.forms = { version: '2.3.4', active: true };
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  remote.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:blogname'].option_value = privateValues[2];
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(cloneJson(remote), plan);
+  const evidence = rpp0234AlreadyInSyncEvidence(plan);
+  const serializedEvidence = JSON.stringify(evidence);
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.summary, {
+    mutations: 1,
+    decisions: 3,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.equal(plan.preconditions.length, plan.mutations.length);
+  assert.equal(mutationFor(plan, 'row:["wp_options","option_name:blogname"]').action, 'put');
+
+  for (const resourceKey of alreadySyncResourceKeys) {
+    const decision = decisionFor(plan, resourceKey);
+    assert.equal(decision.decision, 'already-in-sync', `${resourceKey} decision`);
+    assert.equal(decision.localHash, decision.change.local.hash, `${resourceKey} local hash evidence`);
+    assert.equal(decision.localHash, decision.change.remote.hash, `${resourceKey} remote hash evidence`);
+    assert.notEqual(decision.localHash, decision.baseHash, `${resourceKey} changed from base`);
+    assert.equal(mutationFor(plan, resourceKey), undefined, `${resourceKey} emitted mutation`);
+    assert.equal(
+      plan.preconditions.some((precondition) => precondition.resourceKey === resourceKey),
+      false,
+      `${resourceKey} emitted precondition`,
+    );
+  }
+
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.files['index.php'], privateValues[0]);
+  assert.deepEqual(result.site.plugins.forms, { version: '2.3.4', active: true });
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, privateValues[1]);
+  assert.equal(result.site.db.wp_options['option_name:blogname'].option_value, privateValues[2]);
+
+  for (const decision of evidence.decisions) {
+    assert.match(decision.baseHash, /^[a-f0-9]{64}$/);
+    assert.match(decision.localHash, /^[a-f0-9]{64}$/);
+    assert.match(decision.remoteHash, /^[a-f0-9]{64}$/);
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(serializedEvidence.includes(privateValue), false, `already-in-sync evidence leaked ${privateValue}`);
+  }
 });
 
 test('preserves remote-only plugin changes', () => {
