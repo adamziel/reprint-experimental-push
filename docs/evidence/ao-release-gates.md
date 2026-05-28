@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0028, plus RPP-0030 through RPP-0061, plus RPP-0062 through RPP-0076. RPP-0029 remains open until a variant-2 manage_options scenario-matrix proof is linked.
+Primary checklist range: RPP-0001 through RPP-0076.
 
 ## What changed
 
@@ -41,6 +41,7 @@ Primary checklist range: RPP-0001 through RPP-0028, plus RPP-0030 through RPP-00
 | RPP-0026 | Evidence toward variant-2 auth source command readback drift now runs the `check-release-gates` command from a fixture evidence file and asserts exit `1`, `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, exact drift evidence, and `mutationAttempted: false`. |
 | RPP-0027 | Evidence toward variant-2 missing production secret proof now runs `check-release-gates` with live source/local/remote topology present, omits production credentials and auth-session source evidence, and asserts exact `REPRINT_PUSH_SECRET_REQUIRED` evidence before mutation. |
 | RPP-0028 | Evidence toward variant-2 Application Password credential binding now runs `check-release-gates` from a fixture evidence file and asserts exit `1`, `APPLICATION_PASSWORD_BINDING_REQUIRED`, exact binding-drift evidence, and `mutationAttempted: false`. |
+| RPP-0029 | Evidence toward variant-2 manage_options capability proof now records an explicit negative/positive scenario matrix: subscriber evidence fails with `MANAGE_OPTIONS_CAPABILITY_REQUIRED`, admin evidence passes the gate while release remains `NO-GO` without provenance, and both command paths record `mutationAttempted: false`. |
 | RPP-0030 | Evidence toward variant-2 same source URL identity now records exact same-source drift evidence and proves the final bracketed status marker reports `SAME_SOURCE_IDENTITY_REQUIRED`; the CLI path exits `1` with `mutationAttempted: false`. |
 | RPP-0031 | Evidence toward variant-2 preflight route identity now runs `check-release-gates` from a fixture evidence file and asserts exit `1`, `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact wrong-route evidence, and `mutationAttempted: false`. |
 | RPP-0032 | Evidence toward variant-2 dry-run route eligibility now runs `check-release-gates` from a fixture evidence file and asserts exit `1`, `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, exact rejection evidence, and `mutationAttempted: false`. |
@@ -75,13 +76,23 @@ node --test test/release-gate-same-source-identity-regression.test.js test/relea
 
 Observed status: pass, 43 tests.
 
+Focused manage_options variant-2 scenario-matrix refresh:
+
+```sh
+node --test test/release-gate-manage-options-capability-regression.test.js
+```
+
+Observed status: pass, 3 tests. This checks RPP-0029 with explicit subscriber
+denial and admin approval paths while preserving final release `NO-GO` without
+provenance.
+
 Expanded release-gate evidence-count refresh:
 
 ```sh
 node --test test/release-gates.test.js test/release-gate-source-url-generated.test.js test/release-gate-local-url-generated.test.js test/release-gate-remote-changed-url-generated.test.js test/release-gate-packaged-fallback-generated.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-gate-auth-source-readback-generated.test.js test/release-gate-missing-production-secret-generated.test.js test/release-gate-application-password-binding-generated.test.js test/release-gate-manage-options-generated.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gate-apply-route-pre-mutation-generated.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-recovery-inspect-read-only-generated.test.js test/release-gate-release-movement-summary-generated.test.js test/release-gate-tmux-status-marker-generated.test.js test/release-gate-status-row-generated.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 72 tests. This refresh checks RPP-0027, RPP-0041
+Observed status: pass, 73 tests. This refresh checks RPP-0027, RPP-0029, RPP-0041
 through RPP-0049, RPP-0052 through RPP-0057, RPP-0059 through RPP-0061,
 RPP-0063 through RPP-0066, and RPP-0068 through RPP-0069 from evidence already
 present in the current lane; final release remains `NO-GO`.

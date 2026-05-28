@@ -178,6 +178,99 @@ function assertSecretRedacted(result, report) {
   assert.doesNotMatch(JSON.stringify(report), new RegExp(secretValue));
 }
 
+test('manage_options capability variant-2 scenario matrix records negative and positive paths for RPP-0029', () => {
+  const scenarios = [
+    {
+      name: 'negative-subscriber-without-manage-options',
+      evidence: manageOptionsDeniedEvidence(),
+      expectedGateStatus: 'failed',
+      expectedCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+      expectedBucket: 'auth',
+      expectedMarker: heldMarker,
+      expectedReleaseAllowed: false,
+      expectedFinalGates: '19/20',
+      expectedObserved: 'subscriber',
+      expectedUser: 'editor',
+      expectedCapability: false,
+    },
+    {
+      name: 'positive-admin-with-manage-options',
+      evidence: manageOptionsPassedEvidence(),
+      expectedGateStatus: 'passed',
+      expectedCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+      expectedBucket: 'provenance',
+      expectedMarker: readyMarker,
+      expectedReleaseAllowed: true,
+      expectedFinalGates: '20/20',
+      expectedObserved: 'manage_options',
+      expectedUser: 'admin',
+      expectedCapability: true,
+    },
+  ];
+  const matrix = [];
+
+  for (const scenario of scenarios) {
+    const fixture = generatedFixture({
+      manageOptionsCapability: scenario.evidence,
+    });
+    const result = runCheckedCommand(fixture);
+    const report = parseReport(result);
+    const gate = gateById(report, 'manage-options-capability');
+
+    assert.equal(result.status, 1, scenario.name);
+    assert.equal(report.releaseStatus, 'NO-GO', scenario.name);
+    assert.equal(report.primaryFailureBucket, scenario.expectedBucket, scenario.name);
+    assert.equal(report.primaryFailureCode, scenario.expectedCode, scenario.name);
+    assert.equal(report.statusMarker, scenario.expectedMarker, scenario.name);
+    assert.ok(result.stdout.includes(scenario.expectedMarker), scenario.name);
+    assert.equal(report.releaseMovement.allowed, scenario.expectedReleaseAllowed, scenario.name);
+    assert.equal(report.releaseMovement.finalGates, scenario.expectedFinalGates, scenario.name);
+    assert.equal(report.mutationAttempted, false, scenario.name);
+    assert.deepEqual(report.mutationPolicy, expectedMutationPolicy, scenario.name);
+    assertSecretRedacted(result, report);
+
+    matrix.push({
+      scenario: scenario.name,
+      gateStatus: gate.status,
+      gateCode: gate.code,
+      checkedUser: gate.evidence.checkedUser,
+      observed: gate.evidence.observed,
+      hasManageOptions: gate.evidence.hasManageOptions,
+      finalGates: report.releaseMovement.finalGates,
+      releaseAllowed: report.releaseMovement.allowed,
+      primaryFailureCode: report.primaryFailureCode,
+      mutationAttempted: report.mutationAttempted,
+    });
+  }
+
+  assert.deepEqual(matrix, [
+    {
+      scenario: 'negative-subscriber-without-manage-options',
+      gateStatus: 'failed',
+      gateCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+      checkedUser: 'editor',
+      observed: 'subscriber',
+      hasManageOptions: false,
+      finalGates: '19/20',
+      releaseAllowed: false,
+      primaryFailureCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+      mutationAttempted: false,
+    },
+    {
+      scenario: 'positive-admin-with-manage-options',
+      gateStatus: 'passed',
+      gateCode: 'OK',
+      checkedUser: 'admin',
+      observed: 'manage_options',
+      hasManageOptions: true,
+      finalGates: '20/20',
+      releaseAllowed: true,
+      primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+      mutationAttempted: false,
+    },
+  ]);
+});
+
 test('manage_options capability regression fails closed before mutation for RPP-0069', () => {
   const fixture = generatedFixture({ manageOptionsCapability: manageOptionsDeniedEvidence() });
   const result = runCheckedCommand(fixture);

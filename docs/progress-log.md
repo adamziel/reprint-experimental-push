@@ -6,20 +6,27 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 20:39 CEST.
+- Last update: 2026-05-28 20:44 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 207
-  items checked and leaves 793 open.
-- Checked slices: 75 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 208
+  items checked and leaves 792 open.
+- Checked slices: 76 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
   yet.
+- Manage_options variant-2 refresh: the current lane now contains an explicit
+  negative/positive scenario matrix for `RPP-0029` in
+  `test/release-gate-manage-options-capability-regression.test.js`. The
+  command
+  `node --test test/release-gate-manage-options-capability-regression.test.js`
+  passed 3/3, proving subscriber-denied and admin-approved capability paths
+  with `mutationAttempted: false`. Final release remains `NO-GO`.
 - Focused route/recovery/releaseMovement refresh: the current lane now contains
   `test/release-gate-route-recovery-focused-regression.test.js` for
   `RPP-0073` through `RPP-0076`. The command
@@ -41,12 +48,13 @@ linked implementation artifacts.
   passed 36/36. `session/rpp-31` live-roster 10 critic output was also
   integrated as dated support-only audit evidence without moving counts.
 - Release-gate evidence-count refresh: the current lane already contains
-  generated and focused release-gate tests for `RPP-0027`, `RPP-0041` through
-  `RPP-0049`, `RPP-0052` through `RPP-0057`, `RPP-0059` through `RPP-0061`,
-  `RPP-0063` through `RPP-0066`, and `RPP-0068` through `RPP-0069`. The
+  generated and focused release-gate tests for `RPP-0027`, `RPP-0029`,
+  `RPP-0041` through `RPP-0049`, `RPP-0052` through `RPP-0057`,
+  `RPP-0059` through `RPP-0061`, `RPP-0063` through `RPP-0066`, and
+  `RPP-0068` through `RPP-0069`. The
   expanded command
   `node --test test/release-gates.test.js test/release-gate-source-url-generated.test.js test/release-gate-local-url-generated.test.js test/release-gate-remote-changed-url-generated.test.js test/release-gate-packaged-fallback-generated.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-gate-auth-source-readback-generated.test.js test/release-gate-missing-production-secret-generated.test.js test/release-gate-application-password-binding-generated.test.js test/release-gate-manage-options-generated.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gate-apply-route-pre-mutation-generated.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-recovery-inspect-read-only-generated.test.js test/release-gate-release-movement-summary-generated.test.js test/release-gate-tmux-status-marker-generated.test.js test/release-gate-status-row-generated.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-cli.test.js`
-  passed 72/72, so those 25 items are now checked. Final release remains
+  passed 73/73, so those 26 items are now checked. Final release remains
   `NO-GO`.
 - Evidence movement: the local `session/rpp-*` cleanup integrated executable
   branch-local proof for `RPP-0221`, `RPP-0222`, and `RPP-0223`. The generated
