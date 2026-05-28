@@ -76,6 +76,28 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0467 wp_usermeta driver semantics regression
+
+RPP-0467 adds local focused evidence for the `wp_usermeta` plugin-driver
+semantics. The proof accepts explicit `wp-usermeta` and `wp-user-meta` policy
+entries only for `wp_usermeta` rows owned by the plugin, applies the planned
+usermeta mutations, and records hash-only driver audit evidence plus redacted
+journal entries.
+
+Unsupported variants remain fail-closed: a `wp-usermeta` policy for a
+non-`wp_usermeta` table is blocked, and a plugin-owned `wp_usermeta` row without
+an explicit policy is blocked before mutation. The evidence envelope records
+only hashes for accepted audit evidence, owner context, journal entries,
+blockers, and refusal details; private usermeta payload tokens are asserted
+absent. This is local focused support evidence, not production-backed proof,
+and the release posture remains `NO-GO`.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0467|blocks post author and usermeta references when the remote user target diverged|blocks plugin-owned resources when the declared driver does not match the table' test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +111,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0467 — wp_usermeta driver semantics: explicit `wp-usermeta` and
+  `wp-user-meta` policies apply only `wp_usermeta` rows, while missing policy
+  and wrong-table policy remain blocked with redacted local evidence.
