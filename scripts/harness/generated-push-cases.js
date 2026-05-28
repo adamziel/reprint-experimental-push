@@ -51,6 +51,8 @@ const scenarioFamilies = Object.freeze([
   'file-type-swap-conflict',
   'row-create-update-delete-mix-ready',
   'row-create-update-delete-mix-conflict',
+  'wp-options-scalar-ready',
+  'wp-options-scalar-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -72,6 +74,7 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
+  'wp-options-scalar-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -544,6 +547,14 @@ const scenarioFamilyBuilders = {
       conflict: true,
       prefix: 'conflict-row-mix',
     });
+    tags.add('expected-conflict');
+  },
+  'wp-options-scalar-ready': ({ tier, base, local, remote, allocator, tags }) => {
+    addWpOptionsScalarChange(base, local, remote, allocator, tags, { conflict: false, tier });
+    tags.add('ready-candidate');
+  },
+  'wp-options-scalar-conflict': ({ tier, base, local, remote, allocator, tags }) => {
+    addWpOptionsScalarChange(base, local, remote, allocator, tags, { conflict: true, tier });
     tags.add('expected-conflict');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
@@ -1121,6 +1132,41 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
   }
+}
+
+function addWpOptionsScalarChange(base, local, remote, allocator, tags, { conflict, tier }) {
+  const ordinal = allocator.next();
+  const optionName = `scalar_generated_${ordinal}`;
+  const rowId = `option_name:${optionName}`;
+  const valueKind = tier % 2 === 0 ? 'string' : 'number';
+  const baseValue = scalarOptionValue(valueKind, 'base', ordinal);
+  const localValue = scalarOptionValue(valueKind, 'local', ordinal);
+  const remoteValue = scalarOptionValue(valueKind, 'remote', ordinal);
+  const row = {
+    option_name: optionName,
+    option_value: baseValue,
+    autoload: 'no',
+  };
+
+  setRow(base, 'wp_options', rowId, row);
+  setRow(local, 'wp_options', rowId, { ...row, option_value: localValue });
+  setRow(remote, 'wp_options', rowId, row);
+
+  tags.add('wp-options-scalar');
+  tags.add('scalar-option-update');
+  tags.add(`scalar-option-${valueKind}`);
+
+  if (conflict) {
+    setRow(remote, 'wp_options', rowId, { ...row, option_value: remoteValue });
+  }
+}
+
+function scalarOptionValue(kind, source, ordinal) {
+  if (kind === 'number') {
+    const offsets = { base: 0, local: 1000, remote: 2000 };
+    return ordinal + offsets[source];
+  }
+  return `${source}-scalar-option-${ordinal}`;
 }
 
 function addCommentGraph(local, allocator) {
