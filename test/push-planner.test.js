@@ -2490,12 +2490,15 @@ test('RPP-0228 refuses unknown plugin-owned resources before mutation with redac
 
   assert.ok(forgedError instanceof PushPlanError);
   assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
-  assert.deepEqual(forgedError.details, {
-    mutationId: forgedMutationId,
-    resourceKey,
-    pluginOwner: 'forms',
-    driver: null,
-  });
+  assert.equal(forgedError.details.mutationId, forgedMutationId);
+  assert.equal(forgedError.details.resourceKey, resourceKey);
+  assert.equal(forgedError.details.pluginOwner, 'forms');
+  assert.equal(forgedError.details.driver, null);
+  assert.equal(forgedError.details.applyValidationEvidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED');
+  assert.equal(forgedError.details.applyValidationEvidence.outcome, 'refused-before-mutation');
+  assert.equal(forgedError.details.applyValidationEvidence.driverEvidence.state, 'absent');
+  assert.match(forgedError.details.applyValidationEvidence.planned.hash, /^[a-f0-9]{64}$/);
+  assert.match(forgedError.details.applyValidationEvidence.remote.hash, /^[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(forgedRemote), forgedBefore);
   assert.deepEqual(forgedRemote.db.wp_forms_entries['entry_id:29'], remote.db.wp_forms_entries['entry_id:29']);
 

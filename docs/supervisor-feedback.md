@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 11:45 CEST
+Last updated: 2026-05-28 11:57 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 11:57 CEST - RPP-0228 Integrated
+
+- Going well: integration is now at `913f65771`, preserving ancestry for
+  `origin/session/rpp-29-rpp-0228-unknown-plugin-owned-resource-refusal` and
+  adding `RPP-0228` unknown plugin-owned resource refusal evidence. The focused
+  proof blocks an unsupported plugin-owned custom-table row, refuses both the
+  blocked plan and a forged ready mutation before remote mutation, leaves the
+  remote row unchanged, and keeps serialized evidence hash-only/redacted.
+- Checklist movement: 138 verified items checked and 862 open. New check since
+  the prior feedback entry: `RPP-0228`.
+- Verification: focused RPP-0228 planner/apply validation passes 1/1, the full
+  planner/apply suite passes 108/108, checklist lint reports 138 checked / 862
+  open with 0 risky claims, release remains `NO-GO`, and `git diff --check` is
+  clean.
+- Current nudge: keep the integration-only freeze, publish `progress.html` to
+  existing `main` after the lane push, and continue reducing the already-pushed
+  branch backlog one reviewed branch at a time.
 
 ## 2026-05-28 11:45 CEST - RPP-0216 Integrated
 

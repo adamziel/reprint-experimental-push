@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 137.
-- Remaining open: 863.
+- Verified complete: 138.
+- Remaining open: 862.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -249,7 +249,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [ ] RPP-0225 (Near-Mid / merge-invariants) Prove local file type swap versus remote descendant, variant 2. Success: progress log records the command and caveat.
 - [ ] RPP-0226 (Near-Mid / merge-invariants) Prove remote-only plugin metadata preservation, variant 2. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0227 (Near-Mid / merge-invariants) Prove local plugin data with stale owner context, variant 2. Success: executor rejects forged or stale mutation attempts.
-- [ ] RPP-0228 (Near-Mid / merge-invariants) Prove unknown plugin-owned resource refusal, variant 2. Success: no raw private value appears in serialized plan evidence.
+- [x] RPP-0228 (Near-Mid / merge-invariants) Prove unknown plugin-owned resource refusal, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0229 (Near-Mid / merge-invariants) Prove conflict evidence hash redaction, variant 2. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0230 (Near-Mid / merge-invariants) Prove planner summary count consistency, variant 2. Success: progress log records the command and caveat.
 - [ ] RPP-0231 (Near-Mid / merge-invariants) Prove mutation/precondition one-to-one mapping, variant 2. Success: node test proves the invariant over generated and focused fixtures.
