@@ -205,6 +205,41 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
   }
 }
 
+function assertMutationPreconditionOneToOne(plan, remote, label) {
+  assert.equal(
+    plan.preconditions.length,
+    plan.mutations.length,
+    `${label} precondition count should equal emitted mutation count`,
+  );
+  const mutationsById = new Map();
+  for (const mutation of plan.mutations) {
+    assert.equal(mutationsById.has(mutation.id), false, `${label} duplicate mutation id ${mutation.id}`);
+    mutationsById.set(mutation.id, mutation);
+  }
+  const preconditionsByMutationId = new Map();
+  for (const precondition of plan.preconditions) {
+    assert.equal(
+      preconditionsByMutationId.has(precondition.mutationId),
+      false,
+      `${label} duplicate precondition for mutation ${precondition.mutationId}`,
+    );
+    preconditionsByMutationId.set(precondition.mutationId, precondition);
+    const mutation = mutationsById.get(precondition.mutationId);
+    assert.ok(mutation, `${label} precondition without mutation ${precondition.mutationId}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.equal(precondition.resource?.key, mutation.resourceKey);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(precondition.expectedHash, resourceHash(remote, mutation.resource));
+    assert.equal(precondition.checkedAgainst, 'live-remote');
+  }
+  for (const mutation of plan.mutations) {
+    const precondition = preconditionsByMutationId.get(mutation.id);
+    assert.ok(precondition, `${label} missing precondition for mutation ${mutation.id}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  }
+}
+
 function plannerSummaryCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -461,6 +496,103 @@ test('RPP-0210 planner summary counts match emitted evidence deterministically',
       plannerSummaryEvidenceEnvelope(firstPlan),
       plannerSummaryEvidenceEnvelope(secondPlan),
       `${fixture.label} summary envelope changed between deterministic planning runs`,
+    );
+  }
+});
+
+test('RPP-0231 focused planner fixtures map every mutation to exactly one precondition', () => {
+  const readyBase = baseSite();
+  const readyLocal = cloneJson(readyBase);
+  const readyRemote = cloneJson(readyBase);
+  readyLocal.files['index.php'] = '<?php echo "rpp0231-focused-local-file";';
+  readyLocal.db.wp_posts['ID:1'].post_title = 'RPP-0231 focused local post title';
+  readyRemote.db.wp_options['option_name:blogname'].option_value = 'RPP-0231 remote keep value';
+
+  const conflictBase = baseSite();
+  const conflictLocal = cloneJson(conflictBase);
+  const conflictRemote = cloneJson(conflictBase);
+  conflictLocal.files['index.php'] = '<?php echo "rpp0231-conflict-independent-file";';
+  conflictLocal.db.wp_posts['ID:1'].post_title = 'RPP-0231 local conflict title';
+  conflictRemote.db.wp_posts['ID:1'].post_title = 'RPP-0231 remote conflict title';
+
+  const atomicBase = baseSite();
+  const atomicLocal = cloneJson(atomicBase);
+  const atomicRemote = cloneJson(atomicBase);
+  const blockedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  atomicLocal.files['index.php'] = '<?php echo "rpp0231-atomic-local-file";';
+  atomicLocal.db.wp_posts['ID:1'].post_title = 'RPP-0231 atomic local title';
+  atomicLocal.db.wp_options['option_name:forms_settings'].option_value.mode = 'rpp0231-unsupported-local-option';
+  atomicLocal.pushIntents = [
+    {
+      id: 'rpp-0231-atomic-blocked-group',
+      kind: 'change-set',
+      requireAtomic: true,
+      resources: [
+        'file:index.php',
+        'row:["wp_posts","ID:1"]',
+        blockedResourceKey,
+      ],
+    },
+  ];
+
+  const fixtures = [
+    {
+      label: 'ready file and row mutations with keep-remote decision',
+      base: readyBase,
+      local: readyLocal,
+      remote: readyRemote,
+      expectedStatus: 'ready',
+      expectedMutationKeys: ['file:index.php', 'row:["wp_posts","ID:1"]'],
+    },
+    {
+      label: 'conflict plan keeps independent mutation preconditioned',
+      base: conflictBase,
+      local: conflictLocal,
+      remote: conflictRemote,
+      expectedStatus: 'conflict',
+      expectedMutationKeys: ['file:index.php'],
+    },
+    {
+      label: 'blocked atomic propagation keeps emitted mutations preconditioned',
+      base: atomicBase,
+      local: atomicLocal,
+      remote: atomicRemote,
+      expectedStatus: 'blocked',
+      expectedMutationKeys: ['file:index.php', 'row:["wp_posts","ID:1"]'],
+    },
+  ];
+
+  for (const fixture of fixtures) {
+    const firstPlan = planFor(fixture.base, fixture.local, fixture.remote);
+    const replayPlan = planFor(
+      cloneJson(fixture.base),
+      cloneJson(fixture.local),
+      cloneJson(fixture.remote),
+    );
+    const mappingEvidence = (plan) => plan.mutations.map((mutation) => {
+      const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
+      return [
+        mutation.id,
+        mutation.resourceKey,
+        mutation.remoteBeforeHash,
+        precondition?.mutationId || null,
+        precondition?.resourceKey || null,
+        precondition?.expectedHash || null,
+      ];
+    });
+
+    assert.equal(firstPlan.status, fixture.expectedStatus, fixture.label);
+    assertMutationPreconditionOneToOne(firstPlan, fixture.remote, fixture.label);
+    assertMutationPreconditionOneToOne(replayPlan, fixture.remote, `${fixture.label} replay`);
+    assert.deepEqual(
+      firstPlan.mutations.map((mutation) => mutation.resourceKey).sort(),
+      fixture.expectedMutationKeys,
+      `${fixture.label} emitted unexpected mutation keys`,
+    );
+    assert.deepEqual(
+      mappingEvidence(firstPlan),
+      mappingEvidence(replayPlan),
+      `${fixture.label} precondition mapping evidence changed between runs`,
     );
   }
 });

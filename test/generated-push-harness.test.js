@@ -8,6 +8,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { digest } from '../src/stable-json.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -102,6 +103,30 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0231 generated harness proves mutation/precondition one-to-one mapping', () => {
+  const report = runGeneratedPushHarness();
+  const evidence = {
+    command: 'node --test --test-name-pattern=RPP-0231 test/generated-push-harness.test.js',
+    caveat: 'Local deterministic Node generated-harness proof; release remains gated separately.',
+    totalCases: report.summary.totalCases,
+    totalMutations: report.summary.totalMutations,
+    statuses: report.summary.statuses,
+    evidenceHash: `sha256:${digest({
+      totalCases: report.summary.totalCases,
+      totalMutations: report.summary.totalMutations,
+      statuses: report.summary.statuses,
+      featureFamilies: report.summary.featureFamilies,
+    })}`,
+  };
+
+  assert.equal(report.summary.totalCases, DEFAULT_GENERATED_PUSH_CASES);
+  assert.ok(report.summary.totalMutations > report.summary.totalCases);
+  assert.ok(report.summary.statuses.ready > 0);
+  assert.ok(report.summary.statuses.conflict > 0);
+  assert.ok(report.summary.statuses.blocked > 0);
+  assert.match(evidence.evidenceHash, /^sha256:[a-f0-9]{64}$/);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

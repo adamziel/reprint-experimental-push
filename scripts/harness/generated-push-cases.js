@@ -888,8 +888,33 @@ function assertPlanContract(testCase, plan) {
   assertUniqueIds(testCase.id, 'conflict', plan.conflicts.map((entry) => entry.id));
   assertUniqueIds(testCase.id, 'blocker', plan.blockers.map((entry) => entry.id));
 
+  assert.equal(
+    plan.preconditions.length,
+    plan.mutations.length,
+    `${testCase.id} preconditions must map one-to-one with emitted mutations`,
+  );
+  const mutationsById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
+  const preconditionsByMutationId = new Map(plan.preconditions.map((precondition) => [
+    precondition.mutationId,
+    precondition,
+  ]));
+  assert.equal(
+    preconditionsByMutationId.size,
+    plan.preconditions.length,
+    `${testCase.id} duplicate precondition mutation ids`,
+  );
+  for (const precondition of plan.preconditions) {
+    const mutation = mutationsById.get(precondition.mutationId);
+    assert.ok(mutation, `${testCase.id} precondition without mutation ${precondition.mutationId}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.equal(precondition.resource?.key, mutation.resourceKey);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(precondition.expectedHash, resourceHash(testCase.remote, mutation.resource));
+    assert.equal(precondition.checkedAgainst, 'live-remote');
+  }
+
   for (const mutation of plan.mutations) {
-    const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
+    const precondition = preconditionsByMutationId.get(mutation.id);
     assert.ok(precondition, `${testCase.id} missing precondition for ${mutation.id}`);
     assert.equal(precondition.resourceKey, mutation.resourceKey);
     assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
@@ -913,6 +938,14 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      if (blocker.class === 'atomic-group-blocker-propagation') {
+        assert.equal(
+          mutationKeys.has(blocker.resourceKey),
+          true,
+          `${testCase.id} propagation blocker should reference an emitted grouped mutation ${blocker.resourceKey}`,
+        );
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
