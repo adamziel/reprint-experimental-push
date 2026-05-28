@@ -12,6 +12,7 @@ const scenarioGroups = {
   ],
   'driver-production-boundary-guards': [
     'driver-receipt-guards',
+    'driver-activation-hook-effects-boundary',
     'driver-missing-plugin-owner-guard',
     'driver-missing-table-guard',
     'driver-duplicate-name-guard',
@@ -21,6 +22,9 @@ const scenarioGroups = {
     'driver-missing-plugin-owner-guard',
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
+  ],
+  'driver-activation-hook-effects-guards': [
+    'driver-activation-hook-effects-boundary',
   ],
   'driver-registration-guards': [
     'driver-missing-export-guard',
@@ -49,6 +53,7 @@ const scenarioGroups = {
 const scenarioNames = [
   'core-package-routes',
   'driver-receipt-guards',
+  'driver-activation-hook-effects-boundary',
   'driver-delete-apply',
   'driver-missing-export-guard',
   'driver-missing-apply-guard',

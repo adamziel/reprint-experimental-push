@@ -16,6 +16,10 @@ import {
 } from './auth-session-source.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 import { parseProductionPluginPackageSelectedScenarios } from './production-plugin-package-scenarios.js';
+import {
+  productionPluginDriverBoundary,
+  summarizeProductionPluginDriverBoundaryProof,
+} from './production-shaped-release-verify.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const cliPath = path.join(repoRoot, 'bin/reprint-push-lab.js');
@@ -271,7 +275,7 @@ echo wp_json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
 `);
   writeActivationBlueprint(path.join(repoRoot, fixtures.base), blueprintPath);
-  if (runDriverGuardOnly || shouldRunScenario('driver-receipt-guards')) {
+  if (shouldRunScenario('driver-receipt-guards')) {
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardSnapshotBlueprintPath);
     writeDriverFixtureBlueprint(path.join(repoRoot, fixtures.base), driverGuardServerBlueprintPath, {
       activatePackagedPlugin: true,
@@ -436,7 +440,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     });
   }
 
-  if (runDriverGuardOnly || shouldRunScenario('driver-receipt-guards')) {
+  if (shouldRunScenario('driver-receipt-guards')) {
     await runScenario('driver-receipt-guards', async () => {
       await withPlaygroundServer(
         'production-plugin-driver-revoked-credential-guard',
@@ -570,6 +574,59 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     });
   }
 
+  await runScenario('driver-activation-hook-effects-boundary', async () => {
+    const boundary = productionPluginDriverBoundary;
+    const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+    const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+    const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+    const releasePlan = createPushPlan({
+      base: remoteBaseSnapshot,
+      local: localEditedSnapshot,
+      remote: remoteBaseSnapshot,
+      now: new Date('2026-05-28T10:15:00.000Z'),
+    });
+    assert.equal(releasePlan.status, 'ready');
+
+    const unprovenPlan = deepClone(releasePlan);
+    addActivationHookSideEffectMutation(unprovenPlan, { withDriverProof: false });
+    const unprovenSummary = summarizeProductionPluginDriverBoundaryProof({
+      proof: productionPluginDriverProof(unprovenPlan, boundary),
+      remoteBaseSnapshot,
+      localEditedSnapshot,
+      remoteChangedSnapshot,
+      packagedSourceFixture: true,
+    });
+    assert.equal(unprovenSummary.status, 'blocked');
+    assert.equal(unprovenSummary.activationHookEffects.status, 'blocked');
+    assert.equal(unprovenSummary.activationHookEffects.verdict, 'ACTIVATION_HOOK_SIDE_EFFECT_DRIVER_PROOF_REQUIRED');
+
+    const proofedPlan = deepClone(releasePlan);
+    addActivationHookSideEffectMutation(proofedPlan, { withDriverProof: true });
+    const proofedSummary = summarizeProductionPluginDriverBoundaryProof({
+      proof: productionPluginDriverProof(proofedPlan, boundary),
+      remoteBaseSnapshot,
+      localEditedSnapshot,
+      remoteChangedSnapshot,
+      packagedSourceFixture: true,
+    });
+    assert.equal(proofedSummary.status, 'blocked');
+    assert.equal(proofedSummary.activationHookEffects.status, 'quarantined');
+    assert.equal(proofedSummary.activationHookEffects.verdict, 'ACTIVATION_HOOK_SIDE_EFFECT_SUPPORT_ONLY');
+    assert.equal(proofedSummary.activationHookEffects.supportOnly, true);
+
+    summary.driverActivationHookEffectsBoundary = {
+      releaseStatePlanStatus: releasePlan.status,
+      unprovenStatus: unprovenSummary.activationHookEffects.status,
+      unprovenVerdict: unprovenSummary.activationHookEffects.verdict,
+      unprovenResourceKeys: unprovenSummary.activationHookEffects.unprovenResourceKeys,
+      proofedStatus: proofedSummary.activationHookEffects.status,
+      proofedVerdict: proofedSummary.activationHookEffects.verdict,
+      supportOnly: proofedSummary.activationHookEffects.supportOnly,
+      supportOnlyResourceKeys: proofedSummary.activationHookEffects.supportOnlyResourceKeys,
+      releaseEligible: proofedSummary.activationHookEffects.releaseEligible,
+    };
+  });
+
   await runScenario('driver-missing-export-guard', async () => {
     const malformedSnapshot = runPackagedDriverRegistryGuard('driver-missing-export-guard', pluginDir);
     assertPackagedDriverFatalExport(
@@ -685,6 +742,130 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
   console.log(JSON.stringify(summary, null, 2));
 } finally {
   fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
+function productionPluginDriverSnapshot(mode, version, marker) {
+  return {
+    files: {},
+    plugins: {},
+    db: {
+      [productionPluginDriverBoundary.table]: {
+        [productionPluginDriverBoundary.rowId]: {
+          state_id: 1,
+          payload: {
+            owner: productionPluginDriverBoundary.owner,
+            mode,
+            version,
+            releaseBoundaryProof: 'plugin-driver-boundary',
+          },
+          updated_marker: marker,
+          __pluginOwner: productionPluginDriverBoundary.owner,
+        },
+      },
+    },
+    meta: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: productionPluginDriverBoundary.resourceKey,
+            pluginOwner: productionPluginDriverBoundary.owner,
+            driver: productionPluginDriverBoundary.driver,
+            table: productionPluginDriverBoundary.table,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
+  };
+}
+
+function productionPluginDriverProof(plan, boundary = productionPluginDriverBoundary) {
+  return {
+    planObject: plan,
+    dryRun: {
+      status: 200,
+      receiptHash: 'a'.repeat(64),
+    },
+    apply: {
+      status: 200,
+      applyRevalidation: {
+        required: 'fresh-live-hashes-before-first-mutation',
+        phase: 'before-first-mutation',
+        checkedAgainst: 'live-remote',
+        verifiedResourceKeys: [boundary.resourceKey],
+        planHash: digest(plan),
+        receiptHash: 'a'.repeat(64),
+        preconditionSetHash: 'b'.repeat(64),
+        mutationSetHash: 'c'.repeat(64),
+      },
+    },
+    recoveryInspect: {
+      status: 200,
+    },
+    replay: {
+      status: 200,
+    },
+    dbJournal: {
+      rows: 2,
+      applyCommitted: true,
+      mutationApplied: 1,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+      },
+    },
+    latestReadRetryEvidence: {
+      path: '/snapshot',
+      preservedRemote: true,
+    },
+  };
+}
+
+function addActivationHookSideEffectMutation(plan, { withDriverProof }) {
+  const resourceKey = 'row:["wp_options","option_name:reprint_push_activation_hook_state"]';
+  plan.mutations.push({
+    id: `mutation-activation-hook-side-effect-${plan.mutations.length + 1}`,
+    resourceKey,
+    resource: {
+      type: 'row',
+      table: 'wp_options',
+      id: 'option_name:reprint_push_activation_hook_state',
+      key: resourceKey,
+    },
+    action: 'put',
+    value: {
+      value: {
+        option_name: 'reprint_push_activation_hook_state',
+        option_value: {
+          mode: withDriverProof ? 'driver-proofed' : 'unproven',
+        },
+        autoload: 'no',
+        __pluginOwner: productionPluginDriverBoundary.owner,
+        __activationHookEffect: true,
+      },
+    },
+    remoteBeforeHash: '0'.repeat(64),
+    baseHash: '0'.repeat(64),
+    localHash: withDriverProof ? '2'.repeat(64) : '1'.repeat(64),
+    pluginOwnedResource: {
+      pluginOwner: productionPluginDriverBoundary.owner,
+      driver: 'wp-option',
+      policySource: 'packaged-activation-hook-side-effect-proof',
+      supportsDelete: false,
+      activationHookEffect: true,
+      ...(withDriverProof ? {
+        driverEvidence: {
+          supported: true,
+          activationHookEffect: true,
+          source: 'packaged-driver-proof',
+          plugin: productionPluginDriverBoundary.owner,
+          resourceKey: `plugin:${productionPluginDriverBoundary.owner}`,
+          baseHash: 'a'.repeat(64),
+          remoteHash: 'a'.repeat(64),
+        },
+      } : {}),
+    },
+  });
 }
 
 function buildPluginPackage(targetDir) {

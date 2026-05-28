@@ -451,6 +451,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
   const directPluginActivationOrUpdateMutations = plannedMutations.filter((entry) =>
     entry?.resource?.type === 'plugin'
       && entry.resource.name === boundary.owner);
+  const activationHookEffects = summarizeActivationHookSideEffects(plannedMutations, boundary);
   const nonProductionCustomTableMutations = plannedMutations.filter((entry) =>
     entry?.resource?.type === 'row'
       && entry.resource.table !== boundary.table
@@ -497,6 +498,7 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && noSerializedPluginOwnedOptionMutation
     && noDirectPluginActivationOrUpdate
     && noArbitraryCustomTableMutation
+    && activationHookEffects.releaseEligible
     && rejectedRemoteEvidence.failureClosed === true
     && failureClosedUnknownPluginData.failureClosed === true;
 
@@ -565,6 +567,9 @@ export function summarizeProductionPluginDriverBoundaryProof({
       activePluginsDirectResourceKeys: activePluginsDirectMutations.map((entry) => entry.resourceKey),
       serializedPluginOwnedOptionResourceKeys: serializedPluginOwnedOptionMutations.map((entry) => entry.resourceKey),
       directPluginActivationOrUpdateResourceKeys: directPluginActivationOrUpdateMutations.map((entry) => entry.resourceKey),
+      activationHookSideEffectResourceKeys: activationHookEffects.resourceKeys,
+      activationHookSideEffectUnprovenResourceKeys: activationHookEffects.unprovenResourceKeys,
+      activationHookSideEffectQuarantineResourceKeys: activationHookEffects.supportOnlyResourceKeys,
       nonProductionCustomTableResourceKeys: nonProductionCustomTableMutations.map((entry) => entry.resourceKey),
     },
     noArbitraryCustomTableMutation,
@@ -572,6 +577,8 @@ export function summarizeProductionPluginDriverBoundaryProof({
     noUnownedSerializedOptionMutation,
     noSerializedPluginOwnedOptionMutation,
     noDirectPluginActivationOrUpdate,
+    noActivationHookSideEffectMutation: activationHookEffects.resourceKeys.length === 0,
+    activationHookEffects,
     failureClosedUnknownPluginData,
     auditEvidence: {
       dryRunStatus: proof.dryRun?.status ?? null,
@@ -585,6 +592,112 @@ export function summarizeProductionPluginDriverBoundaryProof({
       readRetryEvidence: proof.latestReadRetryEvidence || proof.readRetryEvidence || null,
     },
     missingEvidence,
+  };
+}
+
+function summarizeActivationHookSideEffects(plannedMutations, boundary) {
+  const effects = plannedMutations
+    .filter((entry) => isActivationHookSideEffectMutation(entry, plannedMutations, boundary))
+    .map((entry) => ({
+      resourceKey: entry.resourceKey,
+      resource: entry.resource || null,
+      pluginOwner: activationHookEffectOwner(entry),
+      driver: entry.pluginOwnedResource?.driver || null,
+      explicitDriverProof: hasExplicitActivationHookDriverProof(entry),
+      marker: activationHookEffectMarker(entry),
+      driverEvidence: summarizeActivationHookDriverEvidence(entry.pluginOwnedResource?.driverEvidence),
+    }));
+  const proven = effects.filter((entry) => entry.explicitDriverProof);
+  const unproven = effects.filter((entry) => !entry.explicitDriverProof);
+
+  return {
+    status: effects.length === 0
+      ? 'clear'
+      : unproven.length > 0
+        ? 'blocked'
+        : 'quarantined',
+    verdict: effects.length === 0
+      ? 'NO_ACTIVATION_HOOK_SIDE_EFFECTS'
+      : unproven.length > 0
+        ? 'ACTIVATION_HOOK_SIDE_EFFECT_DRIVER_PROOF_REQUIRED'
+        : 'ACTIVATION_HOOK_SIDE_EFFECT_SUPPORT_ONLY',
+    releaseEligible: effects.length === 0,
+    supportOnly: effects.length > 0 && unproven.length === 0,
+    resourceKeys: effects.map((entry) => entry.resourceKey),
+    unprovenResourceKeys: unproven.map((entry) => entry.resourceKey),
+    supportOnlyResourceKeys: proven.map((entry) => entry.resourceKey),
+    effects,
+  };
+}
+
+function isActivationHookSideEffectMutation(entry, plannedMutations, boundary) {
+  if (entry?.resource?.type !== 'row' || entry.resourceKey === boundary.resourceKey) {
+    return false;
+  }
+  if (activationHookEffectMarker(entry)) {
+    return true;
+  }
+
+  const owner = activationHookEffectOwner(entry);
+  if (!owner) {
+    return false;
+  }
+  return plannedMutations.some((mutation) =>
+    mutation?.resource?.type === 'plugin'
+      && mutation.resource.name === owner
+      && mutation.action !== 'delete'
+      && mutation.value?.value?.active === true);
+}
+
+function activationHookEffectOwner(entry) {
+  return entry?.pluginOwnedResource?.pluginOwner
+    || entry?.value?.value?.__pluginOwner
+    || null;
+}
+
+function activationHookEffectMarker(entry) {
+  if (entry?.pluginOwnedResource?.activationHookEffect === true) {
+    return 'plugin-owned-resource';
+  }
+  if (entry?.pluginOwnedResource?.effectSource === 'activation-hook'
+    || entry?.pluginOwnedResource?.sideEffectSource === 'activation-hook') {
+    return 'plugin-owned-resource-source';
+  }
+  const value = entry?.value?.value;
+  if (value?.__activationHookEffect === true || value?.__activationHookSideEffect === true) {
+    return 'snapshot-value';
+  }
+  return null;
+}
+
+function hasExplicitActivationHookDriverProof(entry) {
+  const evidence = entry?.pluginOwnedResource?.driverEvidence;
+  const explicitlyCoversActivationHook = evidence?.activationHookEffect === true
+    || evidence?.effectSource === 'activation-hook'
+    || evidence?.sideEffectSource === 'activation-hook';
+  return evidence?.supported === true
+    && explicitlyCoversActivationHook
+    && typeof evidence.source === 'string'
+    && evidence.source.length > 0
+    && typeof evidence.resourceKey === 'string'
+    && evidence.resourceKey.length > 0
+    && /^[a-f0-9]{64}$/.test(evidence.baseHash || '')
+    && evidence.baseHash === evidence.remoteHash;
+}
+
+function summarizeActivationHookDriverEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object') {
+    return null;
+  }
+  return {
+    supported: evidence.supported === true,
+    source: evidence.source || null,
+    activationHookEffect: evidence.activationHookEffect === true
+      || evidence.effectSource === 'activation-hook'
+      || evidence.sideEffectSource === 'activation-hook',
+    resourceKey: evidence.resourceKey || null,
+    baseHash: evidence.baseHash || null,
+    remoteHash: evidence.remoteHash || null,
   };
 }
 
