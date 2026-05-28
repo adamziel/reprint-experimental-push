@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:10 CEST.
+- Last update: 2026-05-28 10:18 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `16962f5f4` (`test: add missing production secret regression`).
+  `955ea001b` (`test: prove driver registration regression`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 128
-  items complete and leaves 872 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 129
+  items complete and leaves 871 open.
 - Checked slices: 43 release-gate foundation items, 17 graph identity items,
-  19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  20 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 12 merge-invariant items. No release-ops items are checked
   yet.
@@ -290,6 +290,16 @@ linked implementation artifacts.
   while keeping base, local, and drifted remote private values out of audit and
   proof JSON. Caveat: this is focused local plugin-driver boundary evidence,
   not broad production plugin-driver readiness.
+- Driver-registration regression continuation: `955ea001b` integrated
+  `RPP-0461` driver registration API focused regression. Focused command:
+  `node --test --test-name-pattern='RPP-0461|plugin-owned row driver registration API' test/playground-snapshot-lib.test.js`
+  (2 passing focused proofs), plus
+  `node --test test/playground-snapshot-lib.test.js` (5 passing
+  snapshot/plugin-driver tests). The proof checks accepted built-in and
+  extension driver registration, lookup by name/table, non-array filter
+  fallback, and invalid/ambiguous registration refusal with hash-only accepted
+  and refusal evidence. Caveat: this is focused local plugin-driver boundary
+  evidence, not broad production plugin-driver readiness.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10

@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:10 CEST
+Last updated: 2026-05-28 10:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:18 CEST - RPP-0461 Integrated
+
+- Going well: integration is now at `955ea001b`, adding `RPP-0461` driver
+  registration API focused regression coverage. The proof checks accepted
+  built-in and extension driver registration, lookup by name/table, non-array
+  filter fallback, and invalid or ambiguous registration refusal with hash-only
+  accepted/refused proof evidence.
+- Checklist movement: 129 verified items checked and 871 open. New check since
+  the prior feedback entry: `RPP-0461`.
+- Verification: focused RPP-0461 driver registration validation passes 2/2, the
+  full touched snapshot/plugin-driver suite passes 5/5, checklist lint reports
+  129 checked / 871 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 10:10 CEST - RPP-0067 Integrated
 

@@ -66,6 +66,10 @@ function sha256String(value) {
   return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
+function assertSha256Evidence(value) {
+  assert.match(value, /^sha256:[a-f0-9]{64}$/);
+}
+
 function runDriverRegistrationProbe() {
   const result = spawnSync('php', [
     '-d',
@@ -315,6 +319,137 @@ test('snapshot apply gate allows only named lab plugin resources', { skip: !hasP
     { type: 'plugin', name: 'akismet' },
     /Unsupported fixture plugin: akismet/,
   );
+});
+
+test('RPP-0461 driver registration API focused regression emits hash-only accepted and refusal evidence', { skip: !hasPhp }, () => {
+  const evidence = runDriverRegistrationProbe();
+  const defaultDriver = evidence.defaultRegistration.drivers['reprint-push-release-state'];
+  const extensionDriver = evidence.validExtension.drivers['rpp-proof-secondary-driver'];
+  const failureScenarios = [
+    'missing-driver-name',
+    'missing-table',
+    'missing-plugin-owner',
+    'missing-export-callback',
+    'missing-apply-callback',
+    'missing-validate-callback',
+  ];
+  const ambiguousScenarios = [
+    'duplicate-driver-name',
+    'duplicate-table',
+  ];
+  const expectedFailureMessages = {
+    'duplicate-driver-name': 'duplicate driver name: rpp-duplicate-driver',
+    'duplicate-table': 'duplicate table mapping for table: wp_rpp_duplicate_rows',
+    'missing-apply-callback': 'missing applyRowCallback for driver: rpp-invalid-driver',
+    'missing-driver-name': 'missing driver name for table: wp_rpp_invalid_rows',
+    'missing-export-callback': 'missing exportRowsCallback for driver: rpp-invalid-driver',
+    'missing-plugin-owner': 'missing pluginOwner for driver: rpp-invalid-driver',
+    'missing-table': 'missing table for driver: rpp-invalid-driver',
+    'missing-validate-callback': 'missing validateMutationCallback for driver: rpp-invalid-driver',
+  };
+
+  assert.equal(evidence.proof, 'RPP-0421 driver registration API variant 2');
+  assert.equal(evidence.redaction.errorMessages, 'sha256-only');
+  assert.equal(evidence.redaction.rawErrorMessagesIncluded, false);
+  assert.equal(evidence.defaultRegistration.ok, true);
+  assert.deepEqual(evidence.defaultRegistration.driverNames, ['reprint-push-release-state']);
+  assert.deepEqual(defaultDriver, {
+    driver: 'reprint-push-release-state',
+    table: 'wp_reprint_push_release_state',
+    pluginOwner: 'reprint-push',
+    supportsDelete: false,
+    callbacks: {
+      exportRowsCallback: true,
+      applyRowCallback: true,
+      validateMutationCallback: true,
+    },
+    allowlist: {
+      resourceKeys: ['row:["wp_reprint_push_release_state","state_id:1"]'],
+      rowIds: ['state_id:1'],
+      payloadModes: ['base', 'local-update', 'remote-changed'],
+    },
+  });
+  assert.equal(evidence.validExtension.ok, true);
+  assert.deepEqual(evidence.validExtension.driverNames, [
+    'reprint-push-release-state',
+    'rpp-proof-secondary-driver',
+  ]);
+  assert.deepEqual(extensionDriver, {
+    driver: 'rpp-proof-secondary-driver',
+    table: 'wp_rpp_proof_driver_rows',
+    pluginOwner: 'rpp-proof-plugin',
+    supportsDelete: true,
+    callbacks: {
+      exportRowsCallback: true,
+      applyRowCallback: true,
+      validateMutationCallback: true,
+    },
+    allowlist: {
+      resourceKeys: ['row:["wp_rpp_proof_driver_rows","id:1"]'],
+      rowIds: ['id:1'],
+      payloadModes: [],
+    },
+  });
+  assert.deepEqual(evidence.lookupProof.byName, extensionDriver);
+  assert.deepEqual(evidence.lookupProof.byTable, extensionDriver);
+  assert.equal(evidence.filterNotArray.ok, true);
+  assert.deepEqual(evidence.filterNotArray.driverNames, []);
+  assert.deepEqual(evidence.filterNotArray.drivers, []);
+
+  for (const scenario of [...failureScenarios, ...ambiguousScenarios]) {
+    const refusal = evidence.failureClosed[scenario];
+    assert.equal(refusal.ok, false, `${scenario} should fail closed`);
+    assert.equal(refusal.error.class, 'RuntimeException');
+    assert.equal(refusal.error.messageHash, sha256String(expectedFailureMessages[scenario]));
+    assert.deepEqual(refusal.driverNames, []);
+    assert.deepEqual(refusal.drivers, []);
+  }
+
+  const focusedEvidence = {
+    rpp: 'RPP-0461',
+    evidenceSource: 'local-focused-plugin-driver-registration-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    accepted: {
+      defaultDriverHash: sha256Evidence(defaultDriver),
+      extensionDriverHash: sha256Evidence(extensionDriver),
+      lookupProofHash: sha256Evidence(evidence.lookupProof),
+      filterNotArrayHash: sha256Evidence(evidence.filterNotArray),
+    },
+    failureClosed: Object.fromEntries([...failureScenarios, ...ambiguousScenarios].map((scenario) => [
+      scenario,
+      {
+        ok: evidence.failureClosed[scenario].ok,
+        errorClass: evidence.failureClosed[scenario].error.class,
+        errorMessageHash: evidence.failureClosed[scenario].error.messageHash,
+        registrationHash: sha256Evidence(evidence.failureClosed[scenario]),
+      },
+    ])),
+  };
+  focusedEvidence.proofHash = sha256Evidence({
+    accepted: focusedEvidence.accepted,
+    failureClosed: focusedEvidence.failureClosed,
+  });
+
+  for (const value of Object.values(focusedEvidence.accepted)) {
+    assertSha256Evidence(value);
+  }
+  for (const scenario of [...failureScenarios, ...ambiguousScenarios]) {
+    assert.equal(focusedEvidence.failureClosed[scenario].ok, false);
+    assert.equal(focusedEvidence.failureClosed[scenario].errorClass, 'RuntimeException');
+    assertSha256Evidence(focusedEvidence.failureClosed[scenario].errorMessageHash);
+    assertSha256Evidence(focusedEvidence.failureClosed[scenario].registrationHash);
+  }
+  assertSha256Evidence(focusedEvidence.proofHash);
+
+  const serializedFocusedEvidence = JSON.stringify(focusedEvidence);
+  const rawFailureMessages = Object.values(expectedFailureMessages);
+  for (const message of rawFailureMessages) {
+    assert.equal(serializedFocusedEvidence.includes(message), false, `focused evidence leaked ${message}`);
+  }
+  assert.doesNotMatch(serializedFocusedEvidence, /exportRowsCallback|applyRowCallback|validateMutationCallback/);
+  assert.doesNotMatch(serializedFocusedEvidence, /wp_rpp_invalid_rows|wp_rpp_duplicate_rows/);
 });
 
 test('plugin-owned row driver registration API returns exact drivers and fails closed on malformed registrations', { skip: !hasPhp }, () => {

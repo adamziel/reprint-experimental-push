@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 128.
-- Remaining open: 872.
+- Verified complete: 129.
+- Remaining open: 871.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -492,7 +492,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0458 (Mid / plugin-driver) Add generated coverage for driver apply validation hook, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0459 (Mid / plugin-driver) Add generated coverage for driver audit evidence redaction, variant 3. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0460 (Mid / plugin-driver) Add generated coverage for arbitrary plugin fixture package, variant 3. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0461 (Mid / plugin-driver) Add focused regression coverage for driver registration API, variant 4. Success: focused test proves exact driver behavior.
+- [x] RPP-0461 (Mid / plugin-driver) Add focused regression coverage for driver registration API, variant 4. Success: focused test proves exact driver behavior.
 - [ ] RPP-0462 (Mid / plugin-driver) Add focused regression coverage for driver owner identity binding, variant 4. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0463 (Mid / plugin-driver) Add focused regression coverage for custom table allowlist exact match, variant 4. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0464 (Mid / plugin-driver) Add focused regression coverage for wp_options driver semantics, variant 4. Success: remote drift preserves plugin-owned remote data.
