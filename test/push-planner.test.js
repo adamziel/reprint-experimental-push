@@ -14,7 +14,7 @@ import {
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
-import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { deserializeResourceValue, resourceHash, serializeResourceValue } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
@@ -1377,6 +1377,155 @@ test('blocks unknown plugin-owned custom table rows without leaking values', () 
   assert.equal(blocker.resourceKey, resourceKey);
   assert.equal(blockerJson.includes('base-private-entry'), false);
   assert.equal(blockerJson.includes('local-private-entry'), false);
+});
+
+test('RPP-0228 refuses unknown plugin-owned resources before mutation with redacted evidence', () => {
+  const resource = {
+    type: 'row',
+    table: 'wp_forms_entries',
+    id: 'entry_id:29',
+    key: 'row:["wp_forms_entries","entry_id:29"]',
+  };
+  const resourceKey = resource.key;
+  const privateValues = [
+    'rpp0228-base-confidential-entry',
+    'rpp0228-local-confidential-entry',
+  ];
+  const base = baseSite();
+  base.db.wp_forms_entries = {
+    'entry_id:29': {
+      entry_id: 29,
+      payload: privateValues[0],
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_forms_entries['entry_id:29'].payload = privateValues[1];
+  const remote = cloneJson(base);
+
+  const blockedPlan = planFor(base, local, remote);
+  const replayBlockedPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const blocker = blockedPlan.blockers[0];
+
+  assert.equal(blockedPlan.status, 'blocked');
+  assertPlannerSummaryMatchesEvidence(blockedPlan, 'RPP-0228 unknown plugin-owned planner refusal');
+  assert.deepEqual(blockedPlan.summary, {
+    mutations: 0,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 1,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(blockedPlan),
+    plannerSummaryEvidenceEnvelope(replayBlockedPlan),
+    'unknown plugin-owned resource refusal evidence should be deterministic',
+  );
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
+
+  const blockedRemote = cloneJson(remote);
+  const blockedBefore = JSON.stringify(blockedRemote);
+  const blockedError = captureError(() => applyPlan(blockedRemote, blockedPlan));
+
+  assert.ok(blockedError instanceof PushPlanError);
+  assert.equal(blockedError.code, 'PLAN_NOT_READY');
+  assert.deepEqual(blockedError.details, { status: 'blocked' });
+  assert.equal(JSON.stringify(blockedRemote), blockedBefore);
+  assert.deepEqual(blockedRemote.db.wp_forms_entries['entry_id:29'], remote.db.wp_forms_entries['entry_id:29']);
+
+  const forgedMutationId = 'mutation-rpp-0228-forged-unknown-plugin-owned-resource';
+  const forgedReadyPlan = tamperReadyPlan(blockedPlan, (plan) => {
+    const baseHash = resourceHash(base, resource);
+    const localHash = resourceHash(local, resource);
+    const remoteHash = resourceHash(remote, resource);
+    plan.mutations = [
+      {
+        id: forgedMutationId,
+        resource,
+        resourceKey,
+        action: 'put',
+        value: serializeResourceValue(local.db.wp_forms_entries['entry_id:29']),
+        remoteBeforeHash: remoteHash,
+        baseHash,
+        localHash,
+        changeKind: 'update',
+        change: {
+          localChange: 'update',
+          remoteChange: 'unchanged',
+        },
+        atomicGroupId: null,
+        pluginOwnedResource: {
+          pluginOwner: 'forms',
+          driver: null,
+          policySource: null,
+          supportsDelete: false,
+        },
+      },
+    ];
+    plan.preconditions = [
+      {
+        mutationId: forgedMutationId,
+        resource,
+        resourceKey,
+        expectedHash: remoteHash,
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    plan.summary.mutations = 1;
+    plan.summary.decisions = 0;
+  });
+  const forgedRemote = cloneJson(remote);
+  const forgedBefore = JSON.stringify(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedReadyPlan));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.deepEqual(forgedError.details, {
+    mutationId: forgedMutationId,
+    resourceKey,
+    pluginOwner: 'forms',
+    driver: null,
+  });
+  assert.equal(JSON.stringify(forgedRemote), forgedBefore);
+  assert.deepEqual(forgedRemote.db.wp_forms_entries['entry_id:29'], remote.db.wp_forms_entries['entry_id:29']);
+
+  const serializedEvidence = JSON.stringify({
+    planner: {
+      status: blockedPlan.status,
+      summary: blockedPlan.summary,
+      envelope: plannerSummaryEvidenceEnvelope(blockedPlan),
+      blocker: {
+        class: blocker.class,
+        resourceKey: blocker.resourceKey,
+        pluginOwner: blocker.pluginOwner,
+        baseHash: blocker.baseHash,
+        localHash: blocker.localHash,
+        remoteHash: blocker.remoteHash,
+        blockerHash: sha256Evidence(blocker),
+      },
+    },
+    applyRefusals: [
+      {
+        code: blockedError.code,
+        details: blockedError.details,
+      },
+      {
+        code: forgedError.code,
+        details: forgedError.details,
+        detailsHash: sha256Evidence(forgedError.details),
+      },
+    ],
+  });
+  assert.match(JSON.parse(serializedEvidence).planner.blocker.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(JSON.parse(serializedEvidence).applyRefusals[1].detailsHash, /^sha256:[a-f0-9]{64}$/);
+  for (const privateValue of privateValues) {
+    assert.equal(serializedEvidence.includes(privateValue), false, `RPP-0228 evidence leaked ${privateValue}`);
+  }
 });
 
 test('allows plugin-owned custom table rows with explicit driver table policy', () => {
