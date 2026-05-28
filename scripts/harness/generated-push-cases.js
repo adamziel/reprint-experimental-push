@@ -24,6 +24,7 @@ const scenarioFamilies = Object.freeze([
   'local-file-update',
   'remote-only-post-update',
   'independent-local-and-remote',
+  'independent-local-row-remote-file',
   'direct-row-conflict',
   'local-delete',
   'same-independent-content',
@@ -62,6 +63,7 @@ const readyPreservingFamilies = new Set([
   'local-file-update',
   'remote-only-post-update',
   'independent-local-and-remote',
+  'independent-local-row-remote-file',
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
@@ -82,6 +84,10 @@ const readyPreservingFamilies = new Set([
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
+  independentLocalRowRemoteFile: {
+    family: 'independent-local-row-remote-file',
+    tag: 'independent-row-remote-file',
+  },
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
@@ -277,6 +283,19 @@ const scenarioFamilyBuilders = {
     ensurePostExists(remote, remotePostId);
     remote.db.wp_posts[`ID:${remotePostId}`].post_title = `Independent remote ${allocator.next()}`;
     tags.add('independent-merge');
+  },
+  'independent-local-row-remote-file': ({ base, local, remote, allocator, tags }) => {
+    const localPostId = allocator.graphId();
+    const rowId = `ID:${localPostId}`;
+    const remotePath = allocator.existingUploadPath();
+    const baseRow = makePost(localPostId, `Base independent local row ${localPostId}`);
+    setRow(base, 'wp_posts', rowId, baseRow);
+    setRow(local, 'wp_posts', rowId, baseRow);
+    setRow(remote, 'wp_posts', rowId, baseRow);
+    local.db.wp_posts[rowId].post_title = `Independent local row ${allocator.next()}`;
+    remote.files[remotePath] = `independent remote file ${allocator.next()}`;
+    tags.add('independent-merge');
+    tags.add('independent-row-remote-file');
   },
   'direct-row-conflict': ({ local, remote, allocator, tags }) => {
     const postId = allocator.postId();
