@@ -13,6 +13,7 @@ import {
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
+  migrateRecoveryJournalSchema,
   openProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openRecoveryJournal,
@@ -61,6 +62,20 @@ function applyFirstMutations(site, plan, count) {
   }
 }
 
+function withoutSchemaVersion(record) {
+  const { schemaVersion, ...rest } = record;
+  return rest;
+}
+
+function writeLegacyJournalWithoutSchemaVersion(filePath, records) {
+  const legacyRecords = records.map(withoutSchemaVersion);
+  fs.writeFileSync(
+    filePath,
+    `${legacyRecords.map((record) => JSON.stringify(record)).join('\n')}\n`,
+  );
+  return legacyRecords;
+}
+
 test('file-backed journal opens or creates a missing JSONL file', () => {
   const filePath = tempJournalPath();
   const journal = openRecoveryJournal(filePath, { now: fixedNow });
@@ -76,6 +91,52 @@ test('file-backed journal opens or creates a missing JSONL file', () => {
   const restarted = readRecoveryJournal(filePath);
   assert.equal(restarted.integrity.status, 'ok');
   assert.deepEqual(restarted.records.map((record) => record.sequence), [1]);
+});
+
+test('file-backed journal schema migration preserves rows and remains restart-readable', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  journal.close();
+
+  const currentRows = readRecoveryJournal(filePath).records;
+  const legacyRows = writeLegacyJournalWithoutSchemaVersion(filePath, currentRows);
+  const legacyRead = readRecoveryJournal(filePath);
+
+  assert.equal(legacyRead.integrity.status, 'blocked');
+  assert.equal(
+    legacyRead.integrity.errors.some((error) => error.code === 'JOURNAL_SCHEMA_UNSUPPORTED'),
+    true,
+  );
+
+  const migration = migrateRecoveryJournalSchema(filePath);
+
+  assert.deepEqual(migration.recordSchemaVersions, [1]);
+  assert.equal(migration.schemaVersion, 1);
+  assert.equal(migration.migrated, true);
+  assert.equal(migration.records, legacyRows.length);
+  assert.equal(migration.migratedRecords, legacyRows.length);
+  assert.equal(migration.preservedRows, true);
+  assert.equal(migration.restartReadable, true);
+  assert.equal(migration.integrity.status, 'ok');
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: legacyRows.length }, (_, index) => index + 1),
+  );
+  assert.ok(restarted.records.every((record) => record.schemaVersion === 1));
+  assert.deepEqual(restarted.records.map(withoutSchemaVersion), legacyRows);
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current: remote,
+  });
+  assert.equal(inspection.status, 'old-remote');
+  assert.deepEqual(inspection.counts, { old: 8, new: 0, blockedUnknown: 0 });
 });
 
 test('file-backed journal appends monotonic sequences and reads after restart', () => {

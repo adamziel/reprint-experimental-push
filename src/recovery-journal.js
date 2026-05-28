@@ -924,6 +924,82 @@ export function appendJournalCompleted(journal, {
 }
 
 export function readRecoveryJournal(filePath) {
+  return readRecoveryJournalFile(filePath);
+}
+
+export function migrateRecoveryJournalSchema(filePath, options = {}) {
+  assertAllowedOptionKeys(
+    options,
+    new Set([]),
+    'migrateRecoveryJournalSchema()',
+  );
+  const legacyRead = readRecoveryJournalFile(filePath, {
+    allowMissingSchemaVersion: true,
+  });
+
+  if (!legacyRead.exists) {
+    return {
+      filePath,
+      exists: false,
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      migrated: false,
+      records: 0,
+      migratedRecords: 0,
+      preservedRows: true,
+      restartReadable: false,
+      recordSchemaVersions: [],
+      integrity: legacyRead.integrity,
+    };
+  }
+
+  if (legacyRead.integrity.status !== 'ok') {
+    return {
+      filePath,
+      exists: true,
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      migrated: false,
+      records: legacyRead.records.length,
+      migratedRecords: 0,
+      preservedRows: false,
+      restartReadable: false,
+      recordSchemaVersions: recordSchemaVersions(legacyRead.records),
+      integrity: legacyRead.integrity,
+    };
+  }
+
+  const migratedRecords = legacyRead.records.map((record) => (
+    Object.hasOwn(record, 'schemaVersion')
+      ? { ...record }
+      : { schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION, ...record }
+  ));
+  const migratedCount = legacyRead.records.filter((record) => !Object.hasOwn(record, 'schemaVersion')).length;
+
+  if (migratedCount > 0) {
+    writeRecoveryJournalRecordsAtomically(filePath, migratedRecords);
+  }
+
+  const restarted = readRecoveryJournal(filePath);
+  const preservedRows = recoveryJournalRowsMatchIgnoringSchemaVersion(
+    legacyRead.records,
+    restarted.records,
+  );
+
+  return {
+    filePath,
+    exists: true,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    migrated: migratedCount > 0,
+    records: restarted.records.length,
+    migratedRecords: migratedCount,
+    preservedRows,
+    restartReadable: restarted.integrity.status === 'ok',
+    recordSchemaVersions: recordSchemaVersions(restarted.records),
+    integrity: restarted.integrity,
+  };
+}
+
+function readRecoveryJournalFile(filePath, options = {}) {
+  const allowMissingSchemaVersion = options.allowMissingSchemaVersion === true;
   let text;
   try {
     text = fs.readFileSync(filePath, 'utf8');
@@ -979,14 +1055,18 @@ export function readRecoveryJournal(filePath) {
   }
 
   for (const record of records) {
-    if (record.schemaVersion !== RECOVERY_JOURNAL_SCHEMA_VERSION) {
-      errors.push({
-        line: null,
-        code: 'JOURNAL_SCHEMA_UNSUPPORTED',
-        message: `Unsupported recovery journal schema ${record.schemaVersion}.`,
-      });
-      break;
+    if (record.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION) {
+      continue;
     }
+    if (allowMissingSchemaVersion && !Object.hasOwn(record, 'schemaVersion')) {
+      continue;
+    }
+    errors.push({
+      line: null,
+      code: 'JOURNAL_SCHEMA_UNSUPPORTED',
+      message: `Unsupported recovery journal schema ${record.schemaVersion}.`,
+    });
+    break;
   }
 
   if (truncated) {
@@ -1287,6 +1367,81 @@ function timestampFor(now) {
     return value instanceof Date ? value.toISOString() : String(value);
   }
   return new Date().toISOString();
+}
+
+function writeRecoveryJournalRecordsAtomically(filePath, records) {
+  const dir = path.dirname(filePath);
+  const tempPath = path.join(
+    dir,
+    `.${path.basename(filePath)}.schema-migration-${process.pid}-${Date.now()}.tmp`,
+  );
+  let fd;
+  let renamed = false;
+
+  try {
+    fd = fs.openSync(tempPath, 'wx');
+    const text = records.length > 0
+      ? `${records.map((record) => JSON.stringify(record)).join('\n')}\n`
+      : '';
+    fs.writeFileSync(fd, text);
+    fs.fsyncSync(fd);
+    fs.closeSync(fd);
+    fd = undefined;
+
+    fs.renameSync(tempPath, filePath);
+    renamed = true;
+    fsyncDirectory(dir);
+  } finally {
+    if (fd !== undefined) {
+      fs.closeSync(fd);
+    }
+    if (!renamed) {
+      try {
+        fs.rmSync(tempPath, { force: true });
+      } catch {
+        // Best-effort cleanup only.
+      }
+    }
+  }
+}
+
+function fsyncDirectory(dir) {
+  let dirFd;
+  try {
+    dirFd = fs.openSync(dir, 'r');
+    fs.fsyncSync(dirFd);
+  } catch {
+    // Some platforms/filesystems do not allow fsync() on directories; the
+    // journal rows were already fsynced before rename.
+  } finally {
+    if (dirFd !== undefined) {
+      fs.closeSync(dirFd);
+    }
+  }
+}
+
+function recoveryJournalRowsMatchIgnoringSchemaVersion(leftRows, rightRows) {
+  if (!Array.isArray(leftRows) || !Array.isArray(rightRows) || leftRows.length !== rightRows.length) {
+    return false;
+  }
+
+  return leftRows.every((leftRow, index) => (
+    JSON.stringify(recoveryJournalRowWithoutSchemaVersion(leftRow))
+      === JSON.stringify(recoveryJournalRowWithoutSchemaVersion(rightRows[index]))
+  ));
+}
+
+function recoveryJournalRowWithoutSchemaVersion(record) {
+  const { schemaVersion, ...rest } = record;
+  return rest;
+}
+
+function recordSchemaVersions(records) {
+  return [...new Set(
+    (Array.isArray(records) ? records : [])
+      .map((record) => record.schemaVersion)
+      .filter((schemaVersion) => schemaVersion !== undefined),
+  )].sort((left, right) => left - right);
 }
 
 function normalizeOptionalNonNegativeInteger(value) {
