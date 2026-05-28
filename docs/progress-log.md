@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 14:30 CEST.
+- Last update: 2026-05-28 14:35 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `61706f905` (normal merge of `origin/session/rpp-22` combined evidence
-  ancestry).
+  `6194b0bdf` (ours ancestry merge of `origin/session/rpp-24` release
+  evidence provenance root branch).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -239,6 +239,19 @@ linked implementation artifacts.
   gates), and `git diff --check
   origin/lane/evidence-integration-20260527..HEAD` plus a worktree
   `git diff --check`.
+- Ancestry backlog reduction: `6194b0bd` used
+  `git merge -s ours --no-ff origin/session/rpp-24` after verifying
+  `git log --right-only --cherry-pick HEAD...origin/session/rpp-24` was
+  empty. This preserves the already-represented release evidence provenance
+  branch ancestry (`0134fc053`) without moving checklist counts or tree
+  content. Validation succeeded with `node --check
+  src/release-evidence-provenance.js` and `node --check
+  scripts/release/check-release-gates.mjs`, `node --test
+  test/release-evidence-provenance.test.js test/release-gate-cli.test.js
+  test/release-gates.test.js` (36/36), checklist lint, artifact redaction scan
+  (67 files), a current fail-closed release-gate status check
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
+  gates), and `git diff --check` for the worktree and merge diff.
 - `rpp-28` then landed recovery repair, release-gate CI checks, evidence
   redaction, protocol compatibility, route proof matrix, and operator proof
   status on the integration branch. The checklist only moved for exact matches:
