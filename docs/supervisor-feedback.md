@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 09:34 CEST
+Last updated: 2026-05-28 09:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 09:43 CEST - RPP-0062 Integrated
+
+- Going well: integration is now at `a9a1610a4`, adding `RPP-0062`
+  missing local URL gate regression coverage. The fixture supplies every other
+  final-release gate while leaving `REPRINT_PUSH_LOCAL_URL` empty, asserts the
+  exact `REPRINT_PUSH_LOCAL_URL_REQUIRED` reason and evidence object, redacts
+  credential output, and records `mutationAttempted: false`.
+- Checklist movement: 125 verified items checked and 875 open. New check since
+  the prior feedback entry: `RPP-0062`.
+- Verification: focused RPP-0062 release-gate validation passes 30/30, the
+  broader generated release-gate suite passes 39/39, checklist lint reports
+  125 checked / 875 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 09:34 CEST - RPP-0233 Integrated
 

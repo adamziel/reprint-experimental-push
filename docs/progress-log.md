@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 09:34 CEST.
+- Last update: 2026-05-28 09:43 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `e9f56fef8` (`test: prove local hash correctness`).
+  `a9a1610a4` (`test: add missing local url gate regression`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 124
-  items complete and leaves 876 open.
-- Checked slices: 41 release-gate foundation items, 16 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 125
+  items complete and leaves 875 open.
+- Checked slices: 42 release-gate foundation items, 16 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 11 merge-invariant items. No release-ops items are checked
@@ -118,6 +118,16 @@ linked implementation artifacts.
   `progress.html#release-proof-timestamp`, reject invalid timestamp evidence
   with `PROGRESS_RELEASE_TIMESTAMP_REQUIRED`, preserve exact timestamp-gate
   evidence, and keep final release `NO-GO` without provenance.
+- Missing local URL continuation: `a9a1610a4` integrated `RPP-0062`
+  `REPRINT_PUSH_LOCAL_URL` gate regression coverage. Focused command:
+  `node --test test/release-gate-missing-local-url-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  (30 passing release-gate tests). The broader generated release-gate suite
+  with missing-local-url, generated progress timestamp, generated preflight,
+  generated same-source, status-row, verify-release, and core gate coverage
+  passes 39/39. The fixture supplies every other final-release gate while
+  leaving `REPRINT_PUSH_LOCAL_URL` empty, asserts exact
+  `REPRINT_PUSH_LOCAL_URL_REQUIRED` evidence, keeps credential output redacted,
+  records `mutationAttempted: false`, and leaves final release `NO-GO`.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
