@@ -37,6 +37,11 @@ const requiredFamilies = [
   'file-create-update-delete-mix-ready',
   'file-create-update-delete-mix-conflict',
   'file-create-update-delete-mix',
+  'file-type-swap-ready',
+  'file-type-swap-conflict',
+  'file-type-swap',
+  'type-swap-ready',
+  'type-swap-conflict',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -44,6 +49,7 @@ const requiredFamilies = [
   'file-topology',
   'directory-descendant',
   'directory-delete-with-remote-descendant',
+  'type-change',
   'expected-conflict',
   'atomic-ready',
   'atomic-blocked',
@@ -125,4 +131,27 @@ test('RPP-0102 directory descendant conflict exposes per-tier target counts', ()
   assert.equal(result.status, 'conflict');
   assert.ok(result.conflicts > 0, 'directory descendant case must conflict');
   assert.equal(result.applied, false, 'directory descendant conflict must not apply mutations');
+});
+
+test('RPP-0103 generated harness emits ready and non-ready file type-swap cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'file-type-swap-ready');
+  const nonReadyCase = cases.find((testCase) => testCase.family === 'file-type-swap-conflict');
+
+  assert.ok(readyCase, 'missing ready file type-swap case');
+  assert.ok(nonReadyCase, 'missing non-ready file type-swap case');
+  assert.ok(readyCase.tags.has('file-type-swap'));
+  assert.ok(nonReadyCase.tags.has('file-type-swap'));
+  assert.ok(readyCase.tags.has('type-swap-ready'));
+  assert.ok(nonReadyCase.tags.has('type-swap-conflict'));
+
+  const ready = validateGeneratedCase(readyCase);
+  const nonReady = validateGeneratedCase(nonReadyCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready type-swap should plan at least one file mutation');
+  assert.equal(ready.applied, true, 'ready type-swap should apply through the harness');
+  assert.equal(nonReady.status, 'conflict');
+  assert.ok(nonReady.conflicts >= 1, 'non-ready type-swap should expose a file topology conflict');
+  assert.equal(nonReady.applied, false, 'non-ready type-swap must not apply mutations');
 });
