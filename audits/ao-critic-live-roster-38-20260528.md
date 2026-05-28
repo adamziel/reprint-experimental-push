@@ -1,0 +1,37 @@
+# AO critic live roster 38 audit - 2026-05-28
+
+Source of truth audited: `origin/lane/evidence-integration-20260527` at `460df8894` (`docs: refresh progress for rpp-0461`). Checklist lint reports 129 checked / 871 open with zero risky claims/errors; final release remains **NO-GO**. The active integrator is `rpp-28/RPP-0240`; `RPP-0240` is branch-local until `origin/lane` moves and lint confirms a new count.
+
+This audit writes only the live-roster-38 audit/evidence files. It does not edit checklist, progress, or product code surfaces.
+
+## Findings first
+
+| Severity | Finding | Exact evidence | Required correction / owner |
+| --- | --- | --- | --- |
+| High | `RPP-0240` is being counted on the integration branch before it is public lane truth. | `git -C ../rpp-28 status --short --branch` shows `session/rpp-28-rpp-0240-integration-20260528...origin/lane/evidence-integration-20260527 [ahead 1]` with modified `docs/evidence/ao-progress-report.md`, `docs/progress-log.md`, `docs/reprint-push-completion-checklist.md`, `docs/supervisor-feedback.md`, and `progress.html`. `the checklist lint command in ../rpp-28` reports 130 checked / 870 open, while the public lane reports 129 / 871. | `rpp-28` may continue validation, but `rpp-36` and queue/status surfaces must keep public truth at 129/871 until `origin/lane` fast-forwards and lint confirms 130/870. |
+| High | If `RPP-0240` lands, the next merge-invariant candidate `RPP-0241` conflicts with it in the generated harness test. | `lane=critic-live-roster-38 intent=merge-tree-forecast-after-rpp0240` using forecast base `session/rpp-28-rpp-0240-integration-20260528` reports `CONFLICT (content): Merge conflict in test/generated-push-harness.test.js` for `origin/session/rpp-29-rpp-0241-local-file-remote-row-generated-v3`; it auto-merges `test/push-planner.test.js` but not the generated harness file. | `rpp-29` should not queue `RPP-0241` immediately after `RPP-0240` without replaying on the integrated branch. Active `RPP-0242` must also rerun the full planner/generated suites after `RPP-0240` lands. |
+| High | Generated-harness work is heavily duplicated: active `RPP-0155`/`RPP-0347` plus pushed `RPP-0153`/`RPP-0154`/`RPP-0346` all touch the same generated docs/cases/tests. | `git -C ../rpp-24 diff --name-only` lists `docs/generated-push-harness.md`, `scripts/harness/generated-push-cases.js`, and `test/generated-push-harness.test.js` for `RPP-0155`. `git -C ../rpp-30 diff --name-only` lists the same three files plus `docs/evidence/ao-graph-identity.md` for `RPP-0347`. Pairwise `git merge-tree --write-tree` reports conflicts for `RPP-0153 + RPP-0154`, `RPP-0346 + RPP-0154`, and `RPP-0153 + RPP-0346` in `docs/generated-push-harness.md` and/or `scripts/harness/generated-push-cases.js` / `test/generated-push-harness.test.js`. | `rpp-24`, `rpp-30`, and `rpp-33` should serialize generated-harness candidates. Integrate one generated branch, restack the others from the new lane, and rerun the full generated harness suite before counting. |
+| High | Release-gate docs remain a pairwise conflict cluster even though `RPP-0072` is clean and pushed. | `origin/session/rpp-25-rpp-0072-dry-run-route-eligibility-proof` is `0ef30a2db` and clean/ahead by one. Pairwise `git merge-tree --write-tree` reports `CONFLICT (content): Merge conflict in docs/evidence/ao-release-gates.md` for `RPP-0071 + RPP-0072`, `RPP-0068 + RPP-0072`, and `RPP-0069 + RPP-0072`. | `rpp-25`/queue should serialize release-gate docs candidates. Do not batch `RPP-0071` and `RPP-0072`; restack the older `RPP-0068`/`RPP-0069` branches or skip them until docs are reconciled. |
+| High | Plugin-driver docs will collide if pushed `RPP-0468` and `RPP-0469` are batched, and active `RPP-0470`/`RPP-0471` are starting from the same shared surface. | `git merge-tree --write-tree origin/session/rpp-32-rpp-0469-plugin-activation-dependency-validator origin/session/rpp-34-rpp-0468-serialized-option-validator` reports `CONFLICT (content): Merge conflict in docs/evidence/ao-plugin-driver.md`. Active `rpp-34/RPP-0470` already has a dirty `test/push-planner.test.js`; `rpp-32/RPP-0471` is clean but its pane is inspecting `ao-plugin-driver.md` and plugin uninstall/delete behavior. | `rpp-32`, `rpp-34`, and queue owner `rpp-35` should integrate plugin-driver branches one at a time, with explicit `ao-plugin-driver.md` reconciliation and focused planner tests after each lane move. |
+| Medium | The roster has enough busy developers, but several are not yet integration-ready. | Busy evidence: `rpp-24/RPP-0155` dirty generated harness files; `rpp-29/RPP-0242` dirty generated/planner tests; `rpp-30/RPP-0347` dirty graph/generated docs and generated tests; `rpp-32/RPP-0471` active exploration; `rpp-33/RPP-0156` active generated-harness exploration; `rpp-34/RPP-0470` dirty planner test. `rpp-25/RPP-0072` is finished/pushed and should be refilled. | Continue refilling `rpp-25` after `RPP-0072`, but handoff should distinguish active work from merge-ready candidates. |
+| Medium | Queue/progress panes are useful but not authoritative. | `rpp-35` is still `session/rpp-35...origin/lane/evidence-integration-20260527 [behind 44]` even though its stdout queue is refreshed. `rpp-36` has a pushed progress branch `8c2432458` and stdout heartbeats correctly stating public lane `460df8894`, 129/871, NO-GO, and `RPP-0240` uncounted. `rpp-31` still has untracked stale live-roster-10 files. | Handoff should cite fetched `origin/lane` plus checklist lint, not sidecar branch heads alone. Clean stale critic scratch in `rpp-31` before it causes accidental commits. |
+| Low | Redaction and production/local caveats remain release blockers. | Current worker claims are local-only/generated/planner-focused. Public release state remains **NO-GO** and scans are branch-local until rerun on the final lane. | Keep release **NO-GO** until production-backed release-gate evidence and final-lane redaction scans pass. |
+
+## Candidate ordering notes from this snapshot
+
+1. Let `rpp-28/RPP-0240` finish or hold. Do not count it until `origin/lane` advances from `460df8894` and lint confirms 130/870.
+2. Avoid `RPP-0241` immediately after `RPP-0240` unless replayed; it conflicts in `test/generated-push-harness.test.js` against the active integration branch.
+3. Queue `RPP-0072` only as a single release-gate docs integration; do not combine with `RPP-0071`, `RPP-0068`, or `RPP-0069`.
+4. Queue one generated-harness branch at a time from `RPP-0153`, `RPP-0154`, `RPP-0155`, `RPP-0156`, `RPP-0346`, and `RPP-0347`.
+5. Queue one plugin-driver branch at a time from `RPP-0468`, `RPP-0469`, `RPP-0470`, and `RPP-0471`; `ao-plugin-driver.md` is the collision surface.
+6. Keep progress surfaces pinned to `460df8894` / 129 checked / 871 open / **NO-GO** until the lane moves.
+
+## Commands used for this audit
+
+- `git fetch origin --prune`
+- `the checklist lint command`
+- `git -C ../<worktree> status --short --branch`, `git -C ../<worktree> log --oneline -1`, and `git -C ../<worktree> diff --name-only`
+- `tmux list-sessions` and `tmux capture-pane -pt <session>` for active developer, integrator, queue, progress, and critic panes
+- `git for-each-ref` to list candidate session refs
+- `git merge-tree --write-tree` for post-`RPP-0240` forecast, release-gate pairwise, generated-harness pairwise, and plugin-driver pairwise conflict checks
+- `node scripts/release/artifact-redaction-scan.mjs` and `git diff --check` are rerun before commit
