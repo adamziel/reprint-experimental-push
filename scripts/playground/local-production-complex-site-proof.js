@@ -15,6 +15,7 @@ export const complexSiteFixtureShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  postmetaPostGraph: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -91,6 +92,15 @@ const postTagTaxonomyGraphResourceKeys = Object.freeze([
   postTagTaxonomyGraphTaxonomyResourceKey,
   postTagTaxonomyGraphRelationshipResourceKey,
 ]);
+const postmetaPostGraphPostId = 71701;
+const postmetaPostGraphPostSlug = 'reprint-push-postmeta-post-graph';
+const postmetaPostGraphMetaKey = 'reprint_push_postmeta_post_fixture';
+const postmetaPostGraphPostResourceKey = `row:["wp_posts","ID:${postmetaPostGraphPostId}"]`;
+const postmetaPostGraphMetaResourceKey = `row:["wp_postmeta","post_id:${postmetaPostGraphPostId}:meta_key:${postmetaPostGraphMetaKey}"]`;
+const postmetaPostGraphResourceKeys = Object.freeze([
+  postmetaPostGraphPostResourceKey,
+  postmetaPostGraphMetaResourceKey,
+]);
 const commentGraphPostId = 71001;
 const commentGraphParentId = 72801;
 const commentGraphChildId = 72802;
@@ -136,6 +146,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
     taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
     postTagTaxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF === '1',
+    postmetaPostGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POSTMETA_POST_PROOF === '1',
     postParentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF === '1',
     commentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF === '1',
   });
@@ -156,6 +167,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
     `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
     `$complex_post_tag_taxonomy_graph = ${shape.postTagTaxonomyGraph ? 'true' : 'false'};`,
+    `$complex_postmeta_post_graph = ${shape.postmetaPostGraph ? 'true' : 'false'};`,
     `$complex_post_parent_graph = ${shape.postParentGraph ? 'true' : 'false'};`,
     `$complex_comment_graph = ${shape.commentGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
@@ -219,6 +231,13 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  $wpdb->replace($wpdb->term_taxonomy, array('term_taxonomy_id'=>$post_tag_term_taxonomy_id,'term_id'=>$post_tag_term_id,'taxonomy'=>'post_tag','description'=>'Local post_tag taxonomy graph fixture.','parent'=>0,'count'=>1), array('%d','%d','%s','%s','%d','%d'));",
     "  $wpdb->replace($wpdb->term_relationships, array('object_id'=>$post_tag_post_id,'term_taxonomy_id'=>$post_tag_term_taxonomy_id,'term_order'=>0), array('%d','%d','%d'));",
     "  clean_term_cache(array($post_tag_term_id), 'post_tag');",
+    "}",
+    "if ($complex_postmeta_post_graph && $complex_is_local) {",
+    `  $postmeta_post_id = ${postmetaPostGraphPostId};`,
+    `  $postmeta_post_result = wp_insert_post(array('import_id'=>$postmeta_post_id,'post_title'=>'Reprint Push Postmeta Post Graph Target','post_name'=>${phpString(postmetaPostGraphPostSlug)},'post_content'=>'Local post target used for postmeta post_id graph proof.','post_status'=>'publish','post_type'=>'post','post_parent'=>0,'post_author'=>0));`,
+    "  if (is_wp_error($postmeta_post_result)) { throw new RuntimeException($postmeta_post_result->get_error_message()); }",
+    "  add_post_meta((int) $postmeta_post_result, 'reprint_push_fixture', 'complex-postmeta-post-graph', true);",
+    `  update_post_meta($postmeta_post_id, ${phpString(postmetaPostGraphMetaKey)}, 'local-postmeta-post-reference');`,
     "}",
     "if ($complex_comment_graph && $complex_is_local) {",
     `  $comment_post_id = ${commentGraphPostId};`,
@@ -288,6 +307,7 @@ export function buildComplexSitePlannerProof({
     + (shape.postParentGraph ? postParentGraphResourceKeys.length : 0)
     + (shape.taxonomyGraph ? taxonomyGraphResourceKeys.length : 0)
     + (shape.postTagTaxonomyGraph ? postTagTaxonomyGraphResourceKeys.length : 0)
+    + (shape.postmetaPostGraph ? postmetaPostGraphResourceKeys.length : 0)
     + (shape.commentGraph ? commentGraphResourceKeys.length : 0);
   const expectedMinimumConflicts =
     positiveInt(shape.remoteDriftPosts)
@@ -392,6 +412,21 @@ export function buildComplexSitePlannerProof({
           && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
     postTagTaxonomyGraphNoStaleBlocker: !shape.postTagTaxonomyGraph
       || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
+    postmetaPostGraphCountsPresent: !shape.postmetaPostGraph
+      || (summarizeComplexSnapshot(localEditedSnapshot).postmetaPostGraphPosts >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).postmetaPostGraphMeta >= 1),
+    postmetaPostGraphPlanned: !shape.postmetaPostGraph
+      || postmetaPostGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+    postmetaPostGraphHasLivePreconditions: !shape.postmetaPostGraph
+      || postmetaPostGraphResourceKeys.every((resourceKey) =>
+        readyPlan.preconditions?.some((precondition) =>
+          precondition.resourceKey === resourceKey
+          && precondition.checkedAgainst === 'live-remote'
+          && typeof precondition.expectedHash === 'string'
+          && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
+    postmetaPostGraphNoStaleBlocker: !shape.postmetaPostGraph
+      || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
     commentGraphCountsPresent: !shape.commentGraph
       || (summarizeComplexSnapshot(localEditedSnapshot).commentGraphParents >= 1
         && summarizeComplexSnapshot(localEditedSnapshot).commentGraphChildren >= 1
@@ -486,6 +521,18 @@ export function buildComplexSitePlannerProof({
       termTaxonomyIsPostTag: String(
         localEditedSnapshot?.db?.wp_term_taxonomy?.[`term_taxonomy_id:${postTagTaxonomyGraphTermTaxonomyId}`]?.taxonomy || '',
       ) === 'post_tag',
+      staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
+        blocker.class === 'stale-wordpress-graph-identity').length,
+    } : null,
+    postmetaPostGraphEvidence: shape.postmetaPostGraph ? {
+      type: 'postmeta-post-id',
+      postResourceKey: postmetaPostGraphPostResourceKey,
+      postmetaResourceKey: postmetaPostGraphMetaResourceKey,
+      allResourcesPlanned: postmetaPostGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+      postmetaReferencesPost: Number(
+        localEditedSnapshot?.db?.wp_postmeta?.[`post_id:${postmetaPostGraphPostId}:meta_key:${postmetaPostGraphMetaKey}`]?.post_id,
+      ) === postmetaPostGraphPostId,
       staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
         blocker.class === 'stale-wordpress-graph-identity').length,
     } : null,
@@ -687,6 +734,18 @@ export function buildComplexSiteReleaseEvidence({
   const postTagTaxonomyGraphPlannedValue = postTagTaxonomyGraphMutation
     ? deserializeResourceValue(postTagTaxonomyGraphMutation.value)
     : null;
+  const postmetaPostGraphRequired = plannerProof?.shape?.postmetaPostGraph === true;
+  const postmetaPostGraphPostMutation = mutations.find((mutation) =>
+    mutation?.resourceKey === postmetaPostGraphPostResourceKey) || null;
+  const postmetaPostGraphMetaMutation = mutations.find((mutation) =>
+    mutation?.resourceKey === postmetaPostGraphMetaResourceKey) || null;
+  const postmetaPostGraphPostPrecondition = preconditions.find((precondition) =>
+    precondition?.resourceKey === postmetaPostGraphPostResourceKey) || null;
+  const postmetaPostGraphMetaPrecondition = preconditions.find((precondition) =>
+    precondition?.resourceKey === postmetaPostGraphMetaResourceKey) || null;
+  const postmetaPostGraphPlannedValue = postmetaPostGraphMetaMutation
+    ? deserializeResourceValue(postmetaPostGraphMetaMutation.value)
+    : null;
   const applyRevalidationResourceKeys = Array.isArray(applyRevalidation.verifiedResourceKeys)
     ? applyRevalidation.verifiedResourceKeys
     : [];
@@ -735,6 +794,29 @@ export function buildComplexSiteReleaseEvidence({
         && applyRevalidation.checkedAgainst === 'live-remote'
         && applyRevalidationResourceKeys.includes(postTagTaxonomyGraphTaxonomyResourceKey)),
     postTagTaxonomyGraphFinalMatchesLocal: !postTagTaxonomyGraphRequired
+      || after.finalMatchesLocal === true,
+    postmetaPostGraphCarriedInReleasePlan: !postmetaPostGraphRequired
+      || (postmetaPostGraphPostMutation?.resource?.table === 'wp_posts'
+        && postmetaPostGraphPostMutation?.resource?.id === `ID:${postmetaPostGraphPostId}`
+        && postmetaPostGraphMetaMutation?.resource?.table === 'wp_postmeta'
+        && postmetaPostGraphMetaMutation?.resource?.id === `post_id:${postmetaPostGraphPostId}:meta_key:${postmetaPostGraphMetaKey}`
+        && Number(postmetaPostGraphPlannedValue?.post_id) === postmetaPostGraphPostId
+        && postmetaPostGraphPlannedValue?.meta_key === postmetaPostGraphMetaKey),
+    postmetaPostGraphHasReleasePrecondition: !postmetaPostGraphRequired
+      || ([postmetaPostGraphPostPrecondition, postmetaPostGraphMetaPrecondition].every((precondition) =>
+        precondition?.checkedAgainst === 'live-remote'
+        && typeof precondition?.expectedHash === 'string'
+        && /^[a-f0-9]{64}$/.test(precondition.expectedHash))
+        && postmetaPostGraphPostPrecondition?.expectedHash === postmetaPostGraphPostMutation?.baseHash
+        && postmetaPostGraphPostPrecondition?.expectedHash === postmetaPostGraphPostMutation?.remoteBeforeHash
+        && postmetaPostGraphMetaPrecondition?.expectedHash === postmetaPostGraphMetaMutation?.baseHash
+        && postmetaPostGraphMetaPrecondition?.expectedHash === postmetaPostGraphMetaMutation?.remoteBeforeHash),
+    postmetaPostGraphApplyRevalidated: !postmetaPostGraphRequired
+      || (applyRevalidation.phase === 'before-first-mutation'
+        && applyRevalidation.checkedAgainst === 'live-remote'
+        && postmetaPostGraphResourceKeys.every((resourceKey) =>
+          applyRevalidationResourceKeys.includes(resourceKey))),
+    postmetaPostGraphFinalMatchesLocal: !postmetaPostGraphRequired
       || after.finalMatchesLocal === true,
     replayEquivalent: releaseSummary?.replayEquivalence?.equivalent === true,
     plannerProofPassed: plannerProof?.ok === true,
@@ -786,6 +868,23 @@ export function buildComplexSiteReleaseEvidence({
           && typeof postTagTaxonomyGraphPrecondition?.expectedHash === 'string'
           && /^[a-f0-9]{64}$/.test(postTagTaxonomyGraphPrecondition.expectedHash),
         applyRevalidated: applyRevalidationResourceKeys.includes(postTagTaxonomyGraphTaxonomyResourceKey),
+        finalMatchesLocal: after.finalMatchesLocal ?? null,
+      } : null,
+      postmetaPostGraph: postmetaPostGraphRequired ? {
+        postResourceKey: postmetaPostGraphPostResourceKey,
+        postmetaResourceKey: postmetaPostGraphMetaResourceKey,
+        required: true,
+        postMutationPlanned: Boolean(postmetaPostGraphPostMutation),
+        postmetaMutationPlanned: Boolean(postmetaPostGraphMetaMutation),
+        postId: Number(postmetaPostGraphPlannedValue?.post_id),
+        metaKey: postmetaPostGraphPlannedValue?.meta_key || null,
+        postmetaReferencesPost: Number(postmetaPostGraphPlannedValue?.post_id) === postmetaPostGraphPostId,
+        preconditionLive: [postmetaPostGraphPostPrecondition, postmetaPostGraphMetaPrecondition].every((precondition) =>
+          precondition?.checkedAgainst === 'live-remote'
+          && typeof precondition?.expectedHash === 'string'
+          && /^[a-f0-9]{64}$/.test(precondition.expectedHash)),
+        applyRevalidated: postmetaPostGraphResourceKeys.every((resourceKey) =>
+          applyRevalidationResourceKeys.includes(resourceKey)),
         finalMatchesLocal: after.finalMatchesLocal ?? null,
       } : null,
       pluginDriver: {
@@ -1352,6 +1451,12 @@ export function summarizeComplexSnapshot(snapshot) {
     postTagTaxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
       Number(row?.object_id) === postTagTaxonomyGraphPostId
       && Number(row?.term_taxonomy_id) === postTagTaxonomyGraphTermTaxonomyId).length,
+    postmetaPostGraphPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === postmetaPostGraphPostId
+      && String(row?.post_name || '') === postmetaPostGraphPostSlug).length,
+    postmetaPostGraphMeta: Object.values(postmeta).filter((row) =>
+      Number(row?.post_id) === postmetaPostGraphPostId
+      && String(row?.meta_key || '') === postmetaPostGraphMetaKey).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId
