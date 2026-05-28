@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:51 CEST.
+- Last update: 2026-05-28 06:56 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `ff1b3dbb7` (`test: add same source identity coverage`).
+  `bb6b422e7` (`test: add preflight route identity coverage`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 116
-  items complete and leaves 884 open.
-- Checked slices: 39 release-gate foundation items, 16 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 117
+  items complete and leaves 883 open.
+- Checked slices: 40 release-gate foundation items, 16 graph identity items,
   17 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 7 merge-invariant items. No release-ops items are checked
@@ -98,6 +98,14 @@ linked implementation artifacts.
   final release-ready bracketed marker while still ending `NO-GO` without
   provenance, and the drifted apply-source fixture fails closed with
   `SAME_SOURCE_IDENTITY_REQUIRED`, exact same-source evidence, held marker, and
+  `mutationAttempted: false`.
+- Generated preflight-route continuation: `bb6b422e7` integrated `RPP-0051`
+  preflight route identity generated coverage. Focused command:
+  `node --test test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  (35 passing release-gate tests). The matching fixture preserves exact
+  preflight route identity evidence while release remains `NO-GO` without
+  provenance, and the mismatched route fixture fails closed with
+  `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact route evidence, held marker, and
   `mutationAttempted: false`.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
@@ -203,8 +211,8 @@ linked implementation artifacts.
   `node --test test/verify-release-failure-reason.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   with 29 passing tests, `node --test test/playground-snapshot-lib.test.js`
   with 4 passing tests,
-  `node --test test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
-  with 33 passing tests, the `rpp-28`
+  `node --test test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  with 35 passing tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js` with 7 passing tests,
   evidence manifest

@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:51 CEST
+Last updated: 2026-05-28 06:56 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:56 CEST - RPP-0051 Integrated
+
+- Going well: integration is now at `bb6b422e7`, adding `RPP-0051` generated
+  preflight route identity coverage. The matching fixture preserves exact
+  preflight route evidence while release remains `NO-GO` without provenance,
+  and the mismatched route fixture fails closed with
+  `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact route evidence, held marker, and
+  `mutationAttempted: false`.
+- Checklist movement: 117 verified items checked and 883 open. New check since
+  the prior feedback entry: `RPP-0051`.
+- Verification:
+  `node --test test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passes 35/35, checklist lint reports 117 checked / 883 open with 0 risky
+  claims, artifact redaction scans evidence and reporting surfaces with 0
+  rejected files, release remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 06:51 CEST - RPP-0050 Integrated
 
