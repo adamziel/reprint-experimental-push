@@ -4,6 +4,38 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - 1000-Item Completion Checklist
+
+- Last update: 2026-05-28 02:43 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New tracker:
+  `docs/reprint-push-completion-checklist.md`.
+- Checklist shape: exactly 1000 unchecked items, `RPP-0001` through
+  `RPP-1000`, ordered from near-term release-gate foundation work through
+  farthest release/operations work.
+- Near-to-far sections:
+  - `RPP-0001` through `RPP-0100`: release gate foundation;
+  - `RPP-0101` through `RPP-0200`: generated harness expansion;
+  - `RPP-0201` through `RPP-0300`: planner no-data-loss invariants;
+  - `RPP-0301` through `RPP-0400`: WordPress graph identity mapping;
+  - `RPP-0401` through `RPP-0500`: plugin-driver ownership boundary;
+  - `RPP-0501` through `RPP-0600`: production executor and auth protocol;
+  - `RPP-0601` through `RPP-0700`: durable journal and recovery;
+  - `RPP-0701` through `RPP-0800`: storage, chunking, and performance;
+  - `RPP-0801` through `RPP-0900`: production topology and integrations;
+  - `RPP-0901` through `RPP-1000`: audit, release, and operations.
+- Completion rule: an item is not complete until the named success evidence is
+  present in repository files, command output, tmux proof, release gate status,
+  or production run cited by the progress report. The checklist explicitly
+  warns against marking items done from intent, design notes, or too-narrow
+  fixtures.
+- Team supervision: the next tmux-visible worker lanes are being started from
+  this checklist, one slice at a time, with separate worktrees and branches so
+  they can make progress without overwriting the integration branch.
+- Verification:
+  `rg -c '^- \\[ \\] RPP-[0-9]{4}' docs/reprint-push-completion-checklist.md`
+  returned `1000`.
+
 ## 2026-05-28 - Generated Push Harness
 
 - Last update: 2026-05-28 02:35 CEST.

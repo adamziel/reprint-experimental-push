@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it now includes a 360-case generated push harness with 10 complexity tiers, 203 ready/apply cases, 129 conflict cases, 28 blocked cases, tier-9 ready plans, and general no-overwrite invariants. It also includes the Brewcommerce-derived local production proof with graph, journal, auth/session, and local release-state plugin-driver evidence. Docker or external production WordPress, full WooCommerce import stability, rollback, and broader plugin-driver semantics remain required before final release readiness.</p>
-        <time class="update-stamp" datetime="2026-05-28T02:35:00+02:00">Last updated: May 28, 2026, 02:35 CEST</time>
+        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it now includes a 1000-item near-to-far completion checklist, a 360-case generated push harness, and the Brewcommerce-derived local production proof with graph, journal, auth/session, and local release-state plugin-driver evidence. Docker or external production WordPress, full WooCommerce import stability, rollback, and broader plugin-driver semantics remain required before final release readiness.</p>
+        <time class="update-stamp" datetime="2026-05-28T02:43:00+02:00">Last updated: May 28, 2026, 02:43 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Targeted journal tests passing</span>
           <span class="pill">Complex local candidate proof</span>
@@ -504,6 +504,8 @@
           <span class="pill">GATE-4 local candidate</span>
           <span class="pill">Plugin-driver guard tests pass</span>
           <span class="pill">360 generated push cases</span>
+          <span class="pill">1000 completion goals</span>
+          <span class="pill">RPP-0001 to RPP-1000</span>
           <span class="pill">10 complexity tiers</span>
           <span class="pill">203 generated ready cases</span>
           <span class="pill">Tier-9 ready/apply cases</span>
@@ -520,8 +522,8 @@
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
-        <strong>360</strong>
-        <span>generated harness cases</span>
+        <strong>1000</strong>
+        <span>completion checklist goals</span>
       </div>
       <div class="metric">
         <strong>Up</strong>
@@ -532,8 +534,8 @@
         <span>max ready mutations</span>
       </div>
       <div class="metric">
-        <strong>0</strong>
-        <span>Docker/external proofs</span>
+        <strong>360</strong>
+        <span>generated harness cases</span>
       </div>
     </section>
 
@@ -579,11 +581,11 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The generated push harness now passes 360 deterministic cases across 10 complexity tiers, including 203 ready/apply cases and 16 tier-9 ready cases.</span></li>
+            <li><strong>Going well</strong><span>The progress report now has a 1000-item near-to-far completion checklist, and the generated push harness passes 360 deterministic cases across 10 complexity tiers.</span></li>
             <li><strong>Still strong</strong><span>The local plugin-driver verifier remains checked with a 22-mutation release receipt, exact owner/driver evidence, live precondition, apply revalidation, and replay/recovery checks.</span></li>
             <li><strong>Not yet done</strong><span>The generated harness is model coverage, not external WordPress release proof. Full Brewcommerce/WooCommerce import, Docker/external runtime, rollback, and broader plugin-driver semantics remain required.</span></li>
-            <li><strong>Progress change</strong><span>Merge invariants and independent evidence move up because broad generated coverage is now executable instead of a hand-written scenario list only.</span></li>
-            <li><strong>Next nudge</strong><span>Add generated families for every new general WordPress graph, plugin-driver, recovery, or runtime rule before claiming broad coverage.</span></li>
+            <li><strong>Progress change</strong><span>No readiness percentage movement from the checklist itself; it improves supervision and completion tracking.</span></li>
+            <li><strong>Next nudge</strong><span>Start tmux-visible workers on `RPP-0001` onward and integrate their branches one slice at a time.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -592,6 +594,7 @@
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
             <li><a href="scripts/playground/local-production-release-verify.mjs">Local production release verifier</a></li>
+            <li><a href="docs/reprint-push-completion-checklist.md">1000-item completion checklist</a></li>
             <li><a href="scripts/harness/generated-push-cases.js">Generated push harness</a></li>
             <li><a href="test/generated-push-harness.test.js">Generated push harness test</a></li>
             <li><a href="docs/generated-push-harness.md">Generated harness design note</a></li>
@@ -624,6 +627,7 @@
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production:complex-site:journal-pages` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review` for a 190-mutation complex site; graph proof variants now cover 24-mutation featured-image, 26-mutation taxonomy, 24-mutation post-parent, and 25-mutation comment closures, and the plugin-driver variant covers a 22-mutation release-state boundary.</p></div>
+            <div class="proof-item"><span class="status">Tracker</span><p>`docs/reprint-push-completion-checklist.md` tracks 1000 near-to-far goals from `RPP-0001` release-gate foundation through `RPP-1000` final go/no-go release decision evidence.</p></div>
             <div class="proof-item"><span class="status">Generated</span><p>`npm run test:generated-push-harness` covers 360 deterministic three-way push cases with ready, conflict, and blocked outcomes, tier-9 ready/apply plans, plugin-owned rows, file topology, atomic installs, and WordPress graph surfaces.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>Auth-session source readback, restart-readable paged DB journal ownership, lease fencing, stale-claim rejection, fresh retry nonces, and replay/retry are proven in the local topology.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>The process-kill smoke proves complete paged DB-journal readback after local SIGKILL/restart and after exact retry, with no false commit and no partial-state overwrite.</p></div>

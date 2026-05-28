@@ -1,0 +1,55 @@
+$schema: https://raw.githubusercontent.com/ComposioHQ/agent-orchestrator/main/schema/config.schema.json
+
+port: 8080
+terminalPort: 14800
+directTerminalPort: 14801
+readyThresholdMs: 300000
+
+observability:
+  logLevel: info
+  stderr: false
+
+defaults:
+  runtime: tmux
+  agent: codex
+  workspace: worktree
+  notifiers:
+    - dashboard
+  orchestrator:
+    agent: codex
+  worker:
+    agent: codex
+
+projects:
+  reprint-push:
+    name: Reprint Push
+    repo: adamziel/reprint-experimental-push
+    path: /tmp/reprint-evidence-integration-20260527
+    defaultBranch: lane/evidence-integration-20260527
+    sessionPrefix: rpp
+    runtime: tmux
+    agent: codex
+    workspace: worktree
+    agentConfig:
+      permissions: permissionless
+    orchestratorSessionStrategy: kill-previous
+    agentRules: |
+      Work on the Reprint push implementation only.
+      Never use ngrok, cloudflared tunnels, localtunnel, serveo, localhost.run,
+      lhr.life, Tailscale Funnel, or any other remote tunnel. The only exposed
+      sandbox HTTP port is 8080; use loopback ports internally.
+      Keep work in your AO-created worktree and branch. Do not revert changes
+      made by other workers.
+      Use the checklist in docs/reprint-push-completion-checklist.md. Claim the
+      earliest relevant unchecked RPP items in your final report and implement
+      real evidence toward them.
+      Prefer general solutions and generated coverage over exact-shaped
+      fixtures. Add tests or verifier output for every behavioral claim.
+      Run focused checks, commit coherent progress, and push your branch.
+      Do not mention Codex or generated-by attribution in branch names, PR
+      titles, PR descriptions, review comments, or status comments.
+
+notifiers:
+  dashboard:
+    plugin: dashboard
+    limit: 100

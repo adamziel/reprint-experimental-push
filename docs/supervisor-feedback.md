@@ -1,9 +1,36 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 02:35 CEST
+Last updated: 2026-05-28 02:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 02:43 CEST - 1000-Item Completion Checklist
+
+- Going well: `docs/reprint-push-completion-checklist.md` now defines exactly
+  1000 near-to-far completion goals, `RPP-0001` through `RPP-1000`.
+- Also going well: the checklist is ordered by release path, starting with
+  fail-closed release gates and generated harness expansion, then moving
+  through planner invariants, graph identity, plugin drivers, executor/auth,
+  durable recovery, storage/chunking, production topology, and final
+  release/ops audits.
+- Verification:
+  `rg -c '^- \\[ \\] RPP-[0-9]{4}' docs/reprint-push-completion-checklist.md`
+  returned `1000`.
+- Not yet done: the checklist is a tracking surface. Items remain unchecked
+  until a worker lands the named evidence and the progress report cites it.
+- Progress change: no readiness percentage movement from creating the tracker.
+  It changes supervision quality, not product evidence.
+- Next nudge: start tmux-visible workers on the first checklist slices and
+  integrate their branches one by one.
+
+| Lane | Nudge |
+| --- | --- |
+| Release gates | Start at `RPP-0001` and keep fail-closed release evidence exact. |
+| Generated harness | Convert `RPP-0101` onward into new generated families, not one-off fixtures. |
+| Invariants | Use `RPP-0201` onward as the broad no-overwrite checklist. |
+| Recovery | Do not mark durable recovery items complete until restart-readable production evidence exists. |
+| Audit and critic | Treat unchecked items as remaining work, even when adjacent local proofs are green. |
 
 ## 2026-05-28 02:35 CEST - Generated Push Harness
 
