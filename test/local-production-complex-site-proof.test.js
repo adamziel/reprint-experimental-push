@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildCommentmetaIdentityMapProof,
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
@@ -22,6 +23,7 @@ const smallShape = Object.freeze({
   postTagTaxonomyGraph: false,
   postParentGraph: false,
   commentGraph: false,
+  commentmetaIdentityMap: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -286,6 +288,45 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
 });
 
+test('complex-site proof rewrites commentmeta comment identity maps and fails closed when stale', () => {
+  const graphShape = { ...smallShape, commentmetaIdentityMap: true };
+  const proof = buildCommentmetaIdentityMapProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const staleBlockerJson = JSON.stringify(proof.staleBlocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.commentmetaIdentitySourceComments, 0);
+  assert.equal(proof.counts.localEdited.commentmetaIdentitySourceComments, 1);
+  assert.equal(proof.counts.localEdited.commentmetaIdentityRows, 1);
+  assert.equal(proof.counts.remoteChanged.commentmetaIdentityTargetComments, 1);
+  assert.equal(proof.invariants.readyMapsDeterministically, true);
+  assert.equal(proof.invariants.commentmetaCommentRewritten, true);
+  assert.equal(proof.invariants.sourceCommentNotMutated, true);
+  assert.equal(proof.invariants.commentmetaHasLivePrecondition, true);
+  assert.equal(proof.invariants.staleTargetFailsClosed, true);
+  assert.equal(proof.invariants.staleTargetPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.staleTargetNoCommentmetaMutation, true);
+  assert.equal(proof.invariants.staleBlockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.staleBlockerRedactsRawValues, true);
+  assert.equal(proof.deterministicMapping.resourceKey, 'row:["wp_commentmeta","meta_id:74011"]');
+  assert.equal(proof.deterministicMapping.commentId, 75001);
+  assert.equal(proof.deterministicMapping.rewriteType, 'commentmeta-comment');
+  assert.equal(proof.deterministicMapping.sourceTargetResourceKey, 'row:["wp_comments","comment_ID:74001"]');
+  assert.equal(proof.deterministicMapping.targetResourceKey, 'row:["wp_comments","comment_ID:75001"]');
+  assert.match(proof.deterministicMapping.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.deterministicMapping.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(staleBlockerJson.includes('commentmeta-identity@example.test'), false);
+  assert.equal(staleBlockerJson.includes('Remote Private Commentmeta Drift'), false);
+  assert.equal(staleBlockerJson.includes('local-commentmeta-identity-value'), false);
+  assert.equal(staleBlockerJson.includes('remote-private-commentmeta-drift-body'), false);
+});
+
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
   const plannerProof = { ok: true };
   const releaseSummary = syntheticReleaseSummary(9);
@@ -546,6 +587,57 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.commentmetaIdentityMap && local) {
+    snapshot.meta.wordpressGraphIdentityMap = {
+      rows: [
+        { table: 'wp_comments', localId: 'comment_ID:74001', remoteId: 'comment_ID:75001' },
+      ],
+    };
+    snapshot.db.wp_comments['comment_ID:74001'] = {
+      comment_ID: 74001,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Push Commentmeta Identity Comment',
+      comment_author_email: 'commentmeta-identity@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:50:00',
+      comment_date_gmt: '2026-05-27 21:50:00',
+      comment_content: 'Commentmeta target comment used for identity proof.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-commentmeta-identity',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 0,
+    };
+    snapshot.db.wp_commentmeta['meta_id:74011'] = {
+      meta_id: 74011,
+      comment_id: 74001,
+      meta_key: 'reprint_push_commentmeta_identity',
+      meta_value: 'local-commentmeta-identity-value',
+    };
+  }
+
+  if (shape.commentmetaIdentityMap && remote) {
+    snapshot.db.wp_comments['comment_ID:75001'] = {
+      comment_ID: 75001,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Push Commentmeta Identity Comment',
+      comment_author_email: 'commentmeta-identity@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:50:00',
+      comment_date_gmt: '2026-05-27 21:50:00',
+      comment_content: 'Commentmeta target comment used for identity proof.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-commentmeta-identity',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 0,
     };
   }
 

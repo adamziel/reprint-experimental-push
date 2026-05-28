@@ -2151,6 +2151,141 @@ test('allows same-plan comment and user graph closure when author and comment ta
   assert.equal(result.site.db.wp_commentmeta['meta_id:51'].comment_id, 12);
 });
 
+test('RPP-0328 rewrites commentmeta comment identity maps to proven remote comments', () => {
+  const sourceCommentResourceKey = 'row:["wp_comments","comment_ID:301"]';
+  const targetCommentResourceKey = 'row:["wp_comments","comment_ID:401"]';
+  const commentmetaResourceKey = 'row:["wp_commentmeta","meta_id:302"]';
+  const base = baseSite();
+  base.db.wp_comments = {};
+  base.db.wp_commentmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_comments', localId: 'comment_ID:301', remoteId: 'comment_ID:401' }],
+    },
+  };
+  local.db.wp_comments['comment_ID:301'] = {
+    comment_ID: 301,
+    comment_post_ID: 1,
+    comment_author: 'Mapped commentmeta target',
+    comment_author_email: 'mapped-commentmeta-target@example.test',
+    comment_content: 'Mapped comment target',
+    comment_parent: 0,
+    user_id: 0,
+  };
+  remote.db.wp_comments['comment_ID:401'] = {
+    comment_ID: 401,
+    comment_post_ID: 1,
+    comment_author: 'Mapped commentmeta target',
+    comment_author_email: 'mapped-commentmeta-target@example.test',
+    comment_content: 'Mapped comment target',
+    comment_parent: 0,
+    user_id: 0,
+  };
+  local.db.wp_commentmeta['meta_id:302'] = {
+    meta_id: 302,
+    comment_id: 301,
+    meta_key: 'mapped_comment_flag',
+    meta_value: 'mapped-commentmeta-value',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const commentmetaMutation = mutationFor(plan, commentmetaResourceKey);
+  const commentmetaValue = deserializeMutationValue(commentmetaMutation);
+  const commentRewrite = commentmetaMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+    rewrite.relationshipType === 'commentmeta-comment');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, sourceCommentResourceKey), undefined);
+  assert.equal(decisionFor(plan, sourceCommentResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, targetCommentResourceKey).decision, 'keep-remote');
+  assert.equal(commentmetaMutation.changeKind, 'create');
+  assert.equal(commentmetaValue.comment_id, 401);
+  assert.equal(commentRewrite.sourceTargetResourceKey, sourceCommentResourceKey);
+  assert.equal(commentRewrite.targetResourceKey, targetCommentResourceKey);
+  assert.match(commentRewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(commentRewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_comments['comment_ID:301'], undefined);
+  assert.equal(result.site.db.wp_comments['comment_ID:401'].comment_author, 'Mapped commentmeta target');
+  assert.equal(result.site.db.wp_commentmeta['meta_id:302'].comment_id, 401);
+});
+
+test('RPP-0328 blocks stale commentmeta comment identity maps with hash-only evidence', () => {
+  const sourceCommentResourceKey = 'row:["wp_comments","comment_ID:301"]';
+  const targetCommentResourceKey = 'row:["wp_comments","comment_ID:401"]';
+  const commentmetaResourceKey = 'row:["wp_commentmeta","meta_id:302"]';
+  const base = baseSite();
+  base.db.wp_comments = {};
+  base.db.wp_commentmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_comments', localId: 'comment_ID:301', remoteId: 'comment_ID:401' }],
+    },
+  };
+  local.db.wp_comments['comment_ID:301'] = {
+    comment_ID: 301,
+    comment_post_ID: 1,
+    comment_author: 'Local Private Commentmeta Target',
+    comment_author_email: 'local-private-commentmeta-target@example.test',
+    comment_content: 'local-private-commentmeta-target-body',
+    comment_parent: 0,
+    user_id: 0,
+  };
+  remote.db.wp_comments['comment_ID:401'] = {
+    comment_ID: 401,
+    comment_post_ID: 1,
+    comment_author: 'Remote Private Commentmeta Target Drift',
+    comment_author_email: 'remote-private-commentmeta-target@example.test',
+    comment_content: 'remote-private-commentmeta-target-body',
+    comment_parent: 0,
+    user_id: 0,
+  };
+  local.db.wp_commentmeta['meta_id:302'] = {
+    meta_id: 302,
+    comment_id: 301,
+    meta_key: 'local_private_commentmeta_key',
+    meta_value: 'local-private-commentmeta-value',
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceCommentBlocker = plan.blockers.find((blocker) =>
+    blocker.resourceKey === sourceCommentResourceKey);
+  const commentmetaBlocker = plan.blockers.find((blocker) =>
+    blocker.resourceKey === commentmetaResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourceCommentResourceKey), undefined);
+  assert.equal(mutationFor(plan, commentmetaResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetCommentResourceKey).decision, 'keep-remote');
+  assert.equal(sourceCommentBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(sourceCommentBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(sourceCommentBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceCommentBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceCommentBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceCommentBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(sourceCommentBlocker.change.local, 'value'), false);
+  assert.equal(commentmetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(commentmetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(commentmetaBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(commentmetaBlocker.change.local, 'value'), false);
+  assert.equal(commentmetaBlocker.references[0].relationshipType, 'commentmeta-comment');
+  assert.equal(commentmetaBlocker.references[0].targetResourceKey, sourceCommentResourceKey);
+  assert.equal(commentmetaBlocker.references[0].targetSupport.supported, false);
+  assert.equal(planJson.includes('local-private-commentmeta-target-body'), false);
+  assert.equal(planJson.includes('remote-private-commentmeta-target-body'), false);
+  assert.equal(planJson.includes('local-private-commentmeta-value'), false);
+  assert.equal(planJson.includes('remote-private-commentmeta-target@example.test'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks post author and usermeta references when the remote user target diverged', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const usermetaResourceKey = 'row:["wp_usermeta","meta_id:61"]';
