@@ -5,6 +5,37 @@ Last updated: 2026-05-28 02:43 CEST
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-28 02:53 CEST - Progress Reporter Release Hold Snapshot
+
+- Going well: the progress surface now has a dedicated AO evidence report at
+  `docs/evidence/ao-progress-report.md`, plus the integrated supervision
+  handoff at `docs/evidence/ao-supervision-handoff.md`; the report explicitly
+  separates integrated evidence from currently available but unintegrated worker
+  output.
+- Also going well: the integrated branch still has strong local candidate and
+  model evidence: 360 generated push cases, local graph/journal receipts, the
+  22-mutation release-state plugin-driver proof, the AO handoff, and a
+  1000-item near-to-far completion tracker.
+- Not going well: final release is still held. The current release gate file is
+  `release_verdict: 0/4`; Docker/external WordPress proof, broader graph/plugin
+  drivers, rollback/repair, benchmark rollout, and CI release gating remain
+  missing.
+- Progress change: no readiness percentage movement. The report improves audit
+  clarity only.
+- Next nudge: integrate actual worker branches only after they are committed and
+  pushed; then re-run focused proof commands before moving any checklist item or
+  percentage.
+
+| Lane | Nudge |
+| --- | --- |
+| Progress reporter | Keep `progress.html`, `docs/progress-log.md`, and this feedback file aligned with the no-go report. |
+| Reliable executor | Convert pending auth/session continuity output into an integrated, checked release-path change before counting it. |
+| Recovery | Move local restart-readable journal proof to Docker/external storage before changing release gates. |
+| Invariants | Broaden graph coverage beyond the existing featured-image, taxonomy, post-parent, and comment local closures. |
+| Plugin drivers | Treat the release-state row proof as one narrow local candidate; general plugin-owned data remains blocked. |
+| Fast paths | Provide guarded chunk/transfer benchmarks with receipts, cursors, ceilings, and recovery evidence. |
+| Audit and critic | Keep final readiness held until production-backed gates, rollback/repair, and CI release proof exist. |
+
 ## 2026-05-28 02:43 CEST - 1000-Item Completion Checklist
 
 - Going well: `docs/reprint-push-completion-checklist.md` now defines exactly

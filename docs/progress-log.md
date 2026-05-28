@@ -4,6 +4,35 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - AO Progress Report Release Hold
+
+- Last update: 2026-05-28 02:53 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` at
+  `5c9433c4d`.
+- New report: `docs/evidence/ao-progress-report.md`.
+- Worker-output inspection: sibling AO worktrees `rpp-1` through `rpp-8` were
+  inspected through branch status and `.lane-output/final.md`. They remained at
+  the integration commit with no committed branch movement, and their available
+  final reports repeat a pending 2026-05-27 auth/session `userId` continuity
+  slice whose own push result says `Pending`. That output is therefore recorded
+  as available but not counted as integrated release evidence.
+- Verified integrated evidence retained: the 1000-item unchecked RPP checklist,
+  the 360-case generated push harness, local production graph/journal receipts,
+  the 22-mutation release-state plugin-driver local proof, the new AO supervision
+  handoff at `docs/evidence/ao-supervision-handoff.md`, and the current
+  `.agents/RELEASE_GATES.md` status.
+- Release verdict remains held: `.agents/RELEASE_GATES.md` still reports
+  `release_verdict: 0/4`, with GATE-1 through GATE-4 at `support_only`.
+- Final release blockers remain Docker or external WordPress proof, broader
+  graph and plugin-driver coverage, rollback/repair beyond classification,
+  guarded transfer/chunk benchmark rollout, and required CI/release gate proof.
+- RPP evidence advanced only as a report artifact: `RPP-0940` and `RPP-0945`
+  now have a dated no-go record that names remaining risks, and `RPP-0953` has
+  a local `progress.html` refresh that links the report. None of these checklist
+  items should be checked yet because the final success criteria are not met.
+- Percent movement: none. This is an audit/reporting refresh, not new runtime,
+  storage, graph, plugin, rollback, or benchmark evidence.
+
 ## 2026-05-28 - 1000-Item Completion Checklist
 
 - Last update: 2026-05-28 02:43 CEST.
