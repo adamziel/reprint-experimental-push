@@ -273,6 +273,89 @@ test('check-release-gates command proves auth source readback drift before mutat
   });
 });
 
+test('check-release-gates command proves Application Password binding drift before mutation for RPP-0028', () => {
+  const credentialSourceUrl = 'https://forged.example.test/push';
+  const { dir, file } = writeReleaseGateEvidenceFixture({
+    scope: 'final-release',
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      applicationPasswordCredentialBinding: {
+        ok: false,
+        bound: false,
+        sameSource: false,
+        observed: 'credential-bound-to-other-source',
+        credentialSourceUrl,
+        checkedSourceUrl: sourceUrl,
+        scope: 'final-release',
+      },
+    }),
+  });
+
+  const result = runReleaseGateCli([
+    '--evidence-file',
+    file,
+    '--scope',
+    'final-release',
+    '--now',
+    fixedNow.toISOString(),
+  ], {
+    cwd: dir,
+    env: {},
+    now: fixedNow,
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.report.ok, false);
+  assert.equal(result.report.releaseStatus, 'NO-GO');
+  assert.equal(result.report.primaryFailureBucket, 'auth');
+  assert.equal(result.report.primaryFailureCode, 'APPLICATION_PASSWORD_BINDING_REQUIRED');
+  assert.equal(result.report.mutationAttempted, false);
+  assert.deepEqual(result.report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.equal(result.report.releaseMovement.allowed, false);
+  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
+    {
+      bucket: 'auth',
+      gateCount: 1,
+      gates: [
+        {
+          bucket: 'auth',
+          id: 'application-password-binding',
+          rpp: 'RPP-0008',
+          title: 'Application Password credential binding',
+          status: 'failed',
+          code: 'APPLICATION_PASSWORD_BINDING_REQUIRED',
+          reason: 'Application Password credential binding drifted from the checked source identity.',
+          required: ['Application Password bound to checked source identity'],
+          observed: 'credential-bound-to-other-source',
+          envKey: undefined,
+          evidenceKey: undefined,
+          scope: 'final-release',
+          requiredScope: undefined,
+        },
+      ],
+    },
+  ]);
+
+  const gate = gateById(result.report.evaluation, 'application-password-binding');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'APPLICATION_PASSWORD_BINDING_REQUIRED');
+  assert.equal(gate.reason, 'Application Password credential binding drifted from the checked source identity.');
+  assert.deepEqual(gate.evidence, {
+    ok: false,
+    bound: false,
+    sameSource: false,
+    observed: 'credential-bound-to-other-source',
+    credentialSourceUrl,
+    checkedSourceUrl: sourceUrl,
+    scope: 'final-release',
+    required: ['Application Password bound to checked source identity'],
+  });
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
