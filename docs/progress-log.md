@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 11:29 CEST.
+- Last update: 2026-05-28 11:39 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `1ab4941a4` (no-ff merge of `RPP-0205` file type-swap descendant refusal).
+  `c703859c1` (no-ff merge of `RPP-0214` already-in-sync decision evidence).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 135
-  items complete and leaves 865 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 136
+  items complete and leaves 864 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 14 merge-invariant items. No release-ops items are checked
+  harness items, and 15 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -183,6 +183,17 @@ linked implementation artifacts.
   bytes plus remote descendant bytes out of serialized planner evidence.
   Caveat: this is deterministic local planner/apply evidence, not production
   filesystem durability proof or final release evidence.
+- Already-in-sync continuation: `c703859c1` merged the existing
+  `origin/session/rpp-29-rpp-0214-already-in-sync-decision` branch
+  (`bcf03c599`) with ancestry preserved. Focused command:
+  `node --test --test-name-pattern=RPP-0214 test/push-planner.test.js`
+  (1 passing planner/apply proof), plus `node --test test/push-planner.test.js`
+  (106 passing planner/apply tests). The proof covers matching local/remote
+  file, plugin, and row changes, emits only `already-in-sync` decisions, keeps
+  mutations and preconditions at zero, verifies deterministic summary counts,
+  and serializes only hash-only/redacted evidence. Caveat: this is deterministic
+  local planner/apply evidence, not production filesystem durability proof or
+  final release evidence.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
   summary count consistency. The focused local Node proof checks ready,
   conflict, blocked, and atomic fixtures, verifies `plan.summary` against the

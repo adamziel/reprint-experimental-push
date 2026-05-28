@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 11:29 CEST
+Last updated: 2026-05-28 11:39 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 11:39 CEST - RPP-0214 Integrated
+
+- Going well: integration is now at `c703859c1`, preserving ancestry for
+  `origin/session/rpp-29-rpp-0214-already-in-sync-decision` and adding
+  `RPP-0214` already-in-sync decision count evidence. The focused proof covers
+  matching local/remote file, plugin, and row changes, emits only
+  `already-in-sync` decisions, keeps mutation and precondition counts at zero,
+  and records the scenario matrix row plus command.
+- Checklist movement: 136 verified items checked and 864 open. New check since
+  the prior feedback entry: `RPP-0214`. The interim RPP-0070 ancestry-only
+  merge reduced the raw unmerged branch backlog without changing counts.
+- Verification: focused RPP-0214 planner/apply validation passes 1/1, the full
+  planner/apply suite passes 106/106, checklist lint reports 136 checked / 864
+  open with 0 risky claims, release remains `NO-GO`, and `git diff --check` is
+  clean.
+- Current nudge: continue integrating already-pushed branches only; under the
+  integration-only freeze, push only the lane after validation and do not push
+  session branches.
 
 ## 2026-05-28 11:29 CEST - RPP-0205 Integrated
 
