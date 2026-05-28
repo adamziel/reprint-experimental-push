@@ -3691,6 +3691,169 @@ test('RPP-0220 propagates atomic group blockers before mutation with redacted ev
   assert.equal(JSON.stringify(remote), beforeRemote);
 });
 
+test('RPP-0240 propagates group-level atomic blockers before any mutation', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const groupId = 'rpp-0240-missing-dependency-group';
+  const dependentFileResourceKey = `file:${pluginMainFile(atomicDependentPlugin)}`;
+  const dependentPluginResourceKey = `plugin:${atomicDependentPlugin}`;
+  const privateValues = [
+    '<?php echo "rpp0240-private-homepage-code";',
+    '<?php /* rpp0240-private-dependent-plugin-code */',
+    'rpp0240-private-dependency-access-token',
+  ];
+  local.files['index.php'] = privateValues[0];
+  local.files[pluginMainFile(atomicDependentPlugin)] = privateValues[1];
+  local.plugins[atomicDependentPlugin] = {
+    version: '1.0.0',
+    active: true,
+    requires: [atomicDependencyPlugin],
+  };
+  local.pushIntents = [
+    {
+      id: groupId,
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        'file:index.php',
+        dependentFileResourceKey,
+        dependentPluginResourceKey,
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            expectedVersion: '2.1.0',
+            active: true,
+            accessToken: privateValues[2],
+          },
+        ],
+      },
+    },
+  ];
+  const plan = planFor(base, local, remote);
+  const group = plan.atomicGroups.find((entry) => entry.id === groupId);
+  const directBlockers = group.blockers
+    .filter((blocker) => blocker.class !== 'atomic-group-blocker-propagation');
+  const propagatedBlockers = group.blockers
+    .filter((blocker) => blocker.class === 'atomic-group-blocker-propagation')
+    .sort((a, b) => a.mutationId.localeCompare(b.mutationId));
+  const groupMutations = plan.mutations
+    .filter((mutation) => group.mutationIds.includes(mutation.id))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const sourceBlockerIds = directBlockers.map((blocker) => blocker.id).sort();
+  const journalEvents = [];
+  const durableJournal = {
+    claimFenced: true,
+    claimHash: 'd'.repeat(64),
+    appendEvent(type, payload) {
+      journalEvents.push({ type, payload });
+      return { sequence: journalEvents.length, type, ...payload };
+    },
+  };
+  const beforeRemoteHash = digest(remote);
+  const beforeRemoteJson = JSON.stringify(remote);
+  let appliedMutationCount = 0;
+  const error = captureError(() => {
+    const result = applyPlan(remote, plan, { durableJournal });
+    appliedMutationCount = result.appliedMutations;
+  });
+  const mutationJournalEventCount = journalEvents
+    .filter((event) => event.type.includes('mutation')).length;
+  const evidence = {
+    status: plan.status,
+    summary: plan.summary,
+    group: {
+      id: group.id,
+      status: group.status,
+      mutationIds: [...group.mutationIds],
+      directBlockers: directBlockers.map((blocker) => ({
+        id: blocker.id,
+        class: blocker.class,
+        groupId: blocker.groupId,
+        blockerHash: sha256Evidence(blocker),
+      })),
+      propagatedBlockers: propagatedBlockers.map((blocker) => ({
+        id: blocker.id,
+        class: blocker.class,
+        groupId: blocker.groupId,
+        mutationId: blocker.mutationId,
+        resourceKey: blocker.resourceKey,
+        sourceBlockerIds: [...blocker.sourceBlockerIds].sort(),
+        blockerHash: sha256Evidence(blocker),
+      })),
+      dependencyRequirements: group.dependencyRequirements.map((requirement) => ({
+        plugin: requirement.plugin,
+        source: requirement.source,
+        resourceKey: requirement.resourceKey,
+        requirementHash: sha256Evidence(requirement),
+      })),
+    },
+    mutations: groupMutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      atomicGroupId: mutation.atomicGroupId,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      plannedValueHash: sha256Evidence(deserializeMutationValue(mutation)),
+    })),
+    refusal: {
+      code: error.code,
+      detailsHash: sha256Evidence(error.details),
+      beforeRemoteHash,
+      afterRemoteHash: digest(remote),
+      appliedMutationCount,
+      durableJournalEventCount: journalEvents.length,
+      mutationJournalEventCount,
+    },
+  };
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0240 test/push-planner.test.js',
+    caveat: 'Focused local atomic blocker proof only; release remains gated separately.',
+    evidence,
+    evidenceHash: sha256Evidence(evidence),
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(group.status, 'blocked');
+  assert.equal(plan.summary.blockers, 4);
+  assert.deepEqual(
+    directBlockers.map((blocker) => blocker.class),
+    ['missing-plugin-dependency'],
+  );
+  assert.equal(groupMutations.length, 3);
+  assert.deepEqual(
+    propagatedBlockers.map((blocker) => blocker.mutationId),
+    groupMutations.map((mutation) => mutation.id),
+  );
+  assert.deepEqual(
+    propagatedBlockers.map((blocker) => blocker.sourceBlockerIds),
+    groupMutations.map(() => sourceBlockerIds),
+  );
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.deepEqual(error.details, { status: 'blocked' });
+  assert.equal(appliedMutationCount, 0);
+  assert.equal(journalEvents.length, 0);
+  assert.equal(mutationJournalEventCount, 0);
+  assert.equal(JSON.stringify(remote), beforeRemoteJson);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  for (const mutation of groupMutations) {
+    assert.equal(
+      evidenceText.includes(JSON.stringify(mutation.value)),
+      false,
+      `RPP-0240 evidence leaked mutation payload for ${mutation.resourceKey}`,
+    );
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(evidenceText.includes(privateValue), false, `RPP-0240 evidence leaked ${privateValue}`);
+  }
+});
+
 test('redacts raw plugin dependency metadata from blocker evidence', () => {
   const base = baseSite();
   const local = baseSite();
