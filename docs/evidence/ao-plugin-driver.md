@@ -29,6 +29,26 @@ The support-only package smoke alias proved fail-closed registration guards for 
 
 Non-claim: an over-broad full run of `node --test test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js` was stopped/failed after live Playground readiness timeouts in unrelated apply-revalidation smoke tests. It is not used as passing evidence for this lane.
 
+## Owner Context Stale Plugin File Refusal
+
+RPP-0433 adds focused support-only evidence that plugin-owned data guarded by an
+explicit driver still fails closed when the owning plugin file changed on the
+live remote after the pull base. The blocker now carries
+`ownerFileRefusalEvidence` with reason code
+`STALE_PLUGIN_FILE_OWNER_CONTEXT`, the stale plugin file resource key, and
+hash-only context. The executor also rejects a previously ready plan before
+mutation if the owner file hash no longer matches the dry-run evidence.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'stale plugin file owner context|executor rejects stale plugin file owner context' test/plugin-owner-context-metadata-refusal.test.js
+```
+
+This evidence does not broaden accepted plugin-owned data support. The row
+still requires exact owner and driver policy, and stale owner file context keeps
+the plan blocked or rejected before mutation.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -36,3 +56,6 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+- RPP-0433 — owner context stale plugin file refusal: plugin-owned row
+  mutations with otherwise valid owner/driver policy are blocked or rejected
+  before mutation when the owner plugin file drifted on the live remote.

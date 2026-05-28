@@ -2204,6 +2204,11 @@ function pluginContextMutationSupport({
       owner,
       staleContext,
     }),
+    ownerFileRefusalEvidence: stalePluginFileOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
   };
 }
 
@@ -2248,6 +2253,11 @@ function pluginOwnedOwnerContextSupport({
     reason: `Plugin-owned resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
     ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
+    ownerFileRefusalEvidence: stalePluginFileOwnerContextRefusalEvidence({
       resource,
       owner,
       staleContext,
@@ -2322,6 +2332,30 @@ function stalePluginMetadataOwnerContextRefusalEvidence({ resource, owner, stale
   };
 }
 
+function stalePluginFileOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
+  const pluginFileContexts = staleContext.filter((context) => context.type === 'file');
+  if (pluginFileContexts.length === 0) {
+    return null;
+  }
+  return {
+    reasonCode: 'STALE_PLUGIN_FILE_OWNER_CONTEXT',
+    operation: 'refuse-before-mutation',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    stalePluginFileResourceKeys: pluginFileContexts.map((context) => context.resourceKey).sort(),
+    context: pluginFileContexts
+      .map((context) => ({
+        resourceKey: context.resourceKey,
+        baseHash: context.baseHash,
+        localHash: context.localHash,
+        remoteHash: context.remoteHash,
+        localChange: context.change.localChange,
+        remoteChange: context.change.remoteChange,
+      }))
+      .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey)),
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2355,6 +2389,7 @@ function addPluginOwnedResourceBlocker(plan, {
     driver: support.driver || null,
     policySource: support.policySource || null,
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
+    ...(support.ownerFileRefusalEvidence ? { ownerFileRefusalEvidence: support.ownerFileRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
@@ -2391,6 +2426,7 @@ function addPluginContextBlocker(plan, {
     pluginOwner: owner,
     ownerContext: support.ownerContext || [],
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
+    ...(support.ownerFileRefusalEvidence ? { ownerFileRefusalEvidence: support.ownerFileRefusalEvidence } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
