@@ -36,3 +36,28 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+
+## RPP-0434 stale owner metadata refusal
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0434|stale plugin metadata owner context|allowed plugin driver row update' test/plugin-owner-context-metadata-refusal.test.js
+```
+
+The RPP-0434 proof keeps a plugin-owned `wp_options` row unchanged on the
+remote while the local side attempts to mutate that row under an explicit
+`wp-option` policy and the live remote plugin metadata has drifted from the
+pull base. The planner fails closed with blocker class
+`stale-plugin-owner-context` and metadata reason code
+`STALE_PLUGIN_METADATA_OWNER_CONTEXT`; no mutation is emitted for the
+plugin-owned row. Applying the blocked plan returns `PLAN_NOT_READY`, and the
+test asserts the before/after remote snapshot hash and plugin-owned row hash
+are identical.
+
+The test evidence object is hash-only: it records `sha256:` hashes for owner
+context, metadata refusal evidence, blocker evidence, remote snapshot
+preservation, plugin-owned row preservation, and the combined proof hash. It
+also asserts the local attempted value and the preserved remote plugin-owned
+value do not appear in either blocker JSON or the proof JSON. This is local
+focused evidence, not production-backed evidence.
