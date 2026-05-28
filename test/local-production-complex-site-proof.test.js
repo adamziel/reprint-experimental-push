@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   buildComplexSitePlannerProof,
+  buildWpNavigationFailClosedProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
@@ -20,6 +21,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  wpNavigationFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -233,6 +235,42 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site proof keeps wp_navigation references fail closed with hash-only evidence', () => {
+  const graphShape = { ...smallShape, wpNavigationFailClosed: true };
+  const proof = buildWpNavigationFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const evidenceJson = JSON.stringify({ blockers: proof.blockerEvidence, conflicts: proof.conflictEvidence });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.unsupportedPlan.status, 'blocked');
+  assert.equal(proof.remoteDriftPlan.status, 'conflict');
+  assert.equal(proof.counts.source.wpNavigationFailClosedPosts, 0);
+  assert.equal(proof.counts.localEdited.wpNavigationFailClosedPosts, 1);
+  assert.equal(proof.invariants.wpNavigationRowsPresent, true);
+  assert.equal(proof.invariants.unsupportedNavigationFailsClosed, true);
+  assert.equal(proof.invariants.noWpNavigationMutations, true);
+  assert.equal(proof.invariants.stableRemotePreventsReleaseMovement, true);
+  assert.equal(proof.invariants.remoteDriftAlsoFailsClosed, true);
+  assert.equal(proof.invariants.remoteDriftPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.remoteDriftEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.evidenceRedactsRawValues, true);
+  assert.equal(proof.blockedNavigation.resourceKey, 'row:["wp_posts","ID:74501"]');
+  assert.match(proof.blockedNavigation.reason, /wp_navigation/);
+  assert.equal(evidenceJson.includes('Local Private Navigation Document'), false);
+  assert.equal(evidenceJson.includes('local-private-navigation-document'), false);
+  assert.equal(evidenceJson.includes('Local Private Navigation Label'), false);
+  assert.equal(evidenceJson.includes('/private-navigation'), false);
+  assert.equal(evidenceJson.includes('Remote Private Navigation Document Drift'), false);
+  assert.equal(evidenceJson.includes('remote-private-navigation-document-drift'), false);
+  assert.equal(evidenceJson.includes('Remote Private Navigation Label'), false);
+  assert.equal(evidenceJson.includes('/remote-private-navigation'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -546,6 +584,19 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.wpNavigationFailClosed && local) {
+    snapshot.db.wp_posts['ID:74501'] = {
+      ID: 74501,
+      post_title: 'Local Private Navigation Document',
+      post_name: 'local-private-navigation-document',
+      post_content: '<!-- wp:navigation-link {"label":"Local Private Navigation Label","url":"/private-navigation"} /-->',
+      post_status: 'publish',
+      post_type: 'wp_navigation',
+      post_parent: 0,
+      post_author: 0,
     };
   }
 

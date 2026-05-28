@@ -2193,6 +2193,40 @@ test('keeps WordPress menu item graph surfaces fail-closed', () => {
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('RPP-0336 keeps wp_navigation post rows fail closed with hash-only evidence', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:46"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:46'] = {
+    ID: 46,
+    post_title: 'Local Private RPP-0336 Navigation',
+    post_name: 'local-private-rpp0336-navigation',
+    post_content: '<!-- wp:navigation-link {"label":"Local Private RPP-0336 Link","url":"/local-private-rpp0336-link"} /-->',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === navigationResourceKey);
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.match(blocker.reason, /unsupported post graph surface wp_navigation/);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(blocker.change.local, 'value'), false);
+  assert.equal(blockerJson.includes('Local Private RPP-0336 Navigation'), false);
+  assert.equal(blockerJson.includes('local-private-rpp0336-navigation'), false);
+  assert.equal(blockerJson.includes('Local Private RPP-0336 Link'), false);
+  assert.equal(blockerJson.includes('/local-private-rpp0336-link'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows same-plan comment and user graph closure when author and comment targets are created locally', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const userResourceKey = 'row:["wp_users","ID:7"]';

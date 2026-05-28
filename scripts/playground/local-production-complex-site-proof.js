@@ -74,6 +74,14 @@ const postTagTaxonomyGraphResourceKeys = Object.freeze([
   postTagTaxonomyGraphTaxonomyResourceKey,
   postTagTaxonomyGraphRelationshipResourceKey,
 ]);
+const wpNavigationFailClosedPostId = 74501;
+const wpNavigationFailClosedTitle = 'Local Private Navigation Document';
+const wpNavigationFailClosedSlug = 'local-private-navigation-document';
+const wpNavigationFailClosedBody = '<!-- wp:navigation-link {"label":"Local Private Navigation Label","url":"/private-navigation"} /-->';
+const wpNavigationFailClosedPostResourceKey = `row:["wp_posts","ID:${wpNavigationFailClosedPostId}"]`;
+const wpNavigationFailClosedResourceKeys = Object.freeze([
+  wpNavigationFailClosedPostResourceKey,
+]);
 const commentGraphPostId = 71001;
 const commentGraphParentId = 72801;
 const commentGraphChildId = 72802;
@@ -478,6 +486,113 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildWpNavigationFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const stableRemoteSnapshot = wpNavigationFailClosedCloneJson(sourceSnapshot);
+  const unsupportedPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: stableRemoteSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftSnapshot = wpNavigationFailClosedCloneJson(stableRemoteSnapshot);
+  remoteDriftSnapshot.db = remoteDriftSnapshot.db || {};
+  remoteDriftSnapshot.db.wp_posts = remoteDriftSnapshot.db.wp_posts || {};
+  remoteDriftSnapshot.db.wp_posts[`ID:${wpNavigationFailClosedPostId}`] = {
+    ID: wpNavigationFailClosedPostId,
+    post_title: 'Remote Private Navigation Document Drift',
+    post_name: 'remote-private-navigation-document-drift',
+    post_content: '<!-- wp:navigation-link {"label":"Remote Private Navigation Label","url":"/remote-private-navigation"} /-->',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 0,
+    post_author: 0,
+  };
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteDriftSnapshot,
+    now: proofNow,
+  });
+  const navigationBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === wpNavigationFailClosedPostResourceKey) || null;
+  const remoteDriftNavigationBlocker = remoteDriftPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === wpNavigationFailClosedPostResourceKey) || null;
+  const remoteDriftNavigationConflict = remoteDriftPlan.conflicts.find((conflict) =>
+    conflict?.resourceKey === wpNavigationFailClosedPostResourceKey) || null;
+  const sanitizedBlockers = [navigationBlocker, remoteDriftNavigationBlocker]
+    .filter(Boolean)
+    .map(wpNavigationFailClosedHashOnlyRecordEvidence);
+  const sanitizedConflicts = [remoteDriftNavigationConflict]
+    .filter(Boolean)
+    .map(wpNavigationFailClosedHashOnlyRecordEvidence);
+  const sanitizedJson = JSON.stringify({ blockers: sanitizedBlockers, conflicts: sanitizedConflicts });
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const wpNavigationMutations = unsupportedPlan.mutations.filter((mutation) =>
+    wpNavigationFailClosedResourceKeys.includes(mutation.resourceKey));
+  const invariants = {
+    wpNavigationRowsPresent: counts.source.wpNavigationFailClosedPosts === 0
+      && counts.localEdited.wpNavigationFailClosedPosts >= 1,
+    unsupportedNavigationFailsClosed: unsupportedPlan.status === 'blocked'
+      && navigationBlocker?.class === 'stale-wordpress-graph-identity'
+      && navigationBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(navigationBlocker?.reason || '').includes('wp_navigation'),
+    noWpNavigationMutations: wpNavigationMutations.length === 0,
+    stableRemotePreventsReleaseMovement: unsupportedPlan.status !== 'ready',
+    remoteDriftAlsoFailsClosed: remoteDriftPlan.status !== 'ready'
+      && (remoteDriftNavigationBlocker?.class === 'stale-wordpress-graph-identity'
+        || remoteDriftNavigationConflict?.class === 'row-conflict'),
+    remoteDriftPreventsReleaseMovement: remoteDriftPlan.status !== 'ready',
+    blockerEvidenceIsHashOnly: sanitizedBlockers.length >= 1
+      && sanitizedBlockers.every(wpNavigationFailClosedEvidenceHasOnlyHashes),
+    remoteDriftEvidenceIsHashOnly: sanitizedConflicts.length >= 1
+      && sanitizedConflicts.every(wpNavigationFailClosedEvidenceHasOnlyHashes),
+    evidenceRedactsRawValues: ![
+      wpNavigationFailClosedTitle,
+      wpNavigationFailClosedSlug,
+      'Local Private Navigation Label',
+      '/private-navigation',
+      'Remote Private Navigation Document Drift',
+      'remote-private-navigation-document-drift',
+      'Remote Private Navigation Label',
+      '/remote-private-navigation',
+    ].some((privateValue) => sanitizedJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'wp-navigation-fail-closed-reference',
+    releaseReady: false,
+    resourceKeys: {
+      navigationPost: wpNavigationFailClosedPostResourceKey,
+    },
+    counts,
+    unsupportedPlan: summarizePlan(unsupportedPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    mutationFamilies: countMutationFamilies(unsupportedPlan.mutations || []),
+    blockedNavigation: navigationBlocker ? {
+      resourceKey: navigationBlocker.resourceKey,
+      class: navigationBlocker.class,
+      reason: navigationBlocker.reason,
+      resolutionPolicy: navigationBlocker.resolutionPolicy,
+    } : null,
+    blockerEvidence: sanitizedBlockers,
+    conflictEvidence: sanitizedConflicts,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +889,76 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function wpNavigationFailClosedHashOnlyRecordEvidence(record) {
+  return {
+    id: record.id || null,
+    class: record.class || null,
+    resourceKey: record.resourceKey || null,
+    reason: record.reason || null,
+    resolutionPolicy: record.resolutionPolicy || null,
+    baseHash: record.baseHash || null,
+    localHash: record.localHash || null,
+    remoteHash: record.remoteHash || null,
+    change: wpNavigationFailClosedHashOnlyChangeEvidence(record.change),
+    references: Array.isArray(record.references)
+      ? record.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+        targetSupport: reference.targetSupport
+          ? {
+            supported: reference.targetSupport.supported === true,
+            reason: reference.targetSupport.reason || null,
+          }
+          : null,
+        targetChange: wpNavigationFailClosedHashOnlyChangeEvidence(reference.targetChange),
+      }))
+      : [],
+  };
+}
+
+function wpNavigationFailClosedEvidenceHasOnlyHashes(record) {
+  return [record.baseHash, record.localHash, record.remoteHash]
+    .every(wpNavigationFailClosedIsSha256Hex)
+    && ['base', 'local', 'remote'].every((slot) =>
+      wpNavigationFailClosedIsSha256Hex(record.change?.[slot]?.hash));
+}
+
+function wpNavigationFailClosedIsSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
+function wpNavigationFailClosedHashOnlyChangeEvidence(change) {
+  if (!change || typeof change !== 'object') {
+    return null;
+  }
+  return {
+    localChange: change.localChange || null,
+    remoteChange: change.remoteChange || null,
+    base: wpNavigationFailClosedHashOnlySlot(change.base),
+    local: wpNavigationFailClosedHashOnlySlot(change.local),
+    remote: wpNavigationFailClosedHashOnlySlot(change.remote),
+  };
+}
+
+function wpNavigationFailClosedHashOnlySlot(slot) {
+  if (!slot || typeof slot !== 'object') {
+    return null;
+  }
+  return {
+    state: slot.state || null,
+    hash: slot.hash || null,
+  };
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -878,6 +1063,10 @@ export function summarizeComplexSnapshot(snapshot) {
     postTagTaxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
       Number(row?.object_id) === postTagTaxonomyGraphPostId
       && Number(row?.term_taxonomy_id) === postTagTaxonomyGraphTermTaxonomyId).length,
+    wpNavigationFailClosedPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === wpNavigationFailClosedPostId
+      && String(row?.post_type || '') === 'wp_navigation'
+      && String(row?.post_name || '') === wpNavigationFailClosedSlug).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId
@@ -977,6 +1166,10 @@ function positiveEnvInt(value, fallback) {
     return fallback;
   }
   return positiveInt(value);
+}
+
+function wpNavigationFailClosedCloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function phpString(value) {
