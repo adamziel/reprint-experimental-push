@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-28T22:19:00+02:00">Last updated: May 28, 2026, 22:19 CEST</time>
+        <time class="update-stamp" datetime="2026-05-28T22:30:00+02:00">Last updated: May 28, 2026, 22:30 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>219</strong>
+        <strong>220</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>781</strong>
+        <strong>780</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -332,7 +332,7 @@
         <ul class="checklist">
           <li>
             <input type="checkbox" checked disabled aria-label="Release gates checked">
-            <span><strong>Fail-closed release gates</strong>87/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
+            <span><strong>Fail-closed release gates</strong>88/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
@@ -406,10 +406,11 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0087</span>
+        <span>RPP-0088</span>
       </div>
-      <p>The latest refresh checks release-verifier missing production secret carry-through: with source/local/changed URLs present, a partial Application Password value, no username, and no auth session source command, the verifier exits 1 before startup, prints the final held marker, redacts the credential, carries exact production-secret evidence into release gates, and keeps release NO-GO. Counts are now 219/781.</p>
+      <p>The latest refresh checks release-verifier Application Password credential binding carry-through: with source/local/changed URLs, checked credentials, and an auth source command that reads back the same source URL but a different user/password binding, the verifier exits 1 before startup, prints the final held marker, redacts credentials, carries exact application-password-binding evidence into release gates, and keeps release NO-GO. Counts are now 220/780.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">app password binding: 39/39</span>
         <span class="tag">missing secret carry-through: 38/38</span>
         <span class="tag">auth readback carry-through: 38/38</span>
         <span class="tag">wrong alias carry-through: 38/38</span>
@@ -426,7 +427,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 36/36</span>
-        <span class="tag">checked goals: 219/1000</span>
+        <span class="tag">checked goals: 220/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

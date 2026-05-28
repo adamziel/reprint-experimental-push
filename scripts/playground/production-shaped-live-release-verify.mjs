@@ -14,6 +14,7 @@ import {
   resolveLiveApplyRevalidationEnv,
   shouldRequestCheckedLivePackagedBoundary,
 } from './production-shaped-live-release-verify-lib.js';
+import { loadAuthSessionSourceFromRuntimeEnvironment } from './auth-session-source.js';
 import { releaseVerifyFixtureCredentials } from './release-verify-credentials.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -70,6 +71,11 @@ if (
   && (!explicitLiveUsername || !explicitLiveApplicationPassword)
 ) {
   emitMissingExplicitCredentialGateAndExit();
+}
+
+const applicationPasswordBindingBlocker = resolveApplicationPasswordBindingBlocker();
+if (applicationPasswordBindingBlocker) {
+  emitApplicationPasswordBindingGateAndExit(applicationPasswordBindingBlocker);
 }
 
 const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
@@ -665,6 +671,140 @@ function emitReleaseFailureAndExit(verify) {
     releaseMovement,
   }, statusMarker);
   process.exit(exitCode);
+}
+
+function resolveApplicationPasswordBindingBlocker() {
+  if (
+    !explicitLiveSourceUrl
+    || !explicitLiveUsername
+    || !explicitLiveApplicationPassword
+    || !explicitAuthSessionSourceCommand
+  ) {
+    return null;
+  }
+
+  const authSessionSource = loadAuthSessionSourceFromRuntimeEnvironment(
+    explicitAuthSessionSourceCommand,
+    process.env,
+    repoRoot,
+    {
+      sourceUrl: explicitLiveSourceUrl,
+      remoteUrl: explicitLiveRemoteChangedUrl,
+      localUrl: explicitLiveLocalUrl,
+      requireExactSourceUrl: true,
+      checkedSourceUrl: explicitLiveSourceUrl,
+    },
+  );
+
+  if (!authSessionSource?.ok) {
+    return null;
+  }
+
+  const sameSource = sameReleaseTopologyUrl(authSessionSource.sourceUrl, explicitLiveSourceUrl);
+  if (!sameSource) {
+    return null;
+  }
+
+  const sameUser = authSessionSource.username === explicitLiveUsername;
+  const sameApplicationPassword = authSessionSource.applicationPassword === explicitLiveApplicationPassword;
+  if (sameUser && sameApplicationPassword) {
+    return null;
+  }
+
+  return {
+    authSessionSource,
+    sameSource,
+    sameUser,
+    sameApplicationPassword,
+  };
+}
+
+function emitApplicationPasswordBindingGateAndExit(blocker) {
+  const exitCode = 1;
+  const reason = 'APPLICATION_PASSWORD_BINDING_REQUIRED';
+  const observed = blocker.sameUser
+    ? 'credential-bound-to-other-application-password'
+    : 'credential-bound-to-other-source-user';
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason,
+  };
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason });
+  const authSessionSourceSummary = summarizeApplicationPasswordBindingAuthSource(
+    explicitAuthSessionSourceCommand,
+    blocker.authSessionSource,
+  );
+
+  emitVerifyReleaseFailurePayload({
+    ok: false,
+    statusMarker,
+    mutationAttempted: false,
+    topology: {
+      sourceUrl: explicitLiveSourceUrl,
+      remoteBase: null,
+      remoteChanged: null,
+      localEdited: null,
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'Application Password credential binding on the checked live release path',
+      status: 'blocked',
+      verdict: reason,
+      authSession: {
+        required: 'Application Password bound to checked source identity',
+        observed,
+        verdict: reason,
+      },
+      applicationPasswordCredentialBinding: {
+        required: 'Application Password bound to checked source identity',
+        observed,
+        checkedSourceUrl: explicitLiveSourceUrl,
+        credentialSourceUrl: blocker.authSessionSource.sourceUrl || '',
+        checkedUser: explicitLiveUsername,
+        credentialUser: blocker.authSessionSource.username || '',
+        sameSource: blocker.sameSource,
+        sameUser: blocker.sameUser,
+        applicationPasswordPresent: true,
+        applicationPasswordSame: blocker.sameApplicationPassword,
+        verdict: reason,
+      },
+    },
+    preflight: {
+      status: 0,
+      authSessionType: observed,
+      routeProfile: 'production-shaped',
+      session: {
+        id: '',
+        type: observed,
+      },
+    },
+    releaseProof: {
+      ok: false,
+      status: exitCode,
+      code: reason,
+    },
+    authSessionSource: authSessionSourceSummary,
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: {
+        topology: { sourceUrl: explicitLiveSourceUrl },
+        authSessionSource: authSessionSourceSummary,
+      },
+      applyRevalidation: null,
+      releaseMovement,
+    }),
+    releaseMovement,
+  }, statusMarker);
+  process.exit(exitCode);
+}
+
+function summarizeApplicationPasswordBindingAuthSource(command, source) {
+  return {
+    command: redactAuthSessionSourceCommand(command),
+    ok: source?.ok === true,
+    sourceUrl: source?.sourceUrl || '',
+    username: source?.username || '',
+    applicationPasswordPresent: Boolean(source?.applicationPassword),
+  };
 }
 
 function emitTopologyGateFailureAndExit(blocker) {

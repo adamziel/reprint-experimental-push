@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0087.
+Primary checklist range: RPP-0001 through RPP-0088.
 
 ## What changed
 
@@ -78,6 +78,7 @@ Primary checklist range: RPP-0001 through RPP-0087.
 | RPP-0085 | Evidence toward release verifier wrong `REPRINT_PUSH_REMOTE_URL` alias carry-through now emits `REPRINT_PUSH_SOURCE_URL_MISMATCH`, prints the final tmux-visible verifier marker, starts no live verifier server, and proves the release-gate CLI preserves the exact remote-alias gate evidence. |
 | RPP-0086 | Evidence toward release verifier auth source command readback drift carry-through now emits `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts the source command credential, and proves the release-gate CLI preserves the exact `auth-source-readback` gate evidence. |
 | RPP-0087 | Evidence toward release verifier missing production secret carry-through now emits `REPRINT_PUSH_SECRET_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts a partial Application Password value, and proves the release-gate CLI preserves the exact `production-secret` gate evidence. |
+| RPP-0088 | Evidence toward release verifier Application Password credential binding carry-through now emits `APPLICATION_PASSWORD_BINDING_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts the checked and source-command credentials, and proves the release-gate CLI preserves the exact `application-password-binding` gate evidence. |
 
 ## Focused verification
 
@@ -308,6 +309,24 @@ redacts the partial credential, and the release-gate CLI preserves the exact
 
 - Command: `node --test test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gate-missing-production-secret-regression.test.js test/release-gate-missing-production-secret-generated.test.js test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_SECRET_REQUIRED mutationAttempted=false]`; production-secret gate: `REPRINT_PUSH_SECRET_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SECRET_REQUIRED]`.
+
+Release verifier Application Password credential binding carry-through refresh:
+
+```sh
+node --test test/release-verifier-application-password-binding-carry-through-focused-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-application-password-binding-generated.test.js test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 39 tests. This checks RPP-0088 by running the checked
+`npm run verify:release` path with source/local/changed URLs, checked
+credentials, and an auth session source command that reads back the same source
+URL but a different source user and Application Password. The verifier exits
+`1`, prints
+`[verify-release:held exit=1 reason=APPLICATION_PASSWORD_BINDING_REQUIRED mutationAttempted=false]`, records the credential-binding boundary before live verifier
+startup, redacts both credential values, and the release-gate CLI preserves the
+exact `application-password-binding` evidence with the final held marker.
+
+- Command: `node --test test/release-verifier-application-password-binding-carry-through-focused-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-application-password-binding-generated.test.js test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=APPLICATION_PASSWORD_BINDING_REQUIRED mutationAttempted=false]`; application-password-binding gate: `APPLICATION_PASSWORD_BINDING_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=APPLICATION_PASSWORD_BINDING_REQUIRED]`.
 
 Progress HTML release timestamp proof:
 
