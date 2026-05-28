@@ -1,0 +1,362 @@
+{
+  "contract_id": "push-route-proof-matrix-contract-v1",
+  "schema_version": 1,
+  "purpose": "deterministic route proof matrix for production push route methods, permissions, and mutation boundaries without a live external service",
+  "route_order": [
+    "preflight",
+    "dry-run",
+    "apply",
+    "journal",
+    "recovery-inspect",
+    "recovery-repair"
+  ],
+  "permission_floor": {
+    "authentication": "WordPress Application Password or stronger production auth session",
+    "capability": "manage_options",
+    "permission_callback": "reprint_push_lab_rest_authenticated_permission",
+    "fail_closed_when_missing": "ROUTE_CAPABILITY_EVIDENCE_REQUIRED"
+  },
+  "fail_closed_policy": {
+    "absent_evidence": "Route proof matrix evidence fails closed when route identity, methods, manage_options permission evidence, or mutation boundary evidence is absent.",
+    "contradictory_evidence": "Route proof matrix evidence fails closed when observed method, permission, readOnly, or mutates evidence contradicts the production push route contract."
+  },
+  "mutation_legend": [
+    {
+      "classification": "protocol-state-only",
+      "readOnly": false,
+      "mutates": false,
+      "meaning": "route may mint or check short-lived protocol/session metadata but must not mutate remote content or recovery journal state"
+    },
+    {
+      "classification": "non-mutating-receipt",
+      "readOnly": false,
+      "mutates": false,
+      "meaning": "route may return eligibility receipt evidence but must not mutate remote content and cannot authorize apply without fresh revalidation"
+    },
+    {
+      "classification": "readOnly",
+      "readOnly": true,
+      "mutates": false,
+      "meaning": "route is inspection/classification only and cannot authorize or perform writes"
+    },
+    {
+      "classification": "mutating-write",
+      "readOnly": false,
+      "mutates": true,
+      "meaning": "route may mutate planned remote resources only behind explicit preconditions and fresh live hash checks"
+    },
+    {
+      "classification": "mutating-repair",
+      "readOnly": false,
+      "mutates": true,
+      "meaning": "route may finish or roll back partial apply state only after recovery inspect proves the branch safe"
+    }
+  ],
+  "routes": [
+    {
+      "id": "preflight",
+      "stage": "push_preflight",
+      "identity": {
+        "namespace": "reprint/v1",
+        "path": "/push/preflight",
+        "route": "preflight",
+        "profile": "production-shaped"
+      },
+      "methods": [
+        "GET"
+      ],
+      "permission": {
+        "authentication": "application-password-basic + signed production push request",
+        "capability": "manage_options",
+        "callback": "reprint_push_lab_rest_authenticated_permission",
+        "evidence": [
+          "permission_callback requires authenticated WordPress Application Password identity before route execution",
+          "permission_callback requires current_user_can(\"manage_options\") and returns 403 otherwise",
+          "route response evidence exposes authorized.capabilities.manage_options for release review"
+        ]
+      },
+      "mutation": {
+        "classification": "protocol-state-only",
+        "readOnly": false,
+        "mutates": false,
+        "boundary": "May mint or verify a short-lived push session; must not change remote content, files, database resources, durable journal rows, or recovery state.",
+        "evidence": [
+          "runs before dry-run and apply in the stage order",
+          "binds one remote identity and one persisted pull base before any content mutation"
+        ]
+      },
+      "failClosed": {
+        "absentEvidence": "Preflight route proof fails closed before dry-run or apply when route identity, GET method, manage_options capability, or boundary evidence is missing.",
+        "contradictoryEvidence": "Preflight route proof fails closed when it is not the expected GET /push/preflight route or it claims content mutation authority."
+      },
+      "rpp": [
+        "RPP-0011"
+      ]
+    },
+    {
+      "id": "dry-run",
+      "stage": "push_plan_dry_run",
+      "identity": {
+        "namespace": "reprint/v1",
+        "path": "/push/dry-run",
+        "route": "dry-run",
+        "profile": "production-shaped"
+      },
+      "methods": [
+        "POST"
+      ],
+      "permission": {
+        "authentication": "application-password-basic + signed production push request",
+        "capability": "manage_options",
+        "callback": "reprint_push_lab_rest_authenticated_permission",
+        "evidence": [
+          "permission_callback requires authenticated WordPress Application Password identity before route execution",
+          "permission_callback requires current_user_can(\"manage_options\") and returns 403 otherwise",
+          "route response evidence exposes authorized.capabilities.manage_options for release review"
+        ]
+      },
+      "mutation": {
+        "classification": "non-mutating-receipt",
+        "readOnly": false,
+        "mutates": false,
+        "boundary": "May validate a canonical plan and return an eligibility receipt; receipt is not a lock and must not authorize apply without fresh revalidation.",
+        "evidence": [
+          "dry-run and apply are separate remote operations",
+          "dry-run receipt never replaces apply-time live hash checks"
+        ]
+      },
+      "failClosed": {
+        "absentEvidence": "Dry-run route proof fails closed before apply when route identity, POST method, manage_options capability, or eligibility boundary evidence is missing.",
+        "contradictoryEvidence": "Dry-run route proof fails closed when it is not the expected POST /push/dry-run route or it claims direct remote mutation authority."
+      },
+      "rpp": [
+        "RPP-0012"
+      ]
+    },
+    {
+      "id": "apply",
+      "stage": "push_batch_apply",
+      "identity": {
+        "namespace": "reprint/v1",
+        "path": "/push/apply",
+        "route": "apply",
+        "profile": "production-shaped"
+      },
+      "methods": [
+        "POST"
+      ],
+      "permission": {
+        "authentication": "application-password-basic + signed production push request",
+        "capability": "manage_options",
+        "callback": "reprint_push_lab_rest_authenticated_permission",
+        "evidence": [
+          "permission_callback requires authenticated WordPress Application Password identity before route execution",
+          "permission_callback requires current_user_can(\"manage_options\") and returns 403 otherwise",
+          "route response evidence exposes authorized.capabilities.manage_options for release review"
+        ]
+      },
+      "mutation": {
+        "classification": "mutating-write",
+        "readOnly": false,
+        "mutates": true,
+        "boundary": "May commit planned remote changes only after dry-run eligibility, push session continuity, and fresh live hash revalidation before every batch and storage boundary.",
+        "evidence": [
+          "apply is the production content-mutating write route",
+          "apply must reject before mutation when preconditions or live hashes fail"
+        ]
+      },
+      "failClosed": {
+        "absentEvidence": "Apply route proof fails closed before mutation when route identity, POST method, manage_options capability, or pre-mutation boundary evidence is missing.",
+        "contradictoryEvidence": "Apply route proof fails closed when it is marked read-only, omits mutates=true, uses the wrong method, or lacks pre-mutation rejection evidence."
+      },
+      "rpp": [
+        "RPP-0013"
+      ]
+    },
+    {
+      "id": "journal",
+      "stage": "push_journal",
+      "identity": {
+        "namespace": "reprint/v1",
+        "path": "/push/journal",
+        "route": "journal",
+        "profile": "production-shaped"
+      },
+      "methods": [
+        "GET"
+      ],
+      "permission": {
+        "authentication": "application-password-basic + signed production push request",
+        "capability": "manage_options",
+        "callback": "reprint_push_lab_rest_authenticated_permission",
+        "evidence": [
+          "permission_callback requires authenticated WordPress Application Password identity before route execution",
+          "permission_callback requires current_user_can(\"manage_options\") and returns 403 otherwise",
+          "route response evidence exposes authorized.capabilities.manage_options for release review"
+        ]
+      },
+      "mutation": {
+        "classification": "readOnly",
+        "readOnly": true,
+        "mutates": false,
+        "boundary": "Reads durable journal evidence for review; must not append, repair, finalize, roll back, or otherwise authorize mutation.",
+        "evidence": [
+          "journal inspection is read-only and never authorizes mutation by itself",
+          "journal readback happens after apply without broadening mutation authority"
+        ]
+      },
+      "failClosed": {
+        "absentEvidence": "Journal route proof fails closed when route identity, GET method, manage_options capability, or read-only evidence is missing.",
+        "contradictoryEvidence": "Journal route proof fails closed when it is marked mutating or when it claims repair/apply authority."
+      },
+      "rpp": [
+        "RPP-0014"
+      ]
+    },
+    {
+      "id": "recovery-inspect",
+      "stage": "push_recover inspect",
+      "identity": {
+        "namespace": "reprint/v1",
+        "path": "/push/recovery/inspect",
+        "route": "recovery-inspect",
+        "profile": "production-shaped"
+      },
+      "methods": [
+        "POST"
+      ],
+      "permission": {
+        "authentication": "application-password-basic + signed production push request",
+        "capability": "manage_options",
+        "callback": "reprint_push_lab_rest_authenticated_permission",
+        "evidence": [
+          "permission_callback requires authenticated WordPress Application Password identity before route execution",
+          "permission_callback requires current_user_can(\"manage_options\") and returns 403 otherwise",
+          "route response evidence exposes authorized.capabilities.manage_options for release review"
+        ]
+      },
+      "mutation": {
+        "classification": "readOnly",
+        "readOnly": true,
+        "mutates": false,
+        "boundary": "Reads the journal and fresh live hashes to classify finish, rollback, retry, or block before any mutating repair.",
+        "evidence": [
+          "recovery inspect stays read-only and classifies before repair",
+          "read-only signed POST is allowed only for inspect-style recovery evidence"
+        ]
+      },
+      "failClosed": {
+        "absentEvidence": "Recovery inspect route proof fails closed when route identity, POST method, manage_options capability, or read-only classification evidence is missing.",
+        "contradictoryEvidence": "Recovery inspect route proof fails closed when it is marked mutating or when it skips inspect-before-repair classification."
+      },
+      "rpp": [
+        "RPP-0015"
+      ]
+    },
+    {
+      "id": "recovery-repair",
+      "stage": "push_recover auto|finish|rollback",
+      "identity": {
+        "namespace": "reprint/v1",
+        "path": "/push/recovery/repair",
+        "route": "recovery-repair",
+        "profile": "production-shaped"
+      },
+      "methods": [
+        "POST"
+      ],
+      "permission": {
+        "authentication": "application-password-basic + signed production push request",
+        "capability": "manage_options",
+        "callback": "reprint_push_lab_rest_authenticated_permission",
+        "evidence": [
+          "permission_callback requires authenticated WordPress Application Password identity before route execution",
+          "permission_callback requires current_user_can(\"manage_options\") and returns 403 otherwise",
+          "route response evidence exposes authorized.capabilities.manage_options for release review"
+        ]
+      },
+      "mutation": {
+        "classification": "mutating-repair",
+        "readOnly": false,
+        "mutates": true,
+        "boundary": "May finish or roll back partial apply state only after recovery-inspect proves the repair branch safe with the same auth floor and fresh live hashes.",
+        "evidence": [
+          "mutating recovery must follow inspect-first evidence",
+          "repair authority is narrower than apply and is fenced by journal rows, leases, and fresh live hashes"
+        ]
+      },
+      "failClosed": {
+        "absentEvidence": "Recovery repair route proof fails closed when route identity, POST method, manage_options capability, or inspect-first repair evidence is missing.",
+        "contradictoryEvidence": "Recovery repair route proof fails closed when it is marked read-only, skips recovery-inspect, or lacks mutating repair fences."
+      },
+      "rpp": []
+    }
+  ],
+  "claimed_rpp_evidence": [
+    "RPP-0011",
+    "RPP-0012",
+    "RPP-0013",
+    "RPP-0014",
+    "RPP-0015"
+  ],
+  "validation": {
+    "ok": true,
+    "status": "satisfied",
+    "fail_closed": true,
+    "checked_routes": 6,
+    "route_order": [
+      "preflight",
+      "dry-run",
+      "apply",
+      "journal",
+      "recovery-inspect",
+      "recovery-repair"
+    ],
+    "reason": null,
+    "routes": [
+      {
+        "id": "preflight",
+        "ok": true,
+        "status": "satisfied",
+        "failClosedReason": null,
+        "failures": []
+      },
+      {
+        "id": "dry-run",
+        "ok": true,
+        "status": "satisfied",
+        "failClosedReason": null,
+        "failures": []
+      },
+      {
+        "id": "apply",
+        "ok": true,
+        "status": "satisfied",
+        "failClosedReason": null,
+        "failures": []
+      },
+      {
+        "id": "journal",
+        "ok": true,
+        "status": "satisfied",
+        "failClosedReason": null,
+        "failures": []
+      },
+      {
+        "id": "recovery-inspect",
+        "ok": true,
+        "status": "satisfied",
+        "failClosedReason": null,
+        "failures": []
+      },
+      {
+        "id": "recovery-repair",
+        "ok": true,
+        "status": "satisfied",
+        "failClosedReason": null,
+        "failures": []
+      }
+    ],
+    "failures": []
+  }
+}
