@@ -1836,6 +1836,40 @@ test('keeps WordPress menu item graph surfaces fail-closed', () => {
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('RPP-0316 keeps wp_navigation graph surfaces fail-closed with hash-only blockers', () => {
+  const navigationResourceKey = 'row:["wp_posts","ID:45"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Local private wp_navigation',
+    post_content: '<!-- wp:navigation-link {"label":"local-private-navigation-body"} /-->',
+    post_status: 'publish',
+    post_type: 'wp_navigation',
+    post_parent: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const navigationBlocker = plan.blockers.find((blocker) => blocker.resourceKey === navigationResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, navigationResourceKey), undefined);
+  assert.equal(navigationBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(navigationBlocker.reason, /unsupported post graph surface wp_navigation/);
+  assert.equal(navigationBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(navigationBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(navigationBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(navigationBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(navigationBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(navigationBlocker.change.local, 'value'), false);
+  assert.equal(planJson.includes('Local private wp_navigation'), false);
+  assert.equal(planJson.includes('local-private-navigation-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows same-plan comment and user graph closure when author and comment targets are created locally', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const userResourceKey = 'row:["wp_users","ID:7"]';

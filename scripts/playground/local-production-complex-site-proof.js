@@ -12,6 +12,7 @@ export const complexSiteFixtureShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  wpNavigationFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -35,6 +36,11 @@ const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
 const featuredImageMetaKey = '_thumbnail_id';
 const featuredImageAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageAttachmentId}"]`;
 const featuredImageMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImagePostId}:meta_key:${featuredImageMetaKey}"]`;
+const wpNavigationGraphPostId = 71951;
+const wpNavigationGraphSlug = 'reprint-push-wp-navigation-fail-closed';
+const wpNavigationGraphTitle = 'Reprint Push WP Navigation Fail Closed';
+const wpNavigationGraphContent = '<!-- wp:navigation-link {"label":"Local Private Navigation Fail Closed"} /-->';
+const wpNavigationGraphResourceKey = `row:["wp_posts","ID:${wpNavigationGraphPostId}"]`;
 const postParentGraphParentId = 71801;
 const postParentGraphChildId = 71802;
 const postParentGraphParentSlug = 'reprint-push-post-parent-graph-parent';
@@ -86,6 +92,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     remoteDriftFiles: positiveEnvInt(env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_REMOTE_DRIFT_FILES, complexSiteFixtureShape.remoteDriftFiles),
     featuredImageGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF === '1',
     taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
+    wpNavigationFailClosed: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_WP_NAVIGATION_FAIL_CLOSED_PROOF === '1',
     postParentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF === '1',
     commentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF === '1',
   });
@@ -105,6 +112,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_remote_drift_files = ${positiveInt(shape.remoteDriftFiles)};`,
     `$complex_featured_image_graph = ${shape.featuredImageGraph ? 'true' : 'false'};`,
     `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
+    `$complex_wp_navigation_fail_closed = ${shape.wpNavigationFailClosed ? 'true' : 'false'};`,
     `$complex_post_parent_graph = ${shape.postParentGraph ? 'true' : 'false'};`,
     `$complex_comment_graph = ${shape.commentGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
@@ -138,6 +146,12 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  if (is_wp_error($attachment_result)) { throw new RuntimeException($attachment_result->get_error_message()); }",
     "  add_post_meta((int) $attachment_result, 'reprint_push_fixture', 'complex-featured-image', true);",
     `  update_post_meta($featured_post_id, ${phpString(featuredImageMetaKey)}, (string) $attachment_id);`,
+    "}",
+    "if ($complex_wp_navigation_fail_closed && $complex_is_local) {",
+    `  $wp_navigation_post_id = ${wpNavigationGraphPostId};`,
+    `  $navigation_result = wp_insert_post(array('import_id'=>$wp_navigation_post_id,'post_title'=>${phpString(wpNavigationGraphTitle)},'post_name'=>${phpString(wpNavigationGraphSlug)},'post_content'=>${phpString(wpNavigationGraphContent)},'post_status'=>'publish','post_type'=>'wp_navigation','post_parent'=>0,'post_author'=>0));`,
+    "  if (is_wp_error($navigation_result)) { throw new RuntimeException($navigation_result->get_error_message()); }",
+    "  add_post_meta((int) $navigation_result, 'reprint_push_fixture', 'wp-navigation-fail-closed', true);",
     "}",
     "if ($complex_post_parent_graph && $complex_is_local) {",
     `  $parent_post_id = ${postParentGraphParentId};`,
@@ -423,6 +437,73 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildWpNavigationFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: sourceSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteChangedSnapshot,
+    now: proofNow,
+  });
+  const navigationBlocker = readyPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === wpNavigationGraphResourceKey) || null;
+  const blockerEvidence = navigationBlocker
+    ? hashOnlyWordPressGraphBlockerEvidence(navigationBlocker)
+    : null;
+  const blockerEvidenceJson = JSON.stringify(blockerEvidence);
+  const readyMutations = readyPlan.mutations || [];
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    wpNavigationCountsPresent: counts.source.wpNavigationFailClosedPosts === 0
+      && counts.localEdited.wpNavigationFailClosedPosts >= 1,
+    plannerFailsClosed: readyPlan.status === 'blocked',
+    releaseMovementPrevented: readyPlan.status !== 'ready',
+    wpNavigationBlocked: navigationBlocker?.class === 'stale-wordpress-graph-identity'
+      && navigationBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(navigationBlocker?.reason || '').includes('unsupported post graph surface wp_navigation'),
+    noWpNavigationMutation: !readyMutations.some((mutation) =>
+      mutation.resourceKey === wpNavigationGraphResourceKey),
+    blockerEvidenceIsHashOnly: Boolean(blockerEvidence)
+      && [blockerEvidence.baseHash, blockerEvidence.localHash, blockerEvidence.remoteHash].every(isSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) => isSha256Hex(blockerEvidence.change?.[slot]?.hash)),
+    blockerEvidenceRedactsRawValues: ![
+      wpNavigationGraphTitle,
+      wpNavigationGraphSlug,
+      wpNavigationGraphContent,
+    ].some((privateValue) => blockerEvidenceJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'wp-navigation-fail-closed',
+    releaseReady: false,
+    resourceKey: wpNavigationGraphResourceKey,
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    blocker: blockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -676,6 +757,41 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function hashOnlyWordPressGraphBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: blocker.change || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+        targetChange: reference.targetChange || null,
+        targetSupport: reference.targetSupport ? {
+          supported: reference.targetSupport.supported === true,
+          className: reference.targetSupport.className || null,
+          reason: reference.targetSupport.reason || null,
+        } : null,
+      }))
+      : [],
+  };
+}
+
+function isSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -750,6 +866,10 @@ export function summarizeComplexSnapshot(snapshot) {
     featuredImageMeta: Object.values(postmeta).filter((row) =>
       String(row?.meta_key || '') === featuredImageMetaKey
       && String(row?.meta_value || '') === String(featuredImageAttachmentId)).length,
+    wpNavigationFailClosedPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === wpNavigationGraphPostId
+      && String(row?.post_type || '') === 'wp_navigation'
+      && String(row?.post_name || '') === wpNavigationGraphSlug).length,
     postParentGraphParents: Object.values(posts).filter((row) =>
       Number(row?.ID) === postParentGraphParentId
       && String(row?.post_name || '') === postParentGraphParentSlug

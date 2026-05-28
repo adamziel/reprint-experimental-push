@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
+  buildWpNavigationFailClosedProof,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
@@ -19,6 +20,7 @@ const smallShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  wpNavigationFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -57,6 +59,19 @@ test('complex-site seed PHP can add a taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add a wp_navigation fail-closed fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    wpNavigationFailClosed: true,
+  });
+
+  assert.match(php, /reprint-push-wp-navigation-fail-closed/);
+  assert.match(php, /post_type'=>'wp_navigation'/);
+  assert.match(php, /Local Private Navigation Fail Closed/);
+  assert.match(php, /if \(\$complex_wp_navigation_fail_closed && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_wp_navigation_fail_closed = false/);
+});
+
 test('complex-site seed PHP can add a post parent graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -88,6 +103,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_WP_NAVIGATION_FAIL_CLOSED_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
@@ -97,6 +113,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.fileCount, 3);
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
+  assert.equal(shape.wpNavigationFailClosed, true);
   assert.equal(shape.postParentGraph, true);
   assert.equal(shape.commentGraph, true);
 });
@@ -191,6 +208,33 @@ test('complex-site planner proof covers real taxonomy graph closure', () => {
   assert.equal(proof.invariants.taxonomyGraphCountsPresent, true);
   assert.equal(proof.invariants.taxonomyGraphPlanned, true);
   assert.equal(proof.invariants.taxonomyGraphHasLivePreconditions, true);
+});
+
+test('complex-site proof keeps wp_navigation references fail-closed and hash-only', () => {
+  const graphShape = { ...smallShape, wpNavigationFailClosed: true };
+  const proof = buildWpNavigationFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const blockerJson = JSON.stringify(proof.blocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'blocked');
+  assert.equal(proof.counts.source.wpNavigationFailClosedPosts, 0);
+  assert.equal(proof.counts.localEdited.wpNavigationFailClosedPosts, 1);
+  assert.equal(proof.invariants.wpNavigationCountsPresent, true);
+  assert.equal(proof.invariants.plannerFailsClosed, true);
+  assert.equal(proof.invariants.releaseMovementPrevented, true);
+  assert.equal(proof.invariants.wpNavigationBlocked, true);
+  assert.equal(proof.invariants.noWpNavigationMutation, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.blockerEvidenceRedactsRawValues, true);
+  assert.match(proof.blocker.reason, /unsupported post graph surface wp_navigation/);
+  assert.equal(blockerJson.includes('Reprint Push WP Navigation Fail Closed'), false);
+  assert.equal(blockerJson.includes('Local Private Navigation Fail Closed'), false);
+  assert.equal(blockerJson.includes('reprint-push-wp-navigation-fail-closed'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -384,6 +428,19 @@ function syntheticComplexSnapshot(variant, shape) {
       post_id: 71001,
       meta_key: '_thumbnail_id',
       meta_value: '71901',
+    };
+  }
+
+  if (shape.wpNavigationFailClosed && local) {
+    snapshot.db.wp_posts['ID:71951'] = {
+      ID: 71951,
+      post_title: 'Reprint Push WP Navigation Fail Closed',
+      post_name: 'reprint-push-wp-navigation-fail-closed',
+      post_content: '<!-- wp:navigation-link {"label":"Local Private Navigation Fail Closed"} /-->',
+      post_status: 'publish',
+      post_type: 'wp_navigation',
+      post_parent: 0,
+      post_author: 0,
     };
   }
 
