@@ -1,18 +1,24 @@
-# AO Progress Report - 2026-05-28 23:29 CEST
+# AO Progress Report - 2026-05-28 23:31 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0201 independent local-file plus remote-row
-merge-invariant refresh. It separates
+`lane/evidence-integration-20260527` through the current RPP-0401 driver registration API
+plugin-driver refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 227 are
-  checked from integrated evidence and 773 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 228 are
+  checked from integrated evidence and 772 remain open.
+- Focused plugin-driver registration API evidence now checks `RPP-0401`.
+  `node --test --test-name-pattern 'RPP-0401|plugin-owned row driver
+  registration API' test/plugin-driver-registration-api.test.js` passed 3/3,
+  proving normalized driver registration behavior, duplicate/malformed
+  fail-closed behavior, stable lookup, and redacted audit-safe evidence while
+  final release remains **NO-GO**.
 - Focused merge-invariant evidence now checks `RPP-0201`. `node --test
   --test-name-pattern='RPP-0201|RPP-0221' test/push-planner.test.js
   test/generated-push-harness.test.js` passed 3/3, proving focused and
@@ -1155,9 +1161,9 @@ tracks the near-to-far slices used to supervise the AO team:
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 88 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 36 / 100 |
-| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
+| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 21 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
-| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 28 / 100 |
+| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 29 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 10 / 100 |
 | `RPP-0601`-`RPP-0700` | Durable journal and recovery | 12 / 100 |
 | `RPP-0701`-`RPP-0800` | Storage, chunking, and performance | 7 / 100 |
@@ -1174,14 +1180,14 @@ Checked IDs in this report are:
   `RPP-0126`, `RPP-0127`, `RPP-0128`, `RPP-0129`, `RPP-0130`,
   `RPP-0131`, `RPP-0132`, `RPP-0133`, `RPP-0134`, `RPP-0135`,
   `RPP-0150`, `RPP-0156`.
-- Merge invariants: `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`,
+- Merge invariants: `RPP-0201`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`,
   `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0221`, `RPP-0222`, `RPP-0223`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`,
   `RPP-0233`, `RPP-0237`, `RPP-0240`.
 - Graph identity: `RPP-0301`, `RPP-0304`, `RPP-0305`, `RPP-0310`, `RPP-0312`,
   `RPP-0313`, `RPP-0314`, `RPP-0318`, `RPP-0319`, `RPP-0320`, `RPP-0321`,
   `RPP-0324`, `RPP-0325`, `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0340`,
   `RPP-0342`, `RPP-0347`.
-- Plugin driver: `RPP-0402`, `RPP-0403`, `RPP-0404`, `RPP-0408`,
+- Plugin driver: `RPP-0401`, `RPP-0402`, `RPP-0403`, `RPP-0404`, `RPP-0408`,
   `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0422`,
   `RPP-0423`, `RPP-0424`,
   `RPP-0428`, `RPP-0429`, `RPP-0430`, `RPP-0431`, `RPP-0432`, `RPP-0438`,
@@ -1218,6 +1224,7 @@ Checked IDs in this report are:
 - `node --test test/release-gate-manage-options-capability-regression.test.js` — 3 pass / 0 fail for the RPP-0029 manage_options variant-2 scenario matrix plus RPP-0069 regression coverage.
 - `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.
+- `node --test --test-name-pattern 'RPP-0401|plugin-owned row driver registration API' test/plugin-driver-registration-api.test.js` — 3 pass / 0 fail for RPP-0401 focused driver registration API behavior, fail-closed duplicate/malformed registration, lookup, and audit redaction evidence.
 - `node --test --test-name-pattern='RPP-0201|RPP-0221' test/push-planner.test.js test/generated-push-harness.test.js` — 3 pass / 0 fail for RPP-0201 focused/generated independent local-file plus remote-row merge invariant evidence and existing RPP-0221 regression coverage.
 - `node --test --test-name-pattern 'RPP-0115' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 37 full generated-harness passes / 0 fail for RPP-0115 plugin-owned custom-table variant-1 generated/model evidence.
 - `node --test --test-name-pattern 'RPP-0116' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 38 full generated-harness passes / 0 fail for RPP-0116 atomic plugin install stack variant-1 generated/model evidence.

@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 23:29 CEST.
+- Last update: 2026-05-28 23:31 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 227
-  items checked and leaves 773 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 228
+  items checked and leaves 772 open.
 - Checked slices: 92 release-gate foundation items, 19 graph identity items,
-  28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 36 generated
   harness items, and 21 merge-invariant items. No release-ops items are checked
   yet.
@@ -159,6 +159,14 @@ linked implementation artifacts.
   the 620 deterministic generated cases, proving ready plus non-ready model
   evidence for plugin-owned custom-table changes with redacted custom-table
   payload metadata and a documented invariant/surface.
+- Focused plugin-driver registration API refresh: the current lane now contains
+  `RPP-0401` evidence in `docs/evidence/rpp-0401-driver-registration-api.md`
+  and `test/plugin-driver-registration-api.test.js`. The command `node
+  --test --test-name-pattern 'RPP-0401|plugin-owned row driver registration
+  API' test/plugin-driver-registration-api.test.js` passed 3/3, proving exact
+  normalized registration behavior, fail-closed duplicate/malformed
+  registrations, stable lookup, and redacted audit-safe evidence. Counts are
+  now 228/772; final release remains `NO-GO`.
 - Focused merge-invariant independent file/row refresh: the current lane now
   contains `RPP-0201` evidence in
   `docs/evidence/rpp-0201-independent-local-file-remote-row-edit.md` and

@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 227.
-- Remaining open: 773.
+- Verified complete: 228.
+- Remaining open: 772.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -432,7 +432,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 
 Focus: generalize plugin-owned mutation safety beyond release-state rows.
 
-- [ ] RPP-0401 (Mid / plugin-driver) Implement driver registration API, variant 1. Success: focused test proves exact driver behavior.
+- [x] RPP-0401 (Mid / plugin-driver) Implement driver registration API, variant 1. Success: focused test proves exact driver behavior.
 - [x] RPP-0402 (Mid / plugin-driver) Implement driver owner identity binding, variant 1. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0403 (Mid / plugin-driver) Implement custom table allowlist exact match, variant 1. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0404 (Mid / plugin-driver) Implement wp_options driver semantics, variant 1. Success: remote drift preserves plugin-owned remote data.

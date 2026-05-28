@@ -1,7 +1,7 @@
 # RPP-0401 driver registration API evidence
 
-This is variant-1 focused evidence toward `RPP-0401`. The checklist remains
-unchanged for integrator validation.
+This is variant-1 focused evidence toward `RPP-0401`. Integrator validation
+now cites this note from the checklist and progress report.
 
 ## Prior proof inspected
 
@@ -46,5 +46,5 @@ Observed result: exit code 0; 3 subtests ok, 0 fail.
 ## Release posture
 
 This remains local focused plugin-driver evidence only. It is not
-production-backed release evidence, and release remains held for the broader
-checklist until the integrator validates and updates status.
+production-backed release evidence, and release remains held for broader
+production driver coverage.
