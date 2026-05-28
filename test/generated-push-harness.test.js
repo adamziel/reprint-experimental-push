@@ -266,6 +266,36 @@ test('RPP-0237 generated conflict plans reject apply, forged ready status, and s
   assert.equal(evidenceText.includes('payload'), false);
 });
 
+test('RPP-0240 generated atomic group blockers propagate before apply mutation', () => {
+  const firstEvidence = generatedAtomicBlockerPropagationEvidence();
+  const replayEvidence = generatedAtomicBlockerPropagationEvidence();
+  const aggregate = aggregateGeneratedAtomicBlockerPropagationEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0240 test/generated-push-harness.test.js',
+    caveat: 'Generated local atomic blocker proof only; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated atomic blocker evidence changed between runs');
+  assert.ok(aggregate.totalCases > 0, 'generated proof must include atomic blocker cases');
+  assert.ok(aggregate.totalBlockedGroups > 0, 'generated proof must include blocked atomic groups');
+  assert.ok(aggregate.totalDirectBlockers > 0, 'generated proof must include source blockers');
+  assert.equal(
+    aggregate.totalPropagatedBlockers,
+    aggregate.totalGroupMutations,
+    'each grouped mutation should receive an atomic propagation blocker',
+  );
+  assert.equal(aggregate.totalAppliedMutations, 0);
+  assert.equal(aggregate.totalDurableJournalEvents, 0);
+  assert.equal(aggregate.totalMutationJournalEvents, 0);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('generated dependent'), false);
+  assert.equal(evidenceText.includes('<?php'), false);
+  assert.equal(evidenceText.includes('payload'), false);
+});
+
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
   const cases = generatePushHarnessCases();
   const readyCase = cases.find((testCase) => testCase.family === 'file-create-update-delete-mix-ready');
@@ -701,6 +731,132 @@ function generatedStaleConflictMutationAttempt(testCase, plan) {
   };
 }
 
+function generatedAtomicBlockerPropagationEvidence() {
+  return generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'atomic-plugin-missing-dependency')
+    .map((testCase) => {
+      const plan = createPushPlan({
+        base: testCase.base,
+        local: testCase.local,
+        remote: testCase.remote,
+        now: fixedGeneratedHarnessNow,
+      });
+      const blockedGroups = plan.atomicGroups.filter((group) =>
+        group.status === 'blocked'
+        && group.blockers.some((blocker) => blocker.class === 'missing-plugin-dependency'));
+      const remote = cloneJson(testCase.remote);
+      const beforeRemoteHash = digest(remote);
+      const journalEvents = [];
+      let appliedMutationCount = 0;
+      const error = captureError(() => {
+        const result = applyPlan(remote, plan, {
+          durableJournal: claimFencedDurableJournal(journalEvents),
+        });
+        appliedMutationCount = result.appliedMutations;
+      });
+      const mutationJournalEventCount = journalEvents
+        .filter((event) => event.type.includes('mutation')).length;
+
+      assert.ok(blockedGroups.length > 0, `${testCase.id} must include a blocked atomic group`);
+      assert.ok(error instanceof PushPlanError, `${testCase.id} blocked atomic plan should throw`);
+      assert.equal(error.code, 'PLAN_NOT_READY', `${testCase.id} apply refusal code changed`);
+      assert.deepEqual(error.details, { status: plan.status }, `${testCase.id} refusal details changed`);
+      assert.equal(digest(remote), beforeRemoteHash, `${testCase.id} apply mutated remote before refusal`);
+      assert.equal(appliedMutationCount, 0, `${testCase.id} apply reported mutations before refusal`);
+      assert.equal(journalEvents.length, 0, `${testCase.id} apply wrote durable journal events before refusal`);
+      assert.equal(mutationJournalEventCount, 0, `${testCase.id} apply wrote mutation journal events before refusal`);
+
+      const groupEvidence = blockedGroups.map((group) => {
+        const groupMutations = plan.mutations
+          .filter((mutation) => group.mutationIds.includes(mutation.id))
+          .sort((a, b) => a.id.localeCompare(b.id));
+        const directBlockers = group.blockers
+          .filter((blocker) => blocker.class !== 'atomic-group-blocker-propagation')
+          .sort((a, b) => a.id.localeCompare(b.id));
+        const propagatedBlockers = group.blockers
+          .filter((blocker) => blocker.class === 'atomic-group-blocker-propagation')
+          .sort((a, b) => a.mutationId.localeCompare(b.mutationId));
+        const directBlockerIds = directBlockers.map((blocker) => blocker.id);
+
+        assert.ok(directBlockers.length > 0, `${testCase.id} ${group.id} missing source blockers`);
+        assert.equal(
+          propagatedBlockers.length,
+          groupMutations.length,
+          `${testCase.id} ${group.id} should propagate to every grouped mutation`,
+        );
+        assert.deepEqual(
+          propagatedBlockers.map((blocker) => blocker.mutationId),
+          groupMutations.map((mutation) => mutation.id),
+          `${testCase.id} ${group.id} propagation mutation ids changed`,
+        );
+        assert.deepEqual(
+          propagatedBlockers.map((blocker) => [...blocker.sourceBlockerIds].sort()),
+          groupMutations.map(() => [...directBlockerIds].sort()),
+          `${testCase.id} ${group.id} propagation source blockers changed`,
+        );
+
+        const entry = {
+          id: group.id,
+          status: group.status,
+          mutationIds: [...group.mutationIds],
+          directBlockers: directBlockers.map((blocker) => ({
+            id: blocker.id,
+            class: blocker.class,
+            groupId: blocker.groupId,
+            blockerHash: `sha256:${digest(blocker)}`,
+          })),
+          propagatedBlockers: propagatedBlockers.map((blocker) => ({
+            id: blocker.id,
+            class: blocker.class,
+            groupId: blocker.groupId,
+            mutationId: blocker.mutationId,
+            resourceKey: blocker.resourceKey,
+            sourceBlockerIds: [...blocker.sourceBlockerIds].sort(),
+            blockerHash: `sha256:${digest(blocker)}`,
+          })),
+          mutations: groupMutations.map((mutation) => ({
+            id: mutation.id,
+            resourceKey: mutation.resourceKey,
+            action: mutation.action,
+            atomicGroupId: mutation.atomicGroupId,
+            baseHash: mutation.baseHash,
+            localHash: mutation.localHash,
+            remoteBeforeHash: mutation.remoteBeforeHash,
+            plannedValueHash: `sha256:${digest(deserializeResourceValue(mutation.value))}`,
+          })),
+        };
+        const entryText = JSON.stringify(entry);
+        for (const mutation of groupMutations) {
+          assert.equal(
+            entryText.includes(JSON.stringify(mutation.value)),
+            false,
+            `${testCase.id} ${group.id} hash-only evidence leaked payload for ${mutation.resourceKey}`,
+          );
+        }
+        return entry;
+      });
+
+      return {
+        id: testCase.id,
+        tier: testCase.tier,
+        family: testCase.family,
+        tags: [...testCase.tags].sort(),
+        status: plan.status,
+        summary: plan.summary,
+        groups: groupEvidence,
+        refusal: {
+          code: error.code,
+          detailsHash: `sha256:${digest(error.details)}`,
+          beforeRemoteHash: `sha256:${beforeRemoteHash}`,
+          afterRemoteHash: `sha256:${digest(remote)}`,
+          appliedMutationCount,
+          durableJournalEventCount: journalEvents.length,
+          mutationJournalEventCount,
+        },
+      };
+    });
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -751,6 +907,52 @@ function aggregateGeneratedConflictApplyRefusalEvidence(evidence) {
     families: sortStringObject(aggregate.families),
     conflictClasses: sortStringObject(aggregate.conflictClasses),
     forgedIssueCodes: sortStringObject(aggregate.forgedIssueCodes),
+  };
+}
+
+function aggregateGeneratedAtomicBlockerPropagationEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalCases++;
+      aggregate.totalBlockedGroups += entry.groups.length;
+      aggregate.totalAppliedMutations += entry.refusal.appliedMutationCount;
+      aggregate.totalDurableJournalEvents += entry.refusal.durableJournalEventCount;
+      aggregate.totalMutationJournalEvents += entry.refusal.mutationJournalEventCount;
+      incrementCount(aggregate.statuses, entry.status);
+      incrementCount(aggregate.tiers, entry.tier);
+      incrementCount(aggregate.families, entry.family);
+      for (const group of entry.groups) {
+        aggregate.totalGroupMutations += group.mutations.length;
+        aggregate.totalDirectBlockers += group.directBlockers.length;
+        aggregate.totalPropagatedBlockers += group.propagatedBlockers.length;
+        for (const blocker of group.directBlockers) {
+          incrementCount(aggregate.directBlockerClasses, blocker.class);
+        }
+      }
+      return aggregate;
+    },
+    {
+      totalCases: 0,
+      totalBlockedGroups: 0,
+      totalGroupMutations: 0,
+      totalDirectBlockers: 0,
+      totalPropagatedBlockers: 0,
+      totalAppliedMutations: 0,
+      totalDurableJournalEvents: 0,
+      totalMutationJournalEvents: 0,
+      statuses: {},
+      tiers: {},
+      families: {},
+      directBlockerClasses: {},
+    },
+  );
+
+  return {
+    ...aggregate,
+    statuses: sortStringObject(aggregate.statuses),
+    tiers: sortNumericObject(aggregate.tiers),
+    families: sortStringObject(aggregate.families),
+    directBlockerClasses: sortStringObject(aggregate.directBlockerClasses),
   };
 }
 
