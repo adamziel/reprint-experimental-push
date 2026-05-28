@@ -15,10 +15,13 @@ import {
 } from '../../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
 import { resourceHash } from '../../src/resources.js';
+import { digest as stableDigest } from '../../src/stable-json.js';
 import { DEFAULT_LIMITS, MIB } from './performance-model.js';
 
 const FIXED_NOW = new Date('2026-05-24T00:00:00.000Z');
+const BENCHMARK_PLAN_ID = 'plan-guarded-executor-benchmark';
 const LARGE_UPLOAD_PATH = 'wp-content/uploads/2026/05/catalog-export.bin';
+const LARGE_UPLOAD_RESOURCE_KEY = `file:${LARGE_UPLOAD_PATH}`;
 const COMMERCE_PLUGIN = 'commerce';
 const PAYMENTS_PLUGIN = 'payments';
 const COMMERCE_MAIN_FILE = `wp-content/plugins/${COMMERCE_PLUGIN}/${COMMERCE_PLUGIN}.php`;
@@ -106,6 +109,49 @@ export const GUARDED_EXECUTOR_BENCHMARK_PROFILES = Object.freeze({
   }),
 });
 
+export const ROLLOUT_SAFETY_GATE_DEFINITIONS = Object.freeze([
+  Object.freeze({
+    id: 'guarded-transfer-manifest',
+    requirement: 'every staged chunk is present in one durable plan-scoped manifest before any speed claim',
+  }),
+  Object.freeze({
+    id: 'chunk-hash-verification',
+    requirement: 'each staged chunk hash and the assembled file hash match the manifest and finalize record',
+  }),
+  Object.freeze({
+    id: 'receipt-only-resume',
+    requirement: 'resume skips transfer work only from exact durable receipts and blocks mismatched receipts',
+  }),
+  Object.freeze({
+    id: 'live-remote-preconditions',
+    requirement: 'each mutation retains a live remote compare-and-swap precondition at apply time',
+  }),
+  Object.freeze({
+    id: 'durable-journal-integrity',
+    requirement: 'success and failure journals are fsynced, redacted, and integrity-checkable',
+  }),
+  Object.freeze({
+    id: 'failure-recovery-classification',
+    requirement: 'success, pre-commit failure, and partial commit are restart-classifiable',
+  }),
+  Object.freeze({
+    id: 'atomic-group-visibility',
+    requirement: 'required atomic group members remain hidden before commit and blocked after partial visibility',
+  }),
+  Object.freeze({
+    id: 'production-storage-receipts',
+    requirement: 'production rollout needs storage-backed chunk receipts, not lab file-journal receipts',
+  }),
+  Object.freeze({
+    id: 'production-row-batch-executor',
+    requirement: 'production rollout needs a measured batched row compare-and-swap executor',
+  }),
+  Object.freeze({
+    id: 'production-atomic-group-commit',
+    requirement: 'production rollout needs a measured all-or-nothing atomic group commit boundary',
+  }),
+]);
+
 export class BenchmarkClaimError extends Error {
   constructor(message, details = {}) {
     super(message);
@@ -130,7 +176,7 @@ export function runGuardedExecutorBenchmark(options = {}) {
     claimId: successClaimId,
   });
   appendRecoveryClaimOpened(successJournal, {
-    plan: { id: 'plan-guarded-executor-benchmark' },
+    plan: { id: BENCHMARK_PLAN_ID },
     current: { benchmark: 'guarded-executor-benchmark', phase: 'success' },
     claimId: successClaimId,
     reason: 'Benchmark staging claim opened before durable chunk receipts.',
@@ -147,8 +193,8 @@ export function runGuardedExecutorBenchmark(options = {}) {
     stagedFile = stageGeneratedFileBytes({
       tempDir,
       journal: successJournal,
-      planId: 'plan-guarded-executor-benchmark',
-      resourceKey: `file:${LARGE_UPLOAD_PATH}`,
+      planId: BENCHMARK_PLAN_ID,
+      resourceKey: LARGE_UPLOAD_RESOURCE_KEY,
       fileBytes: config.fileBytes,
       chunkSizeBytes: config.chunkSizeBytes,
       seed: config.seed,
@@ -220,6 +266,18 @@ export function runGuardedExecutorBenchmark(options = {}) {
 
 export function productionThroughputBlockers(report) {
   const blockers = [];
+  if (!report.evidence.guardedTransfer?.manifest?.complete) {
+    blockers.push('missing-durable-chunk-manifest');
+  }
+  if (
+    report.evidence.guardedTransfer?.hashVerification?.status !== 'passed'
+    || !report.evidence.guardedTransfer?.hashVerification?.allChunksMatchManifest
+  ) {
+    blockers.push('missing-chunk-hash-verification');
+  }
+  if (!report.evidence.guardedTransfer?.resume?.receiptOnlyResumeSafe) {
+    blockers.push('missing-receipt-only-resume-evidence');
+  }
   if (report.evidence.chunkReceipts.recorded !== report.evidence.chunkReceipts.expected) {
     blockers.push('missing-durable-chunk-receipts');
   }
@@ -315,6 +373,7 @@ function stageGeneratedFileBytes({
   const fd = fs.openSync(stagingPath, 'w');
   const fileHash = crypto.createHash('sha256');
   const chunkCount = Math.ceil(fileBytes / chunkSizeBytes);
+  const manifestEntries = [];
   let bytesMoved = 0;
 
   try {
@@ -323,9 +382,22 @@ function stageGeneratedFileBytes({
       const sizeBytes = Math.min(chunkSizeBytes, fileBytes - offsetBytes);
       const chunk = deterministicChunk(sizeBytes, seed, chunkIndex);
       const chunkDigest = digestBuffer(chunk);
+      const chunkDigestLabel = `sha256:${chunkDigest}`;
+      const idempotencyKey = `${planId}:${resourceKey}:chunk:${chunkIndex}`;
+      const receiptKey = `${planId}:${resourceKey}:${chunkIndex}:sha256:${chunkDigest}`;
+      const manifestEntry = {
+        chunkIndex,
+        offsetBytes,
+        sizeBytes,
+        chunkDigest: chunkDigestLabel,
+        idempotencyKey,
+        receiptKey,
+        canonicalVisible: false,
+      };
       fileHash.update(chunk);
       fs.writeSync(fd, chunk, 0, chunk.length, offsetBytes);
       bytesMoved += chunk.length;
+      manifestEntries.push(manifestEntry);
       journal.appendEvent('chunk-receipt', {
         planId,
         resourceKey,
@@ -334,10 +406,10 @@ function stageGeneratedFileBytes({
         chunkCount,
         offsetBytes,
         sizeBytes,
-        chunkDigest: `sha256:${chunkDigest}`,
+        chunkDigest: chunkDigestLabel,
         canonicalVisible: false,
-        idempotencyKey: `${planId}:${resourceKey}:chunk:${chunkIndex}`,
-        receiptKey: `${planId}:${resourceKey}:${chunkIndex}:sha256:${chunkDigest}`,
+        idempotencyKey,
+        receiptKey,
         artifactRefs: {
           staging: `bench-staging:${resourceKey}:${chunkIndex}`,
         },
@@ -350,6 +422,31 @@ function stageGeneratedFileBytes({
 
   const assembledDigest = fileHash.digest('hex');
   const stat = fs.statSync(stagingPath);
+  const manifest = {
+    planId,
+    resourceKey,
+    fileBytes,
+    chunkSizeBytes,
+    chunkCount,
+    assembledHash: `sha256:${assembledDigest}`,
+    entries: manifestEntries,
+  };
+  const manifestDigest = `sha256:${stableDigest(manifest)}`;
+  journal.appendEvent('chunk-manifest-finalized', {
+    planId,
+    resourceKey,
+    state: 'chunk-manifest-complete',
+    chunkCount,
+    chunkSizeBytes,
+    sizeBytes: stat.size,
+    manifestDigest,
+    assembledHash: `sha256:${assembledDigest}`,
+    canonicalVisible: false,
+    idempotencyKey: `${planId}:${resourceKey}:chunk-manifest-finalize`,
+    artifactRefs: {
+      manifest: `bench-staging:${resourceKey}:chunk-manifest`,
+    },
+  });
   journal.appendEvent('file-staging-finalized', {
     planId,
     resourceKey,
@@ -365,10 +462,15 @@ function stageGeneratedFileBytes({
   });
 
   return {
+    planId,
+    resourceKey,
     stagingPath,
     bytesMoved,
     chunkCount,
     chunkSizeBytes,
+    fileBytes: stat.size,
+    manifestDigest,
+    manifestEntries,
     assembledHash: `sha256:${assembledDigest}`,
     descriptor: fileDescriptor({
       sizeBytes: stat.size,
@@ -719,6 +821,331 @@ function runFailureProbe({ mode, plan, remote, tempDir, now, failDuringCommitAtM
   };
 }
 
+function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
+  const chunkReceiptRecords = successPersisted.records.filter((record) => record.type === 'chunk-receipt');
+  const manifestRecord = successPersisted.records.find((record) =>
+    record.type === 'chunk-manifest-finalized'
+    && record.manifestDigest === stagedFile.manifestDigest);
+  const finalizedRecord = successPersisted.records.find((record) =>
+    record.type === 'file-staging-finalized'
+    && record.assembledHash === stagedFile.assembledHash);
+  const hashVerification = verifyChunkManifest(stagedFile);
+  const resume = buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords });
+  const byteRangeCoverage = manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes);
+
+  return {
+    manifest: {
+      status: manifestRecord ? 'passed' : 'failed',
+      planId: stagedFile.planId,
+      resourceKey: stagedFile.resourceKey,
+      manifestDigest: stagedFile.manifestDigest,
+      chunkCount: stagedFile.chunkCount,
+      chunkSizeBytes: stagedFile.chunkSizeBytes,
+      fileBytes: stagedFile.fileBytes,
+      entries: stagedFile.manifestEntries,
+      complete: Boolean(manifestRecord)
+        && byteRangeCoverage.contiguous
+        && chunkReceiptRecords.length === stagedFile.chunkCount,
+      durableRecordType: manifestRecord?.type || null,
+      byteRangeCoverage,
+    },
+    receipts: {
+      expected: stagedFile.chunkCount,
+      recorded: chunkReceiptRecords.length,
+      receiptKeysUnique: new Set(chunkReceiptRecords.map((record) => record.receiptKey)).size
+        === chunkReceiptRecords.length,
+      everyReceiptPlanScoped: chunkReceiptRecords.every((record) =>
+        record.planId === stagedFile.planId
+        && record.resourceKey === stagedFile.resourceKey
+        && typeof record.receiptKey === 'string'
+        && record.receiptKey.includes(stagedFile.planId)
+        && record.receiptKey.includes(stagedFile.resourceKey)),
+      canonicalVisibleBeforeFinalize: chunkReceiptRecords.some((record) => record.canonicalVisible === true),
+    },
+    hashVerification,
+    resume,
+    visibility: {
+      finalizedRecordPresent: Boolean(finalizedRecord),
+      canonicalVisibleBeforePublish: chunkReceiptRecords.some((record) => record.canonicalVisible === true),
+      livePathChangesOnlyAfterFinalize: Boolean(finalizedRecord)
+        && chunkReceiptRecords.every((record) => record.canonicalVisible === false),
+    },
+  };
+}
+
+function verifyChunkManifest(stagedFile) {
+  const fd = fs.openSync(stagedFile.stagingPath, 'r');
+  const fileHash = crypto.createHash('sha256');
+  let totalBytesVerified = 0;
+  let allChunksMatchManifest = true;
+  const verifiedEntries = [];
+
+  try {
+    for (const entry of stagedFile.manifestEntries) {
+      const chunk = Buffer.alloc(entry.sizeBytes);
+      const bytesRead = fs.readSync(fd, chunk, 0, entry.sizeBytes, entry.offsetBytes);
+      const observed = bytesRead === entry.sizeBytes ? chunk : chunk.subarray(0, bytesRead);
+      const observedDigest = `sha256:${digestBuffer(observed)}`;
+      fileHash.update(observed);
+      totalBytesVerified += bytesRead;
+      const digestMatches = bytesRead === entry.sizeBytes && observedDigest === entry.chunkDigest;
+      allChunksMatchManifest = allChunksMatchManifest && digestMatches;
+      verifiedEntries.push({
+        chunkIndex: entry.chunkIndex,
+        offsetBytes: entry.offsetBytes,
+        sizeBytes: entry.sizeBytes,
+        digestMatches,
+      });
+    }
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  const assembledHash = `sha256:${fileHash.digest('hex')}`;
+  const byteRangeCoverage = manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes);
+
+  return {
+    status: allChunksMatchManifest
+      && assembledHash === stagedFile.assembledHash
+      && totalBytesVerified === stagedFile.fileBytes
+      && byteRangeCoverage.contiguous
+      ? 'passed'
+      : 'failed',
+    verifiedChunkCount: verifiedEntries.length,
+    totalBytesVerified,
+    allChunksMatchManifest,
+    assembledHash,
+    assembledHashMatchesFinalized: assembledHash === stagedFile.assembledHash,
+    byteRangeCoverage,
+    verifiedEntries,
+  };
+}
+
+function buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords }) {
+  const matchedEntries = stagedFile.manifestEntries.filter((entry) =>
+    exactReceiptForEntry(chunkReceiptRecords, stagedFile, entry));
+  const chunksToUpload = stagedFile.manifestEntries.length - matchedEntries.length;
+  const bytesSkippedByReceipt = matchedEntries.reduce((sum, entry) => sum + entry.sizeBytes, 0);
+  const bytesToUpload = stagedFile.fileBytes - bytesSkippedByReceipt;
+  const firstEntry = stagedFile.manifestEntries[0] || null;
+  const firstReceipt = firstEntry ? exactReceiptForEntry(chunkReceiptRecords, stagedFile, firstEntry) : null;
+  const missingReceiptBlocksSkip = firstEntry
+    ? !exactReceiptForEntry(
+      chunkReceiptRecords.filter((record) => record.receiptKey !== firstReceipt?.receiptKey),
+      stagedFile,
+      firstEntry,
+    )
+    : true;
+  const mismatchedReceiptBlocksSkip = firstEntry && firstReceipt
+    ? !receiptMatchesManifestEntry(
+      {
+        ...firstReceipt,
+        chunkDigest: 'sha256:0000000000000000000000000000000000000000000000000000000000000000',
+      },
+      stagedFile,
+      firstEntry,
+    )
+    : true;
+
+  return {
+    status: chunksToUpload === 0 && missingReceiptBlocksSkip && mismatchedReceiptBlocksSkip
+      ? 'passed'
+      : 'blocked',
+    receiptOnlyResumeSafe: chunksToUpload === 0 && missingReceiptBlocksSkip && mismatchedReceiptBlocksSkip,
+    chunksSkippedByReceipt: matchedEntries.length,
+    chunksToUpload,
+    bytesSkippedByReceipt,
+    bytesToUpload,
+    duplicateChunkBytes: 0,
+    duplicateMutationWork: 0,
+    mutationWorkReplayedBeforeFinalize: 0,
+    missingReceiptBlocksSkip,
+    mismatchedReceiptBlocksSkip,
+    resumeCursorFields: [
+      'planId',
+      'resourceKey',
+      'chunkIndex',
+      'offsetBytes',
+      'sizeBytes',
+      'chunkDigest',
+      'receiptKey',
+    ],
+  };
+}
+
+function exactReceiptForEntry(records, stagedFile, entry) {
+  return records.find((record) => receiptMatchesManifestEntry(record, stagedFile, entry)) || null;
+}
+
+function receiptMatchesManifestEntry(record, stagedFile, entry) {
+  return Boolean(record)
+    && record.planId === stagedFile.planId
+    && record.resourceKey === stagedFile.resourceKey
+    && record.chunkIndex === entry.chunkIndex
+    && record.offsetBytes === entry.offsetBytes
+    && record.sizeBytes === entry.sizeBytes
+    && record.chunkDigest === entry.chunkDigest
+    && record.receiptKey === entry.receiptKey
+    && record.idempotencyKey === entry.idempotencyKey
+    && record.canonicalVisible === false;
+}
+
+function manifestByteRangeCoverage(entries, fileBytes) {
+  let expectedOffset = 0;
+  let contiguous = true;
+  let nonOverlapping = true;
+
+  for (const entry of entries) {
+    if (entry.offsetBytes !== expectedOffset) {
+      contiguous = false;
+    }
+    if (entry.offsetBytes < expectedOffset) {
+      nonOverlapping = false;
+    }
+    expectedOffset = entry.offsetBytes + entry.sizeBytes;
+  }
+
+  return {
+    contiguous: contiguous && expectedOffset === fileBytes,
+    nonOverlapping,
+    coveredBytes: expectedOffset,
+    expectedBytes: fileBytes,
+  };
+}
+
+function buildRolloutSafetyGates({ evidence, executorCapabilities }) {
+  const gateById = {
+    'guarded-transfer-manifest': gateResult({
+      id: 'guarded-transfer-manifest',
+      passed: evidence.guardedTransfer.manifest.complete,
+      blocker: 'missing-durable-chunk-manifest',
+      evidence: {
+        manifestDigest: evidence.guardedTransfer.manifest.manifestDigest,
+        chunks: evidence.guardedTransfer.manifest.chunkCount,
+      },
+    }),
+    'chunk-hash-verification': gateResult({
+      id: 'chunk-hash-verification',
+      passed: evidence.guardedTransfer.hashVerification.status === 'passed',
+      blocker: 'missing-chunk-hash-verification',
+      evidence: {
+        verifiedChunks: evidence.guardedTransfer.hashVerification.verifiedChunkCount,
+        assembledHashMatchesFinalized:
+          evidence.guardedTransfer.hashVerification.assembledHashMatchesFinalized,
+      },
+    }),
+    'receipt-only-resume': gateResult({
+      id: 'receipt-only-resume',
+      passed: evidence.guardedTransfer.resume.receiptOnlyResumeSafe,
+      blocker: 'missing-receipt-only-resume-evidence',
+      evidence: {
+        chunksSkippedByReceipt: evidence.guardedTransfer.resume.chunksSkippedByReceipt,
+        chunksToUpload: evidence.guardedTransfer.resume.chunksToUpload,
+      },
+    }),
+    'live-remote-preconditions': gateResult({
+      id: 'live-remote-preconditions',
+      passed: evidence.preconditions.everyMutationHasLiveRemotePrecondition,
+      blocker: 'missing-live-remote-preconditions',
+      evidence: {
+        mutations: evidence.preconditions.mutations,
+        liveRemoteMutationPreconditions: evidence.preconditions.liveRemoteMutationPreconditions,
+      },
+    }),
+    'durable-journal-integrity': gateResult({
+      id: 'durable-journal-integrity',
+      passed: evidence.journal.allJournalsIntegrityOk
+        && evidence.redaction.durableJournalsContainNoRawValues,
+      blocker: evidence.journal.allJournalsIntegrityOk
+        ? 'durable-journal-redaction-not-proven'
+        : 'missing-durable-journal-integrity',
+      evidence: {
+        allJournalsIntegrityOk: evidence.journal.allJournalsIntegrityOk,
+        durableJournalsContainNoRawValues: evidence.redaction.durableJournalsContainNoRawValues,
+      },
+    }),
+    'failure-recovery-classification': gateResult({
+      id: 'failure-recovery-classification',
+      passed: evidence.recovery.successReplayInspectable
+        && evidence.recovery.preCommitFailureInspectable
+        && evidence.recovery.partialCommitBlocksRecovery,
+      blocker: 'missing-failure-recovery-classification',
+      evidence: {
+        success: evidence.recovery.successInspectionStatus,
+        preCommit: evidence.recovery.preCommitFailureInspectionStatus,
+        partialCommit: evidence.recovery.partialCommitInspectionStatus,
+      },
+    }),
+    'atomic-group-visibility': gateResult({
+      id: 'atomic-group-visibility',
+      passed: evidence.atomicGroup.requireAtomic
+        && evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged
+        && evidence.atomicGroup.partialCommitStatus === 'blocked-recovery',
+      blocker: 'atomic-group-pre-commit-visibility-not-proven',
+      evidence: {
+        requireAtomic: evidence.atomicGroup.requireAtomic,
+        preCommitFailureLeavesRemoteUnchanged: evidence.atomicGroup.preCommitFailureLeavesRemoteUnchanged,
+        partialCommitStatus: evidence.atomicGroup.partialCommitStatus,
+      },
+    }),
+    'production-storage-receipts': gateResult({
+      id: 'production-storage-receipts',
+      passed: executorCapabilities.fileReceipts === 'production-storage-receipts',
+      blocker: 'production-storage-receipts-not-measured',
+      blocked: true,
+      evidence: {
+        fileReceipts: executorCapabilities.fileReceipts,
+      },
+    }),
+    'production-row-batch-executor': gateResult({
+      id: 'production-row-batch-executor',
+      passed: executorCapabilities.rowApply === 'production-batched-compare-and-swap',
+      blocker: 'production-row-batch-executor-not-measured',
+      blocked: true,
+      evidence: {
+        rowApply: executorCapabilities.rowApply,
+      },
+    }),
+    'production-atomic-group-commit': gateResult({
+      id: 'production-atomic-group-commit',
+      passed: evidence.atomicGroup.productionAtomicCommitMeasured,
+      blocker: 'production-atomic-group-commit-not-measured',
+      blocked: true,
+      evidence: {
+        productionAtomicCommit: executorCapabilities.productionAtomicCommit,
+      },
+    }),
+  };
+  const gates = ROLLOUT_SAFETY_GATE_DEFINITIONS.map((definition) => ({
+    ...definition,
+    ...gateById[definition.id],
+  }));
+  const blockers = gates
+    .filter((gate) => gate.status !== 'passed')
+    .map((gate) => gate.speedClaimBlocker);
+
+  return {
+    evaluatedBeforeSpeedClaims: true,
+    speedClaimField: 'throughput.productionThroughput',
+    gates,
+    summary: {
+      passed: gates.filter((gate) => gate.status === 'passed').length,
+      blocked: gates.filter((gate) => gate.status === 'blocked').length,
+      failed: gates.filter((gate) => gate.status === 'failed').length,
+      blockers,
+      speedClaimsAllowed: blockers.length === 0,
+    },
+  };
+}
+
+function gateResult({ passed, blocker, blocked = false, evidence }) {
+  return {
+    status: passed ? 'passed' : blocked ? 'blocked' : 'failed',
+    speedClaimBlocker: passed ? null : blocker,
+    evidence,
+  };
+}
+
 function buildReport({
   config,
   tempDir,
@@ -747,99 +1174,130 @@ function buildReport({
     partialFailure.durableJournalHasNoRawValues,
   ].every(Boolean);
   const graphIdentityReport = buildGraphIdentityReport({ config, sites, plan });
+  const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted });
+  const shape = {
+    largeUploadResourceKey: LARGE_UPLOAD_RESOURCE_KEY,
+    fileBytes: config.fileBytes,
+    bytesMovedThroughStaging: stagedFile.bytesMoved,
+    chunkSizeBytes: config.chunkSizeBytes,
+    chunkCount: stagedFile.chunkCount,
+    rowCount: config.rowCount,
+    rowPayloadBytes: config.rowPayloadBytes,
+    graphIdentityTargetCount: sites.graphIdentityTargets.length,
+    mutations: mutationCount,
+    atomicGroupId: sites.atomicGroupId,
+    atomicGroupMutationCount: atomicGroup?.mutationIds.length || 0,
+  };
+  const resources = {
+    transfer: {
+      planId: stagedFile.planId,
+      resourceKey: stagedFile.resourceKey,
+      staging: 'bench-generated-chunk-staging',
+      chunkManifestDigest: stagedFile.manifestDigest,
+      chunkReceipts: chunkReceiptRecords.length,
+      finalizedHash: stagedFile.assembledHash,
+    },
+    apply: {
+      mutationResources: mutationCount,
+      rowResources: sites.rowResourceKeys.length,
+      atomicGroupId: sites.atomicGroupId,
+      atomicGroupMutationCount: atomicGroup?.mutationIds.length || 0,
+    },
+    journals: {
+      successRecords: successPersisted.records.length,
+      failureProbeModes: [
+        preCommitFailure.mode,
+        partialFailure.mode,
+      ],
+    },
+  };
+  const executorCapabilities = {
+    chunkStaging: 'bench-generated-file-staging',
+    fileReceipts: 'lab-file-journal-receipts',
+    guardedApply: 'applyPlan-live-precondition-model',
+    rowApply: 'per-row-apply-model',
+    recoveryJournal: 'file-backed-jsonl-fsync',
+    productionAtomicCommit: 'not-measured',
+  };
+  const evidence = {
+    guardedTransfer,
+    chunkReceipts: {
+      expected: stagedFile.chunkCount,
+      recorded: chunkReceiptRecords.length,
+      finalStagingRecord: successPersisted.records.some((record) =>
+        record.type === 'file-staging-finalized'
+        && record.assembledHash === stagedFile.assembledHash),
+      canonicalVisibleBeforePublish: chunkReceiptRecords.some((record) =>
+        record.canonicalVisible === true),
+    },
+    preconditions: {
+      mutations: mutationCount,
+      liveRemoteMutationPreconditions: mutationPreconditions.length,
+      everyMutationHasLiveRemotePrecondition: plan.mutations.every((mutation) => {
+        const precondition = mutationPreconditions.find((entry) => entry.mutationId === mutation.id);
+        return precondition
+          && precondition.resourceKey === mutation.resourceKey
+          && precondition.expectedHash === mutation.remoteBeforeHash
+          && precondition.checkedAgainst === 'live-remote';
+      }),
+    },
+    journal: {
+      successIntegrity: successPersisted.integrity.status,
+      successRecords: successPersisted.records.length,
+      preCommitFailureIntegrity: preCommitFailure.journalIntegrity,
+      partialFailureIntegrity: partialFailure.journalIntegrity,
+      allJournalsIntegrityOk,
+    },
+    atomicGroup: {
+      groupStatus: atomicGroup?.status || null,
+      requireAtomic: atomicGroup?.requireAtomic === true,
+      successAllTargetsNew: successInspection.status === 'fully-updated-remote',
+      preCommitFailureLeavesRemoteUnchanged: preCommitFailure.remoteUnchanged,
+      partialCommitGroupNewTargets: partialFailure.groupNewTargets,
+      partialCommitStatus: partialFailure.inspectionStatus,
+      productionAtomicCommitMeasured: false,
+    },
+    recovery: {
+      successInspectionStatus: successInspection.status,
+      successInspectionCounts: successInspection.counts,
+      successReplayInspectable: successInspection.status === 'fully-updated-remote',
+      preCommitFailureInspectionStatus: preCommitFailure.inspectionStatus,
+      preCommitFailureInspectable: preCommitFailure.inspectionStatus === 'old-remote',
+      partialCommitInspectionStatus: partialFailure.inspectionStatus,
+      partialCommitBlocksRecovery: partialFailure.inspectionStatus === 'blocked-recovery',
+    },
+    redaction: {
+      durableJournalsContainNoRawValues,
+    },
+    wordpressGraphIdentity: {
+      postmetaReferences: graphIdentityReport.postmetaReferences,
+      stableRemotePostTargets: graphIdentityReport.stableRemotePostTargets,
+      allPostmetaReferencesUseStableRemoteIdentity:
+        graphIdentityReport.allPostmetaReferencesUseStableRemoteIdentity,
+      graphIdentityBlockers: graphIdentityReport.graphIdentityBlockers,
+      familyCounters: graphIdentityReport.familyCounters,
+      familyReport: graphIdentityReport.families,
+      actionableBlockers: graphIdentityReport.actionableBlockers,
+    },
+  };
+  const rolloutSafetyGates = buildRolloutSafetyGates({ evidence, executorCapabilities });
 
   return {
     schemaVersion: 1,
     profile: config.profile,
     priority: 'no-data-loss-no-data-loss-reliable-fast',
     tempDir,
-    shape: {
-      largeUploadResourceKey: `file:${LARGE_UPLOAD_PATH}`,
-      fileBytes: config.fileBytes,
-      bytesMovedThroughStaging: stagedFile.bytesMoved,
-      chunkSizeBytes: config.chunkSizeBytes,
-      chunkCount: stagedFile.chunkCount,
-      rowCount: config.rowCount,
-      rowPayloadBytes: config.rowPayloadBytes,
-      graphIdentityTargetCount: sites.graphIdentityTargets.length,
-      mutations: mutationCount,
-      atomicGroupId: sites.atomicGroupId,
-      atomicGroupMutationCount: atomicGroup?.mutationIds.length || 0,
-    },
+    shape,
+    resources,
+    rolloutSafetyGates,
     timings,
     throughput: {
       labStagedMiBPerSecond: mibPerSecond(stagedFile.bytesMoved, timings.stageFileMs),
       labApplyMutationsPerSecond: perSecond(mutationCount, timings.applyMs),
       productionThroughput: 'not-claimed',
     },
-    executorCapabilities: {
-      chunkStaging: 'bench-generated-file-staging',
-      fileReceipts: 'lab-file-journal-receipts',
-      guardedApply: 'applyPlan-live-precondition-model',
-      rowApply: 'per-row-apply-model',
-      recoveryJournal: 'file-backed-jsonl-fsync',
-      productionAtomicCommit: 'not-measured',
-    },
-    evidence: {
-      chunkReceipts: {
-        expected: stagedFile.chunkCount,
-        recorded: chunkReceiptRecords.length,
-        finalStagingRecord: successPersisted.records.some((record) =>
-          record.type === 'file-staging-finalized'
-          && record.assembledHash === stagedFile.assembledHash),
-        canonicalVisibleBeforePublish: chunkReceiptRecords.some((record) =>
-          record.canonicalVisible === true),
-      },
-      preconditions: {
-        mutations: mutationCount,
-        liveRemoteMutationPreconditions: mutationPreconditions.length,
-        everyMutationHasLiveRemotePrecondition: plan.mutations.every((mutation) => {
-          const precondition = mutationPreconditions.find((entry) => entry.mutationId === mutation.id);
-          return precondition
-            && precondition.resourceKey === mutation.resourceKey
-            && precondition.expectedHash === mutation.remoteBeforeHash
-            && precondition.checkedAgainst === 'live-remote';
-        }),
-      },
-      journal: {
-        successIntegrity: successPersisted.integrity.status,
-        successRecords: successPersisted.records.length,
-        preCommitFailureIntegrity: preCommitFailure.journalIntegrity,
-        partialFailureIntegrity: partialFailure.journalIntegrity,
-        allJournalsIntegrityOk,
-      },
-      atomicGroup: {
-        groupStatus: atomicGroup?.status || null,
-        requireAtomic: atomicGroup?.requireAtomic === true,
-        successAllTargetsNew: successInspection.status === 'fully-updated-remote',
-        preCommitFailureLeavesRemoteUnchanged: preCommitFailure.remoteUnchanged,
-        partialCommitGroupNewTargets: partialFailure.groupNewTargets,
-        partialCommitStatus: partialFailure.inspectionStatus,
-        productionAtomicCommitMeasured: false,
-      },
-      recovery: {
-        successInspectionStatus: successInspection.status,
-        successInspectionCounts: successInspection.counts,
-        successReplayInspectable: successInspection.status === 'fully-updated-remote',
-        preCommitFailureInspectionStatus: preCommitFailure.inspectionStatus,
-        preCommitFailureInspectable: preCommitFailure.inspectionStatus === 'old-remote',
-        partialCommitInspectionStatus: partialFailure.inspectionStatus,
-        partialCommitBlocksRecovery: partialFailure.inspectionStatus === 'blocked-recovery',
-      },
-      redaction: {
-        durableJournalsContainNoRawValues,
-      },
-      wordpressGraphIdentity: {
-        postmetaReferences: graphIdentityReport.postmetaReferences,
-        stableRemotePostTargets: graphIdentityReport.stableRemotePostTargets,
-        allPostmetaReferencesUseStableRemoteIdentity:
-          graphIdentityReport.allPostmetaReferencesUseStableRemoteIdentity,
-        graphIdentityBlockers: graphIdentityReport.graphIdentityBlockers,
-        familyCounters: graphIdentityReport.familyCounters,
-        familyReport: graphIdentityReport.families,
-        actionableBlockers: graphIdentityReport.actionableBlockers,
-      },
-    },
+    executorCapabilities,
+    evidence,
     results: {
       appliedMutations: applyResult.appliedMutations,
       successJournalPath: successPersisted.filePath,

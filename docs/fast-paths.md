@@ -300,9 +300,11 @@ resumed after a failure.
 
 `scripts/bench/guarded-executor-benchmark.js` moves one step past the static
 model. It generates real file chunk buffers, writes them into benchmark staging,
-fsyncs one durable chunk receipt per chunk through the recovery journal, builds a
-planner/apply workload with row payload objects, and applies that workload
-through the existing live-precondition `applyPlan` model. The workload includes:
+fsyncs one durable chunk receipt per chunk through the recovery journal, records
+a deterministic chunk manifest digest, verifies staged bytes back against that
+manifest, builds a planner/apply workload with row payload objects, and applies
+that workload through the existing live-precondition `applyPlan` model. The
+workload includes:
 
 - A large upload resource whose live file value is only changed after staged
   chunk receipts exist.
@@ -318,6 +320,27 @@ through the existing live-precondition `applyPlan` model. The workload includes:
 - A partial commit probe that mutates with `mutateRemote: true` and must inspect
   as `blocked-recovery`, not success.
 
+The JSON report intentionally names `rolloutSafetyGates` before `throughput`.
+That keeps safety gates ahead of speed claims in both review and tests. Current
+gates are:
+
+- `guarded-transfer-manifest`
+- `chunk-hash-verification`
+- `receipt-only-resume`
+- `live-remote-preconditions`
+- `durable-journal-integrity`
+- `failure-recovery-classification`
+- `atomic-group-visibility`
+- `production-storage-receipts`
+- `production-row-batch-executor`
+- `production-atomic-group-commit`
+
+The guarded transfer evidence lives under `evidence.guardedTransfer`. It records
+the manifest digest and chunk ranges, proves each chunk digest and the assembled
+hash match the finalized file, and simulates a resume pass that skips all chunks
+only from exact durable receipts. Missing or mismatched receipts block the skip;
+they do not authorize duplicate-free resume by inference.
+
 The quick check is:
 
 ```sh
@@ -331,7 +354,9 @@ node scripts/bench/guarded-executor-benchmark.js --profile=guardedLarge
 ```
 
 The report's `throughput.productionThroughput` field is always `not-claimed`
-unless the production claim gate passes. The current gate blocks with:
+unless every rollout safety gate passes. The current lab evidence passes the
+manifest, hash verification, receipt-only resume, live-precondition, journal,
+recovery, and atomic visibility gates. Production speed claims still block with:
 
 - `production-atomic-group-commit-not-measured`: the existing apply model can
   stage and classify failures, but it has not measured a production storage
