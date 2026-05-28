@@ -8,6 +8,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+import { deserializeResourceValue } from '../src/resources.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -61,6 +63,15 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'wp-term-relationships-graph-ready',
+  'wp-term-relationships-graph-stale',
+  'wp-term-relationships-graph',
+  'wp-term-relationships-create',
+  'wp-term-relationships-identity-map',
+  'wordpress-graph-identity-map',
+  'wordpress-graph-identity-map-stale',
+  'term-relationship-taxonomy-graph',
+  'term-relationship-object-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -347,6 +358,182 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
     );
+  }
+}
+
+test('RPP-0113 wp_term_relationships graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermRelationshipsGraph;
+
+  assert.ok(coverage, 'missing wp_term_relationships graph target coverage');
+  assert.equal(coverage.family, 'wp-term-relationships-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-relationships-graph']);
+  assert.equal(coverage.total, 18);
+  assert.deepEqual(coverage.statuses, { blocked: 2, conflict: 7, ready: 9 });
+  assert.deepEqual(coverage.perTier, {
+    0: 2,
+    1: 1,
+    2: 1,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+  });
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_term_relationships graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-term-relationships-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-term-relationships-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_term_relationships graph case');
+  assert.ok(staleCase, 'missing stale wp_term_relationships graph case');
+  const readyShape = assertTermRelationshipsGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertTermRelationshipsGraphShape(staleCase, { staleTarget: true });
+  const readyPlan = createGeneratedPlan(readyCase);
+  const stalePlan = createGeneratedPlan(staleCase);
+  const relationshipMutation = readyPlan.mutations
+    .find((mutation) => mutation.resource.table === 'wp_term_relationships');
+  const relationshipBlocker = stalePlan.blockers
+    .find((blocker) => blocker.resource.table === 'wp_term_relationships');
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready graph should create the rewritten relationship row');
+  assert.equal(ready.applied, true, 'ready wp_term_relationships graph should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready relationship graph must preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready wp_term_relationships graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+
+  assert.ok(relationshipMutation, 'ready graph should plan a wp_term_relationships mutation');
+  const plannedRelationship = deserializeResourceValue(relationshipMutation.value);
+  assert.equal(relationshipMutation.resource.id, `object_id:${plannedRelationship.object_id}|term_taxonomy_id:${plannedRelationship.term_taxonomy_id}`);
+  assert.equal(plannedRelationship.object_id, readyShape.remoteObjectId);
+  assert.equal(plannedRelationship.term_taxonomy_id, readyShape.remoteTaxonomyId);
+  assert.notEqual(plannedRelationship.object_id, readyShape.localObjectId);
+  assert.notEqual(plannedRelationship.term_taxonomy_id, readyShape.localTaxonomyId);
+  assert.deepEqual(
+    relationshipMutation.wordpressGraphIdentity.rewrites
+      .map((rewrite) => rewrite.relationshipKey)
+      .sort(),
+    ['wp_term_relationships.object_id', 'wp_term_relationships.term_taxonomy_id'],
+  );
+  assertHashOnlyGraphEvidence(relationshipMutation.wordpressGraphIdentity, readyShape.privateEvidenceValues);
+
+  assert.ok(relationshipBlocker, 'stale graph should block the wp_term_relationships row');
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.deepEqual(
+    relationshipBlocker.references
+      .map((reference) => reference.relationshipKey)
+      .sort(),
+    ['wp_term_relationships.object_id', 'wp_term_relationships.term_taxonomy_id'],
+  );
+  assertHashOnlyGraphEvidence(relationshipBlocker, staleShape.privateEvidenceValues);
+});
+
+function assertTermRelationshipsGraphShape(testCase, { staleTarget }) {
+  const relationshipRows = Object.entries(testCase.local.db.wp_term_relationships)
+    .filter(([id, row]) => !testCase.base.db.wp_term_relationships[id]
+      && testCase.local.db.wp_posts[`ID:${row.object_id}`]?.post_title
+        .startsWith('Generated mapped term relationship object ')
+      && testCase.local.db.wp_term_taxonomy[`term_taxonomy_id:${row.term_taxonomy_id}`]?.description
+        === 'Generated mapped term relationship taxonomy');
+
+  assert.equal(relationshipRows.length, 1, `${testCase.id} should create one mapped term relationship`);
+
+  const [relationshipRowId, relationship] = relationshipRows[0];
+  const localPostRowId = `ID:${relationship.object_id}`;
+  const localTermTaxonomyRowId = `term_taxonomy_id:${relationship.term_taxonomy_id}`;
+  const localTaxonomy = testCase.local.db.wp_term_taxonomy[localTermTaxonomyRowId];
+  const localTermRowId = `term_id:${localTaxonomy.term_id}`;
+  const identityMapRows = testCase.local.meta.wordpressGraphIdentityMap.rows;
+  const postMap = identityMapRows.find((row) => row.table === 'wp_posts' && row.localId === localPostRowId);
+  const termMap = identityMapRows.find((row) => row.table === 'wp_terms' && row.localId === localTermRowId);
+  const taxonomyMap = identityMapRows
+    .find((row) => row.table === 'wp_term_taxonomy' && row.localId === localTermTaxonomyRowId);
+  const remoteObjectId = numericIdentityId(postMap.remoteId, 'ID');
+  const remoteTermId = numericIdentityId(termMap.remoteId, 'term_id');
+  const remoteTaxonomyId = numericIdentityId(taxonomyMap.remoteId, 'term_taxonomy_id');
+  const remotePost = testCase.remote.db.wp_posts[postMap.remoteId];
+  const remoteTerm = testCase.remote.db.wp_terms[termMap.remoteId];
+  const remoteTaxonomy = testCase.remote.db.wp_term_taxonomy[taxonomyMap.remoteId];
+
+  assert.equal(relationshipRowId, `object_id:${relationship.object_id}|term_taxonomy_id:${relationship.term_taxonomy_id}`);
+  assert.ok(remotePost, `${testCase.id} should include mapped remote object target`);
+  assert.ok(remoteTerm, `${testCase.id} should include mapped remote term target`);
+  assert.ok(remoteTaxonomy, `${testCase.id} should include mapped remote taxonomy target`);
+  assert.equal(remoteTaxonomy.term_id, remoteTermId);
+  assert.equal(testCase.remote.db.wp_posts[localPostRowId], undefined);
+  assert.equal(testCase.remote.db.wp_term_taxonomy[localTermTaxonomyRowId], undefined);
+
+  assert.equal(
+    remotePost.post_title.startsWith('Remote stale mapped term relationship object '),
+    staleTarget,
+    `${testCase.id} stale object target mismatch`,
+  );
+  assert.equal(
+    remoteTaxonomy.description.startsWith('Remote stale mapped term relationship taxonomy '),
+    staleTarget,
+    `${testCase.id} stale taxonomy target mismatch`,
+  );
+
+  return {
+    localObjectId: relationship.object_id,
+    remoteObjectId,
+    localTaxonomyId: relationship.term_taxonomy_id,
+    remoteTaxonomyId,
+    privateEvidenceValues: [
+      testCase.local.db.wp_posts[localPostRowId].post_title,
+      remotePost.post_title,
+      testCase.local.db.wp_terms[localTermRowId].name,
+      remoteTerm.name,
+      localTaxonomy.description,
+      remoteTaxonomy.description,
+    ],
+  };
+}
+
+function numericIdentityId(rowId, prefix) {
+  assert.ok(rowId?.startsWith(`${prefix}:`), `unexpected identity row id ${rowId}`);
+  return Number(rowId.slice(prefix.length + 1));
+}
+
+function createGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+}
+
+function assertHashOnlyGraphEvidence(evidence, forbiddenValues) {
+  const evidenceJson = JSON.stringify(evidence);
+  assert.match(evidenceJson, /Hash/);
+  for (const value of forbiddenValues) {
+    assert.equal(evidenceJson.includes(value), false, 'graph identity evidence should not include raw row values');
   }
 }
 
