@@ -30,6 +30,8 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const WP_TERMMETA_PLUGIN_DATA_DRIVERS = new Set(['wp-termmeta', 'wp-term-meta']);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -459,6 +461,35 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      if (WP_TERMMETA_PLUGIN_DATA_DRIVERS.has(supported.driver)) {
+        const driverEvidence = wpTermmetaDriverEvidence({
+          resource,
+          owner,
+          base,
+          local,
+          remote,
+          policySource: supported.source,
+          driver: supported.driver,
+        });
+        if (!driverEvidence.supported) {
+          return {
+            supported: false,
+            className: 'unsupported-plugin-owned-resource',
+            driver: supported.driver,
+            policySource: supported.source,
+            reason: driverEvidence.reason,
+            driverEvidence,
+          };
+        }
+        return {
+          supported: true,
+          driver: supported.driver,
+          policySource: supported.source,
+          supportsDelete: supported.supportsDelete === true,
+          driverEvidence,
+        };
+      }
+
       return {
         supported: true,
         driver: supported.driver,
@@ -467,6 +498,117 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       };
     },
   };
+}
+
+function wpTermmetaDriverEvidence({ resource, owner, base, local, remote, policySource, driver }) {
+  const effectiveDriver = driver || 'wp-termmeta';
+  const unsupported = (reason, extra = {}) => ({
+    supported: false,
+    driver: effectiveDriver,
+    table: 'wp_termmeta',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    policySource,
+    reason,
+    ...extra,
+  });
+
+  if (resource.type !== 'row' || resource.table !== 'wp_termmeta') {
+    return unsupported('wp_termmeta driver only supports wp_termmeta row resources.');
+  }
+
+  const rowId = parseWpTermmetaResourceId(resource.id);
+  if (!rowId.supported) {
+    return unsupported(rowId.reason);
+  }
+
+  const rowValues = [
+    ['base', getResource(base, resource)],
+    ['local', getResource(local, resource)],
+    ['remote', getResource(remote, resource)],
+  ].filter(([, value]) => value !== ABSENT);
+  if (rowValues.length === 0) {
+    return unsupported('wp_termmeta driver requires at least one concrete termmeta row value.');
+  }
+
+  for (const [source, value] of rowValues) {
+    const support = validateWpTermmetaDriverValue(value, {
+      owner,
+      rowId,
+      source,
+    });
+    if (!support.supported) {
+      return unsupported(support.reason, { rowId: resource.id, rowIdKind: rowId.kind });
+    }
+  }
+
+  const localValue = getResource(local, resource);
+  const concreteValue = localValue !== ABSENT
+    ? localValue
+    : rowValues.find(([source]) => source === 'remote')?.[1] || rowValues[0][1];
+  return {
+    supported: true,
+    driver: effectiveDriver,
+    table: 'wp_termmeta',
+    resourceKey: resource.key,
+    rowId: resource.id,
+    rowIdKind: rowId.kind,
+    termId: normalizePositiveInteger(concreteValue.term_id),
+    metaKey: concreteValue.meta_key,
+    pluginOwner: owner,
+    policySource,
+  };
+}
+
+function parseWpTermmetaResourceId(id) {
+  const raw = String(id || '');
+  const metaId = raw.match(/^meta_id:([1-9]\d*)$/);
+  if (metaId) {
+    return {
+      supported: true,
+      kind: 'meta_id',
+      metaId: Number.parseInt(metaId[1], 10),
+    };
+  }
+  return {
+    supported: false,
+    reason: 'wp_termmeta driver requires row id meta_id:<positive-int>.',
+  };
+}
+
+function validateWpTermmetaDriverValue(value, { owner, rowId, source }) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      supported: false,
+      reason: `wp_termmeta driver requires ${source} row value to be an object.`,
+    };
+  }
+  if (value.__pluginOwner !== owner) {
+    return {
+      supported: false,
+      reason: `wp_termmeta driver requires ${source} row owner to match plugin policy owner.`,
+    };
+  }
+  const termId = normalizePositiveInteger(value.term_id);
+  if (!termId) {
+    return {
+      supported: false,
+      reason: `wp_termmeta driver requires ${source} row term_id to be a positive integer.`,
+    };
+  }
+  if (typeof value.meta_key !== 'string' || value.meta_key.trim() === '') {
+    return {
+      supported: false,
+      reason: `wp_termmeta driver requires ${source} row meta_key to be a non-empty string.`,
+    };
+  }
+  if (rowId.kind === 'meta_id' && normalizePositiveInteger(value.meta_id) !== rowId.metaId) {
+    return {
+      supported: false,
+      reason: `wp_termmeta driver requires ${source} row meta_id to match the resource id.`,
+    };
+  }
+  return { supported: true };
 }
 
 function pluginOwnedPolicyEntriesFromSnapshot(snapshot, source) {
@@ -2311,6 +2453,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.driverEvidence ? { driverEvidence: support.driverEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
