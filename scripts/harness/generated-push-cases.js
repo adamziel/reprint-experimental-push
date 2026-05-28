@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'post-author-graph-ready',
+  'post-author-graph-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,8 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'post-author-graph-ready',
+  'post-author-graph-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  postAuthorGraph: {
+    family: 'post-author-graph-ready',
+    tag: 'post-author-graph',
   },
 });
 
@@ -595,6 +603,14 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
+  },
+  'post-author-graph-ready': ({ local, allocator, tags }) => {
+    addPostAuthorGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'post-author-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1215,6 +1231,44 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const userId = allocator.graphId();
+  const postId = allocator.graphId();
+  const userRowId = `ID:${userId}`;
+  const postRowId = `ID:${postId}`;
+  const user = makeUser(userId);
+
+  if (staleTarget) {
+    setRow(base, 'wp_users', userRowId, user);
+    setRow(local, 'wp_users', userRowId, user);
+    setRow(remote, 'wp_users', userRowId, {
+      ...user,
+      user_email: `remote-private-author-${userId}@example.test`,
+      display_name: `Remote stale post author ${userId}`,
+    });
+  } else {
+    setRow(local, 'wp_users', userRowId, user);
+  }
+
+  setRow(local, 'wp_posts', postRowId, makePost(postId, `Generated post author graph post ${postId}`, {
+    post_author: userId,
+    post_type: 'post',
+    post_status: 'draft',
+  }));
+
+  tags.add('post-author-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('post-author-stale-target');
+    tags.add('wp-users-remote-drift');
+  } else {
+    tags.add('post-author-ready');
+    tags.add('wp-users-create');
   }
 }
 

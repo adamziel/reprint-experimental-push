@@ -82,6 +82,13 @@ const requiredFamilies = [
   'term-taxonomy-term-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
+  'post-author-graph-ready',
+  'post-author-graph-stale',
+  'post-author-graph',
+  'post-author-ready',
+  'post-author-stale-target',
+  'wp-users-create',
+  'wp-users-remote-drift',
   'same-plan-graph',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
@@ -470,6 +477,119 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0343 generated harness emits post author ready and stale graph cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postAuthorGraph;
+
+  assert.ok(coverage, 'missing post author graph target coverage');
+  assert.equal(coverage.family, 'post-author-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['post-author-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready post author graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready post author graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'post-author-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'post-author-graph-stale');
+
+  assert.ok(readyCase, 'missing ready post author graph case');
+  assert.ok(staleCase, 'missing stale post author graph case');
+  const readyShape = assertPostAuthorGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertPostAuthorGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const postMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.postResourceKey);
+  const userMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.userResourceKey);
+  const plannedPost = deserializeResourceValue(postMutation.value);
+  const staleBlocker = stalePlan.blockers.find((blocker) =>
+    blocker.resourceKey === staleShape.postResourceKey);
+  const stalePlanJson = JSON.stringify(stalePlan);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true, 'ready post author graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready post author graph should reject stale replay');
+  assert.ok(postMutation, 'ready graph should plan the authored post row');
+  assert.ok(userMutation, 'ready graph should plan the author user row');
+  assert.equal(plannedPost.post_author, readyShape.userId);
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale post author graph must not apply mutations');
+  assert.ok(staleBlocker, 'stale graph should block the authored post row');
+  assert.equal(staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleBlocker.references[0].relationshipType, 'post-author');
+  assert.equal(staleBlocker.references[0].targetResourceKey, staleShape.userResourceKey);
+  assert.match(staleBlocker.references[0].targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.equal(stalePlanJson.includes('remote-private-author-'), false);
+  assert.equal(stalePlanJson.includes('Remote stale post author'), false);
+});
+
+function assertPostAuthorGraphShape(testCase, { staleTarget }) {
+  const postRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => !testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated post author graph post '));
+
+  assert.equal(postRows.length, 1, `${testCase.id} should create one authored post row`);
+
+  const [postRowId, postRow] = postRows[0];
+  const userId = Number(postRow.post_author);
+  const userRowId = `ID:${userId}`;
+  const user = testCase.local.db.wp_users[userRowId];
+
+  assert.ok(Number.isSafeInteger(userId), `${testCase.id} post_author should be a numeric user ID`);
+  assert.ok(user, `${testCase.id} missing local author user ${userRowId}`);
+  assert.equal(user.ID, userId);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_users[userRowId], `${testCase.id} stale author should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_users[userRowId],
+      testCase.base.db.wp_users[userRowId],
+      `${testCase.id} stale author target should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_users[userRowId], undefined);
+    assert.equal(testCase.remote.db.wp_users[userRowId], undefined);
+  }
+
+  return {
+    userId,
+    postResourceKey: generatedRowResourceKey('wp_posts', postRowId),
+    userResourceKey: generatedRowResourceKey('wp_users', userRowId),
+  };
+}
+
+function generatedRowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
 }
 
 function nonReadyTargetCount(coverage) {

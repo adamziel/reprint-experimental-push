@@ -11,6 +11,7 @@ Lane: graph-identity
 - Adds fail-closed post GUID and `post_type` + `post_name` collision detection when a local post would duplicate a different remote post without an explicit proven identity map.
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
+- Adds generated harness evidence for post author references: ready cases create the `wp_users` author target and authored `wp_posts` row in one plan, while stale cases drift the author remotely and stop with hash-only `stale-wordpress-graph-identity` blocker evidence.
 
 ## Verification commands
 
@@ -18,7 +19,7 @@ Lane: graph-identity
 - `node --test test/local-production-complex-site-proof.test.js` — passed (17 tests), including post_tag release-evidence carry-through and fail-closed mutation checks.
 - `node --test test/push-planner.test.js` — passed (90 tests), including same-plan `post_tag` taxonomy closure.
 - `node --test test/graph-mapping-inventory.test.js` — passed (2 tests).
-- `node --test test/generated-push-harness.test.js` — passed (6 generated harness tests covering 300+ cases).
+- `node --test test/generated-push-harness.test.js` — local focused generated harness run covered 10 tests and 300+ cases, including ready/stale post author graph coverage.
 - `npm run bench:graph-mapping-inventory` — passed and emitted `identityMapCapabilities` with explicit map table suffixes and fail-closed collision surfaces.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
@@ -35,6 +36,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 - RPP-0304 / RPP-0324: postmeta `post_id` references and `post_id:<id>:meta_key:<key>` row IDs are rewritten to the mapped remote post ID.
 - RPP-0305 / RPP-0325: comment `comment_post_ID` references are rewritten to mapped remote post identities.
 - RPP-0310: core `post_tag` taxonomy rows are now covered by local-production planner/release evidence, while unsupported taxonomy surfaces remain documented as fail-closed with hash-only evidence.
+- RPP-0343: generated post author reference cases include same-plan `wp_users` + authored `wp_posts` creation and stale remote author fail-closed behavior with redacted hash-only blocker evidence.
 - RPP-0312 / RPP-0332: termmeta `term_id` references are rewritten to mapped remote term identities.
 - RPP-0313 / RPP-0333 and RPP-0314 / RPP-0334: term relationship `object_id` and `term_taxonomy_id` references, including compound row IDs, are rewritten to mapped remote post/taxonomy identities.
 - RPP-0318: GUID and slug collision handling now fails closed without explicit identity-map evidence.
