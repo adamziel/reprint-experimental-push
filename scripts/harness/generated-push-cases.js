@@ -1617,6 +1617,8 @@ function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conf
     option_value: {
       mode: 'base',
       token: `plugin-owned-option-${allocator.next()}`,
+      private_token: `base-private-plugin-owned-option-token-${allocator.next()}`,
+      private_notes: `base-private-plugin-owned-option-notes-${allocator.next()}`,
     },
     __pluginOwner: 'forms',
   };
@@ -1628,6 +1630,8 @@ function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conf
     option_value: {
       mode: 'local',
       token: `plugin-owned-option-local-${prefix}-${allocator.next()}`,
+      private_token: `local-private-plugin-owned-option-token-${prefix}-${allocator.next()}`,
+      private_notes: `local-private-plugin-owned-option-notes-${prefix}-${allocator.next()}`,
     },
   });
   allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
@@ -1640,6 +1644,8 @@ function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conf
     remote.db.wp_options[rowId].option_value = {
       mode: 'remote',
       token: `plugin-owned-option-remote-${prefix}-${allocator.next()}`,
+      private_token: `remote-private-plugin-owned-option-token-${prefix}-${allocator.next()}`,
+      private_notes: `remote-private-plugin-owned-option-notes-${prefix}-${allocator.next()}`,
     };
   }
 }

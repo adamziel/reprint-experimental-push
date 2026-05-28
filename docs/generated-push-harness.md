@@ -193,7 +193,9 @@ The `pluginOwnedOptionChange` target coverage records per-tier counts for
 generated plugin-owned `wp_options` rows using the supported forms driver.
 Ready cases apply the local option update with owner/driver evidence and reject
 stale replays before mutation; conflict cases drift the same plugin-owned option
-remotely and must refuse apply without losing the remote value.
+remotely and must refuse apply without losing the remote value. RPP-0134 keeps
+private plugin-owned option tokens and notes out of summary and planner evidence
+while retaining redacted hashes and plugin owner/driver metadata.
 
 
 The `largeReadyPlanTier` target coverage records one large ready plan per tier.

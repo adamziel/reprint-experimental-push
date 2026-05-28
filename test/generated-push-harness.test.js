@@ -2070,7 +2070,7 @@ test('RPP-0117 stale remote after dry-run target exposes per-tier ready replay r
 });
 
 
-test('RPP-0114 plugin-owned option target exposes ready and conflict coverage', () => {
+test('RPP-0114/RPP-0134 plugin-owned option target exposes ready, conflict, and redacted coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.pluginOwnedOptionChange;
 
@@ -2091,6 +2091,8 @@ test('RPP-0114 plugin-owned option target exposes ready and conflict coverage', 
     Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
     coverage.total,
   );
+  assert.equal(JSON.stringify(report).includes('private_plugin_owned_option'), false);
+  assert.equal(JSON.stringify(report).includes('private-plugin-owned-option'), false);
 
   const cases = generatePushHarnessCases();
   const readyCase = cases.find((testCase) => testCase.family === 'plugin-owned-option-change-ready');
@@ -2098,8 +2100,8 @@ test('RPP-0114 plugin-owned option target exposes ready and conflict coverage', 
 
   assert.ok(readyCase, 'missing ready plugin-owned option case');
   assert.ok(conflictCase, 'missing conflicting plugin-owned option case');
-  assertPluginOwnedOptionShape(readyCase, { conflict: false });
-  assertPluginOwnedOptionShape(conflictCase, { conflict: true });
+  const readyShape = assertPluginOwnedOptionShape(readyCase, { conflict: false });
+  const conflictShape = assertPluginOwnedOptionShape(conflictCase, { conflict: true });
 
   const ready = validateGeneratedCase(readyCase);
   const conflict = validateGeneratedCase(conflictCase);
@@ -2114,6 +2116,9 @@ test('RPP-0114 plugin-owned option target exposes ready and conflict coverage', 
   assert.equal(conflict.status, 'conflict');
   assert.ok(conflict.conflicts >= 1, 'remote plugin-owned option drift should be a conflict');
   assert.equal(conflict.applied, false, 'conflicting plugin-owned option must not apply mutations');
+
+  assertPluginOwnedOptionEvidenceRedacted(readyCase, readyShape);
+  assertPluginOwnedOptionEvidenceRedacted(conflictCase, conflictShape);
 });
 
 function assertPluginOwnedOptionShape(testCase, { conflict }) {
@@ -2130,9 +2135,15 @@ function assertPluginOwnedOptionShape(testCase, { conflict }) {
   assert.ok(baseRow, `${testCase.id} should have a base plugin-owned option row`);
   assert.ok(remoteRow, `${testCase.id} should have a remote plugin-owned option row`);
   assert.notDeepEqual(row.option_value, baseRow.option_value, `${testCase.id} should update option_value locally`);
+  assert.match(baseRow.option_value.private_token, /^base-private-plugin-owned-option-token-/);
+  assert.match(baseRow.option_value.private_notes, /^base-private-plugin-owned-option-notes-/);
+  assert.match(row.option_value.private_token, /^local-private-plugin-owned-option-token-/);
+  assert.match(row.option_value.private_notes, /^local-private-plugin-owned-option-notes-/);
   if (conflict) {
     assert.notDeepEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} should drift remotely`);
-    return;
+    assert.match(remoteRow.option_value.private_token, /^remote-private-plugin-owned-option-token-/);
+    assert.match(remoteRow.option_value.private_notes, /^remote-private-plugin-owned-option-notes-/);
+    return { rowId, baseRow, localRow: row, remoteRow, resourceKey };
   }
 
   assert.deepEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} remote should match base`);
@@ -2147,6 +2158,75 @@ function assertPluginOwnedOptionShape(testCase, { conflict }) {
   assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
   assert.equal(mutation.pluginOwnedResource?.driver, 'wp-option');
   assert.equal(mutation.pluginOwnedResource?.ownerContextRequired, true);
+  return { rowId, baseRow, localRow: row, remoteRow, resourceKey };
+}
+
+function assertPluginOwnedOptionEvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const mutation = plan.mutations.find((candidate) => candidate.resourceKey === shape.resourceKey);
+  const relatedConflicts = plan.conflicts.filter((conflict) => conflict.resourceKey === shape.resourceKey);
+
+  if (plan.status === 'ready') {
+    assert.ok(mutation, `${testCase.id} should include plugin-owned option mutation`);
+    assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource?.driver, 'wp-option');
+    assert.equal(mutation.pluginOwnedResource?.ownerContextRequired, true);
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+  } else {
+    assert.notEqual(plan.status, 'ready');
+    assert.ok(relatedConflicts.length >= 1, `${testCase.id} should carry plugin-owned option conflict evidence`);
+  }
+
+  const redacted = redactEvidence({
+    status: plan.status,
+    mutations: mutation ? [{
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      change: mutation.change,
+      pluginOwnedResource: mutation.pluginOwnedResource,
+      value: mutation.value,
+    }] : [],
+    conflicts: relatedConflicts,
+  });
+  const redactedJson = JSON.stringify(redacted);
+
+  if (mutation) {
+    assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), 'plugin-owned option values should be redacted');
+    assert.ok(redactedJson.includes('sha256'), 'redacted plugin-owned option evidence should keep hashes');
+  }
+  assertPluginOwnedOptionRawValuesAbsent(testCase, shape, redactedJson);
+}
+
+function assertPluginOwnedOptionRawValuesAbsent(testCase, shape, redactedJson) {
+  const privateValues = [
+    shape.baseRow.option_value.private_token,
+    shape.baseRow.option_value.private_notes,
+    shape.localRow.option_value.private_token,
+    shape.localRow.option_value.private_notes,
+    shape.remoteRow.option_value.private_token,
+    shape.remoteRow.option_value.private_notes,
+    'base-private-plugin-owned-option-token',
+    'local-private-plugin-owned-option-token',
+    'remote-private-plugin-owned-option-token',
+    'private-plugin-owned-option-notes',
+  ].filter(Boolean).map(String);
+
+  for (const value of privateValues) {
+    assert.equal(
+      redactedJson.includes(value),
+      false,
+      `${testCase.id} redacted plugin-owned option evidence leaked ${value}`,
+    );
+  }
 }
 
 test('RPP-0347 generated harness emits comment user ready and stale graph cases', () => {
