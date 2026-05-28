@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, and RPP-0040
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, and RPP-0052
 
 ## What changed
 
@@ -51,14 +51,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0038 | Evidence toward variant-2 progress.html release timestamp now links the progress page, focused proof command, observed status, exact timestamp evidence, and `NO-GO` release status without moving release readiness. |
 | RPP-0039 | Evidence toward variant-2 `.agents/RELEASE_GATES.md` status row now parses the generated status row and runs negative/positive `check-release-gates` scenarios: dishonest `release_verdict: 4/4` evidence fails, while the generated `0/4` row remains honest `NO-GO`. |
 | RPP-0040 | Evidence toward variant-2 `verify:release` failure reason now runs the checked `npm run verify:release` missing-source path, asserts exit `1`, final `[verify-release:held ...]` marker, exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` evidence, and `mutationAttempted: false`; the release-gate CLI preserves that evidence while release remains `NO-GO` without provenance. |
+| RPP-0052 | Evidence toward variant-3 dry-run route eligibility proof now generates eligible and rejected final-release fixtures, asserts exact route eligibility evidence on the eligible fixture, and proves dry-run rejection exits `1` with `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, exact reason/evidence, held marker, and `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-dry-run-route-eligibility-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 31 tests.
+Observed status: pass, 33 tests.
 
 Progress HTML release timestamp proof:
 
@@ -78,6 +79,12 @@ Verify release failure reason proof:
 - Observed status: `pass`; checked `npm run verify:release` missing-source path exits `1` and prints `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`.
 - Evidence link: the release-gate CLI preserves exact `verifyReleaseFailure` evidence with `mutationAttempted: false` and still reports `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied.
 
+Generated dry-run route eligibility proof:
+
+- Command: `node --test test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; generated fixtures supply every other final-release gate while comparing eligible and rejected dry-run route evidence before apply.
+- Evidence link: the eligible fixture preserves exact route eligibility evidence and remains `NO-GO` without provenance; the rejected fixture exits `1` with `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, `finalGates: "19/20"`, exact `dry-run-route-eligibility` reason/evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]`, and `mutationAttempted: false`.
+
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
@@ -88,6 +95,7 @@ Key assertions:
 - Same source URL identity drift has variant-2 release-gate and CLI coverage: both paths preserve exact drift evidence, the CLI emits a final bracketed `[release-gates-ci:held ... reason=SAME_SOURCE_IDENTITY_REQUIRED]` marker, and no mutation attempt is recorded.
 - Preflight route identity drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact wrong-route evidence, and `mutationAttempted: false`.
 - Dry-run route eligibility has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, exact rejection evidence, and `mutationAttempted: false`.
+- Generated dry-run route eligibility coverage now records matching final-release route eligibility evidence and a rejected dry-run fixture that fails closed at `dry-run-route-eligibility` only, with `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]` marker, exact evidence, and `mutationAttempted: false`.
 - Apply route pre-mutation proof links the smoke command with observed status `412 PRECONDITION_FAILED`, phase `before-first-mutation`, and `appliedBeforeFailure: 0`; the gate passes while the CLI remains `NO-GO` without provenance and records no mutation attempt.
 - Journal route read-only proof has command-level variant-2 matrix coverage: the negative case records exact write-observed evidence and the positive case links the journal command, `GET` method, stable row counts, no release-state mutation, and `mutationAttempted: false`.
 - Recovery inspect read-only proof has tmux-visible variant-2 matrix coverage: the negative case emits `[release-gates-ci:held ... reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]`, while the positive case emits a final release-ready marker with exact read-only evidence, stable recovery row counts, no release-state mutation, and `mutationAttempted: false`.
