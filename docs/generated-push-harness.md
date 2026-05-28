@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 26 scenario families, then add seeded variation so
+span 10 complexity tiers and 28 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -49,8 +49,9 @@ The default generated run covers:
   delete mixes with ready and conflicting outcomes, supported and unsupported
   plugin-owned data, plugin owner-context drift, supported forms-lab custom-table
   rows, forms-lab delete refusal, atomic plugin install ready and missing-
-  dependency paths, same-plan post-parent, taxonomy, comment, and usermeta graph
-  closures, and stale graph references.
+  dependency paths, same-plan post-parent, post-author, taxonomy, comment, and
+  usermeta graph closures, plus stale post-author and general stale graph
+  references.
 
 At the time this note was added, the summary command reported:
 
@@ -58,14 +59,23 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 26,
-    "conflict": 133,
-    "ready": 201
+    "blocked": 24,
+    "conflict": 138,
+    "ready": 198
   },
-  "maxResourceCount": 69,
-  "maxMutationCount": 44,
+  "maxResourceCount": 68,
+  "maxMutationCount": 45,
   "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxReadyMutationCount": 43,
+  "postAuthorGraph": {
+    "blocked": 3,
+    "conflict": 11,
+    "ready": 12
+  },
+  "fileCreateUpdateDeleteMix": {
+    "conflict": 13,
+    "ready": 11
+  }
 }
 ```
 

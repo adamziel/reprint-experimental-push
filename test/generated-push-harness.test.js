@@ -21,6 +21,8 @@ const requiredFamilies = [
   'plugin-owner-context-drift',
   'file-topology-conflict',
   'same-plan-post-parent-graph',
+  'same-plan-post-author-graph',
+  'stale-post-author-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -38,6 +40,9 @@ const requiredFamilies = [
   'file-create-update-delete-mix',
   'same-plan-user-meta-graph',
   'same-plan-graph',
+  'post-author-graph',
+  'post-author-ready',
+  'post-author-stale',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'file-topology',
@@ -72,6 +77,22 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalMutations > summary.totalCases, 'harness should exercise more mutations than cases');
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
+  assert.ok(
+    summary.statusByFeatureFamily['same-plan-post-author-graph'].ready > 0,
+    'post_author same-plan user mapping needs ready generated cases',
+  );
+  assert.ok(
+    summary.statusByFeatureFamily['stale-post-author-graph'].blocked > 0,
+    'post_author stale user mapping needs blocked generated cases',
+  );
+  assert.ok(
+    summary.statusByFeatureFamily['post-author-graph'].ready > 0,
+    'post_author mapping tag needs ready coverage',
+  );
+  assert.ok(
+    summary.statusByFeatureFamily['post-author-graph'].blocked > 0,
+    'post_author mapping tag needs stale/blocked coverage',
+  );
   assert.ok(summary.totalDecisions > 0);
 });
 
