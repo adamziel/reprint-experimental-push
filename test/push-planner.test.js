@@ -2011,6 +2011,134 @@ test('rewrites explicit WordPress graph identity map references to proven remote
   assert.equal(result.site.db.wp_termmeta['meta_id:4101'].term_id, 3101);
 });
 
+test('RPP-0330 rewrites post_tag taxonomy identity maps to proven remote terms', () => {
+  const sourceTermResourceKey = 'row:["wp_terms","term_id:611"]';
+  const targetTermResourceKey = 'row:["wp_terms","term_id:711"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:612"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_terms', localId: 'term_id:611', remoteId: 'term_id:711' }],
+    },
+  };
+  local.db.wp_terms['term_id:611'] = {
+    term_id: 611,
+    name: 'Mapped post tag term',
+    slug: 'mapped-post-tag-term',
+    term_group: 0,
+  };
+  remote.db.wp_terms['term_id:711'] = {
+    term_id: 711,
+    name: 'Mapped post tag term',
+    slug: 'mapped-post-tag-term',
+    term_group: 0,
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:612'] = {
+    term_taxonomy_id: 612,
+    term_id: 611,
+    taxonomy: 'post_tag',
+    description: 'Mapped post_tag term taxonomy',
+    parent: 0,
+    count: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const taxonomyMutation = mutationFor(plan, taxonomyResourceKey);
+  const taxonomyValue = deserializeMutationValue(taxonomyMutation);
+  const termRewrite = taxonomyMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+    rewrite.relationshipType === 'term-taxonomy-term');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, sourceTermResourceKey), undefined);
+  assert.equal(decisionFor(plan, sourceTermResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, targetTermResourceKey).decision, 'keep-remote');
+  assert.equal(taxonomyMutation.changeKind, 'create');
+  assert.equal(taxonomyValue.term_id, 711);
+  assert.equal(taxonomyValue.taxonomy, 'post_tag');
+  assert.equal(termRewrite.sourceTargetResourceKey, sourceTermResourceKey);
+  assert.equal(termRewrite.targetResourceKey, targetTermResourceKey);
+  assert.match(termRewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(termRewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_terms['term_id:611'], undefined);
+  assert.equal(result.site.db.wp_terms['term_id:711'].slug, 'mapped-post-tag-term');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:612'].term_id, 711);
+});
+
+test('RPP-0330 blocks stale post_tag taxonomy identity maps with hash-only evidence', () => {
+  const sourceTermResourceKey = 'row:["wp_terms","term_id:611"]';
+  const targetTermResourceKey = 'row:["wp_terms","term_id:711"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:612"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_terms', localId: 'term_id:611', remoteId: 'term_id:711' }],
+    },
+  };
+  local.db.wp_terms['term_id:611'] = {
+    term_id: 611,
+    name: 'Local Private Post Tag Term',
+    slug: 'local-private-post-tag-term',
+    term_group: 0,
+  };
+  remote.db.wp_terms['term_id:711'] = {
+    term_id: 711,
+    name: 'Remote Private Post Tag Term Drift',
+    slug: 'remote-private-post-tag-term-drift',
+    term_group: 0,
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:612'] = {
+    term_taxonomy_id: 612,
+    term_id: 611,
+    taxonomy: 'post_tag',
+    description: 'local-private-post-tag-taxonomy-description',
+    parent: 0,
+    count: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceTermBlocker = plan.blockers.find((blocker) =>
+    blocker.resourceKey === sourceTermResourceKey);
+  const taxonomyBlocker = plan.blockers.find((blocker) =>
+    blocker.resourceKey === taxonomyResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourceTermResourceKey), undefined);
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetTermResourceKey).decision, 'keep-remote');
+  assert.equal(sourceTermBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(sourceTermBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(sourceTermBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceTermBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceTermBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceTermBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(sourceTermBlocker.change.local, 'value'), false);
+  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(taxonomyBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(taxonomyBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(taxonomyBlocker.change.local, 'value'), false);
+  assert.equal(taxonomyBlocker.references[0].relationshipType, 'term-taxonomy-term');
+  assert.equal(taxonomyBlocker.references[0].targetResourceKey, sourceTermResourceKey);
+  assert.equal(taxonomyBlocker.references[0].targetSupport.supported, false);
+  assert.equal(planJson.includes('Local Private Post Tag Term'), false);
+  assert.equal(planJson.includes('Remote Private Post Tag Term Drift'), false);
+  assert.equal(planJson.includes('local-private-post-tag-taxonomy-description'), false);
+  assert.equal(planJson.includes('remote-private-post-tag-term-drift'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks explicit WordPress graph identity maps when the remote target is not equivalent', () => {
   const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
   const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';

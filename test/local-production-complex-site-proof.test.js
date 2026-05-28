@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   buildComplexSitePlannerProof,
+  buildPostTagTaxonomyIdentityMapProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
@@ -20,6 +21,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  postTagTaxonomyIdentityMap: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -233,6 +235,47 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site proof rewrites post_tag taxonomy identity maps and fails closed when stale', () => {
+  const graphShape = { ...smallShape, postTagTaxonomyIdentityMap: true };
+  const proof = buildPostTagTaxonomyIdentityMapProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const staleBlockerJson = JSON.stringify(proof.staleBlocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.postTagTaxonomyIdentitySourceTerms, 0);
+  assert.equal(proof.counts.localEdited.postTagTaxonomyIdentitySourceTerms, 1);
+  assert.equal(proof.counts.localEdited.postTagTaxonomyIdentityTaxonomies, 1);
+  assert.equal(proof.counts.remoteChanged.postTagTaxonomyIdentityTargetTerms, 1);
+  assert.equal(proof.invariants.identityMapRowsPresent, true);
+  assert.equal(proof.invariants.readyMapsDeterministically, true);
+  assert.equal(proof.invariants.postTagTaxonomyRewritten, true);
+  assert.equal(proof.invariants.sourceTermNotMutated, true);
+  assert.equal(proof.invariants.taxonomyHasLivePrecondition, true);
+  assert.equal(proof.invariants.staleTargetFailsClosed, true);
+  assert.equal(proof.invariants.staleTargetPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.staleTargetNoTaxonomyMutation, true);
+  assert.equal(proof.invariants.staleBlockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.staleBlockerRedactsRawValues, true);
+  assert.equal(proof.deterministicMapping.resourceKey, 'row:["wp_term_taxonomy","term_taxonomy_id:74211"]');
+  assert.equal(proof.deterministicMapping.termId, 75201);
+  assert.equal(proof.deterministicMapping.taxonomy, 'post_tag');
+  assert.equal(proof.deterministicMapping.rewriteType, 'term-taxonomy-term');
+  assert.equal(proof.deterministicMapping.sourceTargetResourceKey, 'row:["wp_terms","term_id:74201"]');
+  assert.equal(proof.deterministicMapping.targetResourceKey, 'row:["wp_terms","term_id:75201"]');
+  assert.match(proof.deterministicMapping.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.deterministicMapping.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(staleBlockerJson.includes('Reprint Push Post Tag Taxonomy Identity'), false);
+  assert.equal(staleBlockerJson.includes('reprint-push-post-tag-taxonomy-identity'), false);
+  assert.equal(staleBlockerJson.includes('Remote Private Post Tag Term Drift'), false);
+  assert.equal(staleBlockerJson.includes('remote-private-post-tag-term-drift'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -546,6 +589,36 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.postTagTaxonomyIdentityMap && local) {
+    snapshot.meta.wordpressGraphIdentityMap = snapshot.meta.wordpressGraphIdentityMap || { rows: [] };
+    snapshot.meta.wordpressGraphIdentityMap.rows.push(
+      { table: 'wp_terms', localId: 'term_id:74201', remoteId: 'term_id:75201' },
+    );
+    snapshot.db.wp_terms['term_id:74201'] = {
+      term_id: 74201,
+      name: 'Reprint Push Post Tag Taxonomy Identity',
+      slug: 'reprint-push-post-tag-taxonomy-identity',
+      term_group: 0,
+    };
+    snapshot.db.wp_term_taxonomy['term_taxonomy_id:74211'] = {
+      term_taxonomy_id: 74211,
+      term_id: 74201,
+      taxonomy: 'post_tag',
+      description: 'Local post_tag term taxonomy identity fixture.',
+      parent: 0,
+      count: 1,
+    };
+  }
+
+  if (shape.postTagTaxonomyIdentityMap && remote) {
+    snapshot.db.wp_terms['term_id:75201'] = {
+      term_id: 75201,
+      name: 'Reprint Push Post Tag Taxonomy Identity',
+      slug: 'reprint-push-post-tag-taxonomy-identity',
+      term_group: 0,
     };
   }
 
