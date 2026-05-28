@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0079.
+Primary checklist range: RPP-0001 through RPP-0080.
 
 ## What changed
 
@@ -70,6 +70,7 @@ Primary checklist range: RPP-0001 through RPP-0079.
 | RPP-0077 | Evidence toward focused tmux stdout proof status marker regression now proves malformed markers fail with `TMUX_STATUS_MARKER_REQUIRED`, exact valid release-ready markers are emitted on stdout, gate evidence is exact, and `mutationAttempted: false`. |
 | RPP-0078 | Evidence toward focused progress.html release timestamp regression now links the focused command, observed `pass` status, `progress.html#release-proof-timestamp`, exact timestamp gate evidence, and fail-closed non-ISO timestamp refusal with `mutationAttempted: false`. |
 | RPP-0079 | Evidence toward focused `.agents/RELEASE_GATES.md` status row regression now records the scenario matrix: dishonest `release_verdict: 4/4` rows fail with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, while the honest `0/4` row passes the gate and release remains `NO-GO` without provenance. |
+| RPP-0080 | Evidence toward focused `verify:release` nonzero failure reason regression now proves the checked missing-source verifier exits `1`, emits `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`, avoids mutating verifier startup, preserves exact gate evidence, and rejects zero-exit forgery. |
 
 ## Focused verification
 
@@ -159,6 +160,21 @@ the release remains `NO-GO` without provenance.
 
 - Command: `node --test test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; generated `.agents/RELEASE_GATES.md` verdict: `0/4`; release status: `NO-GO`.
+
+Focused `verify:release` nonzero failure reason regression refresh:
+
+```sh
+node --test test/release-gate-verify-release-failure-focused-regression.test.js test/verify-release-failure-reason.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 35 tests. This checks RPP-0080 by running the checked
+`npm run verify:release` missing-source path, asserting the final
+`[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`
+stdout marker, preserving the exact `verifyReleaseFailure` gate evidence, and
+rejecting forged zero-exit evidence before mutation.
+
+- Command: `node --test test/release-gate-verify-release-failure-focused-regression.test.js test/verify-release-failure-reason.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verify:release marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`; release status: `NO-GO`.
 
 Progress HTML release timestamp proof:
 

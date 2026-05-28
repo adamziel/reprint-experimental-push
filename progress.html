@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-28T21:15:00+02:00">Last updated: May 28, 2026, 21:15 CEST</time>
+        <time class="update-stamp" datetime="2026-05-28T21:20:00+02:00">Last updated: May 28, 2026, 21:20 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>211</strong>
+        <strong>212</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>789</strong>
+        <strong>788</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -332,7 +332,7 @@
         <ul class="checklist">
           <li>
             <input type="checkbox" checked disabled aria-label="Release gates checked">
-            <span><strong>Fail-closed release gates</strong>79/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
+            <span><strong>Fail-closed release gates</strong>80/100 release-gate checklist items are checked; final release still holds without production URLs, credentials, and provenance.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
@@ -406,19 +406,20 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0079</span>
+        <span>RPP-0080</span>
       </div>
-      <p>The latest refresh checks focused .agents status-row evidence: dishonest release_verdict 4/4 rows fail before mutation, while the honest 0/4 row passes the gate and release remains NO-GO without provenance. Counts are now 211/789.</p>
+      <p>The latest refresh checks focused verify:release failure-marker evidence: the missing-source verifier exits 1, prints the final held marker before mutation, and forged zero-exit evidence fails closed. Counts are now 212/788.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">verify marker: 35/35</span>
         <span class="tag">status row matrix: 34/34</span>
         <span class="tag">progress timestamp: 32/32</span>
-        <span class="tag">branch ancestry audit: 0 unmerged</span>
+        <span class="tag">branch audit: 843/843 merged</span>
         <span class="tag">auth source fallback: 5/5 focused</span>
         <span class="tag">tmux marker regression: 1/1</span>
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 36/36</span>
-        <span class="tag">checked goals: 211/1000</span>
+        <span class="tag">checked goals: 212/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

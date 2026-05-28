@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 21:15 CEST.
+- Last update: 2026-05-28 21:20 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 211
-  items checked and leaves 789 open.
-- Checked slices: 79 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 212
+  items checked and leaves 788 open.
+- Checked slices: 80 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -43,13 +43,21 @@ linked implementation artifacts.
   `AGENTS_RELEASE_GATES_ROW_REQUIRED` evidence, and the honest `0/4`
   `.agents/RELEASE_GATES.md` row passes the gate while release remains
   `NO-GO`.
-- Branch integration audit: all 842 local/remote `session/rpp*` refs are now
-  ancestors of `lane/evidence-integration-20260527`. The broader
-  `rpp|session` audit also reports zero unmerged refs after preserving the
-  old auth-session boundary/code lane ancestry and carrying forward the
-  missing packaged auth source candidate fallback tests. This did not move the
-  checklist count because it was integration hygiene plus auth helper coverage, not a new
-  checklist slice.
+- Focused `verify:release` failure-marker refresh: the current lane now
+  contains `test/release-gate-verify-release-failure-focused-regression.test.js`
+  for `RPP-0080`. The command
+  `node --test test/release-gate-verify-release-failure-focused-regression.test.js test/verify-release-failure-reason.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 35/35, proving the checked missing-source verifier exits `1`, prints
+  `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`,
+  avoids mutating verifier startup, preserves exact gate evidence, and rejects
+  forged zero-exit evidence. Final release remains `NO-GO`.
+- Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
+  ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
+  The broader local/remote `rpp`/session-like sweep checked 843 refs and also
+  reports 0 unmerged after preserving the old auth-session boundary/code lane
+  ancestry and carrying forward the missing packaged auth source candidate
+  fallback tests. This did not move the checklist count because it was
+  integration hygiene plus auth helper coverage, not a new checklist slice.
 - Manage_options variant-2 refresh: the current lane now contains an explicit
   negative/positive scenario matrix for `RPP-0029` in
   `test/release-gate-manage-options-capability-regression.test.js`. The
