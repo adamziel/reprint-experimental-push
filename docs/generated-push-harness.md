@@ -70,9 +70,10 @@ The default generated run covers:
   `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
-  supported forms-lab custom-table rows, forms-lab delete refusal, atomic plugin
-  install ready and missing-dependency paths, same-plan post-parent, taxonomy,
-  comment, and usermeta graph closures, and stale graph references.
+  supported forms-lab custom-table rows and delete refusal with per-tier target
+  counts, atomic plugin install ready and missing-dependency paths, same-plan
+  post-parent, taxonomy, comment, and usermeta graph closures, and stale graph
+  references.
 
 The `wpOptionsScalar` surface seeds regular, non-plugin-owned `wp_options` rows
 with scalar string and number values. Ready cases update the scalar option while
@@ -197,6 +198,11 @@ remotely and must refuse apply without losing the remote value. RPP-0134 keeps
 private plugin-owned option tokens and notes out of summary and planner evidence
 while retaining redacted hashes and plugin owner/driver metadata.
 
+The `pluginOwnedCustomTableChanges` target coverage records per-tier counts for
+forms-lab custom table rows owned by the forms plugin. Ready cases apply through
+the `fixture-forms-lab-table` driver with hash-only audit evidence and reject a
+stale replay before mutation; delete attempts remain non-ready because the
+driver does not support deletes, so no custom-table delete mutation is applied.
 
 The `largeReadyPlanTier` target coverage records one large ready plan per tier.
 Each case combines post-row creates, updates, deletes, file creates, updates,
@@ -328,6 +334,7 @@ At the time this note was added, the summary command reported:
     "plugin-context-metadata-drift": 10,
     "plugin-context-ready": 10,
     "plugin-file-update": 10,
+    "plugin-owned-custom-table-change": 20,
     "plugin-owned-option-change": 18,
     "plugin-owned-option-change-conflict": 9,
     "plugin-owned-option-change-ready": 9,
@@ -553,6 +560,27 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 9,
         "ready": 9
+      }
+    },
+    "pluginOwnedCustomTableChanges": {
+      "family": "supported-forms-lab-table",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 3,
+        "conflict": 7,
+        "ready": 10
       }
     },
     "rowCreateUpdateDeleteMix": {

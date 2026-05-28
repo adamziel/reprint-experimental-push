@@ -177,6 +177,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-option-change-ready',
     tag: 'plugin-owned-option-change',
   },
+  pluginOwnedCustomTableChanges: {
+    family: 'supported-forms-lab-table',
+    tag: 'plugin-owned-custom-table-change',
+  },
   staleRemoteAfterDryRun: {
     family: 'ready-plan-stale-remote-after-dry-run',
     matches: (_testCase, result) => result.status === 'ready'
@@ -589,6 +593,7 @@ const scenarioFamilyBuilders = {
       table: 'wp_reprint_push_forms_lab',
     });
     tags.add('forms-lab-supported');
+    tags.add('plugin-owned-custom-table-change');
   },
   'forms-lab-delete-blocked': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
@@ -605,6 +610,7 @@ const scenarioFamilyBuilders = {
       table: 'wp_reprint_push_forms_lab',
     });
     tags.add('forms-lab-delete-blocked');
+    tags.add('plugin-owned-custom-table-change');
   },
   'atomic-plugin-stack-ready': ({ local, tags }) => {
     installAtomicStack(local);
