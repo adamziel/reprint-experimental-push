@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -12,6 +15,7 @@ import {
 const requiredFamilies = [
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-plugin-metadata',
   'independent-local-and-remote',
   'direct-row-conflict',
   'local-delete',
@@ -31,6 +35,7 @@ const requiredFamilies = [
   'atomic-plugin-missing-dependency',
   'plugin-file-update',
   'plugin-context-metadata-drift',
+  'plugin-metadata-preserve',
   'remote-delete-local-unchanged',
   'local-create',
   'delete-edit-conflict',
@@ -203,3 +208,32 @@ function assertRowMixShape(testCase) {
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
 }
+
+test('RPP-0206 generated fixture preserves remote-only plugin metadata', () => {
+  const generatedCase = generatePushHarnessCases()
+    .find((testCase) => testCase.family === 'remote-only-plugin-metadata');
+  assert.ok(generatedCase, 'missing generated remote-only plugin metadata case');
+  assert.ok(generatedCase.tags.has('plugin-metadata-preserve'));
+
+  const result = validateGeneratedCase(generatedCase);
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const pluginKey = 'plugin:reprint-push-forms-fixture';
+  const pluginDecision = plan.decisions.find((entry) => entry.resourceKey === pluginKey);
+  const applied = applyPlan(JSON.parse(JSON.stringify(generatedCase.remote)), plan);
+
+  assert.equal(result.status, 'ready');
+  assert.equal(result.applied, true);
+  assert.equal(pluginDecision.decision, 'keep-remote');
+  assert.equal(pluginDecision.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === pluginKey), false);
+  assert.equal(plan.preconditions.some((precondition) => precondition.resourceKey === pluginKey), false);
+  assert.deepEqual(
+    applied.site.plugins['reprint-push-forms-fixture'],
+    generatedCase.remote.plugins['reprint-push-forms-fixture'],
+  );
+});
