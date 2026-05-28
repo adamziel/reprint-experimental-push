@@ -51,6 +51,8 @@ const scenarioFamilies = Object.freeze([
   'file-type-swap-conflict',
   'row-create-update-delete-mix-ready',
   'row-create-update-delete-mix-conflict',
+  'wp-postmeta-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -72,6 +74,7 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
+  'wp-postmeta-create-update-delete-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -79,6 +82,10 @@ const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  wpPostmetaCreateUpdateDelete: {
+    family: 'wp-postmeta-create-update-delete-ready',
+    tag: 'wp-postmeta-create-update-delete',
   },
 });
 
@@ -176,6 +183,7 @@ export function validateGeneratedCase(testCase) {
   if (plan.status === 'ready') {
     const applied = applyPlan(deepClone(testCase.remote), plan);
     assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, applied.site, mutationKeys);
+    result.unplannedRemotePreserved = true;
     const staleReplay = assertReadyPlanRejectsStaleRemote(testCase, plan);
     result.staleReplayRejected = staleReplay.rejected;
     result.staleReplayRejectionCode = staleReplay.code;
@@ -543,6 +551,20 @@ const scenarioFamilyBuilders = {
     addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, {
       conflict: true,
       prefix: 'conflict-row-mix',
+    });
+    tags.add('expected-conflict');
+  },
+  'wp-postmeta-create-update-delete-ready': ({ base, local, remote, allocator, tags }) => {
+    addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-wp-postmeta',
+    });
+    tags.add('ready-candidate');
+  },
+  'wp-postmeta-create-update-delete-conflict': ({ base, local, remote, allocator, tags }) => {
+    addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-wp-postmeta',
     });
     tags.add('expected-conflict');
   },
@@ -1120,6 +1142,54 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
 
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
+  }
+}
+
+function addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const createId = allocator.graphId();
+  const updateId = allocator.graphId();
+  const deleteId = allocator.graphId();
+  const updateRowId = `meta_id:${updateId}`;
+  const deleteRowId = `meta_id:${deleteId}`;
+  const updateBase = {
+    meta_id: updateId,
+    post_id: 1,
+    meta_key: `_generated_postmeta_update_${updateId}`,
+    meta_value: `base postmeta update ${updateId}`,
+  };
+  const deleteBase = {
+    meta_id: deleteId,
+    post_id: 1,
+    meta_key: `_generated_postmeta_delete_${deleteId}`,
+    meta_value: `base postmeta delete ${deleteId}`,
+  };
+
+  setRow(base, 'wp_postmeta', updateRowId, updateBase);
+  setRow(local, 'wp_postmeta', updateRowId, updateBase);
+  setRow(remote, 'wp_postmeta', updateRowId, updateBase);
+  setRow(base, 'wp_postmeta', deleteRowId, deleteBase);
+  setRow(local, 'wp_postmeta', deleteRowId, deleteBase);
+  setRow(remote, 'wp_postmeta', deleteRowId, deleteBase);
+
+  setRow(local, 'wp_postmeta', `meta_id:${createId}`, {
+    meta_id: createId,
+    post_id: 1,
+    meta_key: `_generated_postmeta_create_${createId}`,
+    meta_value: `generated wp_postmeta create ${prefix} ${allocator.next()}`,
+  });
+  setRow(local, 'wp_postmeta', updateRowId, {
+    ...updateBase,
+    meta_value: `generated wp_postmeta update ${prefix} ${allocator.next()}`,
+  });
+  deleteRow(local, 'wp_postmeta', deleteRowId);
+
+  tags.add('wp-postmeta-create-update-delete');
+  tags.add('wp-postmeta-create');
+  tags.add('wp-postmeta-update');
+  tags.add('wp-postmeta-delete');
+
+  if (conflict) {
+    remote.db.wp_postmeta[updateRowId].meta_value = `remote concurrent wp_postmeta update ${allocator.next()}`;
   }
 }
 
