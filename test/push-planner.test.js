@@ -2409,6 +2409,49 @@ test('keeps WordPress menu item graph surfaces fail-closed', () => {
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('keeps serialized block graph references fail-closed with hash-only evidence', () => {
+  const serializedBlockResourceKey = 'row:["wp_posts","ID:47"]';
+  const privateCaption = 'Local Private RPP-0337 Block Caption';
+  const privateUrl = 'https://private.example/rpp0337.jpg';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:47'] = {
+    ID: 47,
+    post_title: 'Local Private RPP-0337 Block Host',
+    post_name: 'local-private-rpp0337-block-host',
+    post_content: `<!-- wp:image {"id":88441,"url":"${privateUrl}","caption":"${privateCaption}"} /-->`,
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === serializedBlockResourceKey);
+  const reference = blocker?.references?.[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, serializedBlockResourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.match(blocker.reason, /unsupported serialized block reference core\/image\.id/);
+  assert.equal(reference.relationshipKey, 'wp_posts.post_content.core/image.id');
+  assert.equal(reference.relationshipType, 'serialized-block-attachment');
+  assert.equal(reference.field, 'post_content');
+  assert.equal(reference.targetResourceKey, null);
+  assert.equal(reference.targetId, null);
+  assert.equal(reference.targetSupport.supported, false);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.equal(blocker.change.local.state, 'present');
+  assert.equal(Object.hasOwn(blocker.change.local, 'value'), false);
+  assert.equal(blockerJson.includes(privateCaption), false);
+  assert.equal(blockerJson.includes(privateUrl), false);
+  assert.equal(blockerJson.includes('Local Private RPP-0337 Block Host'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows same-plan comment and user graph closure when author and comment targets are created locally', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const userResourceKey = 'row:["wp_users","ID:7"]';

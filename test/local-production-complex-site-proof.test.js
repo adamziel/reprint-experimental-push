@@ -5,6 +5,7 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
+  buildSerializedBlockReferenceFailClosedProof,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
   findReleaseVerifierSummary,
@@ -284,6 +285,42 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphCountsPresent, true);
   assert.equal(proof.invariants.commentGraphPlanned, true);
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
+});
+
+test('complex-site graph proof keeps serialized block references fail-closed and hash-only', () => {
+  const proof = buildSerializedBlockReferenceFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', smallShape),
+    localEditedSnapshot: withSerializedBlockReferenceFixture(
+      syntheticComplexSnapshot('local-edited', smallShape),
+      'local-edited',
+    ),
+    remoteChangedSnapshot: withSerializedBlockReferenceFixture(
+      syntheticComplexSnapshot('remote-changed', smallShape),
+      'remote-changed',
+    ),
+  });
+  const proofJson = JSON.stringify(proof);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.counts.source.serializedBlockReferencePosts, 0);
+  assert.equal(proof.counts.localEdited.serializedBlockReferencePosts, 1);
+  assert.equal(proof.unsupportedPlan.status, 'blocked');
+  assert.equal(proof.remoteDriftPlan.status, 'conflict');
+  assert.equal(proof.blockerEvidence.class, 'stale-wordpress-graph-identity');
+  assert.equal(proof.blockerEvidence.references[0].relationshipKey, 'wp_posts.post_content.core/image.id');
+  assert.equal(proof.blockerEvidence.references[0].relationshipType, 'serialized-block-attachment');
+  assert.equal(proof.blockerEvidence.references[0].targetSupported, false);
+  assert.equal(proof.deterministicMapping.action, 'fail-closed-hash-only');
+  assert.equal(proof.invariants.unsupportedSerializedBlockFailsClosed, true);
+  assert.equal(proof.invariants.serializedBlockReferenceDetected, true);
+  assert.equal(proof.invariants.noSerializedBlockMutation, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.remoteDriftEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.evidenceRedactsRawValues, true);
+  assert.equal(proofJson.includes('Local Private Serialized Block Caption'), false);
+  assert.equal(proofJson.includes('https://private.example/rpp0337-local.jpg'), false);
+  assert.equal(proofJson.includes('Remote Private Serialized Block Drift'), false);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -633,6 +670,26 @@ function syntheticComplexSnapshot(variant, shape) {
   };
 
   return snapshot;
+}
+
+function withSerializedBlockReferenceFixture(snapshot, variant) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  const local = variant === 'local-edited';
+  next.db.wp_posts['ID:74601'] = {
+    ID: 74601,
+    post_title: local
+      ? 'Local Private Serialized Block Host'
+      : 'Remote Private Serialized Block Drift',
+    post_name: 'reprint-push-serialized-block-reference-host',
+    post_content: local
+      ? '<!-- wp:image {"id":74691,"url":"https://private.example/rpp0337-local.jpg","caption":"Local Private Serialized Block Caption"} /-->'
+      : 'Remote Private Serialized Block Drift',
+    post_status: 'publish',
+    post_type: 'post',
+    post_parent: 0,
+    post_author: 0,
+  };
+  return next;
 }
 
 function syntheticReleaseSummary(mutations, options = {}) {

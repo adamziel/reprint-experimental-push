@@ -88,6 +88,15 @@ const commentGraphResourceKeys = Object.freeze([
   commentGraphChildResourceKey,
   commentGraphMetaResourceKey,
 ]);
+const serializedBlockReferencePostId = 74601;
+const serializedBlockReferenceSlug = 'reprint-push-serialized-block-reference-host';
+const serializedBlockReferencePostResourceKey = `row:["wp_posts","ID:${serializedBlockReferencePostId}"]`;
+const serializedBlockPrivateTokens = Object.freeze([
+  'Local Private Serialized Block Host',
+  'Local Private Serialized Block Caption',
+  'https://private.example/rpp0337-local.jpg',
+  'Remote Private Serialized Block Drift',
+]);
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
   return Object.freeze({
@@ -763,6 +772,79 @@ export function buildPluginDriverBoundaryEvidence({
   };
 }
 
+export function buildSerializedBlockReferenceFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const unsupportedPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: sourceSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteChangedSnapshot,
+    now: proofNow,
+  });
+  const blocker = unsupportedPlan.blockers.find((entry) =>
+    entry?.resourceKey === serializedBlockReferencePostResourceKey) || null;
+  const reference = blocker?.references?.find((entry) =>
+    entry?.relationshipType === 'serialized-block-attachment') || null;
+  const remoteDriftConflict = remoteDriftPlan.conflicts.find((entry) =>
+    entry?.resourceKey === serializedBlockReferencePostResourceKey) || null;
+  const remoteDriftBlocker = remoteDriftPlan.blockers.find((entry) =>
+    entry?.resourceKey === serializedBlockReferencePostResourceKey) || null;
+  const blockerEvidence = hashOnlyPlanStopEvidence(blocker);
+  const remoteDriftEvidence = hashOnlyPlanStopEvidence(remoteDriftConflict || remoteDriftBlocker);
+  const evidenceJson = JSON.stringify({ blockerEvidence, remoteDriftEvidence });
+
+  const invariants = {
+    serializedBlockRowsPresent: summarizeComplexSnapshot(localEditedSnapshot).serializedBlockReferencePosts >= 1,
+    unsupportedPlanBlocked: unsupportedPlan.status === 'blocked',
+    unsupportedSerializedBlockFailsClosed: blocker?.class === 'stale-wordpress-graph-identity',
+    serializedBlockReferenceDetected: reference?.relationshipKey === 'wp_posts.post_content.core/image.id'
+      && reference?.targetSupport?.supported === false,
+    noSerializedBlockMutation: !unsupportedPlan.mutations.some((mutation) =>
+      mutation.resourceKey === serializedBlockReferencePostResourceKey),
+    stableRemotePreventsReleaseMovement: unsupportedPlan.status !== 'ready',
+    remoteDriftPreventsReleaseMovement: ['blocked', 'conflict'].includes(remoteDriftPlan.status),
+    blockerEvidenceIsHashOnly: planStopEvidenceIsHashOnly(blockerEvidence),
+    remoteDriftEvidenceIsHashOnly: planStopEvidenceIsHashOnly(remoteDriftEvidence),
+    evidenceRedactsRawValues: !serializedBlockPrivateTokens.some((token) => evidenceJson.includes(token)),
+  };
+
+  return {
+    type: 'serialized-block-reference-fail-closed',
+    runtime: 'local-playground-wordpress',
+    releaseReady: false,
+    resourceKey: serializedBlockReferencePostResourceKey,
+    deterministicMapping: {
+      relationshipType: 'serialized-block-attachment',
+      sourceField: 'post_content',
+      targetIdentity: 'unsupported-without-explicit-parser-and-identity-map',
+      action: 'fail-closed-hash-only',
+    },
+    counts: {
+      source: summarizeComplexSnapshot(sourceSnapshot),
+      localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+      remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+    },
+    unsupportedPlan: summarizePlan(unsupportedPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    blockerEvidence,
+    remoteDriftEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function findReleaseVerifierSummary(output) {
   const objects = extractJsonObjects(output);
   return [...objects].reverse().find((object) =>
@@ -794,6 +876,47 @@ function pluginDriverStateEvidence(snapshot) {
     updatedMarker: row?.updated_marker || null,
     proofMarker: row?.payload?.releaseBoundaryProof || null,
   };
+}
+
+function hashOnlyPlanStopEvidence(stop) {
+  if (!stop) {
+    return null;
+  }
+  return {
+    resourceKey: stop.resourceKey || null,
+    class: stop.class || null,
+    resolutionPolicy: stop.resolutionPolicy || null,
+    reason: stop.reason || null,
+    baseHash: stop.baseHash || null,
+    localHash: stop.localHash || null,
+    remoteHash: stop.remoteHash || null,
+    localChange: stop.change?.localChange || null,
+    remoteChange: stop.change?.remoteChange || null,
+    references: Array.isArray(stop.references)
+      ? stop.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        field: reference.field || null,
+        targetTable: reference.targetTable || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetId: reference.targetId || null,
+        targetSupported: reference.targetSupport
+          ? reference.targetSupport.supported === true
+          : null,
+        targetClass: reference.targetSupport?.className || null,
+      }))
+      : [],
+  };
+}
+
+function planStopEvidenceIsHashOnly(evidence) {
+  if (!evidence) {
+    return false;
+  }
+  const hashFieldsPresent = ['baseHash', 'localHash', 'remoteHash']
+    .every((field) => evidence[field] === null || /^[a-f0-9]{64}$/.test(evidence[field]));
+  return hashFieldsPresent
+    && !serializedBlockPrivateTokens.some((token) => JSON.stringify(evidence).includes(token));
 }
 
 export function extractJsonObjects(output) {
@@ -892,6 +1015,10 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === commentGraphMetaId
       && Number(row?.comment_id) === commentGraphChildId
       && String(row?.meta_key || '') === commentGraphMetaKey).length,
+    serializedBlockReferencePosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === serializedBlockReferencePostId
+      && String(row?.post_name || '') === serializedBlockReferenceSlug
+      && String(row?.post_content || '').includes('<!-- wp:image')).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,

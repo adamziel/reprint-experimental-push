@@ -1150,6 +1150,17 @@ const UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS = new Set([
   'menu_item_parent',
 ]);
 
+const UNSUPPORTED_SERIALIZED_BLOCK_REFERENCE_RELATIONSHIPS = Object.freeze({
+  imageAttachment: {
+    relationshipType: 'serialized-block-attachment',
+    targetSuffix: 'posts',
+  },
+  reusableBlock: {
+    relationshipType: 'serialized-block-reusable-block',
+    targetSuffix: 'posts',
+  },
+});
+
 export const SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES = Object.freeze([
   'posts',
   'users',
@@ -1762,6 +1773,20 @@ function wordpressGraphSurfaceSupport(resource, value) {
     };
   }
 
+  if (suffix === 'posts') {
+    const serializedBlockReference = findUnsupportedSerializedBlockReference(value.post_content);
+    if (serializedBlockReference) {
+      return {
+        supported: false,
+        className: 'stale-wordpress-graph-identity',
+        reason: `WordPress graph mutation ${resource.key} contains unsupported serialized block reference ${serializedBlockReference.blockName}.${serializedBlockReference.attributePath} in post_content.`,
+        references: [
+          serializedBlockReferenceEvidence(resource, serializedBlockReference),
+        ],
+      };
+    }
+  }
+
   if (suffix === 'postmeta' && UNSUPPORTED_WORDPRESS_MENU_ITEM_META_KEYS.has(value.meta_key)) {
     return {
       supported: false,
@@ -1793,6 +1818,146 @@ function wordpressGraphSurfaceSupport(resource, value) {
   }
 
   return { supported: true };
+}
+
+function serializedBlockReferenceEvidence(resource, reference) {
+  return {
+    relationshipKey: `${resource.table}.post_content.${reference.blockName}.${reference.attributePath}`,
+    relationshipType: reference.relationshipType,
+    field: 'post_content',
+    sourceResourceKey: resource.key,
+    sourceTable: resource.table,
+    sourceRowId: resource.id,
+    targetTable: wordpressGraphSiblingTable(resource.table, reference.targetSuffix),
+    targetId: null,
+    targetResourceKey: null,
+    blockName: reference.blockName,
+    attributePath: reference.attributePath,
+    targetSupport: {
+      supported: false,
+      className: 'unsupported-serialized-block-reference',
+      reason: `Serialized block reference ${reference.blockName}.${reference.attributePath} has no stable graph identity mapping.`,
+    },
+  };
+}
+
+function findUnsupportedSerializedBlockReference(content) {
+  if (typeof content !== 'string' || !content.includes('<!-- wp:')) {
+    return null;
+  }
+
+  const blockPattern = /<!--\s+wp:([a-z0-9_-]+(?:\/[a-z0-9_-]+)?)([\s\S]*?)-->/gi;
+  let match;
+  while ((match = blockPattern.exec(content)) !== null) {
+    const blockName = normalizeSerializedBlockName(match[1]);
+    const attributes = parseSerializedBlockAttributes(match[2]);
+    const reference = unsupportedSerializedBlockReferenceFor(blockName, attributes);
+    if (reference) {
+      return reference;
+    }
+  }
+  return null;
+}
+
+function normalizeSerializedBlockName(blockName) {
+  const normalized = String(blockName || '').trim().toLowerCase();
+  if (!normalized) {
+    return '';
+  }
+  return normalized.includes('/') ? normalized : `core/${normalized}`;
+}
+
+function parseSerializedBlockAttributes(serializedAttributes) {
+  const text = String(serializedAttributes || '');
+  const start = text.indexOf('{');
+  if (start === -1) {
+    return null;
+  }
+  const json = sliceFirstJsonObject(text.slice(start));
+  if (!json) {
+    return null;
+  }
+  try {
+    const attributes = JSON.parse(json);
+    return attributes && typeof attributes === 'object' && !Array.isArray(attributes)
+      ? attributes
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function sliceFirstJsonObject(text) {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+    if (char === '{') {
+      depth += 1;
+    } else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(0, index + 1);
+      }
+    }
+  }
+  return null;
+}
+
+function unsupportedSerializedBlockReferenceFor(blockName, attributes) {
+  if (!attributes) {
+    return null;
+  }
+
+  if (blockName === 'core/image' && normalizePositiveInteger(attributes.id) != null) {
+    return serializedBlockReference('core/image', 'id', UNSUPPORTED_SERIALIZED_BLOCK_REFERENCE_RELATIONSHIPS.imageAttachment);
+  }
+
+  if (blockName === 'core/gallery') {
+    if (
+      Array.isArray(attributes.ids)
+      && attributes.ids.some((id) => normalizePositiveInteger(id) != null)
+    ) {
+      return serializedBlockReference('core/gallery', 'ids', UNSUPPORTED_SERIALIZED_BLOCK_REFERENCE_RELATIONSHIPS.imageAttachment);
+    }
+    if (
+      Array.isArray(attributes.images)
+      && attributes.images.some((image) =>
+        image && typeof image === 'object' && normalizePositiveInteger(image.id) != null)
+    ) {
+      return serializedBlockReference('core/gallery', 'images[].id', UNSUPPORTED_SERIALIZED_BLOCK_REFERENCE_RELATIONSHIPS.imageAttachment);
+    }
+  }
+
+  if (blockName === 'core/block' && normalizePositiveInteger(attributes.ref) != null) {
+    return serializedBlockReference('core/block', 'ref', UNSUPPORTED_SERIALIZED_BLOCK_REFERENCE_RELATIONSHIPS.reusableBlock);
+  }
+
+  return null;
+}
+
+function serializedBlockReference(blockName, attributePath, relationship) {
+  return {
+    blockName,
+    attributePath,
+    relationshipType: relationship.relationshipType,
+    targetSuffix: relationship.targetSuffix,
+  };
 }
 
 function isUnsafeWordPressGraphReference(reference) {
