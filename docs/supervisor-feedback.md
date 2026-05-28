@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:56 CEST
+Last updated: 2026-05-28 07:01 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 07:01 CEST - RPP-0438 Integrated
+
+- Going well: integration is now at `9570a6110`, adding `RPP-0438` driver apply
+  validation hook evidence. The focused planner/apply proof carries one valid
+  fixture driver row mutation through the apply hook with hash-only accepted
+  evidence, and forged driver evidence fails closed before hook execution,
+  durable journal events, or target mutation.
+- Checklist movement: 118 verified items checked and 882 open. New check since
+  the prior feedback entry: `RPP-0438`.
+- Verification: focused RPP-0438 plugin-driver validation passes 3/3,
+  `node --test test/push-planner.test.js` passes 98/98, checklist lint reports
+  118 checked / 882 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 06:56 CEST - RPP-0051 Integrated
 

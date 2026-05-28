@@ -1,18 +1,18 @@
-# AO Progress Report - 2026-05-28 06:56 CEST
+# AO Progress Report - 2026-05-28 07:01 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`bb6b422e7` (`test: add preflight route identity coverage`). It separates
+`9570a6110` (`test: prove driver apply validation hook`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 117 are
-  checked from integrated evidence and 883 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 118 are
+  checked from integrated evidence and 882 remain open.
 - `src/release-gates.js` and `test/release-gates.test.js` define and test 20
   fail-closed release-gate foundation checks. `ab0340786` extends the focused
   coverage to 11 tests and records `RPP-0008` through `RPP-0020` missing/failed
@@ -125,6 +125,15 @@ progress.
   forged ready plugin delete fails with `UNSUPPORTED_PLUGIN_DELETE` before
   durable journal events or target mutation. Caveat: this remains focused local
   plugin-driver boundary evidence, not production plugin lifecycle readiness.
+- `9570a6110` integrates `RPP-0438` driver apply validation hook evidence in
+  `src/apply.js`, `test/push-planner.test.js`, and
+  `docs/evidence/ao-plugin-driver.md`. The focused proof carries one valid
+  fixture driver row mutation through the apply `beforeMutation` hook with
+  hash-only `PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED` evidence, then proves
+  forged driver evidence fails closed with
+  `PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED` before hook execution, durable
+  journal events, or target mutation. Caveat: this remains focused local
+  plugin-driver boundary evidence, not broad production plugin-driver readiness.
 - `05050392b` integrates independent and critic audit evidence. Both audits
   reinforce the no-go posture: canonical `npm run verify:release` fails closed
   without live production-owned topology, no repo-local CI workflow was found,
@@ -261,8 +270,8 @@ progress.
   `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0101`, `RPP-0102`,
   `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0103`, `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0207`,
   `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`,
-  `RPP-0310`, `RPP-0414`, `RPP-0421`, and `RPP-0431` checklist updates, the
-  current tree reports 117 checked IDs, 883
+  `RPP-0310`, `RPP-0414`, `RPP-0421`, `RPP-0431`, and `RPP-0438` checklist
+  updates, the current tree reports 118 checked IDs, 882
   unchecked IDs, and 0 risky
   completion claims.
 - `6d6b2077c` integrates the release artifact redaction scanner from `rpp-29`.
@@ -291,7 +300,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 6 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 7 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 16 / 100 |
-| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 17 / 100 |
+| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 18 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 10 / 100 |
 | `RPP-0601`-`RPP-0700` | Durable journal and recovery | 12 / 100 |
 | `RPP-0701`-`RPP-0800` | Storage, chunking, and performance | 7 / 100 |
@@ -314,7 +323,7 @@ Checked IDs in this report are:
 - Plugin driver: `RPP-0402`, `RPP-0403`, `RPP-0404`, `RPP-0408`,
   `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0414`, `RPP-0421`, `RPP-0422`,
   `RPP-0423`, `RPP-0424`,
-  `RPP-0428`, `RPP-0429`, `RPP-0430`, `RPP-0431`, `RPP-0432`.
+  `RPP-0428`, `RPP-0429`, `RPP-0430`, `RPP-0431`, `RPP-0432`, `RPP-0438`.
 - Executor/auth: `RPP-0505`, `RPP-0506`, `RPP-0512`, `RPP-0513`,
   `RPP-0515`, `RPP-0525`, `RPP-0526`, `RPP-0532`, `RPP-0533`,
   `RPP-0535`.
@@ -341,7 +350,8 @@ Checked IDs in this report are:
 - `node --test test/guarded-executor-benchmark.test.js` — 6 pass / 0 fail.
 - `node --test test/graph-mapping-inventory.test.js test/generated-push-harness.test.js` — 8 pass / 0 fail.
 - `node --test --test-name-pattern 'plugin uninstall/delete' test/push-planner.test.js` — 1 pass / 0 fail for RPP-0431 plugin uninstall/delete refusal.
-- `node --test test/push-planner.test.js` — 96 pass / 0 fail, including RPP-0217 conflict plan apply refusal, RPP-0218 forged ready plan defense, RPP-0219 redacted raw value evidence, RPP-0220 atomic group blocker propagation, and RPP-0431 plugin uninstall/delete refusal.
+- `node --test --test-name-pattern 'RPP-0438|fixture forms lab table journal redacts raw payload values' test/push-planner.test.js` — 3 pass / 0 fail for RPP-0438 driver apply validation hook evidence.
+- `node --test test/push-planner.test.js` — 98 pass / 0 fail, including RPP-0217 conflict plan apply refusal, RPP-0218 forged ready plan defense, RPP-0219 redacted raw value evidence, RPP-0220 atomic group blocker propagation, RPP-0431 plugin uninstall/delete refusal, and RPP-0438 driver apply validation hook evidence.
 - `node --test test/playground-snapshot-lib.test.js` — 4 pass / 0 fail for RPP-0421 driver registration API proof and existing snapshot apply gates.
 - `node --test test/plugin-owner-context-metadata-refusal.test.js` — 3 pass / 0 fail for RPP-0414 stale plugin metadata owner refusal and ready-path preservation.
 - `node --test test/local-production-complex-site-proof.test.js` — 17 pass / 0 fail for RPP-0310 post_tag release-evidence carry-through and fail-closed mutation checks.
@@ -357,7 +367,7 @@ Checked IDs in this report are:
 - `node --test test/release-evidence-provenance.test.js test/release-gate-cli.test.js test/release-gates.test.js` — 25 pass / 0 fail after provenance wiring.
 - `node ./scripts/release/check-release-gates.mjs --now 2026-05-28T00:00:00.000Z` — expected nonzero exit with `releaseStatus: "NO-GO"` and named missing production evidence.
 - `node --test test/checklist-completion-lint.test.js` — 13 pass / 0 fail after current-tree hardening.
-- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 117 checked IDs, 883 unchecked IDs.
+- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 118 checked IDs, 882 unchecked IDs.
 - `node --test test/artifact-redaction-scan.test.js` — 10 pass / 0 fail.
 - `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html` — `ok: true`, 39 scanned files, 0 rejected files.
 - `node --test test/required-release-checks.test.js` — passed when integrated
@@ -408,12 +418,12 @@ branch.
 | --- | --- | --- |
 | `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
 | `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, and `RPP-0051` are integrated; current visible work is the next release-gate proof candidate. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `bb6b422e7`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0310`, `RPP-0414`, `RPP-0421`, and `RPP-0431`; now evaluating the next completed branch one at a time. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced through `9570a6110`. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0310`, `RPP-0414`, `RPP-0421`, `RPP-0431`, and `RPP-0438`; now evaluating the next completed branch one at a time. |
 | `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, and `RPP-0220` are represented by pushed or integrated evidence; newer branch-local work is not counted until tested and integrated. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `bb6b422e7`. |
-| `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after `9570a6110`. |
+| `rpp-32` | developer | Docker/local-production release-gate artifact work, `RPP-0414` stale plugin metadata owner evidence, and `RPP-0438` driver apply validation hook evidence are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
 | `rpp-34` | completed candidate | `RPP-0421` driver registration API proof and `RPP-0431` plugin uninstall/delete refusal are integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
