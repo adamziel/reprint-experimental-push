@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, and RPP-0058
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, RPP-0058, and RPP-0065
 
 ## What changed
 
@@ -54,14 +54,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0050 | Evidence toward variant-3 same source URL identity proof now generates matching and drifted final-release fixtures, asserts the release-ready final bracketed marker for the matching source path, and proves apply-source drift exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`, exact identity evidence, held marker, and `mutationAttempted: false`. |
 | RPP-0051 | Evidence toward variant-3 preflight route identity proof now generates matching and mismatched final-release fixtures, asserts exact route identity evidence on the matching fixture, and proves wrong preflight route evidence exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, held marker, and `mutationAttempted: false`. |
 | RPP-0058 | Evidence toward variant-3 progress.html release timestamp now generates valid and invalid timestamp fixtures, links the focused command and observed `pass` status to the current progress proof timestamp, preserves `NO-GO`, and asserts exact timestamp-gate evidence with `mutationAttempted: false`. |
+| RPP-0065 | Evidence toward variant-4 wrong remote alias rejection now runs negative and positive release-gate CLI fixtures: mismatched `REPRINT_PUSH_REMOTE_URL` fails with exact `REPRINT_PUSH_SOURCE_URL_MISMATCH` reason/evidence and a final held marker, while a matching alias passes the gate but remains `NO-GO` without provenance; both paths assert redaction and `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 37 tests.
+Observed status: pass, 39 tests.
 
 Progress HTML release timestamp proof:
 
@@ -99,10 +100,17 @@ Generated preflight route identity proof:
 - Observed status: `pass`; generated fixtures supply every other final-release gate while comparing matching and mismatched preflight route identity evidence.
 - Evidence link: the matching fixture preserves exact route identity evidence and remains `NO-GO` without provenance; the mismatched fixture exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, `finalGates: "19/20"`, exact `preflight-route-identity` evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=PREFLIGHT_ROUTE_IDENTITY_REQUIRED]`, and `mutationAttempted: false`.
 
+Wrong remote alias regression proof:
+
+- Command: `node --test test/release-gate-wrong-remote-alias-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; scenario matrix fixture covers mismatched and matching `REPRINT_PUSH_REMOTE_URL` paths with source, local, remote-changed, credential, and all other final-release evidence supplied.
+- Evidence link: mismatched alias evidence exits `1` with `REPRINT_PUSH_SOURCE_URL_MISMATCH`, `finalGates: "19/20"`, exact `remote-alias` reason/evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH]`, `NO-GO`, redacted credential output, and `mutationAttempted: false`; the matching alias path passes the gate, emits the release-ready marker, and remains `NO-GO` until provenance is supplied.
+
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
 - Packaged fallback and wrong remote alias each keep `releaseMovement.allowed: false` with `finalGates: "19/20"` when all other final evidence is present.
+- Wrong remote alias regression coverage now records a negative/positive scenario matrix: mismatched `REPRINT_PUSH_REMOTE_URL` fails closed at `remote-alias` only with exact `REPRINT_PUSH_SOURCE_URL_MISMATCH` evidence and final held marker, while matching alias evidence passes that gate and remains `NO-GO` without provenance; both paths record `mutationAttempted: false`.
 - Missing/failed auth, route, read-only, operator-proof, and verifier-failure evidence is named per gate and keeps `releaseMovement.allowed: false`.
 - Auth source command readback drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED` and records `mutationAttempted: false`.
 - Application Password binding drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `APPLICATION_PASSWORD_BINDING_REQUIRED`, exact binding evidence, and `mutationAttempted: false`.
