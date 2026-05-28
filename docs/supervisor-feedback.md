@@ -1,35 +1,40 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 04:16 CEST
+Last updated: 2026-05-28 04:39 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-28 04:16 CEST - RPP-0026, RPP-0101, and RPP-0102 Integrated
+## 2026-05-28 04:39 CEST - RPP-0026, RPP-0028, RPP-0030, and RPP-0101 Through RPP-0104 Integrated
 
-- Going well: integration is now at `912bdfbd4`, with checklist lint,
+- Going well: integration is now at `460ba7ad6`, with checklist lint,
   release-evidence provenance wiring, current-tree linter hardening, artifact
   redaction scanning, required release checks reporting, `RPP-0101`
   generated file create/update/delete coverage, `RPP-0102` directory
-  descendant conflict coverage, `RPP-0026` auth readback drift coverage, and
-  Docker/local-production release-gate artifact output landed on the lane.
-- Checklist movement: 88 verified items checked and 912 open. New checks:
-  `RPP-0026`, `RPP-0101`, and `RPP-0102`. The new guardrails protect progress
-  honesty and artifact privacy; they do not by themselves close release-ops or
+  descendant conflict coverage, `RPP-0103` file type-swap coverage,
+  `RPP-0104` row create/update/delete coverage, `RPP-0026` auth readback drift
+  coverage, `RPP-0028` Application Password binding drift coverage, and
+  `RPP-0030` same-source identity coverage landed on the lane.
+- Checklist movement: 92 verified items checked and 908 open. New checks:
+  `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0101`, `RPP-0102`, `RPP-0103`,
+  and `RPP-0104`. The new guardrails
+  protect progress honesty and artifact privacy; they do not by themselves
+  close release-ops or
   production-readiness items.
 - AO lifecycle: `rpp-ao-lifecycle` is visible in tmux. The full
   project-supervisor wrapper OOMed again, so it was replaced with a lightweight
-  AO registry watchdog as PID `2142025` in `running.json`; the dashboard and
-  tmux sessions remain up on local port 8080. `ao spawn` successfully created
+  AO registry watchdog as PID `2142025` in `running.json`. The AO web child
+  later wedged at high memory and was restarted in tmux as `rpp-ao-web`; the
+  dashboard now responds on local port 8080. `ao spawn` successfully created
   `rpp-32`.
 - Current AO shape: active developers are `rpp-24`, `rpp-25`, `rpp-29`,
   `rpp-30`, and `rpp-32`; `rpp-28` is the integrator, `rpp-31` is critic,
   `rpp-26` is progress reporter, and `rpp-orchestrator` is supervising through
   visible tmux panes.
 - Next nudge: keep integrating one completed branch at a time. Candidate work
-  still in flight includes `RPP-0103` generated harness expansion,
-  merge-invariant coverage, graph post-author evidence, auth/secret release
-  gate coverage, and local production artifact output.
+  still in flight includes `RPP-0105` generated harness expansion,
+  merge-invariant coverage, graph commentmeta evidence, the next release-gate
+  proof after `RPP-0030`, and plugin driver termmeta work.
 
 ## 2026-05-28 03:36 CEST - rpp-28 Integrated, AO Lifecycle Recreated
 
@@ -165,7 +170,7 @@ changed, what is helping, what is not helping, and the next nudge.
 | Lane | Nudge |
 | --- | --- |
 | Release gates | Start at `RPP-0001` and keep fail-closed release evidence exact. |
-| Generated harness | Convert `RPP-0103` onward into new generated families, not one-off fixtures. |
+| Generated harness | Convert `RPP-0104` onward into new generated families, not one-off fixtures. |
 | Invariants | Use `RPP-0201` onward as the broad no-overwrite checklist. |
 | Recovery | Do not mark durable recovery items complete until restart-readable production evidence exists. |
 | Audit and critic | Treat unchecked items as remaining work, even when adjacent local proofs are green. |

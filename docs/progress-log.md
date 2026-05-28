@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 04:16 CEST.
+- Last update: 2026-05-28 04:39 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `912bdfbd4` (`feat: emit docker release gate artifact`).
+  `460ba7ad6` (`docs: mark same source proof complete`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 88
-  items complete and leaves 912 open.
-- Checked slices: 26 release-gate foundation items, 15 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 92
+  items complete and leaves 908 open.
+- Checked slices: 28 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, and 2 generated
-  harness item. No release-ops items are checked yet.
+  7 chunking/performance items, 2 production-topology items, and 4 generated
+  harness items. No release-ops items are checked yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
   evidence coverage manifest. The Docker harness is fail-closed in this sandbox
@@ -41,13 +41,25 @@ linked implementation artifacts.
 - Docker/local-production artifact update: `912bdfbd4` integrates the `rpp-32`
   harness change that emits deterministic release-gate input when Docker is
   available while still failing closed as `DOCKER_CLI_MISSING` in this sandbox.
+- Generated harness continuation: `e345e724f`/`c3cdc079d` integrated
+  `RPP-0103` file type-swap coverage with ready and non-ready generated cases.
+- Application Password continuation: `d18921cfd`/`49710acee` integrated
+  command-level `RPP-0028` binding drift coverage with an exact
+  `APPLICATION_PASSWORD_BINDING_REQUIRED` failure before mutation.
+- Row-mix generated harness continuation: `4d12f8a47`/`15290691e` integrated
+  `RPP-0104` row create/update/delete coverage with ready, conflict, and stale
+  replay refusal evidence.
+- Same-source continuation: `89b8d184f`/`460ba7ad6` integrated `RPP-0030`
+  same source URL identity proof with a final bracketed status marker and
+  mutation-free CLI failure path.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
   `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`, and the
-  `rpp-ao-lifecycle` lightweight registry watchdog registered in
-  `running.json` as PID `2142025` after the full supervisor wrapper OOMed.
+  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
+  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
+  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
+  web child wedged and was restarted in tmux.
 - Verification for this entry: checklist counts, focused Docker/evidence
-  manifest tests, `node --test test/release-gates.test.js` with 12 passing
+  manifest tests, `node --test test/release-gates.test.js` with 13 passing
   release-gate tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js`, evidence manifest
