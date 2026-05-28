@@ -1,4 +1,4 @@
-# AO Progress Report - 2026-05-28 21:06 CEST
+# AO Progress Report - 2026-05-28 21:15 CEST
 
 Status: **NO-GO for final release**.
 
@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 210 are
-  checked from integrated evidence and 790 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 211 are
+  checked from integrated evidence and 789 remain open.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -47,6 +47,18 @@ progress.
   `mutationAttempted: false` while final release remains **NO-GO**.
   - Command: `node --test test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   - Observed status: `pass`; progress.html release status: `NO-GO`; proof timestamp: `2026-05-28T03:18:00.000Z`.
+- Focused `.agents/RELEASE_GATES.md` status row regression now checks `RPP-0079`.
+  `node --test
+  test/release-gate-agents-status-row-focused-regression.test.js
+  test/release-gates-status-row.test.js
+  test/release-gate-status-row-generated.test.js test/release-gates.test.js
+  test/release-gate-cli.test.js` passed 34/34, proving the focused
+  negative/positive matrix: dishonest `release_verdict: 4/4` evidence fails
+  closed with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and the honest `0/4`
+  `.agents/RELEASE_GATES.md` row passes the gate while final release remains
+  **NO-GO**.
+  - Command: `node --test test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  - Observed status: `pass`; generated `.agents/RELEASE_GATES.md` verdict: `0/4`; release status: `NO-GO`.
 - Branch integration audit now reports zero unmerged `session/rpp*` refs across
   the 842 local/remote refs inspected, and zero unmerged refs in the broader
   `rpp|session` audit. The lane preserves the stale auth-session boundary/code
@@ -947,7 +959,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 78 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 79 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 34 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
@@ -960,7 +972,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0078`.
+- Release gates: `RPP-0001` through `RPP-0079`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
   `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`,
@@ -994,7 +1006,8 @@ Checked IDs in this report are:
 ## Checked Commands
 
 - `node --test test/release-gate-tmux-status-marker-focused-regression.test.js` — 1 pass / 0 fail for the RPP-0077 focused tmux stdout proof marker regression.
-- `node --test test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 31 pass / 0 fail for the RPP-0078 focused progress timestamp regression plus progress/release-gate coverage.
+- `node --test test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 34 pass / 0 fail for the RPP-0079 focused `.agents/RELEASE_GATES.md` status row regression plus release-gate/CLI coverage.
+- `node --test test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 32 pass / 0 fail for the RPP-0078 focused progress timestamp regression plus progress/release-gate coverage.
 - `node --test test/release-gate-manage-options-capability-regression.test.js` — 3 pass / 0 fail for the RPP-0029 manage_options variant-2 scenario matrix plus RPP-0069 regression coverage.
 - `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.

@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 21:06 CEST.
+- Last update: 2026-05-28 21:15 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 210
-  items checked and leaves 790 open.
-- Checked slices: 78 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 211
+  items checked and leaves 789 open.
+- Checked slices: 79 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -34,6 +34,15 @@ linked implementation artifacts.
   observed `pass` status, non-ISO timestamp evidence fails closed with exact
   `PROGRESS_RELEASE_TIMESTAMP_REQUIRED` evidence, and `mutationAttempted`
   remains `false`. Final release remains `NO-GO`.
+- Focused `.agents/RELEASE_GATES.md` status row refresh: the current lane now
+  contains `test/release-gate-agents-status-row-focused-regression.test.js`
+  for `RPP-0079`. The command
+  `node --test test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 34/34, proving the negative/positive scenario matrix: dishonest
+  `release_verdict: 4/4` evidence fails closed with exact
+  `AGENTS_RELEASE_GATES_ROW_REQUIRED` evidence, and the honest `0/4`
+  `.agents/RELEASE_GATES.md` row passes the gate while release remains
+  `NO-GO`.
 - Branch integration audit: all 842 local/remote `session/rpp*` refs are now
   ancestors of `lane/evidence-integration-20260527`. The broader
   `rpp|session` audit also reports zero unmerged refs after preserving the
