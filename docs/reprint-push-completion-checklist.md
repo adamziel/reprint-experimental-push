@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 154.
-- Remaining open: 846.
+- Verified complete: 155.
+- Remaining open: 845.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -143,7 +143,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0124 (Near / generated-harness) Prove row create/update/delete mix, variant 2. Success: stale remote replay fails before mutation.
 - [x] RPP-0125 (Near / generated-harness) Prove wp_options scalar option changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0126 (Near / generated-harness) Prove wp_options serialized option changes, variant 2. Success: generator emits at least one ready case and one non-ready case for this target.
-- [ ] RPP-0127 (Near / generated-harness) Prove wp_posts create/update/delete changes, variant 2. Success: summary exposes per-tier counts for this target.
+- [x] RPP-0127 (Near / generated-harness) Prove wp_posts create/update/delete changes, variant 2. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0128 (Near / generated-harness) Prove wp_postmeta create/update/delete changes, variant 2. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0129 (Near / generated-harness) Prove wp_users and wp_usermeta graph changes, variant 2. Success: stale remote replay fails before mutation.
 - [ ] RPP-0130 (Near / generated-harness) Prove wp_comments and wp_commentmeta graph changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
