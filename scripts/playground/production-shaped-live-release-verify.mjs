@@ -526,7 +526,9 @@ function buildReleaseTopologyEvidence({
       localEditedSite: localEditedUrl,
       remoteChangedDriftSource: remoteChangedUrl,
       sameRemoteIdentity: verify?.remoteSnapshotHashes?.sameRemoteIdentity ?? null,
-      sourceCommand: verify?.authSessionSource?.command || explicitAuthSessionSourceCommand || '',
+      sourceCommand: redactAuthSessionSourceCommand(
+        verify?.authSessionSource?.command || explicitAuthSessionSourceCommand || '',
+      ),
       sourceCommandReadbackUrl: verify?.authSessionSource?.sourceUrl || '',
       packagedFallbackSource,
       blocker: blocker?.code || null,
@@ -537,6 +539,17 @@ function buildReleaseTopologyEvidence({
       reason: 'release movement has not been evaluated',
     },
   };
+}
+
+function redactAuthSessionSourceCommand(command = '') {
+  return String(command || '')
+    .replace(/(['"]--application-password=)[^'"]*(['"])/g, '$1<redacted>$2')
+    .replace(/(--application-password=)[^\s'"]+/g, '$1<redacted>')
+    .replace(/(--application-password)(\s+)(?:'[^']*'|"[^"]*"|[^\s]+)/g, '$1$2<redacted>')
+    .replace(
+      /\b(REPRINT_PUSH_(?:APPLICATION_PASSWORD|LAB_AUTH_ADMIN_APP_PASSWORD)=)(?:'[^']*'|"[^"]*"|[^\s]+)/g,
+      '$1<redacted>',
+    );
 }
 
 function serviceEvidence(role, url, kind) {

@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0083.
+Primary checklist range: RPP-0001 through RPP-0084.
 
 ## What changed
 
@@ -74,6 +74,7 @@ Primary checklist range: RPP-0001 through RPP-0083.
 | RPP-0081 | Evidence toward release verifier missing `REPRINT_PUSH_SOURCE_URL` carry-through now runs the checked verifier with local/changed URLs and credentials present but source empty, asserts the final missing-source marker, exact live-source boundary evidence, no verifier startup or mutation, and release-gate preservation of the exact `source-url` evidence. |
 | RPP-0082 | Evidence toward release verifier missing `REPRINT_PUSH_LOCAL_URL` carry-through now emits the named verifier code `REPRINT_PUSH_LOCAL_URL_REQUIRED`, preserves exact local topology evidence before startup or mutation, redacts credentials, and proves the release-gate CLI keeps the exact `local-url` evidence with source and changed-remote gates passed. |
 | RPP-0083 | Evidence toward release verifier missing `REPRINT_PUSH_REMOTE_CHANGED_URL` carry-through now emits the named verifier code `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED`, preserves exact changed-remote topology evidence before startup or mutation, redacts credentials, and proves the release-gate CLI keeps the exact `remote-changed-url` evidence with source and local gates passed. |
+| RPP-0084 | Evidence toward release verifier packaged fallback rejection carry-through now emits `REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED`, redacts the packaged auth source command before stdout, starts no live verifier server, and proves the release-gate CLI preserves the negative/positive packaged fallback scenario matrix. |
 
 ## Focused verification
 
@@ -232,6 +233,23 @@ exact `remote-changed-url` evidence with source and local gates passed.
 
 - Command: `node --test test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-remote-changed-url-generated.test.js test/release-verifier-missing-local-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED mutationAttempted=false]`; changed-remote gate: `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED`; release status: `NO-GO`.
+
+Release verifier packaged fallback rejection carry-through refresh:
+
+```sh
+node --test test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-packaged-fallback-generated.test.js test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 37 tests. This checks RPP-0084 by running the checked
+`npm run verify:release` path with source/local/changed URLs present and a
+packaged production-plugin auth source command. The verifier exits `1`, prints
+`[verify-release:held exit=1 reason=REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED mutationAttempted=false]`,
+records the packaged fallback boundary before live verifier startup, redacts
+the auth source command credential, and the release-gate CLI preserves the
+negative packaged fallback gate plus the positive non-fallback scenario matrix.
+
+- Command: `node --test test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-packaged-fallback-generated.test.js test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED mutationAttempted=false]`; fallback gate: `REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED`; scenario matrix: `negative+positive`.
 
 Progress HTML release timestamp proof:
 

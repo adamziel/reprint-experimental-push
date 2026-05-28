@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 21:35 CEST.
+- Last update: 2026-05-28 21:43 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 215
-  items checked and leaves 785 open.
-- Checked slices: 83 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 216
+  items checked and leaves 784 open.
+- Checked slices: 84 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -83,6 +83,17 @@ linked implementation artifacts.
   no live verifier server, redacts credentials, and preserves exact
   release-gate `remote-changed-url` evidence with source and local gates
   passed. Final release remains `NO-GO`.
+- Release verifier packaged-fallback carry-through refresh: the current lane
+  now contains
+  `test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js`
+  for `RPP-0084`. The command
+  `node --test test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-packaged-fallback-generated.test.js test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 37/37, proving the checked verifier emits
+  `REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED` with source/local/changed URLs
+  present and a packaged auth source command, starts no live verifier server,
+  redacts the command credential, and preserves the negative/positive
+  packaged fallback scenario matrix in release-gate evidence. Final release
+  remains `NO-GO`.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also
