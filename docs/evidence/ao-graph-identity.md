@@ -6,7 +6,7 @@ Lane: graph-identity
 ## Implemented evidence
 
 - Added explicit WordPress graph identity-map handling in the planner. Local rows with exporter/importer identity-map metadata are only mapped to a different remote row when the remote row exists, the same local numeric row is absent on remote, and the local/remote rows are equivalent after identity rewriting.
-- Rewrites dependent graph references to proven remote IDs, including page/post parent references, postmeta `post_id` composite row IDs, comment `comment_post_ID`, term relationship `object_id`/`term_taxonomy_id` composite row IDs, and termmeta `term_id`.
+- Rewrites dependent graph references to proven remote IDs, including page/post parent references, postmeta `post_id` composite row IDs, featured image `_thumbnail_id` attachment references, comment `comment_post_ID`, term relationship `object_id`/`term_taxonomy_id` composite row IDs, and termmeta `term_id`.
 - Keeps unsupported or ambiguous identity maps fail-closed with hash-only `stale-wordpress-graph-identity` blockers. Dependent rows that point at an unusable map inherit the target blocker instead of being planned.
 - Adds fail-closed post GUID and `post_type` + `post_name` collision detection when a local post would duplicate a different remote post without an explicit proven identity map.
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
@@ -24,6 +24,10 @@ Lane: graph-identity
 - `node --test test/generated-push-harness.test.js` — passed (11 generated harness tests covering 300+ cases, including comment-user ready and stale graph target coverage).
 - `npm run bench:graph-mapping-inventory` — passed and emitted `identityMapCapabilities` with explicit map table suffixes and fail-closed collision surfaces.
 
+Featured image variant 2 focused worker verification:
+
+- `node --test test/local-production-complex-site-proof.test.js test/push-planner.test.js test/generated-push-harness.test.js test/graph-mapping-inventory.test.js` — passed (118 tests), including deterministic identity-map rewriting for `_thumbnail_id` and hash-only stale attachment blockers.
+
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 
 ## Remaining unmapped or fail-closed WordPress surfaces
@@ -36,6 +40,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 ## RPP items with new evidence
 
 - RPP-0301 / RPP-0321: post/page `post_parent` references are now rewritten through an explicit identity map to a proven remote parent row.
+- RPP-0322: featured image attachment references in `_thumbnail_id` postmeta are rewritten from mapped local post/attachment IDs to proven remote post/attachment IDs; stale remote attachment targets keep release movement blocked with hash-only evidence.
 - RPP-0304 / RPP-0324: postmeta `post_id` references and `post_id:<id>:meta_key:<key>` row IDs are rewritten to the mapped remote post ID.
 - RPP-0305 / RPP-0325: comment `comment_post_ID` references are rewritten to mapped remote post identities.
 - RPP-0310: core `post_tag` taxonomy rows are now covered by local-production planner/release evidence, while unsupported taxonomy surfaces remain documented as fail-closed with hash-only evidence.

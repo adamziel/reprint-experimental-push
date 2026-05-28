@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildFeaturedImageIdentityMapProof,
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
@@ -19,6 +20,7 @@ const smallShape = Object.freeze({
   remoteDriftPosts: 1,
   remoteDriftFiles: 1,
   featuredImageGraph: false,
+  featuredImageIdentityMap: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
   postParentGraph: false,
@@ -184,6 +186,41 @@ test('complex-site planner proof covers real featured image attachment graph clo
   assert.equal(proof.invariants.featuredImageGraphCountsPresent, true);
   assert.equal(proof.invariants.featuredImageGraphPlanned, true);
   assert.equal(proof.invariants.featuredImageGraphHasLivePreconditions, true);
+});
+
+test('complex-site proof rewrites featured image identity maps and fails closed when stale', () => {
+  const graphShape = { ...smallShape, featuredImageIdentityMap: true };
+  const proof = buildFeaturedImageIdentityMapProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const staleBlockerJson = JSON.stringify(proof.staleBlocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.featuredImageIdentitySourceAttachments, 0);
+  assert.equal(proof.counts.localEdited.featuredImageIdentitySourceAttachments, 1);
+  assert.equal(proof.counts.remoteChanged.featuredImageIdentityTargetAttachments, 1);
+  assert.equal(proof.invariants.readyMapsDeterministically, true);
+  assert.equal(proof.invariants.featuredImageMetaRewritten, true);
+  assert.equal(proof.invariants.sourceRowsNotMutated, true);
+  assert.equal(proof.invariants.mappedMetaHasLivePrecondition, true);
+  assert.equal(proof.invariants.staleTargetFailsClosed, true);
+  assert.equal(proof.invariants.staleTargetPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.staleTargetNoFeaturedImageMutation, true);
+  assert.equal(proof.invariants.staleBlockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.staleBlockerRedactsRawValues, true);
+  assert.equal(proof.rewrittenMeta.resourceKey, 'row:["wp_postmeta","post_id:72601:meta_key:_thumbnail_id"]');
+  assert.equal(proof.rewrittenMeta.postId, 72601);
+  assert.equal(proof.rewrittenMeta.metaValue, '72602');
+  assert.deepEqual(proof.rewrittenMeta.rewriteTypes, ['featured-image-attachment', 'postmeta-post']);
+  assert.equal(staleBlockerJson.includes('Reprint Push Featured Image Identity Parent'), false);
+  assert.equal(staleBlockerJson.includes('Reprint Push Featured Image Identity Attachment'), false);
+  assert.equal(staleBlockerJson.includes('Remote Private Featured Image Drift'), false);
+  assert.equal(staleBlockerJson.includes('reprint-push-featured-image-identity-attachment'), false);
 });
 
 test('complex-site planner proof covers real taxonomy graph closure', () => {
@@ -535,6 +572,63 @@ function syntheticComplexSnapshot(variant, shape) {
       post_id: 71001,
       meta_key: '_thumbnail_id',
       meta_value: '71901',
+    };
+  }
+
+  if (shape.featuredImageIdentityMap && local) {
+    snapshot.meta.wordpressGraphIdentityMap = {
+      rows: [
+        { table: 'wp_posts', localId: 'ID:71601', remoteId: 'ID:72601' },
+        { table: 'wp_posts', localId: 'ID:71602', remoteId: 'ID:72602' },
+      ],
+    };
+    snapshot.db.wp_posts['ID:71601'] = {
+      ID: 71601,
+      post_title: 'Reprint Push Featured Image Identity Parent',
+      post_name: 'reprint-push-featured-image-identity-parent',
+      post_content: 'Local featured image parent used for identity map proof.',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    snapshot.db.wp_posts['ID:71602'] = {
+      ID: 71602,
+      post_title: 'Reprint Push Featured Image Identity Attachment',
+      post_name: 'reprint-push-featured-image-identity-attachment',
+      post_content: 'Local featured image attachment used for identity map proof.',
+      post_status: 'inherit',
+      post_type: 'attachment',
+      post_parent: 71601,
+      post_author: 0,
+    };
+    snapshot.db.wp_postmeta['post_id:71601:meta_key:_thumbnail_id'] = {
+      post_id: 71601,
+      meta_key: '_thumbnail_id',
+      meta_value: '71602',
+    };
+  }
+
+  if (shape.featuredImageIdentityMap && remote) {
+    snapshot.db.wp_posts['ID:72601'] = {
+      ID: 72601,
+      post_title: 'Reprint Push Featured Image Identity Parent',
+      post_name: 'reprint-push-featured-image-identity-parent',
+      post_content: 'Local featured image parent used for identity map proof.',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    snapshot.db.wp_posts['ID:72602'] = {
+      ID: 72602,
+      post_title: 'Reprint Push Featured Image Identity Attachment',
+      post_name: 'reprint-push-featured-image-identity-attachment',
+      post_content: 'Local featured image attachment used for identity map proof.',
+      post_status: 'inherit',
+      post_type: 'attachment',
+      post_parent: 72601,
+      post_author: 0,
     };
   }
 
