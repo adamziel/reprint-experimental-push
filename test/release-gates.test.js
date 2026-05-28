@@ -836,6 +836,225 @@ test('check-release-gates command records journal route read-only scenario matri
   ]);
 });
 
+test('check-release-gates command proves recovery inspect read-only marker for RPP-0035', () => {
+  const command = 'node scripts/playground/production-shaped-apply-revalidation-smoke.mjs';
+  const checkedRoute = '/reprint-push/v1/recovery/inspect';
+  const scenarios = [
+    {
+      name: 'negative-recovery-inspect-write-observed',
+      evidence: {
+        ok: false,
+        readOnly: false,
+        observed: 'inspect-write-observed',
+        observedStatus: 200,
+        command,
+        checkedRoute,
+        method: 'POST',
+        mutatesReleaseState: true,
+        mutationAttempted: true,
+        recoveryRowsBefore: 2,
+        recoveryRowsAfter: 3,
+        recoveryStateBefore: 'blocked-recovery',
+        recoveryStateAfter: 'mutated-recovery',
+        scope: 'final-release',
+      },
+      expected: {
+        exitCode: 1,
+        releaseAllowed: false,
+        finalGates: '19/20',
+        primaryFailureBucket: 'recovery',
+        primaryFailureCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+        statusMarker: '[release-gates-ci:held final=19/20 candidate=19/20 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
+        gateStatus: 'failed',
+        gateCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+        gateReason: 'Recovery inspect route was not proven read-only.',
+        gateEvidence: {
+          ok: false,
+          readOnly: false,
+          observed: 'inspect-write-observed',
+          observedStatus: 200,
+          command,
+          checkedRoute,
+          method: 'POST',
+          mutatesReleaseState: true,
+          mutationAttempted: true,
+          recoveryRowsBefore: 2,
+          recoveryRowsAfter: 3,
+          recoveryStateBefore: 'blocked-recovery',
+          recoveryStateAfter: 'mutated-recovery',
+          scope: 'final-release',
+          required: ['recovery inspect read-only proof'],
+        },
+        missingProductionEvidenceBuckets: [
+          {
+            bucket: 'recovery',
+            gateCount: 1,
+            gates: [
+              {
+                bucket: 'recovery',
+                id: 'recovery-inspect-read-only',
+                rpp: 'RPP-0015',
+                title: 'Recovery inspect read-only proof',
+                status: 'failed',
+                code: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+                reason: 'Recovery inspect route was not proven read-only.',
+                required: ['recovery inspect read-only proof'],
+                observed: 'inspect-write-observed',
+                envKey: undefined,
+                evidenceKey: undefined,
+                scope: 'final-release',
+                requiredScope: undefined,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      name: 'positive-recovery-inspect-read-only',
+      evidence: {
+        ok: true,
+        readOnly: true,
+        observed: 'inspect-read-only',
+        observedStatus: 200,
+        command,
+        checkedRoute,
+        method: 'POST',
+        mutatesReleaseState: false,
+        mutationAttempted: false,
+        recoveryRowsBefore: 2,
+        recoveryRowsAfter: 2,
+        recoveryStateBefore: 'blocked-recovery',
+        recoveryStateAfter: 'blocked-recovery',
+        scope: 'final-release',
+      },
+      expected: {
+        exitCode: 1,
+        releaseAllowed: true,
+        finalGates: '20/20',
+        primaryFailureBucket: 'provenance',
+        primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+        statusMarker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+        gateStatus: 'passed',
+        gateCode: 'OK',
+        gateReason: 'Recovery inspect read-only proof is backed by final release evidence.',
+        gateEvidence: {
+          ok: true,
+          readOnly: true,
+          observed: 'inspect-read-only',
+          observedStatus: 200,
+          command,
+          checkedRoute,
+          method: 'POST',
+          mutatesReleaseState: false,
+          mutationAttempted: false,
+          recoveryRowsBefore: 2,
+          recoveryRowsAfter: 2,
+          recoveryStateBefore: 'blocked-recovery',
+          recoveryStateAfter: 'blocked-recovery',
+          scope: 'final-release',
+          required: ['recovery inspect read-only proof'],
+          requiredScope: 'final-release',
+        },
+      },
+    },
+  ];
+  const observedMatrix = [];
+
+  for (const scenario of scenarios) {
+    const { dir, file } = writeReleaseGateEvidenceFixture({
+      scope: 'final-release',
+      env: releaseEnv(),
+      evidence: completeEvidence('final-release', {
+        recoveryInspectReadOnly: scenario.evidence,
+      }),
+    });
+
+    const result = runReleaseGateCli([
+      '--evidence-file',
+      file,
+      '--scope',
+      'final-release',
+      '--now',
+      fixedNow.toISOString(),
+    ], {
+      cwd: dir,
+      env: {},
+      now: fixedNow,
+    });
+    const gate = gateById(result.report.evaluation, 'recovery-inspect-read-only');
+
+    assert.equal(result.exitCode, scenario.expected.exitCode, scenario.name);
+    assert.equal(result.report.ok, false, scenario.name);
+    assert.equal(result.report.releaseStatus, 'NO-GO', scenario.name);
+    assert.equal(result.report.primaryFailureBucket, scenario.expected.primaryFailureBucket, scenario.name);
+    assert.equal(result.report.primaryFailureCode, scenario.expected.primaryFailureCode, scenario.name);
+    assert.equal(result.report.statusMarker, scenario.expected.statusMarker, scenario.name);
+    assert.equal(result.report.mutationAttempted, false, scenario.name);
+    assert.deepEqual(result.report.mutationPolicy, {
+      readOnly: true,
+      reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+    }, scenario.name);
+    assert.equal(result.report.releaseMovement.allowed, scenario.expected.releaseAllowed, scenario.name);
+    assert.equal(result.report.releaseMovement.finalGates, scenario.expected.finalGates, scenario.name);
+    assert.equal(gate.status, scenario.expected.gateStatus, scenario.name);
+    assert.equal(gate.code, scenario.expected.gateCode, scenario.name);
+    assert.equal(gate.reason, scenario.expected.gateReason, scenario.name);
+    assert.deepEqual(gate.evidence, scenario.expected.gateEvidence, scenario.name);
+
+    if (scenario.expected.missingProductionEvidenceBuckets) {
+      assert.deepEqual(
+        result.report.missingProductionEvidenceBuckets,
+        scenario.expected.missingProductionEvidenceBuckets,
+        scenario.name,
+      );
+    }
+
+    observedMatrix.push({
+      scenario: scenario.name,
+      marker: result.report.statusMarker,
+      gateStatus: gate.status,
+      gateCode: gate.code,
+      readOnly: gate.evidence.readOnly,
+      mutatesReleaseState: gate.evidence.mutatesReleaseState,
+      recoveryRowsBefore: gate.evidence.recoveryRowsBefore,
+      recoveryRowsAfter: gate.evidence.recoveryRowsAfter,
+      releaseAllowed: result.report.releaseMovement.allowed,
+      primaryFailureCode: result.report.primaryFailureCode,
+      mutationAttempted: result.report.mutationAttempted,
+    });
+  }
+
+  assert.deepEqual(observedMatrix, [
+    {
+      scenario: 'negative-recovery-inspect-write-observed',
+      marker: '[release-gates-ci:held final=19/20 candidate=19/20 reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]',
+      gateStatus: 'failed',
+      gateCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+      readOnly: false,
+      mutatesReleaseState: true,
+      recoveryRowsBefore: 2,
+      recoveryRowsAfter: 3,
+      releaseAllowed: false,
+      primaryFailureCode: 'RECOVERY_INSPECT_READ_ONLY_REQUIRED',
+      mutationAttempted: false,
+    },
+    {
+      scenario: 'positive-recovery-inspect-read-only',
+      marker: '[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]',
+      gateStatus: 'passed',
+      gateCode: 'OK',
+      readOnly: true,
+      mutatesReleaseState: false,
+      recoveryRowsBefore: 2,
+      recoveryRowsAfter: 2,
+      releaseAllowed: true,
+      primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+      mutationAttempted: false,
+    },
+  ]);
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
