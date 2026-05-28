@@ -66,6 +66,28 @@ function sha256String(value) {
   return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
+const driverRegistrationExpectedFailureMessages = Object.freeze({
+  'duplicate-driver-name': 'duplicate driver name: rpp-duplicate-driver',
+  'duplicate-table': 'duplicate table mapping for table: wp_rpp_duplicate_rows',
+  'missing-apply-callback': 'missing applyRowCallback for driver: rpp-invalid-driver',
+  'missing-driver-name': 'missing driver name for table: wp_rpp_invalid_rows',
+  'missing-export-callback': 'missing exportRowsCallback for driver: rpp-invalid-driver',
+  'missing-plugin-owner': 'missing pluginOwner for driver: rpp-invalid-driver',
+  'missing-table': 'missing table for driver: rpp-invalid-driver',
+  'missing-validate-callback': 'missing validateMutationCallback for driver: rpp-invalid-driver',
+});
+
+const rpp0441GeneratedUnsupportedRegistrationMessages = Object.freeze({
+  'duplicate-default-driver-name': 'duplicate driver name: reprint-push-release-state',
+  'duplicate-default-table': 'duplicate table mapping for table: wp_reprint_push_release_state',
+  'numeric-key-missing-driver-name': 'missing driver name for table: wp_rpp_generated_numeric_key',
+  'uncallable-apply-callback': 'missing applyRowCallback for driver: rpp-generated-uncallable-apply',
+});
+
+function assertSha256Uri(value) {
+  assert.match(value, /^sha256:[a-f0-9]{64}$/);
+}
+
 function runDriverRegistrationProbe() {
   const result = spawnSync('php', [
     '-d',
@@ -260,6 +282,99 @@ foreach ($failure_filters as $name => $filter) {
 ksort($failure_closed);
 
 $valid_filter = 'reprint_push_probe_valid_filter';
+
+$generated_supported_filters = [
+    'default-release-driver' => null,
+    'explicit-secondary-driver' => $valid_filter,
+    'key-derived-driver-name' => static function (array $drivers): array {
+        $driver = reprint_push_probe_driver('', 'wp_rpp_keyed_driver_rows', 'rpp-keyed-plugin');
+        unset($driver['driver']);
+        $drivers['rpp-keyed-driver'] = $driver;
+        return $drivers;
+    },
+    'non-array-entry-ignored' => static function (array $drivers): array {
+        $drivers['rpp-generated-non-array-entry'] = 'not-a-driver-registration';
+        return $drivers;
+    },
+    'two-extension-drivers' => static function (array $drivers): array {
+        $drivers['rpp-generated-alpha'] = reprint_push_probe_driver(
+            'rpp-generated-alpha',
+            'wp_rpp_generated_alpha_rows',
+            'rpp-generated-alpha-plugin'
+        );
+        $beta = reprint_push_probe_driver(
+            'rpp-generated-beta',
+            'wp_rpp_generated_beta_rows',
+            'rpp-generated-beta-plugin'
+        );
+        $beta['supportsDelete'] = false;
+        $beta['allowlist']['payloadModes'] = ['generated-local'];
+        $drivers['rpp-generated-beta'] = $beta;
+        return $drivers;
+    },
+];
+
+$generated_unsupported_filters = [
+    'duplicate-default-driver-name' => static function (array $drivers): array {
+        $drivers['rpp-generated-duplicate-default-name'] = reprint_push_probe_driver(
+            'reprint-push-release-state',
+            'wp_rpp_generated_duplicate_default_name',
+            'rpp-generated-plugin'
+        );
+        return $drivers;
+    },
+    'duplicate-default-table' => static function (array $drivers): array {
+        $drivers['rpp-generated-duplicate-default-table'] = reprint_push_probe_driver(
+            'rpp-generated-duplicate-default-table',
+            'wp_reprint_push_release_state',
+            'rpp-generated-plugin'
+        );
+        return $drivers;
+    },
+    'numeric-key-missing-driver-name' => static function (array $drivers): array {
+        $drivers[] = reprint_push_probe_driver('', 'wp_rpp_generated_numeric_key', 'rpp-generated-plugin');
+        return $drivers;
+    },
+    'uncallable-apply-callback' => static function (array $drivers): array {
+        $driver = reprint_push_probe_driver('rpp-generated-uncallable-apply', 'wp_rpp_generated_uncallable_apply_rows');
+        $driver['applyRowCallback'] = 'reprint_push_probe_missing_apply_row';
+        $drivers['rpp-generated-uncallable-apply'] = $driver;
+        return $drivers;
+    },
+];
+
+$generated_registration = [
+    'proof' => 'RPP-0441 driver registration API generated variant 3',
+    'redaction' => [
+        'errorMessages' => 'sha256-only',
+        'rawErrorMessagesIncluded' => false,
+    ],
+    'supported' => [],
+    'unsupported' => [],
+    'caseHashes' => [
+        'supported' => [],
+        'unsupported' => [],
+    ],
+];
+foreach ($generated_supported_filters as $name => $filter) {
+    $capture = reprint_push_probe_capture($filter);
+    $generated_registration['supported'][$name] = $capture;
+    $generated_registration['caseHashes']['supported'][$name] = reprint_push_probe_sha256($capture);
+}
+foreach ($generated_unsupported_filters as $name => $filter) {
+    $capture = reprint_push_probe_capture($filter);
+    $generated_registration['unsupported'][$name] = $capture;
+    $generated_registration['caseHashes']['unsupported'][$name] = reprint_push_probe_sha256($capture);
+}
+ksort($generated_registration['supported']);
+ksort($generated_registration['unsupported']);
+ksort($generated_registration['caseHashes']['supported']);
+ksort($generated_registration['caseHashes']['unsupported']);
+$generated_registration['proofHash'] = reprint_push_probe_sha256([
+    'proof' => $generated_registration['proof'],
+    'caseHashes' => $generated_registration['caseHashes'],
+]);
+
 $GLOBALS['reprint_push_driver_filter'] = $valid_filter;
 $by_name = reprint_push_plugin_owned_row_driver_by_name('rpp-proof-secondary-driver');
 $by_table = reprint_push_plugin_owned_row_driver_for_table('wp_rpp_proof_driver_rows');
@@ -277,6 +392,7 @@ $evidence = [
         'byName' => reprint_push_probe_registration_summary(['rpp-proof-secondary-driver' => $by_name])['rpp-proof-secondary-driver'],
         'byTable' => reprint_push_probe_registration_summary(['rpp-proof-secondary-driver' => $by_table])['rpp-proof-secondary-driver'],
     ],
+    'generatedCoverage' => $generated_registration,
     'filterNotArray' => reprint_push_probe_capture(static function (array $drivers) {
         return 'not-a-driver-list';
     }),
@@ -371,16 +487,7 @@ test('plugin-owned row driver registration API returns exact drivers and fails c
   assert.deepEqual(evidence.filterNotArray.driverNames, []);
   assert.deepEqual(evidence.filterNotArray.drivers, []);
 
-  const expectedFailureMessages = {
-    'duplicate-driver-name': 'duplicate driver name: rpp-duplicate-driver',
-    'duplicate-table': 'duplicate table mapping for table: wp_rpp_duplicate_rows',
-    'missing-apply-callback': 'missing applyRowCallback for driver: rpp-invalid-driver',
-    'missing-driver-name': 'missing driver name for table: wp_rpp_invalid_rows',
-    'missing-export-callback': 'missing exportRowsCallback for driver: rpp-invalid-driver',
-    'missing-plugin-owner': 'missing pluginOwner for driver: rpp-invalid-driver',
-    'missing-table': 'missing table for driver: rpp-invalid-driver',
-    'missing-validate-callback': 'missing validateMutationCallback for driver: rpp-invalid-driver',
-  };
+  const expectedFailureMessages = driverRegistrationExpectedFailureMessages;
   assert.deepEqual(Object.keys(evidence.failureClosed), Object.keys(expectedFailureMessages).sort());
 
   for (const [scenario, message] of Object.entries(expectedFailureMessages)) {
@@ -401,6 +508,87 @@ test('plugin-owned row driver registration API returns exact drivers and fails c
     hashes: evidence.hashes,
   }));
   assert.doesNotMatch(JSON.stringify(evidence), /missing (?:driver|table|pluginOwner|exportRowsCallback|applyRowCallback|validateMutationCallback)|duplicate (?:driver|table)/i);
+});
+
+test('RPP-0441 generated driver registration API coverage stays exact and redacted', { skip: !hasPhp }, () => {
+  const evidence = runDriverRegistrationProbe();
+  const generated = evidence.generatedCoverage;
+
+  assert.equal(generated.proof, 'RPP-0441 driver registration API generated variant 3');
+  assert.equal(generated.redaction.errorMessages, 'sha256-only');
+  assert.equal(generated.redaction.rawErrorMessagesIncluded, false);
+  assert.deepEqual(Object.keys(generated.supported), [
+    'default-release-driver',
+    'explicit-secondary-driver',
+    'key-derived-driver-name',
+    'non-array-entry-ignored',
+    'two-extension-drivers',
+  ]);
+  assert.deepEqual(
+    Object.keys(generated.unsupported),
+    Object.keys(rpp0441GeneratedUnsupportedRegistrationMessages).sort(),
+  );
+
+  assert.deepEqual(
+    generated.supported['default-release-driver'].driverNames,
+    ['reprint-push-release-state'],
+  );
+  assert.deepEqual(
+    generated.supported['explicit-secondary-driver'].driverNames,
+    ['reprint-push-release-state', 'rpp-proof-secondary-driver'],
+  );
+  assert.deepEqual(
+    generated.supported['non-array-entry-ignored'].driverNames,
+    ['reprint-push-release-state'],
+  );
+  assert.equal(
+    generated.supported['non-array-entry-ignored'].drivers['rpp-generated-non-array-entry'],
+    undefined,
+  );
+
+  const keyedDriver = generated.supported['key-derived-driver-name'].drivers['rpp-keyed-driver'];
+  assert.equal(keyedDriver.driver, 'rpp-keyed-driver');
+  assert.equal(keyedDriver.table, 'wp_rpp_keyed_driver_rows');
+  assert.equal(keyedDriver.pluginOwner, 'rpp-keyed-plugin');
+  assert.deepEqual(keyedDriver.allowlist.resourceKeys, ['row:["wp_rpp_keyed_driver_rows","id:1"]']);
+  assert.deepEqual(keyedDriver.allowlist.rowIds, ['id:1']);
+
+  const alphaDriver = generated.supported['two-extension-drivers'].drivers['rpp-generated-alpha'];
+  const betaDriver = generated.supported['two-extension-drivers'].drivers['rpp-generated-beta'];
+  assert.deepEqual(generated.supported['two-extension-drivers'].driverNames, [
+    'reprint-push-release-state',
+    'rpp-generated-alpha',
+    'rpp-generated-beta',
+  ]);
+  assert.equal(alphaDriver.supportsDelete, true);
+  assert.equal(betaDriver.supportsDelete, false);
+  assert.deepEqual(betaDriver.allowlist.payloadModes, ['generated-local']);
+
+  for (const [scenario, capture] of Object.entries(generated.supported)) {
+    assert.equal(capture.ok, true, `${scenario} should remain supported`);
+    assert.equal(capture.error, null);
+    assert.equal(generated.caseHashes.supported[scenario], sha256Evidence(capture));
+    assertSha256Uri(generated.caseHashes.supported[scenario]);
+  }
+
+  for (const [scenario, message] of Object.entries(rpp0441GeneratedUnsupportedRegistrationMessages)) {
+    const capture = generated.unsupported[scenario];
+    assert.equal(capture.ok, false, `${scenario} should fail closed`);
+    assert.deepEqual(capture.driverNames, []);
+    assert.deepEqual(capture.drivers, []);
+    assert.equal(capture.error.class, 'RuntimeException');
+    assert.equal(capture.error.messageHash, sha256String(message));
+    assertSha256Uri(capture.error.messageHash);
+    assert.equal(generated.caseHashes.unsupported[scenario], sha256Evidence(capture));
+    assertSha256Uri(generated.caseHashes.unsupported[scenario]);
+  }
+
+  assert.equal(generated.proofHash, sha256Evidence({
+    proof: generated.proof,
+    caseHashes: generated.caseHashes,
+  }));
+  assertSha256Uri(generated.proofHash);
+  assert.doesNotMatch(JSON.stringify(generated), /missing (?:driver|table|pluginOwner|exportRowsCallback|applyRowCallback|validateMutationCallback)|duplicate (?:driver|table)/i);
 });
 
 test('snapshot apply gate allows only named lab plugin file paths', { skip: !hasPhp }, () => {

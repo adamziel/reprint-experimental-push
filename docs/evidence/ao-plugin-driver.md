@@ -29,6 +29,26 @@ The support-only package smoke alias proved fail-closed registration guards for 
 
 Non-claim: an over-broad full run of `node --test test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js` was stopped/failed after live Playground readiness timeouts in unrelated apply-revalidation smoke tests. It is not used as passing evidence for this lane.
 
+## Generated Driver Registration API
+
+RPP-0441 adds generated support-only coverage around the plugin-owned row driver
+registration API. The matrix proves supported registrations for the default
+release-state driver, an explicit extension driver, a driver name inherited from
+the registration map key, ignored non-array entries, and multiple exact
+extension drivers.
+
+Unsupported generated registrations fail closed with empty driver output and
+hash-only error evidence for duplicate default driver name, duplicate default
+table mapping, numeric-key missing driver names, and uncallable apply
+callbacks. The evidence keeps raw registration failure messages out of the JSON
+surface and records per-case hashes plus a proof hash.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0441|plugin-owned row driver registration API' test/playground-snapshot-lib.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -36,3 +56,6 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+- RPP-0441 — generated driver registration API coverage: exact supported
+  registrations stay accepted, malformed registrations fail closed, and failure
+  evidence remains hash-only/redacted.
