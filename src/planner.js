@@ -553,20 +553,27 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
     return false;
   }
 
+  if (entry.driver === 'fixture-forms-lab-table') {
+    return resource.type === 'row'
+      && resource.table === 'wp_reprint_push_forms_lab'
+      && (!entry.table || entry.table === 'wp_reprint_push_forms_lab')
+      && /^id:\d+$/.test(resource.id)
+      && owner === 'forms'
+      && entry.pluginOwner === 'forms';
+  }
+
+  const expectedTable = PLUGIN_DATA_DRIVER_TABLES.get(entry.driver);
+  if (expectedTable) {
+    return resource.type === 'row'
+      && resource.table === expectedTable
+      && (!entry.table || entry.table === expectedTable);
+  }
+
   if (entry.table) {
     return resource.type === 'row' && resource.table === entry.table;
   }
 
-  if (entry.driver !== 'fixture-forms-lab-table') {
-    const expectedTable = PLUGIN_DATA_DRIVER_TABLES.get(entry.driver);
-    return resource.type === 'row' && resource.table === expectedTable;
-  }
-
-  return resource.type === 'row'
-    && resource.table === 'wp_reprint_push_forms_lab'
-    && /^id:\d+$/.test(resource.id)
-    && owner === 'forms'
-    && entry.pluginOwner === 'forms';
+  return false;
 }
 
 function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {

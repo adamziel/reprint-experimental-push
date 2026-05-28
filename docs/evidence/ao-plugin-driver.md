@@ -89,3 +89,26 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+
+## RPP-0445 wp_postmeta driver semantics, variant 3
+
+Generated local plugin-driver coverage now proves `wp_postmeta` semantics for
+the postmeta drivers. Accepted cases cover both `wp-postmeta` and
+`wp-post-meta`; each plans one plugin-owned `wp_postmeta` row mutation and
+applies it through the local apply executor.
+
+Fail-closed generated cases cover missing policy, a wrong `wp-termmeta` driver,
+near-miss resource table `wp_postmetas`, and a wrong explicit policy table.
+Standard WordPress meta drivers no longer accept table overrides that do not
+match their exact WordPress table.
+
+Evidence status: local plugin-driver node proof only; it is not
+production-backed and keeps the release gate at NO-GO. The proof object is
+hash-only (`rawValuesIncluded: false`) and records row, mutation, journal-entry,
+and blocker hashes without raw plugin-owned private values.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0445|postmeta|plugin-owned resources when the declared driver does not match' test/push-planner.test.js
+```

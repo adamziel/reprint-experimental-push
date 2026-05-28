@@ -1444,6 +1444,220 @@ test('allows plugin-owned postmeta-like rows with explicit push intent policy', 
   assert.equal(plan.atomicGroups[0].status, 'ready');
 });
 
+test('RPP-0445 generated wp_postmeta driver semantics are exact and redacted', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
+  const rowId = 'meta_id:7';
+  const privateValues = [
+    'rpp-0445-private-base-postmeta',
+    'rpp-0445-private-local-postmeta',
+    'rpp-0445-private-missing-policy-postmeta',
+    'rpp-0445-private-wrong-driver-postmeta',
+    'rpp-0445-private-near-miss-table-postmeta',
+    'rpp-0445-private-wrong-policy-table-postmeta',
+  ];
+
+  function postmetaSite(table, rowValue) {
+    const site = baseSite();
+    site.db[table] = {
+      [rowId]: {
+        meta_id: 7,
+        post_id: 1,
+        meta_key: '_forms_payload',
+        meta_value: rowValue,
+        __pluginOwner: 'forms',
+      },
+    };
+    return site;
+  }
+
+  function planWithPolicy({
+    driver,
+    resourceTable = 'wp_postmeta',
+    policyTable,
+    baseSecret,
+    localSecret,
+  }) {
+    const key = `row:["${resourceTable}","${rowId}"]`;
+    const base = postmetaSite(resourceTable, {
+      state: 'base',
+      private_note: baseSecret,
+    });
+    const local = postmetaSite(resourceTable, {
+      state: 'local',
+      private_note: localSecret,
+    });
+    local.pushIntents = [
+      {
+        id: `update-forms-postmeta-${driver}-${resourceTable}`,
+        kind: 'plugin-data-update',
+        requireAtomic: true,
+        resources: [key],
+        resourcePolicy: pluginOwnedResourcePolicy(
+          allowedPluginOwnedResource(key, 'forms', driver, policyTable ? { table: policyTable } : {}),
+        ),
+      },
+    ];
+    const remote = postmetaSite(resourceTable, {
+      state: 'base',
+      private_note: baseSecret,
+    });
+    return {
+      key,
+      base,
+      local,
+      remote,
+      plan: planFor(base, local, remote),
+    };
+  }
+
+  const acceptedEvidence = [
+    {
+      label: 'canonical',
+      driver: 'wp-postmeta',
+    },
+    {
+      label: 'hyphenated-alias',
+      driver: 'wp-post-meta',
+    },
+  ].map((variant, index) => {
+    const proof = planWithPolicy({
+      driver: variant.driver,
+      baseSecret: `${privateValues[0]}-${index}`,
+      localSecret: `${privateValues[1]}-${index}`,
+    });
+    assert.equal(proof.plan.status, 'ready');
+    assert.equal(proof.plan.mutations.length, 1);
+    const mutation = mutationFor(proof.plan, resourceKey);
+    assert.equal(mutation.pluginOwnedResource.driver, variant.driver);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+    assert.equal(mutation.resource.table, 'wp_postmeta');
+    assert.equal(mutation.action, 'put');
+
+    const result = applyPlan(cloneJson(proof.remote), proof.plan);
+    assert.equal(result.appliedMutations, 1);
+    assert.deepEqual(result.site.db.wp_postmeta[rowId].meta_value, proof.local.db.wp_postmeta[rowId].meta_value);
+    assert.equal(JSON.stringify(result.journal).includes(privateValues[0]), false);
+    assert.equal(JSON.stringify(result.journal).includes(privateValues[1]), false);
+
+    return {
+      label: variant.label,
+      driver: variant.driver,
+      resourceKey,
+      table: 'wp_postmeta',
+      appliedMutations: result.appliedMutations,
+      baseRowHash: sha256Evidence(proof.base.db.wp_postmeta[rowId]),
+      localRowHash: sha256Evidence(proof.local.db.wp_postmeta[rowId]),
+      remoteAfterRowHash: sha256Evidence(result.site.db.wp_postmeta[rowId]),
+      mutationHash: sha256Evidence(mutation),
+      journalEntryHash: sha256Evidence(result.journal.entries[0]),
+    };
+  });
+
+  const missingPolicy = (() => {
+    const base = postmetaSite('wp_postmeta', {
+      state: 'base',
+      private_note: privateValues[2],
+    });
+    const local = postmetaSite('wp_postmeta', {
+      state: 'local',
+      private_note: privateValues[2],
+    });
+    const plan = planFor(base, local, cloneJson(base));
+    const blocker = plan.blockers[0];
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.summary.mutations, 0);
+    assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+    assert.equal(blocker.resourceKey, resourceKey);
+    assert.equal(JSON.stringify(blocker).includes(privateValues[2]), false);
+    return {
+      label: 'missing-policy',
+      class: blocker.class,
+      resourceKey: blocker.resourceKey,
+      blockerHash: sha256Evidence(blocker),
+    };
+  })();
+
+  const refusalEvidence = [
+    {
+      label: 'wrong-driver',
+      driver: 'wp-termmeta',
+      resourceTable: 'wp_postmeta',
+      privateValue: privateValues[3],
+    },
+    {
+      label: 'near-miss-resource-table',
+      driver: 'wp-postmeta',
+      resourceTable: 'wp_postmetas',
+      policyTable: 'wp_postmetas',
+      privateValue: privateValues[4],
+    },
+    {
+      label: 'wrong-policy-table',
+      driver: 'wp-postmeta',
+      resourceTable: 'wp_postmeta',
+      policyTable: 'wp_postmetas',
+      privateValue: privateValues[5],
+    },
+  ].map((variant) => {
+    const proof = planWithPolicy({
+      driver: variant.driver,
+      resourceTable: variant.resourceTable,
+      policyTable: variant.policyTable,
+      baseSecret: variant.privateValue,
+      localSecret: `${variant.privateValue}-local`,
+    });
+    const blocker = proof.plan.blockers[0];
+    const blockerJson = JSON.stringify(blocker);
+
+    assert.equal(proof.plan.status, 'blocked');
+    assert.equal(proof.plan.summary.mutations, 0);
+    assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+    assert.equal(blocker.driver, variant.driver);
+    assert.match(blocker.reason, /driver does not match/);
+    assert.equal(blockerJson.includes(variant.privateValue), false);
+
+    return {
+      label: variant.label,
+      driver: variant.driver,
+      resourceKey: proof.key,
+      resourceTable: variant.resourceTable,
+      policyTable: variant.policyTable || null,
+      class: blocker.class,
+      blockerHash: sha256Evidence(blocker),
+    };
+  });
+
+  const evidence = {
+    rpp: 'RPP-0445',
+    evidenceSource: 'local-plugin-driver-generated-node-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    accepted: acceptedEvidence,
+    refused: [missingPolicy, ...refusalEvidence],
+  };
+  evidence.proofHash = sha256Evidence({
+    accepted: evidence.accepted,
+    refused: evidence.refused,
+  });
+
+  for (const accepted of evidence.accepted) {
+    assert.match(accepted.baseRowHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(accepted.localRowHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(accepted.remoteAfterRowHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(accepted.mutationHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(accepted.journalEntryHash, /^sha256:[a-f0-9]{64}$/);
+  }
+  for (const refused of evidence.refused) {
+    assert.match(refused.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  }
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  for (const privateValue of privateValues) {
+    assert.equal(JSON.stringify(evidence).includes(privateValue), false);
+  }
+});
+
 test('blocks unknown plugin-owned custom table rows without leaking values', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
