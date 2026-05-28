@@ -1590,6 +1590,178 @@ test('RPP-0229 conflict evidence serializes hash-only conflict refusals', () => 
   }
 });
 
+test('RPP-0237 conflict plans reject apply, forged ready status, and stale mutation attempts before mutation', () => {
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const conflictResourceKey = 'row:["wp_posts","ID:1"]';
+  const independentMutationKey = 'file:index.php';
+  const privateValues = [
+    'rpp0237-base-private-row-title',
+    'rpp0237-local-private-row-title',
+    'rpp0237-remote-private-row-title',
+    '<?php echo "rpp0237-local-private-file";',
+    '<?php echo "rpp0237-stale-remote-file";',
+  ];
+  base.db.wp_posts['ID:1'].post_title = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  remote.db.wp_posts['ID:1'].post_title = privateValues[2];
+  local.files['index.php'] = privateValues[3];
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const conflictJournalEvents = [];
+  const forgedJournalEvents = [];
+  const staleJournalEvents = [];
+  const claimFencedJournal = (events) => ({
+    claimFenced: true,
+    claimHash: 'b'.repeat(64),
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+  const hashOnlyEvidence = (plan, applyError, forgedError, staleError) => ({
+    command: 'node --test --test-name-pattern=RPP-0237 test/push-planner.test.js',
+    caveat: 'Focused local planner/apply proof; release remains gated separately.',
+    status: plan.status,
+    summary: plan.summary,
+    emitted: plannerSummaryCounts(plan),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      baseHash: conflict.baseHash,
+      localHash: conflict.localHash,
+      remoteHash: conflict.remoteHash,
+      conflictHash: sha256Evidence({
+        resourceKey: conflict.resourceKey,
+        class: conflict.class,
+        baseHash: conflict.baseHash,
+        localHash: conflict.localHash,
+        remoteHash: conflict.remoteHash,
+      }),
+    })),
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    refusals: {
+      conflictApply: {
+        code: applyError.code,
+        detailsHash: sha256Evidence(applyError.details),
+      },
+      forgedReadyWithConflictEvidence: {
+        code: forgedError.code,
+        issueCodes: forgedError.details.issues.map((issue) => issue.code).sort(),
+        detailsHash: sha256Evidence(forgedError.details),
+      },
+      staleMutationAttempt: {
+        code: staleError.code,
+        detailsHash: sha256Evidence(staleError.details),
+      },
+    },
+    journalEventCounts: {
+      conflictApply: conflictJournalEvents.length,
+      forgedReady: forgedJournalEvents.length,
+      staleAttempt: staleJournalEvents.length,
+      mutationEvents: [
+        ...conflictJournalEvents,
+        ...forgedJournalEvents,
+        ...staleJournalEvents,
+      ].filter((event) => event.type.includes('mutation')).length,
+    },
+  });
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0237 conflict apply refusal');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'RPP-0237 conflict refusal evidence should be deterministic',
+  );
+  assert.equal(firstPlan.conflicts[0].resourceKey, conflictResourceKey);
+  assert.equal(firstPlan.conflicts[0].class, 'row-conflict');
+  assert.equal(firstPlan.conflicts[0].resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(mutationFor(firstPlan, conflictResourceKey), undefined);
+  assert.equal(mutationFor(firstPlan, independentMutationKey).action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  const beforeRemoteHash = digest(remote);
+  let appliedMutationCount = 0;
+  const conflictApplyError = captureError(() => {
+    const result = applyPlan(remote, firstPlan, {
+      durableJournal: claimFencedJournal(conflictJournalEvents),
+    });
+    appliedMutationCount = result.appliedMutations;
+  });
+  assert.ok(conflictApplyError instanceof PushPlanError);
+  assert.equal(conflictApplyError.code, 'PLAN_NOT_READY');
+  assert.deepEqual(conflictApplyError.details, { status: 'conflict' });
+  assert.equal(appliedMutationCount, 0);
+  assert.equal(digest(remote), beforeRemoteHash);
+  assert.deepEqual(conflictJournalEvents, []);
+
+  const forgedReadyWithConflictEvidence = cloneJson(firstPlan);
+  forgedReadyWithConflictEvidence.status = 'ready';
+  const forgedRemote = cloneJson(remote);
+  const forgedBeforeHash = digest(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedReadyWithConflictEvidence, {
+    durableJournal: claimFencedJournal(forgedJournalEvents),
+  }));
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.ok(
+    forgedError.details.issues.some((issue) => issue.code === 'READY_PLAN_HAS_CONFLICTS'),
+    'forged ready status should keep conflict evidence fail-closed',
+  );
+  assert.equal(digest(forgedRemote), forgedBeforeHash);
+  assert.deepEqual(forgedJournalEvents, []);
+
+  const staleForgedReady = tamperReadyPlan(firstPlan, () => {});
+  const staleRemote = cloneJson(remote);
+  staleRemote.files['index.php'] = privateValues[4];
+  const staleBeforeHash = digest(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, staleForgedReady, {
+    durableJournal: claimFencedJournal(staleJournalEvents),
+  }));
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.equal(digest(staleRemote), staleBeforeHash);
+  assert.equal(
+    staleJournalEvents.filter((event) => event.type.includes('mutation')).length,
+    0,
+    'stale forged conflict plan wrote mutation journal evidence before refusal',
+  );
+
+  const serializedEvidence = JSON.stringify({
+    ...hashOnlyEvidence(firstPlan, conflictApplyError, forgedError, staleError),
+    evidenceHash: sha256Evidence(hashOnlyEvidence(firstPlan, conflictApplyError, forgedError, staleError)),
+  });
+  assert.match(JSON.parse(serializedEvidence).evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  for (const privateValue of privateValues) {
+    assert.equal(serializedEvidence.includes(privateValue), false, `RPP-0237 evidence leaked ${privateValue}`);
+  }
+});
+
 test('classifies plugin-owned data conflicts separately from generic rows', () => {
   const base = baseSite();
   const local = baseSite();
