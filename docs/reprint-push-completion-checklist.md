@@ -51,7 +51,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0037 (Near / release-gates) Prove tmux stdout proof status marker, variant 2. Success: test asserts the exact reason and evidence object.
 - [x] RPP-0038 (Near / release-gates) Prove progress.html release timestamp, variant 2. Success: progress report links the command and observed status.
 - [x] RPP-0039 (Near / release-gates) Prove .agents/RELEASE_GATES.md status row, variant 2. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0040 (Near / release-gates) Prove verify:release nonzero failure reason, variant 2. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0040 (Near / release-gates) Prove verify:release nonzero failure reason, variant 2. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0041 (Near / release-gates) Add generated coverage for missing REPRINT_PUSH_SOURCE_URL gate, variant 3. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0042 (Near / release-gates) Add generated coverage for missing REPRINT_PUSH_LOCAL_URL gate, variant 3. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0043 (Near / release-gates) Add generated coverage for missing REPRINT_PUSH_REMOTE_CHANGED_URL gate, variant 3. Success: progress report links the command and observed status.

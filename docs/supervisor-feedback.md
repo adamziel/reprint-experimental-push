@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:50 CEST
+Last updated: 2026-05-28 05:58 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:58 CEST - RPP-0040 Integrated
+
+- Going well: integration is now at `87f53b06f`, adding `RPP-0040`
+  `verify:release` nonzero failure reason evidence. The checked
+  `npm run verify:release` missing-source path exits `1`, prints final
+  `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`,
+  starts no Playground server, and feeds exact mutation-free evidence into
+  `check-release-gates` while release remains `NO-GO`.
+- Checklist movement: 109 verified items checked and 891 open. New check since
+  the prior feedback entry: `RPP-0040`.
+- Verification: focused release-gate tests pass 29/29, checklist lint reports
+  109 checked / 891 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 05:50 CEST - RPP-0215 Integrated
 
