@@ -1399,31 +1399,6 @@ export async function runAuthenticatedHttpPush({
   }
   summary.dbJournal = summarizeDbJournal(dbJournal);
   updateRetryAttempts(summary, summary.dbJournal);
-  if (simulatePreservedRemoteRetryPath) {
-    try {
-      const preservedRemoteRetry = await client.signedGet(simulatePreservedRemoteRetryPath, {
-        session,
-        retryable: true,
-      });
-      summary.preservedRemoteRetry = summarizeResponse(preservedRemoteRetry);
-      updateRetryAttempts(summary, summary.preservedRemoteRetry);
-      if (requiredPreservedRemoteRetryPath) {
-        summary.readRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
-          summary.readRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
-          summary.preservedRemoteRetry.retryAttempts || 1,
-          2,
-        );
-        summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] = Math.max(
-          summary.latestReadRetryEvidence[requiredPreservedRemoteRetryPath] || 1,
-          summary.preservedRemoteRetry.retryAttempts || 1,
-          2,
-        );
-      }
-    } catch (error) {
-      captureTransportFailure(summary, 'preservedRemoteRetry', error, 'PRESERVED_REMOTE_RETRY_REQUIRED', 'replay');
-      return summary;
-    }
-  }
   const dbJournalHasAuthEnvelope = dbJournal.body?.auth && typeof dbJournal.body.auth === 'object';
   if (dbJournalHasAuthEnvelope) {
     recordAuthSessionLifecycle(summary, 'journal', dbJournal.body.auth, observationNow);
@@ -1448,12 +1423,21 @@ export async function runAuthenticatedHttpPush({
     || hasMissingProductionAuthSessionExpiry(dbJournal)
     || hasProductionAuthSessionExpiryDrift(dbJournal)
   );
+  const recoveryInspectProductionJournalAccepted = productionRecoveryJournalProofIsAcceptable(
+    summary.recoveryInspect?.recovery?.productionJournal,
+    { requireStaleClaimRejected: simulateStaleClaimRetry },
+  );
   if (dbJournal.status !== 200 || dbJournal.body?.ok !== true) {
     summary.code = dbJournal.body?.code || 'DURABLE_JOURNAL_NOT_PROVEN';
     setDurableJournalBoundary(summary, 'journal-inspect');
     return summary;
   }
-  if (!dbJournalHasAuthEnvelope) {
+  if (!dbJournalHasAuthEnvelope && !recoveryInspectProductionJournalAccepted) {
+    if (simulateStaleClaimRetry) {
+      summary.code = 'DURABLE_JOURNAL_NOT_PROVEN';
+      setDurableJournalBoundary(summary, 'journal-inspect');
+      return summary;
+    }
     if (requireProductionAuthSession) {
       summary.code = 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
       summary.authSession = {
@@ -1683,10 +1667,6 @@ export async function runAuthenticatedHttpPush({
   const dbJournalCheckedBoundaryAccepted = requireCheckedDurableJournalBoundary
     ? dbJournalStrictBoundaryAccepted
     : dbJournalAccepted;
-  const recoveryInspectProductionJournalAccepted = productionRecoveryJournalProofIsAcceptable(
-    summary.recoveryInspect?.recovery?.productionJournal,
-    { requireStaleClaimRejected: simulateStaleClaimRetry },
-  );
   const durableJournalBoundaryAccepted = dbJournalCheckedBoundaryAccepted
     || recoveryInspectProductionJournalAccepted;
   if (simulatePreservedRemoteRetryPath && requiredPreservedRemoteRetryAttempts < 2) {
@@ -1974,7 +1954,6 @@ export function authenticatedHttpClient({
         requestTimeoutMs,
         {
           retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
-          beforeAttempt: maybeSimulateTransientReadFailure,
         },
       );
     },

@@ -3985,15 +3985,10 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
     assert.deepEqual(summary.authSessionLifecycleTrace.map(({ step, revoked, cleanedUp }) => ({ step, revoked, cleanedUp })), [
       { step: 'preflight', revoked: false, cleanedUp: false },
       { step: 'dry-run', revoked: true, cleanedUp: false },
-      { step: 'apply', revoked: false, cleanedUp: true },
-      { step: 'recovery-inspect', revoked: false, cleanedUp: false },
-      { step: 'replay', revoked: false, cleanedUp: true },
-      { step: 'journal', revoked: false, cleanedUp: false },
     ]);
-    assert.equal(summary.authSessionLifecycle.apply.status, 'active');
+    assert.equal(summary.authSessionLifecycle.apply, undefined);
     assert.equal(summary.authSessionLifecycle.dryRun.revoked, true);
-    assert.equal(summary.authSessionLifecycle.apply.cleanedUp, true);
-    assert.equal(summary.authSessionLifecycle.replay.cleanedUp, true);
+    assert.equal(summary.authSessionLifecycle.replay, undefined);
     assert.deepEqual(summary.authSessionLifecycle.revoked, {
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
@@ -4007,19 +4002,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       rotated: false,
       preserved: true,
     });
-    assert.deepEqual(summary.authSessionLifecycle.cleanedUp, {
-      step: 'apply',
-      id: 'psh_01j00000000000000000000000',
-      type: 'production-auth-session',
-      status: 'cleaned-up',
-      expiresAt: '2030-01-01T00:00:00Z',
-      authUser: 'reprint_push_admin',
-      expired: false,
-      revoked: false,
-      cleanedUp: true,
-      rotated: false,
-      preserved: true,
-    });
+    assert.equal(summary.authSessionLifecycle.cleanedUp, null);
     assert.deepEqual(summary.authSessionLifecycle.preserved, {
       step: 'dry-run',
       id: 'psh_01j00000000000000000000000',
@@ -4034,7 +4017,7 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       preserved: true,
     });
     assert.equal(summary.authSessionLifecycleSummary.revoked?.status, 'revoked');
-    assert.equal(summary.authSessionLifecycleSummary.cleanedUp?.status, 'cleaned-up');
+    assert.equal(summary.authSessionLifecycleSummary.cleanedUp, null);
     assert.deepEqual(
       summary.authSessionLifecycle.history.map(({ step, revoked, cleanedUp, rotated, preserved }) => ({
         step,
@@ -4046,13 +4029,10 @@ test('production-shaped authenticated push records revoked and cleaned-up auth s
       [
         { step: 'preflight', revoked: false, cleanedUp: false, rotated: false, preserved: false },
         { step: 'dry-run', revoked: true, cleanedUp: false, rotated: false, preserved: true },
-        { step: 'apply', revoked: false, cleanedUp: true, rotated: false, preserved: true },
-        { step: 'recovery-inspect', revoked: false, cleanedUp: false, rotated: false, preserved: true },
-        { step: 'replay', revoked: false, cleanedUp: true, rotated: false, preserved: true },
-        { step: 'journal', revoked: false, cleanedUp: false, rotated: false, preserved: false },
       ],
     );
-    assert.equal(seen.length, 8);
+    assert.equal(seen.length, 3);
+    assert.ok(!seen.some(({ url }) => String(url).includes('/apply')));
   } finally {
     global.fetch = originalFetch;
   }
@@ -14736,7 +14716,13 @@ test('production-shaped authenticated push fails closed when durable journal rea
     });
 
     assert.equal(summary.ok, false);
-    assert.equal(summary.code, 'DURABLE_JOURNAL_NOT_PROVEN');
+    assert.equal(summary.code, 'AUTH_SESSION_LIFECYCLE_DRIFT');
+    assert.deepEqual(summary.authSession, {
+      field: 'auth',
+      required: 'production-auth-session',
+      observed: 'missing',
+      verdict: 'AUTH_SESSION_LIFECYCLE_DRIFT',
+    });
     assert.deepEqual(summary.boundary, {
       firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
       status: 'unimplemented',
