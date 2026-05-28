@@ -951,9 +951,29 @@ Authentication stays at least as strict as current Reprint HMAC usage:
 - apply requires the short-lived push session, the canonical push signature,
   and an idempotency key, then revalidates fresh live evidence before every
   batch and at the storage boundary
-- journal inspect is read-only and never authorizes mutation by itself
+- journal inspect is read-only, session-bound, signed, and never authorizes
+  mutation by itself
+- recovery inspect is also read-only: it carries the same session-bound
+  signature floor but must not carry the mutating idempotency key used by
+  dry-run/apply/replay
 - recovery stays inspect-first and may mutate only when the journal row and
   fresh live hashes still prove the branch safe
+
+Signed retry semantics are part of the auth floor, not a transport detail:
+
+- every retry attempt is signed again with a fresh nonce so the nonce replay
+  store can reject stale attempts without blocking the retry path
+- mutating retries preserve the same idempotency key and request body so
+  same-key/same-body replay can prove no fresh mutation work
+- read-only journal and recovery inspect retries omit the mutating
+  idempotency key while preserving the session and canonical query string
+- query strings are decode-sort-encode canonicalized before the push HMAC is
+  computed, so route-equivalent inspect URLs sign to the same push signature
+
+The executor can run the inspect path in `read-only-session-bound` mode for
+that contract while retaining the legacy idempotency-bound mode for existing
+production-shaped fixtures until the server-side route enforces the same
+idempotency-free read-only rule.
 
 The auth boundary is the same one the current Reprint HMAC flow already uses
 or exceeds:
@@ -965,8 +985,8 @@ or exceeds:
 - `push_plan_dry_run` uploads the canonical plan without granting mutation
 - `push_batch_apply` revalidates live evidence before every batch and at the
   storage boundary
-- `push_journal` stays read-only
-- `push_recover inspect` stays read-only
+- `push_journal` stays read-only and idempotency-key-free
+- `push_recover inspect` stays read-only and idempotency-key-free
 - `push_recover auto|finish|rollback` requires the same auth floor plus the
   live recovery proof
 
@@ -996,6 +1016,8 @@ Authentication is intentionally conservative:
 - apply must revalidate fresh live evidence after dry-run and before every
   storage boundary commit
 - journal inspect is read-only and never authorizes mutation by itself
+- read-only journal/recovery inspect calls are signed and session-bound but
+  must not carry mutating idempotency keys
 - mutating recovery is fenced by fresh live hashes and the journal row claim
   and lease evidence
 

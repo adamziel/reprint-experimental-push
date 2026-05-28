@@ -36,9 +36,11 @@
     "remote_snapshot_hash_listing": "planning evidence only and never write authority",
     "dry_run_plan_upload": "eligibility evidence only and never a lock",
     "mutation_batch_apply": "revalidates fresh live evidence before every batch and at the storage boundary",
-    "journal_inspect": "reads durable evidence without authorizing mutation",
-    "recovery_inspect": "must happen before any mutating recovery mode",
-    "auth_floor": "at least as strict as current Reprint HMAC usage"
+    "journal_inspect": "reads durable evidence without authorizing mutation and carries no mutating idempotency key",
+    "recovery_inspect": "must happen before any mutating recovery mode, is read-only, and carries no mutating idempotency key",
+    "auth_floor": "at least as strict as current Reprint HMAC usage",
+    "signed_retry": "every retry is re-signed with a fresh nonce; mutating retries preserve the idempotency key while read-only inspect retries omit it",
+    "lease_fence": "checked journal and recovery surfaces must expose claim identity, monotonic sequence, restart-readable ownership, and stale-claim rejection before mutation"
   },
   "topology": {
     "remote_base": "remote-base",
@@ -79,7 +81,8 @@
         "runner owns preflight, remote snapshot hash listing, dry-run plan upload, batch apply, journal inspect, and recovery",
         "dry-run and apply remain separate remote calls",
         "apply revalidates fresh live evidence before every batch and at the storage boundary",
-        "journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch"
+        "journal inspect stays read-only and reads the journal, claim, lease, and recovery fence before any mutating recovery branch",
+        "journal and recovery inspect calls are signed and session-bound without mutating idempotency keys"
       ]
     },
     "playground": {
@@ -90,6 +93,7 @@
         "runner uses the same route names as Docker",
         "dry-run and apply remain separate remote calls",
         "apply revalidates fresh live evidence before every batch and at the storage boundary",
+        "journal and recovery inspect calls are signed and session-bound without mutating idempotency keys",
         "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
       ]
     }
@@ -129,7 +133,8 @@
         "remote-base and remote-changed are the same remote identity observed at different times",
         "dry-run and apply remain separate remote operations",
         "apply revalidates fresh live evidence before every batch and again at the storage boundary",
-        "recovery inspect happens before any mutating repair"
+        "recovery inspect happens before any mutating repair",
+        "journal and recovery inspect stay signed, session-bound, and idempotency-key-free"
       ]
     }
   },
@@ -140,6 +145,8 @@
     "dry-run and apply are separate remote operations",
     "apply must revalidate the live remote before every batch and at the storage boundary",
     "journal inspection is read-only and never authorizes mutation by itself",
+    "journal and recovery inspect are session-bound signed reads and must not carry mutating idempotency keys",
+    "retryable signed requests must regenerate the nonce on each retry attempt",
     "recovery must begin with inspect before any mutating repair",
     "authentication must be at least as strict as current Reprint HMAC usage",
     "pull exporter/importer establish the immutable base package before push",
