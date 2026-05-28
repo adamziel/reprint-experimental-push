@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 164.
-- Remaining open: 836.
+- Verified complete: 172.
+- Remaining open: 828.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -166,7 +166,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [ ] RPP-0147 (Near / generated-harness) Add generated coverage for wp_posts create/update/delete changes, variant 3. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0148 (Near / generated-harness) Add generated coverage for wp_postmeta create/update/delete changes, variant 3. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0149 (Near / generated-harness) Add generated coverage for wp_users and wp_usermeta graph changes, variant 3. Success: stale remote replay fails before mutation.
-- [ ] RPP-0150 (Near / generated-harness) Add generated coverage for wp_comments and wp_commentmeta graph changes, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0150 (Near / generated-harness) Add generated coverage for wp_comments and wp_commentmeta graph changes, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0151 (Near / generated-harness) Add generated coverage for wp_terms and wp_termmeta graph changes, variant 3. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0152 (Near / generated-harness) Add generated coverage for wp_term_taxonomy graph changes, variant 3. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0153 (Near / generated-harness) Add generated coverage for wp_term_relationships graph changes, variant 3. Success: ready cases apply with no unplanned remote overwrite.
@@ -368,7 +368,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [ ] RPP-0339 (Mid / graph-identity) Prove cross-table create batch mapping, variant 2. Success: local production verifier carries the target through apply.
 - [x] RPP-0340 (Mid / graph-identity) Prove production importer/exporter identity map, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0341 (Mid / graph-identity) Add generated coverage for post_parent page hierarchy, variant 3. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0342 (Mid / graph-identity) Add generated coverage for featured image attachment reference, variant 3. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0342 (Mid / graph-identity) Add generated coverage for featured image attachment reference, variant 3. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0343 (Mid / graph-identity) Add generated coverage for post author reference, variant 3. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0344 (Mid / graph-identity) Add generated coverage for postmeta post_id reference, variant 3. Success: local production verifier carries the target through apply.
 - [ ] RPP-0345 (Mid / graph-identity) Add generated coverage for comment post reference, variant 3. Success: docs state remaining unmapped WordPress surfaces.
@@ -474,7 +474,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0440 (Mid / plugin-driver) Prove arbitrary plugin fixture package, variant 2. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0441 (Mid / plugin-driver) Add generated coverage for driver registration API, variant 3. Success: focused test proves exact driver behavior.
 - [ ] RPP-0442 (Mid / plugin-driver) Add generated coverage for driver owner identity binding, variant 3. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0443 (Mid / plugin-driver) Add generated coverage for custom table allowlist exact match, variant 3. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0443 (Mid / plugin-driver) Add generated coverage for custom table allowlist exact match, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0444 (Mid / plugin-driver) Add generated coverage for wp_options driver semantics, variant 3. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0445 (Mid / plugin-driver) Add generated coverage for wp_postmeta driver semantics, variant 3. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0446 (Mid / plugin-driver) Add generated coverage for wp_termmeta driver semantics, variant 3. Success: focused test proves exact driver behavior.
@@ -487,8 +487,8 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0453 (Mid / plugin-driver) Add generated coverage for owner context stale plugin file refusal, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0454 (Mid / plugin-driver) Add generated coverage for owner context stale metadata refusal, variant 3. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0455 (Mid / plugin-driver) Add generated coverage for remote plugin removal refusal, variant 3. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0456 (Mid / plugin-driver) Add generated coverage for driver delete support flag, variant 3. Success: focused test proves exact driver behavior.
-- [ ] RPP-0457 (Mid / plugin-driver) Add generated coverage for driver dry-run validation hook, variant 3. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0456 (Mid / plugin-driver) Add generated coverage for driver delete support flag, variant 3. Success: focused test proves exact driver behavior.
+- [x] RPP-0457 (Mid / plugin-driver) Add generated coverage for driver dry-run validation hook, variant 3. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0458 (Mid / plugin-driver) Add generated coverage for driver apply validation hook, variant 3. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0459 (Mid / plugin-driver) Add generated coverage for driver audit evidence redaction, variant 3. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0460 (Mid / plugin-driver) Add generated coverage for arbitrary plugin fixture package, variant 3. Success: release gate notes whether evidence is local or production-backed.
@@ -500,9 +500,9 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0466 (Mid / plugin-driver) Add focused regression coverage for wp_termmeta driver semantics, variant 4. Success: focused test proves exact driver behavior.
 - [ ] RPP-0467 (Mid / plugin-driver) Add focused regression coverage for wp_usermeta driver semantics, variant 4. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0468 (Mid / plugin-driver) Add focused regression coverage for serialized option validator, variant 4. Success: local production proof carries one real mutation through apply.
-- [ ] RPP-0469 (Mid / plugin-driver) Add focused regression coverage for plugin activation dependency validator, variant 4. Success: remote drift preserves plugin-owned remote data.
-- [ ] RPP-0470 (Mid / plugin-driver) Add focused regression coverage for plugin update dependency validator, variant 4. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0471 (Mid / plugin-driver) Add focused regression coverage for plugin uninstall/delete refusal, variant 4. Success: focused test proves exact driver behavior.
+- [x] RPP-0469 (Mid / plugin-driver) Add focused regression coverage for plugin activation dependency validator, variant 4. Success: remote drift preserves plugin-owned remote data.
+- [x] RPP-0470 (Mid / plugin-driver) Add focused regression coverage for plugin update dependency validator, variant 4. Success: release gate notes whether evidence is local or production-backed.
+- [x] RPP-0471 (Mid / plugin-driver) Add focused regression coverage for plugin uninstall/delete refusal, variant 4. Success: focused test proves exact driver behavior.
 - [ ] RPP-0472 (Mid / plugin-driver) Add focused regression coverage for direct active_plugins mutation refusal, variant 4. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0473 (Mid / plugin-driver) Add focused regression coverage for owner context stale plugin file refusal, variant 4. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0474 (Mid / plugin-driver) Add focused regression coverage for owner context stale metadata refusal, variant 4. Success: remote drift preserves plugin-owned remote data.

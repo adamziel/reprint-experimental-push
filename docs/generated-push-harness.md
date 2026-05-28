@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 510 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 52 scenario families, then add seeded variation so
+fixtures. The current default is 610 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 61 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 510 total cases;
-- 10 tiers, 51 cases per tier;
+- 610 total cases;
+- 10 tiers, 61 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -69,6 +69,8 @@ The default generated run covers:
   ready/conflict outcomes and stale replay rejection before mutation,
   `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
+  featured-image attachment references with ready postmeta/attachment closure
+  and stale attachment blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
   supported forms-lab custom-table rows and delete refusal with per-tier target
   counts, atomic plugin install ready and missing-dependency paths, same-plan
@@ -143,17 +145,18 @@ Ready cases create the comment and commentmeta row in one plan, preserve
 unplanned remote resources, and reject stale replays before mutation; stale
 cases keep the comment in the base, drift that comment remotely, and require the
 new commentmeta reference to fail closed instead of overwriting the drifted
-remote. RPP-0130 proves the ready and stale target cases across every tier and
-keeps generated comment/commentmeta row values out of the summary evidence.
+remote. RPP-0130 and RPP-0150 prove the ready and stale target cases across
+every tier and keep generated comment/commentmeta row values out of the summary
+evidence.
 
 The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 `wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create
 the term and termmeta row in one plan, preserve unplanned remote resources, and
 reject stale replays before mutation; stale cases keep the term in the base,
 drift that term remotely, and require the new termmeta reference to fail closed
-instead of overwriting the drifted remote. RPP-0131 keeps the current 510-case
-run and proves one ready terms/termmeta graph case in every tier plus stale
-non-ready graph references in tiers 0 through 8.
+instead of overwriting the drifted remote. RPP-0131 now runs in the 610-case
+roster and proves one ready and one stale terms/termmeta graph case in every
+tier.
 
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready
@@ -174,11 +177,10 @@ The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 create the term and taxonomy row in one plan, preserve unplanned remote
 resources, and reject a stale replay before mutation; stale cases keep the term
 in the base, drift that term remotely, and require the new taxonomy reference to
-fail closed instead of overwriting the drifted remote. RPP-0132 keeps the
-current 510-case run and proves the 18 current term-taxonomy graph cases across
-all 10 tiers, including nine ready cases, nine stale non-ready cases, and
-hash-only redacted evidence for generated taxonomy descriptions and stale term
-drift values.
+fail closed instead of overwriting the drifted remote. RPP-0132 now runs in the
+610-case roster and proves 20 term-taxonomy graph cases across all 10 tiers,
+including 10 ready cases, 10 stale non-ready cases, and hash-only redacted
+evidence for generated taxonomy descriptions and stale term drift values.
 
 The `wpTermRelationshipsGraph` target coverage records per-tier counts for
 generated `wp_term_relationships` rows and their `wp_term_taxonomy` targets.
@@ -186,7 +188,7 @@ Ready cases create the term, taxonomy, and relationship in one plan, preserve
 unplanned remote resources, and reject stale replay before mutation; stale
 cases keep the term and taxonomy in the base, drift the taxonomy remotely, and
 require the new relationship row to fail closed instead of applying partial
-graph mutations. RPP-0133 keeps the current 510-case run and proves one
+graph mutations. RPP-0133 now runs in the 610-case roster and proves one
 relationship target in every tier: five ready cases, five stale blocked cases,
 and hash-only redacted evidence for generated relationship target values.
 
@@ -221,622 +223,15 @@ in one plan and reject a stale replay before mutation; stale cases keep the user
 in the base, drift that user remotely, and require the comment reference to fail
 closed with hash-only target evidence.
 
-At the time this note was added, the summary command reported:
+The `featuredImageAttachmentGraph` target coverage records per-tier counts for
+generated `_thumbnail_id` postmeta references to attachment posts. Ready cases
+create the attachment and thumbnail postmeta in one plan, preserve unplanned
+remote resources, and reject stale replay before mutation; stale cases keep the
+attachment in the base, drift that attachment remotely, and require the
+thumbnail reference to fail closed with hash-only target evidence. RPP-0342
+proves 10 ready and 10 stale featured-image graph cases across every tier.
 
-```json
-{
-  "totalCases": 510,
-  "minCasesRequired": 300,
-  "statuses": {
-    "blocked": 38,
-    "conflict": 187,
-    "ready": 285
-  },
-  "statusByTier": {
-    "blocked": {
-      "0": 8,
-      "1": 9,
-      "2": 5,
-      "3": 4,
-      "4": 6,
-      "5": 1,
-      "6": 1,
-      "7": 1,
-      "8": 1,
-      "9": 2
-    },
-    "conflict": {
-      "0": 14,
-      "1": 14,
-      "2": 18,
-      "3": 18,
-      "4": 17,
-      "5": 21,
-      "6": 22,
-      "7": 21,
-      "8": 22,
-      "9": 20
-    },
-    "ready": {
-      "0": 29,
-      "1": 28,
-      "2": 28,
-      "3": 29,
-      "4": 28,
-      "5": 29,
-      "6": 28,
-      "7": 29,
-      "8": 28,
-      "9": 29
-    }
-  },
-  "tiers": {
-    "0": 51,
-    "1": 51,
-    "2": 51,
-    "3": 51,
-    "4": 51,
-    "5": 51,
-    "6": 51,
-    "7": 51,
-    "8": 51,
-    "9": 51
-  },
-  "featureFamilies": {
-    "already-in-sync": 63,
-    "atomic-blocked": 10,
-    "atomic-plugin-missing-dependency": 10,
-    "atomic-plugin-stack-ready": 10,
-    "atomic-ready": 10,
-    "bulk-local-update": 363,
-    "bulk-remote-preserve": 354,
-    "comment-graph": 286,
-    "comment-user": 18,
-    "comment-user-graph": 18,
-    "comment-user-graph-ready": 9,
-    "comment-user-graph-stale": 9,
-    "comment-user-ready": 9,
-    "comment-user-stale-target": 9,
-    "commentmeta-comment-graph": 20,
-    "delete": 44,
-    "delete-edit": 10,
-    "delete-edit-conflict": 10,
-    "direct-row-conflict": 10,
-    "directory-delete-no-remote-descendant": 10,
-    "directory-delete-with-remote-descendant": 10,
-    "directory-descendant": 20,
-    "directory-descendant-conflict": 10,
-    "directory-descendant-ready": 10,
-    "expected-blocked": 46,
-    "expected-conflict": 170,
-    "file-create": 30,
-    "file-create-update-delete-mix": 20,
-    "file-create-update-delete-mix-conflict": 10,
-    "file-create-update-delete-mix-ready": 10,
-    "file-delete": 30,
-    "file-topology": 124,
-    "file-topology-conflict": 10,
-    "file-type-swap": 20,
-    "file-type-swap-conflict": 10,
-    "file-type-swap-ready": 10,
-    "file-update": 30,
-    "forms-lab-delete-blocked": 20,
-    "forms-lab-supported": 30,
-    "independent-local-and-remote": 10,
-    "independent-merge": 10,
-    "large-ready-plan": 10,
-    "large-ready-plan-target": 10,
-    "large-ready-plan-tier": 10,
-    "local-create": 73,
-    "local-delete": 10,
-    "local-file-update": 10,
-    "plugin-context-drift": 20,
-    "plugin-context-metadata-drift": 10,
-    "plugin-context-ready": 10,
-    "plugin-file-update": 10,
-    "plugin-owned-custom-table-change": 20,
-    "plugin-owned-option-change": 18,
-    "plugin-owned-option-change-conflict": 9,
-    "plugin-owned-option-change-ready": 9,
-    "plugin-owned-option-update": 18,
-    "plugin-owned-supported": 370,
-    "plugin-owned-unsupported": 81,
-    "plugin-owner-context-drift": 10,
-    "post-parent-graph": 10,
-    "ready-candidate": 151,
-    "remote-delete": 10,
-    "remote-delete-local-unchanged": 10,
-    "remote-only-post-update": 10,
-    "remote-preserve": 40,
-    "row-create": 30,
-    "row-create-update-delete-mix": 20,
-    "row-create-update-delete-mix-conflict": 10,
-    "row-create-update-delete-mix-ready": 10,
-    "row-delete": 30,
-    "row-update": 30,
-    "same-independent-content": 10,
-    "same-independent-content-target": 10,
-    "same-plan-comment-graph": 10,
-    "same-plan-graph": 442,
-    "same-plan-post-parent-graph": 10,
-    "same-plan-taxonomy-graph": 10,
-    "same-plan-user-meta-graph": 9,
-    "scalar-option-number": 10,
-    "scalar-option-string": 10,
-    "scalar-option-update": 20,
-    "serialized-option": 20,
-    "serialized-option-array": 10,
-    "serialized-option-object": 10,
-    "serialized-option-update": 20,
-    "stale-graph": 133,
-    "stale-graph-reference": 10,
-    "supported-forms-lab-table": 10,
-    "supported-plugin-option": 10,
-    "taxonomy-graph": 284,
-    "term-relationship-object-graph": 10,
-    "term-relationship-taxonomy-graph": 10,
-    "term-taxonomy-term-graph": 18,
-    "termmeta-term-graph": 19,
-    "tier-0": 51,
-    "tier-1": 51,
-    "tier-2": 51,
-    "tier-3": 51,
-    "tier-4": 51,
-    "tier-5": 51,
-    "tier-6": 51,
-    "tier-7": 51,
-    "tier-8": 51,
-    "tier-9": 51,
-    "type-change": 20,
-    "type-swap-conflict": 10,
-    "type-swap-ready": 10,
-    "unsupported-plugin-owned-row": 10,
-    "user-meta-graph": 27,
-    "usermeta-user-graph": 18,
-    "wp-commentmeta-create": 20,
-    "wp-comments-commentmeta-graph": 20,
-    "wp-comments-commentmeta-graph-ready": 10,
-    "wp-comments-commentmeta-graph-stale": 10,
-    "wp-comments-create": 38,
-    "wp-comments-remote-drift": 10,
-    "wp-options-scalar": 20,
-    "wp-options-scalar-conflict": 10,
-    "wp-options-scalar-ready": 10,
-    "wp-options-serialized": 20,
-    "wp-options-serialized-change": 20,
-    "wp-options-serialized-conflict": 10,
-    "wp-options-serialized-ready": 10,
-    "wp-options-update": 20,
-    "wp-postmeta-create": 20,
-    "wp-postmeta-create-update-delete": 20,
-    "wp-postmeta-create-update-delete-conflict": 10,
-    "wp-postmeta-create-update-delete-ready": 10,
-    "wp-postmeta-delete": 20,
-    "wp-postmeta-update": 20,
-    "wp-posts-create": 20,
-    "wp-posts-create-update-delete": 20,
-    "wp-posts-create-update-delete-conflict": 10,
-    "wp-posts-create-update-delete-ready": 10,
-    "wp-posts-delete": 20,
-    "wp-posts-update": 20,
-    "wp-term-relationships-create": 10,
-    "wp-term-relationships-graph": 10,
-    "wp-term-relationships-graph-ready": 5,
-    "wp-term-relationships-graph-stale": 5,
-    "wp-term-relationships-graph-target": 10,
-    "wp-term-relationships-remote-drift": 5,
-    "wp-term-taxonomy-create": 18,
-    "wp-term-taxonomy-graph": 18,
-    "wp-term-taxonomy-graph-ready": 9,
-    "wp-term-taxonomy-graph-stale": 9,
-    "wp-termmeta-create": 19,
-    "wp-terms-create": 37,
-    "wp-terms-remote-drift": 18,
-    "wp-terms-termmeta-graph": 19,
-    "wp-terms-termmeta-graph-ready": 10,
-    "wp-terms-termmeta-graph-stale": 9,
-    "wp-usermeta-create": 18,
-    "wp-users-create": 36,
-    "wp-users-remote-drift": 18,
-    "wp-users-usermeta-graph": 18,
-    "wp-users-usermeta-graph-ready": 9,
-    "wp-users-usermeta-graph-stale": 9
-  },
-  "targetCoverage": {
-    "commentUserGraph": {
-      "family": "comment-user-graph-ready",
-      "total": 18,
-      "perTier": {
-        "0": 1,
-        "1": 1,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "blocked": 9,
-        "ready": 9
-      }
-    },
-    "directoryDescendantConflict": {
-      "family": "directory-descendant-conflict",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "fileCreateUpdateDeleteMix": {
-      "family": "file-create-update-delete-mix-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "fileTypeSwap": {
-      "family": "file-type-swap-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "largeReadyPlanTier": {
-      "family": "large-ready-plan-tier",
-      "total": 10,
-      "perTier": {
-        "0": 1,
-        "1": 1,
-        "2": 1,
-        "3": 1,
-        "4": 1,
-        "5": 1,
-        "6": 1,
-        "7": 1,
-        "8": 1,
-        "9": 1
-      },
-      "statuses": {
-        "ready": 10
-      }
-    },
-    "pluginOwnedOptionChange": {
-      "family": "plugin-owned-option-change-ready",
-      "total": 18,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 1,
-        "4": 1,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 9,
-        "ready": 9
-      }
-    },
-    "pluginOwnedCustomTableChanges": {
-      "family": "supported-forms-lab-table",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "blocked": 3,
-        "conflict": 7,
-        "ready": 10
-      }
-    },
-    "rowCreateUpdateDeleteMix": {
-      "family": "row-create-update-delete-mix-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "sameIndependentContent": {
-      "family": "same-independent-content",
-      "total": 10,
-      "perTier": {
-        "0": 1,
-        "1": 1,
-        "2": 1,
-        "3": 1,
-        "4": 1,
-        "5": 1,
-        "6": 1,
-        "7": 1,
-        "8": 1,
-        "9": 1
-      },
-      "statuses": {
-        "ready": 10
-      }
-    },
-    "staleRemoteAfterDryRun": {
-      "family": "ready-plan-stale-remote-after-dry-run",
-      "total": 284,
-      "perTier": {
-        "0": 28,
-        "1": 28,
-        "2": 28,
-        "3": 29,
-        "4": 28,
-        "5": 29,
-        "6": 28,
-        "7": 29,
-        "8": 28,
-        "9": 29
-      },
-      "statuses": {
-        "ready": 284
-      }
-    },
-    "wpCommentsCommentmetaGraph": {
-      "family": "wp-comments-commentmeta-graph-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "blocked": 3,
-        "conflict": 7,
-        "ready": 10
-      }
-    },
-    "wpOptionsScalarChanges": {
-      "family": "wp-options-scalar-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "wpOptionsSerializedChanges": {
-      "family": "wp-options-serialized-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "wpPostmetaCreateUpdateDelete": {
-      "family": "wp-postmeta-create-update-delete-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "wpPostsCreateUpdateDelete": {
-      "family": "wp-posts-create-update-delete-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "wpTermRelationshipsGraph": {
-      "family": "wp-term-relationships-graph",
-      "total": 10,
-      "perTier": {
-        "0": 1,
-        "1": 1,
-        "2": 1,
-        "3": 1,
-        "4": 1,
-        "5": 1,
-        "6": 1,
-        "7": 1,
-        "8": 1,
-        "9": 1
-      },
-      "statuses": {
-        "blocked": 5,
-        "ready": 5
-      }
-    },
-    "wpTermsTermmetaGraph": {
-      "family": "wp-terms-termmeta-graph-ready",
-      "total": 19,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 1
-      },
-      "statuses": {
-        "blocked": 4,
-        "conflict": 5,
-        "ready": 10
-      }
-    },
-    "wpTermTaxonomyGraph": {
-      "family": "wp-term-taxonomy-graph-ready",
-      "total": 18,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 1,
-        "6": 1,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "blocked": 1,
-        "conflict": 8,
-        "ready": 9
-      }
-    },
-    "wpUsersUsermetaGraph": {
-      "family": "wp-users-usermeta-graph-ready",
-      "total": 18,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 1,
-        "8": 1,
-        "9": 2
-      },
-      "statuses": {
-        "blocked": 3,
-        "conflict": 6,
-        "ready": 9
-      }
-    }
-  },
-  "maxResourceCount": 74,
-  "maxMutationCount": 46,
-  "maxReadyResourceCount": 74,
-  "maxReadyMutationCount": 46,
-  "maxComplexityScore": 94,
-  "totalMutations": 7229,
-  "totalConflicts": 509,
-  "totalBlockers": 518,
-  "totalDecisions": 1399
-}
-```
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 610 total cases with 345 ready, 211 conflict, and 54 blocked outcomes. The target coverage includes 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 10 `pluginOwnedCustomTableChanges` cases, and 342 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

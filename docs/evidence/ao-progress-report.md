@@ -1,19 +1,18 @@
-# AO Progress Report - 2026-05-28 16:42 CEST
+# AO Progress Report - 2026-05-28 19:46 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`a82afb2d7` (normal merge of
-`origin/session/rpp-24-rpp-0120-large-ready-plan-tier`). It separates
+`e3f6830a0` (session evidence integration repair). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 148 are
-  checked from integrated evidence and 852 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 172 are
+  checked from integrated evidence and 828 remain open.
 - `scripts/release/publish-progress-page.mjs` and the
   `publish:progress-page` npm script give AO an explicit GitHub Pages refresh
   step. GitHub Pages serves from existing branch `main`, so after a validated
@@ -528,7 +527,7 @@ progress.
   `a82afb2d7` integrates `RPP-0120` large ready plan tier coverage with 10
   ready target cases spread across all 10 tiers, combining row/file create,
   update, delete, same-plan taxonomy/comment graph rows, remote-only drift
-  preservation, and stale replay rejection. The generator now emits 510
+  preservation, and stale replay rejection. At that point the generator emitted 510
   deterministic cases and reports 269 ready, 204 conflict, 37 blocked, and
   7204 planned mutations.
 - `687b3954e` integrates `RPP-0207` local plugin data stale-owner-context
@@ -853,9 +852,19 @@ progress.
   `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0103`, `RPP-0104`, `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`, `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0120`, `RPP-0205`, `RPP-0207`,
   `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`,
   `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`
-  checklist updates, the current tree reports 148 checked IDs, 852
+  checklist updates, the current tree reports 172 checked IDs, 828
   unchecked IDs, and 0 risky
   completion claims.
+- `e3f6830a0` integrates the latest generated-harness and plugin-driver repair
+  bundle. The 610-case generated harness now proves `RPP-0150` comments to
+  commentmeta graph coverage and `RPP-0342` featured-image attachment graph
+  coverage; focused plugin tests prove `RPP-0443`, `RPP-0457`, `RPP-0469`,
+  `RPP-0470`, and `RPP-0471`, and the generated driver delete-support cases
+  prove `RPP-0456`. Validation for the bundle passed syntax checks, the
+  plugin/planner focused suite (164/164), `npm run test:generated-push-harness`
+  (32/32), release-gate tests (90/90), docs/progress tests (24/24),
+  checklist lint, artifact redaction scan, `git diff --check`, and the
+  expected held release-gate command with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`.
 - `6d6b2077c` integrates the release artifact redaction scanner from `rpp-29`.
   It scans release/evidence artifacts for raw URLs, application passwords,
   token/cookie-looking values, serialized private option payloads, and explicit
@@ -879,10 +888,10 @@ tracks the near-to-far slices used to supervise the AO team:
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 44 / 100 |
-| `RPP-0101`-`RPP-0200` | Generated harness expansion | 16 / 100 |
+| `RPP-0101`-`RPP-0200` | Generated harness expansion | 33 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 17 / 100 |
-| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 18 / 100 |
-| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 22 / 100 |
+| `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
+| `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 28 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 10 / 100 |
 | `RPP-0601`-`RPP-0700` | Durable journal and recovery | 12 / 100 |
 | `RPP-0701`-`RPP-0800` | Storage, chunking, and performance | 7 / 100 |
@@ -898,19 +907,24 @@ Checked IDs in this report are:
   `RPP-0070`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
-  `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0120`.
+  `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`,
+  `RPP-0120`, `RPP-0121`, `RPP-0122`, `RPP-0123`, `RPP-0124`, `RPP-0125`,
+  `RPP-0126`, `RPP-0127`, `RPP-0128`, `RPP-0129`, `RPP-0130`,
+  `RPP-0131`, `RPP-0132`, `RPP-0133`, `RPP-0134`, `RPP-0135`,
+  `RPP-0150`.
 - Merge invariants: `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`,
   `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`,
   `RPP-0233`, `RPP-0237`, `RPP-0240`.
 - Graph identity: `RPP-0301`, `RPP-0304`, `RPP-0305`, `RPP-0310`, `RPP-0312`,
   `RPP-0313`, `RPP-0314`, `RPP-0318`, `RPP-0319`, `RPP-0320`, `RPP-0321`,
   `RPP-0324`, `RPP-0325`, `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0340`,
-  `RPP-0347`.
+  `RPP-0342`, `RPP-0347`.
 - Plugin driver: `RPP-0402`, `RPP-0403`, `RPP-0404`, `RPP-0408`,
   `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0422`,
   `RPP-0423`, `RPP-0424`,
   `RPP-0428`, `RPP-0429`, `RPP-0430`, `RPP-0431`, `RPP-0432`, `RPP-0438`,
-  `RPP-0439`, `RPP-0461`, `RPP-0468`.
+  `RPP-0439`, `RPP-0443`, `RPP-0456`, `RPP-0457`, `RPP-0461`, `RPP-0468`,
+  `RPP-0469`, `RPP-0470`, `RPP-0471`.
 - Executor/auth: `RPP-0505`, `RPP-0506`, `RPP-0512`, `RPP-0513`,
   `RPP-0515`, `RPP-0525`, `RPP-0526`, `RPP-0532`, `RPP-0533`,
   `RPP-0535`.
