@@ -168,10 +168,14 @@ mutation; conflict cases drift the updated row remotely and refuse apply.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
-create the term and taxonomy row in one plan and reject a stale replay before
-mutation; stale cases keep the term in the base, drift that term remotely, and
-require the new taxonomy reference to fail closed instead of overwriting the
-drifted remote.
+create the term and taxonomy row in one plan, preserve unplanned remote
+resources, and reject a stale replay before mutation; stale cases keep the term
+in the base, drift that term remotely, and require the new taxonomy reference to
+fail closed instead of overwriting the drifted remote. RPP-0132 keeps the
+current 510-case run and proves the 18 current term-taxonomy graph cases across
+all 10 tiers, including nine ready cases, nine stale non-ready cases, and
+hash-only redacted evidence for generated taxonomy descriptions and stale term
+drift values.
 
 
 The `pluginOwnedOptionChange` target coverage records per-tier counts for

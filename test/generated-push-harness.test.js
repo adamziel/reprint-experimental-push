@@ -1661,19 +1661,28 @@ function assertTermTermmetaGraphShape(testCase, { staleTarget }) {
   }
 }
 
-test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {
+test('RPP-0112/RPP-0132 wp_term_taxonomy graph target exposes redacted per-tier ready and stale coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.wpTermTaxonomyGraph;
 
   assert.ok(coverage, 'missing wp_term_taxonomy graph target coverage');
   assert.equal(coverage.family, 'wp-term-taxonomy-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-term-taxonomy-graph']);
-  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_term_taxonomy graph cases');
-  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
-  assert.deepEqual(
-    Object.keys(coverage.perTier).map(Number),
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-  );
+  assert.equal(coverage.total, 18, 'target should include current ready and stale term-taxonomy graph cases');
+  assert.deepEqual(coverage.statuses, { blocked: 1, conflict: 8, ready: 9 });
+  assert.equal(nonReadyTargetCount(coverage), 9, 'target should include stale term-taxonomy graph cases');
+  assert.deepEqual(coverage.perTier, {
+    0: 2,
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 2,
+    5: 1,
+    6: 1,
+    7: 2,
+    8: 2,
+    9: 2,
+  });
   assert.equal(
     Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
     coverage.total,
@@ -1684,26 +1693,37 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
   );
 
   const cases = generatePushHarnessCases();
-  const readyCase = cases.find((testCase) => testCase.family === 'wp-term-taxonomy-graph-ready');
-  const staleCase = cases.find((testCase) => testCase.family === 'wp-term-taxonomy-graph-stale');
+  const readyCases = cases.filter((testCase) => testCase.family === 'wp-term-taxonomy-graph-ready');
+  const staleCases = cases.filter((testCase) => testCase.family === 'wp-term-taxonomy-graph-stale');
 
-  assert.ok(readyCase, 'missing ready wp_term_taxonomy graph case');
-  assert.ok(staleCase, 'missing stale wp_term_taxonomy graph case');
-  assertTermTaxonomyGraphShape(readyCase, { staleTarget: false });
-  assertTermTaxonomyGraphShape(staleCase, { staleTarget: true });
+  assert.equal(readyCases.length, 9, 'missing current ready wp_term_taxonomy graph cases');
+  assert.equal(staleCases.length, 9, 'missing current stale wp_term_taxonomy graph cases');
+  assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 7, 8, 9]);
+  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 6, 7, 8, 9]);
 
-  const ready = validateGeneratedCase(readyCase);
-  const stale = validateGeneratedCase(staleCase);
+  for (const readyCase of readyCases) {
+    const readyShape = assertTermTaxonomyGraphShape(readyCase, { staleTarget: false });
+    const ready = validateGeneratedCase(readyCase);
 
-  assert.equal(ready.status, 'ready');
-  assert.ok(ready.mutations >= 2, 'ready graph should create term and term_taxonomy rows');
-  assert.equal(ready.applied, true, 'ready wp_term_taxonomy graph should apply through the harness');
-  assert.equal(ready.staleReplayRejected, true, 'ready wp_term_taxonomy graph should reject stale replay');
-  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
-  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
-  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
-  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
-  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 2, `${readyCase.id} should create term and term_taxonomy rows`);
+    assert.equal(ready.applied, true, `${readyCase.id} should apply through the harness`);
+    assert.equal(ready.unplannedRemotePreserved, true, `${readyCase.id} should preserve unplanned remote data`);
+    assert.equal(ready.staleReplayRejected, true, `${readyCase.id} should reject stale replay`);
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, `${readyCase.id} stale replay must fail before mutation`);
+    assertTermTaxonomyEvidenceRedacted(readyCase, readyShape);
+  }
+
+  for (const staleCase of staleCases) {
+    const staleShape = assertTermTaxonomyGraphShape(staleCase, { staleTarget: true });
+    const stale = validateGeneratedCase(staleCase);
+
+    assert.notEqual(stale.status, 'ready', `${staleCase.id} should not be ready`);
+    assert.ok(stale.blockers >= 1, `${staleCase.id} should record a graph identity blocker`);
+    assert.equal(stale.applied, false, `${staleCase.id} must not apply mutations`);
+    assertTermTaxonomyEvidenceRedacted(staleCase, staleShape);
+  }
 });
 
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
@@ -1712,6 +1732,7 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       && row.name.startsWith('Generated term taxonomy graph target '));
   const termTaxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
     .filter(([id, row]) => !testCase.base.db.wp_term_taxonomy[id]
+      && typeof row.description === 'string'
       && row.description.startsWith('generated term taxonomy graph '));
 
   assert.equal(termRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one term`);
@@ -1729,6 +1750,80 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.remote.db.wp_terms[termRowId],
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
+    );
+  }
+
+  const termRowId = `term_id:${termId}`;
+  const taxonomyRowId = termTaxonomyRows[0][0];
+  return {
+    termRowId,
+    taxonomyRowId,
+    termRow: testCase.local.db.wp_terms[termRowId],
+    remoteTermRow: testCase.remote.db.wp_terms[termRowId],
+    taxonomyRow: termTaxonomyRows[0][1],
+  };
+}
+
+function assertTermTaxonomyEvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const termResourceKey = `row:${JSON.stringify(['wp_terms', shape.termRowId])}`;
+  const taxonomyResourceKey = `row:${JSON.stringify(['wp_term_taxonomy', shape.taxonomyRowId])}`;
+  const relatedMutations = plan.mutations.filter((mutation) =>
+    mutation.resourceKey === termResourceKey || mutation.resourceKey === taxonomyResourceKey);
+  const relatedBlockers = plan.blockers.filter((blocker) =>
+    blocker.resourceKey === taxonomyResourceKey
+    || blocker.references?.some((reference) => reference.targetResourceKey === termResourceKey));
+  const relatedDecisions = plan.decisions.filter((decision) => decision.resourceKey === termResourceKey);
+
+  if (plan.status === 'ready') {
+    assert.equal(relatedMutations.length, 2, `${testCase.id} should mutate term and term_taxonomy rows`);
+  } else {
+    assert.notEqual(plan.status, 'ready');
+    assert.ok(relatedBlockers.length >= 1, `${testCase.id} should have term_taxonomy graph blockers`);
+  }
+
+  const redacted = redactEvidence({
+    status: plan.status,
+    mutations: relatedMutations.map((mutation) => ({
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      change: mutation.change,
+      value: mutation.value,
+    })),
+    blockers: relatedBlockers,
+    decisions: relatedDecisions,
+  });
+  const redactedJson = JSON.stringify(redacted);
+
+  if (relatedMutations.length > 0) {
+    assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), 'mutation values should be redacted in evidence');
+    assert.ok(redactedJson.includes('sha256'), 'redacted mutation evidence should keep hashes');
+  }
+  assertTermTaxonomyRawValuesAbsent(testCase, shape, redactedJson);
+}
+
+function assertTermTaxonomyRawValuesAbsent(testCase, shape, redactedJson) {
+  const values = [
+    shape.termRow?.name,
+    shape.termRow?.slug,
+    shape.remoteTermRow?.name,
+    shape.remoteTermRow?.slug,
+    shape.taxonomyRow.description,
+  ].filter(Boolean).map(String);
+
+  for (const value of values) {
+    assert.equal(
+      redactedJson.includes(value),
+      false,
+      `${testCase.id} redacted evidence should not expose ${value}`,
     );
   }
 }
