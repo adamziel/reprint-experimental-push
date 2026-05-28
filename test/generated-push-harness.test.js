@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan, PushPlanError } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -8,6 +10,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+
+const fixedGeneratedNowForRpp0225 = new Date('2026-05-28T00:00:00.000Z');
 
 const requiredFamilies = [
   'local-file-update',
@@ -174,6 +178,64 @@ test('RPP-0103 generated harness emits ready and non-ready file type-swap cases'
   assert.equal(nonReady.status, 'conflict');
   assert.ok(nonReady.conflicts >= 1, 'non-ready type-swap should expose a file topology conflict');
   assert.equal(nonReady.applied, false, 'non-ready type-swap must not apply mutations');
+});
+
+
+test('RPP-0225 generated file type swap remote descendant refuses with hash-only evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileTypeSwapRemoteDescendant;
+
+  assert.ok(coverage, 'missing file type swap remote descendant target coverage');
+  assert.equal(coverage.family, 'file-type-swap-conflict');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-type-swap-conflict']);
+  assert.deepEqual(coverage.statuses, { conflict: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'file-type-swap-conflict')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated type-swap conflict case');
+  assert.ok(generatedCase.tags.has('file-type-swap'));
+  assert.ok(generatedCase.tags.has('type-swap-conflict'));
+
+  const { path, descendant, localContent, descendantValue } = generatedTypeSwapTargetsForRpp0225(generatedCase);
+  const swapKey = `file:${path}`;
+  const descendantKey = `file:${descendant}`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedNowForRpp0225,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === swapKey);
+  const evidenceJson = JSON.stringify(hashOnlyGeneratedTopologyEvidenceForRpp0225(plan));
+  const remoteReplay = cloneJsonForRpp0225(generatedCase.remote);
+  const beforeReplay = JSON.stringify(remoteReplay);
+  const error = captureGeneratedErrorForRpp0225(() => applyPlan(remoteReplay, plan));
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(validation.status, 'conflict');
+  assert.equal(validation.applied, false);
+  assert.ok(conflict, `${generatedCase.id} missing file type swap conflict`);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.change.localChange, 'type-change');
+  assert.equal(conflict.change.remoteChange, 'unchanged');
+  assert.equal(conflict.relatedResourceKey, descendantKey);
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-file-topology-and-stop');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === swapKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === swapKey), false);
+  assert.equal(JSON.stringify(conflict).includes(localContent), false);
+  assert.equal(JSON.stringify(conflict).includes(descendantValue), false);
+  assert.equal(evidenceJson.includes(localContent), false, 'hash-only generated evidence leaked local replacement');
+  assert.equal(evidenceJson.includes(descendantValue), false, 'hash-only generated evidence leaked descendant value');
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remoteReplay), beforeReplay, 'conflict apply mutated generated remote');
 });
 
 test('RPP-0104 generated harness emits row create/update/delete mix with stale replay guard', () => {
@@ -354,4 +416,91 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function cloneJsonForRpp0225(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function captureGeneratedErrorForRpp0225(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected generated operation to throw');
+}
+
+function generatedTypeSwapTargetsForRpp0225(testCase) {
+  for (const [candidate, baseValue] of Object.entries(testCase.base.files)) {
+    if (!baseValue || typeof baseValue !== 'object' || baseValue.type !== 'directory') {
+      continue;
+    }
+    const localValue = testCase.local.files[candidate];
+    if (!localValue || typeof localValue !== 'object' || localValue.type !== 'file') {
+      continue;
+    }
+    const descendantEntry = Object.entries(testCase.remote.files).find(([path]) => (
+      path.startsWith(`${candidate}/`)
+      && !Object.hasOwn(testCase.base.files, path)
+      && !Object.hasOwn(testCase.local.files, path)
+    ));
+    if (descendantEntry) {
+      return {
+        path: candidate,
+        descendant: descendantEntry[0],
+        localContent: localValue.content,
+        descendantValue: descendantEntry[1],
+      };
+    }
+  }
+  assert.fail(`${testCase.id} missing generated type-swap descendant target`);
+}
+
+function hashOnlyGeneratedTopologyEvidenceForRpp0225(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      relatedResourceKey: conflict.relatedResourceKey || null,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      baseHash: conflict.baseHash,
+      localHash: conflict.localHash,
+      remoteHash: conflict.remoteHash,
+      change: conflict.change,
+      relatedChange: conflict.relatedChange || null,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
 }

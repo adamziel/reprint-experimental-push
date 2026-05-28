@@ -257,6 +257,62 @@ function plannerSummaryEvidenceEnvelope(plan) {
   };
 }
 
+
+function hashOnlyTopologyEvidenceForRpp0225(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      relatedResourceKey: conflict.relatedResourceKey || null,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      baseHash: conflict.baseHash,
+      localHash: conflict.localHash,
+      remoteHash: conflict.remoteHash,
+      change: conflict.change,
+      relatedChange: conflict.relatedChange || null,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+    atomicGroups: plan.atomicGroups.map((group) => ({
+      id: group.id,
+      status: group.status,
+      mutationIds: group.mutationIds,
+      conflicts: group.conflicts,
+      blockers: group.blockers.map((blocker) => blocker.id),
+    })),
+  };
+}
+
 function assertPlannerSummaryMatchesEvidence(plan, label) {
   assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
   assert.equal(
@@ -556,6 +612,77 @@ test('stops file type swaps that would hide remote-only descendants', () => {
   assert.equal(JSON.stringify(conflict).includes('remote image bytes'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote image bytes');
+});
+
+
+test('RPP-0225 local file type swap versus remote descendant refuses with redacted evidence', () => {
+  const base = baseSite();
+  const path = 'wp-content/uploads/gallery-rpp0225';
+  const descendant = `${path}/remote-only-private.txt`;
+  const swapKey = `file:${path}`;
+  const descendantKey = `file:${descendant}`;
+  const independentKey = 'file:index.php';
+  const privateLocalReplacement = 'local-private-rpp0225-replacement-file';
+  const privateLocalIndependent = '<?php echo "local-private-rpp0225-independent-file";';
+  const privateDescendantValue = 'remote-private-rpp0225-descendant-bytes';
+  base.files[path] = { type: 'directory' };
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  local.files[path] = privateLocalReplacement;
+  local.files['index.php'] = privateLocalIndependent;
+  remote.files[descendant] = privateDescendantValue;
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const conflict = firstPlan.conflicts.find((entry) => entry.resourceKey === swapKey);
+  const keepRemoteDecision = decisionFor(firstPlan, descendantKey);
+  const independentMutation = mutationFor(firstPlan, independentKey);
+  const swapPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === swapKey);
+  const evidence = hashOnlyTopologyEvidenceForRpp0225(firstPlan);
+  const evidenceJson = JSON.stringify(evidence);
+  const durableJournal = failingDurableJournal();
+  const beforeRemote = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, firstPlan, { durableJournal }));
+  const errorJson = JSON.stringify(error.details);
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0225 file type swap remote descendant invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 1,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(evidence, hashOnlyTopologyEvidenceForRpp0225(secondPlan));
+  assert.ok(conflict, 'missing file type swap descendant conflict');
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.resourceKey, swapKey);
+  assert.equal(conflict.relatedResourceKey, descendantKey);
+  assert.equal(conflict.change.localChange, 'type-change');
+  assert.equal(conflict.change.remoteChange, 'unchanged');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-file-topology-and-stop');
+  assert.equal(mutationFor(firstPlan, swapKey), undefined);
+  assert.equal(swapPrecondition, undefined);
+  assert.equal(keepRemoteDecision?.decision, 'keep-remote');
+  assert.equal(keepRemoteDecision.change.remoteChange, 'create');
+  assert.equal(independentMutation?.action, 'put');
+  assert.equal(independentMutation.resourceKey, independentKey);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.deepEqual(durableJournal.events, []);
+  for (const rawValue of [privateLocalReplacement, privateLocalIndependent, privateDescendantValue]) {
+    assert.equal(evidenceJson.includes(rawValue), false, `proof evidence leaked ${rawValue}`);
+    assert.equal(JSON.stringify(conflict).includes(rawValue), false, `conflict evidence leaked ${rawValue}`);
+    assert.equal(errorJson.includes(rawValue), false, `refusal evidence leaked ${rawValue}`);
+  }
+  assert.equal(remote.files[descendant], privateDescendantValue);
+  assert.deepEqual(remote.files[path], { type: 'directory' });
+  assert.equal(remote.files['index.php'], base.files['index.php']);
 });
 
 test('keeps independent mutation evidence while suppressing unsafe topology mutations', () => {
