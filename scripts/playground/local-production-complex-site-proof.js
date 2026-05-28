@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../../src/apply.js';
 import { createPushPlan } from '../../src/planner.js';
 import { deserializeResourceValue, resourceHash } from '../../src/resources.js';
+import { digest } from '../../src/stable-json.js';
 
 export const complexSiteFixtureShape = Object.freeze({
   postCount: 12,
@@ -87,6 +89,25 @@ const commentGraphResourceKeys = Object.freeze([
   commentGraphParentResourceKey,
   commentGraphChildResourceKey,
   commentGraphMetaResourceKey,
+]);
+const importerExporterSourcePostId = 76401;
+const importerExporterChildPostId = 76402;
+const importerExporterTargetPostId = 77401;
+const importerExporterMetaKey = '_rpp_0340_importer_exporter_map';
+const importerExporterSourcePostResourceKey = `row:["wp_posts","ID:${importerExporterSourcePostId}"]`;
+const importerExporterChildPostResourceKey = `row:["wp_posts","ID:${importerExporterChildPostId}"]`;
+const importerExporterTargetPostResourceKey = `row:["wp_posts","ID:${importerExporterTargetPostId}"]`;
+const importerExporterSourcePostmetaResourceKey = `row:["wp_postmeta","post_id:${importerExporterSourcePostId}:meta_key:${importerExporterMetaKey}"]`;
+const importerExporterTargetPostmetaResourceKey = `row:["wp_postmeta","post_id:${importerExporterTargetPostId}:meta_key:${importerExporterMetaKey}"]`;
+const importerExporterMapSource = 'base-snapshot.meta.identityMap[2].resources[0]';
+const importerExporterPrivateTokens = Object.freeze([
+  'Production Private RPP-0340 Parent',
+  'Production Private RPP-0340 Child',
+  'Stale Production Private RPP-0340 Parent',
+  'production-private-rpp-0340-parent-body',
+  'production-private-rpp-0340-child-body',
+  'production-private-rpp-0340-meta',
+  'stale-production-private-rpp-0340-parent-body',
 ]);
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
@@ -763,6 +784,113 @@ export function buildPluginDriverBoundaryEvidence({
   };
 }
 
+export function buildProductionImporterExporterIdentityMapProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  importedRemoteSnapshot,
+  staleRemoteSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(importedRemoteSnapshot, 'importedRemoteSnapshot is required');
+  assert.ok(staleRemoteSnapshot, 'staleRemoteSnapshot is required');
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: importedRemoteSnapshot,
+    now: proofNow,
+  });
+  const applied = readyPlan.status === 'ready'
+    ? applyPlan(importedRemoteSnapshot, readyPlan).site
+    : null;
+  const stalePlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: staleRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const sourceDecision = readyPlan.decisions.find((decision) =>
+    decision.resourceKey === importerExporterSourcePostResourceKey) || null;
+  const childMutation = readyMutations.find((mutation) =>
+    mutation.resourceKey === importerExporterChildPostResourceKey) || null;
+  const postmetaMutation = readyMutations.find((mutation) =>
+    mutation.resourceKey === importerExporterTargetPostmetaResourceKey) || null;
+  const mapEvidence = hashOnlyImporterExporterMapEvidence({
+    sourceSnapshot,
+    sourceDecision,
+    childMutation,
+    postmetaMutation,
+  });
+  const appliedEvidence = hashOnlyImporterExporterAppliedEvidence(applied);
+  const staleBlockerEvidence = hashOnlyImporterExporterBlockerEvidence(stalePlan.blockers || []);
+  const evidenceJson = JSON.stringify({ mapEvidence, appliedEvidence, staleBlockerEvidence });
+  const rewriteTypes = mapEvidence.dependentRewrites.flatMap((entry) =>
+    entry.rewrites.map((rewrite) => rewrite.relationshipType));
+
+  const invariants = {
+    baseCarriesImporterPushIdentityMap: summarizeComplexSnapshot(sourceSnapshot).importerExporterMapEntries === 1,
+    localCarriesExportedSourceRows: summarizeComplexSnapshot(localEditedSnapshot).importerExporterSourcePosts === 1
+      && summarizeComplexSnapshot(localEditedSnapshot).importerExporterChildPosts === 1
+      && summarizeComplexSnapshot(localEditedSnapshot).importerExporterSourcePostmeta === 1,
+    remoteCarriesImportedTargetRows: summarizeComplexSnapshot(importedRemoteSnapshot).importerExporterTargetPosts === 1,
+    readyPlanReady: readyPlan.status === 'ready',
+    identityDecisionUsesImporterMap: sourceDecision?.decision === 'map-local-identity-to-remote'
+      && sourceDecision?.identityMapSource === importerExporterMapSource
+      && sourceDecision?.targetResourceKey === importerExporterTargetPostResourceKey,
+    sourceIdentityNotMutated: !readyMutations.some((mutation) =>
+      mutation.resourceKey === importerExporterSourcePostResourceKey),
+    targetRemotePreserved: readyPlan.decisions.some((decision) =>
+      decision.resourceKey === importerExporterTargetPostResourceKey
+      && decision.decision === 'keep-remote'),
+    dependentRowsRewrittenToImportedTarget: childMutation?.wordpressGraphIdentity?.rewrites?.some((rewrite) =>
+      rewrite.relationshipType === 'post-parent'
+      && rewrite.targetResourceKey === importerExporterTargetPostResourceKey)
+      && postmetaMutation?.wordpressGraphIdentity?.rewrites?.some((rewrite) =>
+        rewrite.relationshipType === 'postmeta-post'
+        && rewrite.targetResourceKey === importerExporterTargetPostResourceKey),
+    rewrittenPostmetaResourceKeyUsed: Boolean(postmetaMutation)
+      && !readyMutations.some((mutation) =>
+        mutation.resourceKey === importerExporterSourcePostmetaResourceKey),
+    rewriteEvidenceCoversImporterExporterReferences: ['post-parent', 'postmeta-post'].every((relationshipType) =>
+      rewriteTypes.includes(relationshipType)),
+    applyCarriesImportedTargetIds: appliedEvidence?.childPostParent === importerExporterTargetPostId
+      && appliedEvidence?.postmetaPostId === importerExporterTargetPostId,
+    staleRemoteFailsClosed: stalePlan.status === 'blocked'
+      && staleBlockerEvidence.some((entry) => entry.class === 'stale-wordpress-graph-identity'),
+    evidenceHashOnly: importerExporterEvidenceIsHashOnly({ mapEvidence, appliedEvidence, staleBlockerEvidence }),
+    evidenceRedactsRawValues: !importerExporterPrivateTokens.some((token) => evidenceJson.includes(token)),
+  };
+
+  return {
+    type: 'production-importer-exporter-identity-map',
+    runtime: 'local-playground-wordpress',
+    releaseReady: false,
+    noGoCaveat: 'Local proof only; release remains NO-GO until required production observations are integrated.',
+    deterministicMapping: {
+      mapAlias: 'pushIdentityMap',
+      mapSource: importerExporterMapSource,
+      sourceResourceKey: importerExporterSourcePostResourceKey,
+      targetResourceKey: importerExporterTargetPostResourceKey,
+      action: 'preserve-imported-remote-target-and-rewrite-exported-dependent-rows',
+    },
+    counts: {
+      source: summarizeComplexSnapshot(sourceSnapshot),
+      localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+      importedRemote: summarizeComplexSnapshot(importedRemoteSnapshot),
+      staleRemote: summarizeComplexSnapshot(staleRemoteSnapshot),
+    },
+    readyPlan: summarizePlan(readyPlan),
+    stalePlan: summarizePlan(stalePlan),
+    mapEvidence,
+    appliedEvidence,
+    staleBlockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function findReleaseVerifierSummary(output) {
   const objects = extractJsonObjects(output);
   return [...objects].reverse().find((object) =>
@@ -794,6 +922,137 @@ function pluginDriverStateEvidence(snapshot) {
     updatedMarker: row?.updated_marker || null,
     proofMarker: row?.payload?.releaseBoundaryProof || null,
   };
+}
+
+function hashOnlyImporterExporterMapEvidence({
+  sourceSnapshot,
+  sourceDecision,
+  childMutation,
+  postmetaMutation,
+}) {
+  const identityMap = sourceSnapshot?.meta?.pushIdentityMap || {};
+  const mapRows = Array.isArray(identityMap.resources)
+    ? identityMap.resources
+    : identityMap.rows || [];
+  const dependentRewrites = [childMutation, postmetaMutation]
+    .filter(Boolean)
+    .map((mutation) => ({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action || null,
+      baseHash: mutation.baseHash || null,
+      remoteBeforeHash: mutation.remoteBeforeHash || null,
+      localHash: mutation.localHash || null,
+      identityMapSource: mutation.wordpressGraphIdentity?.rewrites?.[0]?.identityMapSource || null,
+      rewrites: (mutation.wordpressGraphIdentity?.rewrites || []).map((rewrite) => ({
+        relationshipKey: rewrite.relationshipKey || null,
+        relationshipType: rewrite.relationshipType || null,
+        sourceResourceKey: rewrite.sourceResourceKey || null,
+        rewrittenResourceKey: rewrite.rewrittenResourceKey || null,
+        sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+        targetResourceKey: rewrite.targetResourceKey || null,
+        identityMapSource: rewrite.identityMapSource || null,
+        sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+        targetRemoteHash: rewrite.targetRemoteHash || null,
+      })),
+    }));
+
+  return {
+    mapAlias: 'pushIdentityMap',
+    mapSource: importerExporterMapSource,
+    mapRowsHash: digest(mapRows),
+    exporterProvenanceHash: digest(identityMap.provenance?.exporter || null),
+    importerProvenanceHash: digest(identityMap.provenance?.importer || null),
+    sourceDecision: sourceDecision ? {
+      resourceKey: sourceDecision.resourceKey,
+      targetResourceKey: sourceDecision.targetResourceKey,
+      identityMapSource: sourceDecision.identityMapSource || null,
+      baseHash: sourceDecision.baseHash || null,
+      localHash: sourceDecision.localHash || null,
+      remoteHash: sourceDecision.remoteHash || null,
+      targetRemoteHash: sourceDecision.targetRemoteHash || null,
+    } : null,
+    dependentRewrites,
+  };
+}
+
+function hashOnlyImporterExporterAppliedEvidence(snapshot) {
+  if (!snapshot) {
+    return null;
+  }
+  const posts = snapshot?.db?.wp_posts || {};
+  const postmeta = snapshot?.db?.wp_postmeta || {};
+  return {
+    targetPostResourceKey: importerExporterTargetPostResourceKey,
+    targetPostHash: importerExporterRowHash(snapshot, 'wp_posts', `ID:${importerExporterTargetPostId}`),
+    childPostResourceKey: importerExporterChildPostResourceKey,
+    childPostHash: importerExporterRowHash(snapshot, 'wp_posts', `ID:${importerExporterChildPostId}`),
+    childPostParent: Number(posts[`ID:${importerExporterChildPostId}`]?.post_parent),
+    postmetaResourceKey: importerExporterTargetPostmetaResourceKey,
+    postmetaHash: importerExporterRowHash(snapshot, 'wp_postmeta', `post_id:${importerExporterTargetPostId}:meta_key:${importerExporterMetaKey}`),
+    postmetaPostId: Number(postmeta[`post_id:${importerExporterTargetPostId}:meta_key:${importerExporterMetaKey}`]?.post_id),
+  };
+}
+
+function hashOnlyImporterExporterBlockerEvidence(blockers) {
+  return blockers
+    .filter((blocker) => blocker?.class === 'stale-wordpress-graph-identity')
+    .map((blocker) => ({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      reasonHash: digest(blocker.reason || ''),
+      baseHash: blocker.baseHash || null,
+      localHash: blocker.localHash || null,
+      remoteHash: blocker.remoteHash || null,
+      references: (blocker.references || []).map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        identityMapSource: reference.identityMapSource || null,
+        className: reference.className || reference.targetSupport?.className || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+      })),
+    }));
+}
+
+function importerExporterEvidenceIsHashOnly(evidence) {
+  const json = JSON.stringify(evidence);
+  const hashValues = [];
+  collectImporterExporterHashValues(evidence, hashValues);
+  return hashValues.length > 0
+    && hashValues.every((hash) => /^[a-f0-9]{64}$/.test(hash))
+    && !importerExporterPrivateTokens.some((token) => json.includes(token));
+}
+
+function collectImporterExporterHashValues(value, hashes) {
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectImporterExporterHashValues(entry, hashes));
+    return;
+  }
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry == null) {
+      continue;
+    }
+    if (key.toLowerCase().endsWith('hash') && typeof entry === 'string') {
+      hashes.push(entry);
+      continue;
+    }
+    collectImporterExporterHashValues(entry, hashes);
+  }
+}
+
+function importerExporterRowHash(snapshot, table, id) {
+  return resourceHash(snapshot, {
+    type: 'row',
+    table,
+    id,
+    key: `row:${JSON.stringify([table, id])}`,
+  });
 }
 
 export function extractJsonObjects(output) {
@@ -892,6 +1151,24 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === commentGraphMetaId
       && Number(row?.comment_id) === commentGraphChildId
       && String(row?.meta_key || '') === commentGraphMetaKey).length,
+    importerExporterMapEntries: Array.isArray(snapshot?.meta?.pushIdentityMap?.resources)
+      ? snapshot.meta.pushIdentityMap.resources.length
+      : 0,
+    importerExporterSourcePosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === importerExporterSourcePostId
+      && Number(row?.post_parent) === 0).length,
+    importerExporterChildPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === importerExporterChildPostId
+      && Number(row?.post_parent) === importerExporterSourcePostId).length,
+    importerExporterTargetPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === importerExporterTargetPostId
+      && Number(row?.post_parent) === 0).length,
+    importerExporterSourcePostmeta: Object.values(postmeta).filter((row) =>
+      Number(row?.post_id) === importerExporterSourcePostId
+      && String(row?.meta_key || '') === importerExporterMetaKey).length,
+    importerExporterTargetPostmeta: Object.values(postmeta).filter((row) =>
+      Number(row?.post_id) === importerExporterTargetPostId
+      && String(row?.meta_key || '') === importerExporterMetaKey).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,

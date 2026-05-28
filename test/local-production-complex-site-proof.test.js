@@ -5,6 +5,7 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
+  buildProductionImporterExporterIdentityMapProof,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
   findReleaseVerifierSummary,
@@ -284,6 +285,67 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphCountsPresent, true);
   assert.equal(proof.invariants.commentGraphPlanned, true);
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
+});
+
+test('complex-site graph proof keeps production importer exporter identity maps redacted', () => {
+  const source = withImporterExporterIdentityMapFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'base-map',
+  );
+  const localEdited = withImporterExporterIdentityMapFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'local-edited',
+  );
+  const importedRemote = withImporterExporterIdentityMapFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'imported-remote',
+  );
+  const staleRemote = withImporterExporterIdentityMapFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'stale-remote',
+  );
+
+  const proof = buildProductionImporterExporterIdentityMapProof({
+    sourceSnapshot: source,
+    localEditedSnapshot: localEdited,
+    importedRemoteSnapshot: importedRemote,
+    staleRemoteSnapshot: staleRemote,
+  });
+  const proofJson = JSON.stringify(proof);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.match(proof.noGoCaveat, /NO-GO/);
+  assert.equal(proof.deterministicMapping.mapAlias, 'pushIdentityMap');
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.importerExporterMapEntries, 1);
+  assert.equal(proof.counts.localEdited.importerExporterSourcePosts, 1);
+  assert.equal(proof.counts.localEdited.importerExporterSourcePostmeta, 1);
+  assert.equal(proof.counts.importedRemote.importerExporterTargetPosts, 1);
+  assert.equal(proof.mapEvidence.mapSource, 'base-snapshot.meta.identityMap[2].resources[0]');
+  assert.equal(proof.mapEvidence.sourceDecision.identityMapSource, 'base-snapshot.meta.identityMap[2].resources[0]');
+  assert.equal(proof.mapEvidence.sourceDecision.targetResourceKey, 'row:["wp_posts","ID:77401"]');
+  assert.equal(proof.mapEvidence.dependentRewrites.length, 2);
+  assert.equal(proof.mapEvidence.dependentRewrites.some((entry) =>
+    entry.rewrites.some((rewrite) => rewrite.relationshipType === 'post-parent')), true);
+  assert.equal(proof.mapEvidence.dependentRewrites.some((entry) =>
+    entry.rewrites.some((rewrite) => rewrite.relationshipType === 'postmeta-post')), true);
+  assert.equal(proof.appliedEvidence.childPostParent, 77401);
+  assert.equal(proof.appliedEvidence.postmetaPostId, 77401);
+  assert.equal(proof.invariants.identityDecisionUsesImporterMap, true);
+  assert.equal(proof.invariants.sourceIdentityNotMutated, true);
+  assert.equal(proof.invariants.targetRemotePreserved, true);
+  assert.equal(proof.invariants.dependentRowsRewrittenToImportedTarget, true);
+  assert.equal(proof.invariants.rewrittenPostmetaResourceKeyUsed, true);
+  assert.equal(proof.invariants.staleRemoteFailsClosed, true);
+  assert.equal(proof.invariants.evidenceHashOnly, true);
+  assert.equal(proof.invariants.evidenceRedactsRawValues, true);
+  assert.equal(proof.staleBlockerEvidence.some((entry) =>
+    entry.class === 'stale-wordpress-graph-identity'), true);
+  assert.equal(proofJson.includes('Production Private RPP-0340 Parent'), false);
+  assert.equal(proofJson.includes('production-private-rpp-0340-meta'), false);
+  assert.equal(proofJson.includes('Stale Production Private RPP-0340 Parent'), false);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -633,6 +695,80 @@ function syntheticComplexSnapshot(variant, shape) {
   };
 
   return snapshot;
+}
+
+function withImporterExporterIdentityMapFixture(snapshot, variant) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  next.db.wp_postmeta = next.db.wp_postmeta || {};
+
+  if (variant === 'base-map') {
+    next.meta.pushIdentityMap = {
+      provenance: {
+        exporter: {
+          artifactHash: '1'.repeat(64),
+          rowCount: 1,
+          observedAt: '2026-05-27T21:45:00.000Z',
+        },
+        importer: {
+          packageHash: '2'.repeat(64),
+          persistedAt: '2026-05-27T21:46:00.000Z',
+          immutableBase: true,
+        },
+      },
+      resources: [
+        {
+          sourceResourceKey: 'row:["wp_posts","ID:76401"]',
+          targetResourceKey: 'row:["wp_posts","ID:77401"]',
+        },
+      ],
+    };
+  }
+
+  if (variant === 'local-edited') {
+    next.db.wp_posts['ID:76401'] = {
+      ID: 76401,
+      post_title: 'Production Private RPP-0340 Parent',
+      post_name: 'rpp-0340-importer-exporter-parent',
+      post_content: 'production-private-rpp-0340-parent-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+    next.db.wp_posts['ID:76402'] = {
+      ID: 76402,
+      post_title: 'Production Private RPP-0340 Child',
+      post_name: 'rpp-0340-importer-exporter-child',
+      post_content: 'production-private-rpp-0340-child-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 76401,
+      post_author: 0,
+    };
+    next.db.wp_postmeta['post_id:76401:meta_key:_rpp_0340_importer_exporter_map'] = {
+      post_id: 76401,
+      meta_key: '_rpp_0340_importer_exporter_map',
+      meta_value: 'production-private-rpp-0340-meta',
+    };
+  }
+
+  if (variant === 'imported-remote' || variant === 'stale-remote') {
+    const stale = variant === 'stale-remote';
+    next.db.wp_posts['ID:77401'] = {
+      ID: 77401,
+      post_title: stale ? 'Stale Production Private RPP-0340 Parent' : 'Production Private RPP-0340 Parent',
+      post_name: 'rpp-0340-importer-exporter-parent',
+      post_content: stale
+        ? 'stale-production-private-rpp-0340-parent-body'
+        : 'production-private-rpp-0340-parent-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+    };
+  }
+
+  return next;
 }
 
 function syntheticReleaseSummary(mutations, options = {}) {
