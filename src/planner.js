@@ -232,7 +232,13 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           addPluginOwnedResourceBlocker(plan, {
             resource,
             owner,
-            support: ownerContextSupport,
+            support: {
+              ...ownerContextSupport,
+              driver: support.driver,
+              policySource: support.policySource,
+              supportsDelete: support.supportsDelete,
+              driverEvidence: support.driverEvidence,
+            },
             baseValue,
             localValue,
             remoteValue,
@@ -321,6 +327,17 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           driver: support.driver,
           policySource: support.policySource,
           supportsDelete: support.supportsDelete,
+          driverAuditEvidence: pluginDriverAuditEvidence({
+            resource,
+            owner,
+            support,
+            baseHash,
+            localHash,
+            remoteHash,
+            action: mutation.action,
+            decision: 'supported',
+            reasonCode: 'PLUGIN_DRIVER_DECISION_SUPPORTED',
+          }),
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
           driverEvidence: support.driverEvidence,
@@ -2288,6 +2305,48 @@ function isPluginOwnerContextResource(resource, owner) {
   return resource.type === 'file' && pluginOwnerFor(resource) === owner;
 }
 
+function pluginDriverAuditEvidence({
+  resource,
+  owner,
+  support = {},
+  baseHash,
+  localHash,
+  remoteHash,
+  action,
+  decision,
+  reasonCode,
+}) {
+  return {
+    reasonCode,
+    operation: 'plugin-driver-audit',
+    decision,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    policySource: support.policySource || null,
+    action,
+    redaction: 'hash-only',
+    hashes: {
+      baseHash,
+      localHash,
+      remoteHash,
+    },
+  };
+}
+
+function pluginDriverAuditBlockedReasonCode(className) {
+  if (className === 'missing-plugin-driver') {
+    return 'PLUGIN_DRIVER_MISSING';
+  }
+  if (className === 'stale-plugin-owner-context') {
+    return 'PLUGIN_DRIVER_REMOTE_DRIFT_PRESERVED';
+  }
+  if (className === 'unsupported-plugin-owned-resource') {
+    return 'PLUGIN_DRIVER_UNSUPPORTED';
+  }
+  return 'PLUGIN_DRIVER_DECISION_BLOCKED';
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2320,6 +2379,17 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    driverAuditEvidence: support.driverAuditEvidence || pluginDriverAuditEvidence({
+      resource,
+      owner,
+      support,
+      baseHash,
+      localHash,
+      remoteHash,
+      action: localValue === ABSENT ? 'delete' : 'put',
+      decision: 'blocked',
+      reasonCode: pluginDriverAuditBlockedReasonCode(className),
+    }),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
