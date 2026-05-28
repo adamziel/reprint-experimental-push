@@ -73,7 +73,8 @@ The default generated run covers:
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
-  supported forms-lab custom-table rows and delete refusal with per-tier target
+  supported forms-lab custom-table rows, plugin-owned custom-table update
+  variant-1 cases, and delete refusal with per-tier target
   counts, atomic plugin install ready and missing-dependency paths with
   per-tier target counts, same-plan post-parent, taxonomy, comment, and
   usermeta graph closures, and stale graph references.
@@ -224,6 +225,16 @@ the `fixture-forms-lab-table` driver with hash-only audit evidence and reject a
 stale replay before mutation; delete attempts remain non-ready because the
 driver does not support deletes, so no custom-table delete mutation is applied.
 
+The `pluginOwnedCustomTableVariant1` target coverage records the RPP-0115
+generated model for plugin-owned forms-lab custom-table updates. Each target row
+is an existing positive-id `wp_reprint_push_forms_lab` row owned by `forms`,
+with an exact local push-policy allowlist binding that row to the
+`fixture-forms-lab-table` driver. Ready variant-1 cases apply one `put`
+mutation with owner, driver, delete-policy, owner-context, and hash-only audit
+evidence, preserve unplanned remote files, and reject stale replay before any
+mutation. Stale variant-1 cases drift the same row remotely, record refusal
+evidence, and carry no planned mutation for that custom-table row.
+
 The `largeReadyPlanTier` target coverage records one large ready plan per tier.
 Each case combines post-row creates, updates, deletes, file creates, updates,
 deletes, same-plan taxonomy/comment graph rows, and remote-only row/file drift.
@@ -256,7 +267,7 @@ the dependency proof is same-group and stale replay fails before mutation.
 Missing-dependency cases remain non-ready, propagate blockers to every group
 mutation, and keep private install option values hash-only/redacted.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 10 `pluginOwnedCustomTableChanges` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

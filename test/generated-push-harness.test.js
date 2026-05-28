@@ -193,6 +193,8 @@ const requiredFamilies = [
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'plugin-owned-custom-table-change',
+  'plugin-owned-custom-table-variant1',
+  'plugin-owned-custom-table-update',
   'file-topology',
   'directory-descendant',
   'directory-delete-with-remote-descendant',
@@ -2590,6 +2592,168 @@ function assertPluginOwnedOptionRawValuesAbsent(testCase, shape, redactedJson) {
       `${testCase.id} redacted plugin-owned option evidence leaked ${value}`,
     );
   }
+}
+
+test('RPP-0115 plugin-owned custom-table variant 1 records generated model evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedCustomTableVariant1;
+
+  assert.ok(coverage, 'missing plugin-owned custom-table variant 1 target coverage');
+  assert.equal(coverage.family, 'plugin-owned-custom-table-variant1');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table-variant1']);
+  assert.ok(coverage.statuses.ready > 0, 'variant 1 should include ready custom-table cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 1 should include non-ready custom-table cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('plugin-owned-custom-table-variant1'));
+
+  assert.equal(cases.length, coverage.total);
+  const evidence = cases.map(assertPluginOwnedCustomTableVariant1ModelEvidence);
+  const proof = {
+    rpp: 'RPP-0115',
+    evidenceSource: 'generated-push-harness-model',
+    surface: 'plugin-owned-custom-table-variant1',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    cases: evidence,
+    proofHash: digest(evidence),
+  };
+  const proofJson = JSON.stringify(proof);
+
+  assert.ok(evidence.some((entry) => entry.status === 'ready'), 'variant 1 evidence should include a ready case');
+  assert.ok(evidence.some((entry) => entry.status !== 'ready'), 'variant 1 evidence should include a refusal case');
+  assert.equal(proofJson.includes('rpp0135-private'), false);
+  assert.equal(proofJson.includes('privateToken'), false);
+});
+
+function assertPluginOwnedCustomTableVariant1ModelEvidence(testCase) {
+  const shape = pluginOwnedCustomTableVariant1Shape(testCase);
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const result = validateGeneratedCase(testCase);
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey);
+  const refusal = plan.conflicts.find((entry) => entry.resourceKey === shape.resourceKey)
+    || plan.blockers.find((entry) => entry.resourceKey === shape.resourceKey);
+
+  assert.equal(testCase.family, 'plugin-owned-custom-table-changes');
+  assert.ok(testCase.tags.has('plugin-owned-custom-table-update'));
+  assert.equal(shape.policy.pluginOwner, 'forms');
+  assert.equal(shape.policy.driver, 'fixture-forms-lab-table');
+  assert.equal(shape.policy.table, 'wp_reprint_push_forms_lab');
+  assert.equal(shape.policy.supportsDelete === true, false);
+
+  if (result.status === 'ready') {
+    assert.ok(mutation, `${testCase.id} should plan the variant 1 custom-table mutation`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource?.driver, 'fixture-forms-lab-table');
+    assert.equal(mutation.pluginOwnedResource?.supportsDelete, false);
+    assert.equal(mutation.pluginOwnedResource?.auditEvidence?.format, 'hash-only');
+    assert.equal(mutation.pluginOwnedResource?.auditEvidence?.rawValuesIncluded, false);
+    assert.equal(result.applied, true);
+    assert.equal(result.unplannedRemotePreserved, true);
+    assert.equal(result.staleReplayRejected, true);
+  } else {
+    assert.equal(mutation, undefined, `${testCase.id} should refuse the stale variant 1 row before mutation`);
+    assert.ok(refusal, `${testCase.id} should expose conflict/blocker evidence for the stale variant 1 row`);
+    assert.equal(result.applied, false);
+    assert.equal(result.nonReadyRemoteUnchanged, true);
+  }
+
+  const modelEvidence = {
+    caseId: testCase.id,
+    tier: testCase.tier,
+    status: result.status,
+    table: 'wp_reprint_push_forms_lab',
+    rowId: shape.rowId,
+    resourceKey: shape.resourceKey,
+    owner: 'forms',
+    driver: 'fixture-forms-lab-table',
+    supportsDelete: false,
+    baseRowHash: digest(shape.baseRow),
+    localRowHash: digest(shape.localRow),
+    remoteRowHash: digest(shape.remoteRow),
+    planStatus: plan.status,
+    mutationHash: mutation ? digest({
+      action: mutation.action,
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+      driver: mutation.pluginOwnedResource?.driver,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete,
+      auditEvidenceHash: digest(mutation.pluginOwnedResource?.auditEvidence),
+      driverEvidenceHash: digest(mutation.pluginOwnedResource?.driverEvidence),
+    }) : null,
+    refusalHash: refusal ? digest(refusal) : null,
+  };
+  const modelEvidenceJson = JSON.stringify(modelEvidence);
+
+  for (const rawValue of shape.privateValues) {
+    assert.equal(
+      modelEvidenceJson.includes(rawValue),
+      false,
+      `${testCase.id} variant 1 model evidence leaked raw custom-table value ${rawValue}`,
+    );
+  }
+
+  return modelEvidence;
+}
+
+function pluginOwnedCustomTableVariant1Shape(testCase) {
+  const rows = Object.entries(testCase.local.db.wp_reprint_push_forms_lab)
+    .filter(([, row]) => row.payload?.generatedHarnessVariant === 'rpp-0115-variant1');
+
+  assert.equal(rows.length, 1, `${testCase.id} should carry one RPP-0115 custom-table model row`);
+  const [rowId, localRow] = rows[0];
+  const baseRow = testCase.base.db.wp_reprint_push_forms_lab[rowId];
+  const remoteRow = testCase.remote.db.wp_reprint_push_forms_lab[rowId];
+  const resourceKey = generatedRowResourceKey('wp_reprint_push_forms_lab', rowId);
+  const policy = testCase.local.meta.pluginOwnedResources.allowedResources
+    .find((entry) => entry.resourceKey === resourceKey);
+
+  assert.ok(baseRow, `${testCase.id} should seed the variant 1 row in the base model`);
+  assert.ok(remoteRow, `${testCase.id} should seed the variant 1 row in the remote model`);
+  assert.ok(policy, `${testCase.id} should allowlist the exact variant 1 row`);
+  assert.match(rowId, /^id:\d+$/, `${testCase.id} should use a deterministic positive id row`);
+  assert.equal(localRow.__pluginOwner, 'forms');
+  assert.equal(baseRow.__pluginOwner, 'forms');
+  assert.equal(remoteRow.__pluginOwner, 'forms');
+  assert.equal(localRow.payload.owner, 'forms');
+  assert.equal(baseRow.payload.owner, 'forms');
+  assert.equal(remoteRow.payload.owner, 'forms');
+  assert.equal(localRow.payload.generatedHarnessVariant, 'rpp-0115-variant1');
+  assert.equal(baseRow.payload.generatedHarnessVariant, 'rpp-0115-variant1');
+  assert.equal(remoteRow.payload.generatedHarnessVariant, 'rpp-0115-variant1');
+  assert.equal(localRow.payload.mode, 'local');
+  assert.equal(baseRow.payload.mode, 'base');
+  assert.ok(
+    remoteRow.payload.mode === 'base' || remoteRow.payload.mode === 'remote-stale',
+    `${testCase.id} should model either an unchanged or stale remote custom-table row`,
+  );
+
+  return {
+    rowId,
+    resourceKey,
+    baseRow,
+    localRow,
+    remoteRow,
+    policy,
+    privateValues: [
+      baseRow.payload.privateToken,
+      localRow.payload.privateToken,
+      remoteRow.payload.privateToken,
+    ].filter(Boolean),
+  };
 }
 
 test('RPP-0135 plugin-owned custom-table target records ready and non-ready invariants', () => {

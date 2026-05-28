@@ -232,6 +232,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-custom-table-changes',
     tag: 'plugin-owned-custom-table-target',
   },
+  pluginOwnedCustomTableVariant1: {
+    family: 'plugin-owned-custom-table-variant1',
+    tag: 'plugin-owned-custom-table-variant1',
+  },
   staleRemoteAfterDryRun: {
     family: 'ready-plan-stale-remote-after-dry-run',
     matches: (_testCase, result) => result.status === 'ready'
@@ -2435,6 +2439,7 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
     payload: {
       owner: 'forms',
       scenario: 'rpp-0135-plugin-owned-custom-table',
+      generatedHarnessVariant: 'rpp-0115-variant1',
       mode: 'base',
       privateToken: `rpp0135-private-base-${prefix}-${id}`,
     },
@@ -2449,6 +2454,7 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
     payload: {
       ...row.payload,
       owner: 'forms',
+      generatedHarnessVariant: 'rpp-0115-variant1',
       mode: 'local',
       privateToken: `rpp0135-private-local-${prefix}-${allocator.next()}`,
     },
@@ -2466,6 +2472,7 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
       payload: {
         ...row.payload,
         owner: 'forms',
+        generatedHarnessVariant: 'rpp-0115-variant1',
         mode: 'remote-stale',
         privateToken: `rpp0135-private-remote-${prefix}-${allocator.next()}`,
       },
@@ -2478,6 +2485,8 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
   }
 
   tags.add('plugin-owned-custom-table-target');
+  tags.add('plugin-owned-custom-table-variant1');
+  tags.add('plugin-owned-custom-table-update');
   tags.add('plugin-owned-custom-table-change');
   tags.add('forms-lab-custom-table-change');
   tags.add('forms-lab-supported');
