@@ -141,6 +141,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-options-scalar-ready',
     tag: 'wp-options-scalar',
   },
+  wpOptionsSerializedChanges: {
+    family: 'wp-options-serialized-ready',
+    tag: 'wp-options-serialized-change',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -1405,48 +1409,67 @@ function scalarOptionValue(kind, source, ordinal) {
 }
 
 function addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict, tier }) {
-  const ordinal = allocator.next();
-  const optionName = `serialized_generated_${ordinal}`;
+  const optionOrdinal = allocator.next();
+  const optionName = `generated_serialized_${optionOrdinal}`;
   const rowId = `option_name:${optionName}`;
   const valueKind = tier % 2 === 0 ? 'object' : 'array';
-  const baseValue = serializedOptionValue(valueKind, 'base', ordinal);
-  const localValue = serializedOptionValue(valueKind, 'local', ordinal);
-  const remoteValue = serializedOptionValue(valueKind, 'remote', ordinal);
-  const row = {
+  const prefix = conflict ? 'conflict-wp-options-serialized' : 'ready-wp-options-serialized';
+  const baseRow = {
     option_name: optionName,
-    option_value: baseValue,
+    option_value: phpSerializeStringMap({
+      shape: valueKind,
+      mode: 'base',
+      public_label: `${prefix}-base-${optionOrdinal}`,
+      private_notes: `base-private-serialized-${allocator.next()}`,
+      auth_token: `base-token-${allocator.next()}`,
+    }),
     autoload: 'no',
   };
 
-  setRow(base, 'wp_options', rowId, row);
-  setRow(local, 'wp_options', rowId, { ...row, option_value: localValue });
-  setRow(remote, 'wp_options', rowId, row);
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(remote, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: phpSerializeStringMap({
+      shape: valueKind,
+      mode: 'local',
+      public_label: `${prefix}-local-${optionOrdinal}`,
+      private_notes: `local-private-serialized-${allocator.next()}`,
+      auth_token: `local-token-${allocator.next()}`,
+    }),
+  });
 
+  tags.add('wp-options-serialized-change');
   tags.add('wp-options-serialized');
+  tags.add('wp-options-update');
+  tags.add('serialized-option');
   tags.add('serialized-option-update');
   tags.add(`serialized-option-${valueKind}`);
 
   if (conflict) {
-    setRow(remote, 'wp_options', rowId, { ...row, option_value: remoteValue });
+    setRow(remote, 'wp_options', rowId, {
+      ...baseRow,
+      option_value: phpSerializeStringMap({
+        shape: valueKind,
+        mode: 'remote',
+        public_label: `${prefix}-remote-${optionOrdinal}`,
+        private_notes: `remote-private-serialized-${allocator.next()}`,
+        auth_token: `remote-token-${allocator.next()}`,
+      }),
+    });
   }
 }
 
-function serializedOptionValue(kind, source, ordinal) {
-  if (kind === 'array') {
-    return [
-      `${source}-serialized-option-${ordinal}`,
-      ordinal,
-      { enabled: source !== 'base', marker: `${source}-marker-${ordinal}` },
-    ];
-  }
-  return {
-    mode: source,
-    flags: { enabled: source !== 'base', ordinal },
-    items: [
-      `${source}-item-${ordinal}`,
-      { key: `${source}-nested-${ordinal}`, priority: ordinal % 5 },
-    ],
-  };
+function phpSerializeStringMap(entries) {
+  const fields = Object.entries(entries);
+  return `a:${fields.length}:{${
+    fields
+      .map(([key, value]) => {
+        const stringValue = String(value);
+        return `s:${key.length}:"${key}";s:${stringValue.length}:"${stringValue}";`;
+      })
+      .join('')
+  }}`;
 }
 
 function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {

@@ -52,8 +52,9 @@ The default generated run covers:
   per-tier target counts, file type-swap cases with ready/conflict outcomes
   plus per-tier target counts, row create/update/delete mixes with
   ready/conflict outcomes plus per-tier target counts and stale replay rejection
-  before mutation, non-plugin-owned `wp_options` scalar and serialized option
-  updates with ready and concurrent remote-drift outcomes, `wp_posts`
+  before mutation, non-plugin-owned `wp_options` scalar changes with per-tier
+  target counts, serialized option changes with per-tier target counts and
+  redacted hash-only evidence for private serialized payloads, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, and stale replay rejection before mutation,
@@ -83,9 +84,17 @@ replay before mutation; conflict cases drift the same scalar remotely and refuse
 apply so local scalar options cannot overwrite newer remote values.
 
 The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
-rows with structured array and object values. Ready cases update the serialized
-option while preserving the live remote; conflict cases drift the same option
-remotely and must refuse apply without plugin-owner evidence.
+rows with PHP-serialized option strings that include public labels plus private
+fields such as `private_notes` and `auth_token`. Ready cases update the
+serialized option while preserving the live remote; conflict cases drift the same
+option remotely and must refuse apply without plugin-owner evidence.
+
+The `wpOptionsSerializedChanges` target coverage records per-tier counts for
+the serialized `wp_options.option_value` update surface. Ready cases apply the
+local serialized payload while preserving unplanned remote resources and
+rejecting stale replay before mutation; non-ready cases drift the same serialized
+option remotely, fail closed, and keep private serialized payload evidence
+redacted to hashes and metadata.
 
 The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,
@@ -185,10 +194,211 @@ At the time this note was added, the summary command reported:
 ```json
 {
   "totalCases": 510,
+  "minCasesRequired": 300,
   "statuses": {
     "blocked": 37,
     "conflict": 204,
     "ready": 269
+  },
+  "statusByTier": {
+    "blocked": {
+      "0": 8,
+      "1": 9,
+      "2": 5,
+      "3": 4,
+      "4": 6,
+      "5": 1,
+      "6": 1,
+      "7": 1,
+      "8": 1,
+      "9": 1
+    },
+    "conflict": {
+      "0": 14,
+      "1": 14,
+      "2": 18,
+      "3": 18,
+      "4": 17,
+      "5": 21,
+      "6": 22,
+      "7": 21,
+      "8": 30,
+      "9": 29
+    },
+    "ready": {
+      "0": 29,
+      "1": 28,
+      "2": 28,
+      "3": 29,
+      "4": 28,
+      "5": 29,
+      "6": 28,
+      "7": 29,
+      "8": 20,
+      "9": 21
+    }
+  },
+  "tiers": {
+    "0": 51,
+    "1": 51,
+    "2": 51,
+    "3": 51,
+    "4": 51,
+    "5": 51,
+    "6": 51,
+    "7": 51,
+    "8": 51,
+    "9": 51
+  },
+  "featureFamilies": {
+    "already-in-sync": 63,
+    "atomic-blocked": 10,
+    "atomic-plugin-missing-dependency": 10,
+    "atomic-plugin-stack-ready": 10,
+    "atomic-ready": 10,
+    "bulk-local-update": 363,
+    "bulk-remote-preserve": 354,
+    "comment-graph": 286,
+    "comment-user": 18,
+    "comment-user-graph": 18,
+    "comment-user-graph-ready": 9,
+    "comment-user-graph-stale": 9,
+    "comment-user-ready": 9,
+    "comment-user-stale-target": 9,
+    "commentmeta-comment-graph": 20,
+    "delete": 44,
+    "delete-edit": 10,
+    "delete-edit-conflict": 10,
+    "direct-row-conflict": 10,
+    "directory-delete-no-remote-descendant": 10,
+    "directory-delete-with-remote-descendant": 10,
+    "directory-descendant": 20,
+    "directory-descendant-conflict": 10,
+    "directory-descendant-ready": 10,
+    "expected-blocked": 46,
+    "expected-conflict": 170,
+    "file-create": 30,
+    "file-create-update-delete-mix": 20,
+    "file-create-update-delete-mix-conflict": 10,
+    "file-create-update-delete-mix-ready": 10,
+    "file-delete": 30,
+    "file-topology": 124,
+    "file-topology-conflict": 10,
+    "file-type-swap": 20,
+    "file-type-swap-conflict": 10,
+    "file-type-swap-ready": 10,
+    "file-update": 30,
+    "forms-lab-delete-blocked": 20,
+    "forms-lab-supported": 30,
+    "independent-local-and-remote": 10,
+    "independent-merge": 10,
+    "large-ready-plan": 10,
+    "large-ready-plan-target": 10,
+    "large-ready-plan-tier": 10,
+    "local-create": 73,
+    "local-delete": 10,
+    "local-file-update": 10,
+    "plugin-context-drift": 20,
+    "plugin-context-metadata-drift": 10,
+    "plugin-context-ready": 10,
+    "plugin-file-update": 10,
+    "plugin-owned-option-change": 18,
+    "plugin-owned-option-change-conflict": 9,
+    "plugin-owned-option-change-ready": 9,
+    "plugin-owned-option-update": 18,
+    "plugin-owned-supported": 370,
+    "plugin-owned-unsupported": 81,
+    "plugin-owner-context-drift": 10,
+    "post-parent-graph": 10,
+    "ready-candidate": 146,
+    "remote-delete": 10,
+    "remote-delete-local-unchanged": 10,
+    "remote-only-post-update": 10,
+    "remote-preserve": 30,
+    "row-create": 30,
+    "row-create-update-delete-mix": 20,
+    "row-create-update-delete-mix-conflict": 10,
+    "row-create-update-delete-mix-ready": 10,
+    "row-delete": 30,
+    "row-update": 30,
+    "same-independent-content": 10,
+    "same-independent-content-target": 10,
+    "same-plan-comment-graph": 10,
+    "same-plan-graph": 441,
+    "same-plan-post-parent-graph": 10,
+    "same-plan-taxonomy-graph": 10,
+    "same-plan-user-meta-graph": 9,
+    "scalar-option-number": 10,
+    "scalar-option-string": 10,
+    "scalar-option-update": 20,
+    "serialized-option": 20,
+    "serialized-option-array": 10,
+    "serialized-option-object": 10,
+    "serialized-option-update": 20,
+    "stale-graph": 133,
+    "stale-graph-reference": 10,
+    "supported-forms-lab-table": 10,
+    "supported-plugin-option": 10,
+    "taxonomy-graph": 282,
+    "term-taxonomy-term-graph": 18,
+    "termmeta-term-graph": 19,
+    "tier-0": 51,
+    "tier-1": 51,
+    "tier-2": 51,
+    "tier-3": 51,
+    "tier-4": 51,
+    "tier-5": 51,
+    "tier-6": 51,
+    "tier-7": 51,
+    "tier-8": 51,
+    "tier-9": 51,
+    "type-change": 20,
+    "type-swap-conflict": 10,
+    "type-swap-ready": 10,
+    "unsupported-plugin-owned-row": 10,
+    "user-meta-graph": 27,
+    "wp-commentmeta-create": 20,
+    "wp-comments-commentmeta-graph": 20,
+    "wp-comments-commentmeta-graph-ready": 10,
+    "wp-comments-commentmeta-graph-stale": 10,
+    "wp-comments-create": 38,
+    "wp-comments-remote-drift": 10,
+    "wp-options-scalar": 20,
+    "wp-options-scalar-conflict": 10,
+    "wp-options-scalar-ready": 10,
+    "wp-options-serialized": 20,
+    "wp-options-serialized-change": 20,
+    "wp-options-serialized-conflict": 10,
+    "wp-options-serialized-ready": 10,
+    "wp-options-update": 20,
+    "wp-postmeta-create": 20,
+    "wp-postmeta-create-update-delete": 20,
+    "wp-postmeta-create-update-delete-conflict": 10,
+    "wp-postmeta-create-update-delete-ready": 10,
+    "wp-postmeta-delete": 20,
+    "wp-postmeta-update": 20,
+    "wp-posts-create": 20,
+    "wp-posts-create-update-delete": 20,
+    "wp-posts-create-update-delete-conflict": 10,
+    "wp-posts-create-update-delete-ready": 10,
+    "wp-posts-delete": 20,
+    "wp-posts-update": 20,
+    "wp-term-taxonomy-create": 18,
+    "wp-term-taxonomy-graph": 18,
+    "wp-term-taxonomy-graph-ready": 9,
+    "wp-term-taxonomy-graph-stale": 9,
+    "wp-termmeta-create": 19,
+    "wp-terms-create": 37,
+    "wp-terms-remote-drift": 18,
+    "wp-terms-termmeta-graph": 19,
+    "wp-terms-termmeta-graph-ready": 10,
+    "wp-terms-termmeta-graph-stale": 9,
+    "wp-usermeta-create": 18,
+    "wp-users-create": 36,
+    "wp-users-remote-drift": 18,
+    "wp-users-usermeta-graph": 18,
+    "wp-users-usermeta-graph-ready": 9,
+    "wp-users-usermeta-graph-stale": 9
   },
   "targetCoverage": {
     "commentUserGraph": {
@@ -252,6 +462,26 @@ At the time this note was added, the summary command reported:
         "ready": 10
       }
     },
+    "fileTypeSwap": {
+      "family": "file-type-swap-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
+      }
+    },
     "largeReadyPlanTier": {
       "family": "large-ready-plan-tier",
       "total": 10,
@@ -289,6 +519,26 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 10,
         "ready": 8
+      }
+    },
+    "rowCreateUpdateDeleteMix": {
+      "family": "row-create-update-delete-mix-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 11,
+        "ready": 9
       }
     },
     "sameIndependentContent": {
@@ -351,66 +601,6 @@ At the time this note was added, the summary command reported:
         "ready": 9
       }
     },
-    "wpPostmetaCreateUpdateDelete": {
-      "family": "wp-postmeta-create-update-delete-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 11,
-        "ready": 9
-      }
-    },
-    "fileTypeSwap": {
-      "family": "file-type-swap-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 10,
-        "ready": 10
-      }
-    },
-    "rowCreateUpdateDeleteMix": {
-      "family": "row-create-update-delete-mix-ready",
-      "total": 20,
-      "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
-      },
-      "statuses": {
-        "conflict": 11,
-        "ready": 9
-      }
-    },
     "wpOptionsScalarChanges": {
       "family": "wp-options-scalar-ready",
       "total": 20,
@@ -429,6 +619,46 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 10,
         "ready": 10
+      }
+    },
+    "wpOptionsSerializedChanges": {
+      "family": "wp-options-serialized-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 11,
+        "ready": 9
+      }
+    },
+    "wpPostmetaCreateUpdateDelete": {
+      "family": "wp-postmeta-create-update-delete-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 11,
+        "ready": 9
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -515,160 +745,15 @@ At the time this note was added, the summary command reported:
       }
     }
   },
-  "featureFamilies": {
-    "already-in-sync": 63,
-    "atomic-blocked": 10,
-    "atomic-plugin-missing-dependency": 10,
-    "atomic-plugin-stack-ready": 10,
-    "atomic-ready": 10,
-    "bulk-local-update": 363,
-    "bulk-remote-preserve": 354,
-    "comment-graph": 286,
-    "comment-user": 18,
-    "comment-user-graph": 18,
-    "comment-user-graph-ready": 9,
-    "comment-user-graph-stale": 9,
-    "comment-user-ready": 9,
-    "comment-user-stale-target": 9,
-    "commentmeta-comment-graph": 20,
-    "delete": 44,
-    "delete-edit": 10,
-    "delete-edit-conflict": 10,
-    "direct-row-conflict": 10,
-    "directory-delete-no-remote-descendant": 10,
-    "directory-delete-with-remote-descendant": 10,
-    "directory-descendant": 20,
-    "directory-descendant-conflict": 10,
-    "directory-descendant-ready": 10,
-    "expected-blocked": 46,
-    "expected-conflict": 170,
-    "file-create": 30,
-    "file-create-update-delete-mix": 20,
-    "file-create-update-delete-mix-conflict": 10,
-    "file-create-update-delete-mix-ready": 10,
-    "file-delete": 30,
-    "file-topology": 124,
-    "file-topology-conflict": 10,
-    "file-type-swap": 20,
-    "file-type-swap-conflict": 10,
-    "file-type-swap-ready": 10,
-    "file-update": 30,
-    "forms-lab-delete-blocked": 20,
-    "forms-lab-supported": 30,
-    "independent-local-and-remote": 10,
-    "independent-merge": 10,
-    "large-ready-plan": 10,
-    "large-ready-plan-target": 10,
-    "large-ready-plan-tier": 10,
-    "local-create": 73,
-    "local-delete": 10,
-    "local-file-update": 10,
-    "plugin-context-drift": 20,
-    "plugin-context-metadata-drift": 10,
-    "plugin-context-ready": 10,
-    "plugin-file-update": 10,
-    "plugin-owned-option-change": 18,
-    "plugin-owned-option-change-conflict": 9,
-    "plugin-owned-option-change-ready": 9,
-    "plugin-owned-option-update": 18,
-    "plugin-owned-supported": 370,
-    "plugin-owned-unsupported": 81,
-    "plugin-owner-context-drift": 10,
-    "post-parent-graph": 10,
-    "ready-candidate": 146,
-    "remote-delete": 10,
-    "remote-delete-local-unchanged": 10,
-    "remote-only-post-update": 10,
-    "remote-preserve": 30,
-    "row-create": 30,
-    "row-create-update-delete-mix": 20,
-    "row-create-update-delete-mix-conflict": 10,
-    "row-create-update-delete-mix-ready": 10,
-    "row-delete": 30,
-    "row-update": 30,
-    "same-independent-content": 10,
-    "same-independent-content-target": 10,
-    "same-plan-comment-graph": 10,
-    "same-plan-graph": 441,
-    "same-plan-post-parent-graph": 10,
-    "same-plan-taxonomy-graph": 10,
-    "same-plan-user-meta-graph": 9,
-    "scalar-option-number": 10,
-    "scalar-option-string": 10,
-    "scalar-option-update": 20,
-    "serialized-option-array": 10,
-    "serialized-option-object": 10,
-    "serialized-option-update": 20,
-    "stale-graph": 133,
-    "stale-graph-reference": 10,
-    "supported-forms-lab-table": 10,
-    "supported-plugin-option": 10,
-    "taxonomy-graph": 282,
-    "term-taxonomy-term-graph": 18,
-    "termmeta-term-graph": 19,
-    "tier-0": 51,
-    "tier-1": 51,
-    "tier-2": 51,
-    "tier-3": 51,
-    "tier-4": 51,
-    "tier-5": 51,
-    "tier-6": 51,
-    "tier-7": 51,
-    "tier-8": 51,
-    "tier-9": 51,
-    "type-change": 20,
-    "type-swap-conflict": 10,
-    "type-swap-ready": 10,
-    "unsupported-plugin-owned-row": 10,
-    "user-meta-graph": 27,
-    "wp-commentmeta-create": 20,
-    "wp-comments-commentmeta-graph": 20,
-    "wp-comments-commentmeta-graph-ready": 10,
-    "wp-comments-commentmeta-graph-stale": 10,
-    "wp-comments-create": 38,
-    "wp-comments-remote-drift": 10,
-    "wp-options-scalar": 20,
-    "wp-options-scalar-conflict": 10,
-    "wp-options-scalar-ready": 10,
-    "wp-options-serialized": 20,
-    "wp-options-serialized-conflict": 10,
-    "wp-options-serialized-ready": 10,
-    "wp-postmeta-create": 20,
-    "wp-postmeta-create-update-delete": 20,
-    "wp-postmeta-create-update-delete-conflict": 10,
-    "wp-postmeta-create-update-delete-ready": 10,
-    "wp-postmeta-delete": 20,
-    "wp-postmeta-update": 20,
-    "wp-posts-create": 20,
-    "wp-posts-create-update-delete": 20,
-    "wp-posts-create-update-delete-conflict": 10,
-    "wp-posts-create-update-delete-ready": 10,
-    "wp-posts-delete": 20,
-    "wp-posts-update": 20,
-    "wp-term-taxonomy-create": 18,
-    "wp-term-taxonomy-graph": 18,
-    "wp-term-taxonomy-graph-ready": 9,
-    "wp-term-taxonomy-graph-stale": 9,
-    "wp-termmeta-create": 19,
-    "wp-terms-create": 37,
-    "wp-terms-remote-drift": 18,
-    "wp-terms-termmeta-graph": 19,
-    "wp-terms-termmeta-graph-ready": 10,
-    "wp-terms-termmeta-graph-stale": 9,
-    "wp-usermeta-create": 18,
-    "wp-users-create": 36,
-    "wp-users-remote-drift": 18,
-    "wp-users-usermeta-graph": 18,
-    "wp-users-usermeta-graph-ready": 9,
-    "wp-users-usermeta-graph-stale": 9
-  },
   "maxResourceCount": 73,
   "maxMutationCount": 46,
   "maxReadyResourceCount": 73,
   "maxReadyMutationCount": 46,
+  "maxComplexityScore": 89,
   "totalMutations": 7214,
   "totalConflicts": 527,
-  "totalBlockers": 513
+  "totalBlockers": 513,
+  "totalDecisions": 1265
 }
 ```
 
