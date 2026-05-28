@@ -102,6 +102,12 @@ const requiredFamilies = [
   'wp-postmeta-create',
   'wp-postmeta-update',
   'wp-postmeta-delete',
+  'wp-comments-commentmeta-graph-ready',
+  'wp-comments-commentmeta-graph-stale',
+  'wp-comments-commentmeta-graph',
+  'wp-commentmeta-create',
+  'wp-comments-remote-drift',
+  'commentmeta-comment-graph',
   'wp-users-usermeta-graph-ready',
   'wp-users-usermeta-graph-stale',
   'wp-users-usermeta-graph',
@@ -674,6 +680,79 @@ function assertWpPostmetaCreateUpdateDeleteShape(testCase) {
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_postmeta row`);
 }
 
+
+
+test('RPP-0110 wp_comments/wp_commentmeta graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpCommentsCommentmetaGraph;
+
+  assert.ok(coverage, 'missing wp_comments/wp_commentmeta graph target coverage');
+  assert.equal(coverage.family, 'wp-comments-commentmeta-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-comments-commentmeta-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready comment/commentmeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-comments-commentmeta-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-comments-commentmeta-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_comments/wp_commentmeta graph case');
+  assert.ok(staleCase, 'missing stale wp_comments/wp_commentmeta graph case');
+  assertCommentCommentmetaGraphShape(readyCase, { staleTarget: false });
+  assertCommentCommentmetaGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready graph should create comment and commentmeta rows');
+  assert.equal(ready.applied, true, 'ready comment/commentmeta graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready comment/commentmeta graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+});
+
+function assertCommentCommentmetaGraphShape(testCase, { staleTarget }) {
+  const commentRows = Object.entries(testCase.local.db.wp_comments)
+    .filter(([id, row]) => !testCase.base.db.wp_comments[id]
+      && row.comment_content.startsWith('Generated comment graph target '));
+  const commentmetaRows = Object.entries(testCase.local.db.wp_commentmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_commentmeta[id]
+      && row.meta_key.startsWith('_generated_commentmeta_graph_'));
+
+  assert.equal(commentRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one comment`);
+  assert.equal(commentmetaRows.length, 1, `${testCase.id} should create one commentmeta row`);
+
+  const commentId = staleTarget
+    ? commentmetaRows[0][1].comment_id
+    : commentRows[0][1].comment_ID;
+  assert.equal(commentmetaRows[0][1].comment_id, commentId);
+
+  if (staleTarget) {
+    const commentRowId = `comment_ID:${commentId}`;
+    assert.ok(testCase.base.db.wp_comments[commentRowId], `${testCase.id} stale target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_comments[commentRowId],
+      testCase.base.db.wp_comments[commentRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  }
+}
 
 test('RPP-0109 wp_users/wp_usermeta graph target exposes ready and stale coverage', () => {
   const report = runGeneratedPushHarness();

@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 450 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 45 scenario families, then add seeded variation so
+fixtures. The current default is 470 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 47 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 450 total cases;
-- 10 tiers, 45 cases per tier;
+- 470 total cases;
+- 10 tiers, 47 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -55,7 +55,8 @@ The default generated run covers:
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, and stale replay rejection before mutation,
-  `wp_users` + `wp_usermeta` graph cases with per-tier target counts and
+  `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
+  ready/stale non-ready outcomes, `wp_users` + `wp_usermeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_term_taxonomy` graph cases with per-tier
   target counts and ready/stale non-ready outcomes, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
@@ -87,6 +88,14 @@ preserving every unplanned remote resource; stale replays fail before mutation,
 and concurrent remote edits to the updated postmeta row remain `conflict` and
 refuse apply.
 
+
+The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
+generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
+Ready cases create the comment and commentmeta row in one plan and reject stale
+replays before mutation; stale cases keep the comment in the base, drift that
+comment remotely, and require the new commentmeta reference to fail closed
+instead of overwriting the drifted remote.
+
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready
 cases create the user and usermeta row in one plan and reject stale replays
@@ -111,11 +120,11 @@ At the time this note was added, the summary command reported:
 
 ```json
 {
-  "totalCases": 450,
+  "totalCases": 470,
   "statuses": {
-    "blocked": 32,
-    "conflict": 175,
-    "ready": 243
+    "blocked": 38,
+    "conflict": 187,
+    "ready": 245
   },
   "targetCoverage": {
     "commentUserGraph": {
@@ -158,6 +167,27 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
+    "wpCommentsCommentmetaGraph": {
+      "family": "wp-comments-commentmeta-graph-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 10
+      }
+    },
     "wpPostmetaCreateUpdateDelete": {
       "family": "wp-postmeta-create-update-delete-ready",
       "total": 20,
@@ -194,8 +224,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 11,
-        "ready": 9
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpTermTaxonomyGraph": {
@@ -215,8 +245,8 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 3,
-        "conflict": 7,
-        "ready": 10
+        "conflict": 9,
+        "ready": 8
       }
     },
     "wpUsersUsermetaGraph": {
@@ -235,9 +265,9 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 7,
-        "ready": 10
+        "blocked": 2,
+        "conflict": 9,
+        "ready": 9
       }
     }
   },
@@ -248,6 +278,7 @@ At the time this note was added, the summary command reported:
     "comment-user-graph-stale": 10,
     "comment-user-ready": 10,
     "comment-user-stale-target": 10,
+    "commentmeta-comment-graph": 20,
     "file-type-swap": 20,
     "file-type-swap-ready": 10,
     "file-type-swap-conflict": 10,
@@ -260,7 +291,12 @@ At the time this note was added, the summary command reported:
     "serialized-option-array": 10,
     "serialized-option-object": 10,
     "serialized-option-update": 20,
-    "wp-comments-create": 20,
+    "wp-comments-commentmeta-graph": 20,
+    "wp-comments-commentmeta-graph-ready": 10,
+    "wp-comments-commentmeta-graph-stale": 10,
+    "wp-comments-create": 40,
+    "wp-comments-remote-drift": 10,
+    "wp-commentmeta-create": 20,
     "wp-options-scalar": 20,
     "wp-options-scalar-ready": 10,
     "wp-options-scalar-conflict": 10,
@@ -290,9 +326,9 @@ At the time this note was added, the summary command reported:
     "wp-terms-remote-drift": 10
   },
   "maxResourceCount": 68,
-  "maxMutationCount": 43,
+  "maxMutationCount": 44,
   "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxReadyMutationCount": 44
 }
 ```
 

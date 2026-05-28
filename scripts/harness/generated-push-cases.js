@@ -13,7 +13,7 @@ import {
 } from '../../src/resources.js';
 
 export const MIN_GENERATED_PUSH_CASES = 300;
-export const DEFAULT_GENERATED_PUSH_CASES = 450;
+export const DEFAULT_GENERATED_PUSH_CASES = 470;
 export const DEFAULT_GENERATED_PUSH_SEED = 0x52706e74;
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
@@ -59,6 +59,8 @@ const scenarioFamilies = Object.freeze([
   'wp-posts-create-update-delete-conflict',
   'wp-postmeta-create-update-delete-ready',
   'wp-postmeta-create-update-delete-conflict',
+  'wp-comments-commentmeta-graph-ready',
+  'wp-comments-commentmeta-graph-stale',
   'wp-users-usermeta-graph-ready',
   'wp-users-usermeta-graph-stale',
   'wp-term-taxonomy-graph-ready',
@@ -90,6 +92,7 @@ const readyPreservingFamilies = new Set([
   'wp-options-serialized-ready',
   'wp-posts-create-update-delete-ready',
   'wp-postmeta-create-update-delete-ready',
+  'wp-comments-commentmeta-graph-ready',
   'wp-users-usermeta-graph-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
@@ -109,6 +112,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpPostmetaCreateUpdateDelete: {
     family: 'wp-postmeta-create-update-delete-ready',
     tag: 'wp-postmeta-create-update-delete',
+  },
+  wpCommentsCommentmetaGraph: {
+    family: 'wp-comments-commentmeta-graph-ready',
+    tag: 'wp-comments-commentmeta-graph',
   },
   wpUsersUsermetaGraph: {
     family: 'wp-users-usermeta-graph-ready',
@@ -632,6 +639,14 @@ const scenarioFamilyBuilders = {
       prefix: 'conflict-wp-postmeta',
     });
     tags.add('expected-conflict');
+  },
+  'wp-comments-commentmeta-graph-ready': ({ local, allocator, tags }) => {
+    addWpCommentsCommentmetaGraph(local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-comments-commentmeta-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget: true, base });
+    tags.add('expected-blocked');
   },
   'wp-users-usermeta-graph-ready': ({ local, allocator, tags }) => {
     addWpUsersUsermetaGraph(local, null, allocator, tags, { staleTarget: false });
@@ -1421,6 +1436,50 @@ function addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
   }
 }
 
+
+
+function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
+  const commentId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const commentRowId = `comment_ID:${commentId}`;
+  const commentmetaRowId = `meta_id:${metaId}`;
+  const comment = makeComment(commentId, {
+    comment_post_ID: 1,
+    comment_parent: 0,
+    comment_content: `Generated comment graph target ${commentId}`,
+    user_id: 1,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_comments', commentRowId, comment);
+    setRow(local, 'wp_comments', commentRowId, comment);
+    setRow(remote, 'wp_comments', commentRowId, {
+      ...comment,
+      comment_content: `Remote stale comment graph target ${commentId}`,
+    });
+  } else {
+    setRow(local, 'wp_comments', commentRowId, comment);
+  }
+
+  setRow(local, 'wp_commentmeta', commentmetaRowId, {
+    meta_id: metaId,
+    comment_id: commentId,
+    meta_key: `_generated_commentmeta_graph_${metaId}`,
+    meta_value: `generated commentmeta graph ${metaId}`,
+  });
+
+  tags.add('wp-comments-commentmeta-graph');
+  tags.add('wp-comments-create');
+  tags.add('wp-commentmeta-create');
+  tags.add('commentmeta-comment-graph');
+  tags.add('comment-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wp-comments-remote-drift');
+  }
+}
 
 function addWpUsersUsermetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
   const userId = allocator.graphId();
