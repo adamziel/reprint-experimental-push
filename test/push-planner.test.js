@@ -4376,6 +4376,7 @@ test('blocks comment graph references when the remote post target is missing', (
   const planJson = JSON.stringify(plan);
 
   assert.equal(plan.status, 'blocked');
+  assert.ok(blocker, 'missing comment graph blocker');
   assert.equal(mutationFor(plan, commentResourceKey), undefined);
   assert.equal(decisionFor(plan, targetPostResourceKey).decision, 'keep-remote');
   assert.equal(blocker.references[0].relationshipKey, 'wp_comments.comment_post_ID');
@@ -4503,6 +4504,75 @@ test('blocks core user, link, and multisite graph references when targets diverg
   assert.equal(planJson.includes('local-private-registration@example.test'), false);
   assert.equal(planJson.includes('remote-private-network.test'), false);
   assert.equal(planJson.includes('Remote Private User'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks comment user references with hash-only evidence when the user target diverged', () => {
+  const commentResourceKey = 'row:["wp_comments","comment_ID:21"]';
+  const targetUserResourceKey = 'row:["wp_users","ID:7"]';
+  const hashPattern = /^[0-9a-f]{64}$/;
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:7': {
+      ID: 7,
+      user_login: 'base-private-comment-user',
+      user_email: 'base-private-comment-user@example.test',
+      display_name: 'Base Private Comment User',
+    },
+  };
+  base.db.wp_comments = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_comments['comment_ID:21'] = {
+    comment_ID: 21,
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: 7,
+    comment_content: 'local-private-comment-user-body',
+  };
+  remote.db.wp_users['ID:7'] = {
+    ...remote.db.wp_users['ID:7'],
+    user_email: 'remote-private-comment-user@example.test',
+    display_name: 'Remote Private Comment User',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === commentResourceKey);
+  const commentUserReference = blocker?.references.find((reference) =>
+    reference.relationshipType === 'comment-user');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(blocker, 'missing comment user graph blocker');
+  assert.equal(mutationFor(plan, commentResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetUserResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.match(blocker.reason, /without proven identity mapping/);
+  assert.ok(commentUserReference, 'missing comment user reference evidence');
+  assert.equal(commentUserReference.relationshipKey, 'wp_comments.user_id');
+  assert.equal(commentUserReference.targetResourceKey, targetUserResourceKey);
+  assert.equal(commentUserReference.targetChange.remoteChange, 'update');
+  for (const hash of [
+    blocker.baseHash,
+    blocker.localHash,
+    blocker.remoteHash,
+    blocker.change.base.hash,
+    blocker.change.local.hash,
+    blocker.change.remote.hash,
+    commentUserReference.targetBaseHash,
+    commentUserReference.targetLocalHash,
+    commentUserReference.targetRemoteHash,
+    commentUserReference.targetChange.base.hash,
+    commentUserReference.targetChange.local.hash,
+    commentUserReference.targetChange.remote.hash,
+  ]) {
+    assert.match(hash, hashPattern);
+  }
+  assert.equal(blockerJson.includes('local-private-comment-user-body'), false);
+  assert.equal(blockerJson.includes('base-private-comment-user@example.test'), false);
+  assert.equal(blockerJson.includes('remote-private-comment-user@example.test'), false);
+  assert.equal(blockerJson.includes('Remote Private Comment User'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
