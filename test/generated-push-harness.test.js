@@ -9,6 +9,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -68,6 +69,7 @@ const requiredFamilies = [
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
+  'same-independent-content-target',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'file-topology',
@@ -382,6 +384,103 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+test('RPP-0138 same independent content target exposes deterministic safe-apply coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.sameIndependentContent;
+
+  assert.ok(coverage, 'missing same independent content target coverage');
+  assert.equal(coverage.family, 'same-independent-content');
+  assert.equal(coverage.total, report.summary.featureFamilies['same-independent-content']);
+  assert.deepEqual(coverage.statuses, { conflict: 3, ready: 8 });
+  assert.deepEqual(coverage.perTier, {
+    0: 1,
+    1: 1,
+    2: 1,
+    3: 1,
+    4: 1,
+    5: 2,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+  });
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'same-independent-content');
+  assert.equal(cases.length, coverage.total);
+  assert.equal(JSON.stringify(report).includes('Shared independent'), false);
+
+  const readyWithMutations = [];
+  const nonReady = [];
+  for (const testCase of cases) {
+    assert.ok(testCase.tags.has('same-independent-content-target'));
+    const result = validateGeneratedCase(testCase);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    if (result.status === 'ready') {
+      const sameRow = assertSameIndependentReadyShape(testCase, plan);
+      assert.equal(result.applied, true);
+      assert.equal(result.unplannedRemotePreserved, true);
+      assert.equal(
+        plan.mutations.some((mutation) => mutation.resourceKey === sameRow.resourceKey),
+        false,
+        `${testCase.id} should not overwrite same independent remote content`,
+      );
+      if (result.mutations > 0) {
+        assert.equal(result.staleReplayRejected, true);
+        assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+        assert.equal(result.staleReplayRemoteUnchanged, true);
+        readyWithMutations.push({ testCase, plan, sameRow });
+      }
+    } else {
+      assert.equal(result.applied, false);
+      assert.ok(result.conflicts + result.blockers > 0, `${testCase.id} should fail closed before mutation`);
+      nonReady.push(testCase);
+    }
+  }
+
+  assert.equal(readyWithMutations.length, 7, 'ready target should include stale replay variants');
+  assert.equal(nonReady.length, 3, 'target should include non-ready fail-closed variants');
+  assertSameIndependentEvidenceRedacted(readyWithMutations[0]);
+});
+
+function assertSameIndependentReadyShape(testCase, plan) {
+  const rows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => {
+      const remoteRow = testCase.remote.db.wp_posts[id];
+      return row.post_title.startsWith('Shared independent ')
+        && remoteRow?.post_title === row.post_title;
+    });
+
+  assert.equal(rows.length, 1, `${testCase.id} should keep one local/remote row already in sync`);
+  const [rowId, row] = rows[0];
+  assert.deepEqual(testCase.local.db.wp_posts[rowId], testCase.remote.db.wp_posts[rowId]);
+  assert.notDeepEqual(testCase.base.db.wp_posts[rowId], testCase.local.db.wp_posts[rowId]);
+  assert.equal(plan.status, 'ready');
+  return {
+    rowId,
+    title: row.post_title,
+    resourceKey: `row:${JSON.stringify(['wp_posts', rowId])}`,
+  };
+}
+
+function assertSameIndependentEvidenceRedacted({ plan, sameRow }) {
+  const redacted = redactEvidence(plan);
+  const redactedJson = JSON.stringify(redacted);
+
+  assert.equal(redactedJson.includes(sameRow.title), false);
+  assert.equal(redactedJson.includes('Shared independent'), false);
+  assert.equal(redactedJson.includes(EVIDENCE_REDACTION_MARKER), true);
+  assert.ok(redactedJson.includes('remoteBeforeHash'), 'redacted evidence should preserve hash metadata');
+  assert.ok(redactedJson.includes('baseHash'), 'redacted evidence should preserve base hash metadata');
+  assert.ok(redactedJson.includes('localHash'), 'redacted evidence should preserve local hash metadata');
 }
 
 function generatedPlannerSummaryEvidence() {

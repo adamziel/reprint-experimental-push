@@ -58,6 +58,14 @@ The default generated run covers:
   same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
   stale graph references.
 
+The `sameIndependentContent` target coverage records per-tier counts for cases
+where local and remote independently reach the same `wp_posts` content. Ready
+cases leave the already-synchronized row out of the mutation list, apply any
+other planned changes without overwriting unplanned remote resources, and reject
+stale replay before mutation when the ready plan carries live-remote
+preconditions. Non-ready seeded variants remain `conflict` and refuse apply
+before mutation.
+
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
@@ -99,6 +107,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "sameIndependentContent": {
+      "family": "same-independent-content",
+      "total": 11,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 2,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "conflict": 3,
+        "ready": 8
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -150,6 +178,8 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
+    "same-independent-content": 11,
+    "same-independent-content-target": 11,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
