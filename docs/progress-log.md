@@ -4,39 +4,20 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
-## 2026-05-28 - RPP-0205 File Type Swap Descendant Refusal Worker Proof
-
-- Branch-scoped evidence only: `session/rpp-29-rpp-0205-file-type-swap-remote-descendant`
-  extends the focused planner/apply fixture for a local directory-to-file type
-  swap while the remote site has created a descendant file under the same
-  directory. Checklist counts are intentionally unchanged in this worker lane.
-- Command recorded for the proof: `node --check test/push-planner.test.js &&
-  node --test test/push-planner.test.js && git diff --check`.
-- The focused `RPP-0205` assertion requires a `file-topology-conflict`,
-  `type-change` versus remote descendant `create`, no emitted mutation or live
-  precondition for the unsafe ancestor path, `PLAN_NOT_READY` from `applyPlan`,
-  unchanged remote state, hash-only conflict evidence, and no serialized raw
-  local replacement bytes or remote descendant bytes.
-- Caveat: this is deterministic model/planner coverage, not production
-  filesystem durability proof or a release-go signal. It reuses the current
-  merge-invariant fixture surface and remains limited to the explicit topology
-  conflict shape.
-
-
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 11:14 CEST.
+- Last update: 2026-05-28 11:29 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `a18426a31` (no-ff merge of `RPP-0415` activation hook effects evidence).
+  `1ab4941a4` (no-ff merge of `RPP-0205` file type-swap descendant refusal).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 134
-  items complete and leaves 866 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 135
+  items complete and leaves 865 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 13 merge-invariant items. No release-ops items are checked
+  harness items, and 14 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -188,6 +169,20 @@ linked implementation artifacts.
   plan evidence, and leaves final release `NO-GO`.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
+- File type-swap descendant continuation: `1ab4941a4` merged the existing
+  `origin/session/rpp-29-rpp-0205-file-type-swap-remote-descendant` branch
+  (`e0d49cf08`) with ancestry preserved. Focused command:
+  `node --test --test-name-pattern=RPP-0205 test/push-planner.test.js`
+  (1 passing planner/apply proof), plus `node --test test/push-planner.test.js`
+  (105 passing planner/apply tests). The proof covers a local
+  directory-to-file type swap while the remote has created a descendant under
+  the same directory, verifies `file-topology-conflict` evidence with
+  `type-change` versus remote descendant `create`, emits no mutation or live
+  precondition for the unsafe ancestor path, rejects `applyPlan()` with
+  `PLAN_NOT_READY`, leaves remote state unchanged, and keeps local replacement
+  bytes plus remote descendant bytes out of serialized planner evidence.
+  Caveat: this is deterministic local planner/apply evidence, not production
+  filesystem durability proof or final release evidence.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
   summary count consistency. The focused local Node proof checks ready,
   conflict, blocked, and atomic fixtures, verifies `plan.summary` against the

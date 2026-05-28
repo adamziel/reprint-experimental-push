@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 11:14 CEST
+Last updated: 2026-05-28 11:29 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 11:29 CEST - RPP-0205 Integrated
+
+- Going well: integration is now at `1ab4941a4`, preserving ancestry for
+  `origin/session/rpp-29-rpp-0205-file-type-swap-remote-descendant` and adding
+  `RPP-0205` file type-swap descendant refusal evidence. The focused proof
+  blocks a local directory-to-file replacement when the remote has created a
+  descendant under the original directory, emits hash-only
+  `file-topology-conflict` evidence, and leaves the remote state unchanged.
+- Checklist movement: 135 verified items checked and 865 open. New check since
+  the prior feedback entry: `RPP-0205`.
+- Verification: focused RPP-0205 planner/apply validation passes 1/1, the full
+  planner/apply suite passes 105/105, checklist lint reports 135 checked / 865
+  open with 0 risky claims, artifact redaction scans evidence and reporting
+  surfaces with 0 rejected files, release remains `NO-GO`, and `git diff
+  --check` is clean.
+- Current nudge: continue integrating already-pushed branches only; under the
+  integration-only freeze, push only the lane after validation and do not push
+  session branches.
 
 ## 2026-05-28 11:14 CEST - RPP-0415 Integrated
 
