@@ -589,6 +589,98 @@ test('combines non-overlapping local and remote changes', () => {
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote title');
 });
 
+test('RPP-0241 preserves independent local file mutation plus remote row edit with hash-only proof', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const localPath = 'wp-content/themes/theme/rpp-0241-private.css';
+  const localFileResourceKey = `file:${localPath}`;
+  const remoteRowResourceKey = 'row:["wp_posts","ID:1"]';
+  const privateValues = [
+    'rpp0241-private-local-file-body',
+    'rpp0241-private-remote-row-title',
+    base.db.wp_posts['ID:1'].post_title,
+  ];
+  local.files[localPath] = privateValues[0];
+  remote.db.wp_posts['ID:1'].post_title = privateValues[1];
+
+  const plan = planFor(base, local, remote);
+  const localFileMutation = mutationFor(plan, localFileResourceKey);
+  const remoteRowDecision = decisionFor(plan, remoteRowResourceKey);
+  const result = applyPlan(cloneJson(remote), plan);
+  const mutationResourceKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const preconditionResourceKeys = new Set(plan.preconditions.map((precondition) => precondition.resourceKey));
+  const journalResourceKeys = result.journal.entries.map((entry) => entry.resourceKey);
+  const evidence = {
+    status: plan.status,
+    summary: plan.summary,
+    localFileMutation: {
+      id: localFileMutation.id,
+      resourceKey: localFileMutation.resourceKey,
+      action: localFileMutation.action,
+      baseHash: localFileMutation.baseHash,
+      localHash: localFileMutation.localHash,
+      remoteBeforeHash: localFileMutation.remoteBeforeHash,
+      plannedValueHash: sha256Evidence(deserializeMutationValue(localFileMutation)),
+    },
+    remoteRowDecision: {
+      id: remoteRowDecision.id,
+      resourceKey: remoteRowDecision.resourceKey,
+      decision: remoteRowDecision.decision,
+      baseHash: remoteRowDecision.baseHash,
+      remoteHash: remoteRowDecision.remoteHash,
+      resultHash: resourceHash(result.site, remoteRowDecision.resource),
+    },
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    journal: result.journal.entries.map((entry) => ({
+      mutationId: entry.mutationId,
+      resourceKey: entry.resourceKey,
+      action: entry.action,
+      beforeHash: entry.beforeHash,
+      afterHash: entry.afterHash,
+    })),
+    appliedMutations: result.appliedMutations,
+  };
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0241 test/push-planner.test.js',
+    caveat: 'Focused local planner/apply proof only; release remains gated separately.',
+    evidence,
+    evidenceHash: sha256Evidence(evidence),
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(plan.summary.decisions, 1);
+  assert.equal(plan.summary.conflicts, 0);
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(localFileMutation.action, 'put');
+  assert.equal(remoteRowDecision.decision, 'keep-remote');
+  assert.equal(mutationResourceKeys.has(remoteRowResourceKey), false);
+  assert.equal(preconditionResourceKeys.has(remoteRowResourceKey), false);
+  assert.deepEqual(journalResourceKeys, [localFileResourceKey]);
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.files[localPath], privateValues[0]);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, privateValues[1]);
+  assert.equal(resourceHash(result.site, remoteRowDecision.resource), remoteRowDecision.remoteHash);
+  assert.equal(resourceHash(result.site, localFileMutation.resource), localFileMutation.localHash);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  for (const rawValue of privateValues) {
+    assert.equal(evidenceText.includes(rawValue), false, `RPP-0241 evidence leaked ${rawValue}`);
+  }
+  assert.equal(
+    evidenceText.includes(JSON.stringify(localFileMutation.value)),
+    false,
+    'RPP-0241 evidence leaked local file mutation payload',
+  );
+});
+
 test('plans local deletions only behind live remote preconditions', () => {
   const base = baseSite();
   const local = baseSite();

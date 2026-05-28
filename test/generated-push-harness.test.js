@@ -266,6 +266,33 @@ test('RPP-0237 generated conflict plans reject apply, forged ready status, and s
   assert.equal(evidenceText.includes('payload'), false);
 });
 
+test('RPP-0241 generated local file mutations preserve independent remote row edits', () => {
+  const firstEvidence = generatedIndependentLocalFileRemoteRowEvidence();
+  const replayEvidence = generatedIndependentLocalFileRemoteRowEvidence();
+  const aggregate = aggregateGeneratedIndependentLocalFileRemoteRowEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0241 test/generated-push-harness.test.js',
+    caveat: 'Generated local planner/apply proof only; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated local-file/remote-row evidence changed between runs');
+  assert.ok(aggregate.totalCases > 0, 'generated proof must include independent local/remote cases');
+  assert.equal(aggregate.statuses.ready, aggregate.totalCases);
+  assert.ok(aggregate.totalLocalFileMutations >= aggregate.totalCases);
+  assert.ok(aggregate.totalRemoteRowDecisions >= aggregate.totalCases);
+  assert.equal(aggregate.totalRemoteRowMutationLeaks, 0);
+  assert.equal(aggregate.totalRemoteRowJournalLeaks, 0);
+  assert.equal(aggregate.totalRemoteRowHashMismatches, 0);
+  assert.equal(aggregate.totalLocalFileHashMismatches, 0);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Independent remote'), false);
+  assert.equal(evidenceText.includes('independent local'), false);
+  assert.equal(evidenceText.includes('payload'), false);
+});
+
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
   const cases = generatePushHarnessCases();
   const readyCase = cases.find((testCase) => testCase.family === 'file-create-update-delete-mix-ready');
@@ -701,6 +728,116 @@ function generatedStaleConflictMutationAttempt(testCase, plan) {
   };
 }
 
+function generatedIndependentLocalFileRemoteRowEvidence() {
+  return generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'independent-local-and-remote')
+    .map((testCase) => {
+      const plan = createPushPlan({
+        base: testCase.base,
+        local: testCase.local,
+        remote: testCase.remote,
+        now: fixedGeneratedHarnessNow,
+      });
+      const remote = cloneJson(testCase.remote);
+      const result = applyPlan(remote, plan);
+      const mutationResourceKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+      const journalResourceKeys = new Set(result.journal.entries.map((entry) => entry.resourceKey));
+      const localFileMutations = plan.mutations
+        .filter((mutation) =>
+          mutation.resource?.type === 'file'
+          && mutation.resource.path.includes('independent-local'))
+        .sort((a, b) => a.resourceKey.localeCompare(b.resourceKey));
+      const remoteRowDecisions = plan.decisions
+        .filter((decision) =>
+          decision.decision === 'keep-remote'
+          && decision.resource?.type === 'row'
+          && decision.change?.remoteChange === 'update')
+        .sort((a, b) => a.resourceKey.localeCompare(b.resourceKey));
+
+      assert.equal(plan.status, 'ready', `${testCase.id} independent case should be ready`);
+      assert.ok(localFileMutations.length > 0, `${testCase.id} missing independent local file mutation`);
+      assert.ok(remoteRowDecisions.length > 0, `${testCase.id} missing independent remote row decision`);
+      assert.equal(plan.conflicts.length, 0, `${testCase.id} should not conflict independent changes`);
+      assert.equal(plan.blockers.length, 0, `${testCase.id} should not block independent changes`);
+      assert.equal(result.appliedMutations, plan.mutations.length, `${testCase.id} applied mutation count changed`);
+
+      const localFileHashMismatches = localFileMutations
+        .filter((mutation) => resourceHash(result.site, mutation.resource) !== mutation.localHash)
+        .length;
+      const remoteRowMutationLeaks = remoteRowDecisions
+        .filter((decision) => mutationResourceKeys.has(decision.resourceKey))
+        .length;
+      const remoteRowJournalLeaks = remoteRowDecisions
+        .filter((decision) => journalResourceKeys.has(decision.resourceKey))
+        .length;
+      const remoteRowHashMismatches = remoteRowDecisions
+        .filter((decision) => resourceHash(result.site, decision.resource) !== decision.remoteHash)
+        .length;
+      assert.equal(localFileHashMismatches, 0, `${testCase.id} local file was not applied`);
+      assert.equal(remoteRowMutationLeaks, 0, `${testCase.id} remote row was planned as a mutation`);
+      assert.equal(remoteRowJournalLeaks, 0, `${testCase.id} remote row was written to mutation journal`);
+      assert.equal(remoteRowHashMismatches, 0, `${testCase.id} remote row was not preserved`);
+
+      const evidence = {
+        id: testCase.id,
+        tier: testCase.tier,
+        family: testCase.family,
+        tags: [...testCase.tags].sort(),
+        status: plan.status,
+        summary: plan.summary,
+        localFileMutations: localFileMutations.map((mutation) => ({
+          id: mutation.id,
+          resourceKey: mutation.resourceKey,
+          action: mutation.action,
+          baseHash: mutation.baseHash,
+          localHash: mutation.localHash,
+          remoteBeforeHash: mutation.remoteBeforeHash,
+          resultHash: resourceHash(result.site, mutation.resource),
+          plannedValueHash: `sha256:${digest(deserializeResourceValue(mutation.value))}`,
+        })),
+        remoteRowDecisions: remoteRowDecisions.map((decision) => ({
+          id: decision.id,
+          resourceKey: decision.resourceKey,
+          decision: decision.decision,
+          baseHash: decision.baseHash,
+          remoteHash: decision.remoteHash,
+          resultHash: resourceHash(result.site, decision.resource),
+        })),
+        journal: result.journal.entries.map((entry) => ({
+          mutationId: entry.mutationId,
+          resourceKey: entry.resourceKey,
+          action: entry.action,
+          beforeHash: entry.beforeHash,
+          afterHash: entry.afterHash,
+        })),
+        appliedMutations: result.appliedMutations,
+        localFileHashMismatches,
+        remoteRowMutationLeaks,
+        remoteRowJournalLeaks,
+        remoteRowHashMismatches,
+      };
+      const evidenceText = JSON.stringify(evidence);
+      for (const mutation of localFileMutations) {
+        assert.equal(
+          evidenceText.includes(JSON.stringify(mutation.value)),
+          false,
+          `${testCase.id} hash-only evidence leaked local file payload for ${mutation.resourceKey}`,
+        );
+      }
+      for (const decision of remoteRowDecisions) {
+        const remoteRow = testCase.remote.db?.[decision.resource.table]?.[decision.resource.id];
+        if (remoteRow?.post_title) {
+          assert.equal(
+            evidenceText.includes(remoteRow.post_title),
+            false,
+            `${testCase.id} hash-only evidence leaked remote row title for ${decision.resourceKey}`,
+          );
+        }
+      }
+      return evidence;
+    });
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -751,6 +888,47 @@ function aggregateGeneratedConflictApplyRefusalEvidence(evidence) {
     families: sortStringObject(aggregate.families),
     conflictClasses: sortStringObject(aggregate.conflictClasses),
     forgedIssueCodes: sortStringObject(aggregate.forgedIssueCodes),
+  };
+}
+
+function aggregateGeneratedIndependentLocalFileRemoteRowEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalCases++;
+      aggregate.totalLocalFileMutations += entry.localFileMutations.length;
+      aggregate.totalRemoteRowDecisions += entry.remoteRowDecisions.length;
+      aggregate.totalAppliedMutations += entry.appliedMutations;
+      aggregate.totalJournalEntries += entry.journal.length;
+      aggregate.totalRemoteRowMutationLeaks += entry.remoteRowMutationLeaks;
+      aggregate.totalRemoteRowJournalLeaks += entry.remoteRowJournalLeaks;
+      aggregate.totalRemoteRowHashMismatches += entry.remoteRowHashMismatches;
+      aggregate.totalLocalFileHashMismatches += entry.localFileHashMismatches;
+      incrementCount(aggregate.statuses, entry.status);
+      incrementCount(aggregate.tiers, entry.tier);
+      incrementCount(aggregate.families, entry.family);
+      return aggregate;
+    },
+    {
+      totalCases: 0,
+      totalLocalFileMutations: 0,
+      totalRemoteRowDecisions: 0,
+      totalAppliedMutations: 0,
+      totalJournalEntries: 0,
+      totalRemoteRowMutationLeaks: 0,
+      totalRemoteRowJournalLeaks: 0,
+      totalRemoteRowHashMismatches: 0,
+      totalLocalFileHashMismatches: 0,
+      statuses: {},
+      tiers: {},
+      families: {},
+    },
+  );
+
+  return {
+    ...aggregate,
+    statuses: sortStringObject(aggregate.statuses),
+    tiers: sortNumericObject(aggregate.tiers),
+    families: sortStringObject(aggregate.families),
   };
 }
 
