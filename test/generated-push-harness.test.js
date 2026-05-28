@@ -54,6 +54,14 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'wp-term-relationships-graph-ready',
+  'wp-term-relationships-graph-stale',
+  'wp-term-relationships-graph',
+  'wp-term-relationships-create',
+  'term-relationship-taxonomy-graph',
+  'term-relationship-object-graph',
+  'wp-term-taxonomy-remote-drift',
+  'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -268,4 +276,84 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+test('RPP-0113 wp_term_relationships graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermRelationshipsGraph;
+
+  assert.ok(coverage, 'missing wp_term_relationships graph target coverage');
+  assert.equal(coverage.family, 'wp-term-relationships-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-relationships-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_term_relationships graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-term-relationships-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-term-relationships-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_term_relationships graph case');
+  assert.ok(staleCase, 'missing stale wp_term_relationships graph case');
+  assertTermRelationshipsGraphShape(readyCase, { staleTarget: false });
+  assertTermRelationshipsGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 4, 'ready graph should create post, term, taxonomy, and relationship rows');
+  assert.equal(ready.applied, true, 'ready wp_term_relationships graph should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready relationship graph must preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready wp_term_relationships graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+});
+
+function assertTermRelationshipsGraphShape(testCase, { staleTarget }) {
+  const taxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
+    .filter(([, row]) => row.description?.startsWith('Generated term relationship graph taxonomy '));
+  const taxonomyIds = new Set(taxonomyRows.map(([, row]) => row.term_taxonomy_id));
+  const relationshipRows = Object.entries(testCase.local.db.wp_term_relationships)
+    .filter(([id, row]) => !testCase.base.db.wp_term_relationships[id]
+      && taxonomyIds.has(row.term_taxonomy_id)
+      && testCase.local.db.wp_posts[`ID:${row.object_id}`]?.post_title.startsWith('Generated term relationship object '));
+  const createdTaxonomyRows = taxonomyRows
+    .filter(([id]) => !testCase.base.db.wp_term_taxonomy[id]);
+
+  assert.equal(taxonomyRows.length, 1, `${testCase.id} should include one generated term_taxonomy target`);
+  assert.equal(relationshipRows.length, 1, `${testCase.id} should create one term relationship`);
+  assert.equal(createdTaxonomyRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create taxonomy`);
+
+  const [taxonomyRowId, taxonomy] = taxonomyRows[0];
+  assert.equal(relationshipRows[0][1].term_taxonomy_id, taxonomy.term_taxonomy_id);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_term_taxonomy[taxonomyRowId], `${testCase.id} stale target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_term_taxonomy[taxonomyRowId],
+      testCase.base.db.wp_term_taxonomy[taxonomyRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  }
+}
+
+function nonReadyTargetCount(coverage) {
+  return Object.entries(coverage.statuses)
+    .filter(([status]) => status !== 'ready')
+    .reduce((sum, [, count]) => sum + count, 0);
 }
