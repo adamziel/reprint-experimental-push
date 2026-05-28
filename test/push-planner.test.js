@@ -313,17 +313,20 @@ test('stops a local directory deletion that would remove a remote-only descendan
   assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote private image bytes');
 });
 
-test('stops file type swaps that would hide remote-only descendants', () => {
+test('RPP-0205 stops local file type swaps that would hide remote descendants without leaking file bytes', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
   const local = baseSite();
-  local.files['wp-content/uploads/gallery'] = 'local replacement file';
+  local.files['wp-content/uploads/gallery'] = 'local private replacement bytes';
   const remote = baseSite();
   remote.files['wp-content/uploads/gallery'] = { type: 'directory' };
-  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote image bytes';
+  remote.files['wp-content/uploads/gallery/remote-only.jpg'] = 'remote private descendant bytes';
 
   const plan = planFor(base, local, remote);
   const conflict = plan.conflicts[0];
+  const serializedPlan = JSON.stringify(plan);
+  const remoteBefore = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, plan));
 
   assert.equal(plan.status, 'conflict');
   assert.equal(plan.summary.mutations, 0);
@@ -333,13 +336,20 @@ test('stops file type swaps that would hide remote-only descendants', () => {
     false,
   );
   assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.reason, 'Local file deletion or type change would hide or remove a live remote descendant.');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-file-topology-and-stop');
   assert.equal(conflict.resourceKey, 'file:wp-content/uploads/gallery');
   assert.equal(conflict.relatedResourceKey, 'file:wp-content/uploads/gallery/remote-only.jpg');
   assert.equal(conflict.change.localChange, 'type-change');
   assert.equal(conflict.relatedChange.remoteChange, 'create');
-  assert.equal(JSON.stringify(conflict).includes('remote image bytes'), false);
-  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
-  assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote image bytes');
+  assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(conflict.relatedChange.remote.hash, /^[a-f0-9]{64}$/);
+  assert.equal(serializedPlan.includes('local private replacement bytes'), false);
+  assert.equal(serializedPlan.includes('remote private descendant bytes'), false);
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remote), remoteBefore);
+  assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote private descendant bytes');
 });
 
 test('keeps independent mutation evidence while suppressing unsafe topology mutations', () => {

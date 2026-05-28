@@ -4,6 +4,25 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - RPP-0205 File Type Swap Descendant Refusal Worker Proof
+
+- Branch-scoped evidence only: `session/rpp-29-rpp-0205-file-type-swap-remote-descendant`
+  extends the focused planner/apply fixture for a local directory-to-file type
+  swap while the remote site has created a descendant file under the same
+  directory. Checklist counts are intentionally unchanged in this worker lane.
+- Command recorded for the proof: `node --check test/push-planner.test.js &&
+  node --test test/push-planner.test.js && git diff --check`.
+- The focused `RPP-0205` assertion requires a `file-topology-conflict`,
+  `type-change` versus remote descendant `create`, no emitted mutation or live
+  precondition for the unsafe ancestor path, `PLAN_NOT_READY` from `applyPlan`,
+  unchanged remote state, hash-only conflict evidence, and no serialized raw
+  local replacement bytes or remote descendant bytes.
+- Caveat: this is deterministic model/planner coverage, not production
+  filesystem durability proof or a release-go signal. It reuses the current
+  merge-invariant fixture surface and remains limited to the explicit topology
+  conflict shape.
+
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 04:16 CEST.
