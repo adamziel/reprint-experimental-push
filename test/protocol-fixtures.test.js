@@ -954,6 +954,8 @@ test('production executor flow contract keeps the pull handoff, ladder, and topo
     'dry-run and apply are separate remote operations',
     'apply must revalidate the live remote before every batch and at the storage boundary',
     'journal inspection is read-only and never authorizes mutation by itself',
+    'journal and recovery inspect are session-bound signed reads and must not carry mutating idempotency keys',
+    'retryable signed requests must regenerate the nonce on each retry attempt',
     'recovery must begin with inspect before any mutating repair',
     'authentication must be at least as strict as current Reprint HMAC usage',
     'pull exporter/importer establish the immutable base package before push',
@@ -3311,7 +3313,9 @@ test('push contract fixture binds the pull handoff to the production push sequen
   assert.equal(authSessionFencing.session.push_session, 'psh_01j00000000000000000000000');
   assert.equal(authSessionFencing.journal_row.claim_generation, 4);
   assert.equal(authSessionFencing.journal_row.lease_expires_at, '2026-05-24T00:00:09Z');
-  assert.equal(authSessionFencing.journal_row.storage_guard, 'filesystem-compare-rename');
+  assert.equal(authSessionFencing.journal_row.storage_guard, 'wpdb-single-statement-cas');
+  assert.equal(authSessionFencing.journal_row.writer_lease.storage_guard, 'wpdb-single-statement-cas');
+  assert.equal(authSessionFencing.journal_row.lease_fence.boundary, 'wpdb-single-statement-cas');
   assert.ok(
     authSessionFencing.required_invariants.includes(
       'claim generation and lease expiry fence stale workers before mutation',
