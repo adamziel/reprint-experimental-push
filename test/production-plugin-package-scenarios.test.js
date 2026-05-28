@@ -56,8 +56,21 @@ test('scenario parser expands the production boundary alias into custom-table an
     scenarioGroups['driver-production-boundary-guards'].slice().sort(),
   );
   assert.ok(selected.has('driver-receipt-guards'));
+  assert.ok(selected.has('driver-activation-hook-effects-boundary'));
   assert.ok(selected.has('driver-missing-plugin-owner-guard'));
   assert.ok(selected.has('driver-duplicate-table-guard'));
+});
+
+test('scenario parser exposes activation-hook effects as a concrete support-only boundary check', () => {
+  const selected = parseProductionPluginPackageSelectedScenarios(
+    ['--scenario=driver-activation-hook-effects-guards'],
+    undefined,
+  );
+
+  assert.deepEqual(
+    Array.from(selected),
+    ['driver-activation-hook-effects-boundary'],
+  );
 });
 
 test('scenario groups only contain concrete plugin-driver smoke scenarios', () => {

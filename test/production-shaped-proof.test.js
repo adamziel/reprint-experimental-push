@@ -405,6 +405,14 @@ const serializedPluginOptionBoundary = Object.freeze({
   resourceKey: 'row:["wp_options","option_name:reprint_push_serialized_state"]',
 });
 
+const activationHookSideEffectBoundary = Object.freeze({
+  driver: 'wp-option',
+  owner: productionPluginDriverBoundary.owner,
+  table: 'wp_options',
+  rowId: 'option_name:reprint_push_activation_hook_state',
+  resourceKey: 'row:["wp_options","option_name:reprint_push_activation_hook_state"]',
+});
+
 function addDriverFixtureCustomTable(snapshot, mode, version, marker) {
   snapshot.db[driverFixtureCustomTableBoundary.table] = {
     [driverFixtureCustomTableBoundary.rowId]: {
@@ -499,6 +507,52 @@ function productionPluginDriverProof(plan, boundary = productionPluginDriverBoun
       preservedRemote: true,
     },
   };
+}
+
+function addActivationHookSideEffectMutation(plan, { withDriverProof = false } = {}) {
+  plan.mutations.push({
+    id: `mutation-activation-hook-side-effect-${plan.mutations.length + 1}`,
+    resourceKey: activationHookSideEffectBoundary.resourceKey,
+    resource: {
+      type: 'row',
+      table: activationHookSideEffectBoundary.table,
+      id: activationHookSideEffectBoundary.rowId,
+      key: activationHookSideEffectBoundary.resourceKey,
+    },
+    action: 'put',
+    value: {
+      value: {
+        option_name: 'reprint_push_activation_hook_state',
+        option_value: {
+          mode: withDriverProof ? 'driver-proofed' : 'unproven',
+        },
+        autoload: 'no',
+        __pluginOwner: activationHookSideEffectBoundary.owner,
+        __activationHookEffect: true,
+      },
+    },
+    remoteBeforeHash: '0'.repeat(64),
+    baseHash: '0'.repeat(64),
+    localHash: withDriverProof ? '2'.repeat(64) : '1'.repeat(64),
+    pluginOwnedResource: {
+      pluginOwner: activationHookSideEffectBoundary.owner,
+      driver: activationHookSideEffectBoundary.driver,
+      policySource: 'activation-hook-side-effect-test',
+      supportsDelete: false,
+      activationHookEffect: true,
+      ...(withDriverProof ? {
+        driverEvidence: {
+          supported: true,
+          activationHookEffect: true,
+          source: 'live-remote',
+          plugin: activationHookSideEffectBoundary.owner,
+          resourceKey: `plugin:${activationHookSideEffectBoundary.owner}`,
+          baseHash: 'a'.repeat(64),
+          remoteHash: 'a'.repeat(64),
+        },
+      } : {}),
+    },
+  });
 }
 
 function stopAllPlaygroundChildrenSync() {
@@ -1780,6 +1834,8 @@ test('production-shaped release verify owns the production plugin-driver boundar
   assert.match(verifySource, /nonProductionCustomTableResourceKeys/);
   assert.match(verifySource, /noSerializedPluginOwnedOptionMutation/);
   assert.match(verifySource, /noDirectPluginActivationOrUpdate/);
+  assert.match(verifySource, /activationHookEffects/);
+  assert.match(verifySource, /ACTIVATION_HOOK_SIDE_EFFECT_SUPPORT_ONLY/);
   assert.match(verifySource, /applyTimeRevalidation/);
   assert.match(verifySource, /preconditionHashes/);
 });
@@ -1895,11 +1951,83 @@ test('production plugin-driver boundary proof accepts one owned row and fails cl
   assert.equal(summary.noUnownedSerializedOptionMutation, true);
   assert.equal(summary.noSerializedPluginOwnedOptionMutation, true);
   assert.equal(summary.noDirectPluginActivationOrUpdate, true);
+  assert.equal(summary.noActivationHookSideEffectMutation, true);
+  assert.equal(summary.activationHookEffects.status, 'clear');
+  assert.equal(summary.activationHookEffects.releaseEligible, true);
+  assert.deepEqual(summary.ownershipBoundary.activationHookSideEffectResourceKeys, []);
   assert.equal(summary.preconditionHashes.expectedHash, baseHash);
   assert.equal(summary.preconditionHashes.mutationLocalHash, localHash);
   assert.equal(summary.applyTimeRevalidation.verifiedBeforeFirstMutation, true);
   assert.equal(summary.failureClosedUnknownPluginData.failureClosed, true);
   assert.equal(summary.auditEvidence.dbJournalOwnership.ownsJournal, true);
+});
+
+test('production plugin-driver boundary proof blocks unproven activation hook side effects', () => {
+  const boundary = productionPluginDriverBoundary;
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+  const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteBaseSnapshot,
+    now: new Date('2026-05-27T10:13:00.000Z'),
+  });
+  addActivationHookSideEffectMutation(plan);
+
+  const summary = summarizeProductionPluginDriverBoundaryProof({
+    proof: productionPluginDriverProof(plan, boundary),
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(summary.status, 'blocked');
+  assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+  assert.equal(summary.noActivationHookSideEffectMutation, false);
+  assert.equal(summary.activationHookEffects.status, 'blocked');
+  assert.equal(summary.activationHookEffects.verdict, 'ACTIVATION_HOOK_SIDE_EFFECT_DRIVER_PROOF_REQUIRED');
+  assert.equal(summary.activationHookEffects.releaseEligible, false);
+  assert.equal(summary.activationHookEffects.supportOnly, false);
+  assert.deepEqual(summary.activationHookEffects.resourceKeys, [activationHookSideEffectBoundary.resourceKey]);
+  assert.deepEqual(summary.activationHookEffects.unprovenResourceKeys, [activationHookSideEffectBoundary.resourceKey]);
+  assert.deepEqual(summary.activationHookEffects.supportOnlyResourceKeys, []);
+  assert.deepEqual(summary.ownershipBoundary.activationHookSideEffectUnprovenResourceKeys, [activationHookSideEffectBoundary.resourceKey]);
+});
+
+test('production plugin-driver boundary proof quarantines driver-proofed activation hook side effects as non-release evidence', () => {
+  const boundary = productionPluginDriverBoundary;
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+  const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteBaseSnapshot,
+    now: new Date('2026-05-27T10:13:30.000Z'),
+  });
+  addActivationHookSideEffectMutation(plan, { withDriverProof: true });
+
+  const summary = summarizeProductionPluginDriverBoundaryProof({
+    proof: productionPluginDriverProof(plan, boundary),
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(summary.status, 'blocked');
+  assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+  assert.equal(summary.noActivationHookSideEffectMutation, false);
+  assert.equal(summary.activationHookEffects.status, 'quarantined');
+  assert.equal(summary.activationHookEffects.verdict, 'ACTIVATION_HOOK_SIDE_EFFECT_SUPPORT_ONLY');
+  assert.equal(summary.activationHookEffects.releaseEligible, false);
+  assert.equal(summary.activationHookEffects.supportOnly, true);
+  assert.deepEqual(summary.activationHookEffects.unprovenResourceKeys, []);
+  assert.deepEqual(summary.activationHookEffects.supportOnlyResourceKeys, [activationHookSideEffectBoundary.resourceKey]);
+  assert.deepEqual(summary.ownershipBoundary.activationHookSideEffectQuarantineResourceKeys, [activationHookSideEffectBoundary.resourceKey]);
+  assert.equal(summary.activationHookEffects.effects[0].explicitDriverProof, true);
+  assert.equal(summary.activationHookEffects.effects[0].driverEvidence.supported, true);
+  assert.equal(summary.activationHookEffects.effects[0].driverEvidence.activationHookEffect, true);
 });
 
 test('production plugin-driver boundary blocks unknown plugin data before mutation', () => {
