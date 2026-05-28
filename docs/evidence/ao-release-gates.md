@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, and RPP-0058
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, RPP-0058, and RPP-0062
 
 ## What changed
 
@@ -54,14 +54,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0050 | Evidence toward variant-3 same source URL identity proof now generates matching and drifted final-release fixtures, asserts the release-ready final bracketed marker for the matching source path, and proves apply-source drift exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`, exact identity evidence, held marker, and `mutationAttempted: false`. |
 | RPP-0051 | Evidence toward variant-3 preflight route identity proof now generates matching and mismatched final-release fixtures, asserts exact route identity evidence on the matching fixture, and proves wrong preflight route evidence exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, held marker, and `mutationAttempted: false`. |
 | RPP-0058 | Evidence toward variant-3 progress.html release timestamp now generates valid and invalid timestamp fixtures, links the focused command and observed `pass` status to the current progress proof timestamp, preserves `NO-GO`, and asserts exact timestamp-gate evidence with `mutationAttempted: false`. |
+| RPP-0062 | Evidence toward variant-4 missing `REPRINT_PUSH_LOCAL_URL` coverage now runs the release-gate CLI with every other final-release gate supplied, asserting exit `1`, exact `REPRINT_PUSH_LOCAL_URL_REQUIRED` reason/evidence, `NO-GO`, redaction, and `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-missing-local-url-regression.test.js test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 37 tests.
+Observed status: pass, 39 tests.
 
 Progress HTML release timestamp proof:
 
@@ -99,6 +100,12 @@ Generated preflight route identity proof:
 - Observed status: `pass`; generated fixtures supply every other final-release gate while comparing matching and mismatched preflight route identity evidence.
 - Evidence link: the matching fixture preserves exact route identity evidence and remains `NO-GO` without provenance; the mismatched fixture exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, `finalGates: "19/20"`, exact `preflight-route-identity` evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=PREFLIGHT_ROUTE_IDENTITY_REQUIRED]`, and `mutationAttempted: false`.
 
+Missing local URL regression proof:
+
+- Command: `node --test test/release-gate-missing-local-url-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; generated fixture supplies source URL, remote-changed URL, credentials, and every non-topology final-release gate while leaving `REPRINT_PUSH_LOCAL_URL` empty.
+- Evidence link: the checked command exits `1` with `REPRINT_PUSH_LOCAL_URL_REQUIRED`, `finalGates: "19/20"`, exact `local-url` reason/evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_LOCAL_URL_REQUIRED]`, `NO-GO`, redacted credential output, and `mutationAttempted: false`.
+
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
@@ -110,6 +117,7 @@ Key assertions:
 - Generated same source URL identity coverage now records a matching final-release source path with a release-ready final bracketed marker and a drifted apply-source fixture that fails closed at `same-source-identity` only, with `SAME_SOURCE_IDENTITY_REQUIRED`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]` marker, exact evidence, and `mutationAttempted: false`.
 - Preflight route identity drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact wrong-route evidence, and `mutationAttempted: false`.
 - Generated preflight route identity coverage now records matching final-release route evidence and a mismatched route fixture that fails closed at `preflight-route-identity` only, with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=PREFLIGHT_ROUTE_IDENTITY_REQUIRED]` marker, exact evidence, and `mutationAttempted: false`.
+- Missing local URL regression coverage now records a final-release fixture where every other gate is supplied but `REPRINT_PUSH_LOCAL_URL` is empty; the checked CLI exits nonzero with `REPRINT_PUSH_LOCAL_URL_REQUIRED`, exact `local-url` reason/evidence, `NO-GO`, redacted credentials, and `mutationAttempted: false`.
 - Dry-run route eligibility has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`, exact rejection evidence, and `mutationAttempted: false`.
 - Apply route pre-mutation proof links the smoke command with observed status `412 PRECONDITION_FAILED`, phase `before-first-mutation`, and `appliedBeforeFailure: 0`; the gate passes while the CLI remains `NO-GO` without provenance and records no mutation attempt.
 - Journal route read-only proof has command-level variant-2 matrix coverage: the negative case records exact write-observed evidence and the positive case links the journal command, `GET` method, stable row counts, no release-state mutation, and `mutationAttempted: false`.
