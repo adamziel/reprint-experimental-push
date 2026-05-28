@@ -1,4 +1,4 @@
-# AO Progress Report - 2026-05-28 22:05 CEST
+# AO Progress Report - 2026-05-28 22:19 CEST
 
 Status: **NO-GO for final release**.
 
@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 218 are
-  checked from integrated evidence and 782 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 219 are
+  checked from integrated evidence and 781 remain open.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -156,6 +156,20 @@ progress.
   `auth-source-readback` release-gate evidence plus final held marker.
   - Command: `node --test test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-auth-source-readback-generated.test.js test/release-verifier-wrong-remote-alias-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED mutationAttempted=false]`; auth-source-readback gate: `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED]`.
+- Release verifier missing production secret carry-through now checks `RPP-0087`.
+  `node --test
+  test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js
+  test/release-gate-missing-production-secret-regression.test.js
+  test/release-gate-missing-production-secret-generated.test.js
+  test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js
+  test/release-gates.test.js test/release-gate-cli.test.js` passed 38/38,
+  proving the checked verifier emits `REPRINT_PUSH_SECRET_REQUIRED` with
+  source/local/changed URLs present, a partial Application Password value,
+  no username, and no auth session source command, starts no live verifier
+  server, redacts the partial credential, and preserves the exact
+  `production-secret` release-gate evidence plus final held marker.
+  - Command: `node --test test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gate-missing-production-secret-regression.test.js test/release-gate-missing-production-secret-generated.test.js test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_SECRET_REQUIRED mutationAttempted=false]`; production-secret gate: `REPRINT_PUSH_SECRET_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SECRET_REQUIRED]`.
 - Branch integration audit now reports zero unmerged refs across the freshly
   fetched `origin/session/rpp*` set: 397 checked, 0 unmerged. The broader
   local/remote `rpp`/session-like sweep checked 843 refs with 0 unmerged. The
@@ -1056,7 +1070,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 86 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 87 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 34 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
@@ -1069,7 +1083,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0086`.
+- Release gates: `RPP-0001` through `RPP-0087`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
   `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`,
@@ -1103,6 +1117,7 @@ Checked IDs in this report are:
 ## Checked Commands
 
 - `node --test test/release-gate-tmux-status-marker-focused-regression.test.js` — 1 pass / 0 fail for the RPP-0077 focused tmux stdout proof marker regression.
+- `node --test test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gate-missing-production-secret-regression.test.js test/release-gate-missing-production-secret-generated.test.js test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 38 pass / 0 fail for the RPP-0087 release verifier missing production secret carry-through plus missing-secret/release-gate/CLI coverage.
 - `node --test test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-auth-source-readback-generated.test.js test/release-verifier-wrong-remote-alias-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 38 pass / 0 fail for the RPP-0086 release verifier auth source command readback drift carry-through plus auth-readback/release-gate/CLI coverage.
 - `node --test test/release-verifier-wrong-remote-alias-carry-through-focused-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 38 pass / 0 fail for the RPP-0085 release verifier wrong remote alias carry-through plus wrong-alias/release-gate/CLI coverage.
 - `node --test test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-packaged-fallback-generated.test.js test/release-verifier-missing-remote-changed-url-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 37 pass / 0 fail for the RPP-0084 release verifier packaged fallback rejection carry-through plus packaged-fallback/release-gate/CLI coverage.
