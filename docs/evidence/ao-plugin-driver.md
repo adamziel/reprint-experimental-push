@@ -62,3 +62,17 @@ driver plugin evidence, and no delete mutation.
 - RPP-0438 — driver apply validation hook: accepted fixture driver evidence
   carries one real mutation through apply, and forged driver evidence fails
   closed before mutation.
+
+## RPP-0443 custom table allowlist exact match, variant 3
+
+Generated local plugin-driver coverage now proves the custom table allowlist is exact. The accepted case uses `wp_reprint_push_forms_lab` with owner `forms`, driver `fixture-forms-lab-table`, and an explicit table allowlist; the plan is ready and `applyPlan()` carries one real mutation through to the local apply result.
+
+The same generated proof attempts near-miss custom table names (`wp_reprint_push_forms_lab_backup`, `wp_reprint_push_forms_labs`, and `wp_reprint_push_forms_lab2`). Each near miss stays blocked as `unsupported-plugin-owned-resource` even when it declares the fixture driver and matching near-miss table policy.
+
+Evidence status: local production-shaped/plugin-driver node proof only; it is not production-backed. The proof object is hash-only (`rawValuesIncluded: false`) and records row, mutation, journal-entry, and near-miss blocker hashes without raw plugin-owned private values.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0443|fixture forms lab table' test/push-planner.test.js
+```
