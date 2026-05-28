@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 04:46 CEST.
+- Last update: 2026-05-28 04:48 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `d400b1fe1` (`docs: mark preflight route proof complete`).
+  `35d8d4601` (`test: prove dry run route eligibility gate`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 93
-  items complete and leaves 907 open.
-- Checked slices: 29 release-gate foundation items, 15 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 94
+  items complete and leaves 906 open.
+- Checked slices: 30 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, and 4 generated
   harness items. No release-ops items are checked yet.
@@ -52,15 +52,11 @@ linked implementation artifacts.
 - Same-source continuation: `89b8d184f`/`460ba7ad6` integrated `RPP-0030`
   same source URL identity proof with a final bracketed status marker and
   mutation-free CLI failure path.
-- Preflight route continuation: `c382b091f`/`d400b1fe1` integrated
-  `RPP-0031` preflight route identity evidence, including exact
-  `PREFLIGHT_ROUTE_IDENTITY_REQUIRED` evidence and no mutation attempt.
-- Pushed-only candidate status: `RPP-0032` dry-run route eligibility proof is
-  pushed at `a30be4b10` but is not integrated and must not move checklist
-  counts.
-- Active next tasks observed from tmux and branch inspection: `rpp-24` on
-  `RPP-0106`, `rpp-29` on `RPP-0207`, `rpp-30` on `RPP-0309`, and `rpp-32`
-  on `RPP-0407`; these are branch-local until integrated.
+- Preflight and dry-run route continuation: `c382b091f`/`d400b1fe1` integrated
+  `RPP-0031` preflight route identity drift proof, and `35d8d4601` integrated
+  `RPP-0032` dry-run route eligibility proof. Both run
+  `check-release-gates` from fixture evidence, exit nonzero with the named
+  route failure code, and record `mutationAttempted: false`.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
   `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
   progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
@@ -68,8 +64,9 @@ linked implementation artifacts.
   `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
   web child wedged and was restarted in tmux.
 - Verification for this entry: checklist counts, focused Docker/evidence
-  manifest tests, `node --test test/release-gates.test.js` with integrated release-gate
-  coverage through `RPP-0031`, the `rpp-28`
+  manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
+  with 23 passing
+  release-gate tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js`, evidence manifest
   generation, artifact redaction scan over evidence/report paths, and

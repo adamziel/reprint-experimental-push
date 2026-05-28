@@ -1,18 +1,18 @@
-# AO Progress Report - 2026-05-28 04:46 CEST
+# AO Progress Report - 2026-05-28 04:48 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`d400b1fe1` (`docs: mark preflight route proof complete`). It separates
+`35d8d4601` (`test: prove dry run route eligibility gate`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 93 are
-  checked from integrated evidence and 907 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 94 are
+  checked from integrated evidence and 906 remain open.
 - `src/release-gates.js` and `test/release-gates.test.js` define and test 20
   fail-closed release-gate foundation checks. `ab0340786` extends the focused
   coverage to 11 tests and records `RPP-0008` through `RPP-0020` missing/failed
@@ -33,9 +33,14 @@ progress.
   including the final bracketed status marker with
   `SAME_SOURCE_IDENTITY_REQUIRED` and a mutation-free CLI path. `460ba7ad6`
   updates checklist totals for that integrated proof.
-- `c382b091f` adds variant-2 preflight route identity proof for `RPP-0031`,
-  including exact `PREFLIGHT_ROUTE_IDENTITY_REQUIRED` evidence and no mutation
-  attempt. `d400b1fe1` updates checklist totals for that integrated proof.
+- `c382b091f` adds command-level `check-release-gates` coverage for
+  `RPP-0031` preflight route identity drift, including exact
+  `PREFLIGHT_ROUTE_IDENTITY_REQUIRED` evidence and `mutationAttempted: false`.
+  `d400b1fe1` updates checklist totals for that integrated proof.
+- `35d8d4601` adds command-level `check-release-gates` coverage for
+  `RPP-0032` dry-run route eligibility failure, including exact
+  `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED` evidence and `mutationAttempted: false`,
+  and updates checklist totals for that integrated proof.
 - `docs/evidence/ao-release-gates.md` maps evaluator evidence to `RPP-0001`
   through `RPP-0025` and reiterates that release movement remains held until
   all 20 gates pass with `final-release` scope evidence.
@@ -124,9 +129,10 @@ progress.
   local-only, generated-placeholder, missing-hash, raw-URL, and
   secret-looking operator-proof rows now keep final release at **NO-GO**.
 - `c22966b16` integrates current-tree checklist linter hardening from
-  `rpp-25-checklist-lint-current-v2`. After the `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0101`,
-  `RPP-0102`, `RPP-0103`, and `RPP-0104` checklist updates, the current tree
-  reports 93 checked IDs, 907 unchecked IDs, and 0 risky completion claims.
+  `rpp-25-checklist-lint-current-v2`. After the `RPP-0026`, `RPP-0028`,
+  `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0101`, `RPP-0102`, `RPP-0103`,
+  and `RPP-0104` checklist updates, the current tree reports 94 checked IDs,
+  906 unchecked IDs, and 0 risky completion claims.
 - `6d6b2077c` integrates the release artifact redaction scanner from `rpp-29`.
   It scans release/evidence artifacts for raw URLs, application passwords,
   token/cookie-looking values, serialized private option payloads, and explicit
@@ -149,7 +155,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 29 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 30 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 4 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 0 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 15 / 100 |
@@ -162,8 +168,8 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0026`, plus `RPP-0028` and
-  `RPP-0030`, `RPP-0031`.
+- Release gates: `RPP-0001` through `RPP-0026`, plus `RPP-0028`,
+  `RPP-0030`, `RPP-0031`, and `RPP-0032`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`.
 - Graph identity: `RPP-0301`, `RPP-0304`, `RPP-0305`, `RPP-0312`,
   `RPP-0313`, `RPP-0314`, `RPP-0318`, `RPP-0319`, `RPP-0320`, `RPP-0321`,
@@ -183,7 +189,7 @@ Checked IDs in this report are:
 
 ## Checked Commands
 
-- `node --test test/release-gates.test.js` — 14 pass / 0 fail.
+- `node --test test/release-gates.test.js test/release-gate-cli.test.js` — 23 pass / 0 fail.
 - `node --test test/recovery-journal.test.js` — 21 pass / 0 fail.
 - `npm run test:recovery:file-journal` — restart smoke passed; fail-after-2
   stayed `blocked-recovery` with 6 old / 2 new targets, retry did not mutate,
@@ -204,7 +210,7 @@ Checked IDs in this report are:
 - `node --test test/release-evidence-provenance.test.js test/release-gate-cli.test.js test/release-gates.test.js` — 25 pass / 0 fail after provenance wiring.
 - `node ./scripts/release/check-release-gates.mjs --now 2026-05-28T00:00:00.000Z` — expected nonzero exit with `releaseStatus: "NO-GO"` and named missing production evidence.
 - `node --test test/checklist-completion-lint.test.js` — 13 pass / 0 fail after current-tree hardening.
-- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 93 checked IDs, 907 unchecked IDs.
+- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 94 checked IDs, 906 unchecked IDs.
 - `node --test test/artifact-redaction-scan.test.js` — 10 pass / 0 fail.
 - `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html` — `ok: true`, 34 scanned files, 0 rejected files.
 - `node --test test/required-release-checks.test.js` — passed when integrated
@@ -234,14 +240,14 @@ branch.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | `RPP-0101` through `RPP-0104` are integrated. `RPP-0105` is pushed at `ce443fef75`; current visible work is `RPP-0106` wp_options serialized generated coverage. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, and `RPP-0031` are integrated. `RPP-0032` dry-run route eligibility proof is pushed at `a30be4b10` but is not integrated. |
-| `rpp-26` | progress reporter | Refreshing reporting after the lane advanced through `d400b1fe1`; it does not implement release behavior or open a PR. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0026`, `RPP-0028`, `RPP-0030`, and `RPP-0031`; now evaluating the next completed branch one at a time. |
-| `rpp-29` | developer | `RPP-0205` is pushed at `e0d49cf08`; `RPP-0206` is pushed at `af3a68a477`; current visible work is `RPP-0207` local plugin data with stale owner context. |
-| `rpp-30` | developer | `RPP-0307` is pushed at `980434304`; `RPP-0308` is pushed at `af4487b5c`; current visible work is `RPP-0309` category term taxonomy reference coverage. |
-| `rpp-31` | critic | Latest visible critic output is `817bada87c` after same-source integration; critic work reinforces no-go posture and does not move checklist counts. |
-| `rpp-32` | developer | Docker/local-production release-gate artifact work is integrated; `RPP-0405` is pushed at `7da9af46e`; `RPP-0406` is pushed at `7d667b813`; current visible work is `RPP-0407` wp_usermeta driver semantics. |
+| `rpp-24` | developer | `RPP-0101` through `RPP-0104` are integrated; `RPP-0106` wp_options serialized generated coverage is pushed branch-local and not counted yet. |
+| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, and `RPP-0032` are integrated; current visible work is `RPP-0033` apply route pre-mutation proof. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced through `35d8d4601`. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, and `RPP-0032`; now evaluating the next completed branch one at a time. |
+| `rpp-29` | developer | `RPP-0205` and `RPP-0206` are pushed branch-local; current visible work is `RPP-0207` plugin-data stale owner coverage. |
+| `rpp-30` | developer | `RPP-0307` and `RPP-0308` are pushed branch-local; current visible work is `RPP-0309` category term taxonomy reference coverage. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after `35d8d4601`. |
+| `rpp-32` | developer | Docker/local-production release-gate artifact work is integrated; `RPP-0405` and `RPP-0406` are pushed branch-local and current visible work is `RPP-0407` wp_usermeta driver semantics. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
 | `rpp-10` through `rpp-23`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
@@ -291,6 +297,6 @@ Final release remains held for the following missing production-backed gates:
 11. Red-suite/auth/plugin/snapshot failures called out by the critic must be
     resolved before any final release movement.
 
-Decision: **NO-GO** for final release on 2026-05-28 04:46 CEST.
+Decision: **NO-GO** for final release on 2026-05-28 04:48 CEST.
 
 No readiness percentage moves in this report.
