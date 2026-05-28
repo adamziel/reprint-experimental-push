@@ -549,7 +549,9 @@ function redactAuthSessionSourceCommand(command = '') {
     .replace(
       /\b(REPRINT_PUSH_(?:APPLICATION_PASSWORD|LAB_AUTH_ADMIN_APP_PASSWORD)=)(?:'[^']*'|"[^"]*"|[^\s]+)/g,
       '$1<redacted>',
-    );
+    )
+    .replace(/(applicationPassword\s*:\s*['"])[^'"]+(['"])/g, '$1<redacted>$2')
+    .replace(/(applicationPassword\\?"\s*:\s*\\?")[^"\\]+(\\?")/g, '$1<redacted>$2');
 }
 
 function serviceEvidence(role, url, kind) {

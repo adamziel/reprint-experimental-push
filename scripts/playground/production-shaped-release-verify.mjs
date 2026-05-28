@@ -179,13 +179,26 @@ function summarizeAuthSessionSource(command, source) {
   }
 
   return {
-    command,
+    command: redactAuthSessionSourceCommand(command),
     ok: Boolean(source?.ok),
     sourceUrl: source?.sourceUrl || '',
     username: source?.username || '',
-    applicationPasswordPresent: Boolean(source?.applicationPassword),
+    applicationPasswordPresent: source?.applicationPasswordPresent === true || Boolean(source?.applicationPassword),
     error: source?.error || '',
   };
+}
+
+function redactAuthSessionSourceCommand(command = '') {
+  return String(command || '')
+    .replace(/(['"]--application-password=)[^'"]*(['"])/g, '$1<redacted>$2')
+    .replace(/(--application-password=)[^\s'"]+/g, '$1<redacted>')
+    .replace(/(--application-password)(\s+)(?:'[^']*'|"[^"]*"|[^\s]+)/g, '$1$2<redacted>')
+    .replace(
+      /\b(REPRINT_PUSH_(?:APPLICATION_PASSWORD|LAB_AUTH_ADMIN_APP_PASSWORD)=)(?:'[^']*'|"[^"]*"|[^\s]+)/g,
+      '$1<redacted>',
+    )
+    .replace(/(applicationPassword\s*:\s*['"])[^'"]+(['"])/g, '$1<redacted>$2')
+    .replace(/(applicationPassword\\?"\s*:\s*\\?")[^"\\]+(\\?")/g, '$1<redacted>$2');
 }
 
 export function resolveAuthSessionBoundaryProof({
@@ -994,6 +1007,14 @@ if (requireExplicitLiveCheckedBoundary) {
 const labDriftAfterSnapshot = process.env.REPRINT_PUSH_LAB_DRIFT_AFTER_SNAPSHOT || '';
 
 if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSource?.ok) {
+  const authSessionSourceExactSourceMismatch =
+    authSessionSource?.error === 'Auth session source command must return the exact checked sourceUrl';
+  const authSessionSourceFailureCode = authSessionSourceExactSourceMismatch
+    ? 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED'
+    : 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED';
+  const authSessionSourceObserved = authSessionSourceExactSourceMismatch
+    ? 'forged-or-mismatched-production-auth-session-source'
+    : 'invalid-production-auth-session-source';
   process.stdout.write(
     JSON.stringify(
       {
@@ -1005,38 +1026,47 @@ if (requireProductionAuthSession && authSessionSourceCommand && !authSessionSour
           localEdited: null,
         },
         boundary: {
-          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+          firstRemainingProductionBoundary: authSessionSourceExactSourceMismatch
+            ? 'auth/session source command on the checked live release path'
+            : 'auth/session lifecycle and durable journal semantics',
           status: 'unimplemented',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          verdict: authSessionSourceFailureCode,
           durableJournal: {
             storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
             verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
           },
           authSession: {
-            required: 'production-auth-session',
-            observed: 'invalid-production-auth-session-source',
-            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+            required: authSessionSourceExactSourceMismatch
+              ? 'same live REPRINT_PUSH_SOURCE_URL at issuance and readback'
+              : 'production-auth-session',
+            observed: authSessionSourceExactSourceMismatch
+              ? authSessionSource?.sourceUrl || 'missing-production-auth-session-source'
+              : authSessionSourceObserved,
+            verdict: authSessionSourceFailureCode,
           },
           liveAuthSessionSource: {
             ...liveAuthSessionSourceBlocker,
-            observed: 'invalid-production-auth-session-source',
+            requiredSourceUrl: authSessionSourceExactSourceMismatch ? explicitReleaseVerifySourceUrl : undefined,
+            observedSourceUrl: authSessionSourceExactSourceMismatch ? authSessionSource?.sourceUrl || '' : undefined,
+            observed: authSessionSourceObserved,
+            verdict: authSessionSourceFailureCode,
             error: authSessionSource?.error || 'invalid auth session source',
           },
         },
         protocolExtension,
         preflight: {
           status: 0,
-          authSessionType: 'invalid-production-auth-session-source',
+          authSessionType: authSessionSourceObserved,
           routeProfile: 'production-shaped',
           session: {
             id: '',
-            type: 'invalid-production-auth-session-source',
+            type: authSessionSourceObserved,
           },
         },
         releaseProof: {
           ok: false,
-          status: 501,
-          code: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          status: authSessionSourceExactSourceMismatch ? 409 : 501,
+          code: authSessionSourceFailureCode,
         },
         authSessionSource: summarizeAuthSessionSource(authSessionSourceCommand, authSessionSource),
       },

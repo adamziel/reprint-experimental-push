@@ -63,6 +63,9 @@ export function loadAuthSessionSource(
   ) {
     return {
       ok: false,
+      sourceUrl,
+      username: normalizeAuthSessionSourceField(parsed.username),
+      applicationPasswordPresent: Boolean(normalizeAuthSessionSourceField(parsed.applicationPassword)),
       error: 'Auth session source command must return the exact checked sourceUrl',
     };
   }

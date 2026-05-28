@@ -1576,16 +1576,18 @@ test('production-shaped release verify rejects an auth/session source command fo
   );
   assert.equal(proof.status, 1, proof.stderr);
   const summary = parseFirstJsonObject(proof.stdout);
-  assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED');
+  assert.equal(summary.releaseProof?.code, 'PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED');
   assert.equal(summary.topology?.sourceUrl, 'http://127.0.0.1:65535');
-  assert.equal(summary.boundary?.authSession?.observed, 'invalid-production-auth-session-source');
-  assert.equal(summary.boundary?.liveAuthSessionSource?.observed, 'invalid-production-auth-session-source');
+  assert.equal(summary.boundary?.authSession?.observed, 'http://127.0.0.1:65534');
+  assert.equal(summary.boundary?.liveAuthSessionSource?.observed, 'forged-or-mismatched-production-auth-session-source');
+  assert.equal(summary.boundary?.liveAuthSessionSource?.observedSourceUrl, 'http://127.0.0.1:65534');
   assert.equal(
     summary.boundary?.liveAuthSessionSource?.error,
     'Auth session source command must return the exact checked sourceUrl',
   );
   assert.equal(summary.authSessionSource?.ok, false);
-  assert.equal(summary.authSessionSource?.sourceUrl, '');
+  assert.equal(summary.authSessionSource?.sourceUrl, 'http://127.0.0.1:65534');
+  assert.equal(summary.authSessionSource?.applicationPasswordPresent, true);
   assert.equal(
     summary.authSessionSource?.error,
     'Auth session source command must return the exact checked sourceUrl',
@@ -6472,7 +6474,8 @@ test('production-shaped live release verify rejects auth/session source command 
   assertLiveReleaseVerifyProof(proof, 'source command URL drift live release verify wrapper', proofSubprocessTimeoutMs);
   assert.equal(proof.status, 1, proof.stderr);
   assert.match(proof.stdout, /Auth session source command must return the exact checked sourceUrl/);
-  assert.match(proof.stdout, /"observed": "invalid-production-auth-session-source"/);
+  assert.match(proof.stdout, /"observed": "forged-or-mismatched-production-auth-session-source"/);
+  assert.match(proof.stdout, /"code": "PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED"/);
   assert.match(proof.stdout, /"releaseMovement": \{\s*"allowed": false,\s*"gates": "0\/4"/);
 });
 

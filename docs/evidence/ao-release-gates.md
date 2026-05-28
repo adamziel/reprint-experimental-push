@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0085.
+Primary checklist range: RPP-0001 through RPP-0086.
 
 ## What changed
 
@@ -76,6 +76,7 @@ Primary checklist range: RPP-0001 through RPP-0085.
 | RPP-0083 | Evidence toward release verifier missing `REPRINT_PUSH_REMOTE_CHANGED_URL` carry-through now emits the named verifier code `REPRINT_PUSH_REMOTE_CHANGED_URL_REQUIRED`, preserves exact changed-remote topology evidence before startup or mutation, redacts credentials, and proves the release-gate CLI keeps the exact `remote-changed-url` evidence with source and local gates passed. |
 | RPP-0084 | Evidence toward release verifier packaged fallback rejection carry-through now emits `REPRINT_PUSH_PACKAGED_FALLBACK_REJECTED`, redacts the packaged auth source command before stdout, starts no live verifier server, and proves the release-gate CLI preserves the negative/positive packaged fallback scenario matrix. |
 | RPP-0085 | Evidence toward release verifier wrong `REPRINT_PUSH_REMOTE_URL` alias carry-through now emits `REPRINT_PUSH_SOURCE_URL_MISMATCH`, prints the final tmux-visible verifier marker, starts no live verifier server, and proves the release-gate CLI preserves the exact remote-alias gate evidence. |
+| RPP-0086 | Evidence toward release verifier auth source command readback drift carry-through now emits `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, prints the final tmux-visible verifier marker, starts no live verifier server, redacts the source command credential, and proves the release-gate CLI preserves the exact `auth-source-readback` gate evidence. |
 
 ## Focused verification
 
@@ -269,6 +270,25 @@ evidence with the final held marker.
 
 - Command: `node --test test/release-verifier-wrong-remote-alias-carry-through-focused-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-verifier-packaged-fallback-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH mutationAttempted=false]`; remote-alias gate: `REPRINT_PUSH_SOURCE_URL_MISMATCH`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_SOURCE_URL_MISMATCH]`.
+
+Release verifier auth source command readback drift carry-through refresh:
+
+```sh
+node --test test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-auth-source-readback-generated.test.js test/release-verifier-wrong-remote-alias-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 38 tests. This checks RPP-0086 by running the checked
+`npm run verify:release` path with source/local/changed URLs present and an
+auth session source command that reads back a different source URL. The
+verifier exits `1`, prints
+`[verify-release:held exit=1 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED mutationAttempted=false]`,
+records the auth source readback boundary before live verifier startup,
+redacts the command credential, carries the forged readback URL into topology
+evidence, and the release-gate CLI preserves the exact `auth-source-readback`
+evidence with the final held marker.
+
+- Command: `node --test test/release-verifier-auth-source-readback-carry-through-focused-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-auth-source-readback-generated.test.js test/release-verifier-wrong-remote-alias-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED mutationAttempted=false]`; auth-source-readback gate: `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED]`.
 
 Progress HTML release timestamp proof:
 
