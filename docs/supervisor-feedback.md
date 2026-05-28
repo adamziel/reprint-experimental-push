@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 04:48 CEST
+Last updated: 2026-05-28 04:58 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 04:58 CEST - RPP-0033, RPP-0034, RPP-0207, and RPP-0107 Integrated
+
+- Going well: integration is now at `c11c03a4b`, with `RPP-0033` apply route
+  pre-mutation proof, `RPP-0034` journal route read-only proof, `RPP-0207`
+  stale plugin-owner-context rejection, and `RPP-0107` `wp_posts`
+  create/update/delete generated coverage.
+- Checklist movement: 98 verified items checked and 902 open. New checks since
+  the prior feedback entry: `RPP-0033`, `RPP-0034`, `RPP-0207`, and
+  `RPP-0107`.
+- Verification: release-gate focused tests pass 25/25, generated-harness tests
+  pass 6/6, checklist lint reports 98 checked / 902 open with 0 risky claims,
+  artifact redaction scans 34 files with 0 rejected files, and `git diff
+  --check` is clean.
+- Current nudge: keep integrating one completed branch at a time from the
+  current lane head. Strong queued candidates include route read-only,
+  graph-taxonomy, and plugin-refusal slices, but each needs the same
+  conflict/stat/focused-test pass before checklist movement.
 
 ## 2026-05-28 04:48 CEST - RPP-0031 and RPP-0032 Integrated
 
