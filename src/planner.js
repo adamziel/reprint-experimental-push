@@ -30,6 +30,15 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const PLUGIN_DRIVER_APPLY_VALIDATION_HOOKS = new Map([
+  ['wp-option:validate-apply', new Set(['wp-option'])],
+  ['wp-postmeta:validate-apply', new Set(['wp-postmeta', 'wp-post-meta'])],
+  ['wp-termmeta:validate-apply', new Set(['wp-termmeta', 'wp-term-meta'])],
+  ['wp-usermeta:validate-apply', new Set(['wp-usermeta', 'wp-user-meta'])],
+  ['fixture-custom-table:validate-apply', new Set(['fixture-arbitrary-plugin-table'])],
+  ['fixture-forms-lab-table:validate-apply', new Set(['fixture-forms-lab-table'])],
+]);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -324,6 +333,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
           driverEvidence: support.driverEvidence,
+          ...(support.applyValidationEvidence ? { applyValidationEvidence: support.applyValidationEvidence } : {}),
         };
       }
       plan.mutations.push(mutation);
@@ -465,6 +475,11 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           policySource: supported.source,
           supportsDelete: false,
           driverEvidence,
+          applyValidationEvidence: pluginDriverApplyValidationEvidence({
+            entry: supported,
+            resource,
+            owner,
+          }),
         };
       }
 
@@ -473,6 +488,11 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         driver: supported.driver,
         policySource: supported.source,
         supportsDelete: supported.supportsDelete === true,
+        applyValidationEvidence: pluginDriverApplyValidationEvidence({
+          entry: supported,
+          resource,
+          owner,
+        }),
       };
     },
   };
@@ -534,8 +554,57 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
     table: entry.table || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    applyValidation: normalizePluginDriverApplyValidation(entry),
     source,
   };
+}
+
+function normalizePluginDriverApplyValidation(entry) {
+  const raw = entry.applyValidation
+    ?? entry.applyValidationHook
+    ?? entry.applyHook
+    ?? null;
+  if (raw == null) {
+    return null;
+  }
+  if (typeof raw === 'string') {
+    return {
+      hook: raw,
+      status: 'missing',
+    };
+  }
+  if (typeof raw !== 'object') {
+    return {
+      hook: null,
+      status: 'invalid',
+    };
+  }
+  return {
+    hook: raw.hook || raw.name || raw.id || raw.type || null,
+    status: normalizePluginDriverApplyValidationStatus(
+      raw.status ?? raw.result ?? raw.outcome ?? raw.ok ?? raw.passed,
+    ),
+  };
+}
+
+function normalizePluginDriverApplyValidationStatus(value) {
+  if (value === true) {
+    return 'passed';
+  }
+  if (value === false) {
+    return 'failed';
+  }
+  if (typeof value !== 'string') {
+    return 'missing';
+  }
+  const normalized = value.trim().toLowerCase();
+  if (['pass', 'passed', 'ok', 'success', 'succeeded', 'valid'].includes(normalized)) {
+    return 'passed';
+  }
+  if (['fail', 'failed', 'error', 'invalid', 'rejected'].includes(normalized)) {
+    return 'failed';
+  }
+  return 'invalid';
 }
 
 function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
@@ -557,6 +626,38 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
     && /^id:\d+$/.test(resource.id)
     && owner === 'forms'
     && entry.pluginOwner === 'forms';
+}
+
+function pluginDriverApplyValidationEvidence({ entry, resource, owner }) {
+  if (!entry.applyValidation) {
+    return null;
+  }
+
+  const hook = entry.applyValidation.hook || null;
+  const supportedDrivers = PLUGIN_DRIVER_APPLY_VALIDATION_HOOKS.get(hook);
+  const supportedHook = Boolean(
+    hook
+    && supportedDrivers !== undefined
+    && (!supportedDrivers || supportedDrivers.has(entry.driver)),
+  );
+  const status = entry.applyValidation.status;
+  const reasonCode = !supportedHook
+    ? 'PLUGIN_DRIVER_APPLY_VALIDATION_UNSUPPORTED'
+    : status === 'passed'
+      ? 'PLUGIN_DRIVER_APPLY_VALIDATION_PASSED'
+      : 'PLUGIN_DRIVER_APPLY_VALIDATION_FAILED';
+
+  return {
+    reasonCode,
+    operation: 'apply-validation',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: entry.driver || null,
+    policySource: entry.source || null,
+    hook,
+    supportedHook,
+    status,
+  };
 }
 
 function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {

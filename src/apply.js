@@ -225,6 +225,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
       );
     }
     validatePluginOwnedOwnerContext(remote, mutation, owner);
+    validatePluginOwnedApplyValidation(mutation, owner, driver);
   }
 }
 
@@ -288,6 +289,53 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
   }
   return false;
+}
+
+function validatePluginOwnedApplyValidation(mutation, owner, driver) {
+  const evidence = mutation.pluginOwnedResource?.applyValidationEvidence;
+  if (!evidence) {
+    return;
+  }
+
+  const passed = evidence.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_PASSED'
+    && evidence.operation === 'apply-validation'
+    && evidence.resourceKey === mutation.resourceKey
+    && evidence.pluginOwner === owner
+    && evidence.driver === driver
+    && evidence.supportedHook === true
+    && evidence.status === 'passed';
+  if (passed) {
+    return;
+  }
+
+  const reasonCode = typeof evidence.reasonCode === 'string' && evidence.reasonCode
+    ? evidence.reasonCode
+    : 'PLUGIN_DRIVER_APPLY_VALIDATION_INVALID';
+  throw new PushPlanError(
+    reasonCode,
+    `Refusing to apply plugin-owned resource ${mutation.resourceKey} because driver apply validation did not pass.`,
+    {
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      pluginOwner: owner,
+      driver,
+      applyValidationEvidence: redactedPluginDriverApplyValidationEvidence(evidence),
+    },
+  );
+}
+
+function redactedPluginDriverApplyValidationEvidence(evidence) {
+  return {
+    reasonCode: evidence?.reasonCode || null,
+    operation: evidence?.operation || null,
+    resourceKey: evidence?.resourceKey || null,
+    pluginOwner: evidence?.pluginOwner || null,
+    driver: evidence?.driver || null,
+    policySource: evidence?.policySource || null,
+    hook: evidence?.hook || null,
+    supportedHook: evidence?.supportedHook === true,
+    status: evidence?.status || null,
+  };
 }
 
 function validatePluginOwnedOwnerContext(remote, mutation, owner) {
