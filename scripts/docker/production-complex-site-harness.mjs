@@ -14,10 +14,18 @@ import {
 } from '../playground/local-production-complex-site-proof.js';
 import { buildAuthSessionSourceCommand } from '../playground/auth-session-source-command.js';
 import { releaseVerifyFixtureCredentials } from '../playground/release-verify-credentials.js';
+import {
+  evaluateReleaseGates,
+  formatReleaseGateStatusMarker,
+  releaseGateSummary,
+} from '../../src/release-gates.js';
+import { digest } from '../../src/stable-json.js';
 
 export const dockerHarnessEvent = 'docker-local-production-complex-site-harness';
 export const dockerHarnessGate = 'GATE-3';
 export const dockerHarnessRuntime = 'docker-local-wordpress';
+export const dockerReleaseGateInputSchemaVersion = 1;
+export const dockerReleaseGateInputProducer = 'docker-local-production-release-gate-input';
 
 export const forbiddenTunnelBinaries = Object.freeze([
   'ngrok',
@@ -154,6 +162,7 @@ export function probeDockerPrerequisites({ runCommand = runCommandSync } = {}) {
 export function buildDockerTopologyPlan({
   cwd = repoRoot,
   workDir = path.join(os.tmpdir(), 'reprint-docker-local-production'),
+  evidenceDir = workDir,
   env = process.env,
   shape = complexSiteFixtureShapeFromEnv(env),
   images = {},
@@ -202,6 +211,7 @@ export function buildDockerTopologyPlan({
     projectName,
     cwd: path.resolve(cwd),
     workDir: path.resolve(workDir),
+    evidenceDir: path.resolve(evidenceDir),
     images: resolvedImages,
     network: {
       name: 'reprint_private',
@@ -248,9 +258,10 @@ export function buildDockerTopologyPlan({
     shape: { ...shape },
     releaseEnv,
     evidence: {
-      plannerProofFile: path.join(path.resolve(workDir), 'planner-proof.json'),
-      releaseOutputFile: path.join(path.resolve(workDir), 'release-verify-output.txt'),
-      releaseGateInputFile: path.join(path.resolve(workDir), 'release-gate-input.json'),
+      evidenceDir: path.resolve(evidenceDir),
+      plannerProofFile: path.join(path.resolve(evidenceDir), 'planner-proof.json'),
+      releaseOutputFile: path.join(path.resolve(evidenceDir), 'release-verify-output.txt'),
+      releaseGateInputFile: path.join(path.resolve(evidenceDir), 'release-gate-input.json'),
     },
   };
   return {
@@ -319,10 +330,27 @@ export function validateTopologyPlan(plan) {
   };
 }
 
-export function buildPrerequisiteGateArtifact({ probe, plan, status = 'blocked' } = {}) {
+export function buildPrerequisiteGateArtifact({
+  probe,
+  plan,
+  status = 'blocked',
+  releaseEvidence = null,
+  verify = null,
+  generatedAt = null,
+} = {}) {
   const blocker = probe?.blocker || null;
-  return {
-    event: 'docker-local-production-release-gate-input',
+  const releaseGateInput = buildDockerReleaseGateInput({
+    probe,
+    plan,
+    status,
+    releaseEvidence,
+    verify,
+    generatedAt: normalizeIsoTimestamp(generatedAt || probe?.checkedAt),
+  });
+  const releaseGateEvaluation = buildReleaseGateEvaluationSummary(releaseGateInput);
+  const artifact = {
+    schemaVersion: dockerReleaseGateInputSchemaVersion,
+    event: dockerReleaseGateInputProducer,
     gate: dockerHarnessGate,
     runtime: dockerHarnessRuntime,
     status,
@@ -335,7 +363,10 @@ export function buildPrerequisiteGateArtifact({ probe, plan, status = 'blocked' 
     commands: {
       runHarness: 'npm run verify:release:docker-local-production',
       focusedTests: 'npm run test:docker:production-complex-site-harness',
+      releaseGateCheck: 'node ./scripts/release/check-release-gates.mjs --evidence-file <artifact>',
     },
+    ...releaseGateInput,
+    releaseGateEvaluation,
     topology: plan ? {
       projectName: plan.projectName,
       sites: (plan.sites || []).map((site) => ({ key: site.key, service: site.service, url: site.url })),
@@ -355,6 +386,311 @@ export function buildPrerequisiteGateArtifact({ probe, plan, status = 'blocked' 
       dockerWordPressReleaseReady: status === 'passed',
       dockerWordPressBlockedUntilPrerequisitesPass: status !== 'passed',
     },
+  };
+  return {
+    ...artifact,
+    deterministic: buildDeterministicArtifactMetadata(artifact),
+  };
+}
+
+export function buildDockerReleaseGateInput({
+  probe,
+  plan,
+  status = 'blocked',
+  releaseEvidence = null,
+  verify = null,
+  generatedAt = null,
+} = {}) {
+  const scope = releaseGateScopeForStatus(status);
+  const normalizedGeneratedAt = normalizeIsoTimestamp(generatedAt || probe?.checkedAt);
+  return {
+    scope,
+    evidenceScope: scope,
+    generatedAt: normalizedGeneratedAt,
+    env: {},
+    packagedFallback: false,
+    evidence: buildDockerReleaseGateEvidence({
+      probe,
+      plan,
+      status,
+      releaseEvidence,
+      verify,
+      scope,
+    }),
+  };
+}
+
+export function buildReleaseGateEvaluationSummary(releaseGateInput = {}) {
+  const evaluation = evaluateReleaseGates({
+    env: releaseGateInput.env || {},
+    evidence: releaseGateInput.evidence || {},
+    scope: releaseGateInput.scope || releaseGateInput.evidenceScope || 'missing',
+    packagedFallback: releaseGateInput.packagedFallback,
+    now: releaseGateInput.generatedAt,
+  });
+  const primaryFailure = evaluation.releaseMovement?.missingEvidence?.[0] || null;
+  return {
+    evaluator: evaluation.evaluator,
+    generatedAt: evaluation.generatedAt,
+    status: evaluation.status,
+    scope: evaluation.scope,
+    ok: evaluation.releaseMovement?.allowed === true,
+    primaryFailureCode: primaryFailure?.code || null,
+    primaryFailureGate: primaryFailure?.id || null,
+    statusMarker: formatReleaseGateStatusMarker(evaluation, { label: 'docker-local-production-release-gates' }),
+    totals: evaluation.totals,
+    candidateMovement: evaluation.candidateMovement,
+    releaseMovement: evaluation.releaseMovement,
+    summary: releaseGateSummary(evaluation),
+  };
+}
+
+export function validateReleaseGateArtifact(artifact = {}) {
+  const failures = [];
+  if (artifact.schemaVersion !== dockerReleaseGateInputSchemaVersion) {
+    failures.push({
+      code: 'RELEASE_GATE_ARTIFACT_SCHEMA_VERSION',
+      expected: dockerReleaseGateInputSchemaVersion,
+      observed: artifact.schemaVersion,
+    });
+  }
+  if (artifact.event !== dockerReleaseGateInputProducer) {
+    failures.push({
+      code: 'RELEASE_GATE_ARTIFACT_EVENT',
+      expected: dockerReleaseGateInputProducer,
+      observed: artifact.event,
+    });
+  }
+  if (!artifact.evidence || typeof artifact.evidence !== 'object' || Array.isArray(artifact.evidence)) {
+    failures.push({ code: 'RELEASE_GATE_ARTIFACT_EVIDENCE_OBJECT_REQUIRED' });
+  }
+  if (artifact.env && Object.keys(artifact.env).some((key) => /password|secret|token|nonce|authorization/i.test(key))) {
+    failures.push({ code: 'RELEASE_GATE_ARTIFACT_ENV_CONTAINS_SECRET_SHAPED_KEY' });
+  }
+
+  const observedEvaluation = buildReleaseGateEvaluationSummary({
+    scope: artifact.scope,
+    env: artifact.env,
+    packagedFallback: artifact.packagedFallback,
+    evidence: artifact.evidence,
+    generatedAt: artifact.generatedAt,
+  });
+  if (artifact.releaseGateEvaluation?.status !== observedEvaluation.status) {
+    failures.push({
+      code: 'RELEASE_GATE_ARTIFACT_EVALUATION_STATUS_MISMATCH',
+      expected: observedEvaluation.status,
+      observed: artifact.releaseGateEvaluation?.status,
+    });
+  }
+  if (artifact.releaseGateEvaluation?.primaryFailureCode !== observedEvaluation.primaryFailureCode) {
+    failures.push({
+      code: 'RELEASE_GATE_ARTIFACT_PRIMARY_FAILURE_MISMATCH',
+      expected: observedEvaluation.primaryFailureCode,
+      observed: artifact.releaseGateEvaluation?.primaryFailureCode,
+    });
+  }
+  if (artifact.status !== 'passed' && artifact.releaseGateEvaluation?.releaseMovement?.allowed === true) {
+    failures.push({ code: 'RELEASE_GATE_ARTIFACT_MUST_FAIL_CLOSED_WHEN_NOT_PASSED' });
+  }
+
+  const expectedDigest = buildDeterministicArtifactMetadata(artifact).canonicalSha256;
+  if (artifact.deterministic?.canonicalSha256 !== expectedDigest) {
+    failures.push({
+      code: 'RELEASE_GATE_ARTIFACT_CANONICAL_DIGEST_MISMATCH',
+      expected: expectedDigest,
+      observed: artifact.deterministic?.canonicalSha256 || null,
+    });
+  }
+
+  return {
+    ok: failures.length === 0,
+    failures,
+    releaseGateEvaluation: observedEvaluation,
+  };
+}
+
+function buildDockerReleaseGateEvidence({
+  probe,
+  plan,
+  status,
+  releaseEvidence,
+  verify,
+  scope,
+} = {}) {
+  const blocker = probe?.blocker || null;
+  const marker = status === 'passed'
+    ? '[RPP-DOCKER-LOCAL-PRODUCTION:PASS]'
+    : '[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]';
+  const evidence = {
+    packagedFallback: {
+      ok: true,
+      observed: false,
+      source: dockerReleaseGateInputProducer,
+      scope,
+    },
+    tmuxStatusMarker: {
+      ok: true,
+      marker,
+      scope,
+    },
+    dockerLocalProductionProof: {
+      ok: status === 'passed',
+      status,
+      failClosed: status !== 'passed',
+      code: blocker?.code || (status === 'passed' ? 'DOCKER_LOCAL_PRODUCTION_PASSED' : 'DOCKER_LOCAL_PRODUCTION_FAILED'),
+      reason: blocker?.reason || (status === 'passed'
+        ? 'Docker local production proof completed.'
+        : 'Docker local production proof did not produce a passing release artifact.'),
+      runtime: dockerHarnessRuntime,
+      gate: dockerHarnessGate,
+      externalAccountsRequired: false,
+      scope,
+    },
+  };
+
+  const verifyStatus = typeof verify?.status === 'number'
+    ? verify.status
+    : (status === 'blocked' ? 2 : null);
+  if (status !== 'passed' || (Number.isInteger(verifyStatus) && verifyStatus !== 0)) {
+    evidence.verifyReleaseFailure = {
+      ok: true,
+      exitCode: Number.isInteger(verifyStatus) && verifyStatus !== 0 ? verifyStatus : 1,
+      reason: blocker?.code || releaseEvidence?.verifier?.boundary?.verdict || 'DOCKER_LOCAL_PRODUCTION_PROOF_FAILED',
+      scope,
+    };
+  }
+
+  if (status !== 'passed' || releaseEvidence?.ok !== true || !plan) {
+    return evidence;
+  }
+
+  const sourceUrl = plan.releaseEnv.REPRINT_PUSH_SOURCE_URL;
+  const localUrl = plan.releaseEnv.REPRINT_PUSH_LOCAL_URL;
+  const remoteChangedUrl = plan.releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL;
+  const preflightRoute = '/reprint/v1/push/preflight';
+  const dryRunRoute = '/reprint/v1/push/dry-run';
+  const applyRoute = '/reprint/v1/push/apply';
+  const journalRoute = '/reprint/v1/push/journal';
+  const recoveryInspectRoute = '/reprint/v1/push/recovery/inspect';
+  const recoveryInspectReadOnlyOk = releaseEvidence.verifier?.gate2DurableRecoveryJournal?.ok === true;
+
+  return {
+    ...evidence,
+    sourceUrl: { ok: true, url: sourceUrl, observed: sourceUrl, scope },
+    localUrl: { ok: true, url: localUrl, observed: localUrl, scope },
+    remoteChangedUrl: { ok: true, url: remoteChangedUrl, observed: remoteChangedUrl, scope },
+    remoteAlias: { ok: true, url: sourceUrl, observed: sourceUrl, scope },
+    authSourceCommandReadback: {
+      ok: true,
+      same: true,
+      issuedSourceUrl: sourceUrl,
+      readbackSourceUrl: sourceUrl,
+      command: 'auth-session-source-command:redacted-docker-fixture',
+      scope,
+    },
+    productionSecret: {
+      ok: true,
+      present: true,
+      observed: 'fixture-application-password-provisioned-by-disposable-docker-mu-plugin',
+      scope,
+    },
+    applicationPasswordCredentialBinding: {
+      ok: true,
+      bound: true,
+      sameSource: true,
+      observed: 'fixture-credential-bound-to-docker-source-url',
+      scope,
+    },
+    manageOptionsCapability: {
+      ok: releaseEvidence.verifier?.authSessionBoundary?.manageOptions === true,
+      hasManageOptions: releaseEvidence.verifier?.authSessionBoundary?.manageOptions === true,
+      observed: releaseEvidence.verifier?.authSessionBoundary?.manageOptions === true
+        ? 'manage_options'
+        : 'missing-manage_options',
+      scope,
+    },
+    sourceIdentity: {
+      ok: true,
+      same: true,
+      sameSource: true,
+      observed: 'docker-service-dns-source-identity',
+      sourceUrl,
+      localUrl,
+      remoteChangedUrl,
+      scope,
+    },
+    preflightRouteIdentity: { ok: true, sameRoute: true, observed: preflightRoute, scope },
+    dryRunRouteEligibility: {
+      ok: releaseEvidence.invariants?.receiptHashPresent === true,
+      eligible: releaseEvidence.invariants?.receiptHashPresent === true,
+      observed: dryRunRoute,
+      scope,
+    },
+    applyRoutePreMutation: {
+      ok: releaseEvidence.invariants?.applyRevalidationCoveredEveryMutation === true,
+      preMutation: releaseEvidence.invariants?.applyRevalidationCoveredEveryMutation === true,
+      observed: applyRoute,
+      scope,
+    },
+    journalRouteReadOnly: {
+      ok: releaseEvidence.invariants?.durableJournalGateOk === true,
+      readOnly: releaseEvidence.invariants?.durableJournalGateOk === true,
+      observed: journalRoute,
+      scope,
+    },
+    recoveryInspectReadOnly: {
+      ok: recoveryInspectReadOnlyOk,
+      readOnly: recoveryInspectReadOnlyOk,
+      observed: recoveryInspectRoute,
+      scope,
+    },
+  };
+}
+
+function releaseGateScopeForStatus(status) {
+  return status === 'passed' ? 'local-candidate' : 'missing';
+}
+
+function buildDeterministicArtifactMetadata(artifact) {
+  return {
+    canonicalVersion: 1,
+    canonicalSha256: digest(canonicalReleaseGateArtifact(artifact)),
+    excludes: [
+      'artifactFile',
+      'deterministic',
+      'generatedAt',
+      'prerequisiteProbe.checkedAt',
+      'releaseGateEvaluation.generatedAt',
+    ],
+  };
+}
+
+function canonicalReleaseGateArtifact(artifact) {
+  return {
+    schemaVersion: artifact.schemaVersion,
+    event: artifact.event,
+    gate: artifact.gate,
+    runtime: artifact.runtime,
+    status: artifact.status,
+    ok: artifact.ok,
+    acceptedForReleaseGate: artifact.acceptedForReleaseGate,
+    failClosed: artifact.failClosed,
+    reason: artifact.reason,
+    scope: artifact.scope,
+    evidenceScope: artifact.evidenceScope,
+    packagedFallback: artifact.packagedFallback,
+    env: artifact.env,
+    evidence: artifact.evidence,
+    topology: artifact.topology,
+    releaseGateEvaluation: artifact.releaseGateEvaluation ? {
+      ...artifact.releaseGateEvaluation,
+      generatedAt: '<dynamic>',
+    } : null,
+    rppEvidence: artifact.rppEvidence,
+    prerequisiteProbe: artifact.prerequisiteProbe ? {
+      ...artifact.prerequisiteProbe,
+      checkedAt: '<dynamic>',
+    } : null,
   };
 }
 
@@ -428,12 +764,21 @@ export async function runDockerLocalProductionHarness({
   const shape = complexSiteFixtureShapeFromEnv(env);
   const workDir = env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_WORKDIR
     || fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-local-production-'));
-  const plan = buildDockerTopologyPlan({ cwd, workDir, env, shape });
+  const evidenceDir = env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_DIR
+    || fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-docker-local-production-evidence-'));
+  const generatedAt = normalizeIsoTimestamp(env.REPRINT_PUSH_DOCKER_LOCAL_PRODUCTION_EVIDENCE_GENERATED_AT);
+  const plan = buildDockerTopologyPlan({ cwd, workDir, evidenceDir, env, shape });
   const probe = probeDockerPrerequisites({ runCommand });
   stdout.write(`${JSON.stringify({ event: 'docker-local-production-prerequisite-probe', ...probe }, null, 2)}\n`);
 
   if (!probe.ok) {
-    const artifact = buildPrerequisiteGateArtifact({ probe, plan, status: 'blocked' });
+    const artifact = buildPrerequisiteGateArtifact({
+      probe,
+      plan,
+      status: 'blocked',
+      verify: { status: 2, signal: null },
+      generatedAt,
+    });
     writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
     stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]\n');
@@ -454,6 +799,8 @@ export async function runDockerLocalProductionHarness({
       },
       plan,
       status: 'blocked',
+      verify: { status: 3, signal: null },
+      generatedAt,
     });
     writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
@@ -475,6 +822,8 @@ export async function runDockerLocalProductionHarness({
     workDir,
     projectName: plan.projectName,
     publishedPorts: plan.publishedPorts,
+    evidenceDir: plan.evidence.evidenceDir,
+    releaseGateInputFile: plan.evidence.releaseGateInputFile,
     sites: plan.sites.map((site) => ({ key: site.key, url: site.url, service: site.service })),
     validation: plan.validation,
   }, null, 2)}\n`);
@@ -512,7 +861,7 @@ export async function runDockerLocalProductionHarness({
     });
     const status = verify.status === 0 && releaseEvidence.ok ? 'passed' : 'failed';
     const artifact = {
-      ...buildPrerequisiteGateArtifact({ probe, plan, status }),
+      ...buildPrerequisiteGateArtifact({ probe, plan, status, releaseEvidence, verify, generatedAt }),
       releaseEvidence,
       verify: {
         status: verify.status,
@@ -529,13 +878,20 @@ export async function runDockerLocalProductionHarness({
     return { status: status === 'passed' ? 0 : 4, probe, plan, artifact };
   } catch (error) {
     const artifact = {
-      ...buildPrerequisiteGateArtifact({ probe, plan, status: 'failed' }),
+      ...buildPrerequisiteGateArtifact({
+        probe,
+        plan,
+        status: 'failed',
+        verify: { status: 4, signal: null },
+        generatedAt,
+      }),
       reason: error instanceof Error ? error.message : String(error),
       failure: {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack || null : null,
       },
     };
+    artifact.deterministic = buildDeterministicArtifactMetadata(artifact);
     writeEvidenceArtifact(plan.evidence.releaseGateInputFile, artifact);
     stdout.write(`${JSON.stringify(artifact, null, 2)}\n`);
     stdout.write('[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]\n');
@@ -793,6 +1149,19 @@ function positiveEnvInt(value, fallback) {
 function positiveInt(value) {
   const parsed = Number.parseInt(String(value), 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function normalizeIsoTimestamp(value = null) {
+  if (value instanceof Date && !Number.isNaN(value.valueOf())) {
+    return value.toISOString();
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.valueOf())) {
+      return parsed.toISOString();
+    }
+  }
+  return new Date().toISOString();
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
