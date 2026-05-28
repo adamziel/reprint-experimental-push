@@ -25,6 +25,13 @@ const requiredFamilies = [
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'wp-comments-commentmeta-graph',
+  'wp-comments-commentmeta-graph-target',
+  'wp-comments-commentmeta-graph-ready',
+  'wp-comments-commentmeta-graph-stale',
+  'wp-comments-graph',
+  'wp-commentmeta-graph',
+  'wp-comments-remote-drift',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -347,6 +354,103 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
     );
+  }
+}
+
+test('RPP-0130 wp_comments and wp_commentmeta graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpCommentsCommentmetaGraph;
+
+  assert.ok(coverage, 'missing wp_comments/wp_commentmeta graph target coverage');
+  assert.equal(coverage.family, 'wp-comments-commentmeta-graph');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-comments-commentmeta-graph-target']);
+  assert.deepEqual(coverage.statuses, { conflict: 5, ready: 5 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('Generated wp_commentmeta graph'), false);
+  assert.equal(summaryEvidence.includes('Remote concurrent wp_comments child'), false);
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'wp-comments-commentmeta-graph');
+  const readyCases = cases.filter((testCase) => testCase.tags.has('wp-comments-commentmeta-graph-ready'));
+  const staleCases = cases.filter((testCase) => testCase.tags.has('wp-comments-commentmeta-graph-stale'));
+
+  assert.equal(cases.length, 10, 'one wp_comments/wp_commentmeta graph case should appear per tier');
+  assert.equal(readyCases.length, 5, 'even tiers should produce ready comment graph cases');
+  assert.equal(staleCases.length, 5, 'odd tiers should produce stale comment graph cases');
+
+  for (const readyCase of readyCases) {
+    assertWpCommentsCommentmetaGraphShape(readyCase, { staleTarget: false });
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 3, 'ready graph should create parent, child, and commentmeta rows');
+    assert.equal(ready.applied, true, 'ready wp_comments/wp_commentmeta graph should apply');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready graph should preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready graph should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const staleCase of staleCases) {
+    assertWpCommentsCommentmetaGraphShape(staleCase, { staleTarget: true });
+    const stale = validateGeneratedCase(staleCase);
+    assert.equal(stale.status, 'conflict');
+    assert.ok(stale.conflicts >= 1, 'remote comment drift should produce a conflict');
+    assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+  }
+});
+
+function assertWpCommentsCommentmetaGraphShape(testCase, { staleTarget }) {
+  const parentRows = Object.entries(testCase.local.db.wp_comments)
+    .filter(([id, row]) => !testCase.base.db.wp_comments[id]
+      && row.comment_content.startsWith('Generated wp_comments parent '));
+  const childRows = Object.entries(testCase.local.db.wp_comments)
+    .filter(([id, row]) => !testCase.base.db.wp_comments[id]
+      && row.comment_content.startsWith('Generated wp_comments child '));
+  const metaRows = Object.entries(testCase.local.db.wp_commentmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_commentmeta[id]
+      && row.meta_value.startsWith('Generated wp_commentmeta graph '));
+
+  assert.equal(parentRows.length, 1, `${testCase.id} should create one parent comment`);
+  assert.equal(childRows.length, 1, `${testCase.id} should create one child comment`);
+  assert.equal(metaRows.length, 1, `${testCase.id} should create one commentmeta row`);
+
+  const [parentRowId, parent] = parentRows[0];
+  const [childRowId, child] = childRows[0];
+  const [metaRowId, meta] = metaRows[0];
+
+  assert.equal(parent.comment_post_ID, 1, `${testCase.id} parent should attach to seeded post`);
+  assert.ok(testCase.base.db.wp_posts[`ID:${parent.comment_post_ID}`], `${testCase.id} parent post should exist`);
+  assert.equal(parent.comment_parent, 0, `${testCase.id} parent should not depend on another comment`);
+  assert.equal(child.comment_post_ID, parent.comment_post_ID, `${testCase.id} child should share parent post`);
+  assert.equal(child.comment_parent, parent.comment_ID, `${testCase.id} child should reference parent comment`);
+  assert.equal(meta.comment_id, child.comment_ID, `${testCase.id} commentmeta should reference child comment`);
+
+  assert.equal(testCase.base.db.wp_comments[parentRowId], undefined);
+  assert.equal(testCase.base.db.wp_comments[childRowId], undefined);
+  assert.equal(testCase.base.db.wp_commentmeta[metaRowId], undefined);
+
+  if (staleTarget) {
+    assert.equal(testCase.remote.db.wp_comments[parentRowId], undefined);
+    assert.ok(testCase.remote.db.wp_comments[childRowId], `${testCase.id} should carry remote child drift`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_comments[childRowId],
+      child,
+      `${testCase.id} remote child drift should differ from local child`,
+    );
+    assert.equal(testCase.remote.db.wp_commentmeta[metaRowId], undefined);
+  } else {
+    assert.equal(testCase.remote.db.wp_comments[parentRowId], undefined);
+    assert.equal(testCase.remote.db.wp_comments[childRowId], undefined);
+    assert.equal(testCase.remote.db.wp_commentmeta[metaRowId], undefined);
   }
 }
 

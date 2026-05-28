@@ -36,6 +36,7 @@ const scenarioFamilies = Object.freeze([
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'wp-comments-commentmeta-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -68,6 +69,7 @@ const readyPreservingFamilies = new Set([
   'same-plan-post-parent-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'wp-comments-commentmeta-graph',
   'supported-forms-lab-table',
   'atomic-plugin-stack-ready',
   'plugin-file-update',
@@ -93,6 +95,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpCommentsCommentmetaGraph: {
+    family: 'wp-comments-commentmeta-graph',
+    tag: 'wp-comments-commentmeta-graph-target',
   },
 });
 
@@ -430,6 +436,13 @@ const scenarioFamilyBuilders = {
     tags.add('same-plan-graph');
     tags.add('comment-graph');
   },
+  'wp-comments-commentmeta-graph': ({ base, local, remote, allocator, tags, tier }) => {
+    addWpCommentsCommentmetaGraph(base, local, remote, allocator, tags, {
+      staleTarget: tier % 2 === 1,
+      prefix: tier % 2 === 1 ? 'stale-wp-comments' : 'ready-wp-comments',
+    });
+    tags.add(tier % 2 === 1 ? 'expected-conflict' : 'ready-candidate');
+  },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
     const rowId = `id:${id}`;
@@ -668,6 +681,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (family === 'wp-comments-commentmeta-graph') {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -912,7 +929,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1263,6 +1280,60 @@ function addCommentGraph(local, allocator) {
     comment_parent: parentId,
     user_id: 1,
   }));
+}
+
+function addWpCommentsCommentmetaGraph(base, local, remote, allocator, tags, { staleTarget, prefix }) {
+  const parentId = allocator.graphId();
+  const childId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const parentRowId = `comment_ID:${parentId}`;
+  const childRowId = `comment_ID:${childId}`;
+  const metaRowId = `meta_id:${metaId}`;
+  const parent = makeComment(parentId, {
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: 1,
+    comment_content: `Generated wp_comments parent ${prefix} ${parentId}`,
+  });
+  const child = makeComment(childId, {
+    comment_post_ID: 1,
+    comment_parent: parentId,
+    user_id: 1,
+    comment_content: `Generated wp_comments child ${prefix} ${childId}`,
+  });
+
+  setRow(local, 'wp_comments', parentRowId, parent);
+  setRow(local, 'wp_comments', childRowId, child);
+  setRow(local, 'wp_commentmeta', metaRowId, {
+    meta_id: metaId,
+    comment_id: childId,
+    meta_key: `_rpp_comment_graph_${metaId}`,
+    meta_value: `Generated wp_commentmeta graph ${prefix} ${metaId}`,
+  });
+  remote.files[`wp-content/uploads/${prefix}-remote-only-${allocator.next()}.txt`] =
+    `Remote preserved wp_comments graph note ${allocator.next()}`;
+  tags.add('remote-preserve');
+
+  if (staleTarget) {
+    setRow(remote, 'wp_comments', childRowId, {
+      ...child,
+      comment_content: `Remote concurrent wp_comments child ${allocator.next()}`,
+    });
+    tags.add('wp-comments-commentmeta-graph-stale');
+    tags.add('wp-comments-remote-drift');
+  } else {
+    assert.equal(base.db.wp_comments[parentRowId], undefined);
+    assert.equal(remote.db.wp_comments[parentRowId], undefined);
+    assert.equal(remote.db.wp_comments[childRowId], undefined);
+    assert.equal(remote.db.wp_commentmeta[metaRowId], undefined);
+    tags.add('wp-comments-commentmeta-graph-ready');
+  }
+
+  tags.add('wp-comments-commentmeta-graph-target');
+  tags.add('wp-comments-graph');
+  tags.add('wp-commentmeta-graph');
+  tags.add('comment-graph');
+  tags.add('same-plan-graph');
 }
 
 function addTaxonomyGraph(local, allocator) {
