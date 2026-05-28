@@ -53,10 +53,10 @@ The default generated run covers:
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
-  plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  plugin owner-context drift, supported forms-lab custom-table rows and delete
+  refusal with per-tier target counts, atomic plugin install ready and
+  missing-dependency paths, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -70,6 +70,12 @@ create the term and taxonomy row in one plan and reject a stale replay before
 mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
+
+The `pluginOwnedCustomTableChanges` target coverage records per-tier counts for
+forms-lab custom table rows owned by the forms plugin. Ready cases apply through
+the `fixture-forms-lab-table` driver with hash-only audit evidence and reject a
+stale replay before mutation; delete attempts remain non-ready because the
+driver does not support deletes, so no custom-table delete mutation is applied.
 
 At the time this note was added, the summary command reported:
 
@@ -99,6 +105,27 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "pluginOwnedCustomTableChanges": {
+      "family": "supported-forms-lab-table",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 5,
+        "conflict": 5,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -150,6 +177,10 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
+    "forms-lab-delete-blocked": 20,
+    "forms-lab-supported": 24,
+    "plugin-owned-custom-table-change": 20,
+    "supported-forms-lab-table": 10,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,

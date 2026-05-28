@@ -8,6 +8,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -66,6 +67,7 @@ const requiredFamilies = [
   'same-plan-graph',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
+  'plugin-owned-custom-table-change',
   'file-topology',
   'directory-descendant',
   'directory-delete-with-remote-descendant',
@@ -354,4 +356,158 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+test('RPP-0135 plugin-owned custom-table target records ready and non-ready invariants', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedCustomTableChanges;
+
+  assert.ok(coverage, 'missing plugin-owned custom-table target coverage');
+  assert.equal(coverage.family, 'supported-forms-lab-table');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table-change']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready custom-table cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready custom-table cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'supported-forms-lab-table');
+  const deleteBlockedCase = cases.find((testCase) => testCase.family === 'forms-lab-delete-blocked');
+
+  assert.ok(readyCase, 'missing ready plugin-owned custom-table case');
+  assert.ok(deleteBlockedCase, 'missing non-ready plugin-owned custom-table delete case');
+  assert.ok(readyCase.tags.has('plugin-owned-custom-table-change'));
+  assert.ok(deleteBlockedCase.tags.has('plugin-owned-custom-table-change'));
+
+  const readyShape = assertFormsLabReadyShape(readyCase);
+  const deleteShape = assertFormsLabDeleteBlockedShape(deleteBlockedCase);
+  const ready = validateGeneratedCase(readyCase);
+  const deleteBlocked = validateGeneratedCase(deleteBlockedCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true, 'ready custom-table case should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready custom-table apply should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready custom-table case should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(deleteBlocked.status, 'ready', 'delete custom-table case must not be ready');
+  assert.ok(deleteBlocked.blockers >= 1, 'custom-table delete should be blocked by driver policy');
+  assert.equal(deleteBlocked.applied, false, 'non-ready custom-table case must not apply mutations');
+
+  assertFormsLabReadyPlanEvidence(readyCase, readyShape.resourceKey, readyShape.payloadToken);
+  assertFormsLabDeletePlanRefusesMutation(deleteBlockedCase, deleteShape.resourceKey);
+});
+
+function assertFormsLabReadyShape(testCase) {
+  const rows = Object.entries(testCase.local.db.wp_reprint_push_forms_lab)
+    .filter(([id, row]) => {
+      const baseRow = testCase.base.db.wp_reprint_push_forms_lab[id];
+      const remoteRow = testCase.remote.db.wp_reprint_push_forms_lab[id];
+      return baseRow
+        && remoteRow
+        && row.__pluginOwner === 'forms'
+        && row.payload?.mode === 'local'
+        && baseRow.payload?.mode === 'base'
+        && remoteRow.payload?.mode === 'base';
+    });
+
+  assert.equal(rows.length, 1, `${testCase.id} should update one plugin-owned custom-table row`);
+  const [rowId, row] = rows[0];
+  assert.match(rowId, /^id:\d+$/, `${testCase.id} should use deterministic numeric custom-table ids`);
+  assert.equal(row.payload.token, testCase.base.db.wp_reprint_push_forms_lab[rowId].payload.token);
+  return {
+    rowId,
+    resourceKey: `row:${JSON.stringify(['wp_reprint_push_forms_lab', rowId])}`,
+    payloadToken: row.payload.token,
+  };
+}
+
+function assertFormsLabDeleteBlockedShape(testCase) {
+  const rows = Object.entries(testCase.base.db.wp_reprint_push_forms_lab)
+    .filter(([id, row]) => row.__pluginOwner === 'forms'
+      && row.payload?.token?.startsWith('delete-blocked-')
+      && !testCase.local.db.wp_reprint_push_forms_lab[id]
+      && testCase.remote.db.wp_reprint_push_forms_lab[id]);
+
+  assert.equal(rows.length, 1, `${testCase.id} should attempt one custom-table delete`);
+  const [rowId] = rows[0];
+  assert.match(rowId, /^id:\d+$/, `${testCase.id} should use deterministic numeric custom-table ids`);
+  return {
+    rowId,
+    resourceKey: `row:${JSON.stringify(['wp_reprint_push_forms_lab', rowId])}`,
+  };
+}
+
+function assertFormsLabReadyPlanEvidence(testCase, resourceKey, payloadToken) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(plan.status, 'ready');
+  assert.ok(mutation, `${testCase.id} should plan a custom-table mutation`);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource?.driver, 'fixture-forms-lab-table');
+  assert.equal(mutation.pluginOwnedResource?.supportsDelete, false);
+  assert.equal(mutation.pluginOwnedResource?.ownerContextRequired, true);
+  assert.ok(mutation.pluginOwnedResource.ownerContext.length >= 2);
+  assert.equal(mutation.pluginOwnedResource.auditEvidence?.format, 'hash-only');
+  assert.equal(mutation.pluginOwnedResource.auditEvidence?.rawValuesIncluded, false);
+  assert.equal(mutation.pluginOwnedResource.auditEvidence?.resourceKey, resourceKey);
+  assert.equal(mutation.pluginOwnedResource.auditEvidence?.driver, 'fixture-forms-lab-table');
+  assert.equal(mutation.pluginOwnedResource.auditEvidence?.supportsDelete, false);
+  assert.ok(mutation.pluginOwnedResource.auditEvidence?.baseHash);
+  assert.ok(mutation.pluginOwnedResource.auditEvidence?.localHash);
+  assert.ok(mutation.pluginOwnedResource.auditEvidence?.remoteHash);
+  assert.ok(mutation.pluginOwnedResource.auditEvidence?.driverEvidenceHash);
+  assert.equal(mutation.pluginOwnedResource.driverEvidence?.plugin, 'reprint-push-forms-fixture');
+  assert.ok(mutation.pluginOwnedResource.driverEvidence?.baseHash);
+  assert.ok(mutation.pluginOwnedResource.driverEvidence?.remoteHash);
+  assert.equal(
+    Object.hasOwn(mutation.pluginOwnedResource.auditEvidence, 'payload'),
+    false,
+    'custom-table audit evidence must not include payload fields',
+  );
+  assert.equal(
+    JSON.stringify(mutation.pluginOwnedResource.auditEvidence).includes(payloadToken),
+    false,
+    'custom-table audit evidence must be hash-only',
+  );
+}
+
+function assertFormsLabDeletePlanRefusesMutation(testCase, resourceKey) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+
+  assert.notEqual(plan.status, 'ready');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === resourceKey),
+    false,
+    `${testCase.id} should not plan the refused custom-table delete`,
+  );
+  assert.ok(
+    plan.blockers.some((blocker) =>
+      blocker.resourceKey === resourceKey
+      && blocker.class === 'unsupported-plugin-owned-resource'
+      && blocker.reason === 'Plugin-owned resource driver does not support delete mutations.'),
+    `${testCase.id} should block custom-table delete before mutation`,
+  );
 }

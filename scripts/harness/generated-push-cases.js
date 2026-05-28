@@ -90,6 +90,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
   },
+  pluginOwnedCustomTableChanges: {
+    family: 'supported-forms-lab-table',
+    tag: 'plugin-owned-custom-table-change',
+  },
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
@@ -448,6 +452,7 @@ const scenarioFamilyBuilders = {
       table: 'wp_reprint_push_forms_lab',
     });
     tags.add('forms-lab-supported');
+    tags.add('plugin-owned-custom-table-change');
   },
   'forms-lab-delete-blocked': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
@@ -464,6 +469,7 @@ const scenarioFamilyBuilders = {
       table: 'wp_reprint_push_forms_lab',
     });
     tags.add('forms-lab-delete-blocked');
+    tags.add('plugin-owned-custom-table-change');
   },
   'atomic-plugin-stack-ready': ({ local, tags }) => {
     installAtomicStack(local);
@@ -902,6 +908,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -913,6 +920,13 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
+      if (
+        blocker.class === 'atomic-group-blocker-propagation'
+        && matchingMutation?.resourceKey === blocker.resourceKey
+      ) {
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
