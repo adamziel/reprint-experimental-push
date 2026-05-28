@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 23:06 CEST.
+- Last update: 2026-05-28 23:12 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 225
-  items checked and leaves 775 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 226
+  items checked and leaves 774 open.
 - Checked slices: 92 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 35 generated
+  7 chunking/performance items, 2 production-topology items, 36 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
   yet.
 - Focused tmux stdout marker refresh: the current lane now contains
@@ -159,6 +159,15 @@ linked implementation artifacts.
   the 620 deterministic generated cases, proving ready plus non-ready model
   evidence for plugin-owned custom-table changes with redacted custom-table
   payload metadata and a documented invariant/surface.
+- Generated harness atomic plugin install stack variant-1 refresh: the current
+  lane now contains RPP-0116 coverage in `scripts/harness/generated-push-cases.js`,
+  `test/generated-push-harness.test.js`, `docs/generated-push-harness.md`, and
+  `docs/evidence/ao-generated-harness-rpp-0116.md`. `node --test
+  --test-name-pattern 'RPP-0116' test/generated-push-harness.test.js` passed
+  1/1, and `npm run test:generated-push-harness` passed 38/38 across the 620
+  deterministic generated cases, proving ready plus non-ready missing-dependency
+  model evidence for atomic plugin install stacks with hash-only resource and
+  blocker summaries.
 - Release verifier same-source identity carry-through refresh: the current lane
   now contains
   `test/release-verifier-same-source-carry-through-focused-regression.test.js`
@@ -243,7 +252,7 @@ linked implementation artifacts.
   `RPP-0470`, and `RPP-0471`.
 - Validation: focused `RPP-0221` through `RPP-0223` planner tests passed 3/3,
   `npm run test:generated-push-harness` passed 35/35, the current integrated
-  `node --test test/generated-push-harness.test.js` pass is 37/37, and the plugin/planner
+  `node --test test/generated-push-harness.test.js` pass is 38/38, and the plugin/planner
   focused suite passed 167/167.
 - Public progress publishing is now explicit: GitHub Pages serves
   `progress.html` from the existing `main` branch, so AO must run

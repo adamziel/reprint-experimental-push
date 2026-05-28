@@ -1,9 +1,9 @@
-# AO Progress Report - 2026-05-28 23:06 CEST
+# AO Progress Report - 2026-05-28 23:12 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0115 plugin-owned custom-table
+`lane/evidence-integration-20260527` through the current RPP-0116 atomic plugin install stack
 generated harness refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 225 are
-  checked from integrated evidence and 775 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 226 are
+  checked from integrated evidence and 774 remain open.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -238,6 +238,16 @@ progress.
   `docs/generated-push-harness.md`.
   - Command: `node --test --test-name-pattern 'RPP-0115' test/generated-push-harness.test.js`; `npm run test:generated-push-harness`
   - Observed status: `pass`; focused generated-harness tests: `1/1`; full generated harness: `37/37`; generated cases: `620`.
+- Generated harness atomic plugin install stack variant-1 coverage now checks
+  `RPP-0116`. `node --test --test-name-pattern 'RPP-0116'
+  test/generated-push-harness.test.js` passed 1/1, and `npm run
+  test:generated-push-harness` passed 38/38 across the 620 deterministic cases,
+  proving one ready stack plus one non-ready missing-dependency stack from the
+  real generated harness with same-group dependency proof, apply refusal, and
+  hash-only resource/blocker summaries in
+  `docs/evidence/ao-generated-harness-rpp-0116.md`.
+  - Command: `node --test --test-name-pattern 'RPP-0116' test/generated-push-harness.test.js`; `npm run test:generated-push-harness`
+  - Observed status: `pass`; focused generated-harness tests: `1/1`; full generated harness: `38/38`; generated cases: `620`.
 - Branch integration audit now reports zero unmerged refs across the freshly
   fetched `origin/session/rpp*` set: 397 checked, 0 unmerged. The broader
   local/remote `rpp`/session-like sweep checked 843 refs with 0 unmerged. The
@@ -1139,7 +1149,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 88 / 100 |
-| `RPP-0101`-`RPP-0200` | Generated harness expansion | 34 / 100 |
+| `RPP-0101`-`RPP-0200` | Generated harness expansion | 36 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 28 / 100 |
@@ -1154,7 +1164,7 @@ Checked IDs in this report are:
 - Release gates: `RPP-0001` through `RPP-0092`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
-  `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0115`, `RPP-0117`, `RPP-0118`,
+  `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0113`, `RPP-0114`, `RPP-0115`, `RPP-0116`, `RPP-0117`, `RPP-0118`,
   `RPP-0120`, `RPP-0121`, `RPP-0122`, `RPP-0123`, `RPP-0124`, `RPP-0125`,
   `RPP-0126`, `RPP-0127`, `RPP-0128`, `RPP-0129`, `RPP-0130`,
   `RPP-0131`, `RPP-0132`, `RPP-0133`, `RPP-0134`, `RPP-0135`,
@@ -1204,7 +1214,8 @@ Checked IDs in this report are:
 - `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.
 - `node --test --test-name-pattern 'RPP-0115' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 37 full generated-harness passes / 0 fail for RPP-0115 plugin-owned custom-table variant-1 generated/model evidence.
-- `node --test test/generated-push-harness.test.js` — 37 pass / 0 fail after RPP-0115, including the full generated harness, plugin-owned custom-table variant-1, and prior atomic plugin install stack target coverage.
+- `node --test --test-name-pattern 'RPP-0116' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 38 full generated-harness passes / 0 fail for RPP-0116 atomic plugin install stack variant-1 generated/model evidence.
+- `node --test test/generated-push-harness.test.js` — 38 pass / 0 fail after RPP-0116, including the full generated harness, atomic plugin install stack variant-1, plugin-owned custom-table variant-1, and prior atomic plugin install stack target coverage.
 - `node --test test/release-gates.test.js test/release-gate-source-url-generated.test.js test/release-gate-local-url-generated.test.js test/release-gate-remote-changed-url-generated.test.js test/release-gate-packaged-fallback-generated.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-gate-auth-source-readback-generated.test.js test/release-gate-missing-production-secret-generated.test.js test/release-gate-application-password-binding-generated.test.js test/release-gate-manage-options-generated.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gate-apply-route-pre-mutation-generated.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-recovery-inspect-read-only-generated.test.js test/release-gate-release-movement-summary-generated.test.js test/release-gate-tmux-status-marker-generated.test.js test/release-gate-status-row-generated.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-cli.test.js` — 73 pass / 0 fail for the expanded RPP-0027, RPP-0029, generated release-gate, and focused regression evidence-count refresh.
 - `node --test test/release-gates.test.js test/release-gate-cli.test.js` — 28 pass / 0 fail.
 - `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 29 pass / 0 fail for the RPP-0038 progress.html release timestamp proof plus release-gate/CLI coverage.

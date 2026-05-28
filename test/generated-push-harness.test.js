@@ -80,6 +80,9 @@ const requiredFamilies = [
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
   'atomic-plugin-missing-dependency',
+  'atomic-plugin-install-stack-v1',
+  'atomic-plugin-stack-ready-v1',
+  'atomic-plugin-stack-missing-dependency-v1',
   'atomic-plugin-install-stack-v3',
   'atomic-plugin-stack-ready-v3',
   'atomic-plugin-stack-missing-dependency-v3',
@@ -774,6 +777,70 @@ test('RPP-0240 generated atomic group blockers propagate before apply mutation',
   assert.equal(evidenceText.includes('generated dependent'), false);
   assert.equal(evidenceText.includes('<?php'), false);
   assert.equal(evidenceText.includes('payload'), false);
+});
+
+test('RPP-0116 atomic plugin install stack variant 1 emits ready and non-ready generated model evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.atomicPluginInstallStackV1;
+  const firstEvidence = generatedAtomicPluginInstallStackV1Evidence();
+  const replayEvidence = generatedAtomicPluginInstallStackV1Evidence();
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0116 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.ok(coverage, 'missing atomic plugin install stack variant 1 target coverage');
+  assert.equal(coverage.family, 'atomic-plugin-stack-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['atomic-plugin-install-stack-v1']);
+  assert.ok(coverage.statuses.ready > 0, 'variant 1 target should include ready atomic plugin stack cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 1 target should include non-ready atomic plugin stack cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 1 generated model evidence changed between runs');
+  assert.equal(firstEvidence.target, 'atomicPluginInstallStackV1');
+  assert.equal(firstEvidence.totalCases, 2);
+  assert.equal(firstEvidence.readyCases, 1);
+  assert.equal(firstEvidence.nonReadyCases, 1);
+
+  const readyCase = firstEvidence.cases.find((entry) => entry.status === 'ready');
+  const nonReadyCase = firstEvidence.cases.find((entry) => entry.status !== 'ready');
+
+  assert.ok(readyCase, 'variant 1 evidence must include a ready case');
+  assert.ok(nonReadyCase, 'variant 1 evidence must include a non-ready case');
+  assert.equal(readyCase.atomicGroup.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.atomicGroup.dependencySources[0], 'same-atomic-group');
+  assert.ok(
+    readyCase.atomicGroup.mutationResourceKeys.includes(pluginResourceKey(atomicDependencyPlugin)),
+    'ready variant 1 case should install dependency plugin metadata inside the same atomic group',
+  );
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.atomicGroup.status, 'blocked');
+  assert.ok(
+    nonReadyCase.atomicGroup.blockers.some((blocker) =>
+      blocker.class === 'missing-plugin-dependency'
+        && blocker.plugin === atomicDependencyPlugin),
+    'non-ready variant 1 case should expose missing dependency evidence',
+  );
+  assert.ok(
+    nonReadyCase.atomicGroup.blockers.some((blocker) =>
+      blocker.class === 'atomic-group-blocker-propagation'
+        && blocker.resourceKey === pluginResourceKey(atomicDependentPlugin)),
+    'non-ready variant 1 case should propagate the atomic blocker to grouped plugin metadata',
+  );
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('private-atomic-plugin-install-stack-v3'), false);
+  assert.equal(evidenceText.includes('<?php'), false);
+  assert.equal(evidenceText.includes('generated dependency'), false);
+  assert.equal(evidenceText.includes('generated dependent'), false);
 });
 
 test('RPP-0156 atomic plugin install stack target emits ready and non-ready redacted coverage', () => {
@@ -3418,7 +3485,97 @@ function assertCommentsCommentmetaEvidenceRedacted(testCase, plan, shape) {
 }
 
 
+function generatedAtomicPluginInstallStackV1Evidence() {
+  const targetCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('atomic-plugin-install-stack-v1'));
+  const selectedCases = [
+    targetCases.find((testCase) => testCase.family === 'atomic-plugin-stack-ready'),
+    targetCases.find((testCase) => testCase.family === 'atomic-plugin-missing-dependency'),
+  ];
+
+  assert.equal(selectedCases.includes(undefined), false, 'variant 1 evidence needs ready and non-ready cases');
+
+  const cases = selectedCases.map((testCase) => {
+    const missingDependency = testCase.family === 'atomic-plugin-missing-dependency';
+    const shape = assertAtomicPluginStackShape(testCase, { missingDependency });
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(testCase);
+    const group = plan.atomicGroups.find((candidate) => candidate.id === shape.intent.id);
+
+    assert.ok(group, `${testCase.id} should emit an atomic group for variant 1 evidence`);
+    assert.equal(testCase.tags.has('atomic-plugin-install-stack-v1'), true);
+
+    return {
+      id: testCase.id,
+      tier: testCase.tier,
+      family: testCase.family,
+      status: result.status,
+      applied: result.applied,
+      summary: {
+        mutations: plan.summary.mutations,
+        blockers: plan.summary.blockers,
+        conflicts: plan.summary.conflicts,
+        atomicGroups: plan.summary.atomicGroups,
+      },
+      atomicGroup: {
+        id: group.id,
+        status: group.status,
+        requireAtomic: group.requireAtomic,
+        resources: [...group.resources].sort(),
+        mutationResourceKeys: plan.mutations
+          .filter((mutation) => mutation.atomicGroupId === group.id)
+          .map((mutation) => mutation.resourceKey)
+          .sort(),
+        dependencySources: (group.dependencyRequirements || [])
+          .map((requirement) => requirement.source)
+          .sort(),
+        dependencyRequirementHashes: (group.dependencyRequirements || [])
+          .map((requirement) => ({
+            plugin: requirement.plugin,
+            expectedHash: requirement.expectedHash,
+            plannedHash: requirement.plannedHash || null,
+            remoteHash: requirement.remoteHash || null,
+          }))
+          .sort((left, right) => left.plugin.localeCompare(right.plugin)),
+        blockers: group.blockers
+          .map((blocker) => ({
+            class: blocker.class,
+            resourceKey: blocker.resourceKey || null,
+            plugin: blocker.plugin || null,
+            reason: blocker.reason || null,
+          }))
+          .sort((left, right) =>
+            `${left.class}:${left.resourceKey || ''}:${left.plugin || ''}`
+              .localeCompare(`${right.class}:${right.resourceKey || ''}:${right.plugin || ''}`)),
+      },
+      modelProofHash: digest({
+        id: testCase.id,
+        expectedResourceKeys: shape.expectedResourceKeys,
+        status: result.status,
+        applied: result.applied,
+        groupStatus: group.status,
+      }),
+    };
+  });
+
+  return {
+    target: 'atomicPluginInstallStackV1',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases: cases.length,
+    readyCases: cases.filter((entry) => entry.status === 'ready').length,
+    nonReadyCases: cases.filter((entry) => entry.status !== 'ready').length,
+    cases,
+  };
+}
+
 function assertAtomicPluginStackShape(testCase, { missingDependency }) {
+  assert.ok(testCase.tags.has('atomic-plugin-install-stack-v1'));
   assert.ok(testCase.tags.has('atomic-plugin-install-stack-v3'));
   const intent = testCase.local.pushIntents?.[0];
 

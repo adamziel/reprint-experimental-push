@@ -224,6 +224,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'atomic-plugin-stack-ready',
     tag: 'atomic-plugin-install-stack-v3',
   },
+  atomicPluginInstallStackV1: {
+    family: 'atomic-plugin-stack-ready',
+    tag: 'atomic-plugin-install-stack-v1',
+  },
   pluginOwnedOptionChange: {
     family: 'plugin-owned-option-change-ready',
     tag: 'plugin-owned-option-change',
@@ -1216,6 +1220,8 @@ const scenarioFamilyBuilders = {
   'atomic-plugin-stack-ready': ({ local, tags }) => {
     installAtomicStack(local);
     tags.add('atomic-ready');
+    tags.add('atomic-plugin-install-stack-v1');
+    tags.add('atomic-plugin-stack-ready-v1');
     tags.add('atomic-plugin-install-stack-v3');
     tags.add('atomic-plugin-stack-ready-v3');
   },
@@ -1239,6 +1245,8 @@ const scenarioFamilyBuilders = {
       },
     ];
     tags.add('atomic-blocked');
+    tags.add('atomic-plugin-install-stack-v1');
+    tags.add('atomic-plugin-stack-missing-dependency-v1');
     tags.add('atomic-plugin-install-stack-v3');
     tags.add('atomic-plugin-stack-missing-dependency-v3');
   },
