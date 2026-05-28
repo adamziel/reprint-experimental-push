@@ -49,11 +49,11 @@ The default generated run covers:
   conflicts, file topology conflicts, file create/update/
   delete mixes with ready and conflicting outcomes plus per-tier target counts,
   directory descendant deletes with ready and conflicting outcomes plus
-  per-tier target counts, file type-swap cases with ready and conflicting
-  outcomes, row create/update/delete mixes with ready and conflicting
-  outcomes plus stale replay rejection before mutation, non-plugin-owned
-  `wp_options` scalar and serialized option updates with ready and
-  concurrent remote-drift outcomes, `wp_posts`
+  per-tier target counts, file type-swap cases with ready/conflict outcomes
+  plus per-tier target counts, row create/update/delete mixes with ready and
+  conflicting outcomes plus stale replay rejection before mutation,
+  non-plugin-owned `wp_options` scalar and serialized option updates with ready
+  and concurrent remote-drift outcomes, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, and stale replay rejection before mutation,
@@ -99,6 +99,10 @@ only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
 
+The `fileTypeSwap` target coverage records per-tier counts for file topology
+type swaps. Ready cases replace an empty directory with the planned file value
+and preserve unplanned remote resources; conflict cases add a remote descendant
+under the directory and refuse apply.
 
 The `sameIndependentContent` target coverage records per-tier counts for local
 and remote edits that independently converge on the same content. Its ready
@@ -112,14 +116,12 @@ preserving every unplanned remote resource; stale replays fail before mutation,
 and concurrent remote edits to the updated postmeta row remain `conflict` and
 refuse apply.
 
-
 The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
 generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
 Ready cases create the comment and commentmeta row in one plan and reject stale
 replays before mutation; stale cases keep the comment in the base, drift that
 comment remotely, and require the new commentmeta reference to fail closed
 instead of overwriting the drifted remote.
-
 
 The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 `wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create
@@ -356,6 +358,26 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 11,
         "ready": 9
+      }
+    },
+    "fileTypeSwap": {
+      "family": "file-type-swap-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {

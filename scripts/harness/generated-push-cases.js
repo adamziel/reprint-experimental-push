@@ -129,6 +129,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'same-independent-content',
     tag: 'same-independent-content-target',
   },
+  fileTypeSwap: {
+    family: 'file-type-swap-ready',
+    tag: 'file-type-swap',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
