@@ -62,6 +62,17 @@ const taxonomyGraphResourceKeys = Object.freeze([
   taxonomyGraphRelationshipResourceKey,
   taxonomyGraphTermMetaResourceKey,
 ]);
+const categoryTermTaxonomyIdentitySourceTermId = 74101;
+const categoryTermTaxonomyIdentityTargetTermId = 75101;
+const categoryTermTaxonomyIdentityTaxonomyId = 74111;
+const categoryTermTaxonomyIdentityName = 'Reprint Push Category Term Taxonomy Identity';
+const categoryTermTaxonomyIdentitySlug = 'reprint-push-category-term-taxonomy-identity';
+const categoryTermTaxonomyIdentityDescription = 'Local category term taxonomy identity fixture.';
+const categoryTermTaxonomyIdentityPrivateRemoteName = 'Remote Private Category Term Drift';
+const categoryTermTaxonomyIdentityPrivateRemoteSlug = 'remote-private-category-term-drift';
+const categoryTermTaxonomyIdentitySourceTermResourceKey = `row:["wp_terms","term_id:${categoryTermTaxonomyIdentitySourceTermId}"]`;
+const categoryTermTaxonomyIdentityTargetTermResourceKey = `row:["wp_terms","term_id:${categoryTermTaxonomyIdentityTargetTermId}"]`;
+const categoryTermTaxonomyIdentityTaxonomyResourceKey = `row:["wp_term_taxonomy","term_taxonomy_id:${categoryTermTaxonomyIdentityTaxonomyId}"]`;
 const postTagTaxonomyGraphPostId = 71002;
 const postTagTaxonomyGraphTermId = 72931;
 const postTagTaxonomyGraphTermTaxonomyId = 72941;
@@ -478,6 +489,139 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildCategoryTermTaxonomyIdentityMapProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyRemoteSnapshot = categoryTermTaxonomyIdentityReadyRemoteSnapshot(
+    sourceSnapshot,
+    remoteChangedSnapshot,
+  );
+  const staleRemoteSnapshot = categoryTermTaxonomyCloneJson(readyRemoteSnapshot);
+  if (staleRemoteSnapshot?.db?.wp_terms?.[`term_id:${categoryTermTaxonomyIdentityTargetTermId}`]) {
+    staleRemoteSnapshot.db.wp_terms[`term_id:${categoryTermTaxonomyIdentityTargetTermId}`].name =
+      categoryTermTaxonomyIdentityPrivateRemoteName;
+    staleRemoteSnapshot.db.wp_terms[`term_id:${categoryTermTaxonomyIdentityTargetTermId}`].slug =
+      categoryTermTaxonomyIdentityPrivateRemoteSlug;
+  }
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: readyRemoteSnapshot,
+    now: proofNow,
+  });
+  const stalePlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: staleRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const taxonomyMutation = readyMutations.find((mutation) =>
+    mutation?.resourceKey === categoryTermTaxonomyIdentityTaxonomyResourceKey) || null;
+  const taxonomyValue = taxonomyMutation
+    ? deserializeResourceValue(taxonomyMutation.value)
+    : null;
+  const termRewrite = Array.isArray(taxonomyMutation?.wordpressGraphIdentity?.rewrites)
+    ? taxonomyMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+      rewrite.relationshipType === 'term-taxonomy-term')
+    : null;
+  const staleTaxonomyBlocker = stalePlan.blockers.find((blocker) =>
+    blocker?.resourceKey === categoryTermTaxonomyIdentityTaxonomyResourceKey) || null;
+  const staleBlockerEvidence = staleTaxonomyBlocker
+    ? categoryTermTaxonomyHashOnlyWordPressGraphBlockerEvidence(staleTaxonomyBlocker)
+    : null;
+  const staleBlockerJson = JSON.stringify(staleBlockerEvidence);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    identityMapRowsPresent: counts.source.categoryTermTaxonomyIdentitySourceTerms === 0
+      && counts.localEdited.categoryTermTaxonomyIdentitySourceTerms >= 1
+      && counts.localEdited.categoryTermTaxonomyIdentityTaxonomies >= 1
+      && counts.remoteChanged.categoryTermTaxonomyIdentityTargetTerms >= 1,
+    readyMapsDeterministically: readyPlan.status === 'ready'
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === categoryTermTaxonomyIdentitySourceTermResourceKey
+        && decision.decision === 'map-local-identity-to-remote')
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === categoryTermTaxonomyIdentityTargetTermResourceKey
+        && decision.decision === 'keep-remote'),
+    categoryTermTaxonomyRewritten: taxonomyMutation?.changeKind === 'create'
+      && taxonomyValue?.taxonomy === 'category'
+      && taxonomyValue?.term_id === categoryTermTaxonomyIdentityTargetTermId
+      && termRewrite?.relationshipType === 'term-taxonomy-term'
+      && termRewrite?.sourceTargetResourceKey === categoryTermTaxonomyIdentitySourceTermResourceKey
+      && termRewrite?.targetResourceKey === categoryTermTaxonomyIdentityTargetTermResourceKey,
+    sourceTermNotMutated: !readyMutations.some((mutation) =>
+      mutation.resourceKey === categoryTermTaxonomyIdentitySourceTermResourceKey),
+    taxonomyHasLivePrecondition: readyPlan.preconditions?.some((precondition) =>
+      precondition.resourceKey === categoryTermTaxonomyIdentityTaxonomyResourceKey
+      && precondition.checkedAgainst === 'live-remote'
+      && categoryTermTaxonomyIsSha256Hex(precondition.expectedHash)
+      && precondition.expectedHash === taxonomyMutation?.baseHash
+      && precondition.expectedHash === taxonomyMutation?.remoteBeforeHash),
+    staleTargetFailsClosed: stalePlan.status === 'blocked'
+      && staleTaxonomyBlocker?.class === 'stale-wordpress-graph-identity'
+      && staleTaxonomyBlocker?.references?.some((reference) =>
+        reference.relationshipType === 'term-taxonomy-term'
+        && reference.targetResourceKey === categoryTermTaxonomyIdentitySourceTermResourceKey
+        && reference.targetSupport?.supported === false),
+    staleTargetPreventsReleaseMovement: stalePlan.status !== 'ready',
+    staleTargetNoTaxonomyMutation: !((stalePlan.mutations || []).some((mutation) =>
+      mutation.resourceKey === categoryTermTaxonomyIdentityTaxonomyResourceKey)),
+    staleBlockerEvidenceIsHashOnly: Boolean(staleBlockerEvidence)
+      && [staleBlockerEvidence.baseHash, staleBlockerEvidence.localHash, staleBlockerEvidence.remoteHash]
+        .every(categoryTermTaxonomyIsSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) =>
+        categoryTermTaxonomyIsSha256Hex(staleBlockerEvidence.change?.[slot]?.hash)),
+    staleBlockerRedactsRawValues: ![
+      categoryTermTaxonomyIdentityName,
+      categoryTermTaxonomyIdentitySlug,
+      categoryTermTaxonomyIdentityDescription,
+      categoryTermTaxonomyIdentityPrivateRemoteName,
+      categoryTermTaxonomyIdentityPrivateRemoteSlug,
+    ].some((privateValue) => staleBlockerJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'category-term-taxonomy-identity-map-reference',
+    releaseReady: false,
+    resourceKeys: {
+      sourceTerm: categoryTermTaxonomyIdentitySourceTermResourceKey,
+      targetTerm: categoryTermTaxonomyIdentityTargetTermResourceKey,
+      termTaxonomy: categoryTermTaxonomyIdentityTaxonomyResourceKey,
+    },
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    stalePlan: summarizePlan(stalePlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    deterministicMapping: taxonomyMutation
+      ? {
+        resourceKey: taxonomyMutation.resourceKey,
+        termId: taxonomyValue?.term_id,
+        taxonomy: taxonomyValue?.taxonomy || null,
+        rewriteType: termRewrite?.relationshipType || null,
+        sourceTargetResourceKey: termRewrite?.sourceTargetResourceKey || null,
+        targetResourceKey: termRewrite?.targetResourceKey || null,
+        sourceTargetLocalHash: termRewrite?.sourceTargetLocalHash || null,
+        targetRemoteHash: termRewrite?.targetRemoteHash || null,
+      }
+      : null,
+    staleBlocker: staleBlockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +918,55 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function categoryTermTaxonomyIdentityReadyRemoteSnapshot(sourceSnapshot, remoteChangedSnapshot) {
+  const snapshot = categoryTermTaxonomyCloneJson(sourceSnapshot);
+  snapshot.db = snapshot.db || {};
+  snapshot.db.wp_terms = snapshot.db.wp_terms || {};
+  const targetTerm =
+    remoteChangedSnapshot?.db?.wp_terms?.[`term_id:${categoryTermTaxonomyIdentityTargetTermId}`];
+  if (targetTerm) {
+    snapshot.db.wp_terms[`term_id:${categoryTermTaxonomyIdentityTargetTermId}`] =
+      categoryTermTaxonomyCloneJson(targetTerm);
+  }
+  return snapshot;
+}
+
+function categoryTermTaxonomyHashOnlyWordPressGraphBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: blocker.change || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+        targetSupport: reference.targetSupport
+          ? {
+            supported: reference.targetSupport.supported === true,
+            reason: reference.targetSupport.reason || null,
+          }
+          : null,
+      }))
+      : [],
+  };
+}
+
+function categoryTermTaxonomyIsSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -869,6 +1062,16 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === taxonomyGraphTermMetaId
       && Number(row?.term_id) === taxonomyGraphTermId
       && String(row?.meta_key || '') === taxonomyGraphMetaKey).length,
+    categoryTermTaxonomyIdentitySourceTerms: Object.values(terms).filter((row) =>
+      Number(row?.term_id) === categoryTermTaxonomyIdentitySourceTermId
+      && String(row?.slug || '') === categoryTermTaxonomyIdentitySlug).length,
+    categoryTermTaxonomyIdentityTargetTerms: Object.values(terms).filter((row) =>
+      Number(row?.term_id) === categoryTermTaxonomyIdentityTargetTermId
+      && String(row?.slug || '') === categoryTermTaxonomyIdentitySlug).length,
+    categoryTermTaxonomyIdentityTaxonomies: Object.values(termTaxonomy).filter((row) =>
+      Number(row?.term_taxonomy_id) === categoryTermTaxonomyIdentityTaxonomyId
+      && Number(row?.term_id) === categoryTermTaxonomyIdentitySourceTermId
+      && String(row?.taxonomy || '') === 'category').length,
     postTagTaxonomyGraphTerms: Object.values(terms).filter((row) =>
       String(row?.slug || '') === postTagTaxonomyGraphTermSlug).length,
     postTagTaxonomyGraphTaxonomies: Object.values(termTaxonomy).filter((row) =>
@@ -977,6 +1180,10 @@ function positiveEnvInt(value, fallback) {
     return fallback;
   }
   return positiveInt(value);
+}
+
+function categoryTermTaxonomyCloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function phpString(value) {
