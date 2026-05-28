@@ -821,7 +821,7 @@ function extractFirstJsonObject(text, label, details) {
 async function withPlaygroundServer(name, blueprintPath, run) {
   const server = await startPlaygroundServer(name, blueprintPath);
   try {
-    await run(server);
+    return await run(server);
   } finally {
     await stopPlaygroundServer(server);
   }
