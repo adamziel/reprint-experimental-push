@@ -6,19 +6,27 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 20:28 CEST.
+- Last update: 2026-05-28 20:39 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the current release-gate and session/rpp integration refresh.
+  the current release-gate focused regression and session/rpp integration
+  refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 203
-  items checked and leaves 797 open.
-- Checked slices: 71 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 207
+  items checked and leaves 793 open.
+- Checked slices: 75 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
   yet.
+- Focused route/recovery/releaseMovement refresh: the current lane now contains
+  `test/release-gate-route-recovery-focused-regression.test.js` for
+  `RPP-0073` through `RPP-0076`. The command
+  `node --test test/release-gate-route-recovery-focused-regression.test.js`
+  passed 4/4, covering apply route pre-mutation, journal route read-only,
+  recovery inspect read-only, and releaseMovement summary evidence. Final
+  release remains `NO-GO`.
 - Focused route-regression refresh: the current lane already contains
   preflight route identity and dry-run route eligibility focused regression
   tests for `RPP-0071` and `RPP-0072`. The command

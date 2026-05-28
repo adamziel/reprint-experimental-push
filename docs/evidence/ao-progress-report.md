@@ -1,18 +1,18 @@
-# AO Progress Report - 2026-05-28 20:28 CEST
+# AO Progress Report - 2026-05-28 20:39 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current release-gate and
-session/rpp integration refresh. It separates
+`lane/evidence-integration-20260527` through the current release-gate focused
+regression and session/rpp integration refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 203 are
-  checked from integrated evidence and 797 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 207 are
+  checked from integrated evidence and 793 remain open.
 - This release-gate evidence-count refresh checks `RPP-0027`, `RPP-0041`
   through `RPP-0049`, `RPP-0052` through `RPP-0057`, `RPP-0059` through
   `RPP-0061`, `RPP-0063` through `RPP-0066`, and `RPP-0068` through
@@ -23,6 +23,12 @@ progress.
   `RPP-0072`. The current lane already contains focused preflight route
   identity and dry-run route eligibility regression tests; the focused
   route-regression command passed 33/33 while final release remains
+  **NO-GO**.
+- A focused route/recovery/releaseMovement refresh now checks `RPP-0073`
+  through `RPP-0076`. `node --test
+  test/release-gate-route-recovery-focused-regression.test.js` passed 4/4,
+  covering apply route pre-mutation, journal route read-only, recovery inspect
+  read-only, and releaseMovement summary proof while final release remains
   **NO-GO**.
 - Session/rpp cleanup now checks `RPP-0156` by integrating the branch-local
   generated-harness atomic plugin install stack proof. The current lane exposes
@@ -917,7 +923,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 71 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 75 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 34 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 20 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
@@ -931,7 +937,7 @@ tracks the near-to-far slices used to supervise the AO team:
 Checked IDs in this report are:
 
 - Release gates: `RPP-0001` through `RPP-0028`, plus `RPP-0030` through
-  `RPP-0061`, plus `RPP-0062` through `RPP-0072`. `RPP-0029` remains open
+  `RPP-0061`, plus `RPP-0062` through `RPP-0076`. `RPP-0029` remains open
   until a variant-2 manage_options scenario-matrix proof is linked.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
@@ -965,6 +971,7 @@ Checked IDs in this report are:
 
 ## Checked Commands
 
+- `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.
 - `node --test test/generated-push-harness.test.js` — 36 pass / 0 fail after RPP-0156, including the full generated harness and atomic plugin install stack target coverage.
 - `node --test test/release-gates.test.js test/release-gate-source-url-generated.test.js test/release-gate-local-url-generated.test.js test/release-gate-remote-changed-url-generated.test.js test/release-gate-packaged-fallback-generated.test.js test/release-gate-wrong-remote-alias-generated.test.js test/release-gate-auth-source-readback-generated.test.js test/release-gate-missing-production-secret-generated.test.js test/release-gate-application-password-binding-generated.test.js test/release-gate-manage-options-generated.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gate-apply-route-pre-mutation-generated.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-recovery-inspect-read-only-generated.test.js test/release-gate-release-movement-summary-generated.test.js test/release-gate-tmux-status-marker-generated.test.js test/release-gate-status-row-generated.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-missing-remote-changed-url-regression.test.js test/release-gate-packaged-fallback-regression.test.js test/release-gate-wrong-remote-alias-regression.test.js test/release-gate-auth-source-readback-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-cli.test.js` — 72 pass / 0 fail for the expanded RPP-0027, generated release-gate, and focused regression evidence-count refresh.
