@@ -4,6 +4,30 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Live Roster After Supervisor Cleanup
+
+- Last update: 2026-05-28 03:47 CEST.
+- Integrated evidence branch: `origin/lane/evidence-integration-20260527` at
+  `fdb02ab6a` (`test: add checklist completion linter`).
+- Release posture: **NO-GO**. Release remains **NO-GO unless
+  production-backed evidence lands**.
+- Checklist state verified from `docs/reprint-push-completion-checklist.md`: 85
+  checked, 915 open, 1000 total. No checklist item is marked complete by this
+  reporting refresh.
+- Live roster observed in tmux after cleanup: developers `rpp-24`, `rpp-25`,
+  `rpp-28`, `rpp-29`, `rpp-30`; critic `rpp-31`; progress reporter
+  `rpp-26`; supervisor `rpp-orchestrator`.
+- Stale interactive sessions `rpp-10` through `rpp-23` and `rpp-27` were absent
+  from tmux and are treated as archived/stale. Their remote branches remain
+  history only unless explicitly re-integrated.
+- Active developer assignments are mostly branch-local: provenance gate wiring,
+  checklist linter current-tree hardening, artifact redaction current-tree
+  scanning, and required release-check command work remain branch-local. The
+  checklist linter safe integration landed as `fdb02ab6a`; it is support
+  tooling, not production release evidence.
+- AO lifecycle is still unstable; supervision is currently tmux/git/process
+  based. This is coordination evidence only, not product release evidence.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 03:36 CEST.

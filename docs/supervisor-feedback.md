@@ -1,9 +1,35 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 03:36 CEST
+Last updated: 2026-05-28 03:47 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 03:47 CEST - Reduced Live Roster After Cleanup
+
+- Going well: tmux now shows only the reduced live roster: developers `rpp-24`,
+  `rpp-25`, `rpp-28`, `rpp-29`, `rpp-30`; critic `rpp-31`; progress reporter
+  `rpp-26`; supervisor `rpp-orchestrator`.
+- Also going well: each live developer pane has a concrete current-tree task
+  from the supervisor. The stale `rpp-10` through `rpp-23` and `rpp-27` panes
+  are archived/stale rather than counted as active capacity.
+- Integrated head advanced to `fdb02ab6a` while this report was running, adding
+  checklist completion linter support. The checklist remains 85 checked / 915
+  open.
+- Not yet integrated: active provenance/redaction/required-check work and any
+  new current-tree linter hardening are branch-local until pushed, dry-run
+  inspected, tested, and integrated on top of `fdb02ab6a` or a descendant.
+- Release hold: **NO-GO unless production-backed evidence lands**. The live
+  roster and support tooling do not prove Docker/external WordPress, production
+  credentials, final release gates, or broad graph/plugin semantics.
+
+| Lane | Nudge |
+| --- | --- |
+| `rpp-24` | Keep provenance fail-closed and local-only production-required evidence as NO-GO. |
+| `rpp-25` / `rpp-28` | Avoid overlapping checklist-linter writes during integration; reconcile one branch first. |
+| `rpp-29` | Scanner must distinguish redacted examples from raw secret/site leaks. |
+| `rpp-30` | Required-check command should enumerate missing checks without becoming a false release pass. |
+| `rpp-31` | Critique standalone tools versus wired gates and keep full-suite red signals visible. |
 
 ## 2026-05-28 03:36 CEST - rpp-28 Integrated, AO Lifecycle Recreated
 
