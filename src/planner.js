@@ -324,6 +324,15 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           supportsDelete: support.supportsDelete,
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
+          auditEvidence: pluginOwnedDriverAuditEvidence({
+            resource,
+            owner,
+            support,
+            baseHash,
+            localHash,
+            remoteHash,
+            ownerContext,
+          }),
           driverEvidence: support.driverEvidence,
         };
       }
@@ -596,6 +605,33 @@ function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
   return {
     supported: false,
     reason: 'Fixture forms lab table driver requires unchanged active reprint-push-forms-fixture evidence.',
+  };
+}
+
+function pluginOwnedDriverAuditEvidence({
+  resource,
+  owner,
+  support,
+  baseHash,
+  localHash,
+  remoteHash,
+  ownerContext,
+}) {
+  return {
+    schemaVersion: 1,
+    evidenceSource: 'planner-plugin-driver-audit',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver,
+    policySource: support.policySource,
+    supportsDelete: support.supportsDelete === true,
+    baseHash,
+    localHash,
+    remoteHash,
+    ownerContextHash: digest(ownerContext || []),
+    ...(support.driverEvidence ? { driverEvidenceHash: digest(support.driverEvidence) } : {}),
   };
 }
 

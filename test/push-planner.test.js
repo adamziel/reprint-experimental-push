@@ -1259,6 +1259,99 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
 });
 
+test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plugin-owned remote data', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const baseSecret = 'audit-redaction-base-private-rpp-0439';
+  const localSecret = 'audit-redaction-local-private-rpp-0439';
+  const remoteDriftSecret = 'audit-redaction-remote-drift-rpp-0439';
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'].option_value.mode = baseSecret;
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = localSecret;
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(auditEvidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(auditEvidence.format, 'hash-only');
+  assert.equal(auditEvidence.rawValuesIncluded, false);
+  assert.equal(auditEvidence.resourceKey, resourceKey);
+  assert.equal(auditEvidence.pluginOwner, 'forms');
+  assert.equal(auditEvidence.driver, 'wp-option');
+  assert.equal(auditEvidence.baseHash, mutation.baseHash);
+  assert.equal(auditEvidence.localHash, mutation.localHash);
+  assert.equal(auditEvidence.remoteHash, mutation.remoteBeforeHash);
+  assert.match(auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+
+  const driftedRemote = cloneJson(remote);
+  driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode = remoteDriftSecret;
+  const driftedRowBeforeHash = resourceHash(driftedRemote, mutation.resource);
+  const driftedRemoteBeforeHash = sha256Evidence(driftedRemote);
+  const staleError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.deepEqual(staleError.details, {
+    resourceKey,
+    expectedHash: mutation.remoteBeforeHash,
+    actualHash: driftedRowBeforeHash,
+  });
+  assert.equal(
+    driftedRemote.db.wp_options['option_name:forms_settings'].option_value.mode,
+    remoteDriftSecret,
+  );
+  assert.equal(resourceHash(driftedRemote, mutation.resource), driftedRowBeforeHash);
+  assert.equal(sha256Evidence(driftedRemote), driftedRemoteBeforeHash);
+
+  const evidence = {
+    rpp: 'RPP-0439',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    audit: {
+      resourceKey: auditEvidence.resourceKey,
+      pluginOwner: auditEvidence.pluginOwner,
+      driver: auditEvidence.driver,
+      format: auditEvidence.format,
+      rawValuesIncluded: auditEvidence.rawValuesIncluded,
+      auditEvidenceHash: sha256Evidence(auditEvidence),
+      ownerContextHash: `sha256:${auditEvidence.ownerContextHash}`,
+    },
+    staleRemotePreservation: {
+      code: staleError.code,
+      detailsHash: sha256Evidence(staleError.details),
+      rowHashBefore: `sha256:${driftedRowBeforeHash}`,
+      rowHashAfter: `sha256:${resourceHash(driftedRemote, mutation.resource)}`,
+      remoteHashBefore: driftedRemoteBeforeHash,
+      remoteHashAfter: sha256Evidence(driftedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    audit: evidence.audit,
+    staleRemotePreservation: evidence.staleRemotePreservation,
+  });
+
+  assert.equal(evidence.staleRemotePreservation.rowHashAfter, evidence.staleRemotePreservation.rowHashBefore);
+  assert.equal(evidence.staleRemotePreservation.remoteHashAfter, evidence.staleRemotePreservation.remoteHashBefore);
+  assert.match(evidence.audit.auditEvidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.staleRemotePreservation.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  const serializedAudit = JSON.stringify(auditEvidence);
+  const serializedEvidence = JSON.stringify(evidence);
+  for (const rawValue of [baseSecret, localSecret, remoteDriftSecret]) {
+    assert.equal(serializedAudit.includes(rawValue), false, `audit leaked ${rawValue}`);
+    assert.equal(serializedEvidence.includes(rawValue), false, `evidence leaked ${rawValue}`);
+  }
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();
