@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 16:27 CEST.
+- Last update: 2026-05-28 16:42 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `9409be010` (normal merge of
-  `origin/session/rpp-24-rpp-0118-same-independent-content`).
+  `a82afb2d7` (normal merge of
+  `origin/session/rpp-24-rpp-0120-large-ready-plan-tier`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 147
-  items complete and leaves 853 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 148
+  items complete and leaves 852 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 15 generated
+  7 chunking/performance items, 2 production-topology items, 16 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -924,7 +924,7 @@ linked implementation artifacts.
   and rejecting stale replay before mutation.
 - Generated stale-replay target continuation: `24c061259` integrated
   `RPP-0117` stale remote after dry-run coverage. The generated harness keeps
-  the 510-case run and now exposes a `staleRemoteAfterDryRun` target with 256
+  the 510-case run and now exposes a `staleRemoteAfterDryRun` target with 268
   ready stale-replay rejections spread across all 10 tiers, excluding
   zero-mutation ready cases that have no planned target to drift.
 - Generated same-content continuation: `9409be010` integrated `RPP-0118` same
@@ -932,6 +932,12 @@ linked implementation artifacts.
   now exposes 10 same-independent-content target cases across all 10 tiers, with
   ready cases applying as already-in-sync decisions and preserving unplanned
   remote resources.
+- Generated large-ready-plan continuation: `a82afb2d7` integrated `RPP-0120`
+  large ready plan tier coverage. The generated harness keeps the 510-case run
+  and now exposes 10 large ready plan target cases across all 10 tiers, with
+  ready cases combining row/file create-update-delete work, same-plan
+  taxonomy/comment graph rows, remote-only drift preservation, and stale replay
+  rejection before mutation.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
   same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for

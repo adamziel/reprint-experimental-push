@@ -1,19 +1,19 @@
-# AO Progress Report - 2026-05-28 16:27 CEST
+# AO Progress Report - 2026-05-28 16:42 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`9409be010` (normal merge of
-`origin/session/rpp-24-rpp-0118-same-independent-content`). It separates
+`a82afb2d7` (normal merge of
+`origin/session/rpp-24-rpp-0120-large-ready-plan-tier`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 147 are
-  checked from integrated evidence and 853 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 148 are
+  checked from integrated evidence and 852 remain open.
 - `scripts/release/publish-progress-page.mjs` and the
   `publish:progress-page` npm script give AO an explicit GitHub Pages refresh
   step. GitHub Pages serves from existing branch `main`, so after a validated
@@ -521,12 +521,16 @@ progress.
   across all 10 tiers. `5a73abe79` integrates `RPP-0114` plugin-owned
   `wp_options` update generated coverage with 20 target cases spread across all
   10 tiers. `24c061259` integrates `RPP-0117` stale remote after dry-run
-  target coverage over 256 ready stale replay rejection cases spread across all
+  target coverage over 268 ready stale replay rejection cases spread across all
   10 tiers. `9409be010` integrates `RPP-0118` same-independent-content target
   coverage with 10 target cases spread across all 10 tiers, proving identical
-  local/remote post edits apply without an unplanned remote overwrite. The
-  generator now emits 510 deterministic cases and reports 259 ready, 210
-  conflict, 41 blocked, and 6937 planned mutations.
+  local/remote post edits apply without an unplanned remote overwrite.
+  `a82afb2d7` integrates `RPP-0120` large ready plan tier coverage with 10
+  ready target cases spread across all 10 tiers, combining row/file create,
+  update, delete, same-plan taxonomy/comment graph rows, remote-only drift
+  preservation, and stale replay rejection. The generator now emits 510
+  deterministic cases and reports 269 ready, 204 conflict, 37 blocked, and
+  7204 planned mutations.
 - `687b3954e` integrates `RPP-0207` local plugin data stale-owner-context
   protection in `src/planner.js`, `src/apply.js`, and
   `test/push-planner.test.js`. Forged or stale plugin-owner mutation context is
@@ -771,7 +775,7 @@ progress.
   merge commit and a lane-side conflict resolution limited to the generated
   harness design note, case generator, and test file. The resolution keeps the
   current 510 generated cases and adds `RPP-0117` target coverage that counts
-  256 ready plans whose stale remote replay is rejected before mutation across
+  268 ready plans whose stale remote replay is rejected before mutation across
   all 10 tiers. Validation succeeded with the generated harness test suite
   (20/20), checklist lint, artifact redaction scan, `git diff --check`, and a
   fail-closed release-gate check showing `releaseMovement.allowed: false`.
@@ -846,10 +850,10 @@ progress.
 - `c22966b16` integrates current-tree checklist linter hardening from
   `rpp-25-checklist-lint-current-v2`. After the `RPP-0026`, `RPP-0028`,
   `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0101`, `RPP-0102`,
-  `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0103`, `RPP-0104`, `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`, `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0205`, `RPP-0207`,
+  `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0103`, `RPP-0104`, `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`, `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0120`, `RPP-0205`, `RPP-0207`,
   `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`,
   `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`
-  checklist updates, the current tree reports 147 checked IDs, 853
+  checklist updates, the current tree reports 148 checked IDs, 852
   unchecked IDs, and 0 risky
   completion claims.
 - `6d6b2077c` integrates the release artifact redaction scanner from `rpp-29`.
@@ -875,7 +879,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 44 / 100 |
-| `RPP-0101`-`RPP-0200` | Generated harness expansion | 15 / 100 |
+| `RPP-0101`-`RPP-0200` | Generated harness expansion | 16 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 17 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 18 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 22 / 100 |
@@ -894,7 +898,7 @@ Checked IDs in this report are:
   `RPP-0070`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
-  `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`.
+  `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0120`.
 - Merge invariants: `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`,
   `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`,
   `RPP-0233`, `RPP-0237`, `RPP-0240`.
@@ -1042,10 +1046,10 @@ branch.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | Root release provenance branch ancestry is preserved by `6194b0bd` and provenance-gate wiring ancestry by `787ac659`, and RPP-0101 generated-harness ancestry by `7df3a73f`, RPP-0102 directory-descendant ancestry by `455912018`, RPP-0103 file type-swap ancestry by `5753933a`, RPP-0104 row mix ancestry by `5729dd05`, RPP-0105 wp_options scalar coverage by `3582471e9`, RPP-0106 wp_options serialized coverage by `3dd96b2fa`, RPP-0108 wp_postmeta coverage by `00987b359`, RPP-0109 users/usermeta graph coverage by `400d9072b`, RPP-0110 comments/commentmeta graph coverage by `ec0e41d49`, RPP-0111 terms/termmeta graph coverage by `7dcc06bc`, RPP-0112 term-taxonomy graph ancestry by `8851a742`, RPP-0114 plugin-owned option coverage by `5a73abe79`, RPP-0117 stale remote after dry-run coverage by `24c061259`, and RPP-0118 same-independent-content coverage by `9409be010`; `RPP-0101` through `RPP-0112` plus `RPP-0114`, `RPP-0117`, and `RPP-0118` are integrated; newer generated graph targets remain branch-local until tested and integrated. |
+| `rpp-24` | developer | Root release provenance branch ancestry is preserved by `6194b0bd` and provenance-gate wiring ancestry by `787ac659`, and RPP-0101 generated-harness ancestry by `7df3a73f`, RPP-0102 directory-descendant ancestry by `455912018`, RPP-0103 file type-swap ancestry by `5753933a`, RPP-0104 row mix ancestry by `5729dd05`, RPP-0105 wp_options scalar coverage by `3582471e9`, RPP-0106 wp_options serialized coverage by `3dd96b2fa`, RPP-0108 wp_postmeta coverage by `00987b359`, RPP-0109 users/usermeta graph coverage by `400d9072b`, RPP-0110 comments/commentmeta graph coverage by `ec0e41d49`, RPP-0111 terms/termmeta graph coverage by `7dcc06bc`, RPP-0112 term-taxonomy graph ancestry by `8851a742`, RPP-0114 plugin-owned option coverage by `5a73abe79`, RPP-0117 stale remote after dry-run coverage by `24c061259`, RPP-0118 same-independent-content coverage by `9409be010`, and RPP-0120 large ready plan tier coverage by `a82afb2d7`; `RPP-0101` through `RPP-0112` plus `RPP-0114`, `RPP-0117`, `RPP-0118`, and `RPP-0120` are integrated; newer generated graph targets remain branch-local until tested and integrated. |
 | `rpp-25` | developer | Checklist-linter root ancestry is preserved by `af00dd07` and current hardening ancestry by `228d7e2f` plus v2 hardening ancestry by `873fee36`, and RPP-0026 ancestry by `cc29719c` plus RPP-0028 ancestry by `7310b522` plus RPP-0030 ancestry by `2c6b4852`; `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, and `RPP-0070` are integrated; newer release-gate proof candidates remain uncounted until integration. |
 | `rpp-26` | progress reporter | Monitoring after the lane advanced through `43d18cd6`. |
-| `rpp-28` | integrator | Integrated `rpp-1` release-gate branch ancestry, `rpp-2` recovery-journal branch ancestry, `rpp-3` graph-identity branch ancestry, `rpp-4` plugin-driver branch ancestry, `rpp-10` Docker local-production branch ancestry, `rpp-11` recovery-repair branch ancestry, `rpp-13` evidence-redaction branch ancestry, `rpp-14` protocol-compatibility branch ancestry, `rpp-15` critic-continuation audit branch ancestry, `rpp-16` progress-evidence branch ancestry, `rpp-17` auth/recovery reconciliation, checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`; now evaluating already-pushed branches one at a time under the integration-only freeze. |
+| `rpp-28` | integrator | Integrated `rpp-1` release-gate branch ancestry, `rpp-2` recovery-journal branch ancestry, `rpp-3` graph-identity branch ancestry, `rpp-4` plugin-driver branch ancestry, `rpp-10` Docker local-production branch ancestry, `rpp-11` recovery-repair branch ancestry, `rpp-13` evidence-redaction branch ancestry, `rpp-14` protocol-compatibility branch ancestry, `rpp-15` critic-continuation audit branch ancestry, `rpp-16` progress-evidence branch ancestry, `rpp-17` auth/recovery reconciliation, checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`, `RPP-0120`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0067`, `RPP-0070`, `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0240`, `RPP-0310`, `RPP-0340`, `RPP-0347`, `RPP-0414`, `RPP-0415`, `RPP-0421`, `RPP-0431`, `RPP-0438`, `RPP-0439`, `RPP-0461`, and `RPP-0468`; now evaluating already-pushed branches one at a time under the integration-only freeze. |
 | `rpp-29` | developer | `RPP-0205`, `RPP-0207`, `RPP-0210`, `RPP-0214`, `RPP-0215`, `RPP-0216`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0228`, `RPP-0229`, `RPP-0230`, `RPP-0237`, and `RPP-0240` are integrated; `RPP-0206` and newer branch-local work are not counted until tested and integrated. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence, `RPP-0340` production importer/exporter identity-map proof, and `RPP-0347` comment-user generated graph coverage are integrated; newer graph candidates remain branch-local until tested and integrated. |
 | `rpp-31` | critic | Auditing candidate branch merge risks after `43d18cd6`. |

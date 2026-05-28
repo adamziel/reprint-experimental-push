@@ -136,7 +136,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0117 (Near / generated-harness) Implement stale remote after dry-run, variant 1. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0118 (Near / generated-harness) Implement same independent content, variant 1. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0119 (Near / generated-harness) Implement remote-only preservation, variant 1. Success: stale remote replay fails before mutation.
-- [ ] RPP-0120 (Near / generated-harness) Implement large ready plan tier, variant 1. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0120 (Near / generated-harness) Implement large ready plan tier, variant 1. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0121 (Near / generated-harness) Prove file create/update/delete mix, variant 2. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0122 (Near / generated-harness) Prove directory descendant conflict, variant 2. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0123 (Near / generated-harness) Prove file type-swap conflict, variant 2. Success: ready cases apply with no unplanned remote overwrite.
