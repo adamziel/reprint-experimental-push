@@ -1548,6 +1548,200 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
 });
 
+test('RPP-0452 generated direct active_plugins mutation refusal is exact and redacted', () => {
+  const supportedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const activePluginsResourceKey = 'row:["wp_options","option_name:active_plugins"]';
+  const activePluginsResource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:active_plugins',
+    key: activePluginsResourceKey,
+  };
+  const privateValues = [
+    'rpp-0452-private-supported-base',
+    'rpp-0452-private-supported-local',
+    'rpp-0452-private-plugin/private.php',
+    'rpp-0452-private-policy-plugin/private.php',
+  ];
+
+  const supportedBase = baseSite();
+  supportedBase.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[0];
+  const supportedLocal = cloneJson(supportedBase);
+  supportedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[1];
+  supportedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(supportedResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const supportedRemote = cloneJson(supportedBase);
+  const supportedPlan = planFor(supportedBase, supportedLocal, supportedRemote);
+  const supportedMutation = mutationFor(supportedPlan, supportedResourceKey);
+  const supportedResult = applyPlan(cloneJson(supportedRemote), supportedPlan);
+
+  assert.equal(supportedPlan.status, 'ready');
+  assert.equal(supportedPlan.summary.mutations, 1);
+  assert.equal(supportedMutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(supportedMutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(supportedResult.appliedMutations, 1);
+  assert.equal(
+    supportedResult.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    privateValues[1],
+  );
+  assert.equal(JSON.stringify(supportedResult.journal).includes(privateValues[0]), false);
+  assert.equal(JSON.stringify(supportedResult.journal).includes(privateValues[1]), false);
+
+  function activePluginsSite(optionValue, { pluginOwner = false } = {}) {
+    const site = baseSite();
+    site.db.wp_options['option_name:active_plugins'] = {
+      option_name: 'active_plugins',
+      option_value: optionValue,
+      autoload: 'yes',
+      ...(pluginOwner ? { __pluginOwner: 'forms' } : {}),
+    };
+    return site;
+  }
+
+  const blockedVariants = [
+    {
+      label: 'without-plugin-driver-proof',
+      pluginOwner: false,
+      withPolicy: false,
+      privatePlugin: privateValues[2],
+    },
+    {
+      label: 'with-generic-wp-option-policy',
+      pluginOwner: true,
+      withPolicy: true,
+      privatePlugin: privateValues[3],
+    },
+  ].map((variant) => {
+    const base = activePluginsSite(['forms/forms.php'], { pluginOwner: variant.pluginOwner });
+    const local = activePluginsSite(
+      ['forms/forms.php', variant.privatePlugin],
+      { pluginOwner: variant.pluginOwner },
+    );
+    if (variant.withPolicy) {
+      local.meta = {
+        pushPolicy: pluginOwnedResourcePolicy(
+          allowedPluginOwnedResource(activePluginsResourceKey, 'forms', 'wp-option'),
+        ),
+      };
+    }
+    const remote = cloneJson(base);
+    const plan = planFor(base, local, remote);
+    const blocker = plan.blockers[0];
+
+    assert.equal(plan.status, 'blocked', variant.label);
+    assert.equal(plan.summary.mutations, 0, variant.label);
+    assert.equal(blocker.class, 'unsupported-active-plugins-direct-mutation', variant.label);
+    assert.equal(blocker.reasonCode, 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED', variant.label);
+    assert.equal(blocker.resourceKey, activePluginsResourceKey, variant.label);
+    assert.equal(blocker.requiredDriver, 'plugin-activation-driver', variant.label);
+    assert.equal(JSON.stringify(blocker).includes(variant.privatePlugin), false, variant.label);
+
+    return {
+      label: variant.label,
+      class: blocker.class,
+      reasonCode: blocker.reasonCode,
+      resourceKey: blocker.resourceKey,
+      blockerHash: sha256Evidence(blocker),
+      planSummaryHash: sha256Evidence(plan.summary),
+    };
+  });
+
+  const forgedRemote = activePluginsSite(['forms/forms.php']);
+  const forgedRemoteBeforeHash = sha256Evidence(forgedRemote);
+  const forgedRowBeforeHash = resourceHash(forgedRemote, activePluginsResource);
+  const forged = tamperReadyPlan(supportedPlan, (plan) => {
+    const mutation = plan.mutations[0];
+    mutation.resource = activePluginsResource;
+    mutation.resourceKey = activePluginsResourceKey;
+    mutation.action = 'put';
+    mutation.value = {
+      value: {
+        option_name: 'active_plugins',
+        option_value: ['forms/forms.php', privateValues[2]],
+        autoload: 'yes',
+      },
+    };
+    mutation.remoteBeforeHash = forgedRowBeforeHash;
+    plan.preconditions = [
+      {
+        mutationId: mutation.id,
+        resource: activePluginsResource,
+        resourceKey: activePluginsResourceKey,
+        expectedHash: forgedRowBeforeHash,
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    plan.summary.mutations = 1;
+  });
+  let hookCalls = 0;
+  const forgedError = captureError(() => applyPlan(forgedRemote, forged, {
+    beforeMutation() {
+      hookCalls++;
+    },
+  }));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'UNSUPPORTED_ACTIVE_PLUGINS_MUTATION');
+  assert.equal(forgedError.details.reasonCode, 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED');
+  assert.equal(forgedError.details.resourceKey, activePluginsResourceKey);
+  assert.equal(hookCalls, 0);
+  assert.equal(resourceHash(forgedRemote, activePluginsResource), forgedRowBeforeHash);
+  assert.equal(sha256Evidence(forgedRemote), forgedRemoteBeforeHash);
+  assert.equal(JSON.stringify(forgedError.details).includes(privateValues[2]), false);
+
+  const evidence = {
+    rpp: 'RPP-0452',
+    evidenceSource: 'local-plugin-driver-focused-node-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    supported: {
+      resourceKey: supportedResourceKey,
+      mutationHash: sha256Evidence(supportedMutation),
+      journalEntryHash: sha256Evidence(supportedResult.journal.entries[0]),
+      remoteAfterRowHash: sha256Evidence(
+        supportedResult.site.db.wp_options['option_name:forms_settings'],
+      ),
+    },
+    refused: {
+      variants: blockedVariants,
+      forgedApplyDetailsHash: sha256Evidence(forgedError.details),
+      activePluginsRowHashBefore: `sha256:${forgedRowBeforeHash}`,
+      activePluginsRowHashAfter: `sha256:${resourceHash(forgedRemote, activePluginsResource)}`,
+      remoteHashBefore: forgedRemoteBeforeHash,
+      remoteHashAfter: sha256Evidence(forgedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    supported: evidence.supported,
+    refused: evidence.refused,
+  });
+
+  assert.equal(evidence.refused.activePluginsRowHashAfter, evidence.refused.activePluginsRowHashBefore);
+  assert.equal(evidence.refused.remoteHashAfter, evidence.refused.remoteHashBefore);
+  for (const hash of [
+    evidence.supported.mutationHash,
+    evidence.supported.journalEntryHash,
+    evidence.supported.remoteAfterRowHash,
+    evidence.refused.forgedApplyDetailsHash,
+    evidence.refused.activePluginsRowHashBefore,
+    evidence.refused.activePluginsRowHashAfter,
+    evidence.refused.remoteHashBefore,
+    evidence.refused.remoteHashAfter,
+    evidence.proofHash,
+    ...blockedVariants.flatMap((variant) => [variant.blockerHash, variant.planSummaryHash]),
+  ]) {
+    assert.match(hash, /^sha256:[a-f0-9]{64}$/);
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(JSON.stringify(evidence).includes(privateValue), false, `RPP-0452 evidence leaked ${privateValue}`);
+  }
+});
+
 test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plugin-owned remote data', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const baseSecret = 'audit-redaction-base-private-rpp-0439';

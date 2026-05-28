@@ -177,6 +177,19 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
     }
 
     if (localHash !== baseHash && remoteHash === baseHash) {
+      if (isActivePluginsOptionResource(resource)) {
+        addDirectActivePluginsMutationBlocker(plan, {
+          resource,
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        });
+        continue;
+      }
+
       if (isPluginContextMutationResource(resource, owner)) {
         const pluginContextSupport = pluginContextMutationSupport({
           resource,
@@ -2234,6 +2247,12 @@ function isPluginContextMutationResource(resource, owner) {
     && (resource.type === 'plugin' || (resource.type === 'file' && isPluginOwnerContextResource(resource, owner)));
 }
 
+function isActivePluginsOptionResource(resource) {
+  return resource?.type === 'row'
+    && resource.table === 'wp_options'
+    && resource.id === 'option_name:active_plugins';
+}
+
 function pluginContextMutationSupport({
   resource,
   owner,
@@ -2431,6 +2450,39 @@ function addPluginOwnedResourceBlocker(plan, {
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
+    baseHash,
+    localHash,
+    remoteHash,
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
+  });
+}
+
+function addDirectActivePluginsMutationBlocker(plan, {
+  resource,
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  plan.blockers.push({
+    id: `blocker-active-plugins-direct-mutation-${plan.blockers.length + 1}`,
+    class: 'unsupported-active-plugins-direct-mutation',
+    reasonCode: 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED',
+    resource,
+    resourceKey: resource.key,
+    requiredDriver: 'plugin-activation-driver',
+    reason: 'Direct wp_options active_plugins mutations require explicit plugin activation driver support and are refused by default.',
+    resolutionPolicy: 'preserve-remote-active-plugins-and-stop',
     baseHash,
     localHash,
     remoteHash,

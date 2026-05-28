@@ -76,6 +76,34 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0452 direct active_plugins mutation refusal, variant 3
+
+Focused local plugin-driver coverage now proves that direct
+`row:["wp_options","option_name:active_plugins"]` mutations fail closed in the
+planner and in forged ready-plan apply. A supported control variant still
+carries one ordinary plugin-owned `wp_options` mutation through the
+`wp-option` driver policy and local apply executor.
+
+Unsupported generated variants cover direct `active_plugins` edits without
+plugin-driver proof and with a generic `wp-option` policy. Both emit
+`unsupported-active-plugins-direct-mutation` with
+`DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED`. A forged ready plan containing an
+`active_plugins` mutation refuses before the mutation hook with
+`UNSUPPORTED_ACTIVE_PLUGINS_MUTATION` and preserves the remote row hash.
+
+Evidence status: local plugin-driver node proof only; it is not
+production-backed and keeps the release gate at NO-GO. The proof records only
+`sha256:` hashes for the supported mutation, supported journal entry, refusal
+blockers, forged-apply refusal, active_plugins row preservation, remote
+preservation, and combined proof hash; raw private plugin slugs and option
+values are not included.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0452|active_plugins|plugin-owned option rows' test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +117,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0452 — direct `active_plugins` mutation refusal: direct option-row
+  activation mutations fail closed in planner and forged apply while normal
+  plugin-owned `wp_options` driver mutations remain supported.
