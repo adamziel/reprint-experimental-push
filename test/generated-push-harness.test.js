@@ -8,6 +8,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -17,6 +18,12 @@ const requiredFamilies = [
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'wp-usermeta-driver-supported',
+  'wp-user-meta-driver-supported',
+  'wp-usermeta-driver-wrong-policy',
+  'wp-usermeta-driver',
+  'wp-usermeta-supported',
+  'wp-usermeta-unsupported',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
@@ -349,6 +356,60 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
     );
   }
 }
+
+test('RPP-0427 generated harness covers wp_usermeta driver supported and wrong-policy variants', () => {
+  const cases = generatePushHarnessCases();
+  const supported = [
+    ['wp-usermeta-driver-supported', 'wp-usermeta'],
+    ['wp-user-meta-driver-supported', 'wp-user-meta'],
+  ];
+
+  for (const [family, driver] of supported) {
+    const testCase = cases.find((candidate) => candidate.family === family);
+    assert.ok(testCase, `missing generated ${family} case`);
+    assert.ok(testCase.tags.has('wp-usermeta-driver'));
+    assert.ok(testCase.tags.has('wp-usermeta-supported'));
+    assert.ok(testCase.tags.has('plugin-owned-supported'));
+
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: new Date('2026-05-28T00:00:00.000Z'),
+    });
+    const mutation = plan.mutations.find((entry) => entry.resource?.table === 'wp_usermeta');
+    const result = validateGeneratedCase(testCase);
+
+    assert.equal(result.status, 'ready', family);
+    assert.equal(result.applied, true, family);
+    assert.equal(mutation?.pluginOwnedResource?.driver, driver, family);
+    assert.equal(mutation?.pluginOwnedResource?.pluginOwner, 'forms', family);
+  }
+
+  const wrongPolicy = cases.find((candidate) => candidate.family === 'wp-usermeta-driver-wrong-policy');
+  assert.ok(wrongPolicy, 'missing generated wrong-policy wp_usermeta case');
+  assert.ok(wrongPolicy.tags.has('wp-usermeta-driver'));
+  assert.ok(wrongPolicy.tags.has('wp-usermeta-unsupported'));
+  assert.ok(wrongPolicy.tags.has('plugin-owned-unsupported'));
+
+  const wrongPolicyPlan = createPushPlan({
+    base: wrongPolicy.base,
+    local: wrongPolicy.local,
+    remote: wrongPolicy.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const blocker = wrongPolicyPlan.blockers.find((entry) => entry.resource?.table === 'wp_usermeta');
+  const blockerJson = JSON.stringify(blocker);
+  const wrongPolicyResult = validateGeneratedCase(wrongPolicy);
+
+  assert.equal(wrongPolicyResult.status, 'blocked');
+  assert.equal(wrongPolicyResult.applied, false);
+  assert.equal(blocker?.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker?.driver, 'wp-postmeta');
+  assert.match(blocker?.reason || '', /driver does not match/);
+  assert.equal(blockerJson.includes('mode":"local'), false);
+  assert.equal(blockerJson.includes('mode":"base'), false);
+});
 
 function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)

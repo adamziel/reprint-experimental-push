@@ -512,6 +512,16 @@ function journalValueEvidence(mutation, value) {
       resourceKey: mutation.resourceKey,
     };
   }
+  if (mutation.pluginOwnedResource?.driver === 'wp-usermeta'
+    || mutation.pluginOwnedResource?.driver === 'wp-user-meta') {
+    return {
+      redacted: true,
+      reason: 'plugin-owned-usermeta-resource',
+      resourceKey: mutation.resourceKey,
+      driver: mutation.pluginOwnedResource.driver,
+      pluginOwner: mutation.pluginOwnedResource.pluginOwner || null,
+    };
+  }
   return value;
 }
 
@@ -1138,23 +1148,37 @@ function recoveryBlocked(remote, plan, journal, reason, details = {}) {
 function sanitizeRecoveryRemote(remote, plan) {
   const sanitized = deepClone(remote);
   for (const mutation of plan.mutations || []) {
-    if (mutation.pluginOwnedResource?.driver !== 'fixture-forms-lab-table') {
+    const redactedTable = pluginOwnedRecoveryRedactionTable(mutation);
+    if (!redactedTable) {
       continue;
     }
-    if (mutation.resource?.type !== 'row' || mutation.resource.table !== 'wp_reprint_push_forms_lab') {
-      continue;
-    }
-    const row = sanitized.db?.wp_reprint_push_forms_lab?.[mutation.resource.id];
+    const row = sanitized.db?.[redactedTable]?.[mutation.resource.id];
     if (!row || typeof row !== 'object') {
       continue;
     }
-    sanitized.db.wp_reprint_push_forms_lab[mutation.resource.id] = {
+    sanitized.db[redactedTable][mutation.resource.id] = {
       __redacted: true,
       resourceKey: mutation.resourceKey,
       hash: resourceHash(remote, mutation.resource),
     };
   }
   return sanitized;
+}
+
+function pluginOwnedRecoveryRedactionTable(mutation) {
+  if (mutation.resource?.type !== 'row') {
+    return null;
+  }
+  if (mutation.pluginOwnedResource?.driver === 'fixture-forms-lab-table'
+    && mutation.resource.table === 'wp_reprint_push_forms_lab') {
+    return 'wp_reprint_push_forms_lab';
+  }
+  if ((mutation.pluginOwnedResource?.driver === 'wp-usermeta'
+    || mutation.pluginOwnedResource?.driver === 'wp-user-meta')
+    && mutation.resource.table === 'wp_usermeta') {
+    return 'wp_usermeta';
+  }
+  return null;
 }
 
 function validatePreconditions(remote, plan) {

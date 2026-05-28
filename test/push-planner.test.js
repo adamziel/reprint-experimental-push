@@ -1239,6 +1239,186 @@ test('allows plugin-owned postmeta-like rows with explicit push intent policy', 
   assert.equal(plan.atomicGroups[0].status, 'ready');
 });
 
+test('allows plugin-owned wp_usermeta rows only with exact usermeta driver semantics', () => {
+  for (const driver of ['wp-usermeta', 'wp-user-meta']) {
+    const resourceKey = 'row:["wp_usermeta","umeta_id:710"]';
+    const base = baseSite();
+    base.db.wp_users = {
+      'ID:9': { ID: 9, user_login: 'forms-user', user_email: 'forms@example.test' },
+    };
+    base.db.wp_usermeta = {
+      'umeta_id:710': {
+        umeta_id: 710,
+        user_id: 9,
+        meta_key: '_forms_user_payload',
+        meta_value: { mode: 'base-secret-usermeta' },
+        __pluginOwner: 'forms',
+      },
+    };
+    const local = cloneJson(base);
+    local.db.wp_usermeta['umeta_id:710'].meta_value = { mode: 'local-secret-usermeta' };
+    local.pushIntents = [
+      {
+        id: `update-forms-usermeta-${driver}`,
+        kind: 'plugin-data-update',
+        requireAtomic: true,
+        resources: [resourceKey],
+        resourcePolicy: pluginOwnedResourcePolicy(
+          allowedPluginOwnedResource(resourceKey, 'forms', driver),
+        ),
+      },
+    ];
+    const remote = cloneJson(base);
+
+    const plan = planFor(base, local, remote);
+    const mutation = mutationFor(plan, resourceKey);
+    const result = applyPlan(cloneJson(remote), plan);
+    const journalJson = JSON.stringify(result.journal);
+
+    assert.equal(plan.status, 'ready', driver);
+    assert.equal(plan.summary.mutations, 1, driver);
+    assert.equal(mutation.action, 'put', driver);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms', driver);
+    assert.equal(mutation.pluginOwnedResource.driver, driver, driver);
+    assert.equal(mutation.pluginOwnedResource.supportsDelete, false, driver);
+    assert.match(mutation.baseHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.equal(plan.preconditions[0].expectedHash, mutation.remoteBeforeHash, driver);
+    assert.equal(result.site.db.wp_usermeta['umeta_id:710'].meta_value.mode, 'local-secret-usermeta', driver);
+    assert.equal(journalJson.includes('base-secret-usermeta'), false, driver);
+    assert.equal(journalJson.includes('local-secret-usermeta'), false, driver);
+    assert.match(result.journal.entries[0].beforeHash, /^[a-f0-9]{64}$/);
+    assert.match(result.journal.entries[0].afterHash, /^[a-f0-9]{64}$/);
+    assert.equal(result.journal.entries[0].beforeValue.redacted, true, driver);
+    assert.equal(result.journal.entries[0].beforeValue.reason, 'plugin-owned-usermeta-resource', driver);
+    assert.equal(result.journal.entries[0].afterValue.redacted, true, driver);
+    assert.equal(result.journal.entries[0].afterValue.driver, driver, driver);
+  }
+});
+
+test('blocks wp_usermeta plugin data when policy driver points at another table', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:711"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:9': { ID: 9, user_login: 'forms-user', user_email: 'forms@example.test' },
+  };
+  base.db.wp_usermeta = {
+    'umeta_id:711': {
+      umeta_id: 711,
+      user_id: 9,
+      meta_key: '_forms_user_payload',
+      meta_value: 'base-private-usermeta',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_usermeta['umeta_id:711'].meta_value = 'local-private-usermeta';
+  local.pushIntents = [
+    {
+      id: 'update-forms-usermeta-wrong-policy',
+      kind: 'plugin-data-update',
+      requireAtomic: true,
+      resources: [resourceKey],
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-termmeta'),
+      ),
+    },
+  ];
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.driver, 'wp-termmeta');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.match(blocker.reason, /driver does not match/);
+  assert.equal(blockerJson.includes('base-private-usermeta'), false);
+  assert.equal(blockerJson.includes('local-private-usermeta'), false);
+});
+
+test('executor refuses forged ready wp_usermeta mutations with a non-usermeta driver', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:712"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:9': { ID: 9, user_login: 'forms-user', user_email: 'forms@example.test' },
+  };
+  base.db.wp_usermeta = {
+    'umeta_id:712': {
+      umeta_id: 712,
+      user_id: 9,
+      meta_key: '_forms_user_payload',
+      meta_value: 'base-forged-usermeta',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_usermeta['umeta_id:712'].meta_value = 'local-forged-usermeta';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-usermeta'),
+    ),
+  };
+  const ready = planFor(base, local, cloneJson(base));
+  const forged = tamperReadyPlan(ready, (plan) => {
+    mutationFor(plan, resourceKey).pluginOwnedResource.driver = 'wp-option';
+  });
+  const remote = cloneJson(base);
+  const before = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, forged));
+  const detailsJson = JSON.stringify(error.details);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(JSON.stringify(remote), before);
+  assert.equal(detailsJson.includes('base-forged-usermeta'), false);
+  assert.equal(detailsJson.includes('local-forged-usermeta'), false);
+  assert.equal(error.details.resourceKey, resourceKey);
+  assert.equal(error.details.driver, 'wp-option');
+});
+
+test('wp_usermeta blocked recovery evidence redacts raw plugin-owned usermeta values', () => {
+  const resourceKey = 'row:["wp_usermeta","umeta_id:714"]';
+  const base = baseSite();
+  base.db.wp_users = {
+    'ID:9': { ID: 9, user_login: 'forms-user', user_email: 'forms@example.test' },
+  };
+  base.db.wp_usermeta = {
+    'umeta_id:714': {
+      umeta_id: 714,
+      user_id: 9,
+      meta_key: '_forms_user_payload',
+      meta_value: 'base-recovery-usermeta',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = cloneJson(base);
+  local.db.wp_usermeta['umeta_id:714'].meta_value = 'local-recovery-usermeta';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-usermeta'),
+    ),
+  };
+  const remote = cloneJson(base);
+  const plan = planFor(base, local, remote);
+  const error = captureError(() => applyPlan(remote, plan, {
+    mutateRemote: true,
+    failDuringCommitAtMutation: 1,
+  }));
+  const detailsJson = JSON.stringify(error.details);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'INJECTED_FAILURE_DURING_COMMIT');
+  assert.equal(detailsJson.includes('base-recovery-usermeta'), false);
+  assert.equal(detailsJson.includes('local-recovery-usermeta'), false);
+  assert.equal(error.details.recovery.artifacts.remote.db.wp_usermeta['umeta_id:714'].__redacted, true);
+  assert.match(error.details.recovery.artifacts.remote.db.wp_usermeta['umeta_id:714'].hash, /^[a-f0-9]{64}$/);
+});
+
 test('blocks unknown plugin-owned custom table rows without leaking values', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
@@ -1547,6 +1727,18 @@ test('classifies divergent plugin-owned data rows as redacted plugin data confli
       __pluginOwner: 'forms',
     },
   };
+  base.db.wp_users = {
+    'ID:9': { ID: 9, user_login: 'forms-user', user_email: 'forms@example.test' },
+  };
+  base.db.wp_usermeta = {
+    'umeta_id:713': {
+      umeta_id: 713,
+      user_id: 9,
+      meta_key: '_forms_user_payload',
+      meta_value: 'base-private-usermeta-conflict',
+      __pluginOwner: 'forms',
+    },
+  };
   base.db.wp_forms_entries = {
     'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
   };
@@ -1556,24 +1748,29 @@ test('classifies divergent plugin-owned data rows as redacted plugin data confli
   remote.db.wp_options['option_name:forms_settings'].option_value.mode = 'remote-private-option';
   local.db.wp_postmeta['meta_id:7'].meta_value = 'local-private-meta';
   remote.db.wp_postmeta['meta_id:7'].meta_value = 'remote-private-meta';
+  local.db.wp_usermeta['umeta_id:713'].meta_value = 'local-private-usermeta-conflict';
+  remote.db.wp_usermeta['umeta_id:713'].meta_value = 'remote-private-usermeta-conflict';
   local.db.wp_forms_entries['entry_id:9'].payload = 'local-private-entry';
   remote.db.wp_forms_entries['entry_id:9'].payload = 'remote-private-entry';
 
   const plan = planFor(base, local, remote);
 
   assert.equal(plan.status, 'conflict');
-  assert.equal(plan.summary.conflicts, 3);
+  assert.equal(plan.summary.conflicts, 4);
   assert.deepEqual(
     plan.conflicts.map((conflict) => [conflict.resourceKey, conflict.class, conflict.pluginOwner]),
     [
       ['row:["wp_forms_entries","entry_id:9"]', 'plugin-data-conflict', 'forms'],
       ['row:["wp_options","option_name:forms_settings"]', 'plugin-data-conflict', 'forms'],
       ['row:["wp_postmeta","meta_id:7"]', 'plugin-data-conflict', 'forms'],
+      ['row:["wp_usermeta","umeta_id:713"]', 'plugin-data-conflict', 'forms'],
     ],
   );
   const conflictsJson = JSON.stringify(plan.conflicts);
   assert.equal(conflictsJson.includes('local-private-option'), false);
   assert.equal(conflictsJson.includes('remote-private-meta'), false);
+  assert.equal(conflictsJson.includes('local-private-usermeta-conflict'), false);
+  assert.equal(conflictsJson.includes('remote-private-usermeta-conflict'), false);
   assert.equal(conflictsJson.includes('local-private-entry'), false);
 });
 

@@ -28,6 +28,9 @@ const scenarioFamilies = Object.freeze([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'wp-usermeta-driver-supported',
+  'wp-user-meta-driver-supported',
+  'wp-usermeta-driver-wrong-policy',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
@@ -65,6 +68,8 @@ const readyPreservingFamilies = new Set([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'wp-usermeta-driver-supported',
+  'wp-user-meta-driver-supported',
   'same-plan-post-parent-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -316,6 +321,24 @@ const scenarioFamilyBuilders = {
     });
     allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
     tags.add('plugin-owned-supported');
+  },
+  'wp-usermeta-driver-supported': ({ base, local, remote, allocator, tags }) => {
+    addGeneratedPluginOwnedUsermeta(base, local, remote, allocator, tags, {
+      driver: 'wp-usermeta',
+      wrongPolicy: false,
+    });
+  },
+  'wp-user-meta-driver-supported': ({ base, local, remote, allocator, tags }) => {
+    addGeneratedPluginOwnedUsermeta(base, local, remote, allocator, tags, {
+      driver: 'wp-user-meta',
+      wrongPolicy: false,
+    });
+  },
+  'wp-usermeta-driver-wrong-policy': ({ base, local, remote, allocator, tags }) => {
+    addGeneratedPluginOwnedUsermeta(base, local, remote, allocator, tags, {
+      driver: 'wp-postmeta',
+      wrongPolicy: true,
+    });
   },
   'unsupported-plugin-owned-row': ({ local, allocator, tags }) => {
     const optionName = `unsafe_generated_${allocator.next()}`;
@@ -597,6 +620,37 @@ const scenarioFamilyBuilders = {
     tags.add('user-meta-graph');
   },
 };
+
+function addGeneratedPluginOwnedUsermeta(base, local, remote, allocator, tags, { driver, wrongPolicy }) {
+  const userId = 1;
+  const metaId = allocator.graphId();
+  const rowId = `umeta_id:${metaId}`;
+  const resourceKey = rowKey('wp_usermeta', rowId);
+  const row = {
+    umeta_id: metaId,
+    user_id: userId,
+    meta_key: `_generated_forms_user_${metaId}`,
+    meta_value: { mode: 'base', generated: metaId },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_usermeta', rowId, row);
+  setRow(remote, 'wp_usermeta', rowId, row);
+  setRow(local, 'wp_usermeta', rowId, {
+    ...row,
+    meta_value: { mode: 'local', generated: allocator.next() },
+  });
+  allowPluginOwned(local, resourceKey, 'forms', driver);
+
+  tags.add('wp-usermeta-driver');
+  tags.add(wrongPolicy ? 'wp-usermeta-unsupported' : 'wp-usermeta-supported');
+  tags.add(wrongPolicy ? 'plugin-owned-unsupported' : 'plugin-owned-supported');
+  if (wrongPolicy) {
+    tags.add('expected-blocked');
+  } else {
+    tags.add('ready-candidate');
+  }
+}
 
 function buildBaseSite(index, tier) {
   const files = {
