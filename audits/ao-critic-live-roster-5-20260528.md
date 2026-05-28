@@ -2,85 +2,75 @@
 
 Lane: critic-live-roster-5
 Branch: session/rpp-31-critic-live-roster-5
-Latest lane inspected: `origin/lane/evidence-integration-20260527` at `a0f650fb6` (`feat: add file create update delete generated cases`)
+Latest lane inspected: `origin/lane/evidence-integration-20260527` at `0dc2b2c9d` (`docs: refresh AO guardrail progress`)
 
 ## Verdict
 
-Release posture remains **NO-GO**. The requested `5a636b8b2` lane had the required release checks report integrated; during this critic pass the lane advanced once more to `a0f650fb6` with the RPP-0101 generated-harness candidate integrated. That latest head still lacks production-backed release proof and now has a current-repo checklist-linter failure.
+Release posture remains **NO-GO**. The lane has integrated provenance gating, checklist linting, artifact redaction scanning, required-check reporting, RPP-0101 generated harness coverage, RPP-0026 auth-readback proof, and the 04:07 guardrail progress refresh. None of those replace production-backed release evidence.
 
-Primary blockers observed on the latest lane:
+Current lane observations:
 
 - `node ./scripts/release/check-release-gates.mjs` exits 1 with `releaseStatus: "NO-GO"`, `primaryFailureCode: "REPRINT_PUSH_LIVE_SOURCE_REQUIRED"`, and 17 blocking missing gates out of 20.
-- `node ./scripts/release/required-release-checks-report.mjs --now 2026-05-28T02:05:00.000Z` exits 1 in current-repo mode with 10 required local observations missing and 0 passed observations.
-- `node scripts/release/checklist-completion-lint.mjs` exits 1 because `docs/evidence/ao-required-release-checks.md:92` uses completion-shaped wording for unchecked `RPP-0056`.
-- Two focused regression probes still fail: authenticated push revocation coverage stops at preflight/dry-run, and the snapshot apply table guard still errors with `Call to undefined function apply_filters()` instead of the expected unsupported-table rejection.
+- `node ./scripts/release/required-release-checks-report.mjs --now 2026-05-28T02:13:00.000Z` exits 1 in current-repo mode with 10 required observations missing and 0 passed observations.
+- `node scripts/release/checklist-completion-lint.mjs` now exits 0 after the docs refresh: 0 risky claims, 87 checked IDs, and 913 unchecked IDs.
+- `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits docs/progress-log.md docs/supervisor-feedback.md progress.html` exits 0 with 35 files scanned and 0 rejected files.
 
 ## Integrated lane status
 
-The lane now contains, in order after `fdb02ab6a`:
+Commits integrated after `a0f650fb6`:
 
-1. `9617ad4fc` - release evidence provenance validator.
-2. `bfcaa1216` - provenance wired into `scripts/release/check-release-gates.mjs`.
-3. `c22966b16` - checklist linter hardening.
-4. `6d6b2077c` - release artifact redaction scanner.
-5. `a7d6facb9` and `5a636b8b2` - required release checks contract and report command.
-6. `a0f650fb6` - RPP-0101 generated harness file create/update/delete cases.
+1. `281fcf797` - RPP-0026 auth source command readback drift gate proof.
+2. `2f079e09f` - checklist totals update for auth-readback evidence.
+3. `0dc2b2c9d` - docs/progress/dashboard refresh that fixes the prior checklist-linter overclaim and records 87 checked / 913 open.
 
-The RPP-0101 remote candidate (`origin/session/rpp-24-rpp-0101-generated-harness` at `da7ee6f70`) is patch-equivalent to `a0f650fb6` (`git cherry` reports it with `-`). It should be considered integrated and not merged as a branch, because the branch ref itself is still behind the lane and would carry revert risk if used directly.
+The earlier risky `RPP-0056` wording in `docs/evidence/ao-required-release-checks.md` was softened by the docs refresh, and the linter no longer reports it.
 
-## Pushed but not yet integrated branches
+## Pushed but not yet integrated candidates
 
-- `origin/session/rpp-25-rpp-0026-auth-readback` (`cca48431d`) touches `scripts/release/check-release-gates.mjs`, release-gate tests, release-gate evidence docs, and the checklist. `git merge-tree` showed no textual conflict against `a0f650fb6`, but it overlaps the release CLI that provenance already changed. It needs focused review to ensure it does not weaken the provenance hold or mask the current required-check linter failure.
-- `origin/session/rpp-29-rpp-0201-independent-file-row` (`81e6f4245`) touches `test/generated-push-harness.test.js`, which now also contains the integrated RPP-0101 test. `git merge-tree` reported `changed in both` for that file, with adjacent/overlapping test additions. This is the highest immediate conflict risk.
-- `origin/session/rpp-30-rpp-0302-featured-image-graph` (`a762cd276`) touches `test/push-planner.test.js` and `docs/evidence/ao-graph-identity.md`. `git merge-tree` showed no textual conflict against the latest lane; evidence remains focused-only.
-- `origin/session/rpp-32` (`dcfc23022`) adds a Docker local-production release-gate artifact path across the Docker harness, its tests, and Docker evidence docs. It is behind the new generated-harness lane by one commit and should be rebased or cherry-picked, not branch-merged.
+| Candidate | Head | Merge-tree vs `0dc2b2c9d` | Risk / note |
+| --- | --- | --- | --- |
+| RPP-0102 `origin/session/rpp-24-rpp-0102-directory-descendant-conflict` | `892eed724` | no conflict | Best next integration candidate. It is based on `a0f650fb6`, has focused generated-harness tests reported as 3 passing, no checklist count edits, and adds only generated-harness docs/code/tests. Cherry-pick/rebase onto `0dc2b2c9d`, do not branch-merge. |
+| RPP-0027 `origin/session/rpp-25-rpp-0027-production-secret` | `2b2c55553` | conflicts in `docs/evidence/ao-release-gates.md` and `test/release-gates.test.js` | Valid-looking release-gate proof, but stale against integrated RPP-0026. Needs manual merge to keep both RPP-0026 and RPP-0027 evidence/test coverage and preserve the 87/913 checklist state. |
+| RPP-0203 `origin/session/rpp-29-rpp-0203-delete-remote-edit` | `bd502f747` | no conflict | Focused-only planner/generated coverage. It has clean merge-tree status now, but touches `test/generated-push-harness.test.js`; recheck after any RPP-0102/RPP-0303 generated-harness integration. |
+| RPP-0303 `origin/session/rpp-30-rpp-0303-post-author-graph` | `db614dbda` | no conflict now | Focused generated/graph coverage; worktree is ahead/behind because lane advanced. Rebase/cherry-pick only. It overlaps generated-harness files with RPP-0102 and may need re-evaluation after RPP-0102 lands. |
+| RPP-32 artifact `origin/session/rpp-32` | `dcfc23022` | no conflict | Adds Docker local-production release-gate artifact emission. It still demonstrates fail-closed `DOCKER_CLI_MISSING`, not production readiness. It is behind by four lane commits and should be replayed after lower-risk focused coverage. |
+| Docs refresh `origin/session/rpp-26-progress-live-roster-v2` | `1365239c8` | conflicts in all progress surfaces | Superseded by lane `0dc2b2c9d`. Do not integrate this stale report branch as-is; it contains older 86/914-style report material and conflicts with the official 87/913 tracker. |
 
-All non-integrated candidate refs are behind the current lane. Direct branch merge/push would risk dropping recent lane commits; integration should cherry-pick or rebase onto `a0f650fb6` one candidate at a time.
+## Recommended next integration
 
-## Standalone versus wired release movement
+Integrate **RPP-0102** next, one candidate only. It has no merge-tree conflicts against `0dc2b2c9d`, its write scope is limited to generated-harness surfaces, and it does not touch the release-gate/checklist progress docs that just stabilized. After RPP-0102, re-run generated-harness focused checks and re-evaluate RPP-0203/RPP-0303 for generated-harness overlap before selecting the next candidate.
 
-- Provenance is wired into `check-release-gates`, but it is required only when the base release-gate evaluator would otherwise allow release movement. On current evidence it reports `required: false` and `ready: true` because release movement is already blocked earlier.
-- The artifact redaction scanner passes the current docs/evidence/audits/progress surfaces, but it is not called by `verify:release`, `check:release-gates`, or the release-gate CLI.
-- The checklist linter is standalone and currently red on the lane. This is a real integration gap: the linter's own current-repo test is intended to hold risky claims, but the lane advanced with a new risky claim.
-- The required release checks report is standalone. It is useful and fail-closed, but it is not wired into `verify:release` or `check-release-gates`.
-- The generated harness integration adds valuable focused cases, but it does not change the release movement gates and does not replace production-backed evidence.
+Delay RPP-0027 until the integrator can manually preserve both RPP-0026 and RPP-0027 release-gate evidence and tests. Delay stale docs refresh integration because the lane already contains the official progress refresh.
 
-## False-positive and false-negative risks
+## Stale-base and revert risks
 
-- Checklist linter: the failing line mentions a schema field name plus unchecked `RPP-0056`. It may be a field-name false positive, but the current implementation explicitly treats this as risky completion language, so the lane is red until the doc or linter is corrected.
-- Redaction scanner: current lane scan passed with 35 files and zero rejected files. The scanner allows loopback port 8080 and specific Docker service hostnames; that is reasonable for sandbox evidence docs, but must not become a blanket production URL allowlist.
-- Provenance: artifact paths and subject hashes are validated, but provenance does not surface as the primary blocker until all earlier release gates pass.
-- Required checks: fixture mode proves summary shape; current-repo mode proves fail-closed missing-observation behavior. Neither proves the 10 required commands were run against production-backed evidence.
+- Every pushed candidate inspected is behind `0dc2b2c9d`. Direct branch merges would risk reverting recent progress docs, checklist totals, or auth-readback integration. Use cherry-pick or fresh rebases from the lane.
+- RPP-0027 carries a stale release-gate doc/test base. The branch intentionally leaves the checklist file with no net diff, which is good, but its evidence doc must be merged with the already-integrated RPP-0026 row.
+- RPP-0203 and RPP-0303 are currently text-clean, but both depend on generated-harness areas that are actively moving. Their risk increases after RPP-0102 integrates.
+- RPP-32 is a support artifact package, not a production-backed gate. It should not be interpreted as satisfying release readiness.
 
-## Live roster and ongoing follow-up risk
+## Checklist and overclaim risk
 
-Current live branches observed after the lane moved to `a0f650fb6`:
+The latest lane reports 87 checked and 913 unchecked RPP IDs. The checklist linter passes with 0 risky claims. Candidate integrations must not change checklist counts unless they include exact evidence-backed checklist edits. The docs refresh fixed the prior false-positive/overclaim risk around `RPP-0056`, but stale report branch `rpp-26-progress-live-roster-v2` can reintroduce stale counts if merged.
 
-- `rpp-24` moved on to `session/rpp-24-rpp-0102-directory-descendant-conflict`, with local changes to generated-harness files. It is already marked behind the lane by one commit in its worktree and must refresh before committing.
-- `rpp-25` moved on to `session/rpp-25-rpp-0027-production-secret`, again changing release-gate CLI/test/docs/checklist files. This overlaps the just-pushed RPP-0026 branch and the provenance/required-check area.
-- `rpp-26` progress-report docs are local and behind the lane by one commit, so any report must be refreshed before commit.
-- `rpp-29` moved on to `session/rpp-29-rpp-0202-independent-row-file`, changing `src/apply.js` and `test/push-planner.test.js`; it is behind the lane by one commit.
-- `rpp-30` moved on to `session/rpp-30-rpp-0303-post-author-graph`, changing generated harness code and behind the lane by one commit.
-- `rpp-32` has pushed its Docker artifact branch but remains a separate candidate.
+## Live roster snapshot
 
-Several prior panes printed final reports and then accepted generic prompts. The roster is productive, but it requires prompt reassignments and stale-base warnings; otherwise panes can appear active while working from pre-integration bases.
-
-## AO lifecycle and dashboard
-
-The hand-run `rpp-ao-lifecycle` tmux session is alive and heartbeating, and `curl -I http://127.0.0.1:8080/` returned `HTTP/1.1 200 OK`. This proves the local dashboard workaround is available on the allowed sandbox port. It does not prove normal AO lifecycle helpers are stable; supervision still depends on tmux, git, and bounded commands.
+- `rpp-24` pushed RPP-0102 and was reassigned to RPP-0103.
+- `rpp-25` pushed RPP-0027 and was reassigned to RPP-0028.
+- `rpp-29` pushed RPP-0203 and was reassigned to RPP-0204.
+- `rpp-30` pushed RPP-0303 and was reassigned to RPP-0306; its worktree still showed ahead/behind relative to the lane.
+- `rpp-32` pushed the Docker artifact branch and was assigned an artifact package follow-up; no separate pushed package branch was visible at inspection time.
+- `rpp-28` remains the direct integrator, with supervisor guidance to integrate completed branches one at a time from latest lane.
 
 ## Checks run
 
-- `git fetch origin lane/evidence-integration-20260527` and fast-forward to `a0f650fb6`.
+- `git fetch origin lane/evidence-integration-20260527 'refs/heads/session/rpp-*:refs/remotes/origin/session/rpp-*' --prune`.
+- Merged `origin/lane/evidence-integration-20260527` into the critic branch to inspect `0dc2b2c9d` without force-pushing.
 - `node ./scripts/release/check-release-gates.mjs` - expected exit 1, release held.
-- `node scripts/release/checklist-completion-lint.mjs` - exit 1, one risky current-lane claim.
-- `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits docs/progress-log.md docs/supervisor-feedback.md progress.html` - exit 0, 35 files scanned.
-- `node ./scripts/release/required-release-checks-report.mjs --now 2026-05-28T02:05:00.000Z` - expected exit 1, 10 required observations missing.
-- `node --test test/generated-push-harness.test.js` - exit 0, 2 tests passed.
-- `node --test test/checklist-completion-lint.test.js` - exit 1, current-repo linter assertion fails.
-- `node --test test/required-release-checks.test.js test/artifact-redaction-scan.test.js test/release-evidence-provenance.test.js test/release-gate-cli.test.js` - exit 0, 33 tests passed.
-- Focused red probes: authenticated push revocation test and snapshot apply table guard both still fail.
-- `curl -sS -I --max-time 5 http://127.0.0.1:8080/` - dashboard responds 200.
-- `git merge-tree` conflict checks for rpp-25/rpp-29/rpp-30/rpp-32 candidates.
+- `node scripts/release/checklist-completion-lint.mjs` - exit 0, 0 risky claims, 87 checked / 913 unchecked.
+- `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits docs/progress-log.md docs/supervisor-feedback.md progress.html` - exit 0, 35 scanned, 0 rejected.
+- `node ./scripts/release/required-release-checks-report.mjs --now 2026-05-28T02:13:00.000Z` - expected exit 1, 10 missing observations.
+- `git merge-tree` conflict probes for RPP-0102, RPP-0027, RPP-0203, RPP-0303, RPP-32, and docs refresh.
+- `git diff --check` for critic docs.
 
-No full suite was run in this critic pass; the evidence is focused/read-only by assignment.
+No full suite was run in this critic refresh; checks were lightweight/read-only except the audit/evidence doc updates.
