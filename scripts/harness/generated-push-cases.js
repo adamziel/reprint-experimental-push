@@ -32,6 +32,7 @@ const scenarioFamilies = Object.freeze([
   'plugin-owner-context-drift',
   'file-topology-conflict',
   'directory-descendant-conflict',
+  'directory-descendant-ready',
   'same-plan-post-parent-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
@@ -65,6 +66,7 @@ const readyPreservingFamilies = new Set([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'directory-descendant-ready',
   'same-plan-post-parent-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -84,7 +86,7 @@ const readyPreservingFamilies = new Set([
 const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
-    tag: 'directory-delete-with-remote-descendant',
+    tag: 'directory-descendant',
   },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
@@ -353,6 +355,17 @@ const scenarioFamilyBuilders = {
     tags.add('file-topology');
     tags.add('directory-descendant');
     tags.add('directory-delete-with-remote-descendant');
+  },
+  'directory-descendant-ready': ({ base, local, remote, allocator, tags }) => {
+    const directory = `wp-content/uploads/descendant-ready-${allocator.next()}`;
+    base.files[directory] = { type: 'directory' };
+    local.files[directory] = { type: 'directory' };
+    remote.files[directory] = { type: 'directory' };
+    delete local.files[directory];
+    tags.add('file-topology');
+    tags.add('directory-descendant');
+    tags.add('directory-delete-no-remote-descendant');
+    tags.add('ready-candidate');
   },
   'same-plan-post-parent-graph': ({ local, allocator, tags }) => {
     const parentId = allocator.graphId();

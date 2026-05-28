@@ -21,6 +21,7 @@ const requiredFamilies = [
   'plugin-owner-context-drift',
   'file-topology-conflict',
   'directory-descendant-conflict',
+  'directory-descendant-ready',
   'same-plan-post-parent-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
@@ -69,6 +70,7 @@ const requiredFamilies = [
   'file-topology',
   'directory-descendant',
   'directory-delete-with-remote-descendant',
+  'directory-delete-no-remote-descendant',
   'type-change',
   'expected-conflict',
   'atomic-ready',
@@ -124,34 +126,82 @@ test('RPP-0101 generated harness emits ready and non-ready file create/update/de
   assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
 });
 
-test('RPP-0102 directory descendant conflict exposes per-tier target counts', () => {
+test('RPP-0102/RPP-0122 directory descendant target exposes per-tier ready and conflict counts', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.directoryDescendantConflict;
 
   assert.ok(coverage, 'missing directory descendant conflict target coverage');
   assert.equal(coverage.family, 'directory-descendant-conflict');
-  assert.equal(coverage.total, report.summary.featureFamilies['directory-descendant-conflict']);
-  assert.deepEqual(coverage.statuses, { conflict: coverage.total });
+  assert.equal(coverage.total, report.summary.featureFamilies['directory-descendant']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready directory descendant cases');
+  assert.ok(coverage.statuses.conflict > 0, 'target should include conflicting directory descendant cases');
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
   );
+  assert.deepEqual(Object.values(coverage.perTier), Array(10).fill(2));
   assert.equal(
     Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
     coverage.total,
   );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
 
-  const conflictCase = generatePushHarnessCases()
-    .find((testCase) => testCase.family === 'directory-descendant-conflict');
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'directory-descendant-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'directory-descendant-conflict');
+
+  assert.ok(readyCase, 'missing generated ready directory descendant case');
   assert.ok(conflictCase, 'missing generated directory descendant conflict case');
+  assert.ok(readyCase.tags.has('directory-descendant'));
+  assert.ok(readyCase.tags.has('directory-delete-no-remote-descendant'));
   assert.ok(conflictCase.tags.has('directory-descendant'));
   assert.ok(conflictCase.tags.has('directory-delete-with-remote-descendant'));
+  assertDirectoryDescendantShape(readyCase, { conflict: false });
+  assertDirectoryDescendantShape(conflictCase, { conflict: true });
 
-  const result = validateGeneratedCase(conflictCase);
-  assert.equal(result.status, 'conflict');
-  assert.ok(result.conflicts > 0, 'directory descendant case must conflict');
-  assert.equal(result.applied, false, 'directory descendant conflict must not apply mutations');
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready directory descendant case should plan the directory delete');
+  assert.equal(ready.applied, true, 'ready directory descendant case should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready directory descendant apply should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready directory descendant case should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts > 0, 'directory descendant case must conflict');
+  assert.equal(conflict.applied, false, 'directory descendant conflict must not apply mutations');
 });
+
+function assertDirectoryDescendantShape(testCase, { conflict }) {
+  const marker = conflict ? '/descendant-' : '/descendant-ready-';
+  const directories = Object.entries(testCase.base.files)
+    .filter(([path, value]) => path.includes(marker) && value?.type === 'directory')
+    .map(([path]) => path);
+
+  assert.equal(directories.length, 1, `${testCase.id} should seed one directory descendant target`);
+
+  const [directory] = directories;
+  assert.equal(Object.hasOwn(testCase.local.files, directory), false, `${testCase.id} should delete the directory locally`);
+  assert.equal(testCase.remote.files[directory]?.type, 'directory', `${testCase.id} should keep the remote directory`);
+
+  const remoteDescendants = Object.keys(testCase.remote.files)
+    .filter((path) => path.startsWith(`${directory}/`));
+  assert.equal(
+    remoteDescendants.length > 0,
+    conflict,
+    `${testCase.id} remote descendant shape should match expected conflict readiness`,
+  );
+
+  for (const path of remoteDescendants) {
+    assert.equal(Object.hasOwn(testCase.base.files, path), false, `${testCase.id} remote descendant should not exist in base`);
+    assert.equal(Object.hasOwn(testCase.local.files, path), false, `${testCase.id} remote descendant should be remote-only`);
+  }
+}
 
 test('RPP-0103 generated harness emits ready and non-ready file type-swap cases', () => {
   const cases = generatePushHarnessCases();
