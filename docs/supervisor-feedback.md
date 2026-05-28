@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 09:43 CEST
+Last updated: 2026-05-28 09:53 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 09:53 CEST - RPP-0340 Integrated
+
+- Going well: integration is now at `165031908`, adding `RPP-0340`
+  production importer/exporter identity-map proof. The local-production graph
+  fixture carries immutable-base `pushIdentityMap` metadata, rewrites dependent
+  child post and postmeta rows to the imported remote target, blocks stale
+  imported targets, and keeps evidence hash-only/redacted.
+- Checklist movement: 126 verified items checked and 874 open. New check since
+  the prior feedback entry: `RPP-0340`.
+- Verification: focused RPP-0340 local-production graph validation passes
+  18/18, the broader graph/planner/inventory suite passes 122/122, checklist
+  lint reports 126 checked / 874 open with 0 risky claims, artifact redaction
+  scans evidence and reporting surfaces with 0 rejected files, release remains
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 09:43 CEST - RPP-0062 Integrated
 

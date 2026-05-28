@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 09:43 CEST.
+- Last update: 2026-05-28 09:53 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `a9a1610a4` (`test: add missing local url gate regression`).
+  `165031908` (`test: prove importer exporter identity map`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 125
-  items complete and leaves 875 open.
-- Checked slices: 42 release-gate foundation items, 16 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 126
+  items complete and leaves 874 open.
+- Checked slices: 42 release-gate foundation items, 17 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 11 merge-invariant items. No release-ops items are checked
@@ -128,6 +128,15 @@ linked implementation artifacts.
   leaving `REPRINT_PUSH_LOCAL_URL` empty, asserts exact
   `REPRINT_PUSH_LOCAL_URL_REQUIRED` evidence, keeps credential output redacted,
   records `mutationAttempted: false`, and leaves final release `NO-GO`.
+- Graph importer/exporter continuation: `165031908` integrated `RPP-0340`
+  production importer/exporter identity-map proof. Focused command:
+  `node --test test/local-production-complex-site-proof.test.js`
+  (18 passing local-production graph tests). The broader graph/planner command
+  `node --test test/local-production-complex-site-proof.test.js test/push-planner.test.js test/graph-mapping-inventory.test.js`
+  passes 122/122. The proof carries immutable-base `pushIdentityMap` metadata,
+  rewrites dependent child post and postmeta rows to the imported remote target,
+  blocks stale imported targets, records only hashes/resource keys/rewrite
+  hashes, and leaves final release `NO-GO`.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
