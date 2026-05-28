@@ -11,6 +11,7 @@ import {
 import { readRecoveryJournal } from './recovery-journal.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
+const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
 const FIXTURE_PLUGIN_DEPENDENCIES = new Map([
   ['reprint-push-atomic-dependent-fixture', ['reprint-push-atomic-dependency-fixture']],
   ['reprint-push-atomic-failing-fixture', ['reprint-push-atomic-dependency-fixture']],
@@ -1327,6 +1328,41 @@ function validateReadyPlanEnvelope(plan) {
         actualResourceKey: mutation.resource.key,
       });
     }
+
+    const localHashState = hashEvidenceState(mutation.localHash);
+    if (localHashState === 'missing') {
+      issues.push({
+        code: 'LOCAL_HASH_MISSING',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        localHash: hashEvidenceForDetails(mutation.localHash),
+      });
+    } else if (localHashState === 'invalid') {
+      issues.push({
+        code: 'LOCAL_HASH_INVALID',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        localHash: hashEvidenceForDetails(mutation.localHash),
+      });
+    } else {
+      const plannedValueHash = plannedMutationValueHash(mutation);
+      if (plannedValueHash === null) {
+        issues.push({
+          code: 'LOCAL_HASH_VALUE_INVALID',
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey || null,
+          localHash: hashEvidenceForDetails(mutation.localHash),
+        });
+      } else if (plannedValueHash !== mutation.localHash) {
+        issues.push({
+          code: 'LOCAL_HASH_MISMATCH',
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey || null,
+          localHash: mutation.localHash,
+          plannedValueHash,
+        });
+      }
+    }
   }
 
   for (const precondition of preconditions) {
@@ -1414,6 +1450,56 @@ function validateReadyPlanEnvelope(plan) {
       },
     );
   }
+}
+
+function hashEvidenceState(value) {
+  if (value === undefined || value === null || value === '') {
+    return 'missing';
+  }
+  if (typeof value !== 'string') {
+    return 'invalid';
+  }
+  return SHA256_HEX_PATTERN.test(value) ? 'hash' : 'invalid';
+}
+
+function hashEvidenceForDetails(value) {
+  const state = hashEvidenceState(value);
+  if (state === 'hash') {
+    return value;
+  }
+  if (state === 'missing') {
+    return { state };
+  }
+  return stripUndefined({
+    state,
+    sha256: digest(value),
+    valueType: valueType(value),
+    characterCount: typeof value === 'string' ? value.length : undefined,
+  });
+}
+
+function plannedMutationValueHash(mutation) {
+  try {
+    return digest(deserializeResourceValue(mutation.value));
+  } catch {
+    return null;
+  }
+}
+
+function valueType(value) {
+  if (Array.isArray(value)) {
+    return 'array';
+  }
+  if (value === null) {
+    return 'null';
+  }
+  return typeof value;
+}
+
+function stripUndefined(object) {
+  return Object.fromEntries(
+    Object.entries(object).filter(([, value]) => value !== undefined),
+  );
 }
 
 function validateAtomicGroupDependencyPlan(remote, plan) {

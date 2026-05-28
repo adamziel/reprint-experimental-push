@@ -895,6 +895,12 @@ function assertPlanContract(testCase, plan) {
     assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
     assert.equal(precondition.expectedHash, resourceHash(testCase.remote, mutation.resource));
     assert.equal(precondition.checkedAgainst, 'live-remote');
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.equal(
+      mutation.localHash,
+      digest(deserializeResourceValue(mutation.value)),
+      `${testCase.id} localHash should match planned value for ${mutation.resourceKey}`,
+    );
     if (mutation.pluginOwnedResource) {
       assert.ok(mutation.pluginOwnedResource.pluginOwner, `${testCase.id} plugin mutation missing owner`);
       assert.ok(mutation.pluginOwnedResource.driver, `${testCase.id} plugin mutation missing driver`);
