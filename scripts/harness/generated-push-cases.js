@@ -912,7 +912,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,

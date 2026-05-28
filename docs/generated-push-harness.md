@@ -33,7 +33,8 @@ invariants:
 - ready plans reject stale remotes before mutation;
 - non-ready plans refuse apply and leave the remote unchanged;
 - conflicts and blockers do not still carry mutations for the same blocked or
-  conflicted resource;
+  conflicted resource, except atomic-group propagation blockers that explicitly
+  mark grouped mutations unavailable for partial apply;
 - plugin-owned mutations carry explicit owner and driver evidence.
 
 ## Current Coverage
@@ -61,8 +62,10 @@ The default generated run covers:
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
-unplanned remote resource; concurrent remote edits to the updated post remain
-`conflict` and refuse apply.
+unplanned remote resource, and every ready case rejects stale replay before any
+mutation. Concurrent remote edits to the updated post remain `conflict` and
+refuse apply so local `wp_posts` create/update/delete plans cannot overwrite
+newer remote rows.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
