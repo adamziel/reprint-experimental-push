@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 04:39 CEST
+Last updated: 2026-05-28 04:48 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 04:48 CEST - RPP-0031 and RPP-0032 Integrated
+
+- Going well: integration is now at `35d8d4601`, with `RPP-0031` preflight
+  route identity drift and `RPP-0032` dry-run route eligibility failure landed
+  on the lane as command-level `check-release-gates` proofs.
+- Checklist movement: 94 verified items checked and 906 open. New checks since
+  the prior feedback entry: `RPP-0031` and `RPP-0032`. Both route proofs assert
+  exact named failure codes and `mutationAttempted: false`; neither changes
+  final release readiness.
+- AO shape: at least five developer lanes remain visible in tmux
+  (`rpp-24`, `rpp-25`, `rpp-29`, `rpp-30`, `rpp-32`) plus integrator
+  `rpp-28`, critic `rpp-31`, progress reporter `rpp-26`, the visible
+  `rpp-orchestrator`, and AO lifecycle/web panes.
+- Current nudge: let `rpp-25` continue `RPP-0033`, keep the progress reporter
+  and critic reviewing the new lane head, and integrate only one completed
+  branch at a time after focused tests and checklist lint pass.
 
 ## 2026-05-28 04:39 CEST - RPP-0026, RPP-0028, RPP-0030, and RPP-0101 Through RPP-0104 Integrated
 

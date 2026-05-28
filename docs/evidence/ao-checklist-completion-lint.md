@@ -41,8 +41,8 @@ Observed local repository lint summary from the standalone linter:
   "ok": true,
   "riskyClaims": 0,
   "scannedFiles": 36,
-  "checkedIds": 92,
-  "uncheckedIds": 908,
+  "checkedIds": 94,
+  "uncheckedIds": 906,
   "reasonCodes": []
 }
 ```
