@@ -44,6 +44,8 @@ const scenarioFamilies = Object.freeze([
   'remote-delete-local-unchanged',
   'local-create',
   'delete-edit-conflict',
+  'file-create-update-delete-mix-ready',
+  'file-create-update-delete-mix-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -62,6 +64,7 @@ const readyPreservingFamilies = new Set([
   'plugin-file-update',
   'remote-delete-local-unchanged',
   'local-create',
+  'file-create-update-delete-mix-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -459,6 +462,20 @@ const scenarioFamilyBuilders = {
     remote.db.wp_posts[rowId].post_title = `Remote edit while local deletes ${allocator.next()}`;
     tags.add('expected-conflict');
     tags.add('delete-edit');
+  },
+  'file-create-update-delete-mix-ready': ({ local, allocator, tags }) => {
+    addFileCreateUpdateDeleteMix(local, null, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-file-mix',
+    });
+    tags.add('ready-candidate');
+  },
+  'file-create-update-delete-mix-conflict': ({ local, remote, allocator, tags }) => {
+    addFileCreateUpdateDeleteMix(local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-file-mix',
+    });
+    tags.add('expected-conflict');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
@@ -931,6 +948,27 @@ function installAtomicStack(local) {
       },
     },
   ];
+}
+
+function addFileCreateUpdateDeleteMix(local, remote, allocator, tags, { conflict, prefix }) {
+  const createPath = allocator.filePath(`${prefix}-create`);
+  const updatePath = allocator.existingUploadPath();
+  const deletePath = updatePath.endsWith('shared-1.txt')
+    ? 'wp-content/uploads/shared-2.txt'
+    : 'wp-content/uploads/shared-1.txt';
+
+  local.files[createPath] = `generated file mix create ${allocator.next()}`;
+  local.files[updatePath] = `generated file mix update ${allocator.next()}`;
+  delete local.files[deletePath];
+
+  tags.add('file-create-update-delete-mix');
+  tags.add('file-create');
+  tags.add('file-update');
+  tags.add('file-delete');
+
+  if (conflict && remote) {
+    remote.files[updatePath] = `remote concurrent file mix update ${allocator.next()}`;
+  }
 }
 
 function addCommentGraph(local, allocator) {

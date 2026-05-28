@@ -4,7 +4,9 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generatePushHarnessCases,
   runGeneratedPushHarness,
+  validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 
 const requiredFamilies = [
@@ -31,6 +33,9 @@ const requiredFamilies = [
   'remote-delete-local-unchanged',
   'local-create',
   'delete-edit-conflict',
+  'file-create-update-delete-mix-ready',
+  'file-create-update-delete-mix-conflict',
+  'file-create-update-delete-mix',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -68,4 +73,24 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'file-create-update-delete-mix-ready');
+  const nonReadyCase = cases.find((testCase) => testCase.family === 'file-create-update-delete-mix-conflict');
+
+  assert.ok(readyCase, 'missing ready file create/update/delete mix case');
+  assert.ok(nonReadyCase, 'missing non-ready file create/update/delete mix case');
+  assert.ok(readyCase.tags.has('file-create-update-delete-mix'));
+  assert.ok(nonReadyCase.tags.has('file-create-update-delete-mix'));
+
+  const ready = validateGeneratedCase(readyCase);
+  const nonReady = validateGeneratedCase(nonReadyCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready mix should create, update, and delete files');
+  assert.equal(nonReady.status, 'conflict');
+  assert.ok(nonReady.conflicts >= 1, 'non-ready mix should expose a file conflict');
+  assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
 });

@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 24 scenario families, then add seeded variation so
+span 10 complexity tiers and 26 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -45,11 +45,12 @@ The default generated run covers:
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
-  deletes, delete/edit conflicts, file topology conflicts, supported and
-  unsupported plugin-owned data, plugin owner-context drift, supported forms-lab
-  custom-table rows, forms-lab delete refusal, atomic plugin install ready and
-  missing-dependency paths, same-plan post-parent, taxonomy, comment, and
-  usermeta graph closures, and stale graph references.
+  deletes, delete/edit conflicts, file topology conflicts, file create/update/
+  delete mixes with ready and conflicting outcomes, supported and unsupported
+  plugin-owned data, plugin owner-context drift, supported forms-lab custom-table
+  rows, forms-lab delete refusal, atomic plugin install ready and missing-
+  dependency paths, same-plan post-parent, taxonomy, comment, and usermeta graph
+  closures, and stale graph references.
 
 At the time this note was added, the summary command reported:
 
@@ -57,13 +58,13 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 28,
-    "conflict": 129,
-    "ready": 203
+    "blocked": 26,
+    "conflict": 133,
+    "ready": 201
   },
   "maxResourceCount": 69,
   "maxMutationCount": 44,
-  "maxReadyResourceCount": 66,
+  "maxReadyResourceCount": 68,
   "maxReadyMutationCount": 43
 }
 ```
