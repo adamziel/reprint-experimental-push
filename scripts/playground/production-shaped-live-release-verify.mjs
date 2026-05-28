@@ -39,6 +39,10 @@ const explicitLiveUsername = process.env.REPRINT_PUSH_USERNAME || process.env.RE
 const explicitLiveApplicationPassword =
   process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '';
 const explicitAuthSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const expectedPreflightRouteIdentityRoute =
+  process.env.REPRINT_PUSH_PREFLIGHT_ROUTE_IDENTITY_EXPECTED_ROUTE || '/wp-json/reprint-push/v1/preflight';
+const observedPreflightRouteIdentityRoute =
+  process.env.REPRINT_PUSH_PREFLIGHT_ROUTE_IDENTITY_OBSERVED_ROUTE || '';
 const explicitCheckedBoundaryRequested = hasExplicitCheckedBoundaryRequest({
   liveSourceUrl: explicitLiveSourceUrl,
   username: explicitLiveUsername,
@@ -81,6 +85,10 @@ if (applicationPasswordBindingBlocker) {
 const manageOptionsCapabilityBlocker = resolveManageOptionsCapabilityBlocker(checkedExplicitAuthSessionSource);
 if (manageOptionsCapabilityBlocker) {
   emitManageOptionsCapabilityGateAndExit(manageOptionsCapabilityBlocker);
+}
+const preflightRouteIdentityBlocker = resolvePreflightRouteIdentityBlocker(checkedExplicitAuthSessionSource);
+if (preflightRouteIdentityBlocker) {
+  emitPreflightRouteIdentityGateAndExit(preflightRouteIdentityBlocker);
 }
 
 const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
@@ -752,6 +760,25 @@ function resolveManageOptionsCapabilityBlocker(authSessionSource) {
   };
 }
 
+function resolvePreflightRouteIdentityBlocker(authSessionSource) {
+  const observedRoute = normalizePreflightRouteIdentityRoute(observedPreflightRouteIdentityRoute);
+  if (!observedRoute) {
+    return null;
+  }
+
+  const checkedRoute = normalizePreflightRouteIdentityRoute(expectedPreflightRouteIdentityRoute)
+    || '/wp-json/reprint-push/v1/preflight';
+  if (observedRoute === checkedRoute) {
+    return null;
+  }
+
+  return {
+    authSessionSource,
+    checkedRoute,
+    observedRoute,
+  };
+}
+
 function emitApplicationPasswordBindingGateAndExit(blocker) {
   const exitCode = 1;
   const reason = 'APPLICATION_PASSWORD_BINDING_REQUIRED';
@@ -809,6 +836,83 @@ function emitApplicationPasswordBindingGateAndExit(blocker) {
       session: {
         id: '',
         type: observed,
+      },
+    },
+    releaseProof: {
+      ok: false,
+      status: exitCode,
+      code: reason,
+    },
+    authSessionSource: authSessionSourceSummary,
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: {
+        topology: { sourceUrl: explicitLiveSourceUrl },
+        authSessionSource: authSessionSourceSummary,
+      },
+      applyRevalidation: null,
+      releaseMovement,
+    }),
+    releaseMovement,
+  }, statusMarker);
+  process.exit(exitCode);
+}
+
+function emitPreflightRouteIdentityGateAndExit(blocker) {
+  const exitCode = 1;
+  const reason = 'PREFLIGHT_ROUTE_IDENTITY_REQUIRED';
+  const observed = blocker.observedRoute;
+  const authSessionType = 'preflight-route-identity-mismatch';
+  const preflightRouteIdentity = {
+    ok: false,
+    sameRoute: false,
+    observed,
+    checkedRoute: blocker.checkedRoute,
+    observedRoute: blocker.observedRoute,
+    sourceUrl: explicitLiveSourceUrl,
+    method: 'GET',
+    routeNamespace: routeNamespaceFromPath(blocker.checkedRoute) || 'reprint-push/v1',
+    routeName: 'preflight',
+    mutationAttempted: false,
+    scope: 'final-release',
+    required: ['preflight route identity checked before mutation'],
+  };
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason,
+  };
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason });
+  const authSessionSourceSummary = blocker.authSessionSource
+    ? summarizeApplicationPasswordBindingAuthSource(
+      explicitAuthSessionSourceCommand,
+      blocker.authSessionSource,
+    )
+    : null;
+
+  emitVerifyReleaseFailurePayload({
+    ok: false,
+    statusMarker,
+    mutationAttempted: false,
+    topology: {
+      sourceUrl: explicitLiveSourceUrl,
+      remoteBase: null,
+      remoteChanged: null,
+      localEdited: null,
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'preflight route identity on the checked live release path',
+      status: 'blocked',
+      verdict: reason,
+      preflightRouteIdentity,
+    },
+    preflight: {
+      status: 0,
+      authSessionType,
+      routeProfile: 'production-shaped',
+      routeIdentity: preflightRouteIdentity,
+      session: {
+        id: '',
+        type: authSessionType,
       },
     },
     releaseProof: {
@@ -915,6 +1019,25 @@ function summarizeApplicationPasswordBindingAuthSource(command, source) {
     applicationPasswordPresent: Boolean(source?.applicationPassword),
     ...(source?.capabilities ? { capabilities: source.capabilities } : {}),
   };
+}
+
+function normalizePreflightRouteIdentityRoute(route) {
+  const value = String(route || '').trim();
+  if (!value) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(value);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return value.startsWith('/') ? value : `/${value}`;
+  }
+}
+
+function routeNamespaceFromPath(routePath) {
+  const match = String(routePath || '').match(/\/wp-json\/([^/]+\/v\d+)\//);
+  return match?.[1] || '';
 }
 
 function emitTopologyGateFailureAndExit(blocker) {
