@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 07:07 CEST
+Last updated: 2026-05-28 07:14 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 07:14 CEST - RPP-0227 Integrated
+
+- Going well: integration is now at `b1f58e9a5`, adding `RPP-0227` local
+  plugin data stale owner-context proof. The focused planner/apply proof starts
+  from a ready plugin-owned option update, then rejects live owner-plugin drift
+  and forged ready plans with missing or invalid owner-context hashes before
+  mutation while preserving the remote plugin-owned row.
+- Checklist movement: 120 verified items checked and 880 open. New check since
+  the prior feedback entry: `RPP-0227`.
+- Verification: focused RPP-0227 planner/apply validation passes 1/1,
+  `node --test test/push-planner.test.js` passes 100/100, checklist lint
+  reports 120 checked / 880 open with 0 risky claims, artifact redaction scans
+  evidence and reporting surfaces with 0 rejected files, release remains
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 07:07 CEST - RPP-0439 Integrated
 

@@ -257,6 +257,55 @@ function plannerSummaryEvidenceEnvelope(plan) {
   };
 }
 
+function pluginOwnerContextHashEvidenceEnvelope(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    emitted: plannerSummaryCounts(plan),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      pluginOwnedResource: mutation.pluginOwnedResource
+        ? {
+            pluginOwner: mutation.pluginOwnedResource.pluginOwner,
+            driver: mutation.pluginOwnedResource.driver,
+            ownerContextRequired: mutation.pluginOwnedResource.ownerContextRequired,
+            ownerContext: (mutation.pluginOwnedResource.ownerContext || []).map((context) => ({
+              resourceKey: context.resourceKey,
+              remoteHash: context.remoteHash,
+            })),
+          }
+        : null,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
+}
+
 function assertPlannerSummaryMatchesEvidence(plan, label) {
   assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
   assert.equal(
@@ -1008,6 +1057,107 @@ test('RPP-0207 executor rejects stale or forged plugin-owned data owner context'
   assert.equal(forgedError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
   assert.equal(forgedError.details.resourceKey, resourceKey);
   assert.equal(JSON.stringify(forgedRemote), forgedBefore);
+});
+
+test('RPP-0227 rejects stale or forged plugin-owned data owner context with hash-only evidence', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const ownerContextKey = 'file:wp-content/plugins/forms/forms.php';
+  const ownerContextPath = 'wp-content/plugins/forms/forms.php';
+  const privateValues = [
+    'rpp0227-local-confidential-mode',
+    '<?php /* rpp0227-remote-confidential-owner-file */',
+  ];
+  const base = baseSite();
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[0];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  const ready = planFor(base, local, cloneJson(base));
+  const replay = planFor(cloneJson(base), cloneJson(local), cloneJson(base));
+  const mutation = mutationFor(ready, resourceKey);
+  const ownerContext = mutation.pluginOwnedResource.ownerContext.find(
+    (context) => context.resourceKey === ownerContextKey,
+  );
+  const hashEvidence = pluginOwnerContextHashEvidenceEnvelope(ready);
+  const replayHashEvidence = pluginOwnerContextHashEvidenceEnvelope(replay);
+
+  assert.equal(ready.status, 'ready');
+  assertPlannerSummaryMatchesEvidence(ready, 'RPP-0227 plugin owner context');
+  assert.deepEqual(ready.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(mutation.pluginOwnedResource.ownerContextRequired, true);
+  assert.ok(ownerContext);
+  assert.match(ownerContext.remoteHash, /^[a-f0-9]{64}$/);
+  assert.deepEqual(hashEvidence, replayHashEvidence);
+
+  const staleRemote = cloneJson(base);
+  staleRemote.files[ownerContextPath] = privateValues[1];
+  const staleBefore = JSON.stringify(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, ready));
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
+  assert.equal(staleError.details.resourceKey, resourceKey);
+  assert.equal(staleError.details.contextResourceKey, ownerContextKey);
+  assert.equal(staleError.details.expectedHash, ownerContext.remoteHash);
+  assert.match(staleError.details.actualHash, /^[a-f0-9]{64}$/);
+  assert.notEqual(staleError.details.actualHash, staleError.details.expectedHash);
+  assert.equal(JSON.stringify(staleRemote), staleBefore);
+  assert.deepEqual(staleRemote.db.wp_options['option_name:forms_settings'], base.db.wp_options['option_name:forms_settings']);
+  assert.equal(staleRemote.files[ownerContextPath], privateValues[1]);
+
+  const missingContext = tamperReadyPlan(ready, (plan) => {
+    delete mutationFor(plan, resourceKey).pluginOwnedResource.ownerContext;
+  });
+  const missingRemote = cloneJson(base);
+  const missingBefore = JSON.stringify(missingRemote);
+  const missingError = captureError(() => applyPlan(missingRemote, missingContext));
+
+  assert.ok(missingError instanceof PushPlanError);
+  assert.equal(missingError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
+  assert.equal(missingError.details.resourceKey, resourceKey);
+  assert.equal(missingError.details.pluginOwner, 'forms');
+  assert.equal(JSON.stringify(missingRemote), missingBefore);
+  assert.deepEqual(missingRemote.db.wp_options['option_name:forms_settings'], base.db.wp_options['option_name:forms_settings']);
+
+  const forgedContext = tamperReadyPlan(ready, (plan) => {
+    mutationFor(plan, resourceKey).pluginOwnedResource.ownerContext[0].remoteHash = 'not-a-valid-owner-hash';
+  });
+  const forgedRemote = cloneJson(base);
+  const forgedBefore = JSON.stringify(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedContext));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
+  assert.equal(forgedError.details.resourceKey, resourceKey);
+  assert.equal(forgedError.details.contextResourceKey, ownerContextKey);
+  assert.equal(JSON.stringify(forgedRemote), forgedBefore);
+  assert.deepEqual(forgedRemote.db.wp_options['option_name:forms_settings'], base.db.wp_options['option_name:forms_settings']);
+
+  const serializedEvidence = JSON.stringify({
+    plan: hashEvidence,
+    refusals: [
+      { code: staleError.code, details: staleError.details },
+      { code: missingError.code, details: missingError.details },
+      { code: forgedError.code, details: forgedError.details },
+    ],
+  });
+  for (const privateValue of privateValues) {
+    assert.equal(serializedEvidence.includes(privateValue), false, `RPP-0227 evidence leaked ${privateValue}`);
+  }
 });
 
 test('allows plugin-owned data when owner plugin context independently matches remote', () => {
