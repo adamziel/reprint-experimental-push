@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 15:01 CEST.
+- Last update: 2026-05-28 15:05 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `228d7e2f` (ours ancestry merge of
-  `origin/session/rpp-25-checklist-lint-current`).
+  `873fee36` (ours ancestry merge of
+  `origin/session/rpp-25-checklist-lint-current-v2`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -352,6 +352,19 @@ linked implementation artifacts.
   redaction scan (67 files), a current fail-closed release-gate status check
   (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
   gates), and `git diff --check` for the worktree and merge diff.
+- Ancestry backlog reduction: `873fee36` used
+  `git merge -s ours --no-ff origin/session/rpp-25-checklist-lint-current-v2`
+  after verifying `git log --right-only --cherry-pick
+  HEAD...origin/session/rpp-25-checklist-lint-current-v2` was empty. This
+  preserves the already-represented current-tree checklist linter hardening v2
+  branch ancestry (`a8bc9b499`) without moving checklist counts or tree
+  content. Validation succeeded with `node --check
+  scripts/release/checklist-completion-lint.mjs`, `node --test
+  test/checklist-completion-lint.test.js test/progress-html-release-timestamp.test.js`
+  (14/14), checklist lint, artifact redaction scan (67 files), a current
+  fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, 3/20 gates), and `git diff --check` for the
+  worktree and merge diff.
 - `rpp-28` then landed recovery repair, release-gate CI checks, evidence
   redaction, protocol compatibility, route proof matrix, and operator proof
   status on the integration branch. The checklist only moved for exact matches:
