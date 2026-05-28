@@ -624,6 +624,218 @@ test('check-release-gates command links apply route pre-mutation proof for RPP-0
   });
 });
 
+test('check-release-gates command records journal route read-only scenario matrix for RPP-0034', () => {
+  const command = 'node scripts/playground/production-shaped-apply-revalidation-smoke.mjs';
+  const checkedRoute = '/reprint-push/v1/db-journal';
+  const scenarios = [
+    {
+      name: 'negative-journal-write-observed',
+      evidence: {
+        ok: false,
+        readOnly: false,
+        observed: 'journal-write-observed',
+        observedStatus: 200,
+        command,
+        checkedRoute,
+        method: 'POST',
+        mutatesReleaseState: true,
+        mutationAttempted: true,
+        mutatingIdempotencyKey: 'idem-journal-write',
+        journalRowsBefore: 7,
+        journalRowsAfter: 8,
+        scope: 'final-release',
+      },
+      expected: {
+        exitCode: 1,
+        releaseAllowed: false,
+        finalGates: '19/20',
+        primaryFailureBucket: 'recovery',
+        primaryFailureCode: 'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
+        gateStatus: 'failed',
+        gateCode: 'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
+        gateReason: 'Journal route was not proven read-only.',
+        gateEvidence: {
+          ok: false,
+          readOnly: false,
+          observed: 'journal-write-observed',
+          observedStatus: 200,
+          command,
+          checkedRoute,
+          method: 'POST',
+          mutatesReleaseState: true,
+          mutationAttempted: true,
+          mutatingIdempotencyKey: 'idem-journal-write',
+          journalRowsBefore: 7,
+          journalRowsAfter: 8,
+          scope: 'final-release',
+          required: ['journal route read-only proof'],
+        },
+        missingProductionEvidenceBuckets: [
+          {
+            bucket: 'recovery',
+            gateCount: 1,
+            gates: [
+              {
+                bucket: 'recovery',
+                id: 'journal-route-read-only',
+                rpp: 'RPP-0014',
+                title: 'Journal route read-only proof',
+                status: 'failed',
+                code: 'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
+                reason: 'Journal route was not proven read-only.',
+                required: ['journal route read-only proof'],
+                observed: 'journal-write-observed',
+                envKey: undefined,
+                evidenceKey: undefined,
+                scope: 'final-release',
+                requiredScope: undefined,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      name: 'positive-journal-read-only',
+      evidence: {
+        ok: true,
+        readOnly: true,
+        observed: 'journal-read-only',
+        observedStatus: 200,
+        command,
+        checkedRoute,
+        method: 'GET',
+        mutatesReleaseState: false,
+        mutationAttempted: false,
+        mutatingIdempotencyKey: 'absent',
+        journalRowsBefore: 7,
+        journalRowsAfter: 7,
+        scope: 'final-release',
+      },
+      expected: {
+        exitCode: 1,
+        releaseAllowed: true,
+        finalGates: '20/20',
+        primaryFailureBucket: 'provenance',
+        primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+        gateStatus: 'passed',
+        gateCode: 'OK',
+        gateReason: 'Journal route read-only proof is backed by final release evidence.',
+        gateEvidence: {
+          ok: true,
+          readOnly: true,
+          observed: 'journal-read-only',
+          observedStatus: 200,
+          command,
+          checkedRoute,
+          method: 'GET',
+          mutatesReleaseState: false,
+          mutationAttempted: false,
+          mutatingIdempotencyKey: 'absent',
+          journalRowsBefore: 7,
+          journalRowsAfter: 7,
+          scope: 'final-release',
+          required: ['journal route read-only proof'],
+          requiredScope: 'final-release',
+        },
+      },
+    },
+  ];
+  const observedMatrix = [];
+
+  for (const scenario of scenarios) {
+    const { dir, file } = writeReleaseGateEvidenceFixture({
+      scope: 'final-release',
+      env: releaseEnv(),
+      evidence: completeEvidence('final-release', {
+        journalRouteReadOnly: scenario.evidence,
+      }),
+    });
+
+    const result = runReleaseGateCli([
+      '--evidence-file',
+      file,
+      '--scope',
+      'final-release',
+      '--now',
+      fixedNow.toISOString(),
+    ], {
+      cwd: dir,
+      env: {},
+      now: fixedNow,
+    });
+    const gate = gateById(result.report.evaluation, 'journal-route-read-only');
+
+    assert.equal(result.exitCode, scenario.expected.exitCode, scenario.name);
+    assert.equal(result.report.ok, false, scenario.name);
+    assert.equal(result.report.releaseStatus, 'NO-GO', scenario.name);
+    assert.equal(result.report.primaryFailureBucket, scenario.expected.primaryFailureBucket, scenario.name);
+    assert.equal(result.report.primaryFailureCode, scenario.expected.primaryFailureCode, scenario.name);
+    assert.equal(result.report.mutationAttempted, false, scenario.name);
+    assert.deepEqual(result.report.mutationPolicy, {
+      readOnly: true,
+      reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+    }, scenario.name);
+    assert.equal(result.report.releaseMovement.allowed, scenario.expected.releaseAllowed, scenario.name);
+    assert.equal(result.report.releaseMovement.finalGates, scenario.expected.finalGates, scenario.name);
+    assert.equal(gate.status, scenario.expected.gateStatus, scenario.name);
+    assert.equal(gate.code, scenario.expected.gateCode, scenario.name);
+    assert.equal(gate.reason, scenario.expected.gateReason, scenario.name);
+    assert.deepEqual(gate.evidence, scenario.expected.gateEvidence, scenario.name);
+
+    if (scenario.expected.missingProductionEvidenceBuckets) {
+      assert.deepEqual(
+        result.report.missingProductionEvidenceBuckets,
+        scenario.expected.missingProductionEvidenceBuckets,
+        scenario.name,
+      );
+    }
+
+    observedMatrix.push({
+      scenario: scenario.name,
+      gateStatus: gate.status,
+      gateCode: gate.code,
+      readOnly: gate.evidence.readOnly,
+      mutatesReleaseState: gate.evidence.mutatesReleaseState,
+      journalRowsBefore: gate.evidence.journalRowsBefore,
+      journalRowsAfter: gate.evidence.journalRowsAfter,
+      releaseAllowed: result.report.releaseMovement.allowed,
+      primaryFailureCode: result.report.primaryFailureCode,
+      command: gate.evidence.command,
+      mutationAttempted: result.report.mutationAttempted,
+    });
+  }
+
+  assert.deepEqual(observedMatrix, [
+    {
+      scenario: 'negative-journal-write-observed',
+      gateStatus: 'failed',
+      gateCode: 'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
+      readOnly: false,
+      mutatesReleaseState: true,
+      journalRowsBefore: 7,
+      journalRowsAfter: 8,
+      releaseAllowed: false,
+      primaryFailureCode: 'JOURNAL_ROUTE_READ_ONLY_REQUIRED',
+      command,
+      mutationAttempted: false,
+    },
+    {
+      scenario: 'positive-journal-read-only',
+      gateStatus: 'passed',
+      gateCode: 'OK',
+      readOnly: true,
+      mutatesReleaseState: false,
+      journalRowsBefore: 7,
+      journalRowsAfter: 7,
+      releaseAllowed: true,
+      primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+      command,
+      mutationAttempted: false,
+    },
+  ]);
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
