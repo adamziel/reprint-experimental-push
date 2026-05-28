@@ -238,3 +238,52 @@ test('.agents/RELEASE_GATES.md status row scenario matrix remains honest and NO-
     ],
   );
 });
+
+test('missing .agents/RELEASE_GATES.md status row fails closed with exact requirement for RPP-0039', () => {
+  const missingRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'missing-release-gates-row-'));
+  const missingRow = readAgentsReleaseGatesStatusRow({
+    rootDir: missingRoot,
+    scope: 'final-release',
+  });
+  const checked = runCheckedCommand(missingRow.evidence);
+  const gate = gateById(checked.report, 'agents-release-gates-row');
+
+  assert.deepEqual(missingRow, {
+    ok: false,
+    evidence: {
+      ok: false,
+      present: false,
+      observed: 'missing-agents-release-gates-row',
+      code: 'AGENTS_RELEASE_GATES_ROW_REQUIRED',
+      reason: '.agents/RELEASE_GATES.md status row evidence is required before release movement.',
+      path: '.agents/RELEASE_GATES.md',
+      scope: 'final-release',
+    },
+  });
+  assert.equal(checked.exitCode, 1);
+  assert.equal(checked.report.ok, false);
+  assert.equal(checked.report.releaseStatus, 'NO-GO');
+  assert.equal(checked.report.primaryFailureBucket, 'operator-proof');
+  assert.equal(checked.report.primaryFailureCode, 'AGENTS_RELEASE_GATES_ROW_REQUIRED');
+  assert.equal(checked.report.releaseMovement.allowed, false);
+  assert.equal(checked.report.releaseMovement.finalGates, '19/20');
+  assert.equal(checked.report.mutationAttempted, false);
+  assert.deepEqual(checked.report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.deepEqual(gate, {
+    id: 'agents-release-gates-row',
+    rpp: 'RPP-0019',
+    title: '.agents/RELEASE_GATES.md status row',
+    category: 'operator-proof',
+    status: 'failed',
+    blocking: true,
+    code: 'AGENTS_RELEASE_GATES_ROW_REQUIRED',
+    reason: '.agents/RELEASE_GATES.md status row evidence is required before release movement.',
+    evidence: {
+      ...missingRow.evidence,
+      required: ['machine-readable release gate status row'],
+    },
+  });
+});
