@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
+  buildNavMenuItemFailClosedProof,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
@@ -20,6 +21,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  navMenuItemFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -71,6 +73,19 @@ test('complex-site seed PHP can add a post_tag taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_tag_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add a nav menu item fail-closed fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    navMenuItemFailClosed: true,
+  });
+
+  assert.match(php, /nav_menu_item/);
+  assert.match(php, /_menu_item_object_id/);
+  assert.match(php, /nav-menu-item-fail-closed/);
+  assert.match(php, /if \(\$complex_nav_menu_item_fail_closed && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_nav_menu_item_fail_closed = false/);
+});
+
 test('complex-site seed PHP can add a post parent graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -103,6 +118,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_NAV_MENU_ITEM_FAIL_CLOSED_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
@@ -113,6 +129,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
   assert.equal(shape.postTagTaxonomyGraph, true);
+  assert.equal(shape.navMenuItemFailClosed, true);
   assert.equal(shape.postParentGraph, true);
   assert.equal(shape.commentGraph, true);
 });
@@ -233,6 +250,35 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site proof keeps nav menu item graph references fail-closed and hash-only', () => {
+  const graphShape = { ...smallShape, navMenuItemFailClosed: true };
+  const proof = buildNavMenuItemFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const blockerJson = JSON.stringify(proof.blockers);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'blocked');
+  assert.equal(proof.counts.source.navMenuItemPosts, 0);
+  assert.equal(proof.counts.localEdited.navMenuItemPosts, 1);
+  assert.equal(proof.counts.localEdited.navMenuItemMeta, 1);
+  assert.equal(proof.invariants.navMenuCountsPresent, true);
+  assert.equal(proof.invariants.plannerFailsClosed, true);
+  assert.equal(proof.invariants.releaseMovementPrevented, true);
+  assert.equal(proof.invariants.navMenuItemPostBlocked, true);
+  assert.equal(proof.invariants.navMenuItemMetaBlocked, true);
+  assert.equal(proof.invariants.noNavMenuItemMutation, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.blockerEvidenceRedactsRawValues, true);
+  assert.equal(proof.blockers.length, 2);
+  assert.equal(blockerJson.includes('Reprint Push Private Navigation Item'), false);
+  assert.equal(blockerJson.includes('Local private navigation body'), false);
+  assert.equal(blockerJson.includes('reprint-push-nav-menu-item-fail-closed'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -473,6 +519,25 @@ function syntheticComplexSnapshot(variant, shape) {
       post_id: 71001,
       meta_key: '_thumbnail_id',
       meta_value: '71901',
+    };
+  }
+
+  if (shape.navMenuItemFailClosed && local) {
+    snapshot.db.wp_posts['ID:71951'] = {
+      ID: 71951,
+      post_title: 'Reprint Push Private Navigation Item',
+      post_name: 'reprint-push-nav-menu-item-fail-closed',
+      post_content: 'Local private navigation body must remain hash-only.',
+      post_status: 'publish',
+      post_type: 'nav_menu_item',
+      post_parent: 0,
+      post_author: 0,
+    };
+    snapshot.db.wp_postmeta['meta_id:71961'] = {
+      meta_id: 71961,
+      post_id: 71951,
+      meta_key: '_menu_item_object_id',
+      meta_value: '71001',
     };
   }
 

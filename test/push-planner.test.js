@@ -1796,7 +1796,7 @@ test('blocks featured image references when the attachment target diverged on re
   assert.equal(planJson.includes('remote-private-attachment-body'), false);
 });
 
-test('keeps WordPress menu item graph surfaces fail-closed', () => {
+test('RPP-0315 keeps WordPress menu item graph surfaces fail-closed with hash-only blockers', () => {
   const menuItemResourceKey = 'row:["wp_posts","ID:44"]';
   const menuMetaResourceKey = 'row:["wp_postmeta","meta_id:90"]';
   const base = baseSite();
@@ -1829,8 +1829,20 @@ test('keeps WordPress menu item graph surfaces fail-closed', () => {
   assert.equal(mutationFor(plan, menuMetaResourceKey), undefined);
   assert.equal(menuItemBlocker.class, 'stale-wordpress-graph-identity');
   assert.match(menuItemBlocker.reason, /nav_menu_item/);
+  assert.equal(menuItemBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(menuItemBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(menuItemBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(menuItemBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(menuItemBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(menuItemBlocker.change.local, 'value'), false);
   assert.equal(menuMetaBlocker.class, 'stale-wordpress-graph-identity');
   assert.match(menuMetaBlocker.reason, /_menu_item_object_id/);
+  assert.equal(menuMetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(menuMetaBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(menuMetaBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(menuMetaBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(menuMetaBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(menuMetaBlocker.change.local, 'value'), false);
   assert.equal(planJson.includes('local-private-menu-item-body'), false);
   assert.equal(planJson.includes('Local private menu item'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
