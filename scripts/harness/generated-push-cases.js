@@ -49,6 +49,8 @@ const scenarioFamilies = Object.freeze([
   'file-create-update-delete-mix-conflict',
   'file-type-swap-ready',
   'file-type-swap-conflict',
+  'row-create-update-delete-mix-ready',
+  'row-create-update-delete-mix-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -69,6 +71,7 @@ const readyPreservingFamilies = new Set([
   'local-create',
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
+  'row-create-update-delete-mix-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -173,7 +176,10 @@ export function validateGeneratedCase(testCase) {
   if (plan.status === 'ready') {
     const applied = applyPlan(deepClone(testCase.remote), plan);
     assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, applied.site, mutationKeys);
-    assertReadyPlanRejectsStaleRemote(testCase, plan);
+    const staleReplay = assertReadyPlanRejectsStaleRemote(testCase, plan);
+    result.staleReplayRejected = staleReplay.rejected;
+    result.staleReplayRejectionCode = staleReplay.code;
+    result.staleReplayRemoteUnchanged = staleReplay.remoteUnchanged;
     result.applied = true;
     return result;
   }
@@ -523,6 +529,20 @@ const scenarioFamilyBuilders = {
     addFileTypeSwap(base, local, remote, allocator, tags, {
       conflict: true,
       prefix: 'conflict-type-swap',
+    });
+    tags.add('expected-conflict');
+  },
+  'row-create-update-delete-mix-ready': ({ base, local, remote, allocator, tags }) => {
+    addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-row-mix',
+    });
+    tags.add('ready-candidate');
+  },
+  'row-create-update-delete-mix-conflict': ({ base, local, remote, allocator, tags }) => {
+    addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-row-mix',
     });
     tags.add('expected-conflict');
   },
@@ -895,7 +915,7 @@ function assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, resultSi
 
 function assertReadyPlanRejectsStaleRemote(testCase, plan) {
   if (plan.mutations.length === 0) {
-    return;
+    return { rejected: false, code: null, remoteUnchanged: true };
   }
   const mutation = plan.mutations[0];
   const driftedRemote = deepClone(testCase.remote);
@@ -905,6 +925,7 @@ function assertReadyPlanRejectsStaleRemote(testCase, plan) {
   assert.ok(error instanceof PushPlanError);
   assert.equal(error.code, 'PRECONDITION_FAILED');
   assert.equal(digest(driftedRemote), before, `${testCase.id} stale apply changed remote state`);
+  return { rejected: true, code: error.code, remoteUnchanged: true };
 }
 
 function recordSummary(summary, testCase, result) {
@@ -1066,6 +1087,39 @@ function addFileTypeSwap(base, local, remote, allocator, tags, { conflict, prefi
     tags.add('type-swap-conflict');
   } else {
     tags.add('type-swap-ready');
+  }
+}
+
+function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const createId = allocator.graphId();
+  const updateId = allocator.graphId();
+  const deleteId = allocator.graphId();
+  const updateRowId = `ID:${updateId}`;
+  const deleteRowId = `ID:${deleteId}`;
+  const updateBase = makePost(updateId, `Base row mix update ${updateId}`);
+  const deleteBase = makePost(deleteId, `Base row mix delete ${deleteId}`);
+
+  setRow(base, 'wp_posts', updateRowId, updateBase);
+  setRow(local, 'wp_posts', updateRowId, updateBase);
+  setRow(remote, 'wp_posts', updateRowId, updateBase);
+  setRow(base, 'wp_posts', deleteRowId, deleteBase);
+  setRow(local, 'wp_posts', deleteRowId, deleteBase);
+  setRow(remote, 'wp_posts', deleteRowId, deleteBase);
+
+  setRow(local, 'wp_posts', `ID:${createId}`, makePost(createId, `Generated row mix create ${createId}`));
+  setRow(local, 'wp_posts', updateRowId, {
+    ...updateBase,
+    post_title: `Generated row mix update ${prefix} ${allocator.next()}`,
+  });
+  deleteRow(local, 'wp_posts', deleteRowId);
+
+  tags.add('row-create-update-delete-mix');
+  tags.add('row-create');
+  tags.add('row-update');
+  tags.add('row-delete');
+
+  if (conflict) {
+    remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
   }
 }
 
