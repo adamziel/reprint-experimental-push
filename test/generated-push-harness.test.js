@@ -8,6 +8,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -61,6 +63,11 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'wp-terms-termmeta-graph-ready',
+  'wp-terms-termmeta-graph-stale',
+  'wp-terms-termmeta-graph',
+  'wp-termmeta-create',
+  'termmeta-term-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -346,6 +353,168 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.remote.db.wp_terms[termRowId],
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
+    );
+  }
+}
+
+test('RPP-0131 wp_terms and wp_termmeta graph target exposes redacted ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermsTermmetaGraph;
+
+  assert.ok(coverage, 'missing wp_terms/termmeta graph target coverage');
+  assert.equal(coverage.family, 'wp-terms-termmeta-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-terms-termmeta-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_terms/termmeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready termmeta graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(JSON.stringify(report).includes('local-private-termmeta-token'), false);
+  assert.equal(JSON.stringify(report).includes('remote-private-termmeta'), false);
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-terms-termmeta-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-terms-termmeta-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_terms/termmeta graph case');
+  assert.ok(staleCase, 'missing stale wp_terms/termmeta graph case');
+  const readyShape = assertWpTermsTermmetaGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertWpTermsTermmetaGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready graph should create term and termmeta rows');
+  assert.equal(ready.applied, true, 'ready wp_terms/termmeta graph should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready graph should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready wp_terms/termmeta graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale term target should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale term target should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale termmeta graph must not apply mutations');
+
+  assertTermmetaGraphEvidenceRedacted(readyCase, readyShape);
+  assertTermmetaGraphEvidenceRedacted(staleCase, staleShape);
+});
+
+function assertWpTermsTermmetaGraphShape(testCase, { staleTarget }) {
+  const createdTerms = Object.entries(testCase.local.db.wp_terms)
+    .filter(([id, row]) => !testCase.base.db.wp_terms[id]
+      && row.name.startsWith('Generated termmeta graph target '));
+  const termmetaRows = Object.entries(testCase.local.db.wp_termmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_termmeta[id]
+      && row.meta_key.startsWith('_generated_private_term_profile_')
+      && row.meta_value?.private_token?.startsWith('local-private-termmeta-token-'));
+
+  assert.equal(createdTerms.length, staleTarget ? 0 : 1, `${testCase.id} should create one term only when ready`);
+  assert.equal(termmetaRows.length, 1, `${testCase.id} should create one termmeta row`);
+
+  const [metaRowId, termmetaRow] = termmetaRows[0];
+  const termId = staleTarget ? termmetaRow.term_id : createdTerms[0][1].term_id;
+  const termRowId = `term_id:${termId}`;
+  assert.equal(termmetaRow.term_id, termId);
+  assert.ok(testCase.local.db.wp_terms[termRowId], `${testCase.id} should have the term target locally`);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_terms[termRowId], `${testCase.id} stale target should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale target should be unchanged locally`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  }
+
+  return {
+    termRowId,
+    metaRowId,
+    termRow: testCase.local.db.wp_terms[termRowId],
+    remoteTermRow: testCase.remote.db.wp_terms[termRowId],
+    termmetaRow,
+  };
+}
+
+function assertTermmetaGraphEvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const termResourceKey = `row:${JSON.stringify(['wp_terms', shape.termRowId])}`;
+  const termmetaResourceKey = `row:${JSON.stringify(['wp_termmeta', shape.metaRowId])}`;
+  const relatedMutations = plan.mutations.filter((mutation) =>
+    mutation.resourceKey === termResourceKey || mutation.resourceKey === termmetaResourceKey);
+  const relatedBlockers = plan.blockers.filter((blocker) =>
+    blocker.resourceKey === termmetaResourceKey
+    || blocker.references?.some((reference) => reference.targetResourceKey === termResourceKey));
+  const relatedDecisions = plan.decisions.filter((decision) => decision.resourceKey === termResourceKey);
+
+  for (const mutation of relatedMutations) {
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+  }
+
+  if (plan.status === 'ready') {
+    assert.equal(relatedMutations.length, 2, `${testCase.id} should mutate term and termmeta rows`);
+  } else {
+    assert.notEqual(plan.status, 'ready');
+    assert.ok(relatedBlockers.length >= 1, `${testCase.id} should have termmeta graph blockers`);
+  }
+
+  const redacted = redactEvidence({
+    status: plan.status,
+    mutations: relatedMutations.map((mutation) => ({
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      change: mutation.change,
+      value: mutation.value,
+    })),
+    blockers: relatedBlockers,
+    decisions: relatedDecisions,
+  });
+  const redactedJson = JSON.stringify(redacted);
+
+  if (relatedMutations.length > 0) {
+    assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), 'mutation values should be redacted in evidence');
+    assert.ok(redactedJson.includes('sha256'), 'redacted mutation evidence should keep hashes');
+  }
+  assertTermmetaGraphRawValuesAbsent(testCase, shape, redactedJson);
+}
+
+function assertTermmetaGraphRawValuesAbsent(testCase, shape, redactedJson) {
+  const values = [
+    shape.remoteTermRow?.name,
+    shape.remoteTermRow?.slug,
+    shape.termmetaRow.meta_value.private_token,
+    shape.termmetaRow.meta_value.private_notes,
+    'local-private-termmeta-token',
+    'remote-private-termmeta',
+  ].filter(Boolean).map(String);
+
+  for (const value of values) {
+    assert.equal(
+      redactedJson.includes(value),
+      false,
+      `${testCase.id} redacted evidence should not expose ${value}`,
     );
   }
 }
