@@ -1,12 +1,14 @@
-# AO Progress Report - 2026-05-28 05:50 CEST
+# AO Progress Report - 2026-05-28 05:55 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`c371eb8d2e` (`test: prove keep-remote decision counts`). It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`3081bfab1` (`docs: refresh progress for keep-remote proof`). The newest
+behavioral proof on the lane is `c371eb8d2e` (`test: prove keep-remote
+decision counts`); `3081bfab1` is the lane documentation refresh that records
+that integration. This report separates committed proof from visible AO worker
+output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
@@ -252,6 +254,8 @@ Checked IDs in this report are:
 - `node --test test/release-gates.test.js test/release-gate-cli.test.js` — 28 pass / 0 fail.
 - `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 29 pass / 0 fail for the RPP-0038 progress.html release timestamp proof plus release-gate/CLI coverage.
 - `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 30 pass / 0 fail for the RPP-0039 status-row proof plus release-gate/CLI coverage.
+- `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js` — 2 pass / 0 fail for the reporting refresh sanity check.
+- `python` local-link sanity parser for `progress.html` — 49 local links checked, 0 missing.
 - `node --test test/recovery-journal.test.js` — 21 pass / 0 fail.
 - `npm run test:recovery:file-journal` — restart smoke passed; fail-after-2
   stayed `blocked-recovery` with 6 old / 2 new targets, retry did not mutate,
@@ -323,17 +327,21 @@ branch.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, and `RPP-0039` are integrated; current visible work is the next release-gate proof candidate. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `c371eb8d2e`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0310`, and `RPP-0414`; now evaluating the next completed branch one at a time. |
-| `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, and `RPP-0215` are represented by pushed or integrated evidence; current visible work is `RPP-0211` mutation/precondition mapping. |
-| `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `c371eb8d2e`. |
-| `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
+| `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is `RPP-0113` replay, with `RPP-0114` still queued/session-only. |
+| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, and `RPP-0039` are integrated; `RPP-0040`, `RPP-0041`, and `RPP-0042` are queued/session-only. |
+| `rpp-36` | progress reporter | Monitoring after the lane advanced through `3081bfab1`; no branch-local claims counted. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0310`, and `RPP-0414`; now evaluating the next candidate one at a time. |
+| `rpp-29` | developer | `RPP-0207`, `RPP-0210`, and `RPP-0215` are integrated; `RPP-0216`, `RPP-0217`, and `RPP-0218` are queued/session-only. |
+| `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; `RPP-0315` and `RPP-0322` are queued/session-only. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after `3081bfab1` and the queued/session-only inventory. |
+| `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated; `RPP-0415` through `RPP-0420` are queued/session-only and newer `RPP-0415` activation-hook work is visible locally. |
+| `rpp-33` | developer | Active `RPP-0115` plugin-owned custom-table branch; branch-local only. |
+| `rpp-34` | developer | Active `RPP-0421` driver-registration API branch from `3081bfab1`; branch-local only. |
+| `rpp-35` | integration-prep | Inspecting queued candidates without lane pushes; not an evidence source. |
+| `rpp-37` | critic | Independent critic lane sampling live workers and queued/session refs. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
-| `rpp-10` through `rpp-23`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-10` through `rpp-23`, `rpp-26`, `rpp-27` | stale/prior | Old or superseded interactive panes are counted only where their output is integrated above. |
 | `rpp-1` | pushed branch `b885aa8b9` | Release-gate extended coverage is represented in the integration branch by `ab0340786`; do not count additional branch-local state. |
 | `rpp-2` | pushed branch `5dc081ea9` | Recovery work is represented in the integration branch by `1362ccb6c`; do not count additional branch-local state. |
 | `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`; do not count additional branch-local state. |
@@ -342,10 +350,32 @@ branch.
 | `rpp-6` | pushed branch `9440daf3e` | Chunk benchmark gate work is represented in the integration branch by `4d5c96d78`; do not count additional branch-local state. |
 | `rpp-7` / `rpp-8` | pushed audit branches | Independent and critic audit evidence is represented in the integration branch by `05050392b`; do not count additional branch-local state. |
 | `rpp-9` | pushed branch `dcc23dc2a` | Prior progress evidence visible; branch-local until integrated. |
-| `rpp-orchestrator` | supervisor | tmux-visible supervisor pane. |
 
 Untracked AO scratch directories observed in some worker trees remain excluded
 from evidence and must not be committed.
+
+## Queued / Session-Only Branches Not Counted
+
+The following refs or live panes were visible after the `3081bfab1` lane
+refresh. They are tracked for handoff only and do **not** change the 108 / 892
+checklist count, release status, or readiness posture until the integration lane
+actually moves and the lane checklist reflects them. `RPP-0215` moved out of
+this bucket and is now counted only because it is present on origin/lane.
+
+| RPP item(s) | Visible ref / session | Current posture | Count rule |
+| --- | --- | --- | --- |
+| `RPP-0040` | `origin/session/rpp-25-rpp-0040-verify-release-failure-reason` @ `337f6b34f` | queued release-gate candidate | not counted |
+| `RPP-0041` | `origin/session/rpp-25-rpp-0041-source-url-gate-coverage` @ `746390195` | pushed session branch | not counted |
+| `RPP-0042` | `origin/session/rpp-25-rpp-0042-local-url-gate-coverage` @ `50a4f74b1` | pushed session branch | not counted |
+| `RPP-0113` / `RPP-0114` | `origin/session/rpp-24-rpp-0113-wp-term-relationships-graph` @ `6ac671f15`; `origin/session/rpp-24-rpp-0114-plugin-owned-option-changes` @ `a1d96509b`; `rpp-24` has local replay edits | queued/generated-harness session output | not counted |
+| `RPP-0115` | `rpp-33` local `session/rpp-33-rpp-0115-plugin-owned-custom-table-changes` | active local branch | not counted |
+| `RPP-0216` | `origin/session/rpp-29-rpp-0216-blocked-plan-apply-refusal` @ `311d3b553` | queued merge-invariant candidate | not counted |
+| `RPP-0217` | `origin/session/rpp-29-rpp-0217-conflict-plan-apply-refusal` @ `0353945a9` | pushed session branch | not counted |
+| `RPP-0218` | `origin/session/rpp-29-rpp-0218-forged-ready-plan-defense` @ `50b86455c` | pushed session branch | not counted |
+| `RPP-0315` | `origin/session/rpp-30-rpp-0315-nav-menu-item-fail-closed` @ `aaa3328b3` | queued graph candidate | not counted |
+| `RPP-0322` | `origin/session/rpp-30-rpp-0322-featured-image-attachment-reference` @ `6c54eea48` | pushed session branch | not counted |
+| `RPP-0415`-`RPP-0420` | `origin/session/rpp-32-rpp-0415-remote-plugin-removal-refusal` @ `92c3ea862`, `RPP-0416` @ `f77e9530c`, `RPP-0417` @ `b0d53218c`, `RPP-0418` @ `003228c1d`, `RPP-0419` @ `2fd1d2e8a`, `RPP-0420` @ `58dd95b29`; `rpp-32` also has local `RPP-0415` activation-hook edits | queued plugin-driver candidates | not counted |
+| `RPP-0421` | `rpp-34` local `session/rpp-34-rpp-0421-driver-registration-api-proof` | active local branch from `3081bfab1` | not counted |
 
 ## Current Missing Gates
 
@@ -380,6 +410,6 @@ Final release remains held for the following missing production-backed gates:
 11. Red-suite/auth/plugin/snapshot failures called out by the critic must be
     resolved before any final release movement.
 
-Decision: **NO-GO** for final release on 2026-05-28 05:50 CEST.
+Decision: **NO-GO** for final release on 2026-05-28 05:55 CEST.
 
 No readiness percentage moves in this report.
