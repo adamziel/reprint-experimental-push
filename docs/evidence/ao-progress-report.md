@@ -1,10 +1,12 @@
-# AO Progress Report - 2026-05-28 07:01 CEST
+# AO Progress Report - 2026-05-28 07:05 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through
-`9570a6110` (`test: prove driver apply validation hook`). It separates
+`lane/evidence-integration-20260527` through lane head
+`f01b317d2` (`docs: refresh progress for driver apply validation hook`), with
+latest checked proof `9570a6110` (`test: prove driver apply validation hook`).
+It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -417,9 +419,9 @@ branch.
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
 | `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, and `RPP-0051` are integrated; current visible work is the next release-gate proof candidate. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `9570a6110`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0310`, `RPP-0414`, `RPP-0421`, `RPP-0431`, and `RPP-0438`; now evaluating the next completed branch one at a time. |
+| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, and `RPP-0051` are integrated; branch-local `RPP-0052`, `RPP-0053`, `RPP-0054`, and later release-gate candidates are not counted until they land on the lane. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced through `f01b317d2`; this heartbeat keeps `118/882` and release `NO-GO` aligned with lane truth. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0310`, `RPP-0414`, `RPP-0421`, `RPP-0431`, and `RPP-0438`; next observed target is `RPP-0439`, not counted until it lands on the lane. |
 | `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, and `RPP-0220` are represented by pushed or integrated evidence; newer branch-local work is not counted until tested and integrated. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
 | `rpp-31` | critic | Auditing candidate branch merge risks after `9570a6110`. |
@@ -474,6 +476,6 @@ Final release remains held for the following missing production-backed gates:
 11. Red-suite/auth/plugin/snapshot failures called out by the critic must be
     resolved before any final release movement.
 
-Decision: **NO-GO** for final release on 2026-05-28 06:21 CEST.
+Decision: **NO-GO** for final release on 2026-05-28 07:05 CEST.
 
 No readiness percentage moves in this report.

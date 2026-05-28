@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 07:01 CEST.
+- Last update: 2026-05-28 07:05 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `9570a6110` (`test: prove driver apply validation hook`).
+  lane head `f01b317d2` (`docs: refresh progress for driver apply validation
+  hook`), with latest checked proof `9570a6110`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -189,6 +190,10 @@ linked implementation artifacts.
   fails closed before hook execution, durable journal events, or target mutation
   with `PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED`. Caveat: this is focused local
   plugin-driver boundary evidence, not broad production plugin-driver readiness.
+- Progress heartbeat: lane truth is `f01b317d2`, 118 checked / 882 open, and
+  release `NO-GO`. `RPP-0438` is integrated; `rpp-28` is next evaluating
+  `RPP-0439`. Branch-local `RPP-0052`, `RPP-0053`, `RPP-0054`, and later
+  release-gate candidates remain uncounted until reviewed and integrated.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
