@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 105 are
-  checked from integrated evidence and 895 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 106 are
+  checked from integrated evidence and 894 remain open.
 - `src/release-gates.js` and `test/release-gates.test.js` define and test 20
   fail-closed release-gate foundation checks. `ab0340786` extends the focused
   coverage to 11 tests and records `RPP-0008` through `RPP-0020` missing/failed
@@ -177,9 +177,9 @@ progress.
   secret-looking operator-proof rows now keep final release at **NO-GO**.
 - `c22966b16` integrates current-tree checklist linter hardening from
   `rpp-25-checklist-lint-current-v2`. After the `RPP-0026`, `RPP-0028`,
-  `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0101`, `RPP-0102`,
+  `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0101`, `RPP-0102`,
   `RPP-0103`, `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0207`, `RPP-0210`,
-  `RPP-0310`, and `RPP-0414` checklist updates, the current tree reports 105 checked IDs, 895
+  `RPP-0310`, and `RPP-0414` checklist updates, the current tree reports 106 checked IDs, 894
   unchecked IDs, and 0 risky
   completion claims.
 - `6d6b2077c` integrates the release artifact redaction scanner from `rpp-29`.
@@ -204,7 +204,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 35 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 36 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 6 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 2 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 16 / 100 |
@@ -219,7 +219,7 @@ Checked IDs in this report are:
 
 - Release gates: `RPP-0001` through `RPP-0026`, plus `RPP-0028`,
   `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`,
-  `RPP-0036`, and `RPP-0037`.
+  `RPP-0036`, `RPP-0037`, and `RPP-0038`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0107`, `RPP-0112`.
 - Merge invariants: `RPP-0207`, `RPP-0210`.
@@ -243,6 +243,7 @@ Checked IDs in this report are:
 ## Checked Commands
 
 - `node --test test/release-gates.test.js test/release-gate-cli.test.js` — 28 pass / 0 fail.
+- `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` — progress.html release timestamp proof, release gate, and CLI tests pass together for RPP-0038.
 - `node --test test/recovery-journal.test.js` — 21 pass / 0 fail.
 - `npm run test:recovery:file-journal` — restart smoke passed; fail-after-2
   stayed `blocked-recovery` with 6 old / 2 new targets, retry did not mutate,
@@ -265,7 +266,7 @@ Checked IDs in this report are:
 - `node --test test/release-evidence-provenance.test.js test/release-gate-cli.test.js test/release-gates.test.js` — 25 pass / 0 fail after provenance wiring.
 - `node ./scripts/release/check-release-gates.mjs --now 2026-05-28T00:00:00.000Z` — expected nonzero exit with `releaseStatus: "NO-GO"` and named missing production evidence.
 - `node --test test/checklist-completion-lint.test.js` — 13 pass / 0 fail after current-tree hardening.
-- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 105 checked IDs, 895 unchecked IDs.
+- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 106 checked IDs, 894 unchecked IDs.
 - `node --test test/artifact-redaction-scan.test.js` — 10 pass / 0 fail.
 - `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html` — `ok: true`, 35 scanned files, 0 rejected files.
 - `node --test test/required-release-checks.test.js` — passed when integrated
@@ -291,6 +292,13 @@ latest graph/plugin/audit/auth commits are also covered by their integrated
 evidence documents; branch-local claims outside those commits are not counted
 here.
 
+Integrated progress timestamp proof for `RPP-0038` remains support evidence
+toward the release-gate surface and does not move final release readiness:
+
+- Command: `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; progress.html release status: `NO-GO`; proof timestamp: `2026-05-28T03:18:00.000Z`.
+- Evidence target: `progress.html#release-proof-timestamp`; release remains held until production provenance is supplied.
+
 ## Active AO Roster From tmux and Branch Inspection
 
 Integrated evidence is counted only from `lane/evidence-integration-20260527`.
@@ -301,9 +309,9 @@ branch.
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
 | `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, and `RPP-0037` are integrated; current visible work is `RPP-0038` progress timestamp proof work. |
+| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, and `RPP-0038` are integrated; current visible work is `RPP-0039` release-gates status row proof work. |
 | `rpp-26` | progress reporter | Monitoring after the lane advanced through `63840e538`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0207`, `RPP-0210`, `RPP-0310`, and `RPP-0414`; now evaluating the next completed branch one at a time. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0207`, `RPP-0210`, `RPP-0310`, and `RPP-0414`; now evaluating the next completed branch one at a time. |
 | `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, and `RPP-0210` are represented by pushed or integrated evidence; current visible work is `RPP-0211` mutation/precondition mapping. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
 | `rpp-31` | critic | Auditing candidate branch merge risks after `63840e538`. |
