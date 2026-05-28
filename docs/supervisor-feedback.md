@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 09:34 CEST
+Last updated: 2026-05-28 09:40 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 09:40 CEST - Live Roster 29 Lane Refresh
+
+- Lane truth: fetch confirmed `origin/lane/evidence-integration-20260527` at
+  `7282d12e3` (`docs: refresh progress for rpp-0233`). Checklist lint reports
+  124 verified items checked and 876 open; release remains `NO-GO`.
+- Counted vs uncounted: `RPP-0058` and `RPP-0233` are integrated. Current
+  active branch-local work remains uncounted: `rpp-24`/`RPP-0145`,
+  `rpp-25`/`RPP-0064`, `rpp-28`/`RPP-0062` integration, `rpp-29`/`RPP-0236`,
+  `rpp-30`/`RPP-0342`, `rpp-32`/`RPP-0456`, `rpp-33`/`RPP-0144`, and
+  `rpp-34`/`RPP-0457`.
+- Active roster: developers `rpp-24`, `rpp-25`, `rpp-29`, `rpp-30`, `rpp-32`,
+  `rpp-33`, and `rpp-34`; integrator `rpp-28`; queue `rpp-35`; critics
+  `rpp-31` and `rpp-37`; progress `rpp-36`; lifecycle/dashboard
+  `rpp-ao-lifecycle` and `rpp-ao-web`; supervisor `rpp-orchestrator`.
+- Dashboard: local `127.0.0.1:8080` returned HTTP 200 to HEAD. A bounded GET
+  received HTTP 200 bytes but timed out after 5 seconds, so keep treating the
+  dashboard as reachable but slow/streaming.
+- Current nudge: continue one candidate at a time from the latest lane head and
+  keep branch-local evidence out of readiness scoring.
 
 ## 2026-05-28 09:34 CEST - RPP-0233 Integrated
 
