@@ -913,6 +913,22 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      if (blocker.class === 'atomic-group-blocker-propagation') {
+        const propagatedMutation = plan.mutations.find((mutation) => (
+          mutation.id === blocker.mutationId
+          && mutation.resourceKey === blocker.resourceKey
+          && mutation.atomicGroupId === blocker.groupId
+        ));
+        assert.ok(
+          propagatedMutation,
+          `${testCase.id} propagated atomic blocker lacks matching audit mutation ${blocker.resourceKey}`,
+        );
+        assert.ok(
+          blocker.sourceBlockerIds?.length > 0,
+          `${testCase.id} propagated atomic blocker lacks source blockers ${blocker.resourceKey}`,
+        );
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,

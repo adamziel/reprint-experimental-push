@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan, PushPlanError } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -8,6 +10,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+
+const fixedGeneratedNowForRpp0224 = new Date('2026-05-28T00:00:00.000Z');
 
 const requiredFamilies = [
   'local-file-update',
@@ -151,6 +155,62 @@ test('RPP-0102 directory descendant conflict exposes per-tier target counts', ()
   assert.equal(result.status, 'conflict');
   assert.ok(result.conflicts > 0, 'directory descendant case must conflict');
   assert.equal(result.applied, false, 'directory descendant conflict must not apply mutations');
+});
+
+
+test('RPP-0224 generated directory descendant conflict refuses with hash-only evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.directoryDescendantConflict;
+
+  assert.ok(coverage, 'missing directory descendant conflict target coverage');
+  assert.equal(coverage.family, 'directory-descendant-conflict');
+  assert.equal(coverage.total, report.summary.featureFamilies['directory-descendant-conflict']);
+  assert.deepEqual(coverage.statuses, { conflict: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'directory-descendant-conflict')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated directory descendant conflict case');
+  assert.ok(generatedCase.tags.has('directory-descendant'));
+  assert.ok(generatedCase.tags.has('directory-delete-with-remote-descendant'));
+
+  const { directory, descendant, descendantValue } = generatedDirectoryDescendantTargets(generatedCase);
+  const directoryKey = `file:${directory}`;
+  const descendantKey = `file:${descendant}`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedNowForRpp0224,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === directoryKey);
+  const evidenceJson = JSON.stringify(hashOnlyGeneratedTopologyEvidenceForRpp0224(plan));
+  const remoteReplay = cloneJsonForRpp0224(generatedCase.remote);
+  const beforeReplay = JSON.stringify(remoteReplay);
+  const error = captureGeneratedErrorForRpp0224(() => applyPlan(remoteReplay, plan));
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(validation.status, 'conflict');
+  assert.equal(validation.applied, false);
+  assert.ok(conflict, `${generatedCase.id} missing directory descendant conflict`);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'unchanged');
+  assert.equal(conflict.relatedResourceKey, descendantKey);
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-file-topology-and-stop');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === directoryKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === directoryKey), false);
+  assert.equal(JSON.stringify(conflict).includes(descendantValue), false);
+  assert.equal(evidenceJson.includes(descendantValue), false, 'hash-only generated evidence leaked descendant value');
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remoteReplay), beforeReplay, 'conflict apply mutated generated remote');
 });
 
 test('RPP-0103 generated harness emits ready and non-ready file type-swap cases', () => {
@@ -354,4 +414,89 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function cloneJsonForRpp0224(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function captureGeneratedErrorForRpp0224(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected generated operation to throw');
+}
+
+function generatedDirectoryDescendantTargets(testCase) {
+  for (const [directory, baseValue] of Object.entries(testCase.base.files)) {
+    if (!baseValue || typeof baseValue !== 'object' || baseValue.type !== 'directory') {
+      continue;
+    }
+    if (Object.hasOwn(testCase.local.files, directory)) {
+      continue;
+    }
+    const descendantEntry = Object.entries(testCase.remote.files).find(([candidate]) => (
+      candidate.startsWith(`${directory}/`)
+      && !Object.hasOwn(testCase.base.files, candidate)
+      && !Object.hasOwn(testCase.local.files, candidate)
+    ));
+    if (descendantEntry) {
+      return {
+        directory,
+        descendant: descendantEntry[0],
+        descendantValue: descendantEntry[1],
+      };
+    }
+  }
+  assert.fail(`${testCase.id} missing generated directory descendant target`);
+}
+
+function hashOnlyGeneratedTopologyEvidenceForRpp0224(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      relatedResourceKey: conflict.relatedResourceKey || null,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      baseHash: conflict.baseHash,
+      localHash: conflict.localHash,
+      remoteHash: conflict.remoteHash,
+      change: conflict.change,
+      relatedChange: conflict.relatedChange || null,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
 }
