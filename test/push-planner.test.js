@@ -670,6 +670,84 @@ test('combines local ordinary changes while preserving remote-only plugin change
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('RPP-0215 keep-remote decisions are deterministic hash-only evidence', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    'remote-private-rpp0215-index-content',
+    '9.9.9-rpp0215-private-version',
+    'Remote private RPP-0215 title',
+  ];
+  local.files['wp-content/themes/theme/style.css'] = 'body { color: blue; }';
+  remote.files['index.php'] = privateValues[0];
+  remote.plugins.forms = { version: privateValues[1], active: false };
+  remote.db.wp_posts['ID:1'].post_title = privateValues[2];
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const keepRemoteKeys = [
+    'file:index.php',
+    'plugin:forms',
+    'row:["wp_posts","ID:1"]',
+  ];
+  const keepRemoteEvidence = JSON.stringify({
+    summary: firstPlan.summary,
+    emitted: plannerSummaryCounts(firstPlan),
+    decisions: firstPlan.decisions,
+    envelope: plannerSummaryEvidenceEnvelope(firstPlan),
+  });
+
+  assert.equal(firstPlan.status, 'ready');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0215 keep-remote invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 3,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    firstPlan.decisions.map((decision) => [
+      decision.resourceKey,
+      decision.decision,
+      decision.change.localChange,
+      decision.change.remoteChange,
+    ]),
+    [
+      ['file:index.php', 'keep-remote', 'unchanged', 'update'],
+      ['plugin:forms', 'keep-remote', 'unchanged', 'update'],
+      ['row:["wp_posts","ID:1"]', 'keep-remote', 'unchanged', 'update'],
+    ],
+  );
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'keep-remote evidence counts should be stable across deterministic planning runs',
+  );
+  assert.equal(mutationFor(firstPlan, 'file:wp-content/themes/theme/style.css').action, 'put');
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  for (const resourceKey of keepRemoteKeys) {
+    assert.equal(mutationFor(firstPlan, resourceKey), undefined, `${resourceKey} emitted a mutation`);
+    assert.equal(
+      firstPlan.preconditions.some((precondition) => precondition.resourceKey === resourceKey),
+      false,
+      `${resourceKey} emitted a precondition`,
+    );
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(keepRemoteEvidence.includes(privateValue), false, `keep-remote evidence leaked ${privateValue}`);
+  }
+
+  const result = applyPlan(remote, firstPlan);
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.files['wp-content/themes/theme/style.css'], 'body { color: blue; }');
+  assert.equal(result.site.files['index.php'], privateValues[0]);
+  assert.deepEqual(result.site.plugins.forms, { version: privateValues[1], active: false });
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, privateValues[2]);
+});
+
 test('blocks local plugin metadata changes when remote plugin files changed', () => {
   const base = baseSite();
   const local = baseSite();
