@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:18 CEST
+Last updated: 2026-05-28 10:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:24 CEST - Post-RPP-0461 Progress Watch
+
+- Lane truth: fetch confirmed `origin/lane/evidence-integration-20260527` at
+  `460df8894` (`docs: refresh progress for rpp-0461`). Checklist lint reports
+  129 verified items checked and 871 open; release remains `NO-GO`.
+- Counted vs uncounted: integrated evidence is counted only through `RPP-0461`.
+  `RPP-0462` remains branch-local until rpp-28 pushes it and lint confirms the
+  next lane count.
+- Active roster: developers `rpp-24`/`RPP-0153`, `rpp-25`/`RPP-0071`,
+  `rpp-29`/`RPP-0241`, `rpp-30`/`RPP-0346`, `rpp-32`/`RPP-0469`,
+  `rpp-33`/`RPP-0154`, and `rpp-34`/`RPP-0468`; queue `rpp-35`; critics
+  `rpp-31` and `rpp-37`; progress `rpp-36`; lifecycle/dashboard sessions stay
+  local.
+- Current nudge: keep integrating one candidate at a time from the latest lane
+  head and keep branch-local evidence out of readiness scoring.
 
 ## 2026-05-28 10:18 CEST - RPP-0461 Integrated
 

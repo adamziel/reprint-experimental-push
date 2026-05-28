@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:18 CEST.
+- Last update: 2026-05-28 10:24 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `955ea001b` (`test: prove driver registration regression`).
+  `460df8894` (`docs: refresh progress for rpp-0461`); newest behavioral proof
+  remains `955ea001b` (`test: prove driver registration regression`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -349,6 +350,12 @@ linked implementation artifacts.
   evidence manifest
   generation, artifact redaction scan over evidence/report paths, and
   `git diff --check`.
+- Post-`RPP-0461` progress watch: origin/lane is `460df8894`, checklist truth
+  is 129 checked and 871 open, and release remains **NO-GO**. Counted evidence
+  stops at integrated `RPP-0461`; `RPP-0462` and newer worker output stay
+  uncounted until lane integration and lint confirmation. Current visible
+  branch-local developer work includes `RPP-0153`, `RPP-0071`, `RPP-0241`,
+  `RPP-0346`, `RPP-0469`, `RPP-0154`, and `RPP-0468`.
 - Release posture: final release remains **NO-GO**. This update makes tracking
   stricter and integrates fail-closed/local audit surfaces; it does not supply
   external production WordPress, production credentials, final release gate
