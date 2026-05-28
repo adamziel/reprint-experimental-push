@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 36 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -52,7 +52,8 @@ The default generated run covers:
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
+  ready/stale non-ready outcomes, plugin-owned option changes with per-tier
+  ready/conflict target counts, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
   delete refusal, atomic plugin install ready and missing-dependency paths,
   same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
@@ -71,15 +72,22 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `pluginOwnedOptionChanges` target coverage records per-tier counts for
+plugin-owned `wp_options` rows using the `forms` owner and `wp-option` driver.
+Ready cases update only the local option value, carry explicit driver evidence,
+preserve unplanned remote data, and reject stale remote replay before mutation.
+Remote-drift cases stay non-ready as `plugin-data-conflict` without planning a
+mutation for the drifted option. Private option values stay hash-only/redacted.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "blocked": 19,
+    "conflict": 157,
+    "ready": 184
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -101,8 +109,8 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
-    "wpPostsCreateUpdateDelete": {
-      "family": "wp-posts-create-update-delete-ready",
+    "pluginOwnedOptionChanges": {
+      "family": "supported-plugin-option",
       "total": 20,
       "perTier": {
         "0": 2,
@@ -121,6 +129,26 @@ At the time this note was added, the summary command reported:
         "ready": 10
       }
     },
+    "wpPostsCreateUpdateDelete": {
+      "family": "wp-posts-create-update-delete-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 11,
+        "ready": 9
+      }
+    },
     "wpTermTaxonomyGraph": {
       "family": "wp-term-taxonomy-graph-ready",
       "total": 20,
@@ -137,9 +165,9 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
+        "blocked": 2,
         "conflict": 8,
-        "ready": 9
+        "ready": 10
       }
     }
   },
@@ -150,6 +178,11 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
+    "plugin-owned-option-changes-v3": 20,
+    "plugin-owned-option-ready-v3": 10,
+    "plugin-owned-option-conflict-v3": 10,
+    "plugin-owned-option-remote-drift-v3": 10,
+    "supported-plugin-option": 10,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
@@ -160,9 +193,9 @@ At the time this note was added, the summary command reported:
     "wp-terms-create": 20,
     "wp-terms-remote-drift": 10
   },
-  "maxResourceCount": 68,
+  "maxResourceCount": 67,
   "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
+  "maxReadyResourceCount": 67,
   "maxReadyMutationCount": 43
 }
 ```

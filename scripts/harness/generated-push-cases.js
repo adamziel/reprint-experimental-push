@@ -28,6 +28,7 @@ const scenarioFamilies = Object.freeze([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'plugin-owned-option-remote-drift-v3',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  pluginOwnedOptionChanges: {
+    family: 'supported-plugin-option',
+    tag: 'plugin-owned-option-changes-v3',
   },
 });
 
@@ -305,17 +310,65 @@ const scenarioFamilyBuilders = {
     const resourceKey = rowKey('wp_options', `option_name:${optionName}`);
     const row = {
       option_name: optionName,
-      option_value: { mode: 'base', ordinal: allocator.next() },
+      option_value: {
+        mode: 'base',
+        ordinal: allocator.next(),
+        privateToken: `private-plugin-option-base-${allocator.next()}`,
+      },
       __pluginOwner: 'forms',
     };
     setRow(base, 'wp_options', `option_name:${optionName}`, row);
     setRow(remote, 'wp_options', `option_name:${optionName}`, row);
     setRow(local, 'wp_options', `option_name:${optionName}`, {
       ...row,
-      option_value: { mode: 'local', ordinal: allocator.next() },
+      option_value: {
+        mode: 'local',
+        ordinal: allocator.next(),
+        privateToken: `private-plugin-option-local-${allocator.next()}`,
+      },
     });
     allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
     tags.add('plugin-owned-supported');
+    tags.add('plugin-owned-option-changes-v3');
+    tags.add('plugin-owned-option-ready-v3');
+  },
+  'plugin-owned-option-remote-drift-v3': ({ base, local, remote, allocator, tags }) => {
+    const optionName = `forms_owned_v3_${allocator.next()}`;
+    const rowId = `option_name:${optionName}`;
+    const resourceKey = rowKey('wp_options', rowId);
+    const row = {
+      option_name: optionName,
+      option_value: {
+        mode: 'base-v3',
+        ordinal: allocator.next(),
+        privateToken: `private-plugin-option-base-${allocator.next()}`,
+      },
+      __pluginOwner: 'forms',
+    };
+    setRow(base, 'wp_options', rowId, row);
+    setRow(local, 'wp_options', rowId, {
+      ...row,
+      option_value: {
+        mode: 'local-v3',
+        ordinal: allocator.next(),
+        privateToken: `private-plugin-option-local-${allocator.next()}`,
+      },
+    });
+    setRow(remote, 'wp_options', rowId, {
+      ...row,
+      option_value: {
+        mode: 'remote-v3',
+        ordinal: allocator.next(),
+        privateToken: `private-plugin-option-remote-${allocator.next()}`,
+      },
+    });
+    allowPluginOwned(base, resourceKey, 'forms', 'wp-option');
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    allowPluginOwned(remote, resourceKey, 'forms', 'wp-option');
+    tags.add('plugin-owned-supported');
+    tags.add('plugin-owned-option-changes-v3');
+    tags.add('plugin-owned-option-conflict-v3');
+    tags.add('expected-conflict');
   },
   'unsupported-plugin-owned-row': ({ local, allocator, tags }) => {
     const optionName = `unsafe_generated_${allocator.next()}`;
