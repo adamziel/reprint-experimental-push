@@ -123,7 +123,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0104 (Near / generated-harness) Implement row create/update/delete mix, variant 1. Success: stale remote replay fails before mutation.
 - [ ] RPP-0105 (Near / generated-harness) Implement wp_options scalar option changes, variant 1. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0106 (Near / generated-harness) Implement wp_options serialized option changes, variant 1. Success: generator emits at least one ready case and one non-ready case for this target.
-- [ ] RPP-0107 (Near / generated-harness) Implement wp_posts create/update/delete changes, variant 1. Success: summary exposes per-tier counts for this target.
+- [x] RPP-0107 (Near / generated-harness) Implement wp_posts create/update/delete changes, variant 1. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0108 (Near / generated-harness) Implement wp_postmeta create/update/delete changes, variant 1. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0109 (Near / generated-harness) Implement wp_users and wp_usermeta graph changes, variant 1. Success: stale remote replay fails before mutation.
 - [ ] RPP-0110 (Near / generated-harness) Implement wp_comments and wp_commentmeta graph changes, variant 1. Success: docs/generated-push-harness.md records the surface and invariant.

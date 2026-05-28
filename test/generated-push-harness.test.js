@@ -48,6 +48,12 @@ const requiredFamilies = [
   'row-create',
   'row-update',
   'row-delete',
+  'wp-posts-create-update-delete-ready',
+  'wp-posts-create-update-delete-conflict',
+  'wp-posts-create-update-delete',
+  'wp-posts-create',
+  'wp-posts-update',
+  'wp-posts-delete',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -202,4 +208,64 @@ function assertRowMixShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
+
+test('RPP-0107 wp_posts create/update/delete target exposes per-tier ready and conflict coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpPostsCreateUpdateDelete;
+
+  assert.ok(coverage, 'missing wp_posts create/update/delete target coverage');
+  assert.equal(coverage.family, 'wp-posts-create-update-delete-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-posts-create-update-delete']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_posts cases');
+  assert.ok(coverage.statuses.conflict > 0, 'target should include conflicting wp_posts cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-posts-create-update-delete-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'wp-posts-create-update-delete-conflict');
+
+  assert.ok(readyCase, 'missing ready wp_posts create/update/delete case');
+  assert.ok(conflictCase, 'missing conflicting wp_posts create/update/delete case');
+  assertWpPostsCreateUpdateDeleteShape(readyCase);
+  assertWpPostsCreateUpdateDeleteShape(conflictCase);
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready wp_posts case should create, update, and delete rows');
+  assert.equal(ready.applied, true, 'ready wp_posts case should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready wp_posts apply should preserve unplanned remote data');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'remote wp_posts drift should be a conflict');
+  assert.equal(conflict.applied, false, 'conflicting wp_posts case must not apply mutations');
+});
+
+function assertWpPostsCreateUpdateDeleteShape(testCase) {
+  const createRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => !testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated wp_posts create '));
+  const updateRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated wp_posts update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_posts)
+    .filter(([id, row]) => row.post_title.startsWith('Base wp_posts delete ')
+      && !testCase.local.db.wp_posts[id]
+      && testCase.remote.db.wp_posts[id]);
+
+  assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
+  assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
+  assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
 }

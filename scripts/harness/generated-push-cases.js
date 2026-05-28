@@ -51,6 +51,8 @@ const scenarioFamilies = Object.freeze([
   'file-type-swap-conflict',
   'row-create-update-delete-mix-ready',
   'row-create-update-delete-mix-conflict',
+  'wp-posts-create-update-delete-ready',
+  'wp-posts-create-update-delete-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -72,6 +74,7 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
+  'wp-posts-create-update-delete-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -79,6 +82,10 @@ const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  wpPostsCreateUpdateDelete: {
+    family: 'wp-posts-create-update-delete-ready',
+    tag: 'wp-posts-create-update-delete',
   },
 });
 
@@ -176,6 +183,7 @@ export function validateGeneratedCase(testCase) {
   if (plan.status === 'ready') {
     const applied = applyPlan(deepClone(testCase.remote), plan);
     assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, applied.site, mutationKeys);
+    result.unplannedRemotePreserved = true;
     const staleReplay = assertReadyPlanRejectsStaleRemote(testCase, plan);
     result.staleReplayRejected = staleReplay.rejected;
     result.staleReplayRejectionCode = staleReplay.code;
@@ -543,6 +551,20 @@ const scenarioFamilyBuilders = {
     addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, {
       conflict: true,
       prefix: 'conflict-row-mix',
+    });
+    tags.add('expected-conflict');
+  },
+  'wp-posts-create-update-delete-ready': ({ base, local, remote, allocator, tags }) => {
+    addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-wp-posts',
+    });
+    tags.add('ready-candidate');
+  },
+  'wp-posts-create-update-delete-conflict': ({ base, local, remote, allocator, tags }) => {
+    addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-wp-posts',
     });
     tags.add('expected-conflict');
   },
@@ -1120,6 +1142,50 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
 
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
+  }
+}
+
+function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const createId = allocator.graphId();
+  const updateId = allocator.graphId();
+  const deleteId = allocator.graphId();
+  const updateRowId = `ID:${updateId}`;
+  const deleteRowId = `ID:${deleteId}`;
+  const updateBase = makePost(updateId, `Base wp_posts update ${updateId}`, {
+    post_content: `base update content ${updateId}`,
+    post_type: 'page',
+  });
+  const deleteBase = makePost(deleteId, `Base wp_posts delete ${deleteId}`, {
+    post_content: `base delete content ${deleteId}`,
+    post_type: 'post',
+  });
+
+  setRow(base, 'wp_posts', updateRowId, updateBase);
+  setRow(local, 'wp_posts', updateRowId, updateBase);
+  setRow(remote, 'wp_posts', updateRowId, updateBase);
+  setRow(base, 'wp_posts', deleteRowId, deleteBase);
+  setRow(local, 'wp_posts', deleteRowId, deleteBase);
+  setRow(remote, 'wp_posts', deleteRowId, deleteBase);
+
+  setRow(local, 'wp_posts', `ID:${createId}`, makePost(createId, `Generated wp_posts create ${createId}`, {
+    post_content: `generated create content ${prefix} ${allocator.next()}`,
+    post_type: 'post',
+  }));
+  setRow(local, 'wp_posts', updateRowId, {
+    ...updateBase,
+    post_title: `Generated wp_posts update ${prefix} ${allocator.next()}`,
+    post_content: `generated update content ${prefix} ${allocator.next()}`,
+  });
+  deleteRow(local, 'wp_posts', deleteRowId);
+
+  tags.add('wp-posts-create-update-delete');
+  tags.add('wp-posts-create');
+  tags.add('wp-posts-update');
+  tags.add('wp-posts-delete');
+
+  if (conflict) {
+    remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
+    remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
   }
 }
 
