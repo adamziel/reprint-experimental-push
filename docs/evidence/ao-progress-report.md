@@ -1,9 +1,9 @@
-# AO Progress Report - 2026-05-28 22:59 CEST
+# AO Progress Report - 2026-05-28 23:02 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0090 same-source identity
+`lane/evidence-integration-20260527` through the current RPP-0091 preflight route identity
 carry-through refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
@@ -11,8 +11,8 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 223 are
-  checked from integrated evidence and 777 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 224 are
+  checked from integrated evidence and 776 remain open.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -208,6 +208,15 @@ progress.
   release **NO-GO** without production provenance.
   - Command: `node --test test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-gate-same-source-identity-regression.test.js test/release-gate-same-source-generated.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=SAME_SOURCE_IDENTITY_REQUIRED mutationAttempted=false]`; same-source gate: `SAME_SOURCE_IDENTITY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]`.
+- Release verifier preflight route identity carry-through now checks
+  `RPP-0091`. `node --test test/release-verifier-preflight-route-carry-through-focused-regression.test.js test/release-gate-preflight-route-identity-regression.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` passed 39/39 after rebasing over the
+  same-source and dry-run route hooks, proving the checked verifier emits
+  `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, carries exact `preflightRouteIdentity`
+  evidence into release gates, starts no live verifier server, redacts
+  credentials, keeps the matching-route positive path, and leaves final release
+  **NO-GO** without production provenance.
+  - Command: `node --test test/release-verifier-preflight-route-carry-through-focused-regression.test.js test/release-gate-preflight-route-identity-regression.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=PREFLIGHT_ROUTE_IDENTITY_REQUIRED mutationAttempted=false]`; preflight-route gate: `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=PREFLIGHT_ROUTE_IDENTITY_REQUIRED]`.
 - Release verifier dry-run route eligibility carry-through now checks
   `RPP-0092`. `node --test
   test/release-verifier-dry-run-route-carry-through-focused-regression.test.js
@@ -1133,7 +1142,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0090`, plus `RPP-0092`.
+- Release gates: `RPP-0001` through `RPP-0092`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
   `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0114`, `RPP-0117`, `RPP-0118`,
@@ -1168,6 +1177,7 @@ Checked IDs in this report are:
 
 - `node --test test/release-gate-tmux-status-marker-focused-regression.test.js` — 1 pass / 0 fail for the RPP-0077 focused tmux stdout proof marker regression.
 - `node --test test/release-verifier-application-password-binding-carry-through-focused-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-application-password-binding-generated.test.js test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 39 pass / 0 fail for the RPP-0088 release verifier Application Password credential binding carry-through plus binding/release-gate/CLI coverage.
+- `node --test test/release-verifier-preflight-route-carry-through-focused-regression.test.js test/release-gate-preflight-route-identity-regression.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 39 pass / 0 fail for the RPP-0091 release verifier preflight route identity carry-through plus preflight/same-source/dry-run/release-gate/CLI coverage.
 - `node --test test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-gate-same-source-identity-regression.test.js test/release-gate-same-source-generated.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 37 pass / 0 fail for the RPP-0090 release verifier same-source identity carry-through plus same-source/dry-run/release-gate/CLI coverage.
 - `node --test test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 35 pass / 0 fail for the RPP-0092 release verifier dry-run route eligibility carry-through plus dry-run route/release-gate/CLI coverage.
 - `node --test test/release-verifier-manage-options-carry-through-focused-regression.test.js test/release-gate-manage-options-capability-regression.test.js test/release-gate-manage-options-generated.test.js test/release-verifier-application-password-binding-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 41 pass / 0 fail for the RPP-0089 release verifier manage_options capability carry-through plus manage-options/release-gate/CLI coverage.
