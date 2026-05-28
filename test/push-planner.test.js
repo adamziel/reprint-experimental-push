@@ -1985,6 +1985,186 @@ test('allows plugin-owned postmeta-like rows with explicit push intent policy', 
   assert.equal(plan.atomicGroups[0].status, 'ready');
 });
 
+test('RPP-0465 wp_postmeta driver semantics stay explicit table bound and redacted', () => {
+  const primaryResourceKey = 'row:["wp_postmeta","meta_id:465"]';
+  const aliasResourceKey = 'row:["wp_postmeta","meta_id:466"]';
+  const wrongTableResourceKey = 'row:["wp_forms_postmeta_shadow","meta_id:467"]';
+  const noPolicyResourceKey = 'row:["wp_postmeta","meta_id:468"]';
+  const privateValues = [
+    'rpp0465-base-primary-secret',
+    'rpp0465-local-primary-secret',
+    'rpp0465-base-alias-secret',
+    'rpp0465-local-alias-secret',
+    'rpp0465-base-wrong-table-secret',
+    'rpp0465-local-wrong-table-secret',
+    'rpp0465-base-no-policy-secret',
+    'rpp0465-local-no-policy-secret',
+  ];
+
+  const acceptedBase = baseSite();
+  acceptedBase.db.wp_postmeta = {
+    'meta_id:465': {
+      meta_id: 465,
+      post_id: 1,
+      meta_key: '_forms_primary_payload',
+      meta_value: { mode: 'base', token: 'rpp0465-base-primary-secret' },
+      __pluginOwner: 'forms',
+    },
+    'meta_id:466': {
+      meta_id: 466,
+      post_id: 1,
+      meta_key: '_forms_alias_payload',
+      meta_value: { mode: 'base', token: 'rpp0465-base-alias-secret' },
+      __pluginOwner: 'forms',
+    },
+  };
+  const acceptedLocal = cloneJson(acceptedBase);
+  acceptedLocal.db.wp_postmeta['meta_id:465'].meta_value = {
+    mode: 'local-primary',
+    token: 'rpp0465-local-primary-secret',
+  };
+  acceptedLocal.db.wp_postmeta['meta_id:466'].meta_value = {
+    mode: 'local-alias',
+    token: 'rpp0465-local-alias-secret',
+  };
+  acceptedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(primaryResourceKey, 'forms', 'wp-postmeta'),
+      allowedPluginOwnedResource(aliasResourceKey, 'forms', 'wp-post-meta'),
+    ),
+  };
+  const acceptedRemote = cloneJson(acceptedBase);
+
+  const acceptedPlan = planFor(acceptedBase, acceptedLocal, acceptedRemote);
+  const primaryMutation = mutationFor(acceptedPlan, primaryResourceKey);
+  const aliasMutation = mutationFor(acceptedPlan, aliasResourceKey);
+
+  assert.equal(acceptedPlan.status, 'ready');
+  assert.equal(acceptedPlan.mutations.length, 2);
+  assert.equal(primaryMutation.pluginOwnedResource.driver, 'wp-postmeta');
+  assert.equal(aliasMutation.pluginOwnedResource.driver, 'wp-post-meta');
+  for (const mutation of [primaryMutation, aliasMutation]) {
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.resource.table, 'wp_postmeta');
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
+    assert.equal(mutation.pluginOwnedResource.driverEvidence, undefined);
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.resourceKey, mutation.resourceKey);
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.driver, mutation.pluginOwnedResource.driver);
+    assert.match(mutation.pluginOwnedResource.auditEvidence.baseHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.pluginOwnedResource.auditEvidence.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.pluginOwnedResource.auditEvidence.remoteHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.pluginOwnedResource.auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+  }
+
+  const applied = applyPlan(cloneJson(acceptedRemote), acceptedPlan);
+  assert.equal(applied.appliedMutations, 2);
+  assert.equal(applied.site.db.wp_postmeta['meta_id:465'].meta_value.mode, 'local-primary');
+  assert.equal(applied.site.db.wp_postmeta['meta_id:466'].meta_value.mode, 'local-alias');
+  assert.equal(applied.journal.entries.length, 2);
+  for (const entry of applied.journal.entries) {
+    assert.equal(entry.beforeValue.redacted, true);
+    assert.equal(entry.afterValue.redacted, true);
+    assert.match(entry.beforeHash, /^[a-f0-9]{64}$/);
+    assert.match(entry.afterHash, /^[a-f0-9]{64}$/);
+  }
+
+  const blockedBase = baseSite();
+  blockedBase.db.wp_postmeta = {
+    'meta_id:468': {
+      meta_id: 468,
+      post_id: 1,
+      meta_key: '_forms_no_policy_payload',
+      meta_value: { mode: 'base', token: 'rpp0465-base-no-policy-secret' },
+      __pluginOwner: 'forms',
+    },
+  };
+  blockedBase.db.wp_forms_postmeta_shadow = {
+    'meta_id:467': {
+      meta_id: 467,
+      post_id: 1,
+      meta_key: '_forms_wrong_table_payload',
+      meta_value: { mode: 'base', token: 'rpp0465-base-wrong-table-secret' },
+      __pluginOwner: 'forms',
+    },
+  };
+  const blockedLocal = cloneJson(blockedBase);
+  blockedLocal.db.wp_postmeta['meta_id:468'].meta_value = {
+    mode: 'local-no-policy',
+    token: 'rpp0465-local-no-policy-secret',
+  };
+  blockedLocal.db.wp_forms_postmeta_shadow['meta_id:467'].meta_value = {
+    mode: 'local-wrong-table',
+    token: 'rpp0465-local-wrong-table-secret',
+  };
+  blockedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(wrongTableResourceKey, 'forms', 'wp-postmeta'),
+    ),
+  };
+  const blockedRemote = cloneJson(blockedBase);
+
+  const blockedPlan = planFor(blockedBase, blockedLocal, blockedRemote);
+  const wrongTableBlocker = blockedPlan.blockers.find((blocker) =>
+    blocker.resourceKey === wrongTableResourceKey);
+  const noPolicyBlocker = blockedPlan.blockers.find((blocker) =>
+    blocker.resourceKey === noPolicyResourceKey);
+
+  assert.equal(blockedPlan.status, 'blocked');
+  assert.equal(mutationFor(blockedPlan, wrongTableResourceKey), undefined);
+  assert.equal(mutationFor(blockedPlan, noPolicyResourceKey), undefined);
+  assert.equal(wrongTableBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(wrongTableBlocker.driver, 'wp-postmeta');
+  assert.match(wrongTableBlocker.reason, /driver does not match/);
+  assert.equal(noPolicyBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(noPolicyBlocker.driver, null);
+
+  const blockedBeforeHash = digest(blockedRemote);
+  const blockedError = captureError(() => applyPlan(blockedRemote, blockedPlan));
+  assert.ok(blockedError instanceof PushPlanError);
+  assert.equal(blockedError.code, 'PLAN_NOT_READY');
+  assert.equal(digest(blockedRemote), blockedBeforeHash, 'blocked wp_postmeta proof mutated remote state');
+
+  const evidence = {
+    evidenceScope: 'local-focused',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    accepted: [primaryMutation, aliasMutation].map((mutation) => ({
+      resourceKey: mutation.resourceKey,
+      driver: mutation.pluginOwnedResource.driver,
+      auditEvidence: mutation.pluginOwnedResource.auditEvidence,
+      ownerContextHash: digest(mutation.pluginOwnedResource.ownerContext),
+    })),
+    appliedJournal: applied.journal.entries.map((entry) => ({
+      resourceKey: entry.resourceKey,
+      beforeHash: entry.beforeHash,
+      afterHash: entry.afterHash,
+      beforeValue: entry.beforeValue,
+      afterValue: entry.afterValue,
+    })),
+    refused: [wrongTableBlocker, noPolicyBlocker].map((blocker) => ({
+      resourceKey: blocker.resourceKey,
+      driver: blocker.driver,
+      class: blocker.class,
+      baseHash: blocker.baseHash,
+      localHash: blocker.localHash,
+      remoteHash: blocker.remoteHash,
+      changeHash: digest(blocker.change),
+    })),
+    refusal: {
+      code: blockedError.code,
+      detailsHash: sha256Evidence(blockedError.details),
+    },
+  };
+  const evidenceJson = JSON.stringify(evidence);
+  for (const privateValue of privateValues) {
+    assert.equal(evidenceJson.includes(privateValue), false, `RPP-0465 evidence leaked ${privateValue}`);
+  }
+});
+
 test('blocks unknown plugin-owned custom table rows without leaking values', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
   const base = baseSite();
