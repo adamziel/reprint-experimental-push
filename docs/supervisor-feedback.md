@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:24 CEST
+Last updated: 2026-05-28 05:28 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:28 CEST - RPP-0414 Integrated
+
+- Going well: integration is now at `43beb7c9c`, adding `RPP-0414` stale
+  plugin metadata owner evidence. The planner proof rejects stale
+  plugin-owned row and plugin file owner metadata before mutation, emits
+  stable redacted refusal evidence, and preserves a ready plugin-driver row
+  when owner metadata independently matches remote.
+- Checklist movement: 104 verified items checked and 896 open. New check since
+  the prior feedback entry: `RPP-0414`.
+- Verification: plugin metadata owner refusal tests pass 3/3, push-planner
+  tests pass 90/90, checklist lint reports 104 checked / 896 open with 0 risky
+  claims, artifact redaction scans the touched docs with 0 rejected files,
+  release gates still fail closed as `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue with the next safe queued candidate one at a time
+  from the latest lane head; skip stale or conflicting branches rather than
+  forcing them.
 
 ## 2026-05-28 05:24 CEST - RPP-0310 Integrated
 

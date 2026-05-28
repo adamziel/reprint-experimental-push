@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:24 CEST.
+- Last update: 2026-05-28 05:28 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `1df596398` (`test: prove post tag taxonomy graph`).
+  `43beb7c9c` (`feat: add stale plugin metadata owner evidence`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 103
-  items complete and leaves 897 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 104
+  items complete and leaves 896 open.
 - Checked slices: 35 release-gate foundation items, 16 graph identity items,
-  14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  15 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 5 generated
   harness items, and 2 merge-invariant items. No release-ops items are checked
   yet.
@@ -78,6 +78,11 @@ linked implementation artifacts.
   conflict, blocked, and atomic fixtures, verifies `plan.summary` against the
   emitted mutations, decisions, conflicts, blockers, and atomic groups, and
   records the caveat that this is not final production release evidence.
+- Stale plugin metadata owner continuation: `43beb7c9c` integrated
+  `RPP-0414` stale plugin metadata owner context refusal. Focused planner
+  tests reject stale plugin-owned row and plugin file mutations before mutation
+  with stable redacted evidence, while preserving a ready plugin-driver row
+  when owner metadata independently matches remote.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
@@ -91,8 +96,9 @@ linked implementation artifacts.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
-  release-gate tests, `node --test test/push-planner.test.js` with 89 passing
-  planner tests, the `rpp-28`
+  release-gate tests, `node --test test/push-planner.test.js` with 90 passing
+  planner tests, `node --test test/plugin-owner-context-metadata-refusal.test.js`
+  with 3 passing tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js` with 6 passing tests,
   evidence manifest
