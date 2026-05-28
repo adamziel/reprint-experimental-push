@@ -2499,6 +2499,173 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
 });
 
+test('RPP-0448 serialized option validator accepts valid payloads and fails closed redacted', () => {
+  const rowId = 'option_name:forms_serialized_state';
+  const resourceKey = `row:["wp_options","${rowId}"]`;
+  const privateValues = [
+    'rpp-0448-valid-base-secret',
+    'rpp-0448-valid-local-secret',
+    'rpp-0448-invalid-local-secret',
+  ];
+  const phpString = (value) => `s:${Buffer.byteLength(value, 'utf8')}:"${value}";`;
+  const phpSerializedOption = ({ mode, secret, version }) =>
+    `a:3:{s:4:"mode";${phpString(mode)}s:6:"secret";${phpString(secret)}s:7:"version";i:${version};}`;
+  const malformedSerializedOption = (secret) =>
+    `a:2:{s:4:"mode";s:5:"local";s:6:"secret";s:${Buffer.byteLength(secret, 'utf8') + 7}:"${secret}";}`;
+
+  function serializedOptionSite(optionValue) {
+    const site = baseSite();
+    site.db.wp_options[rowId] = {
+      option_name: 'forms_serialized_state',
+      option_value: optionValue,
+      autoload: 'no',
+      serialization: 'php-serialize',
+      __pluginOwner: 'forms',
+    };
+    return site;
+  }
+
+  function addSerializedOptionPolicy(site) {
+    site.meta = {
+      pushPolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+      ),
+    };
+    return site;
+  }
+
+  const base = serializedOptionSite(phpSerializedOption({
+    mode: 'base',
+    secret: privateValues[0],
+    version: 1,
+  }));
+  const local = addSerializedOptionPolicy(serializedOptionSite(phpSerializedOption({
+    mode: 'local',
+    secret: privateValues[1],
+    version: 2,
+  })));
+  const remote = serializedOptionSite(phpSerializedOption({
+    mode: 'base',
+    secret: privateValues[0],
+    version: 1,
+  }));
+  const ready = planFor(base, local, remote);
+  const mutation = mutationFor(ready, resourceKey);
+  const acceptedHookEvidence = [];
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.summary.mutations, 1);
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(mutation.pluginOwnedResource.driverPayloadValidationEvidence.outcome, 'accepted');
+  assert.equal(mutation.pluginOwnedResource.driverPayloadValidationEvidence.validator, 'php-serialized-option');
+  assert.equal(mutation.pluginOwnedResource.driverPayloadValidationEvidence.rawValuesIncluded, false);
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+
+  const result = applyPlan(cloneJson(remote), ready, {
+    beforeMutation({ driverApplyValidation }) {
+      acceptedHookEvidence.push(driverApplyValidation);
+    },
+  });
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(acceptedHookEvidence.length, 1);
+  assert.equal(acceptedHookEvidence[0].reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED');
+  assert.equal(acceptedHookEvidence[0].driverPayloadValidationEvidence.outcome, 'accepted');
+  assert.equal(
+    result.site.db.wp_options[rowId].option_value,
+    local.db.wp_options[rowId].option_value,
+  );
+  assert.equal(JSON.stringify(result.journal).includes(privateValues[0]), false);
+  assert.equal(JSON.stringify(result.journal).includes(privateValues[1]), false);
+
+  const invalidLocal = addSerializedOptionPolicy(serializedOptionSite(
+    malformedSerializedOption(privateValues[2]),
+  ));
+  const invalidPlan = planFor(base, invalidLocal, cloneJson(base));
+  const blocker = invalidPlan.blockers[0];
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(invalidPlan.status, 'blocked');
+  assert.equal(invalidPlan.summary.mutations, 0);
+  assert.equal(blocker.class, 'invalid-plugin-driver-payload');
+  assert.equal(blocker.reasonCode, 'INVALID_SERIALIZED_OPTION_PAYLOAD');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.driver, 'wp-option');
+  assert.equal(blocker.driverPayloadValidationEvidence.outcome, 'refused');
+  assert.equal(blocker.driverPayloadValidationEvidence.format, 'hash-only');
+  assert.equal(blocker.driverPayloadValidationEvidence.rawValuesIncluded, false);
+  assert.equal(blockerJson.includes(privateValues[2]), false);
+
+  const forged = tamperReadyPlan(ready, (plan) => {
+    const forgedMutation = mutationFor(plan, resourceKey);
+    forgedMutation.value.value.option_value = malformedSerializedOption(privateValues[2]);
+    forgedMutation.value.value.option_name = 'forms_serialized_state';
+    forgedMutation.pluginOwnedResource.driverPayloadValidationEvidence = null;
+  });
+  const forgedRemote = cloneJson(remote);
+  const forgedRemoteBefore = JSON.stringify(forgedRemote);
+  let forgedHookCalls = 0;
+  const forgedError = captureError(() => applyPlan(forgedRemote, forged, {
+    beforeMutation() {
+      forgedHookCalls++;
+    },
+  }));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'INVALID_PLUGIN_DRIVER_PAYLOAD');
+  assert.equal(forgedError.details.reasonCode, 'INVALID_SERIALIZED_OPTION_PAYLOAD');
+  assert.equal(forgedError.details.applyValidationEvidence.outcome, 'refused-before-mutation');
+  assert.equal(
+    forgedError.details.applyValidationEvidence.driverPayloadValidationEvidence.outcome,
+    'refused',
+  );
+  assert.equal(forgedHookCalls, 0);
+  assert.equal(JSON.stringify(forgedRemote), forgedRemoteBefore);
+  assert.equal(JSON.stringify(forgedError.details).includes(privateValues[2]), false);
+
+  const evidence = {
+    rpp: 'RPP-0448',
+    evidenceSource: 'local-plugin-driver-generated-node-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    accepted: {
+      resourceKey,
+      mutationHash: sha256Evidence(mutation),
+      driverValidationHash: sha256Evidence(mutation.pluginOwnedResource.driverPayloadValidationEvidence),
+      applyValidationHash: sha256Evidence(acceptedHookEvidence[0]),
+      journalEntryHash: sha256Evidence(result.journal.entries[0]),
+      remoteAfterRowHash: sha256Evidence(result.site.db.wp_options[rowId]),
+    },
+    refused: {
+      plannerBlockerHash: sha256Evidence(blocker),
+      applyErrorDetailsHash: sha256Evidence(forgedError.details),
+      remotePreservedHash: sha256Evidence(forgedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    accepted: evidence.accepted,
+    refused: evidence.refused,
+  });
+
+  for (const hash of [
+    evidence.accepted.mutationHash,
+    evidence.accepted.driverValidationHash,
+    evidence.accepted.applyValidationHash,
+    evidence.accepted.journalEntryHash,
+    evidence.accepted.remoteAfterRowHash,
+    evidence.refused.plannerBlockerHash,
+    evidence.refused.applyErrorDetailsHash,
+    evidence.refused.remotePreservedHash,
+    evidence.proofHash,
+  ]) {
+    assert.match(hash, /^sha256:[a-f0-9]{64}$/);
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(JSON.stringify(evidence).includes(privateValue), false, `RPP-0448 evidence leaked ${privateValue}`);
+  }
+});
+
 test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plugin-owned remote data', () => {
   const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
   const baseSecret = 'audit-redaction-base-private-rpp-0439';
