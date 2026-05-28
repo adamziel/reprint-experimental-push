@@ -30,6 +30,8 @@ const scenarioFamilies = Object.freeze([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'supported-plugin-usermeta',
+  'unsupported-plugin-usermeta',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
@@ -88,6 +90,8 @@ const readyPreservingFamilies = new Set([
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'supported-plugin-usermeta',
+  'unsupported-plugin-usermeta',
   'same-plan-post-parent-graph',
   'same-plan-post-author-graph',
   'same-plan-taxonomy-graph',
@@ -209,6 +213,14 @@ const targetCoverageDefinitions = Object.freeze({
   commentUserGraph: {
     family: 'comment-user-graph-ready',
     tag: 'comment-user-graph',
+  },
+  usermetaDriverSupported: {
+    family: 'supported-plugin-usermeta',
+    tag: 'plugin-usermeta-driver-supported',
+  },
+  usermetaDriverUnsupported: {
+    family: 'unsupported-plugin-usermeta',
+    tag: 'plugin-usermeta-driver-unsupported',
   },
 });
 
@@ -490,6 +502,49 @@ const scenarioFamilyBuilders = {
     });
     allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
     tags.add('plugin-owned-supported');
+  },
+  'supported-plugin-usermeta': ({ base, local, remote, allocator, tags }) => {
+    const usermetaId = allocator.graphId();
+    const rowId = `umeta_id:${usermetaId}`;
+    const resourceKey = rowKey('wp_usermeta', rowId);
+    const row = {
+      umeta_id: usermetaId,
+      user_id: 1,
+      meta_key: `_forms_generated_user_flag_${usermetaId}`,
+      meta_value: { mode: 'base', usermetaId },
+      __pluginOwner: 'forms',
+    };
+    setRow(base, 'wp_usermeta', rowId, row);
+    setRow(remote, 'wp_usermeta', rowId, row);
+    setRow(local, 'wp_usermeta', rowId, {
+      ...row,
+      meta_value: { mode: 'local', usermetaId, ordinal: allocator.next() },
+    });
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-usermeta');
+    tags.add('plugin-owned-supported');
+    tags.add('plugin-usermeta-driver-supported');
+  },
+  'unsupported-plugin-usermeta': ({ base, local, remote, allocator, tags }) => {
+    const usermetaId = allocator.graphId();
+    const rowId = `umeta_id:${usermetaId}`;
+    const resourceKey = rowKey('wp_usermeta', rowId);
+    const row = {
+      umeta_id: usermetaId,
+      user_id: 1,
+      meta_key: `_forms_generated_user_flag_${usermetaId}`,
+      meta_value: { mode: 'base', usermetaId },
+      __pluginOwner: 'forms',
+    };
+    setRow(base, 'wp_usermeta', rowId, row);
+    setRow(remote, 'wp_usermeta', rowId, row);
+    setRow(local, 'wp_usermeta', rowId, {
+      ...row,
+      umeta_id: usermetaId + 1,
+      meta_value: { mode: 'local-invalid', usermetaId },
+    });
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-usermeta');
+    tags.add('plugin-owned-unsupported');
+    tags.add('plugin-usermeta-driver-unsupported');
   },
   'unsupported-plugin-owned-row': ({ local, allocator, tags }) => {
     const optionName = `unsafe_generated_${allocator.next()}`;
