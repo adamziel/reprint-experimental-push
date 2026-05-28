@@ -4,6 +4,32 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Plugin Driver Boundary Test Hardening
+
+- Last update: 2026-05-28 02:13 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- Code change: the production-shaped proof tests now include a reusable
+  plugin-driver proof fixture and three additional GATE-4 guard cases.
+- New executable support evidence:
+  - unknown plugin-owned custom-table data blocks before mutation with
+    `unsupported-plugin-owned-resource`;
+  - plugin-driver boundary proof rejects an allowlist entry whose owner and
+    driver do not exactly match the production boundary;
+  - direct `active_plugins` mutation and unowned serialized option mutation
+    both fail the production plugin-driver boundary summary.
+- Focused checks passed:
+  `node --check test/production-shaped-proof.test.js`,
+  `node --test --test-name-pattern "production plugin-driver boundary" test/production-shaped-proof.test.js`,
+  and `git diff --check`.
+- Caveat: this is support test coverage on the production-shaped proof
+  summarizer and planner. It does not prove a live external WordPress
+  plugin-owned mutation, arbitrary plugin semantics, activation/update flows,
+  rollback, or Docker/external production durability.
+- Percent movement: merge invariants move from 69% to 70%; reliable
+  executor/protocol moves from 72% to 73%; independent evidence moves from 69%
+  to 70%. Recovery boundaries stay at 60%, and fast path/chunking stays at
+  37%.
+
 ## 2026-05-28 - Comment Graph Evidence And Journal Claim Readback
 
 - Last update: 2026-05-28 02:06 CEST.

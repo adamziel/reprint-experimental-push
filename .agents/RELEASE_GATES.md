@@ -6,6 +6,9 @@ Status values: `unproven`, `support_only`, `partially_proven`, `proven`, `blocke
 
 `release_verdict`: `0/4`
 
+Last refreshed: 2026-05-28 02:13 CEST on
+`lane/evidence-integration-20260527`.
+
 ## GATE-1: Production Executor/Auth Boundary
 
 Status: `support_only`
@@ -36,6 +39,15 @@ Topology verifier evidence, 2026-05-27:
 - Release movement allowed: no.
 - Reason: `REPRINT_PUSH_SOURCE_URL` is missing, so the release verifier fails closed and gates stay `0/4`.
 
+Local candidate evidence, 2026-05-28:
+
+- `npm run verify:release:local-production:complex-site:comment-graph` passed
+  in tmux with a 25-mutation local Playground receipt, auth/session continuity,
+  durable DB-journal proof, replay/retry proof, and comment graph closure.
+- This supports candidate review and local safety work only. It does not change
+  `release_verdict` because the release objective still requires a
+  production-owned, non-lab-backed source boundary.
+
 Required negative checks now covered by the verifier/test suite:
 
 - Missing source URL: fails closed with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`.
@@ -50,6 +62,20 @@ Required negative checks now covered by the verifier/test suite:
 Status: `support_only`
 
 At least one plugin-owned mutation path must prove driver ownership, allowlisted semantics, precondition evidence, rejected remote preservation, apply-time revalidation, and audit evidence on the release boundary.
+
+Support evidence, 2026-05-28:
+
+- Focused tests in `test/production-shaped-proof.test.js` now prove the
+  production-shaped summary rejects unknown plugin-owned resources before
+  mutation, mismatched owner/driver allowlists, direct `active_plugins`
+  mutations, and unowned serialized option mutations.
+- Checked command:
+  `node --test --test-name-pattern "production plugin-driver boundary" test/production-shaped-proof.test.js`
+  passed 5/5.
+- This is still not live GATE-4 movement. The gate needs the same plugin-owned
+  driver mutation proof on the checked release boundary with live source,
+  apply-time revalidation, durable journal, and preserved rejected-remote
+  evidence.
 
 ## Gate Movement Rule
 

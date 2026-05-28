@@ -389,6 +389,52 @@ function productionPluginDriverSnapshot(mode, version, marker) {
   };
 }
 
+function cloneProofFixture(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function productionPluginDriverProof(plan, boundary = productionPluginDriverBoundary) {
+  return {
+    planObject: plan,
+    dryRun: {
+      status: 200,
+      receiptHash: 'a'.repeat(64),
+    },
+    apply: {
+      status: 200,
+      applyRevalidation: {
+        required: 'fresh-live-hashes-before-first-mutation',
+        phase: 'before-first-mutation',
+        checkedAgainst: 'live-remote',
+        verifiedResourceKeys: [boundary.resourceKey],
+        planHash: digest(plan),
+        receiptHash: 'a'.repeat(64),
+        preconditionSetHash: 'b'.repeat(64),
+        mutationSetHash: 'c'.repeat(64),
+      },
+    },
+    recoveryInspect: {
+      status: 200,
+    },
+    replay: {
+      status: 200,
+    },
+    dbJournal: {
+      rows: 2,
+      applyCommitted: true,
+      mutationApplied: 1,
+      ownership: {
+        ownsJournal: true,
+        restartReadable: true,
+      },
+    },
+    latestReadRetryEvidence: {
+      path: '/snapshot',
+      preservedRemote: true,
+    },
+  };
+}
+
 function stopAllPlaygroundChildrenSync() {
   for (const child of activePlaygroundChildren) {
     if (child.exitCode !== null) {
@@ -1773,6 +1819,156 @@ test('production plugin-driver boundary proof accepts one owned row and fails cl
   assert.equal(summary.applyTimeRevalidation.verifiedBeforeFirstMutation, true);
   assert.equal(summary.failureClosedUnknownPluginData.failureClosed, true);
   assert.equal(summary.auditEvidence.dbJournalOwnership.ownsJournal, true);
+});
+
+test('production plugin-driver boundary blocks unknown plugin data before mutation', () => {
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = cloneProofFixture(remoteBaseSnapshot);
+  const remoteSnapshot = cloneProofFixture(remoteBaseSnapshot);
+  const table = 'wp_reprint_push_unknown_plugin_data';
+  const rowId = 'id:1';
+  const resourceKey = `row:${JSON.stringify([table, rowId])}`;
+  const baseRow = {
+    id: 1,
+    payload: {
+      mode: 'base',
+    },
+    __pluginOwner: 'unknown-plugin',
+  };
+  remoteBaseSnapshot.db[table] = {
+    [rowId]: cloneProofFixture(baseRow),
+  };
+  remoteSnapshot.db[table] = {
+    [rowId]: cloneProofFixture(baseRow),
+  };
+  localEditedSnapshot.db[table] = {
+    [rowId]: {
+      ...cloneProofFixture(baseRow),
+      payload: {
+        mode: 'local-update',
+      },
+    },
+  };
+
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteSnapshot,
+    now: new Date('2026-05-27T10:14:00.000Z'),
+  });
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey) || null;
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.mutations.some((entry) => entry.resourceKey === resourceKey), false);
+  assert.equal(blocker?.class, 'unsupported-plugin-owned-resource');
+  assert.match(blocker?.reason || '', /plugin-owned resource/i);
+});
+
+test('production plugin-driver boundary proof enforces exact allowlist owner and driver', () => {
+  const boundary = productionPluginDriverBoundary;
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+  const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteBaseSnapshot,
+    now: new Date('2026-05-27T10:16:00.000Z'),
+  });
+  const wrongAllowlistBase = cloneProofFixture(remoteBaseSnapshot);
+  const wrongAllowlistLocal = cloneProofFixture(localEditedSnapshot);
+  wrongAllowlistBase.meta.pluginOwnedResources.allowedResources[0] = {
+    ...wrongAllowlistBase.meta.pluginOwnedResources.allowedResources[0],
+    pluginOwner: 'other-plugin',
+    driver: 'other-release-state',
+  };
+  wrongAllowlistLocal.meta.pluginOwnedResources.allowedResources[0] = {
+    ...wrongAllowlistLocal.meta.pluginOwnedResources.allowedResources[0],
+    pluginOwner: 'other-plugin',
+    driver: 'other-release-state',
+  };
+
+  const summary = summarizeProductionPluginDriverBoundaryProof({
+    proof: productionPluginDriverProof(plan, boundary),
+    remoteBaseSnapshot: wrongAllowlistBase,
+    localEditedSnapshot: wrongAllowlistLocal,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(summary.status, 'blocked');
+  assert.equal(summary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+  assert.equal(summary.driver, boundary.driver);
+  assert.equal(summary.owner, boundary.owner);
+  assert.equal(summary.allowlist.entry.resourceKey, boundary.resourceKey);
+  assert.equal(summary.allowlist.entry.pluginOwner, 'other-plugin');
+  assert.equal(summary.allowlist.entry.driver, 'other-release-state');
+  assert.deepEqual(summary.missingEvidence, []);
+});
+
+test('production plugin-driver boundary proof rejects active_plugins and unowned option mutations', () => {
+  const boundary = productionPluginDriverBoundary;
+  const remoteBaseSnapshot = productionPluginDriverSnapshot('base', 1, 'base');
+  const localEditedSnapshot = productionPluginDriverSnapshot('local-update', 2, 'local-update');
+  const remoteChangedSnapshot = productionPluginDriverSnapshot('remote-changed', 3, 'remote-changed');
+  const plan = createPushPlan({
+    base: remoteBaseSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteBaseSnapshot,
+    now: new Date('2026-05-27T10:18:00.000Z'),
+  });
+  const activePluginsPlan = cloneProofFixture(plan);
+  const activePluginsResource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:active_plugins',
+    key: 'row:["wp_options","option_name:active_plugins"]',
+  };
+  activePluginsPlan.mutations.push({
+    id: 'mutation-active-plugins',
+    resourceKey: activePluginsResource.key,
+    resource: activePluginsResource,
+    action: 'update',
+  });
+
+  const activePluginsSummary = summarizeProductionPluginDriverBoundaryProof({
+    proof: productionPluginDriverProof(activePluginsPlan, boundary),
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(activePluginsSummary.status, 'blocked');
+  assert.equal(activePluginsSummary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+  assert.equal(activePluginsSummary.noActivePluginsDirectMutation, false);
+  assert.equal(activePluginsSummary.noUnownedSerializedOptionMutation, false);
+  assert.equal(activePluginsSummary.noArbitraryCustomTableMutation, false);
+
+  const serializedOptionPlan = cloneProofFixture(plan);
+  const serializedOptionResource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:reprint_push_serialized_state',
+    key: 'row:["wp_options","option_name:reprint_push_serialized_state"]',
+  };
+  serializedOptionPlan.mutations.push({
+    id: 'mutation-serialized-option',
+    resourceKey: serializedOptionResource.key,
+    resource: serializedOptionResource,
+    action: 'update',
+  });
+
+  const serializedOptionSummary = summarizeProductionPluginDriverBoundaryProof({
+    proof: productionPluginDriverProof(serializedOptionPlan, boundary),
+    remoteBaseSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+  });
+
+  assert.equal(serializedOptionSummary.status, 'blocked');
+  assert.equal(serializedOptionSummary.verdict, 'PRODUCTION_PLUGIN_DRIVER_BOUNDARY_REQUIRED');
+  assert.equal(serializedOptionSummary.noActivePluginsDirectMutation, true);
+  assert.equal(serializedOptionSummary.noUnownedSerializedOptionMutation, false);
+  assert.equal(serializedOptionSummary.noArbitraryCustomTableMutation, false);
 });
 
 test('production-shaped release verify consumes the packaged production auth/session source command on the checked release path', () => {

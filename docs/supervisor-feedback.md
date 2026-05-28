@@ -1,9 +1,39 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 02:06 CEST
+Last updated: 2026-05-28 02:13 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 02:13 CEST - Plugin Driver Boundary Guards
+
+- Going well: the integration branch now carries the plugin-bound worker's
+  GATE-4 support tests without dropping the newer durable-journal proof
+  selector coverage.
+- Also going well: focused tests prove unknown plugin-owned custom-table data
+  blocks before mutation, exact allowlist owner/driver mismatches fail closed,
+  direct `active_plugins` mutation fails, and unowned serialized option
+  mutation fails.
+- Checked command:
+  `node --test --test-name-pattern "production plugin-driver boundary" test/production-shaped-proof.test.js`
+  passed 5/5.
+- Not yet done: this is proof-summary and planner support coverage, not a live
+  external WordPress plugin-driver apply. Final readiness still requires the
+  same ownership boundary on a live release command with auth/session,
+  durable-journal, apply-revalidation, and replay evidence.
+- Progress change: merge invariants, reliable executor/protocol, and
+  independent evidence move up one point. Recovery and fast-path stay flat.
+- Next nudge: turn one plugin-owned driver mutation into a live local
+  production verifier variant, then carry the same proof to Docker/external
+  WordPress.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep blocking unknown plugin-owned resources and exact-match owner/driver mismatches before mutation. |
+| Recovery | Pair plugin-driver apply proof with the existing DB-journal/replay evidence before counting recovery movement. |
+| Reliable executor | Move the support-only GATE-4 summary into a checked release verifier path. |
+| Fast paths | No movement from this patch; still needs guarded transfer/chunk evidence. |
+| Audit and critic | Review the integration branch after this commit as support progress only. |
 
 ## 2026-05-28 02:06 CEST - Comment Graph Evidence
 
