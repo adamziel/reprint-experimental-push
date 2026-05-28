@@ -2292,6 +2292,49 @@ test('plans a safe same-plan taxonomy closure for a category term, relationship,
   assert.equal(result.site.db.wp_termmeta['meta_id:41'].term_id, 21);
 });
 
+test('plans a safe same-plan post_tag taxonomy closure for a tag term and relationship', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:25"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:35"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:35"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_terms['term_id:25'] = {
+    term_id: 25,
+    name: 'local-private-post-tag-name',
+    slug: 'local-private-post-tag',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:35'] = {
+    term_taxonomy_id: 35,
+    term_id: 25,
+    taxonomy: 'post_tag',
+    parent: 0,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:1|term_taxonomy_id:35'] = {
+    object_id: 1,
+    term_taxonomy_id: 35,
+    term_order: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, termResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, taxonomyResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, taxonomyResourceKey).changeKind, 'create');
+  assert.equal(mutationFor(plan, relationshipResourceKey).action, 'put');
+  assert.equal(mutationFor(plan, relationshipResourceKey).changeKind, 'create');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:35'].taxonomy, 'post_tag');
+  assert.equal(result.site.db.wp_term_taxonomy['term_taxonomy_id:35'].term_id, 25);
+  assert.equal(result.site.db.wp_term_relationships['object_id:1|term_taxonomy_id:35'].term_taxonomy_id, 35);
+});
+
 test('blocks a taxonomy relationship when its same-plan term_taxonomy target is itself blocked', () => {
   const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:31"]';
   const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:31"]';
