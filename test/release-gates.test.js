@@ -395,6 +395,90 @@ test('same source URL identity drift emits a final bracketed marker for RPP-0030
   );
 });
 
+test('check-release-gates command proves preflight route identity drift before mutation for RPP-0031', () => {
+  const expectedRoute = '/reprint-push/v1/preflight';
+  const observedRoute = '/wrong/v1/preflight';
+  const { dir, file } = writeReleaseGateEvidenceFixture({
+    scope: 'final-release',
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      preflightRouteIdentity: {
+        ok: false,
+        sameRoute: false,
+        observed: observedRoute,
+        checkedRoute: expectedRoute,
+        observedRoute,
+        sourceUrl,
+        scope: 'final-release',
+      },
+    }),
+  });
+
+  const result = runReleaseGateCli([
+    '--evidence-file',
+    file,
+    '--scope',
+    'final-release',
+    '--now',
+    fixedNow.toISOString(),
+  ], {
+    cwd: dir,
+    env: {},
+    now: fixedNow,
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.report.ok, false);
+  assert.equal(result.report.releaseStatus, 'NO-GO');
+  assert.equal(result.report.primaryFailureBucket, 'route');
+  assert.equal(result.report.primaryFailureCode, 'PREFLIGHT_ROUTE_IDENTITY_REQUIRED');
+  assert.equal(result.report.mutationAttempted, false);
+  assert.deepEqual(result.report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.equal(result.report.releaseMovement.allowed, false);
+  assert.equal(result.report.releaseMovement.finalGates, '19/20');
+  assert.deepEqual(result.report.missingProductionEvidenceBuckets, [
+    {
+      bucket: 'route',
+      gateCount: 1,
+      gates: [
+        {
+          bucket: 'route',
+          id: 'preflight-route-identity',
+          rpp: 'RPP-0011',
+          title: 'Preflight route identity proof',
+          status: 'failed',
+          code: 'PREFLIGHT_ROUTE_IDENTITY_REQUIRED',
+          reason: 'Preflight route identity proof failed.',
+          required: ['preflight route identity checked before mutation'],
+          observed: observedRoute,
+          envKey: undefined,
+          evidenceKey: undefined,
+          scope: 'final-release',
+          requiredScope: undefined,
+        },
+      ],
+    },
+  ]);
+
+  const gate = gateById(result.report.evaluation, 'preflight-route-identity');
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'PREFLIGHT_ROUTE_IDENTITY_REQUIRED');
+  assert.equal(gate.reason, 'Preflight route identity proof failed.');
+  assert.deepEqual(gate.evidence, {
+    ok: false,
+    sameRoute: false,
+    observed: observedRoute,
+    checkedRoute: expectedRoute,
+    observedRoute,
+    sourceUrl,
+    scope: 'final-release',
+    required: ['preflight route identity checked before mutation'],
+  });
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
