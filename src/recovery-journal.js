@@ -124,6 +124,74 @@ function claimScopedPlanId(records, claim) {
 
   return scopedRecord?.planId || null;
 }
+
+function persistedTargetEnvelopeMatchesPlan(records, plan) {
+  const targets = (Array.isArray(records) ? records : [])
+    .filter((record) => record.type === 'target-planned' && record.planId === plan?.id);
+  const mutations = Array.isArray(plan?.mutations) ? plan.mutations : [];
+  const targetByMutationId = new Map();
+  const issues = [];
+
+  for (const target of targets) {
+    if (targetByMutationId.has(target.mutationId)) {
+      issues.push({
+        code: 'TARGET_PLANNED_DUPLICATE',
+        mutationId: target.mutationId || null,
+      });
+      continue;
+    }
+    targetByMutationId.set(target.mutationId, target);
+  }
+
+  if (targetByMutationId.size !== mutations.length) {
+    issues.push({
+      code: 'TARGET_PLANNED_COUNT_MISMATCH',
+      expected: mutations.length,
+      actual: targetByMutationId.size,
+    });
+  }
+
+  for (const mutation of mutations) {
+    const target = targetByMutationId.get(mutation.id);
+    if (!target) {
+      issues.push({
+        code: 'TARGET_PLANNED_MISSING',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+      });
+      continue;
+    }
+
+    const expectedAfterHash = afterHashForMutation(mutation);
+    if (target.resourceKey !== mutation.resourceKey) {
+      issues.push({
+        code: 'TARGET_PLANNED_RESOURCE_MISMATCH',
+        mutationId: mutation.id,
+        expected: mutation.resourceKey,
+        actual: target.resourceKey,
+      });
+    }
+    if (target.afterHash !== expectedAfterHash) {
+      issues.push({
+        code: 'TARGET_PLANNED_AFTER_HASH_MISMATCH',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+      });
+    }
+    if (hasNonEmptyString(mutation.remoteBeforeHash) && target.beforeHash !== mutation.remoteBeforeHash) {
+      issues.push({
+        code: 'TARGET_PLANNED_BEFORE_HASH_MISMATCH',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+      });
+    }
+  }
+
+  return {
+    matches: issues.length === 0,
+    issues,
+  };
+}
 function assertAllowedOptionKeys(options, allowedKeys, operationName) {
   const providedOptions = options && typeof options === 'object' ? options : {};
   const unexpectedKeys = Object.keys(providedOptions).filter((key) => !allowedKeys.has(key));
@@ -482,59 +550,112 @@ export function openProductionRecoveryJournal(options) {
     truncate = true,
     claimId = null,
   } = options;
-  const journal = openPlanRecoveryJournal({
-    filePath,
-    plan,
-    current,
-    artifactRefs,
-    now,
-    truncate,
-  });
 
-  if (claimId) {
-    const nextClaimHash = recoveryClaimHash(claimId);
-    const existingJournal = truncate
-      ? { exists: false, records: [], integrity: { status: 'ok' } }
-      : readRecoveryJournal(filePath);
-    if (!truncate && existingJournal.integrity?.status !== 'ok') {
-      throw new Error(`Refusing to append to invalid recovery journal: ${existingJournal.integrity.reason}`);
+  const existingJournal = !truncate
+    ? readRecoveryJournal(filePath)
+    : { exists: false, records: [], integrity: { status: 'ok' } };
+  if (!truncate && existingJournal.exists && existingJournal.integrity?.status !== 'ok') {
+    throw new Error(`Refusing to append to invalid recovery journal: ${existingJournal.integrity.reason}`);
+  }
+
+  const nextClaimHash = claimId ? recoveryClaimHash(claimId) : null;
+  const hasExistingPlanEnvelope = existingJournal.exists === true && existingJournal.records.length > 0;
+  const existingClaim = hasExistingPlanEnvelope
+    ? classifyRecoveryJournalClaims(existingJournal.records)
+    : { status: 'none', activeClaimHash: null };
+  const reusingActiveClaim = Boolean(
+    claimId
+      && hasExistingPlanEnvelope
+      && existingClaim.status !== 'blocked'
+      && existingClaim.activeClaimHash === nextClaimHash,
+  );
+
+  if (claimId && hasExistingPlanEnvelope && existingClaim.status === 'blocked') {
+    throw new RecoveryJournalClaimStaleError(
+      'Recovery journal claim state is blocked and cannot be reused.',
+      {
+        filePath,
+        eventType: 'recovery-claim-opened',
+        staleClaimId: claimId,
+        staleClaimHash: nextClaimHash,
+        activeClaimId: existingClaim.activeClaimId || null,
+        activeClaimHash: existingClaim.activeClaimHash || null,
+        activeClaimSequence: existingClaim.sequence || null,
+        activeClaimType: existingClaim.type || null,
+        reason: existingClaim.reason || null,
+      },
+    );
+  }
+
+  if (claimId && hasExistingPlanEnvelope && !reusingActiveClaim && existingClaim.status !== 'none') {
+    const staleJournal = openRecoveryJournal(filePath, { truncate: false, now });
+    try {
+      appendRecoveryClaimOpened(staleJournal, {
+        plan,
+        current,
+        claimId,
+        artifactRefs,
+        reason: 'Production recovery journal claim opened.',
+      });
+    } finally {
+      staleJournal.close();
     }
-    const hasExistingPlanEnvelope = existingJournal.exists === true && existingJournal.records.length > 0;
-    const existingClaim = hasExistingPlanEnvelope
-      ? classifyRecoveryJournalClaims(existingJournal.records)
-      : { status: 'none', activeClaimHash: null };
-    const reusingActiveClaim =
-      existingClaim.status !== 'blocked' && existingClaim.activeClaimHash === nextClaimHash;
-    const persistedArtifactRefs = reusingActiveClaim
-      ? claimScopedArtifactRefs(existingJournal.records, existingClaim)
-      : null;
-    const persistedPlanId = reusingActiveClaim
-      ? claimScopedPlanId(existingJournal.records, existingClaim)
-      : null;
+  }
 
-    if (reusingActiveClaim && !artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
+  let journal;
+  if (reusingActiveClaim) {
+    const persistedArtifactRefs = claimScopedArtifactRefs(existingJournal.records, existingClaim);
+    const persistedPlanId = claimScopedPlanId(existingJournal.records, existingClaim);
+    const targetEnvelope = persistedTargetEnvelopeMatchesPlan(existingJournal.records, plan);
+
+    if (!artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
       throw new Error(
         'openProductionRecoveryJournal() requires artifactRefs to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
       );
     }
 
-    if (reusingActiveClaim && persistedPlanId !== plan.id) {
+    if (persistedPlanId !== plan.id) {
       throw new Error(
         'openProductionRecoveryJournal() requires plan.id to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
       );
     }
 
-    if (!reusingActiveClaim) {
-    appendRecoveryClaimOpened(journal, {
+    if (!targetEnvelope.matches) {
+      const error = new Error(
+        'openProductionRecoveryJournal() requires target-planned records to match the persisted active claim evidence when reopening a claim-fenced production recovery journal.',
+      );
+      error.code = 'RECOVERY_JOURNAL_TARGET_ENVELOPE_MISMATCH';
+      error.details = { issues: targetEnvelope.issues };
+      throw error;
+    }
+
+    journal = openRecoveryJournal(filePath, { truncate: false, now, claimId });
+    journal.claimOpened = true;
+    journal.appendEvent('journal-retry-opened', {
+      planId: plan.id,
+      state: 'retrying-active-claim',
+      observedHash: digest(current),
+      artifactRefs,
+    });
+  } else {
+    journal = openPlanRecoveryJournal({
+      filePath,
       plan,
       current,
-      claimId,
       artifactRefs,
-      reason: 'Production recovery journal claim opened.',
+      now,
+      truncate,
     });
-    journal.claimId = claimId;
-    journal.claimHash = recoveryClaimHash(claimId);
-    journal.claimFenced = true;
+
+    if (claimId) {
+      appendRecoveryClaimOpened(journal, {
+        plan,
+        current,
+        claimId,
+        artifactRefs,
+        reason: 'Production recovery journal claim opened.',
+      });
+      journal.claimOpened = true;
     }
   }
 
@@ -542,16 +663,19 @@ export function openProductionRecoveryJournal(options) {
   journal.ownsJournal = true;
   journal.restartReadable = true;
   journal.claimId = claimId;
+  journal.claimHash = claimId ? recoveryClaimHash(claimId) : null;
+  journal.claimFenced = Boolean(journal.claimHash);
   journal.artifactRefs = { ...artifactRefs };
   journal.schemaVersion = RECOVERY_JOURNAL_SCHEMA_VERSION;
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
-    const staleClaimRejected = hasStaleClaimRejectionEvidence(persisted.records);
     const claim = summarizeProductionRecoveryJournalClaim(persisted);
+    const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
     const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
-    const consumed = persisted.records.some((record) => record.type === 'recovery-journal-consumed');
-    const consumedClaimId = consumed ? claim?.activeClaimId || null : null;
-    const consumedClaimHash = consumed ? claim?.activeClaimHash || null : null;
+    const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
+    const consumed = Boolean(consumedRecord);
+    const consumedClaimId = consumed ? consumedRecord.claimId : null;
+    const consumedClaimHash = consumed ? consumedRecord.claimHash : null;
     const leaseFence = {
       boundary: 'filesystem-compare-rename',
       storageGuard: 'filesystem-compare-rename',
@@ -710,7 +834,9 @@ export function appendRecoveryClaimOpened(journal, {
       {
         filePath: journal.filePath,
         eventType: 'recovery-claim-opened',
+        staleClaimId: claimId,
         staleClaimHash: nextClaimHash,
+        activeClaimId: claim.activeClaimId || null,
         activeClaimHash: claim.activeClaimHash,
         activeClaimSequence: claim.sequence,
         activeClaimType: claim.type,
@@ -779,6 +905,27 @@ export function appendJournalCompleted(journal, {
   current,
   artifactRefs = {},
 }) {
+  const incompleteTargets = (plan.mutations || [])
+    .map((mutation) => ({
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      expectedHash: afterHashForMutation(mutation),
+      observedHash: resourceHash(current, mutation.resource),
+    }))
+    .filter((target) => target.observedHash !== target.expectedHash);
+
+  if (incompleteTargets.length > 0) {
+    const error = new Error(
+      'Refusing to mark recovery journal completed before every planned target matches its after hash.',
+    );
+    error.code = 'RECOVERY_JOURNAL_INCOMPLETE_APPLY';
+    error.details = {
+      planId: plan.id,
+      incompleteTargets,
+    };
+    throw error;
+  }
+
   return journal.appendEvent('journal-completed', {
     planId: plan.id,
     state: 'completed',
@@ -871,6 +1018,69 @@ export function readRecoveryJournal(filePath) {
   };
 }
 
+export function readRecoveryJournalPage(filePath, options = {}) {
+  assertAllowedOptionKeys(
+    options,
+    new Set(['offset', 'limit']),
+    'readRecoveryJournalPage()',
+  );
+  const persisted = readRecoveryJournal(filePath);
+  const totalRecords = persisted.records.length;
+  const offset = normalizeNonNegativeInteger(options.offset ?? 0, 'readRecoveryJournalPage() offset');
+  const limit = normalizePositiveInteger(options.limit ?? Math.max(totalRecords, 1), 'readRecoveryJournalPage() limit');
+  const records = persisted.records.slice(offset, offset + limit);
+  const nextOffset = offset + records.length < totalRecords ? offset + records.length : null;
+
+  return {
+    ...persisted,
+    records,
+    page: {
+      offset,
+      limit,
+      returned: records.length,
+      totalRecords,
+      nextOffset,
+      hasMore: nextOffset !== null,
+    },
+  };
+}
+
+export function readRecoveryJournalPaged(filePath, options = {}) {
+  assertAllowedOptionKeys(
+    options,
+    new Set(['pageSize']),
+    'readRecoveryJournalPaged()',
+  );
+  const pageSize = normalizePositiveInteger(options.pageSize ?? 100, 'readRecoveryJournalPaged() pageSize');
+  const records = [];
+  const pages = [];
+  let offset = 0;
+  let latestPage = null;
+
+  do {
+    latestPage = readRecoveryJournalPage(filePath, { offset, limit: pageSize });
+    records.push(...latestPage.records);
+    pages.push(latestPage.page);
+    offset = latestPage.page.nextOffset ?? offset;
+  } while (latestPage.page.hasMore && latestPage.integrity.status === 'ok');
+
+  return {
+    ...latestPage,
+    records,
+    page: {
+      mode: 'paged-readback',
+      pageSize,
+      pages: pages.length,
+      totalRecords: latestPage?.page?.totalRecords ?? records.length,
+      ranges: pages.map((page) => ({
+        offset: page.offset,
+        returned: page.returned,
+        nextOffset: page.nextOffset,
+      })),
+    },
+  };
+}
+
 export function assertJournalRecordHasNoRawValues(record) {
   visitRecord(record, []);
 }
@@ -935,11 +1145,15 @@ class RecoveryJournalWriter {
     }
     this.assertCurrentClaim(type);
 
+    const claimIdentity = this.claimFenced && !CLAIM_APPEND_EVENT_TYPES.has(type)
+      ? { claimId: this.claimId, claimHash: this.claimHash }
+      : {};
     const record = {
       schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
       sequence: this.nextSequence,
       type,
       timestamp: timestampFor(this.now),
+      ...claimIdentity,
       ...payload,
       fsync: {
         requested: true,
@@ -971,7 +1185,9 @@ class RecoveryJournalWriter {
         {
           filePath: this.filePath,
           eventType,
+          staleClaimId: this.claimId,
           staleClaimHash: this.claimHash,
+          activeClaimId: null,
           activeClaimHash: null,
           activeClaimSequence: null,
           activeClaimType: null,
@@ -984,7 +1200,9 @@ class RecoveryJournalWriter {
         {
           filePath: this.filePath,
           eventType,
+          staleClaimId: this.claimId,
           staleClaimHash: this.claimHash,
+          activeClaimId: claim.activeClaimId || null,
           activeClaimHash: claim.activeClaimHash,
           activeClaimSequence: claim.sequence,
           activeClaimType: claim.type,
@@ -1022,7 +1240,7 @@ function summarizeProductionRecoveryJournalClaim(persisted) {
   }
 
   return {
-    status: hasStaleClaimRejectionEvidence(persisted.records)
+    status: claimScopedStaleClaimRejectionEvidence(persisted.records, claimState)
       ? 'advanced'
       : 'active',
     activeClaimId: claimState.activeClaimId || null,
@@ -1085,6 +1303,20 @@ function normalizeOptionalNonNegativeInteger(value) {
   }
   if (!Number.isInteger(value) || value < 0) {
     throw new Error('Recovery claim timing evidence must be a non-negative integer.');
+  }
+  return value;
+}
+
+function normalizeNonNegativeInteger(value, label) {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`${label} must be a non-negative integer.`);
+  }
+  return value;
+}
+
+function normalizePositiveInteger(value, label) {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${label} must be a positive integer.`);
   }
   return value;
 }

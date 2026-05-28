@@ -17,6 +17,8 @@ import {
   openPlanRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
+  readRecoveryJournalPage,
+  readRecoveryJournalPaged,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { createPushPlan } from '../src/planner.js';
@@ -101,6 +103,41 @@ test('file-backed journal appends monotonic sequences and reads after restart', 
   assert.ok(restarted.records.every((record) => record.fsync.requested));
 });
 
+test('file-backed journal supports paged restart readback without losing classification', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  appendJournalCompleted(journal, { plan, current });
+  journal.close();
+
+  const firstPage = readRecoveryJournalPage(filePath, { offset: 0, limit: 3 });
+  assert.equal(firstPage.integrity.status, 'ok');
+  assert.equal(firstPage.records.length, 3);
+  assert.equal(firstPage.page.totalRecords, 10);
+  assert.equal(firstPage.page.nextOffset, 3);
+  assert.equal(firstPage.page.hasMore, true);
+
+  const paged = readRecoveryJournalPaged(filePath, { pageSize: 4 });
+  assert.equal(paged.integrity.status, 'ok');
+  assert.equal(paged.records.length, 10);
+  assert.equal(paged.page.mode, 'paged-readback');
+  assert.equal(paged.page.pages, 3);
+  assert.deepEqual(paged.records.map((record) => record.sequence), Array.from({ length: 10 }, (_, index) => index + 1));
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    journalPageSize: 4,
+    plan,
+    current,
+  });
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.equal(inspection.journal.page.mode, 'paged-readback');
+  assert.equal(inspection.journal.page.pages, 3);
+});
+
 test('file-backed journal records hashes and metadata without raw values', () => {
   const filePath = tempJournalPath();
   const plan = planFor();
@@ -163,6 +200,35 @@ test('restart inspection classifies fail-after-2 as blocked recovery with two ne
     current,
   });
 
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
+});
+
+test('file-backed journal refuses completion when apply is incomplete', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const current = clone(remote);
+  const journal = openPlanRecoveryJournal({ filePath, plan, current: remote, now: fixedNow });
+
+  applyFirstMutations(current, plan, 2);
+  assert.throws(
+    () => appendJournalCompleted(journal, { plan, current }),
+    (error) => {
+      assert.equal(error.code, 'RECOVERY_JOURNAL_INCOMPLETE_APPLY');
+      assert.equal(error.details.planId, plan.id);
+      assert.equal(error.details.incompleteTargets.length, 6);
+      assert.equal(error.details.incompleteTargets[0].resourceKey, 'file:file-3.txt');
+      return true;
+    },
+  );
+  journal.close();
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.records.some((record) => record.type === 'journal-completed'), false);
+
+  const inspection = inspectRecoveryJournal({ journalPath: filePath, plan, current });
   assert.equal(inspection.status, 'blocked-recovery');
   assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
 });
@@ -274,7 +340,15 @@ test('file-backed journal fences out stale claims on restart', () => {
         observedHash: 'snapshot-hash-only',
         artifactRefs: {},
       }),
-    RecoveryJournalClaimStaleError,
+    (error) => {
+      assert.ok(error instanceof RecoveryJournalClaimStaleError);
+      assert.equal(error.details.staleClaimId, staleClaimId);
+      assert.equal(error.details.staleClaimHash, recoveryClaimHash(staleClaimId));
+      assert.equal(error.details.activeClaimId, activeClaimId);
+      assert.equal(error.details.activeClaimHash, recoveryClaimHash(activeClaimId));
+      assert.equal(error.details.activeClaimType, 'recovery-claim-opened');
+      return true;
+    },
   );
 
   reopened.close();
@@ -338,6 +412,89 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   );
 });
 
+test('production recovery journal same-claim retry is append-only and preserves target envelope', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-claim-retry-01';
+  const artifactRefs = {
+    releaseProof: 'artifact://release-proof-retry',
+  };
+
+  const firstOpen = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId,
+  });
+  firstOpen.close();
+
+  const retryOpen = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    truncate: false,
+    claimId,
+  });
+  retryOpen.close();
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.records.filter((record) => record.type === 'target-planned').length, plan.mutations.length);
+  assert.equal(restarted.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
+
+  const retryRecord = restarted.records.find((record) => record.type === 'journal-retry-opened');
+  assert.ok(retryRecord);
+  assert.equal(retryRecord.claimId, claimId);
+  assert.equal(retryRecord.claimHash, recoveryClaimHash(claimId));
+
+  const inspection = inspectRecoveryJournal({ journalPath: filePath, plan, current: remote });
+  assert.equal(inspection.status, 'old-remote');
+});
+
+test('production recovery journal same-claim retry rejects target envelope drift', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const driftedPlan = clone(plan);
+  driftedPlan.mutations[0].localHash = 'f'.repeat(64);
+  const claimId = 'production-claim-retry-02';
+  const artifactRefs = {
+    releaseProof: 'artifact://release-proof-retry-drift',
+  };
+
+  const firstOpen = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId,
+  });
+  firstOpen.close();
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan: driftedPlan,
+      current: remote,
+      artifactRefs,
+      now: fixedNow,
+      truncate: false,
+      claimId,
+    }),
+    (error) => {
+      assert.equal(error.code, 'RECOVERY_JOURNAL_TARGET_ENVELOPE_MISMATCH');
+      assert.equal(error.details.issues[0].code, 'TARGET_PLANNED_AFTER_HASH_MISMATCH');
+      return true;
+    },
+  );
+});
+
 test('checked release path consumes the production recovery journal inspection surface', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
@@ -384,6 +541,8 @@ test('checked release path consumes the production recovery journal inspection s
   assert.equal(inspection.journal.claimId, activeClaimId);
   assert.equal(inspection.journal.claimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.consumed, true);
+  assert.equal(inspection.journal.consumedClaimId, activeClaimId);
+  assert.equal(inspection.journal.consumedClaimHash, recoveryClaimHash(activeClaimId));
   assert.equal(inspection.journal.restartReadable, true);
   assert.equal(inspection.journal.staleClaimRejected, true);
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
