@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createPushPlan } from '../src/planner.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -203,3 +205,27 @@ function assertRowMixShape(testCase) {
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
 }
+
+test('RPP-0208 generated unsupported plugin-owned fixture redacts raw values', () => {
+  const generatedCase = generatePushHarnessCases()
+    .find((testCase) => testCase.family === 'unsupported-plugin-owned-row');
+  assert.ok(generatedCase, 'missing generated unsupported plugin-owned row case');
+  assert.ok(generatedCase.tags.has('plugin-owned-unsupported'));
+
+  const result = validateGeneratedCase(generatedCase);
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const blocker = plan.blockers.find((entry) => entry.class === 'unsupported-plugin-owned-resource');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(result.status, 'blocked');
+  assert.equal(result.applied, false);
+  assert.ok(blocker, 'missing unsupported plugin-owned resource blocker');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === blocker.resourceKey), false);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.equal(planJson.includes('local-unsafe'), false);
+});
