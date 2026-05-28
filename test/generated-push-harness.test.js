@@ -5,8 +5,10 @@ import { applyPlan, PushPlanError } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generateDriverDeleteSupportFlagCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
+  validateDriverDeleteSupportFlagCase,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
@@ -422,6 +424,43 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0456 generated driver delete support flag coverage is redacted', () => {
+  const cases = generateDriverDeleteSupportFlagCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'delete-supported-applies',
+    'delete-unsupported-blocked',
+    'forged-delete-support-flag-rejected',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('driver-delete-support-flag')), true);
+  assert.equal(cases.every((testCase) => testCase.dataResourceKey.startsWith('row:["wp_options"')), true);
+
+  const results = cases.map(validateDriverDeleteSupportFlagCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'delete-supported-applies': 'applied-delete',
+    'delete-unsupported-blocked': 'blocked-unsupported-delete',
+    'forged-delete-support-flag-rejected': 'rejected-forged-unsupported-delete',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['delete-supported-applies'].status, 'ready');
+  assert.equal(byVariant['delete-supported-applies'].appliedMutations, 1);
+  assert.equal(byVariant['delete-unsupported-blocked'].status, 'blocked');
+  assert.equal(byVariant['delete-unsupported-blocked'].mutations, 0);
+  assert.equal(byVariant['delete-unsupported-blocked'].remotePreserved, true);
+  assert.equal(
+    byVariant['forged-delete-support-flag-rejected'].rejectionCode,
+    'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
+  );
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0233 generated ready fixtures reject forged localHash evidence', () => {
