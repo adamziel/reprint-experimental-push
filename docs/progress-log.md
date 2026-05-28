@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 12:24 CEST.
+- Last update: 2026-05-28 12:29 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `e53a068ac` (no-ff merge of `origin/session/rpp-17` auth/recovery integration reconciliation).
+  `07bd720bc` (tree-unchanged ancestry merge of `origin/session/rpp-1`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -228,6 +228,12 @@ linked implementation artifacts.
   The authenticated playground smoke still fails at the existing
   `/db-journal` 401 assertion on both this head and a detached pre-merge lane,
   so that smoke remains baseline follow-up rather than new release evidence.
+- Release-gate ancestry reduction: `07bd720bc` merged
+  `origin/session/rpp-1` with the `ours` strategy after
+  `git log --right-only --cherry-pick` confirmed no unrepresented commits. The
+  tree is unchanged from the first parent, and
+  `node --test test/release-gates.test.js test/release-gate-cli.test.js`
+  passes 28/28.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
   summary count consistency. The focused local Node proof checks ready,
   conflict, blocked, and atomic fixtures, verifies `plan.summary` against the
