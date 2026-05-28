@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 390 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 39 scenario families, then add seeded variation so
+fixtures. The current default is 410 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 41 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 390 total cases;
-- 10 tiers, 39 cases per tier;
+- 410 total cases;
+- 10 tiers, 41 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -50,8 +50,8 @@ The default generated run covers:
   conflicts with per-tier target counts, file type-swap cases with ready and
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, non-plugin-owned
-  `wp_options` scalar option updates with ready and concurrent remote-drift
-  outcomes, `wp_posts`
+  `wp_options` scalar and serialized option updates with ready and
+  concurrent remote-drift outcomes, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_comments.user_id` author cases with
@@ -65,6 +65,11 @@ The `wpOptionsScalar` surface seeds regular, non-plugin-owned `wp_options` rows
 with scalar string and number values. Ready cases update the scalar option while
 preserving the live remote; conflict cases drift the same option remotely and
 must refuse apply without plugin-owner evidence.
+
+The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
+rows with structured array and object values. Ready cases update the serialized
+option while preserving the live remote; conflict cases drift the same option
+remotely and must refuse apply without plugin-owner evidence.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -89,11 +94,11 @@ At the time this note was added, the summary command reported:
 
 ```json
 {
-  "totalCases": 390,
+  "totalCases": 410,
   "statuses": {
-    "blocked": 28,
-    "conflict": 155,
-    "ready": 207
+    "blocked": 29,
+    "conflict": 162,
+    "ready": 219
   },
   "targetCoverage": {
     "commentUserGraph": {
@@ -112,9 +117,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 8,
-        "conflict": 3,
-        "ready": 9
+        "blocked": 10,
+        "ready": 10
       }
     },
     "directoryDescendantConflict": {
@@ -172,8 +176,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 4,
-        "conflict": 6,
+        "blocked": 3,
+        "conflict": 7,
         "ready": 10
       }
     }
@@ -194,10 +198,16 @@ At the time this note was added, the summary command reported:
     "scalar-option-number": 10,
     "scalar-option-string": 10,
     "scalar-option-update": 20,
+    "serialized-option-array": 10,
+    "serialized-option-object": 10,
+    "serialized-option-update": 20,
     "wp-comments-create": 20,
     "wp-options-scalar": 20,
     "wp-options-scalar-ready": 10,
     "wp-options-scalar-conflict": 10,
+    "wp-options-serialized": 20,
+    "wp-options-serialized-ready": 10,
+    "wp-options-serialized-conflict": 10,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
@@ -210,10 +220,10 @@ At the time this note was added, the summary command reported:
     "wp-users-create": 20,
     "wp-users-remote-drift": 10
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 77,
+  "maxMutationCount": 42,
+  "maxReadyResourceCount": 67,
+  "maxReadyMutationCount": 42
 }
 ```
 

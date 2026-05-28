@@ -13,7 +13,7 @@ import {
 } from '../../src/resources.js';
 
 export const MIN_GENERATED_PUSH_CASES = 300;
-export const DEFAULT_GENERATED_PUSH_CASES = 390;
+export const DEFAULT_GENERATED_PUSH_CASES = 410;
 export const DEFAULT_GENERATED_PUSH_SEED = 0x52706e74;
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
@@ -53,6 +53,8 @@ const scenarioFamilies = Object.freeze([
   'row-create-update-delete-mix-conflict',
   'wp-options-scalar-ready',
   'wp-options-scalar-conflict',
+  'wp-options-serialized-ready',
+  'wp-options-serialized-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
@@ -81,6 +83,7 @@ const readyPreservingFamilies = new Set([
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
   'wp-options-scalar-ready',
+  'wp-options-serialized-ready',
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
@@ -578,6 +581,14 @@ const scenarioFamilyBuilders = {
   },
   'wp-options-scalar-conflict': ({ tier, base, local, remote, allocator, tags }) => {
     addWpOptionsScalarChange(base, local, remote, allocator, tags, { conflict: true, tier });
+    tags.add('expected-conflict');
+  },
+  'wp-options-serialized-ready': ({ tier, base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict: false, tier });
+    tags.add('ready-candidate');
+  },
+  'wp-options-serialized-conflict': ({ tier, base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict: true, tier });
     tags.add('expected-conflict');
   },
   'wp-posts-create-update-delete-ready': ({ base, local, remote, allocator, tags }) => {
@@ -1234,6 +1245,51 @@ function scalarOptionValue(kind, source, ordinal) {
     return ordinal + offsets[source];
   }
   return `${source}-scalar-option-${ordinal}`;
+}
+
+function addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict, tier }) {
+  const ordinal = allocator.next();
+  const optionName = `serialized_generated_${ordinal}`;
+  const rowId = `option_name:${optionName}`;
+  const valueKind = tier % 2 === 0 ? 'object' : 'array';
+  const baseValue = serializedOptionValue(valueKind, 'base', ordinal);
+  const localValue = serializedOptionValue(valueKind, 'local', ordinal);
+  const remoteValue = serializedOptionValue(valueKind, 'remote', ordinal);
+  const row = {
+    option_name: optionName,
+    option_value: baseValue,
+    autoload: 'no',
+  };
+
+  setRow(base, 'wp_options', rowId, row);
+  setRow(local, 'wp_options', rowId, { ...row, option_value: localValue });
+  setRow(remote, 'wp_options', rowId, row);
+
+  tags.add('wp-options-serialized');
+  tags.add('serialized-option-update');
+  tags.add(`serialized-option-${valueKind}`);
+
+  if (conflict) {
+    setRow(remote, 'wp_options', rowId, { ...row, option_value: remoteValue });
+  }
+}
+
+function serializedOptionValue(kind, source, ordinal) {
+  if (kind === 'array') {
+    return [
+      `${source}-serialized-option-${ordinal}`,
+      ordinal,
+      { enabled: source !== 'base', marker: `${source}-marker-${ordinal}` },
+    ];
+  }
+  return {
+    mode: source,
+    flags: { enabled: source !== 'base', ordinal },
+    items: [
+      `${source}-item-${ordinal}`,
+      { key: `${source}-nested-${ordinal}`, priority: ordinal % 5 },
+    ],
+  };
 }
 
 function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {
