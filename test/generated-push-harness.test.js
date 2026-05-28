@@ -9,6 +9,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { findEvidenceRedactionIssues, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
@@ -263,6 +264,31 @@ test('RPP-0237 generated conflict plans reject apply, forged ready status, and s
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(evidenceText.includes('Generated remote'), false);
   assert.equal(evidenceText.includes('confidential'), false);
+  assert.equal(evidenceText.includes('payload'), false);
+});
+
+test('RPP-0239 generated evidence redacts raw mutation and journal payloads', () => {
+  const firstEvidence = generatedRedactedRawValueEvidence();
+  const replayEvidence = generatedRedactedRawValueEvidence();
+  const aggregate = aggregateGeneratedRedactedRawValueEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0239 test/generated-push-harness.test.js',
+    caveat: 'Generated local redaction proof only; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated raw-value redaction evidence changed between runs');
+  assert.ok(aggregate.totalCases >= 4, 'generated redaction proof should cover multiple ready families');
+  assert.ok(aggregate.totalMutations > 0, 'generated redaction proof should include planned mutations');
+  assert.ok(aggregate.totalRawIssuesBeforeRedaction > 0, 'raw generated evidence should need redaction');
+  assert.equal(aggregate.totalRedactionIssuesAfterRedaction, 0);
+  assert.equal(aggregate.totalPayloadLeaksAfterRedaction, 0);
+  assert.equal(aggregate.totalJournalEntriesWithoutRedactedValues, 0);
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated row mix'), false);
+  assert.equal(evidenceText.includes('Generated wp_posts'), false);
   assert.equal(evidenceText.includes('payload'), false);
 });
 
@@ -701,6 +727,104 @@ function generatedStaleConflictMutationAttempt(testCase, plan) {
   };
 }
 
+function generatedRedactedRawValueEvidence() {
+  const selectedFamilies = [
+    'local-file-update',
+    'file-create-update-delete-mix-ready',
+    'row-create-update-delete-mix-ready',
+    'wp-posts-create-update-delete-ready',
+    'supported-plugin-option',
+  ];
+  const cases = generatePushHarnessCases();
+
+  return selectedFamilies.map((family) => {
+    const testCase = cases.find((entry) => entry.family === family);
+    assert.ok(testCase, `missing generated ${family} case`);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const journalRemote = cloneJson(testCase.remote);
+    const journalError = captureError(() => applyPlan(journalRemote, plan, {
+      failAfterStaging: true,
+    }));
+    const journal = journalError.details.recovery.artifacts.journal;
+    const rawEvidence = {
+      id: testCase.id,
+      family: testCase.family,
+      status: plan.status,
+      summary: plan.summary,
+      plan,
+      journalFailure: {
+        code: journalError.code,
+        detailsHash: `sha256:${digest(journalError.details)}`,
+        journal,
+      },
+    };
+    const rawSerialized = JSON.stringify(rawEvidence);
+    const redactedEvidence = redactEvidence(rawEvidence);
+    const redactedSerialized = JSON.stringify(redactedEvidence);
+    const rawIssues = findEvidenceRedactionIssues(rawEvidence);
+    const redactedIssues = findEvidenceRedactionIssues(redactedEvidence);
+    const payloads = plan.mutations.map((mutation) => JSON.stringify(mutation.value));
+    let payloadLeaksAfterRedaction = 0;
+
+    assert.equal(plan.status, 'ready', `${family} should be ready for redaction proof`);
+    assert.ok(plan.mutations.length > 0, `${family} should emit mutations`);
+    assert.ok(journalError instanceof PushPlanError);
+    assert.equal(journalError.code, 'INJECTED_FAILURE_AFTER_STAGING');
+    assert.ok(rawIssues.length > 0, `${family} raw generated evidence should require redaction`);
+    assert.deepEqual(redactedIssues, [], `${family} redacted evidence should be clean`);
+    for (const payload of payloads) {
+      assert.equal(rawSerialized.includes(payload), true, `${family} raw evidence missed payload`);
+      if (redactedSerialized.includes(payload)) {
+        payloadLeaksAfterRedaction++;
+      }
+    }
+    for (const mutation of redactedEvidence.plan.mutations) {
+      assert.equal(mutation.value.redacted, true, `${family} mutation value was not redacted`);
+      assert.match(mutation.value.sha256, /^[a-f0-9]{64}$/);
+    }
+
+    const journalEntriesWithoutRedactedValues = redactedEvidence.journalFailure.journal.entries
+      .filter((entry) => entry.beforeValue?.redacted !== true || entry.afterValue?.redacted !== true)
+      .length;
+
+    return {
+      id: testCase.id,
+      tier: testCase.tier,
+      family: testCase.family,
+      tags: [...testCase.tags].sort(),
+      status: plan.status,
+      summary: plan.summary,
+      mutations: redactedEvidence.plan.mutations.map((mutation) => ({
+        id: mutation.id,
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        redactedValueHash: `sha256:${mutation.value.sha256}`,
+      })),
+      journalEntries: redactedEvidence.journalFailure.journal.entries.map((entry) => ({
+        mutationId: entry.mutationId,
+        resourceKey: entry.resourceKey,
+        action: entry.action,
+        beforeHash: entry.beforeHash,
+        afterHash: entry.afterHash,
+        beforeValueHash: `sha256:${entry.beforeValue.sha256}`,
+        afterValueHash: `sha256:${entry.afterValue.sha256}`,
+      })),
+      rawIssueCount: rawIssues.length,
+      redactedIssueCount: redactedIssues.length,
+      payloadLeaksAfterRedaction,
+      journalEntriesWithoutRedactedValues,
+    };
+  });
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -751,6 +875,37 @@ function aggregateGeneratedConflictApplyRefusalEvidence(evidence) {
     families: sortStringObject(aggregate.families),
     conflictClasses: sortStringObject(aggregate.conflictClasses),
     forgedIssueCodes: sortStringObject(aggregate.forgedIssueCodes),
+  };
+}
+
+function aggregateGeneratedRedactedRawValueEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalCases++;
+      aggregate.totalMutations += entry.mutations.length;
+      aggregate.totalJournalEntries += entry.journalEntries.length;
+      aggregate.totalRawIssuesBeforeRedaction += entry.rawIssueCount;
+      aggregate.totalRedactionIssuesAfterRedaction += entry.redactedIssueCount;
+      aggregate.totalPayloadLeaksAfterRedaction += entry.payloadLeaksAfterRedaction;
+      aggregate.totalJournalEntriesWithoutRedactedValues += entry.journalEntriesWithoutRedactedValues;
+      incrementCount(aggregate.families, entry.family);
+      return aggregate;
+    },
+    {
+      totalCases: 0,
+      totalMutations: 0,
+      totalJournalEntries: 0,
+      totalRawIssuesBeforeRedaction: 0,
+      totalRedactionIssuesAfterRedaction: 0,
+      totalPayloadLeaksAfterRedaction: 0,
+      totalJournalEntriesWithoutRedactedValues: 0,
+      families: {},
+    },
+  );
+
+  return {
+    ...aggregate,
+    families: sortStringObject(aggregate.families),
   };
 }
 
