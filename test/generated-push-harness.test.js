@@ -8,6 +8,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -25,6 +26,12 @@ const requiredFamilies = [
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'plugin-owned-custom-table-changes',
+  'plugin-owned-custom-table-target',
+  'forms-lab-custom-table-change',
+  'forms-lab-custom-table-ready',
+  'forms-lab-custom-table-stale',
+  'forms-lab-remote-drift',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -348,6 +355,140 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0135 plugin-owned custom-table target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedCustomTableChanges;
+
+  assert.ok(coverage, 'missing plugin-owned custom-table target coverage');
+  assert.equal(coverage.family, 'plugin-owned-custom-table-changes');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table-target']);
+  assert.deepEqual(coverage.statuses, { conflict: 5, ready: 5 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('rpp0135-private-'), false);
+  assert.equal(summaryEvidence.includes('Remote preserved custom table note'), false);
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'plugin-owned-custom-table-changes');
+  const readyCases = cases.filter((testCase) => testCase.tags.has('forms-lab-custom-table-ready'));
+  const staleCases = cases.filter((testCase) => testCase.tags.has('forms-lab-custom-table-stale'));
+
+  assert.equal(cases.length, 10, 'one plugin-owned custom-table case should appear per tier');
+  assert.equal(readyCases.length, 5, 'even tiers should produce ready custom-table cases');
+  assert.equal(staleCases.length, 5, 'odd tiers should produce stale custom-table cases');
+
+  for (const readyCase of readyCases) {
+    const shape = assertPluginOwnedCustomTableShape(readyCase, { staleTarget: false });
+    const ready = validateGeneratedCase(readyCase);
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+    });
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey);
+    const auditEvidence = mutation?.pluginOwnedResource?.auditEvidence;
+    const auditJson = JSON.stringify(auditEvidence);
+
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 1, 'ready custom-table case should update a plugin-owned row');
+    assert.equal(ready.applied, true, 'ready custom-table case should apply');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready custom-table case should preserve remote-only data');
+    assert.equal(ready.staleReplayRejected, true, 'ready custom-table case should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource.driver, 'fixture-forms-lab-table');
+    assert.equal(auditEvidence.evidenceSource, 'planner-plugin-driver-audit');
+    assert.equal(auditEvidence.format, 'hash-only');
+    assert.equal(auditEvidence.rawValuesIncluded, false);
+    assert.match(auditEvidence.baseHash, /^[a-f0-9]{64}$/);
+    assert.match(auditEvidence.localHash, /^[a-f0-9]{64}$/);
+    assert.match(auditEvidence.remoteHash, /^[a-f0-9]{64}$/);
+    assert.match(auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+    assert.match(auditEvidence.driverEvidenceHash, /^[a-f0-9]{64}$/);
+    for (const privateValue of shape.privateValues) {
+      assert.equal(auditJson.includes(privateValue), false, `${readyCase.id} audit leaked ${privateValue}`);
+    }
+  }
+
+  for (const staleCase of staleCases) {
+    const shape = assertPluginOwnedCustomTableShape(staleCase, { staleTarget: true });
+    const stale = validateGeneratedCase(staleCase);
+    const plan = createPushPlan({
+      base: staleCase.base,
+      local: staleCase.local,
+      remote: staleCase.remote,
+    });
+    const conflictJson = JSON.stringify(plan.conflicts);
+
+    assert.equal(stale.status, 'conflict');
+    assert.ok(stale.conflicts >= 1, 'remote custom-table drift should produce a conflict');
+    assert.equal(stale.applied, false, 'stale custom-table case must not apply mutations');
+    assert.ok(
+      plan.conflicts.some((conflict) =>
+        conflict.resourceKey === shape.resourceKey && conflict.class === 'plugin-data-conflict'),
+      `${staleCase.id} should expose a plugin-data-conflict`,
+    );
+    assert.equal(
+      plan.mutations.some((mutation) => mutation.resourceKey === shape.resourceKey),
+      false,
+      `${staleCase.id} should not plan a mutation for the conflicted custom-table row`,
+    );
+    for (const privateValue of shape.privateValues) {
+      assert.equal(conflictJson.includes(privateValue), false, `${staleCase.id} conflict leaked ${privateValue}`);
+    }
+  }
+});
+
+function assertPluginOwnedCustomTableShape(testCase, { staleTarget }) {
+  const localRows = Object.entries(testCase.local.db.wp_reprint_push_forms_lab)
+    .filter(([, row]) => row.payload?.scenario === 'rpp-0135-plugin-owned-custom-table');
+
+  assert.equal(localRows.length, 1, `${testCase.id} should carry one target custom-table row`);
+
+  const [rowId, localRow] = localRows[0];
+  const resourceKey = `row:${JSON.stringify(['wp_reprint_push_forms_lab', rowId])}`;
+  const baseRow = testCase.base.db.wp_reprint_push_forms_lab[rowId];
+  const remoteRow = testCase.remote.db.wp_reprint_push_forms_lab[rowId];
+  const policyEntries = testCase.local.meta.pluginOwnedResources.allowedResources || [];
+
+  assert.ok(baseRow, `${testCase.id} target custom-table row should exist in base`);
+  assert.ok(remoteRow, `${testCase.id} target custom-table row should exist in remote`);
+  assert.equal(localRow.__pluginOwner, 'forms');
+  assert.equal(localRow.payload.mode, 'local');
+  assert.ok(
+    policyEntries.some((entry) =>
+      entry.resourceKey === resourceKey
+      && entry.pluginOwner === 'forms'
+      && entry.driver === 'fixture-forms-lab-table'
+      && entry.table === 'wp_reprint_push_forms_lab'),
+    `${testCase.id} missing fixture custom-table allowlist evidence`,
+  );
+
+  const privateValues = [
+    baseRow.payload.privateToken,
+    localRow.payload.privateToken,
+    remoteRow.payload.privateToken,
+  ];
+
+  if (staleTarget) {
+    assert.equal(remoteRow.payload.mode, 'remote-stale');
+    assert.notDeepEqual(remoteRow, baseRow, `${testCase.id} remote target should drift`);
+  } else {
+    assert.deepEqual(remoteRow, baseRow, `${testCase.id} ready remote target should match base`);
+  }
+
+  return { resourceKey, privateValues };
 }
 
 function nonReadyTargetCount(coverage) {

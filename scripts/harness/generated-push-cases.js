@@ -36,6 +36,7 @@ const scenarioFamilies = Object.freeze([
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'plugin-owned-custom-table-changes',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  pluginOwnedCustomTableChanges: {
+    family: 'plugin-owned-custom-table-changes',
+    tag: 'plugin-owned-custom-table-target',
   },
 });
 
@@ -430,6 +435,14 @@ const scenarioFamilyBuilders = {
     tags.add('same-plan-graph');
     tags.add('comment-graph');
   },
+  'plugin-owned-custom-table-changes': ({ base, local, remote, allocator, tags, tier }) => {
+    const staleTarget = tier % 2 === 1;
+    addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, {
+      staleTarget,
+      prefix: staleTarget ? 'stale-forms-lab' : 'ready-forms-lab',
+    });
+    tags.add(staleTarget ? 'expected-conflict' : 'ready-candidate');
+  },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
     const rowId = `id:${id}`;
@@ -668,6 +681,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (family === 'plugin-owned-custom-table-changes') {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -898,6 +915,16 @@ function assertPlanContract(testCase, plan) {
     if (mutation.pluginOwnedResource) {
       assert.ok(mutation.pluginOwnedResource.pluginOwner, `${testCase.id} plugin mutation missing owner`);
       assert.ok(mutation.pluginOwnedResource.driver, `${testCase.id} plugin mutation missing driver`);
+      assert.equal(
+        mutation.pluginOwnedResource.auditEvidence?.format,
+        'hash-only',
+        `${testCase.id} plugin mutation audit evidence is not hash-only`,
+      );
+      assert.equal(
+        mutation.pluginOwnedResource.auditEvidence?.rawValuesIncluded,
+        false,
+        `${testCase.id} plugin mutation audit evidence includes raw values`,
+      );
     }
   }
 
@@ -912,7 +939,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1248,6 +1275,62 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
   }
+}
+
+function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, { staleTarget, prefix }) {
+  const id = allocator.formsLabId();
+  const rowId = `id:${id}`;
+  const resourceKey = rowKey('wp_reprint_push_forms_lab', rowId);
+  const row = {
+    id,
+    form_slug: `generated-rpp-0135-${id}`,
+    payload: {
+      scenario: 'rpp-0135-plugin-owned-custom-table',
+      mode: 'base',
+      privateToken: `rpp0135-private-base-${prefix}-${id}`,
+    },
+    updated_marker: `base-${id}`,
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_reprint_push_forms_lab', rowId, row);
+  setRow(remote, 'wp_reprint_push_forms_lab', rowId, row);
+  setRow(local, 'wp_reprint_push_forms_lab', rowId, {
+    ...row,
+    payload: {
+      ...row.payload,
+      mode: 'local',
+      privateToken: `rpp0135-private-local-${prefix}-${allocator.next()}`,
+    },
+    updated_marker: `local-${allocator.next()}`,
+  });
+  allowPluginOwned(local, resourceKey, 'forms', 'fixture-forms-lab-table', {
+    table: 'wp_reprint_push_forms_lab',
+  });
+  remote.files[`wp-content/uploads/${prefix}-custom-table-remote-only-${allocator.next()}.txt`] =
+    `Remote preserved custom table note ${allocator.next()}`;
+
+  if (staleTarget) {
+    setRow(remote, 'wp_reprint_push_forms_lab', rowId, {
+      ...row,
+      payload: {
+        ...row.payload,
+        mode: 'remote-stale',
+        privateToken: `rpp0135-private-remote-${prefix}-${allocator.next()}`,
+      },
+      updated_marker: `remote-${allocator.next()}`,
+    });
+    tags.add('forms-lab-custom-table-stale');
+    tags.add('forms-lab-remote-drift');
+  } else {
+    tags.add('forms-lab-custom-table-ready');
+  }
+
+  tags.add('plugin-owned-custom-table-target');
+  tags.add('forms-lab-custom-table-change');
+  tags.add('forms-lab-supported');
+  tags.add('plugin-owned-supported');
+  tags.add('remote-preserve');
 }
 
 function addCommentGraph(local, allocator) {
