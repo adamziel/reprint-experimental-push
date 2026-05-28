@@ -71,6 +71,73 @@ test('collects only the configured evidence/progress scan targets in stable orde
   ]);
 });
 
+test('current repository progress surfaces have no risky unchecked completion claims', () => {
+  const result = lintChecklistCompletion({ rootDir: repoRoot });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.riskyClaims, []);
+  assert.ok(result.scannedFiles.includes('progress.html'));
+  assert.ok(result.scannedFiles.includes('docs/progress-log.md'));
+  assert.ok(result.scannedFiles.includes('docs/supervisor-feedback.md'));
+  assert.ok(
+    result.scannedFiles.some((file) => file.startsWith('docs/evidence/') && file.endsWith('.md')),
+    'expected docs/evidence/*.md to be scanned',
+  );
+  assert.ok(
+    result.scannedFiles.some((file) => file.startsWith('audits/') && file.endsWith('.md')),
+    'expected audits/*.md to be scanned',
+  );
+});
+
+test('flags risky unchecked completion claims in every configured progress surface', () => {
+  const root = makeFixture();
+  writeChecklist(root, [
+    [' ', 'RPP-0012', 'progress html item'],
+    [' ', 'RPP-0013', 'progress log item'],
+    [' ', 'RPP-0014', 'supervisor item'],
+    [' ', 'RPP-0015', 'evidence item'],
+    [' ', 'RPP-0016', 'audit item'],
+  ]);
+  writeFile(root, 'progress.html', '<p>RPP-0012 is release-ready.</p>\n');
+  writeFile(root, 'docs/progress-log.md', '- RPP-0013 is complete.\n');
+  writeFile(root, 'docs/supervisor-feedback.md', '- RPP-0014 is done.\n');
+  writeFile(root, 'docs/evidence/lane.md', 'RPP-0015 passed.\n');
+  writeFile(root, 'audits/audit.md', 'RPP-0016 is complete.\n');
+
+  const result = lintChecklistCompletion({ rootDir: root });
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.riskyClaims.map((claim) => [claim.file, claim.id, claim.matchedTerms]), [
+    ['audits/audit.md', 'RPP-0016', ['complete']],
+    ['docs/evidence/lane.md', 'RPP-0015', ['passed']],
+    ['docs/progress-log.md', 'RPP-0013', ['complete']],
+    ['docs/supervisor-feedback.md', 'RPP-0014', ['done']],
+    ['progress.html', 'RPP-0012', ['release-ready']],
+  ]);
+});
+
+test('allows cautious unchecked evidence language in every configured progress surface', () => {
+  const root = makeFixture();
+  writeChecklist(root, [
+    [' ', 'RPP-0017', 'progress html item'],
+    [' ', 'RPP-0018', 'progress log item'],
+    [' ', 'RPP-0019', 'supervisor item'],
+    [' ', 'RPP-0020', 'evidence item'],
+    [' ', 'RPP-0021', 'audit item'],
+  ]);
+  writeFile(root, 'progress.html', '<p>RPP-0017 has evidence toward release discipline; release remains held.</p>\n');
+  writeFile(root, 'docs/progress-log.md', '- RPP-0018 focused checks passed, but the item remains unchecked.\n');
+  writeFile(root, 'docs/supervisor-feedback.md', '- RPP-0019 is not complete and needs production-backed evidence.\n');
+  writeFile(root, 'docs/evidence/lane.md', 'RPP-0020 has claimed evidence toward the gate.\n');
+  writeFile(root, 'audits/audit.md', 'No checklist item should be marked complete from RPP-0021 evidence.\n');
+
+  const result = lintChecklistCompletion({ rootDir: root });
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.riskyClaims, []);
+  assert.deepEqual(result.reasonCodes, []);
+});
+
 test('flags risky completion language for unchecked RPP IDs while ignoring checked IDs', () => {
   const root = makeFixture();
   writeChecklist(root, [
