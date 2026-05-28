@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 22:38 CEST.
+- Last update: 2026-05-28 22:56 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 221
-  items checked and leaves 779 open.
-- Checked slices: 89 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 222
+  items checked and leaves 778 open.
+- Checked slices: 90 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -151,6 +151,17 @@ linked implementation artifacts.
   verifier server, redacts the credential, preserves `sourceCommandReadbackUrl`,
   and carries exact `manage-options-capability` evidence plus the final held
   marker. Final release remains `NO-GO`.
+- Release verifier dry-run route eligibility carry-through refresh: the current
+  lane now contains
+  `test/release-verifier-dry-run-route-carry-through-focused-regression.test.js`
+  for `RPP-0092`. The command
+  `node --test test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 35/35, proving the checked verifier emits
+  `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED` with source/local/changed URLs and
+  credentials present, exits before verifier startup or mutation, redacts the
+  credential, carries exact `dryRunRouteEligibility` evidence into release
+  gates, and keeps the eligible positive path held at `NO-GO` without final
+  production provenance.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also

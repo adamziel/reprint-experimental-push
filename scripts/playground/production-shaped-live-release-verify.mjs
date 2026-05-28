@@ -39,6 +39,8 @@ const explicitLiveUsername = process.env.REPRINT_PUSH_USERNAME || process.env.RE
 const explicitLiveApplicationPassword =
   process.env.REPRINT_PUSH_APPLICATION_PASSWORD || process.env.REPRINT_PUSH_LAB_AUTH_ADMIN_APP_PASSWORD || '';
 const explicitAuthSessionSourceCommand = process.env.REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND || '';
+const simulatedDryRunRouteEligibilityFailure =
+  process.env.REPRINT_PUSH_SIMULATE_DRY_RUN_ROUTE_ELIGIBILITY_FAILURE || '';
 const explicitCheckedBoundaryRequested = hasExplicitCheckedBoundaryRequest({
   liveSourceUrl: explicitLiveSourceUrl,
   username: explicitLiveUsername,
@@ -81,6 +83,10 @@ if (applicationPasswordBindingBlocker) {
 const manageOptionsCapabilityBlocker = resolveManageOptionsCapabilityBlocker(checkedExplicitAuthSessionSource);
 if (manageOptionsCapabilityBlocker) {
   emitManageOptionsCapabilityGateAndExit(manageOptionsCapabilityBlocker);
+}
+const dryRunRouteEligibilityBlocker = resolveDryRunRouteEligibilityBlocker(checkedExplicitAuthSessionSource);
+if (dryRunRouteEligibilityBlocker) {
+  emitDryRunRouteEligibilityGateAndExit(dryRunRouteEligibilityBlocker);
 }
 
 const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
@@ -752,6 +758,21 @@ function resolveManageOptionsCapabilityBlocker(authSessionSource) {
   };
 }
 
+function resolveDryRunRouteEligibilityBlocker(authSessionSource) {
+  if (!dryRunRouteEligibilityFailureRequested()) {
+    return null;
+  }
+
+  return {
+    authSessionSource,
+  };
+}
+
+function dryRunRouteEligibilityFailureRequested() {
+  return /^(1|true|yes|fail|failed|failure|ineligible|blocked)$/i
+    .test(String(simulatedDryRunRouteEligibilityFailure || '').trim());
+}
+
 function emitApplicationPasswordBindingGateAndExit(blocker) {
   const exitCode = 1;
   const reason = 'APPLICATION_PASSWORD_BINDING_REQUIRED';
@@ -817,6 +838,87 @@ function emitApplicationPasswordBindingGateAndExit(blocker) {
       code: reason,
     },
     authSessionSource: authSessionSourceSummary,
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: {
+        topology: { sourceUrl: explicitLiveSourceUrl },
+        authSessionSource: authSessionSourceSummary,
+      },
+      applyRevalidation: null,
+      releaseMovement,
+    }),
+    releaseMovement,
+  }, statusMarker);
+  process.exit(exitCode);
+}
+
+function emitDryRunRouteEligibilityGateAndExit(blocker) {
+  const exitCode = 1;
+  const reason = 'DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED';
+  const observed = 'dry-run-route-rejected-before-plan-upload';
+  const dryRunRouteEligibility = {
+    ok: false,
+    eligible: false,
+    observed,
+    checkedRoute: '/wp-json/reprint-push/v1/dry-run',
+    sourceUrl: explicitLiveSourceUrl,
+    method: 'POST',
+    routeNamespace: 'reprint-push/v1',
+    routeName: 'dry-run',
+    planUploadAllowed: false,
+    applyAttempted: false,
+    mutationAttempted: false,
+    scope: 'final-release',
+    rejectionStatus: 403,
+    rejectionCode: 'dry_run_route_not_allowed',
+  };
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason,
+  };
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason });
+  const authSessionSourceSummary = summarizeApplicationPasswordBindingAuthSource(
+    explicitAuthSessionSourceCommand,
+    blocker.authSessionSource,
+  );
+
+  emitVerifyReleaseFailurePayload({
+    ok: false,
+    statusMarker,
+    mutationAttempted: false,
+    topology: {
+      sourceUrl: explicitLiveSourceUrl,
+      remoteBase: null,
+      remoteChanged: null,
+      localEdited: null,
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'dry-run route eligibility on the checked live release path',
+      status: 'blocked',
+      verdict: reason,
+      route: {
+        required: 'dry-run route eligibility checked before apply',
+        observed,
+        verdict: reason,
+      },
+      dryRunRouteEligibility,
+    },
+    preflight: {
+      status: 0,
+      authSessionType: observed,
+      routeProfile: 'production-shaped',
+      session: {
+        id: '',
+        type: observed,
+      },
+    },
+    releaseProof: {
+      ok: false,
+      status: exitCode,
+      code: reason,
+    },
+    authSessionSource: authSessionSourceSummary,
+    dryRunRouteEligibility,
     topologyEvidence: buildReleaseTopologyEvidence({
       verify: {
         topology: { sourceUrl: explicitLiveSourceUrl },
