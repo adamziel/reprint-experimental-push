@@ -112,6 +112,14 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateDriverDeleteSupportFlagCases() {
+  return [
+    'delete-supported-applies',
+    'delete-unsupported-blocked',
+    'forged-delete-support-flag-rejected',
+  ].map((variant, index) => buildDriverDeleteSupportFlagCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -208,6 +216,122 @@ export function validateGeneratedCase(testCase) {
   return result;
 }
 
+export function validateDriverDeleteSupportFlagCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      evidenceScope: 'local-generated',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      status: plan.status,
+      mutation: mutation ? driverDeleteSupportMutationSummary(mutation) : null,
+      blocker: blocker ? driverDeleteSupportBlockerSummary(blocker) : null,
+    }),
+  };
+
+  assertDriverDeleteSupportRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied-delete') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.mutations.length, 1);
+    assert.equal(plan.blockers.length, 0);
+    assert.ok(mutation, `${testCase.id} should emit a delete mutation`);
+    assert.equal(mutation.action, 'delete');
+    assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+    assertDriverDeleteSupportAuditEvidence(mutation.pluginOwnedResource.auditEvidence, true);
+    assertDriverDeleteSupportChangeHashEvidence(mutation.change);
+    assertDriverDeleteSupportRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(Object.hasOwn(applied.site.db.wp_options, testCase.dataRowId), false);
+    assert.deepEqual(applied.site.plugins[testCase.plugin], testCase.expected.plugin);
+    result.outcome = 'applied-delete';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'blocked-unsupported-delete') {
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.mutations.length, 0);
+    assert.ok(blocker, `${testCase.id} should expose an unsupported delete-support blocker`);
+    assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+    assert.equal(blocker.driver, 'wp-option');
+    assert.equal(blocker.pluginOwner, testCase.plugin);
+    assert.equal(blocker.reason, 'Plugin-owned resource driver does not support delete mutations.');
+    assert.equal(blocker.change.localChange, 'delete');
+    assert.equal(blocker.change.remoteChange, 'unchanged');
+    assertDriverDeleteSupportChangeHashEvidence(blocker.change);
+    assertDriverDeleteSupportRedacted(testCase, blocker);
+
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const error = captureError(() => applyPlan(remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a blocked unsupported delete`);
+    assert.equal(
+      remote.db.wp_options[testCase.dataRowId].option_value.token,
+      testCase.expected.remoteToken,
+    );
+    assertDriverDeleteSupportRedacted(testCase, error.details);
+    result.outcome = 'blocked-unsupported-delete';
+    result.applied = false;
+    result.remotePreserved = true;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'rejected-forged-unsupported-delete');
+  assert.equal(plan.status, 'ready');
+  assert.ok(mutation, `${testCase.id} should start from a valid delete-support plan`);
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+  const forgedPlan = driverDeleteSupportForgedUnsupportedPlan(plan, mutation.id);
+  const forgedMutation = forgedPlan.mutations.find((entry) => entry.id === mutation.id);
+  assert.equal(forgedMutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(forgedMutation.pluginOwnedResource.auditEvidence.supportsDelete, false);
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, forgedPlan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(error.details.resourceKey, testCase.dataResourceKey);
+  assert.equal(error.details.pluginOwner, testCase.plugin);
+  assert.equal(error.details.driver, 'wp-option');
+  assert.equal(error.details.applyValidationEvidence.action, 'delete');
+  assert.equal(error.details.applyValidationEvidence.supportsDelete, false);
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a forged unsupported delete`);
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.token,
+    testCase.expected.remoteToken,
+  );
+  assertDriverDeleteSupportRedacted(testCase, error.details);
+  result.outcome = 'rejected-forged-unsupported-delete';
+  result.applied = false;
+  result.rejectionCode = error.code;
+  return result;
+}
+
 function buildGeneratedCase({ index, tier, rng }) {
   const id = `generated-push-${String(index + 1).padStart(3, '0')}`;
   const family = scenarioFamilies[index % scenarioFamilies.length];
@@ -256,6 +380,70 @@ function buildGeneratedCase({ index, tier, rng }) {
     local,
     remote,
   };
+}
+
+function buildDriverDeleteSupportFlagCase({ variant, index }) {
+  const base = buildBaseSite(4560 + index, 4);
+  const plugin = 'forms';
+  const optionName = `rpp_0456_driver_delete_support_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const secrets = {
+    pluginVersion: `rpp0456-plugin-version-secret-${index + 1}`,
+    baseOption: `rpp0456-base-delete-token-secret-${index + 1}`,
+  };
+  const supportsDelete = variant !== 'delete-unsupported-blocked';
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base-delete-target', token: secrets.baseOption },
+    __pluginOwner: plugin,
+  };
+
+  base.plugins[plugin] = { version: secrets.pluginVersion, active: true };
+  setRow(base, 'wp_options', dataRowId, baseRow);
+  allowPluginOwned(base, dataResourceKey, plugin, 'wp-option', { supportsDelete });
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  deleteRow(local, 'wp_options', dataRowId);
+  allowPluginOwned(local, dataResourceKey, plugin, 'wp-option', { supportsDelete });
+  allowPluginOwned(remote, dataResourceKey, plugin, 'wp-option', { supportsDelete });
+
+  const testCase = {
+    id: `rpp-0456-driver-delete-support-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'driver-delete-support-flag',
+    tags: new Set(['driver-delete-support-flag', 'plugin-owned-generated']),
+    plugin,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {
+      remoteToken: secrets.baseOption,
+      plugin: base.plugins[plugin],
+    },
+  };
+
+  if (variant === 'delete-supported-applies') {
+    testCase.tags.add('delete-support-true-applies');
+    testCase.expected.outcome = 'applied-delete';
+    return testCase;
+  }
+
+  if (variant === 'forged-delete-support-flag-rejected') {
+    testCase.tags.add('delete-support-forged-fail-closed');
+    testCase.expected.outcome = 'rejected-forged-unsupported-delete';
+    return testCase;
+  }
+
+  assert.equal(variant, 'delete-unsupported-blocked');
+  testCase.tags.add('delete-support-false-blocked');
+  testCase.expected.outcome = 'blocked-unsupported-delete';
+  return testCase;
 }
 
 const scenarioFamilyBuilders = {
@@ -868,6 +1056,81 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function driverDeleteSupportMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+    driver: mutation.pluginOwnedResource?.driver,
+    supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+    change: {
+      localChange: mutation.change.localChange,
+      remoteChange: mutation.change.remoteChange,
+      baseHash: mutation.change.base.hash,
+      localHash: mutation.change.local.hash,
+      remoteHash: mutation.change.remote.hash,
+    },
+  };
+}
+
+function driverDeleteSupportBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    resourceKey: blocker.resourceKey,
+    pluginOwner: blocker.pluginOwner,
+    driver: blocker.driver || null,
+    policySource: blocker.policySource || null,
+    localChange: blocker.change.localChange,
+    remoteChange: blocker.change.remoteChange,
+    baseHash: blocker.change.base.hash,
+    localHash: blocker.change.local.hash,
+    remoteHash: blocker.change.remote.hash,
+  };
+}
+
+function driverDeleteSupportForgedUnsupportedPlan(plan, mutationId) {
+  const forged = deepClone(plan);
+  const mutation = forged.mutations.find((entry) => entry.id === mutationId);
+  mutation.pluginOwnedResource.supportsDelete = false;
+  mutation.pluginOwnedResource.auditEvidence = {
+    ...mutation.pluginOwnedResource.auditEvidence,
+    supportsDelete: false,
+  };
+  return forged;
+}
+
+function assertDriverDeleteSupportAuditEvidence(evidence, supportsDelete) {
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'wp-option');
+  assert.equal(evidence.supportsDelete, supportsDelete);
+  for (const key of ['baseHash', 'localHash', 'remoteHash', 'ownerContextHash']) {
+    assert.match(evidence[key], /^[a-f0-9]{64}$/);
+  }
+}
+
+function assertDriverDeleteSupportChangeHashEvidence(change) {
+  assert.ok(change);
+  for (const side of ['base', 'local', 'remote']) {
+    assert.ok(['present', 'absent'].includes(change[side].state));
+    assert.match(change[side].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[side], 'value'), false);
+  }
+}
+
+function assertDriverDeleteSupportRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
+  }
 }
 
 function assertPlanContract(testCase, plan) {

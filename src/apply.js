@@ -298,6 +298,9 @@ function pluginOwnedOwner(value) {
 }
 
 function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
+  if (plannedValue === ABSENT && mutation.pluginOwnedResource?.supportsDelete !== true) {
+    return false;
+  }
   if (driver === 'wp-option') {
     return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options';
   }
@@ -413,6 +416,7 @@ function pluginOwnedApplyValidationEvidence({
     resourceKey: mutation.resourceKey,
     pluginOwner: owner,
     driver,
+    supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
     action: mutation.action,
     resource: pluginOwnedApplyValidationResourceEvidence(mutation.resource),
     planned: {

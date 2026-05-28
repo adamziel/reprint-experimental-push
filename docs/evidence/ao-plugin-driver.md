@@ -76,6 +76,32 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0456 generated driver delete support flag coverage
+
+RPP-0456 adds generated local evidence for the plugin-owned driver
+`supportsDelete` flag. The supported variant uses a `wp-option` driver policy
+with `supportsDelete: true`; the planner emits one plugin-owned delete mutation
+and apply removes the target row. The unsupported variant uses the same driver
+without delete support; the planner blocks with
+`unsupported-plugin-owned-resource` before emitting a mutation, and blocked
+apply leaves the remote row unchanged.
+
+The apply gate now also checks the delete-support flag so a forged ready plan
+with a plugin-owned delete mutation and `supportsDelete: false` fails before
+mutation with `UNSUPPORTED_PLUGIN_OWNED_RESOURCE`. The generated proof records
+only resource keys, action, driver/owner fields, support booleans, blocker
+classes, and hashes; generated plugin-version and option tokens are asserted
+absent from proof, blocker, audit, validation-error, and apply-error evidence.
+
+Evidence status: this is `local-generated` support evidence, not
+production-backed proof. It keeps the release posture at `NO-GO`.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0456|delete support|fixture forms lab table delete|plugin-owned option rows' test/generated-push-harness.test.js test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +115,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0456 — driver delete support flag: generated local evidence proves
+  supported plugin-owned deletes apply, unsupported deletes block in planning,
+  and forged unsupported delete plans fail closed during apply validation.
