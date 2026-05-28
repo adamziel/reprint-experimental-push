@@ -2743,6 +2743,85 @@ test('blocks an atomic plugin install when dependencies are absent', () => {
   assert.throws(() => applyPlan(baseSite(), plan), /Refusing to apply/);
 });
 
+test('RPP-0220 propagates atomic group blockers before mutation with redacted evidence', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const blockedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const privateValues = [
+    '<?php echo "local-private-rpp0220-file";',
+    'Local private RPP-0220 title',
+    'local-private-rpp0220-option-mode',
+  ];
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.pushIntents = [
+    {
+      id: 'rpp-0220-atomic-blocked-group',
+      kind: 'change-set',
+      requireAtomic: true,
+      resources: [
+        'file:index.php',
+        'row:["wp_posts","ID:1"]',
+        blockedResourceKey,
+      ],
+    },
+  ];
+  const journalEvents = [];
+  const durableJournal = {
+    appendEvent(type, payload) {
+      journalEvents.push({ type, payload });
+      return { sequence: journalEvents.length, type, ...payload };
+    },
+  };
+  const beforeRemote = JSON.stringify(remote);
+
+  const plan = planFor(base, local, remote);
+  const group = plan.atomicGroups.find((entry) => entry.id === 'rpp-0220-atomic-blocked-group');
+  const directBlocker = plan.blockers.find((blocker) => blocker.resourceKey === blockedResourceKey);
+  const propagatedBlockers = plan.blockers
+    .filter((blocker) => blocker.class === 'atomic-group-blocker-propagation')
+    .sort((a, b) => a.resourceKey.localeCompare(b.resourceKey));
+  const groupEvidence = JSON.stringify({ group, blockers: plan.blockers });
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.blockers, 3);
+  assert.equal(group.status, 'blocked');
+  assert.equal(directBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.match(directBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.deepEqual(
+    propagatedBlockers.map((blocker) => [
+      blocker.resourceKey,
+      blocker.groupId,
+      blocker.sourceBlockerIds,
+    ]),
+    [
+      ['file:index.php', 'rpp-0220-atomic-blocked-group', [directBlocker.id]],
+      ['row:["wp_posts","ID:1"]', 'rpp-0220-atomic-blocked-group', [directBlocker.id]],
+    ],
+  );
+  assert.deepEqual(
+    propagatedBlockers.map((blocker) => blocker.mutationId),
+    [
+      mutationFor(plan, 'file:index.php').id,
+      mutationFor(plan, 'row:["wp_posts","ID:1"]').id,
+    ],
+  );
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  for (const privateValue of privateValues) {
+    assert.equal(groupEvidence.includes(privateValue), false, `atomic blocker evidence leaked ${privateValue}`);
+  }
+
+  const error = captureError(() => applyPlan(remote, plan, { durableJournal }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.deepEqual(error.details, { status: 'blocked' });
+  assert.deepEqual(journalEvents, []);
+  assert.equal(JSON.stringify(remote), beforeRemote);
+});
+
 test('redacts raw plugin dependency metadata from blocker evidence', () => {
   const base = baseSite();
   const local = baseSite();
