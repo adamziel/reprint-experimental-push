@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:04 CEST
+Last updated: 2026-05-28 06:10 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:10 CEST - RPP-0217 Integrated
+
+- Going well: integration is now at `6d92f9517`, adding `RPP-0217` conflict
+  plan apply refusal. The focused planner/apply proof combines one independent
+  local file mutation with one divergent row conflict, keeps conflict evidence
+  stable and redacted, and proves `applyPlan()` rejects with `PLAN_NOT_READY`
+  before durable journal events or target mutation.
+- Checklist movement: 111 verified items checked and 889 open. New check since
+  the prior feedback entry: `RPP-0217`.
+- Verification: `node --test test/push-planner.test.js` passes 92/92,
+  checklist lint reports 111 checked / 889 open with 0 risky claims, artifact
+  redaction scans evidence and reporting surfaces with 0 rejected files, release
+  remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 06:04 CEST - RPP-0421 Integrated
 

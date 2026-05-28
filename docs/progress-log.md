@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:04 CEST.
+- Last update: 2026-05-28 06:10 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `78323671d` (`test: prove plugin driver registration api`).
+  `6d92f9517` (`test: prove conflict plan apply refusal`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 110
-  items complete and leaves 890 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 111
+  items complete and leaves 889 open.
 - Checked slices: 38 release-gate foundation items, 16 graph identity items,
   16 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 3 merge-invariant items. No release-ops items are checked
+  harness items, and 4 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -106,6 +106,14 @@ linked implementation artifacts.
   and keeps serialized planner evidence hash-only/redacted. Caveat: this is a
   focused local planner/apply invariant proof, not final production release
   evidence.
+- Conflict-plan refusal continuation: `6d92f9517` integrated `RPP-0217`
+  conflict plan apply refusal. Focused command:
+  `node --test test/push-planner.test.js` (92 passing planner tests). The proof
+  plans one independent local file mutation plus one divergent row conflict,
+  verifies stable summary/conflict evidence without raw row values, and confirms
+  `applyPlan()` fails with `PLAN_NOT_READY` before durable journal events or
+  target mutation. Caveat: this is a focused local planner/apply invariant proof,
+  not final production release evidence.
 - Stale plugin metadata owner continuation: `43beb7c9c` integrated
   `RPP-0414` stale plugin metadata owner context refusal. Focused planner
   tests reject stale plugin-owned row and plugin file mutations before mutation
@@ -143,7 +151,7 @@ linked implementation artifacts.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
-  release-gate tests, `node --test test/push-planner.test.js` with 91 passing
+  release-gate tests, `node --test test/push-planner.test.js` with 92 passing
   planner tests, `node --test test/plugin-owner-context-metadata-refusal.test.js`
   with 3 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   with 29 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
