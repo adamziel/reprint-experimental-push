@@ -5,6 +5,7 @@ import {
   buildFeaturedImageIdentityMapProof,
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
+  buildPostAuthorIdentityMapProof,
   buildComplexSiteSeedPhp,
   buildProductionImporterExporterIdentityMapProof,
   complexSiteFixtureShapeFromEnv,
@@ -23,6 +24,7 @@ const smallShape = Object.freeze({
   featuredImageIdentityMap: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  postAuthorIdentityMap: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -271,6 +273,43 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site proof rewrites post_author identity maps and fails closed when stale', () => {
+  const graphShape = { ...smallShape, postAuthorIdentityMap: true };
+  const proof = buildPostAuthorIdentityMapProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const staleBlockerJson = JSON.stringify(proof.staleBlocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.postAuthorIdentitySourceUsers, 0);
+  assert.equal(proof.counts.localEdited.postAuthorIdentitySourceUsers, 1);
+  assert.equal(proof.counts.localEdited.postAuthorIdentityPosts, 1);
+  assert.equal(proof.counts.remoteChanged.postAuthorIdentityTargetUsers, 1);
+  assert.equal(proof.invariants.readyMapsDeterministically, true);
+  assert.equal(proof.invariants.postAuthorRewritten, true);
+  assert.equal(proof.invariants.sourceUserNotMutated, true);
+  assert.equal(proof.invariants.authoredPostHasLivePrecondition, true);
+  assert.equal(proof.invariants.staleTargetFailsClosed, true);
+  assert.equal(proof.invariants.staleTargetPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.staleTargetNoAuthoredPostMutation, true);
+  assert.equal(proof.invariants.staleBlockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.staleBlockerRedactsRawValues, true);
+  assert.equal(proof.authoredPost.resourceKey, 'row:["wp_posts","ID:71711"]');
+  assert.equal(proof.authoredPost.postAuthor, 72701);
+  assert.equal(proof.authoredPost.rewriteType, 'post-author');
+  assert.equal(proof.authoredPost.sourceTargetResourceKey, 'row:["wp_users","ID:71701"]');
+  assert.equal(proof.authoredPost.targetResourceKey, 'row:["wp_users","ID:72701"]');
+  assert.equal(staleBlockerJson.includes('reprint-push-post-author-identity'), false);
+  assert.equal(staleBlockerJson.includes('post-author-identity@example.test'), false);
+  assert.equal(staleBlockerJson.includes('Remote Private Post Author Drift'), false);
+  assert.equal(staleBlockerJson.includes('Reprint Push Post Author Identity Post'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -702,6 +741,39 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.postAuthorIdentityMap && local) {
+    snapshot.meta.wordpressGraphIdentityMap = {
+      rows: [
+        { table: 'wp_users', localId: 'ID:71701', remoteId: 'ID:72701' },
+      ],
+    };
+    snapshot.db.wp_users['ID:71701'] = {
+      ID: 71701,
+      user_login: 'reprint-push-post-author-identity',
+      user_email: 'post-author-identity@example.test',
+      display_name: 'Reprint Push Post Author Identity',
+    };
+    snapshot.db.wp_posts['ID:71711'] = {
+      ID: 71711,
+      post_title: 'Reprint Push Post Author Identity Post',
+      post_name: 'reprint-push-post-author-identity-post',
+      post_content: 'Local post_author points at a mapped local user.',
+      post_status: 'publish',
+      post_type: 'post',
+      post_parent: 0,
+      post_author: 71701,
+    };
+  }
+
+  if (shape.postAuthorIdentityMap && remote) {
+    snapshot.db.wp_users['ID:72701'] = {
+      ID: 72701,
+      user_login: 'reprint-push-post-author-identity',
+      user_email: 'post-author-identity@example.test',
+      display_name: 'Reprint Push Post Author Identity',
     };
   }
 
