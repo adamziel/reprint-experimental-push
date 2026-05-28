@@ -5,8 +5,10 @@ import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
   generatePushHarnessCases,
+  generatePluginActivationDependencyValidatorCases,
   runGeneratedPushHarness,
   validateGeneratedCase,
+  validatePluginActivationDependencyValidatorCase,
 } from '../scripts/harness/generated-push-cases.js';
 
 const requiredFamilies = [
@@ -102,6 +104,63 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0449 generated activation dependency validator preserves drift and fails closed', () => {
+  const cases = generatePluginActivationDependencyValidatorCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'same-group-active-dependency-applies',
+    'live-remote-active-dependency-applies',
+    'remote-drift-preserved',
+    'inactive-live-dependency-blocked',
+    'unsupported-version-range-blocked',
+    'missing-live-evidence-rejected',
+    'stale-live-evidence-rejected',
+  ]);
+  assert.equal(
+    cases.every((testCase) => testCase.tags.has('plugin-activation-dependency-validator')),
+    true,
+  );
+  assert.equal(cases.every((testCase) => testCase.resourceKey.startsWith('row:["wp_options"')), true);
+
+  const results = cases.map(validatePluginActivationDependencyValidatorCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'same-group-active-dependency-applies': 'applied-local',
+    'live-remote-active-dependency-applies': 'applied-local',
+    'remote-drift-preserved': 'preserved-remote',
+    'inactive-live-dependency-blocked': 'blocked',
+    'unsupported-version-range-blocked': 'blocked',
+    'missing-live-evidence-rejected': 'rejected-at-apply',
+    'stale-live-evidence-rejected': 'rejected-at-apply',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['same-group-active-dependency-applies'].status, 'ready');
+  assert.equal(byVariant['live-remote-active-dependency-applies'].status, 'ready');
+  assert.equal(byVariant['remote-drift-preserved'].status, 'ready');
+  assert.equal(byVariant['remote-drift-preserved'].mutations, 0);
+  assert.equal(byVariant['remote-drift-preserved'].decisions, 1);
+  assert.equal(
+    byVariant['inactive-live-dependency-blocked'].blockerClass,
+    'incompatible-plugin-dependency-activation',
+  );
+  assert.equal(
+    byVariant['unsupported-version-range-blocked'].blockerClass,
+    'unsupported-plugin-dependency-version-range',
+  );
+  assert.equal(
+    byVariant['missing-live-evidence-rejected'].rejectionCode,
+    'ATOMIC_GROUP_DEPENDENCY_EVIDENCE_MISSING',
+  );
+  assert.equal(
+    byVariant['stale-live-evidence-rejected'].rejectionCode,
+    'ATOMIC_GROUP_DEPENDENCY_STALE',
+  );
+  for (const result of results) {
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

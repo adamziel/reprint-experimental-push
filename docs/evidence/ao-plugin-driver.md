@@ -76,6 +76,31 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0449 generated activation dependency validator
+
+RPP-0449 adds a deterministic generated support-only matrix for plugin
+activation dependency validation around the atomic fixture plugins. The matrix
+covers same-group active dependency activation, live-remote active dependency
+validation, remote-only plugin-owned data drift preservation, inactive
+dependency refusal, unsupported dependency version-range evidence refusal, and
+apply-time refusal for missing or stale live dependency evidence.
+
+The remote-drift variant leaves plugin-owned remote option data unchanged: the
+plan stays ready, records a `keep-remote` decision, emits zero mutations, and
+`applyPlan()` preserves the remote row. The unsupported/refusal variants fail
+closed before mutation. Decision, blocker, dependency requirement, audit, error,
+and journal evidence is hash-only/redacted for plugin-owned data; generated
+base/local/remote/dependency tokens are asserted absent from evidence payloads.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0449' test/generated-push-harness.test.js
+```
+
+This is generated support-only evidence. It does not broaden production
+plugin-driver acceptance or change the release NO-GO posture.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +114,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0449 — generated activation dependency validator: active dependency
+  evidence supports valid atomic plugin-owned mutations, while remote drift is
+  preserved and unsupported/missing/stale dependency evidence fails closed.

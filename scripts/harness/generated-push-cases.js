@@ -112,6 +112,18 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generatePluginActivationDependencyValidatorCases() {
+  return [
+    'same-group-active-dependency-applies',
+    'live-remote-active-dependency-applies',
+    'remote-drift-preserved',
+    'inactive-live-dependency-blocked',
+    'unsupported-version-range-blocked',
+    'missing-live-evidence-rejected',
+    'stale-live-evidence-rejected',
+  ].map((variant, index) => buildPluginActivationDependencyValidatorCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -164,6 +176,148 @@ export function runGeneratedPushHarness(options = {}) {
   };
 }
 
+export function validatePluginActivationDependencyValidatorCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const group = plan.atomicGroups.find((entry) => entry.id === testCase.intentId);
+  const requirement = group?.dependencyRequirements?.[0] || null;
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const decision = plan.decisions.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.class === testCase.expected.blockerClass);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    blockers: plan.blockers.length,
+    atomicGroups: plan.atomicGroups.length,
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      status: plan.status,
+      group: group ? pluginActivationDependencyGroupSummary(group) : null,
+      mutation: mutation ? pluginActivationDependencyMutationSummary(mutation) : null,
+      decision: decision ? pluginActivationDependencyDecisionSummary(decision) : null,
+      blocker: blocker ? pluginActivationDependencyBlockerSummary(blocker) : null,
+    }),
+  };
+
+  assertPluginActivationDependencyRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied-local') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(group?.status, 'ready');
+    assert.equal(requirement?.plugin, atomicDependencyPlugin);
+    assert.equal(requirement?.active, true);
+    assert.equal(requirement?.source, testCase.expected.dependencySource);
+    assertPluginActivationDependencyRequirementHashes(requirement, testCase.expected.dependencySource);
+    assert.ok(mutation, `${testCase.id} should plan plugin-owned data mutation`);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, atomicDependentPlugin);
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assertPluginActivationDependencyAuditRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.mode,
+      testCase.expected.localMode,
+    );
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.token,
+      testCase.expected.localToken,
+    );
+    assertPluginActivationDependencyRedacted(testCase, applied.journal);
+    result.outcome = 'applied-local';
+    result.applied = true;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'preserved-remote') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(group?.status, 'ready');
+    assert.equal(plan.mutations.length, 0);
+    assert.ok(decision, `${testCase.id} should keep remote plugin-owned data`);
+    assert.equal(decision.decision, 'keep-remote');
+    assert.equal(decision.change.localChange, 'unchanged');
+    assert.equal(decision.change.remoteChange, 'update');
+    assertPluginActivationDependencyChangeHashEvidence(decision.change);
+    assert.equal(requirement?.source, 'live-remote');
+    assertPluginActivationDependencyRequirementHashes(requirement, 'live-remote');
+    assertPluginActivationDependencyRedacted(testCase, decision);
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const applied = applyPlan(remote, plan);
+    assert.equal(applied.appliedMutations, 0);
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated remote-only drift`);
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.mode,
+      testCase.expected.remoteMode,
+    );
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.token,
+      testCase.expected.remoteToken,
+    );
+    assertPluginActivationDependencyRedacted(testCase, applied.journal);
+    result.outcome = 'preserved-remote';
+    result.applied = false;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'blocked') {
+    assert.equal(plan.status, 'blocked');
+    assert.equal(group?.status, 'blocked');
+    assert.ok(blocker, `${testCase.id} should expose ${testCase.expected.blockerClass}`);
+    assert.equal(blocker.plugin, atomicDependencyPlugin);
+    assertPluginActivationDependencyRedacted(testCase, blocker);
+    if (mutation) {
+      assertPluginActivationDependencyAuditRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+    }
+    const remoteBefore = digest(testCase.remote);
+    const error = captureError(() => applyPlan(testCase.remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(testCase.remote), remoteBefore, `${testCase.id} mutated blocked remote`);
+    assertPluginActivationDependencyRedacted(testCase, error.details);
+    result.outcome = 'blocked';
+    result.blockerClass = blocker.class;
+    result.applied = false;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'rejected-at-apply');
+  assert.equal(plan.status, 'ready');
+  assert.equal(group?.status, 'ready');
+  assert.ok(mutation, `${testCase.id} should have a forged-ready mutation target`);
+  assert.equal(requirement?.source, 'live-remote');
+  assertPluginActivationDependencyRequirementHashes(requirement, 'live-remote');
+  const forgedPlan = deepClone(plan);
+  const remote = deepClone(testCase.remote);
+  if (testCase.expected.rejectionCode === 'ATOMIC_GROUP_DEPENDENCY_EVIDENCE_MISSING') {
+    delete forgedPlan.atomicGroups[0].dependencyRequirements[0].remoteHash;
+    delete forgedPlan.atomicGroups[0].dependencyRequirements[0].hash;
+    delete forgedPlan.atomicGroups[0].dependencyRequirements[0].expectedHash;
+  } else {
+    remote.plugins[atomicDependencyPlugin].version = '1.0.1';
+  }
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, forgedPlan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, testCase.expected.rejectionCode);
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated rejected remote`);
+  assert.equal(
+    remote.db.wp_options[testCase.rowId].option_value.mode,
+    testCase.expected.remoteMode,
+  );
+  assertPluginActivationDependencyRedacted(testCase, error.details);
+  result.outcome = 'rejected-at-apply';
+  result.rejectionCode = error.code;
+  result.applied = false;
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -206,6 +360,205 @@ export function validateGeneratedCase(testCase) {
   assert.equal(digest(testCase.remote), before, `${testCase.id} mutated a non-ready remote`);
   result.applied = false;
   return result;
+}
+
+function buildPluginActivationDependencyValidatorCase({ variant, index }) {
+  const base = buildBaseSite(4490 + index, 4);
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const optionName = `rpp_0449_activation_dependency_${index + 1}`;
+  const rowId = `option_name:${optionName}`;
+  const resourceKey = rowKey('wp_options', rowId);
+  const intentId = `rpp-0449-${variant}`;
+  const secrets = {
+    base: `rpp0449-base-plugin-data-secret-${index + 1}`,
+    local: `rpp0449-local-plugin-data-secret-${index + 1}`,
+    remote: `rpp0449-remote-plugin-data-secret-${index + 1}`,
+    dependency: `rpp0449-dependency-evidence-secret-${index + 1}`,
+  };
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base', token: secrets.base },
+    __pluginOwner: atomicDependentPlugin,
+  };
+
+  setAtomicPlugin(base, atomicDependentPlugin, { version: '1.0.0', active: true });
+  setAtomicPlugin(local, atomicDependentPlugin, { version: '1.0.0', active: true });
+  setAtomicPlugin(remote, atomicDependentPlugin, { version: '1.0.0', active: true });
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, baseRow);
+  setRow(remote, 'wp_options', rowId, baseRow);
+  allowPluginOwned(base, resourceKey, atomicDependentPlugin, 'wp-option');
+  allowPluginOwned(local, resourceKey, atomicDependentPlugin, 'wp-option');
+  allowPluginOwned(remote, resourceKey, atomicDependentPlugin, 'wp-option');
+
+  const testCase = {
+    id: `rpp-0449-activation-dependency-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'plugin-activation-dependency-validator',
+    tags: new Set(['plugin-activation-dependency-validator', 'plugin-owned-generated']),
+    resourceKey,
+    rowId,
+    intentId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'same-group-active-dependency-applies') {
+    delete base.plugins[atomicDependencyPlugin];
+    delete base.plugins[atomicDependentPlugin];
+    delete remote.plugins[atomicDependencyPlugin];
+    delete remote.plugins[atomicDependentPlugin];
+    delete base.files[pluginMainFile(atomicDependencyPlugin)];
+    delete base.files[pluginMainFile(atomicDependentPlugin)];
+    delete remote.files[pluginMainFile(atomicDependencyPlugin)];
+    delete remote.files[pluginMainFile(atomicDependentPlugin)];
+    deleteRow(base, 'wp_options', rowId);
+    deleteRow(remote, 'wp_options', rowId);
+    setAtomicPlugin(local, atomicDependencyPlugin, { version: '1.0.0', active: true });
+    setAtomicPlugin(local, atomicDependentPlugin, { version: '1.0.0', active: true });
+    setRow(local, 'wp_options', rowId, {
+      ...baseRow,
+      option_value: { mode: 'local-same-group-active', token: secrets.local },
+    });
+    local.pushIntents = [
+      pluginActivationDependencyIntent({
+        id: intentId,
+        resourceKey,
+        resources: [
+          `file:${pluginMainFile(atomicDependencyPlugin)}`,
+          `file:${pluginMainFile(atomicDependentPlugin)}`,
+          `plugin:${atomicDependencyPlugin}`,
+          `plugin:${atomicDependentPlugin}`,
+          resourceKey,
+        ],
+        dependency: {
+          name: atomicDependencyPlugin,
+          expectedVersion: '1.0.0',
+          active: true,
+          expectedHash: resourceHash(local, pluginResource(atomicDependencyPlugin)),
+          accessToken: secrets.dependency,
+        },
+        privateEnvelope: secrets.dependency,
+      }),
+    ];
+    testCase.tags.add('activation-dependency-supported');
+    testCase.expected = {
+      outcome: 'applied-local',
+      dependencySource: 'same-atomic-group',
+      localMode: 'local-same-group-active',
+      localToken: secrets.local,
+    };
+    return testCase;
+  }
+
+  setAtomicPlugin(base, atomicDependencyPlugin, { version: '1.0.0', active: true });
+  setAtomicPlugin(local, atomicDependencyPlugin, { version: '1.0.0', active: true });
+  setAtomicPlugin(remote, atomicDependencyPlugin, { version: '1.0.0', active: true });
+  const dependency = {
+    name: atomicDependencyPlugin,
+    expectedVersion: '1.0.0',
+    active: true,
+    accessToken: secrets.dependency,
+  };
+
+  if (variant === 'remote-drift-preserved') {
+    remote.db.wp_options[rowId].option_value = {
+      mode: 'remote-plugin-owned-drift',
+      token: secrets.remote,
+    };
+    local.pushIntents = [
+      pluginActivationDependencyIntent({
+        id: intentId,
+        resourceKey,
+        resources: [resourceKey],
+        dependency,
+        privateEnvelope: secrets.dependency,
+      }),
+    ];
+    testCase.tags.add('activation-dependency-remote-preserved');
+    testCase.expected = {
+      outcome: 'preserved-remote',
+      remoteMode: 'remote-plugin-owned-drift',
+      remoteToken: secrets.remote,
+    };
+    return testCase;
+  }
+
+  local.db.wp_options[rowId].option_value = {
+    mode: `local-${variant}`,
+    token: secrets.local,
+  };
+  local.pushIntents = [
+    pluginActivationDependencyIntent({
+      id: intentId,
+      resourceKey,
+      resources: [resourceKey],
+      dependency,
+      privateEnvelope: secrets.dependency,
+    }),
+  ];
+
+  if (variant === 'live-remote-active-dependency-applies') {
+    testCase.tags.add('activation-dependency-supported');
+    testCase.expected = {
+      outcome: 'applied-local',
+      dependencySource: 'live-remote',
+      localMode: 'local-live-remote-active-dependency-applies',
+      localToken: secrets.local,
+    };
+    return testCase;
+  }
+
+  if (variant === 'inactive-live-dependency-blocked') {
+    setAtomicPlugin(base, atomicDependencyPlugin, { version: '1.0.0', active: false });
+    setAtomicPlugin(local, atomicDependencyPlugin, { version: '1.0.0', active: false });
+    setAtomicPlugin(remote, atomicDependencyPlugin, { version: '1.0.0', active: false });
+    testCase.tags.add('activation-dependency-blocked');
+    testCase.expected = {
+      outcome: 'blocked',
+      blockerClass: 'incompatible-plugin-dependency-activation',
+    };
+    return testCase;
+  }
+
+  if (variant === 'unsupported-version-range-blocked') {
+    local.pushIntents[0].dependencies.plugins[0] = {
+      name: atomicDependencyPlugin,
+      versionRange: '^1.0.0',
+      active: true,
+      accessToken: secrets.dependency,
+    };
+    testCase.tags.add('activation-dependency-blocked');
+    testCase.expected = {
+      outcome: 'blocked',
+      blockerClass: 'unsupported-plugin-dependency-version-range',
+    };
+    return testCase;
+  }
+
+  if (variant === 'missing-live-evidence-rejected') {
+    testCase.tags.add('activation-dependency-apply-refusal');
+    testCase.expected = {
+      outcome: 'rejected-at-apply',
+      rejectionCode: 'ATOMIC_GROUP_DEPENDENCY_EVIDENCE_MISSING',
+      remoteMode: 'base',
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'stale-live-evidence-rejected');
+  testCase.tags.add('activation-dependency-apply-refusal');
+  testCase.expected = {
+    outcome: 'rejected-at-apply',
+    rejectionCode: 'ATOMIC_GROUP_DEPENDENCY_STALE',
+    remoteMode: 'base',
+  };
+  return testCase;
 }
 
 function buildGeneratedCase({ index, tier, rng }) {
@@ -870,6 +1223,112 @@ function addReadyPreservingComplexityOperation({
   tags.add('already-in-sync');
 }
 
+function pluginActivationDependencyGroupSummary(group) {
+  return {
+    id: group.id,
+    status: group.status,
+    mutationIds: group.mutationIds.length,
+    dependencies: group.dependencies,
+    dependencyRequirements: (group.dependencyRequirements || []).map((requirement) => ({
+      plugin: requirement.plugin,
+      expectedVersion: requirement.expectedVersion,
+      versionRange: requirement.versionRange,
+      active: requirement.active,
+      source: requirement.source,
+      resourceKey: requirement.resourceKey,
+      baseHash: requirement.baseHash,
+      remoteHash: requirement.remoteHash,
+      plannedHash: requirement.plannedHash,
+      expectedHash: requirement.expectedHash,
+    })),
+    blockers: (group.blockers || []).map(pluginActivationDependencyBlockerSummary),
+  };
+}
+
+function pluginActivationDependencyMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    atomicGroupId: mutation.atomicGroupId || null,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    baseHash: mutation.baseHash,
+    localHash: mutation.localHash,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+  };
+}
+
+function pluginActivationDependencyDecisionSummary(decision) {
+  return {
+    resourceKey: decision.resourceKey,
+    decision: decision.decision,
+    baseHash: decision.baseHash,
+    remoteHash: decision.remoteHash,
+    change: decision.change,
+  };
+}
+
+function pluginActivationDependencyBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    groupId: blocker.groupId || null,
+    resourceKey: blocker.resourceKey || null,
+    plugin: blocker.plugin || null,
+    dependencyIndex: blocker.dependencyIndex ?? null,
+    dependency: blocker.dependency || null,
+    expectedActive: blocker.expectedActive ?? null,
+    actualActive: blocker.actualActive ?? null,
+    expectedHash: blocker.expectedHash || null,
+    actualHash: blocker.actualHash || null,
+    versionRange: blocker.versionRange || null,
+    source: blocker.source || null,
+    sourceBlockerIds: blocker.sourceBlockerIds || null,
+  };
+}
+
+function assertPluginActivationDependencyRequirementHashes(requirement, source) {
+  assert.ok(requirement, `missing ${source} dependency requirement`);
+  assert.equal(requirement.plugin, atomicDependencyPlugin);
+  if (source === 'live-remote') {
+    assert.match(requirement.baseHash, /^[a-f0-9]{64}$/);
+    assert.match(requirement.remoteHash, /^[a-f0-9]{64}$/);
+    return;
+  }
+  assert.equal(source, 'same-atomic-group');
+  assert.match(requirement.plannedHash, /^[a-f0-9]{64}$/);
+  assert.match(requirement.expectedHash, /^[a-f0-9]{64}$/);
+}
+
+function assertPluginActivationDependencyChangeHashEvidence(change) {
+  for (const state of ['base', 'local', 'remote']) {
+    assert.ok(change[state], `missing ${state} hash evidence`);
+    assert.equal(Object.hasOwn(change[state], 'hash'), true, `missing ${state} hash`);
+    assert.match(change[state].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[state], 'value'), false, `${state} evidence leaked a value`);
+  }
+}
+
+function assertPluginActivationDependencyAuditRedacted(testCase, auditEvidence) {
+  assert.ok(auditEvidence, `${testCase.id} missing plugin-owned audit evidence`);
+  const serialized = JSON.stringify(auditEvidence);
+  assert.match(digest(auditEvidence), /^[a-f0-9]{64}$/);
+  assert.equal(serialized.includes('"option_value"'), false, `${testCase.id} audit leaked option value`);
+  assertPluginActivationDependencyRedacted(testCase, auditEvidence);
+}
+
+function assertPluginActivationDependencyRedacted(testCase, evidence) {
+  const serialized = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(
+      serialized.includes(token),
+      false,
+      `${testCase.id} leaked activation dependency token ${token}`,
+    );
+  }
+}
+
 function assertPlanContract(testCase, plan) {
   assert.equal(plan.summary.mutations, plan.mutations.length, `${testCase.id} mutation summary mismatch`);
   assert.equal(plan.summary.decisions, plan.decisions.length, `${testCase.id} decision summary mismatch`);
@@ -1086,6 +1545,38 @@ function installAtomicStack(local) {
       },
     },
   ];
+}
+
+function setAtomicPlugin(site, plugin, { version, active }) {
+  site.files[pluginMainFile(plugin)] = `<?php /* generated ${plugin} ${version} */`;
+  site.plugins[plugin] = { version, active };
+}
+
+function pluginActivationDependencyIntent({
+  id,
+  resourceKey,
+  resources,
+  dependency,
+  privateEnvelope,
+}) {
+  return {
+    id,
+    kind: 'plugin-activation-dependency-validation',
+    label: id,
+    requireAtomic: true,
+    resources,
+    dependencies: {
+      privateEnvelope,
+      plugins: [dependency],
+    },
+    resourcePolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          allowedPluginOwnedResource(resourceKey, atomicDependentPlugin, 'wp-option'),
+        ],
+      },
+    },
+  };
 }
 
 function addFileCreateUpdateDeleteMix(local, remote, allocator, tags, { conflict, prefix }) {
