@@ -610,15 +610,20 @@ function isLoopbackHost(hostname) {
 }
 
 function emitReleaseFailureAndExit(verify) {
+  const exitCode = verify.status || 1;
+  const reason = verify.proof?.releaseProof?.code
+    || verify.proof?.boundary?.verdict
+    || 'CHECKED_RELEASE_VERIFIER_FAILED';
   const releaseMovement = {
     allowed: false,
     gates: '0/4',
-    reason: verify.proof?.releaseProof?.code
-      || verify.proof?.boundary?.verdict
-      || 'checked release verifier failed closed',
+    reason,
   };
-  process.stdout.write(JSON.stringify({
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason });
+  emitVerifyReleaseFailurePayload({
     ...(verify.proof || {}),
+    statusMarker,
+    mutationAttempted: false,
     topologyEvidence: buildReleaseTopologyEvidence({
       verify: verify.proof || null,
       applyRevalidation: null,
@@ -626,118 +631,139 @@ function emitReleaseFailureAndExit(verify) {
       releaseMovement,
     }),
     releaseMovement,
-  }, null, 2));
-  process.stdout.write('\n');
-  process.exit(verify.status || 1);
+  }, statusMarker);
+  process.exit(exitCode);
 }
 
 function emitTopologyGateFailureAndExit(blocker) {
+  const exitCode = 1;
   const releaseMovement = {
     allowed: false,
     gates: '0/4',
     reason: blocker.reason,
   };
-  process.stdout.write(
-    JSON.stringify(
-      {
-        ok: false,
-        topology: {
-          sourceUrl: configuredLiveSourceUrl,
-          remoteBase: configuredLiveSourceUrl || null,
-          remoteChanged: explicitLiveRemoteChangedUrl || null,
-          localEdited: explicitLiveLocalUrl || null,
-        },
-        boundary: blocker.boundary,
-        releaseProof: {
-          ok: false,
-          status: 1,
-          code: blocker.code,
-        },
-        topologyEvidence: buildReleaseTopologyEvidence({
-          verify: null,
-          applyRevalidation: null,
-          options: { packagedBoundaryRequested },
-          releaseMovement,
-          blocker,
-        }),
-        releaseMovement,
-      },
-      null,
-      2,
-    ),
-  );
-  process.stdout.write('\n');
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason: blocker.code });
+  const payload = {
+    ok: false,
+    statusMarker,
+    mutationAttempted: false,
+    topology: {
+      sourceUrl: configuredLiveSourceUrl,
+      remoteBase: configuredLiveSourceUrl || null,
+      remoteChanged: explicitLiveRemoteChangedUrl || null,
+      localEdited: explicitLiveLocalUrl || null,
+    },
+    boundary: blocker.boundary,
+    releaseProof: {
+      ok: false,
+      status: exitCode,
+      code: blocker.code,
+    },
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: null,
+      applyRevalidation: null,
+      options: { packagedBoundaryRequested },
+      releaseMovement,
+      blocker,
+    }),
+    releaseMovement,
+  };
   if (blocker.code === 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED') {
     process.stderr.write(
       'REPRINT_PUSH_LIVE_SOURCE_REQUIRED: production push requires REPRINT_PUSH_SOURCE_URL; gates remain 0/4 and packaged fallback is not allowed for release movement.\n',
     );
   }
-  process.exit(1);
+  emitVerifyReleaseFailurePayload(payload, statusMarker);
+  process.exit(exitCode);
 }
 
 function emitMissingExplicitCredentialGateAndExit() {
+  const exitCode = 1;
   const releaseMovement = {
     allowed: false,
     gates: '0/4',
     reason: 'explicit live source URL is present but production credentials are missing',
   };
-  process.stdout.write(
-    JSON.stringify(
-      {
-        ok: false,
-        topology: {
-          sourceUrl: explicitLiveSourceUrl,
-          remoteBase: null,
-          remoteChanged: null,
-          localEdited: null,
-        },
-        boundary: {
-          firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
-          status: 'unimplemented',
-          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          durableJournal: {
-            storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
-            verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
-          },
-          authSession: {
-            required: 'production-auth-session',
-            observed: 'missing-production-credentials',
-            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-          },
-          liveAuthSessionSource: {
-            requiredCommand: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
-            verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
-            observed: 'missing-production-credentials',
-          },
-        },
-        preflight: {
-          status: 0,
-          authSessionType: 'missing-production-credentials',
-          routeProfile: 'production-shaped',
-          session: {
-            id: '',
-            type: 'missing-production-credentials',
-          },
-        },
-        releaseProof: {
-          ok: false,
-          status: 1,
-          code: 'REPRINT_PUSH_SECRET_REQUIRED',
-        },
-        authSessionSource: null,
-        topologyEvidence: buildReleaseTopologyEvidence({
-          verify: null,
-          applyRevalidation: null,
-          releaseMovement,
-        }),
-        releaseMovement,
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({
+    exitCode,
+    reason: 'REPRINT_PUSH_SECRET_REQUIRED',
+  });
+  emitVerifyReleaseFailurePayload(
+    {
+      ok: false,
+      statusMarker,
+      mutationAttempted: false,
+      topology: {
+        sourceUrl: explicitLiveSourceUrl,
+        remoteBase: null,
+        remoteChanged: null,
+        localEdited: null,
       },
-      null,
-      2,
-    ),
+      boundary: {
+        firstRemainingProductionBoundary: 'auth/session lifecycle and durable journal semantics',
+        status: 'unimplemented',
+        verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        durableJournal: {
+          storageLeaseFence: 'production durable journal storage, lease, and fencing are not yet proven beyond the retained Playground journal path',
+          verdict: 'PRODUCTION_DURABLE_JOURNAL_STORAGE_REQUIRED',
+        },
+        authSession: {
+          required: 'production-auth-session',
+          observed: 'missing-production-credentials',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+        },
+        liveAuthSessionSource: {
+          requiredCommand: 'REPRINT_PUSH_AUTH_SESSION_SOURCE_COMMAND',
+          verdict: 'PRODUCTION_AUTH_SESSION_LIFECYCLE_REQUIRED',
+          observed: 'missing-production-credentials',
+        },
+      },
+      preflight: {
+        status: 0,
+        authSessionType: 'missing-production-credentials',
+        routeProfile: 'production-shaped',
+        session: {
+          id: '',
+          type: 'missing-production-credentials',
+        },
+      },
+      releaseProof: {
+        ok: false,
+        status: exitCode,
+        code: 'REPRINT_PUSH_SECRET_REQUIRED',
+      },
+      authSessionSource: null,
+      topologyEvidence: buildReleaseTopologyEvidence({
+        verify: null,
+        applyRevalidation: null,
+        releaseMovement,
+      }),
+      releaseMovement,
+    },
+    statusMarker,
   );
-  process.stdout.write('\n');
-  process.exit(1);
+  process.exit(exitCode);
+}
+
+function emitVerifyReleaseFailurePayload(payload, statusMarker) {
+  process.stdout.write(JSON.stringify(payload, null, 2));
+  process.stdout.write(`\n${statusMarker}\n`);
+}
+
+function formatVerifyReleaseFailureStatusMarker({
+  exitCode = 1,
+  reason = 'UNKNOWN_VERIFY_RELEASE_FAILURE',
+  mutationAttempted = false,
+} = {}) {
+  return `[verify-release:held exit=${sanitizeStatusMarkerToken(exitCode)} reason=${sanitizeStatusMarkerToken(reason)} mutationAttempted=${mutationAttempted === true ? 'true' : 'false'}]`;
+}
+
+function sanitizeStatusMarkerToken(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/[\s\]]+/g, '-')
+    .replace(/[^\w./:@+-]/g, '-')
+    || 'unknown';
 }
 
 function parseJsonOutput(stdout, label, details = stdout) {
