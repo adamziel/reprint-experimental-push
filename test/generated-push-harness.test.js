@@ -9,6 +9,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -77,6 +78,9 @@ const requiredFamilies = [
   'expected-conflict',
   'atomic-ready',
   'atomic-blocked',
+  'large-ready-plan-tier',
+  'large-ready-plan',
+  'large-ready-plan-target',
 ];
 
 test('generated push harness covers 300+ general cases from trivial to highly complex', () => {
@@ -130,6 +134,66 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0140 large ready plan tier target exposes deterministic safe-apply coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.largeReadyPlanTier;
+
+  assert.ok(coverage, 'missing large ready plan tier target coverage');
+  assert.equal(coverage.family, 'large-ready-plan-tier');
+  assert.equal(coverage.total, report.summary.featureFamilies['large-ready-plan-tier']);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { ready: 10 });
+  assert.deepEqual(coverage.perTier, {
+    0: 1,
+    1: 1,
+    2: 1,
+    3: 1,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+  });
+  assert.equal(report.summary.featureFamilies['large-ready-plan-target'], 10);
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'large-ready-plan-tier');
+  assert.equal(cases.length, 10);
+
+  let largestPlan = null;
+  for (const testCase of cases) {
+    assert.ok(testCase.tags.has('large-ready-plan-target'));
+    const shape = assertLargeReadyPlanShape(testCase);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(testCase);
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+
+    assert.equal(plan.status, 'ready');
+    assert.equal(result.status, 'ready');
+    assert.ok(result.mutations >= 24 + testCase.tier, `${testCase.id} should have a large ready mutation plan`);
+    assert.equal(result.decisions, 2, `${testCase.id} should record remote-preservation decisions`);
+    assert.equal(result.applied, true, `${testCase.id} should apply through the harness`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} must preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay must fail before mutation`);
+    assert.equal(mutationKeys.has(shape.remotePreserveRowKey), false);
+    assert.equal(mutationKeys.has(shape.remotePreserveFileKey), false);
+    if (!largestPlan || result.mutations > largestPlan.result.mutations) {
+      largestPlan = { plan, result };
+    }
+  }
+
+  assert.equal(report.summary.maxReadyMutationCount, largestPlan.result.mutations);
+  assertLargeReadyPlanEvidenceRedacted(largestPlan.plan);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -382,6 +446,86 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function assertLargeReadyPlanShape(testCase) {
+  const createRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => !testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated large ready create '));
+  const updateRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated large ready update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_posts)
+    .filter(([id, row]) => row.post_title.startsWith('Base large ready delete ')
+      && !testCase.local.db.wp_posts[id]
+      && testCase.remote.db.wp_posts[id]);
+  const remotePreserveRows = Object.entries(testCase.base.db.wp_posts)
+    .filter(([, row]) => row.post_title.startsWith('Base large ready remote preserve '));
+  const fileCreates = Object.keys(testCase.local.files)
+    .filter((path) => path.includes('/large-ready-create-') && !testCase.base.files[path]);
+  const fileUpdates = Object.entries(testCase.local.files)
+    .filter(([path, value]) => path.includes('/large-ready-update-')
+      && testCase.base.files[path]
+      && String(value).startsWith('generated large ready file update '));
+  const fileDeletes = Object.keys(testCase.base.files)
+    .filter((path) => path.includes('/large-ready-delete-')
+      && !testCase.local.files[path]
+      && testCase.remote.files[path]);
+  const remotePreserveFiles = Object.keys(testCase.base.files)
+    .filter((path) => path.includes('/large-ready-remote-preserve-'));
+  const taxonomyRows = Object.keys(testCase.local.db.wp_term_taxonomy)
+    .filter((id) => !testCase.base.db.wp_term_taxonomy[id]);
+  const commentRows = Object.keys(testCase.local.db.wp_comments)
+    .filter((id) => !testCase.base.db.wp_comments[id]);
+
+  assert.ok(createRows.length >= 4, `${testCase.id} should create multiple post rows`);
+  assert.ok(updateRows.length >= 4, `${testCase.id} should update multiple post rows`);
+  assert.ok(deleteRows.length >= 3, `${testCase.id} should delete multiple post rows`);
+  assert.ok(fileCreates.length >= 3, `${testCase.id} should create multiple files`);
+  assert.ok(fileUpdates.length >= 3, `${testCase.id} should update multiple files`);
+  assert.ok(fileDeletes.length >= 2, `${testCase.id} should delete multiple files`);
+  assert.equal(remotePreserveRows.length, 1, `${testCase.id} should include one remote-only row`);
+  assert.equal(remotePreserveFiles.length, 1, `${testCase.id} should include one remote-only file`);
+  assert.deepEqual(
+    testCase.local.db.wp_posts[remotePreserveRows[0][0]],
+    testCase.base.db.wp_posts[remotePreserveRows[0][0]],
+    `${testCase.id} remote-only row should be unchanged locally`,
+  );
+  assert.notDeepEqual(
+    testCase.remote.db.wp_posts[remotePreserveRows[0][0]],
+    testCase.base.db.wp_posts[remotePreserveRows[0][0]],
+    `${testCase.id} remote-only row should drift remotely`,
+  );
+  assert.equal(
+    testCase.local.files[remotePreserveFiles[0]],
+    testCase.base.files[remotePreserveFiles[0]],
+    `${testCase.id} remote-only file should be unchanged locally`,
+  );
+  assert.notEqual(
+    testCase.remote.files[remotePreserveFiles[0]],
+    testCase.base.files[remotePreserveFiles[0]],
+    `${testCase.id} remote-only file should drift remotely`,
+  );
+  assert.ok(taxonomyRows.length >= 1, `${testCase.id} should include same-plan taxonomy graph rows`);
+  assert.ok(commentRows.length >= 2, `${testCase.id} should include same-plan comment graph rows`);
+
+  return {
+    remotePreserveRowKey: `row:${JSON.stringify(['wp_posts', remotePreserveRows[0][0]])}`,
+    remotePreserveFileKey: `file:${remotePreserveFiles[0]}`,
+  };
+}
+
+function assertLargeReadyPlanEvidenceRedacted(plan) {
+  const redactedJson = JSON.stringify(redactEvidence(plan));
+
+  assert.equal(redactedJson.includes(EVIDENCE_REDACTION_MARKER), true);
+  assert.ok(redactedJson.includes('remoteBeforeHash'), 'redacted evidence should preserve remote hash metadata');
+  assert.ok(redactedJson.includes('baseHash'), 'redacted evidence should preserve base hash metadata');
+  assert.ok(redactedJson.includes('localHash'), 'redacted evidence should preserve local hash metadata');
+  assert.equal(redactedJson.includes('Generated large ready'), false);
+  assert.equal(redactedJson.includes('generated large ready'), false);
+  assert.equal(redactedJson.includes('Base large ready'), false);
+  assert.equal(redactedJson.includes('Remote large ready'), false);
 }
 
 function generatedPlannerSummaryEvidence() {

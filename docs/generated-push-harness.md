@@ -52,11 +52,12 @@ The default generated run covers:
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
-  plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  ready/stale non-ready outcomes, large ready plan tier cases with deterministic
+  per-tier counts and remote-preservation checks, supported and unsupported
+  plugin-owned data, plugin owner-context drift, supported forms-lab custom-table
+  rows, forms-lab delete refusal, atomic plugin install ready and
+  missing-dependency paths, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -71,6 +72,13 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `largeReadyPlanTier` target coverage records one large ready plan per tier.
+Each case combines post-row creates, updates, deletes, file creates, updates,
+deletes, same-plan taxonomy/comment graph rows, and remote-only row/file drift.
+The invariant is that all 10 cases stay `ready`, apply only planned resources,
+preserve the remote-only drift, reject stale replay before mutation, and keep
+plan evidence redacted/hash-only.
+
 At the time this note was added, the summary command reported:
 
 ```json
@@ -78,8 +86,8 @@ At the time this note was added, the summary command reported:
   "totalCases": 360,
   "statuses": {
     "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "conflict": 140,
+    "ready": 196
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -101,6 +109,25 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
+    "largeReadyPlanTier": {
+      "family": "large-ready-plan-tier",
+      "total": 10,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "ready": 10
+      }
+    },
     "wpPostsCreateUpdateDelete": {
       "family": "wp-posts-create-update-delete-ready",
       "total": 20,
@@ -117,8 +144,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 10,
-        "ready": 10
+        "conflict": 12,
+        "ready": 8
       }
     },
     "wpTermTaxonomyGraph": {
@@ -137,13 +164,16 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 8,
-        "ready": 9
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 10
       }
     }
   },
   "featureFamilies": {
+    "large-ready-plan": 10,
+    "large-ready-plan-target": 10,
+    "large-ready-plan-tier": 10,
     "file-type-swap": 20,
     "file-type-swap-ready": 10,
     "file-type-swap-conflict": 10,
@@ -160,10 +190,10 @@ At the time this note was added, the summary command reported:
     "wp-terms-create": 20,
     "wp-terms-remote-drift": 10
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 73,
+  "maxMutationCount": 46,
+  "maxReadyResourceCount": 73,
+  "maxReadyMutationCount": 46
 }
 ```
 
