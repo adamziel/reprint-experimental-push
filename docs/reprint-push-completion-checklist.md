@@ -38,7 +38,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0024 (Near / release-gates) Prove packaged fallback rejection, variant 2. Success: scenario matrix records the negative and positive path.
 - [x] RPP-0025 (Near / release-gates) Prove wrong remote alias rejection, variant 2. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0026 (Near / release-gates) Prove auth source command readback drift, variant 2. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0027 (Near / release-gates) Prove missing production secret gate, variant 2. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0027 (Near / release-gates) Prove missing production secret gate, variant 2. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0028 (Near / release-gates) Prove Application Password credential binding, variant 2. Success: progress report links the command and observed status.
 - [ ] RPP-0029 (Near / release-gates) Prove manage_options capability proof, variant 2. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0030 (Near / release-gates) Prove same source URL identity proof, variant 2. Success: tmux-visible run prints a final bracketed status marker.
