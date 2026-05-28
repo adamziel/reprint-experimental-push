@@ -88,6 +88,18 @@ const commentGraphResourceKeys = Object.freeze([
   commentGraphChildResourceKey,
   commentGraphMetaResourceKey,
 ]);
+const commentParentIdentitySourceId = 73801;
+const commentParentIdentityTargetId = 74801;
+const commentParentIdentityChildId = 73802;
+const commentParentIdentityAuthor = 'Reprint Push Comment Parent Identity';
+const commentParentIdentityEmail = 'comment-parent-identity@example.test';
+const commentParentIdentityRemoteDriftAuthor = 'Remote Private Comment Parent Drift';
+const commentParentIdentityChildAuthor = 'Reprint Push Child Thread Reply';
+const commentParentIdentityParentContent = 'Mapped parent thread comment for identity proof.';
+const commentParentIdentityChildContent = 'Child thread reply whose comment_parent maps to a remote parent.';
+const commentParentIdentitySourceResourceKey = `row:["wp_comments","comment_ID:${commentParentIdentitySourceId}"]`;
+const commentParentIdentityTargetResourceKey = `row:["wp_comments","comment_ID:${commentParentIdentityTargetId}"]`;
+const commentParentIdentityChildResourceKey = `row:["wp_comments","comment_ID:${commentParentIdentityChildId}"]`;
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
   return Object.freeze({
@@ -478,6 +490,138 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildCommentParentIdentityMapProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyRemoteSnapshot = commentParentIdentityMapReadyRemoteSnapshot(
+    sourceSnapshot,
+    remoteChangedSnapshot,
+  );
+  const staleRemoteSnapshot = cloneJson(readyRemoteSnapshot);
+  if (staleRemoteSnapshot?.db?.wp_comments?.[`comment_ID:${commentParentIdentityTargetId}`]) {
+    staleRemoteSnapshot.db.wp_comments[`comment_ID:${commentParentIdentityTargetId}`].comment_author =
+      commentParentIdentityRemoteDriftAuthor;
+    staleRemoteSnapshot.db.wp_comments[`comment_ID:${commentParentIdentityTargetId}`].comment_content =
+      'remote-private-comment-parent-drift-body';
+  }
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: readyRemoteSnapshot,
+    now: proofNow,
+  });
+  const stalePlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: staleRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const childMutation = readyMutations.find((mutation) =>
+    mutation?.resourceKey === commentParentIdentityChildResourceKey) || null;
+  const childValue = childMutation
+    ? deserializeResourceValue(childMutation.value)
+    : null;
+  const parentRewrite = Array.isArray(childMutation?.wordpressGraphIdentity?.rewrites)
+    ? childMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+      rewrite.relationshipType === 'comment-parent')
+    : null;
+  const staleChildBlocker = stalePlan.blockers.find((blocker) =>
+    blocker?.resourceKey === commentParentIdentityChildResourceKey) || null;
+  const staleBlockerEvidence = staleChildBlocker
+    ? hashOnlyWordPressGraphBlockerEvidence(staleChildBlocker)
+    : null;
+  const staleBlockerJson = JSON.stringify(staleBlockerEvidence);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    identityMapRowsPresent: counts.source.commentParentIdentitySourceComments === 0
+      && counts.localEdited.commentParentIdentitySourceComments >= 1
+      && counts.localEdited.commentParentIdentityChildComments >= 1
+      && counts.remoteChanged.commentParentIdentityTargetComments >= 1,
+    readyMapsDeterministically: readyPlan.status === 'ready'
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === commentParentIdentitySourceResourceKey
+        && decision.decision === 'map-local-identity-to-remote')
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === commentParentIdentityTargetResourceKey
+        && decision.decision === 'keep-remote'),
+    childCommentParentRewritten: childMutation?.changeKind === 'create'
+      && childValue?.comment_parent === commentParentIdentityTargetId
+      && parentRewrite?.sourceTargetResourceKey === commentParentIdentitySourceResourceKey
+      && parentRewrite?.targetResourceKey === commentParentIdentityTargetResourceKey,
+    sourceParentNotMutated: !readyMutations.some((mutation) =>
+      mutation.resourceKey === commentParentIdentitySourceResourceKey),
+    childCommentHasLivePrecondition: readyPlan.preconditions?.some((precondition) =>
+      precondition.resourceKey === commentParentIdentityChildResourceKey
+      && precondition.checkedAgainst === 'live-remote'
+      && isSha256Hex(precondition.expectedHash)
+      && precondition.expectedHash === childMutation?.baseHash
+      && precondition.expectedHash === childMutation?.remoteBeforeHash),
+    staleTargetFailsClosed: stalePlan.status === 'blocked'
+      && staleChildBlocker?.class === 'stale-wordpress-graph-identity'
+      && staleChildBlocker?.references?.some((reference) =>
+        reference.relationshipType === 'comment-parent'
+        && reference.targetResourceKey === commentParentIdentitySourceResourceKey
+        && reference.targetSupport?.supported === false),
+    staleTargetPreventsReleaseMovement: stalePlan.status !== 'ready',
+    staleTargetNoChildMutation: !((stalePlan.mutations || []).some((mutation) =>
+      mutation.resourceKey === commentParentIdentityChildResourceKey)),
+    staleBlockerEvidenceIsHashOnly: Boolean(staleBlockerEvidence)
+      && [staleBlockerEvidence.baseHash, staleBlockerEvidence.localHash, staleBlockerEvidence.remoteHash]
+        .every(isSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) =>
+        isSha256Hex(staleBlockerEvidence.change?.[slot]?.hash)),
+    staleBlockerRedactsRawValues: ![
+      commentParentIdentityAuthor,
+      commentParentIdentityEmail,
+      commentParentIdentityRemoteDriftAuthor,
+      commentParentIdentityChildAuthor,
+      commentParentIdentityParentContent,
+      commentParentIdentityChildContent,
+      'remote-private-comment-parent-drift-body',
+    ].some((privateValue) => staleBlockerJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'comment-parent-identity-map-reference',
+    releaseReady: false,
+    resourceKeys: {
+      sourceParent: commentParentIdentitySourceResourceKey,
+      targetParent: commentParentIdentityTargetResourceKey,
+      childComment: commentParentIdentityChildResourceKey,
+    },
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    stalePlan: summarizePlan(stalePlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    deterministicMapping: childMutation
+      ? {
+        resourceKey: childMutation.resourceKey,
+        commentParent: childValue?.comment_parent,
+        rewriteType: parentRewrite?.relationshipType || null,
+        sourceTargetResourceKey: parentRewrite?.sourceTargetResourceKey || null,
+        targetResourceKey: parentRewrite?.targetResourceKey || null,
+        sourceTargetLocalHash: parentRewrite?.sourceTargetLocalHash || null,
+        targetRemoteHash: parentRewrite?.targetRemoteHash || null,
+      }
+      : null,
+    staleBlocker: staleBlockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +918,53 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function commentParentIdentityMapReadyRemoteSnapshot(sourceSnapshot, remoteChangedSnapshot) {
+  const snapshot = cloneJson(sourceSnapshot);
+  snapshot.db = snapshot.db || {};
+  snapshot.db.wp_comments = snapshot.db.wp_comments || {};
+  const targetComment = remoteChangedSnapshot?.db?.wp_comments?.[`comment_ID:${commentParentIdentityTargetId}`];
+  if (targetComment) {
+    snapshot.db.wp_comments[`comment_ID:${commentParentIdentityTargetId}`] = cloneJson(targetComment);
+  }
+  return snapshot;
+}
+
+function hashOnlyWordPressGraphBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: blocker.change || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+        targetSupport: reference.targetSupport
+          ? {
+            supported: reference.targetSupport.supported === true,
+            reason: reference.targetSupport.reason || null,
+          }
+          : null,
+      }))
+      : [],
+  };
+}
+
+function isSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -892,6 +1083,16 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === commentGraphMetaId
       && Number(row?.comment_id) === commentGraphChildId
       && String(row?.meta_key || '') === commentGraphMetaKey).length,
+    commentParentIdentitySourceComments: Object.values(comments).filter((row) =>
+      Number(row?.comment_ID) === commentParentIdentitySourceId
+      && String(row?.comment_author || '') === commentParentIdentityAuthor).length,
+    commentParentIdentityTargetComments: Object.values(comments).filter((row) =>
+      Number(row?.comment_ID) === commentParentIdentityTargetId
+      && String(row?.comment_author_email || '') === commentParentIdentityEmail).length,
+    commentParentIdentityChildComments: Object.values(comments).filter((row) =>
+      Number(row?.comment_ID) === commentParentIdentityChildId
+      && Number(row?.comment_parent) === commentParentIdentitySourceId
+      && String(row?.comment_author || '') === commentParentIdentityChildAuthor).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,
@@ -977,6 +1178,10 @@ function positiveEnvInt(value, fallback) {
     return fallback;
   }
   return positiveInt(value);
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function phpString(value) {

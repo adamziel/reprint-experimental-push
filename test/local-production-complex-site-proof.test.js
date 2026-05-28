@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildCommentParentIdentityMapProof,
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
@@ -22,6 +23,7 @@ const smallShape = Object.freeze({
   postTagTaxonomyGraph: false,
   postParentGraph: false,
   commentGraph: false,
+  commentParentIdentityMap: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -286,6 +288,45 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
 });
 
+test('complex-site proof rewrites comment_parent identity maps and fails closed when stale', () => {
+  const graphShape = { ...smallShape, commentParentIdentityMap: true };
+  const proof = buildCommentParentIdentityMapProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const staleBlockerJson = JSON.stringify(proof.staleBlocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.commentParentIdentitySourceComments, 0);
+  assert.equal(proof.counts.localEdited.commentParentIdentitySourceComments, 1);
+  assert.equal(proof.counts.localEdited.commentParentIdentityChildComments, 1);
+  assert.equal(proof.counts.remoteChanged.commentParentIdentityTargetComments, 1);
+  assert.equal(proof.invariants.readyMapsDeterministically, true);
+  assert.equal(proof.invariants.childCommentParentRewritten, true);
+  assert.equal(proof.invariants.sourceParentNotMutated, true);
+  assert.equal(proof.invariants.childCommentHasLivePrecondition, true);
+  assert.equal(proof.invariants.staleTargetFailsClosed, true);
+  assert.equal(proof.invariants.staleTargetPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.staleTargetNoChildMutation, true);
+  assert.equal(proof.invariants.staleBlockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.staleBlockerRedactsRawValues, true);
+  assert.equal(proof.deterministicMapping.resourceKey, 'row:["wp_comments","comment_ID:73802"]');
+  assert.equal(proof.deterministicMapping.commentParent, 74801);
+  assert.equal(proof.deterministicMapping.rewriteType, 'comment-parent');
+  assert.equal(proof.deterministicMapping.sourceTargetResourceKey, 'row:["wp_comments","comment_ID:73801"]');
+  assert.equal(proof.deterministicMapping.targetResourceKey, 'row:["wp_comments","comment_ID:74801"]');
+  assert.match(proof.deterministicMapping.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.deterministicMapping.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(staleBlockerJson.includes('comment-parent-identity@example.test'), false);
+  assert.equal(staleBlockerJson.includes('Remote Private Comment Parent Drift'), false);
+  assert.equal(staleBlockerJson.includes('Child thread reply whose comment_parent maps'), false);
+  assert.equal(staleBlockerJson.includes('remote-private-comment-parent-drift-body'), false);
+});
+
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
   const plannerProof = { ok: true };
   const releaseSummary = syntheticReleaseSummary(9);
@@ -546,6 +587,68 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.commentParentIdentityMap && local) {
+    snapshot.meta.wordpressGraphIdentityMap = {
+      rows: [
+        { table: 'wp_comments', localId: 'comment_ID:73801', remoteId: 'comment_ID:74801' },
+      ],
+    };
+    snapshot.db.wp_comments['comment_ID:73801'] = {
+      comment_ID: 73801,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Push Comment Parent Identity',
+      comment_author_email: 'comment-parent-identity@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:47:00',
+      comment_date_gmt: '2026-05-27 21:47:00',
+      comment_content: 'Mapped parent thread comment for identity proof.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-parent-identity',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 0,
+    };
+    snapshot.db.wp_comments['comment_ID:73802'] = {
+      comment_ID: 73802,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Push Child Thread Reply',
+      comment_author_email: 'child-thread-reply@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:48:00',
+      comment_date_gmt: '2026-05-27 21:48:00',
+      comment_content: 'Child thread reply whose comment_parent maps to a remote parent.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-parent-identity',
+      comment_type: 'comment',
+      comment_parent: 73801,
+      user_id: 0,
+    };
+  }
+
+  if (shape.commentParentIdentityMap && remote) {
+    snapshot.db.wp_comments['comment_ID:74801'] = {
+      comment_ID: 74801,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Push Comment Parent Identity',
+      comment_author_email: 'comment-parent-identity@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:47:00',
+      comment_date_gmt: '2026-05-27 21:47:00',
+      comment_content: 'Mapped parent thread comment for identity proof.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-parent-identity',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 0,
     };
   }
 
