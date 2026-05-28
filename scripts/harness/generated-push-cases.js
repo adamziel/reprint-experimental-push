@@ -32,6 +32,7 @@ const scenarioFamilies = Object.freeze([
   'plugin-owner-context-drift',
   'file-topology-conflict',
   'directory-descendant-conflict',
+  'directory-descendant-ready',
   'same-plan-post-parent-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
@@ -69,6 +70,7 @@ const readyPreservingFamilies = new Set([
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
   'supported-forms-lab-table',
+  'directory-descendant-ready',
   'atomic-plugin-stack-ready',
   'plugin-file-update',
   'remote-delete-local-unchanged',
@@ -84,7 +86,7 @@ const readyPreservingFamilies = new Set([
 const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
-    tag: 'directory-delete-with-remote-descendant',
+    tag: 'directory-descendant-target',
   },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
@@ -352,7 +354,22 @@ const scenarioFamilyBuilders = {
     remote.files[descendant] = `remote descendant ${allocator.next()}`;
     tags.add('file-topology');
     tags.add('directory-descendant');
+    tags.add('directory-descendant-target');
     tags.add('directory-delete-with-remote-descendant');
+  },
+  'directory-descendant-ready': ({ base, local, remote, allocator, tags }) => {
+    const directory = `wp-content/uploads/descendant-ready-${allocator.next()}`;
+    const remoteOnlyPath = allocator.filePath('directory-descendant-remote-only');
+    base.files[directory] = { type: 'directory' };
+    local.files[directory] = { type: 'directory' };
+    remote.files[directory] = { type: 'directory' };
+    delete local.files[directory];
+    remote.files[remoteOnlyPath] = `remote-only directory descendant preserve ${allocator.next()}`;
+    tags.add('file-topology');
+    tags.add('directory-descendant');
+    tags.add('directory-descendant-target');
+    tags.add('directory-delete-no-remote-descendant');
+    tags.add('remote-preserve');
   },
   'same-plan-post-parent-graph': ({ local, allocator, tags }) => {
     const parentId = allocator.graphId();

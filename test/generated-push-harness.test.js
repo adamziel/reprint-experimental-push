@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -9,7 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
-import { digest } from '../src/stable-json.js';
+import { deepClone, digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
 
@@ -25,6 +26,9 @@ const requiredFamilies = [
   'plugin-owner-context-drift',
   'file-topology-conflict',
   'directory-descendant-conflict',
+  'directory-descendant-ready',
+  'directory-descendant-target',
+  'directory-delete-no-remote-descendant',
   'same-plan-post-parent-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
@@ -152,14 +156,14 @@ test('RPP-0101 generated harness emits ready and non-ready file create/update/de
   assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
 });
 
-test('RPP-0102 directory descendant conflict exposes per-tier target counts', () => {
+test('RPP-0142 directory descendant target exposes ready and conflict per-tier counts', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.directoryDescendantConflict;
 
   assert.ok(coverage, 'missing directory descendant conflict target coverage');
   assert.equal(coverage.family, 'directory-descendant-conflict');
-  assert.equal(coverage.total, report.summary.featureFamilies['directory-descendant-conflict']);
-  assert.deepEqual(coverage.statuses, { conflict: coverage.total });
+  assert.equal(coverage.total, report.summary.featureFamilies['directory-descendant-target']);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -168,18 +172,141 @@ test('RPP-0102 directory descendant conflict exposes per-tier target counts', ()
     Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
     coverage.total,
   );
+  assert.equal(
+    Object.values(coverage.perTier).every((count) => count === 2),
+    true,
+    'directory descendant target should emit one ready and one conflict case per tier',
+  );
+  assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(report).includes('remote descendant '), false);
+  assert.equal(JSON.stringify(report).includes('remote-only directory descendant preserve'), false);
 
-  const conflictCase = generatePushHarnessCases()
-    .find((testCase) => testCase.family === 'directory-descendant-conflict');
-  assert.ok(conflictCase, 'missing generated directory descendant conflict case');
-  assert.ok(conflictCase.tags.has('directory-descendant'));
-  assert.ok(conflictCase.tags.has('directory-delete-with-remote-descendant'));
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'directory-descendant-ready');
+  const conflictCases = cases.filter((testCase) => testCase.family === 'directory-descendant-conflict');
 
-  const result = validateGeneratedCase(conflictCase);
-  assert.equal(result.status, 'conflict');
-  assert.ok(result.conflicts > 0, 'directory descendant case must conflict');
-  assert.equal(result.applied, false, 'directory descendant conflict must not apply mutations');
+  assert.equal(readyCases.length, 10, 'one ready directory descendant case should appear per tier');
+  assert.equal(conflictCases.length, 10, 'one conflict directory descendant case should appear per tier');
+
+  for (const readyCase of readyCases) {
+    const shape = assertDirectoryDescendantShape(readyCase, { conflict: false });
+    const result = validateGeneratedCase(readyCase);
+    const plan = createGeneratedPlan(readyCase);
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+    const directoryResourceKey = `file:${shape.directory}`;
+    const remoteOnlyResourceKey = `file:${shape.remoteOnlyPath}`;
+    const keepRemoteDecision = plan.decisions.find((decision) =>
+      decision.resourceKey === remoteOnlyResourceKey && decision.decision === 'keep-remote');
+
+    assert.equal(result.status, 'ready');
+    assert.equal(result.applied, true, `${readyCase.id} should apply planned directory deletion`);
+    assert.equal(result.unplannedRemotePreserved, true, `${readyCase.id} should preserve unplanned remote content`);
+    assert.equal(result.staleReplayRejected, true, `${readyCase.id} should reject stale replay before mutation`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true);
+    assert.equal(plan.status, 'ready');
+    assert.ok(mutationKeys.has(directoryResourceKey), `${readyCase.id} should plan the directory deletion`);
+    assert.equal(mutationKeys.has(remoteOnlyResourceKey), false, `${readyCase.id} must not mutate remote-only content`);
+    assert.ok(keepRemoteDecision, `${readyCase.id} should record remote-only content as keep-remote`);
+    assert.match(keepRemoteDecision.remoteHash, /^[a-f0-9]{64}$/);
+    assert.equal(
+      JSON.stringify(keepRemoteDecision).includes(shape.remoteOnlyValue),
+      false,
+      `${readyCase.id} keep-remote evidence should be hash-only`,
+    );
+
+    const applied = applyPlan(deepClone(readyCase.remote), plan);
+    assert.equal(Object.hasOwn(applied.site.files, shape.directory), false);
+    assert.equal(applied.site.files[shape.remoteOnlyPath], readyCase.remote.files[shape.remoteOnlyPath]);
+  }
+
+  for (const conflictCase of conflictCases) {
+    const shape = assertDirectoryDescendantShape(conflictCase, { conflict: true });
+    const result = validateGeneratedCase(conflictCase);
+    const plan = createGeneratedPlan(conflictCase);
+    const directoryResourceKey = `file:${shape.directory}`;
+
+    assert.equal(result.status, 'conflict');
+    assert.ok(result.conflicts > 0, `${conflictCase.id} directory descendant case must conflict`);
+    assert.equal(result.applied, false, `${conflictCase.id} conflict must not apply mutations`);
+    assert.equal(plan.status, 'conflict');
+    assert.equal(
+      plan.mutations.some((mutation) => mutation.resourceKey === directoryResourceKey),
+      false,
+      `${conflictCase.id} must not plan a mutation for the conflicted directory`,
+    );
+    assert.ok(
+      plan.conflicts.some((conflict) => conflict.resourceKey === directoryResourceKey),
+      `${conflictCase.id} should report the directory descendant conflict`,
+    );
+    assert.equal(
+      JSON.stringify(plan.conflicts).includes(shape.remoteDescendantValue),
+      false,
+      `${conflictCase.id} conflict evidence should stay hash-only`,
+    );
+  }
 });
+
+function assertDirectoryDescendantShape(testCase, { conflict }) {
+  assert.ok(testCase.tags.has('file-topology'));
+  assert.ok(testCase.tags.has('directory-descendant'));
+  assert.ok(testCase.tags.has('directory-descendant-target'));
+
+  const prefix = conflict
+    ? 'wp-content/uploads/descendant-'
+    : 'wp-content/uploads/descendant-ready-';
+  const directories = Object.entries(testCase.base.files)
+    .filter(([path, value]) =>
+      path.startsWith(prefix)
+      && (conflict
+        ? !path.startsWith('wp-content/uploads/descendant-ready-')
+        : path.startsWith('wp-content/uploads/descendant-ready-'))
+      && value?.type === 'directory'
+      && !Object.hasOwn(testCase.local.files, path)
+      && testCase.remote.files[path]?.type === 'directory');
+
+  assert.equal(directories.length, 1, `${testCase.id} should stage one directory deletion`);
+
+  const directory = directories[0][0];
+  const remoteDescendants = Object.entries(testCase.remote.files)
+    .filter(([path, value]) =>
+      path.startsWith(`${directory}/`)
+      && String(value).startsWith('remote descendant '));
+
+  if (conflict) {
+    assert.ok(testCase.tags.has('directory-delete-with-remote-descendant'));
+    assert.equal(remoteDescendants.length, 1, `${testCase.id} should include one remote descendant`);
+    return {
+      directory,
+      remoteDescendantPath: remoteDescendants[0][0],
+      remoteDescendantValue: remoteDescendants[0][1],
+    };
+  }
+
+  assert.ok(testCase.tags.has('directory-delete-no-remote-descendant'));
+  assert.equal(remoteDescendants.length, 0, `${testCase.id} should not have remote descendants under deleted directory`);
+  const remoteOnly = Object.entries(testCase.remote.files)
+    .filter(([path, value]) =>
+      !Object.hasOwn(testCase.base.files, path)
+      && !Object.hasOwn(testCase.local.files, path)
+      && String(value).startsWith('remote-only directory descendant preserve '));
+  assert.equal(remoteOnly.length, 1, `${testCase.id} should carry one unrelated remote-only file`);
+
+  return {
+    directory,
+    remoteOnlyPath: remoteOnly[0][0],
+    remoteOnlyValue: remoteOnly[0][1],
+  };
+}
+
+function createGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+}
 
 test('RPP-0103 generated harness emits ready and non-ready file type-swap cases', () => {
   const cases = generatePushHarnessCases();
