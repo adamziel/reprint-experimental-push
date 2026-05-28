@@ -200,6 +200,217 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
   }
 }
 
+function plannerSummaryCounts(plan) {
+  return {
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    conflicts: plan.conflicts.length,
+    blockers: plan.blockers.length,
+    atomicGroups: plan.atomicGroups.length,
+  };
+}
+
+function plannerSummaryEvidenceEnvelope(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    emitted: plannerSummaryCounts(plan),
+    preconditions: plan.preconditions.map((precondition) => [
+      precondition.mutationId,
+      precondition.resourceKey,
+      precondition.expectedHash,
+    ]),
+    mutations: plan.mutations.map((mutation) => [
+      mutation.id,
+      mutation.resourceKey,
+      mutation.action,
+      mutation.atomicGroupId,
+    ]),
+    decisions: plan.decisions.map((decision) => [
+      decision.id,
+      decision.resourceKey,
+      decision.decision,
+    ]),
+    conflicts: plan.conflicts.map((conflict) => [
+      conflict.id,
+      conflict.resourceKey,
+      conflict.class,
+    ]),
+    blockers: plan.blockers.map((blocker) => [
+      blocker.id,
+      blocker.resourceKey || null,
+      blocker.class,
+      blocker.groupId || null,
+    ]),
+    atomicGroups: plan.atomicGroups.map((group) => [
+      group.id,
+      group.status,
+      group.mutationIds,
+      group.conflicts,
+      group.blockers.map((blocker) => blocker.id),
+    ]),
+  };
+}
+
+function assertPlannerSummaryMatchesEvidence(plan, label) {
+  assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
+  assert.equal(
+    plan.preconditions.length,
+    plan.mutations.length,
+    `${label} preconditions should remain one-for-one with emitted mutations`,
+  );
+  assert.equal(
+    plan.status,
+    plan.conflicts.length > 0 ? 'conflict' : plan.blockers.length > 0 ? 'blocked' : 'ready',
+    `${label} status does not match emitted conflicts/blockers`,
+  );
+}
+
+function buildRpp0210SummaryCountCases() {
+  const readyBase = baseSite();
+  const readyLocal = baseSite();
+  const readyRemote = baseSite();
+  readyLocal.files['index.php'] = '<?php echo "local summary proof";';
+  readyRemote.db.wp_posts['ID:1'].post_title = 'Remote summary proof title';
+
+  const conflictBase = baseSite();
+  const conflictLocal = baseSite();
+  const conflictRemote = baseSite();
+  conflictLocal.db.wp_posts['ID:1'].post_title = 'Local summary conflict title';
+  conflictRemote.db.wp_posts['ID:1'].post_title = 'Remote summary conflict title';
+
+  const blockedBase = baseSite();
+  const blockedLocal = baseSite();
+  const blockedRemote = baseSite();
+  blockedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-summary-blocked';
+
+  const atomicBase = baseSite();
+  const atomicLocal = baseSite();
+  const atomicRemote = baseSite();
+  atomicLocal.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* dependency summary */';
+  atomicLocal.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* dependent summary */';
+  atomicLocal.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  atomicLocal.plugins[atomicDependentPlugin] = {
+    version: '1.0.0',
+    active: true,
+    requires: [atomicDependencyPlugin],
+  };
+  atomicLocal.db.wp_options['option_name:reprint_push_atomic_summary_data'] = {
+    option_name: 'reprint_push_atomic_summary_data',
+    option_value: { mode: 'installed' },
+    __pluginOwner: atomicDependentPlugin,
+  };
+  atomicLocal.pushIntents = [
+    {
+      id: 'install-atomic-summary-fixture-stack',
+      kind: 'plugin-install',
+      requireAtomic: true,
+      resources: [
+        `file:${pluginMainFile(atomicDependencyPlugin)}`,
+        `file:${pluginMainFile(atomicDependentPlugin)}`,
+        `plugin:${atomicDependencyPlugin}`,
+        `plugin:${atomicDependentPlugin}`,
+        'row:["wp_options","option_name:reprint_push_atomic_summary_data"]',
+      ],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            version: '2.1.0',
+            hash: resourceHash(atomicLocal, pluginResource(atomicDependencyPlugin)),
+          },
+        ],
+      },
+      resourcePolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(
+          'row:["wp_options","option_name:reprint_push_atomic_summary_data"]',
+          atomicDependentPlugin,
+        ),
+      ),
+    },
+  ];
+
+  return [
+    {
+      label: 'ready local mutation plus keep-remote decision',
+      base: readyBase,
+      local: readyLocal,
+      remote: readyRemote,
+      expectedStatus: 'ready',
+      expectedSummary: {
+        mutations: 1,
+        decisions: 1,
+        conflicts: 0,
+        blockers: 0,
+        atomicGroups: 0,
+      },
+    },
+    {
+      label: 'row conflict',
+      base: conflictBase,
+      local: conflictLocal,
+      remote: conflictRemote,
+      expectedStatus: 'conflict',
+      expectedSummary: {
+        mutations: 0,
+        decisions: 0,
+        conflicts: 1,
+        blockers: 0,
+        atomicGroups: 0,
+      },
+    },
+    {
+      label: 'blocked plugin-owned row',
+      base: blockedBase,
+      local: blockedLocal,
+      remote: blockedRemote,
+      expectedStatus: 'blocked',
+      expectedSummary: {
+        mutations: 0,
+        decisions: 0,
+        conflicts: 0,
+        blockers: 1,
+        atomicGroups: 0,
+      },
+    },
+    {
+      label: 'ready atomic plugin bundle',
+      base: atomicBase,
+      local: atomicLocal,
+      remote: atomicRemote,
+      expectedStatus: 'ready',
+      expectedSummary: {
+        mutations: 5,
+        decisions: 0,
+        conflicts: 0,
+        blockers: 0,
+        atomicGroups: 1,
+      },
+    },
+  ];
+}
+
+test('RPP-0210 planner summary counts match emitted evidence deterministically', () => {
+  for (const fixture of buildRpp0210SummaryCountCases()) {
+    const firstPlan = planFor(fixture.base, fixture.local, fixture.remote);
+    const secondPlan = planFor(
+      cloneJson(fixture.base),
+      cloneJson(fixture.local),
+      cloneJson(fixture.remote),
+    );
+
+    assertPlannerSummaryMatchesEvidence(firstPlan, fixture.label);
+    assertPlannerSummaryMatchesEvidence(secondPlan, `${fixture.label} replay`);
+    assert.equal(firstPlan.status, fixture.expectedStatus, `${fixture.label} status`);
+    assert.deepEqual(firstPlan.summary, fixture.expectedSummary, `${fixture.label} expected summary`);
+    assert.deepEqual(
+      plannerSummaryEvidenceEnvelope(firstPlan),
+      plannerSummaryEvidenceEnvelope(secondPlan),
+      `${fixture.label} summary envelope changed between deterministic planning runs`,
+    );
+  }
+});
+
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();
   const local = baseSite();
