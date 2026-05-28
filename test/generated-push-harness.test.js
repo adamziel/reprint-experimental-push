@@ -9,6 +9,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { enumerateResources, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -130,6 +131,28 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0235 generated keep-remote decisions emit no mutations or preconditions', () => {
+  const firstEvidence = generatedKeepRemoteEvidence();
+  const replayEvidence = generatedKeepRemoteEvidence();
+  const aggregate = aggregateGeneratedKeepRemoteEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0235 test/generated-push-harness.test.js',
+    caveat: 'Generated local planner proof only; apply preservation is covered by the focused RPP-0235 fixture.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated keep-remote evidence changed between runs');
+  assert.ok(firstEvidence.length > 0, 'generated harness must include keep-remote resources');
+  assert.ok(aggregate.totalKeepRemoteResources > 0, 'generated harness must prove at least one keep-remote resource');
+  assert.equal(aggregate.totalKeepRemoteMutations, 0, 'keep-remote resources must not emit mutations');
+  assert.equal(aggregate.totalKeepRemotePreconditions, 0, 'keep-remote resources must not emit preconditions');
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated remote'), false);
+  assert.equal(evidenceText.includes('confidential'), false);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -414,6 +437,73 @@ function generatedPlannerSummaryEvidence() {
   });
 }
 
+function generatedKeepRemoteEvidence() {
+  return generatePushHarnessCases()
+    .map((testCase) => {
+      const plan = createPushPlan({
+        base: testCase.base,
+        local: testCase.local,
+        remote: testCase.remote,
+        now: fixedGeneratedHarnessNow,
+      });
+      const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+      const preconditionKeys = new Set(plan.preconditions.map((precondition) => precondition.resourceKey));
+      const keepRemoteResources = enumerateResources(testCase.base, testCase.local, testCase.remote)
+        .filter((resource) => {
+          const baseHash = resourceHash(testCase.base, resource);
+          const localHash = resourceHash(testCase.local, resource);
+          const remoteHash = resourceHash(testCase.remote, resource);
+          return localHash === baseHash && remoteHash !== baseHash;
+        });
+
+      if (keepRemoteResources.length === 0) {
+        return null;
+      }
+
+      const resources = keepRemoteResources.map((resource) => {
+        const baseHash = resourceHash(testCase.base, resource);
+        const remoteHash = resourceHash(testCase.remote, resource);
+        const decision = plan.decisions.find((entry) => entry.resourceKey === resource.key);
+        const hasMutation = mutationKeys.has(resource.key);
+        const hasPrecondition = preconditionKeys.has(resource.key);
+
+        assert.ok(decision, `${testCase.id} missing keep-remote decision for ${resource.key}`);
+        assert.equal(decision.decision, 'keep-remote', `${testCase.id} wrong decision for ${resource.key}`);
+        assert.equal(decision.baseHash, baseHash, `${testCase.id} base hash mismatch for ${resource.key}`);
+        assert.equal(decision.remoteHash, remoteHash, `${testCase.id} remote hash mismatch for ${resource.key}`);
+        assert.equal(decision.change.localChange, 'unchanged', `${testCase.id} local change mismatch for ${resource.key}`);
+        assert.notEqual(
+          decision.change.remoteChange,
+          'unchanged',
+          `${testCase.id} remote change mismatch for ${resource.key}`,
+        );
+        assert.equal(hasMutation, false, `${testCase.id} emitted mutation for ${resource.key}`);
+        assert.equal(hasPrecondition, false, `${testCase.id} emitted precondition for ${resource.key}`);
+
+        return {
+          resourceKey: resource.key,
+          baseHash,
+          remoteHash,
+          localChange: decision.change.localChange,
+          remoteChange: decision.change.remoteChange,
+          hasMutation,
+          hasPrecondition,
+        };
+      });
+
+      return {
+        id: testCase.id,
+        tier: testCase.tier,
+        family: testCase.family,
+        tags: [...testCase.tags].sort(),
+        status: plan.status,
+        summary: plan.summary,
+        resources,
+      };
+    })
+    .filter(Boolean);
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -421,6 +511,35 @@ function emittedPlannerCounts(plan) {
     conflicts: plan.conflicts.length,
     blockers: plan.blockers.length,
     atomicGroups: plan.atomicGroups.length,
+  };
+}
+
+function aggregateGeneratedKeepRemoteEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalCases++;
+      aggregate.totalKeepRemoteResources += entry.resources.length;
+      aggregate.totalKeepRemoteMutations += entry.resources
+        .filter((resource) => resource.hasMutation).length;
+      aggregate.totalKeepRemotePreconditions += entry.resources
+        .filter((resource) => resource.hasPrecondition).length;
+      incrementCount(aggregate.statuses, entry.status);
+      incrementCount(aggregate.families, entry.family);
+      return aggregate;
+    },
+    {
+      totalCases: 0,
+      totalKeepRemoteResources: 0,
+      totalKeepRemoteMutations: 0,
+      totalKeepRemotePreconditions: 0,
+      statuses: {},
+      families: {},
+    },
+  );
+  return {
+    ...aggregate,
+    statuses: sortStringObject(aggregate.statuses),
+    families: sortStringObject(aggregate.families),
   };
 }
 
