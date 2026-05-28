@@ -58,7 +58,8 @@
     "plan": "node ./bin/reprint-push-lab.js plan",
     "apply": "node ./bin/reprint-push-lab.js apply",
     "verify:release:docker-local-production": "node ./scripts/docker/production-complex-site-harness.mjs",
-    "test:docker:production-complex-site-harness": "node --test test/production-complex-site-harness.test.js"
+    "test:docker:production-complex-site-harness": "node --test test/production-complex-site-harness.test.js",
+    "check:release-gates": "node ./scripts/release/check-release-gates.mjs"
   },
   "engines": {
     "node": ">=20"
