@@ -401,6 +401,7 @@ At the time this note was added, the summary command reported:
     "wp-usermeta-create": 18,
     "wp-users-create": 36,
     "wp-users-remote-drift": 18,
+    "usermeta-user-graph": 18,
     "wp-users-usermeta-graph": 18,
     "wp-users-usermeta-graph-ready": 9,
     "wp-users-usermeta-graph-stale": 9
