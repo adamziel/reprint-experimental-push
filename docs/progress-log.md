@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 15:23 CEST.
+- Last update: 2026-05-28 15:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `3582471e9` (normal merge of
-  `origin/session/rpp-24-rpp-0105-wp-options-scalar`).
+  `3dd96b2fa` (normal merge of
+  `origin/session/rpp-24-rpp-0106-wp-options-serialized`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 139
-  items complete and leaves 861 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 140
+  items complete and leaves 860 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 7 generated
+  7 chunking/performance items, 2 production-topology items, 8 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -327,6 +327,19 @@ linked implementation artifacts.
   Validation succeeded with `npm run test:generated-push-harness` (13/13),
   checklist lint, artifact redaction scan, `git diff --check`, and a current
   fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, 3/20 gates).
+- Generated harness conflict resolution: `3dd96b2fa` normal-merged
+  `origin/session/rpp-24-rpp-0106-wp-options-serialized` after confirming the
+  candidate changed only `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. The lane resolution preserved the
+  current generated harness targets and added non-plugin-owned `wp_options`
+  serialized array/object ready and conflict families from `39a10a537`,
+  raising the default run to 410 deterministic cases with 219 ready, 162
+  conflict, and 29 blocked outcomes. Validation succeeded with
+  `npm run test:generated-push-harness` (14/14), checklist lint, artifact
+  redaction scan, `git diff --check`, and a current fail-closed release-gate
+  status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
   `releaseMovement.allowed: false`, 3/20 gates).
 - Ancestry backlog reduction: `8851a742` used
   `git merge -s ours --no-ff
@@ -871,12 +884,10 @@ linked implementation artifacts.
   `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
-- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+- AO topology cleanup: stale worker sessions, the orphaned `rpp-orchestrator`
+  pane, and the AO dashboard child tree were stopped after the dashboard parent
+  was killed by memory pressure. The next handoff keeps one visible AO process
+  in `main:1` and keeps integration-lane updates serialized.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
