@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 20:20 CEST.
+- Last update: 2026-05-28 20:28 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the current release-gate evidence-count refresh.
+  the current release-gate and session/rpp integration refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 202
-  items checked and leaves 798 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 203
+  items checked and leaves 797 open.
 - Checked slices: 71 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 33 generated
+  7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
   yet.
 - Focused route-regression refresh: the current lane already contains
@@ -25,6 +25,13 @@ linked implementation artifacts.
   `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   passed 33/33, so those 2 items are now checked. Final release remains
   `NO-GO`.
+- Session/rpp cleanup: the current lane now integrates `session/rpp-33`'s
+  branch-local `RPP-0156` generated-harness proof for atomic plugin install
+  stack coverage. The generated harness exposes ready and non-ready
+  `atomicPluginInstallStack` cases across all 10 tiers, keeps private install
+  option evidence redacted, and `node --test test/generated-push-harness.test.js`
+  passed 36/36. `session/rpp-31` live-roster 10 critic output was also
+  integrated as dated support-only audit evidence without moving counts.
 - Release-gate evidence-count refresh: the current lane already contains
   generated and focused release-gate tests for `RPP-0027`, `RPP-0041` through
   `RPP-0049`, `RPP-0052` through `RPP-0057`, `RPP-0059` through `RPP-0061`,
@@ -41,7 +48,8 @@ linked implementation artifacts.
   `RPP-0150`, `RPP-0342`, `RPP-0443`, `RPP-0456`, `RPP-0457`, `RPP-0469`,
   `RPP-0470`, and `RPP-0471`.
 - Validation: focused `RPP-0221` through `RPP-0223` planner tests passed 3/3,
-  `npm run test:generated-push-harness` passed 35/35, and the plugin/planner
+  `npm run test:generated-push-harness` passed 35/35, the current integrated
+  `node --test test/generated-push-harness.test.js` pass is 36/36, and the plugin/planner
   focused suite passed 167/167.
 - Public progress publishing is now explicit: GitHub Pages serves
   `progress.html` from the existing `main` branch, so AO must run
