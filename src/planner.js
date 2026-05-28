@@ -2199,6 +2199,11 @@ function pluginContextMutationSupport({
     className: 'stale-plugin-owner-context',
     reason: `Plugin context resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
+    remotePluginRemovalRefusalEvidence: remotePluginRemovalOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
   };
 }
 
@@ -2242,6 +2247,11 @@ function pluginOwnedOwnerContextSupport({
     className: 'stale-plugin-owner-context',
     reason: `Plugin-owned resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
+    remotePluginRemovalRefusalEvidence: remotePluginRemovalOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
   };
 }
 
@@ -2288,6 +2298,36 @@ function isPluginOwnerContextResource(resource, owner) {
   return resource.type === 'file' && pluginOwnerFor(resource) === owner;
 }
 
+function remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
+  const removedPluginContexts = staleContext.filter((context) =>
+    context.type === 'plugin'
+    && context.resourceKey === `plugin:${owner}`
+    && context.change.remoteChange === 'delete');
+  if (removedPluginContexts.length === 0) {
+    return null;
+  }
+  return {
+    reasonCode: 'REMOTE_PLUGIN_REMOVAL_OWNER_CONTEXT',
+    operation: 'refuse-before-mutation',
+    proofScope: 'local-focused',
+    productionBacked: false,
+    releaseGateNote: 'local-focused proof only; production-backed release gate evidence is still required',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    removedPluginResourceKeys: removedPluginContexts.map((context) => context.resourceKey).sort(),
+    context: removedPluginContexts
+      .map((context) => ({
+        resourceKey: context.resourceKey,
+        baseHash: context.baseHash,
+        localHash: context.localHash,
+        remoteHash: context.remoteHash,
+        localChange: context.change.localChange,
+        remoteChange: context.change.remoteChange,
+      }))
+      .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey)),
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2320,6 +2360,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.remotePluginRemovalRefusalEvidence ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
@@ -2355,6 +2396,7 @@ function addPluginContextBlocker(plan, {
     resourceKey: resource.key,
     pluginOwner: owner,
     ownerContext: support.ownerContext || [],
+    ...(support.remotePluginRemovalRefusalEvidence ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,

@@ -29,6 +29,26 @@ The support-only package smoke alias proved fail-closed registration guards for 
 
 Non-claim: an over-broad full run of `node --test test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js` was stopped/failed after live Playground readiness timeouts in unrelated apply-revalidation smoke tests. It is not used as passing evidence for this lane.
 
+
+
+## RPP-0415 remote plugin removal refusal proof
+
+Evidence provenance: `local-focused`; production-backed: `false`.
+
+The focused planner proof now records `remotePluginRemovalRefusalEvidence` on stale plugin owner-context blockers when a plugin-owned mutation is attempted after the live remote removed the owning plugin. The evidence is hash/key based, redacts plugin-owned row values, records `reasonCode: REMOTE_PLUGIN_REMOVAL_OWNER_CONTEXT`, and carries `productionBacked: false` plus a release-gate note that production-backed evidence is still required before release movement.
+
+Focused verification for this local proof:
+
+```sh
+node --check src/planner.js
+node --check test/plugin-remote-removal-refusal.test.js
+node --test test/plugin-remote-removal-refusal.test.js
+node --test --test-name-pattern 'remote-only plugin removal blocks stale local dependency assumptions|blocks plugin-owned data when the owning plugin is missing or inactive on remote|allows plugin-owned data when owner plugin context independently matches remote' test/push-planner.test.js
+git diff --check
+```
+
+This is not production-backed release evidence and does not make release `GO`; it only proves the deterministic local refusal path and the release evidence provenance bit for RPP-0415 variant 1.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
