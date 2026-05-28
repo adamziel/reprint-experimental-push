@@ -15,6 +15,7 @@ import {
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -170,6 +171,10 @@ function pluginOwnedResourcePolicy(...allowedResources) {
       allowedResources,
     },
   };
+}
+
+function sha256Evidence(value) {
+  return `sha256:${digest(value)}`;
 }
 
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
@@ -1147,6 +1152,206 @@ test('allows plugin-owned postmeta-like rows with explicit push intent policy', 
   assert.equal(plan.status, 'ready');
   assert.equal(mutationFor(plan, resourceKey).atomicGroupId, 'update-forms-postmeta');
   assert.equal(plan.atomicGroups[0].status, 'ready');
+});
+
+test('proves wp_termmeta plugin driver semantics with local hash-redacted evidence', () => {
+  const rowId = 'meta_id:84';
+  const resourceKey = `row:["wp_termmeta","${rowId}"]`;
+  const resource = { type: 'row', table: 'wp_termmeta', id: rowId, key: resourceKey };
+  const termResource = { type: 'row', table: 'wp_terms', id: 'term_id:1', key: 'row:["wp_terms","term_id:1"]' };
+  const localSecret = 'local-private-rpp-0426-termmeta';
+  const baseSecret = 'base-private-rpp-0426-termmeta';
+
+  function siteWithTermmeta(metaValue = baseSecret) {
+    const site = baseSite();
+    site.db.wp_terms = {
+      'term_id:1': {
+        term_id: 1,
+        name: 'Forms category',
+        slug: 'forms-category',
+      },
+    };
+    site.db.wp_termmeta = {
+      [rowId]: {
+        meta_id: 84,
+        term_id: 1,
+        meta_key: '_forms_term_payload',
+        meta_value: {
+          privateState: metaValue,
+        },
+        __pluginOwner: 'forms',
+      },
+    };
+    return site;
+  }
+
+  function localWithDriver(driver) {
+    const local = siteWithTermmeta(localSecret);
+    local.pushIntents = [
+      {
+        id: 'update-forms-termmeta',
+        kind: 'plugin-data-update',
+        requireAtomic: true,
+        resources: [resourceKey],
+        resourcePolicy: pluginOwnedResourcePolicy(
+          allowedPluginOwnedResource(resourceKey, 'forms', driver),
+        ),
+      },
+    ];
+    return local;
+  }
+
+  const base = siteWithTermmeta(baseSecret);
+  const remote = siteWithTermmeta(baseSecret);
+  const localWithoutPolicy = siteWithTermmeta(localSecret);
+  const blockedWithoutPolicy = planFor(base, localWithoutPolicy, remote);
+  const localWrongDriver = localWithDriver('wp-option');
+  const wrongDriverPlan = planFor(base, localWrongDriver, remote);
+  const localCanonical = localWithDriver('wp-termmeta');
+  const canonicalPlan = planFor(base, localCanonical, remote);
+  const localAlias = localWithDriver('wp-term-meta');
+  const aliasPlan = planFor(base, localAlias, remote);
+
+  assert.equal(blockedWithoutPolicy.status, 'blocked');
+  assert.equal(blockedWithoutPolicy.summary.mutations, 0);
+  assert.equal(blockedWithoutPolicy.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(blockedWithoutPolicy.blockers[0].resourceKey, resourceKey);
+  assert.equal(blockedWithoutPolicy.blockers[0].pluginOwner, 'forms');
+
+  assert.equal(wrongDriverPlan.status, 'blocked');
+  assert.equal(wrongDriverPlan.summary.mutations, 0);
+  assert.equal(wrongDriverPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(wrongDriverPlan.blockers[0].driver, 'wp-option');
+  assert.equal(wrongDriverPlan.blockers[0].resource.table, 'wp_termmeta');
+  assert.match(wrongDriverPlan.blockers[0].reason, /driver does not match/);
+
+  assert.equal(canonicalPlan.status, 'ready');
+  assert.equal(canonicalPlan.mutations.length, 1);
+  assert.equal(canonicalPlan.atomicGroups[0].id, 'update-forms-termmeta');
+  assert.equal(canonicalPlan.atomicGroups[0].status, 'ready');
+  assertEveryMutationHasLiveRemotePrecondition(canonicalPlan);
+
+  const canonicalMutation = mutationFor(canonicalPlan, resourceKey);
+  const canonicalPrecondition = canonicalPlan.preconditions.find((entry) =>
+    entry.resourceKey === resourceKey);
+  assert.equal(canonicalMutation.resource.table, 'wp_termmeta');
+  assert.equal(canonicalMutation.action, 'put');
+  assert.equal(canonicalMutation.changeKind, 'update');
+  assert.equal(canonicalMutation.atomicGroupId, 'update-forms-termmeta');
+  assert.equal(canonicalMutation.remoteBeforeHash, resourceHash(remote, resource));
+  assert.equal(canonicalMutation.baseHash, resourceHash(base, resource));
+  assert.equal(canonicalMutation.localHash, resourceHash(localCanonical, resource));
+  assert.equal(canonicalPrecondition.expectedHash, resourceHash(remote, resource));
+  assert.deepEqual(
+    {
+      pluginOwner: canonicalMutation.pluginOwnedResource.pluginOwner,
+      driver: canonicalMutation.pluginOwnedResource.driver,
+      policySource: canonicalMutation.pluginOwnedResource.policySource,
+      supportsDelete: canonicalMutation.pluginOwnedResource.supportsDelete,
+      ownerContextRequired: canonicalMutation.pluginOwnedResource.ownerContextRequired,
+    },
+    {
+      pluginOwner: 'forms',
+      driver: 'wp-termmeta',
+      policySource: 'push-intent:update-forms-termmeta',
+      supportsDelete: false,
+      ownerContextRequired: true,
+    },
+  );
+
+  assert.equal(aliasPlan.status, 'ready');
+  assert.equal(mutationFor(aliasPlan, resourceKey).pluginOwnedResource.driver, 'wp-term-meta');
+  assert.equal(mutationFor(aliasPlan, resourceKey).resource.table, 'wp_termmeta');
+
+  const applied = applyPlan(cloneJson(remote), canonicalPlan);
+  assert.deepEqual(
+    applied.site.db.wp_termmeta[rowId].meta_value,
+    { privateState: localSecret },
+  );
+  assert.equal(applied.site.db.wp_termmeta[rowId].term_id, 1);
+  assert.equal(applied.appliedMutations, 1);
+
+  const tamperedPlan = tamperReadyPlan(canonicalPlan, (plan) => {
+    plan.mutations[0].pluginOwnedResource.driver = 'wp-option';
+  });
+  const tamperedRemote = siteWithTermmeta(baseSecret);
+  const beforeTamperedApply = JSON.stringify(tamperedRemote);
+  const tamperedError = captureError(() => applyPlan(tamperedRemote, tamperedPlan));
+  assert.ok(tamperedError instanceof PushPlanError);
+  assert.equal(tamperedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(tamperedError.details.resourceKey, resourceKey);
+  assert.equal(tamperedError.details.pluginOwner, 'forms');
+  assert.equal(tamperedError.details.driver, 'wp-option');
+  assert.equal(JSON.stringify(tamperedRemote), beforeTamperedApply);
+
+  const blockedWithoutPolicyJson = JSON.stringify(blockedWithoutPolicy.blockers);
+  const wrongDriverJson = JSON.stringify(wrongDriverPlan.blockers);
+  assert.equal(blockedWithoutPolicyJson.includes(localSecret), false);
+  assert.equal(blockedWithoutPolicyJson.includes(baseSecret), false);
+  assert.equal(wrongDriverJson.includes(localSecret), false);
+  assert.equal(wrongDriverJson.includes(baseSecret), false);
+
+  const evidence = {
+    rpp: 'RPP-0426',
+    driver: 'wp-termmeta',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    accepted: {
+      canonicalDriver: canonicalMutation.pluginOwnedResource.driver,
+      aliasDriver: mutationFor(aliasPlan, resourceKey).pluginOwnedResource.driver,
+      table: canonicalMutation.resource.table,
+      resourceKey,
+      pluginOwner: canonicalMutation.pluginOwnedResource.pluginOwner,
+      policySource: canonicalMutation.pluginOwnedResource.policySource,
+      supportsDelete: canonicalMutation.pluginOwnedResource.supportsDelete,
+      action: canonicalMutation.action,
+      atomicGroupStatus: canonicalPlan.atomicGroups[0].status,
+      termReferenceHash: `sha256:${resourceHash(remote, termResource)}`,
+      preconditionHash: `sha256:${canonicalPrecondition.expectedHash}`,
+      baseHash: `sha256:${canonicalMutation.baseHash}`,
+      localHash: `sha256:${canonicalMutation.localHash}`,
+      appliedRowHash: `sha256:${resourceHash(applied.site, resource)}`,
+    },
+    failClosed: {
+      missingPolicy: {
+        status: blockedWithoutPolicy.status,
+        class: blockedWithoutPolicy.blockers[0].class,
+        blockerHash: sha256Evidence(blockedWithoutPolicy.blockers[0]),
+      },
+      wrongDriver: {
+        status: wrongDriverPlan.status,
+        class: wrongDriverPlan.blockers[0].class,
+        declaredDriver: wrongDriverPlan.blockers[0].driver,
+        blockerHash: sha256Evidence(wrongDriverPlan.blockers[0]),
+      },
+      tamperedApply: {
+        code: tamperedError.code,
+        detailsHash: sha256Evidence(tamperedError.details),
+      },
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    accepted: evidence.accepted,
+    failClosed: evidence.failClosed,
+    evidenceSource: evidence.evidenceSource,
+    productionBacked: evidence.productionBacked,
+  });
+
+  assert.equal(evidence.accepted.table, 'wp_termmeta');
+  assert.equal(evidence.accepted.canonicalDriver, 'wp-termmeta');
+  assert.equal(evidence.accepted.aliasDriver, 'wp-term-meta');
+  assert.equal(evidence.accepted.supportsDelete, false);
+  assert.match(evidence.accepted.termReferenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.accepted.preconditionHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.accepted.appliedRowHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.failClosed.missingPolicy.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.failClosed.wrongDriver.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.failClosed.tamperedApply.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+
+  const evidenceJson = JSON.stringify(evidence);
+  assert.equal(evidenceJson.includes(localSecret), false);
+  assert.equal(evidenceJson.includes(baseSecret), false);
 });
 
 test('blocks unknown plugin-owned custom table rows without leaking values', () => {
