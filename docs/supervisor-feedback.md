@@ -1,9 +1,39 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 02:43 CEST
+Last updated: 2026-05-28 03:02 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 03:02 CEST - Release Gate Evaluator Integrated
+
+- Going well: `243dfe777` adds a fail-closed release gate evaluator and focused
+  tests for the first release-gate foundation slice. It turns `RPP-0001`
+  through `RPP-0020` into machine-readable gate definitions, exact evidence
+  objects, `releaseMovement`, `candidateMovement`, and a bracketed tmux status
+  marker.
+- Verification passed:
+  `node --check src/release-gates.js`,
+  `node --test test/release-gates.test.js`, and `git diff --check`.
+- Also going well: AO supervision is live with six developer lanes, one
+  independent audit lane, one critic, and one progress reporter. The repo now
+  records that AO helper/status/send calls can hang here and should be avoided
+  in favor of tmux/process/git inspection plus bounded `ao spawn`.
+- Not yet done: this does not prove Docker/external runtime, production
+  credential lifecycle, durable journal behavior on non-lab storage, broader
+  graph/plugin-driver surfaces, rollback/repair, or benchmark rollout.
+- Progress change: no final release movement. The evaluator improves
+  fail-closed tracking and makes stale percentage drift harder.
+- Next nudge: integrate the next worker slice only after its tests and evidence
+  are checked; keep at least five developer lanes active.
+
+| Lane | Nudge |
+| --- | --- |
+| Release gates | Use the evaluator output in progress reporting before moving any gate. |
+| Recovery | Wait for the journal worker's full-suite result before integration. |
+| Plugin drivers | Keep exact owner/driver allowlist tests separate from broad claims. |
+| Progress reporter | Refresh the no-go report after each committed worker slice. |
+| Critic | Challenge every local-candidate claim against final-release evidence. |
 
 ## 2026-05-28 02:43 CEST - 1000-Item Completion Checklist
 

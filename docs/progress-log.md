@@ -4,6 +4,41 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Release Gate Evaluator and AO Progress Hold
+
+- Last update: 2026-05-28 03:02 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` at
+  `243dfe777` (`Add fail-closed release gate evaluator`).
+- New release-gate evidence:
+  [src/release-gates.js](../src/release-gates.js),
+  [test/release-gates.test.js](../test/release-gates.test.js), and
+  [docs/evidence/ao-release-gates.md](evidence/ao-release-gates.md).
+- What changed: `evaluateReleaseGates()` now emits a machine-readable
+  `releaseMovement`, `candidateMovement`, exact per-gate evidence objects, and
+  a tmux-friendly bracketed status marker. The first 20 release-gate foundation
+  items now have executable evaluator coverage rather than stale percentages.
+- Verification passed:
+  `node --check src/release-gates.js`,
+  `node --test test/release-gates.test.js`, and `git diff --check`.
+- Checked test result: 8 pass / 0 fail in `test/release-gates.test.js`.
+- Release posture: the evaluator can report `candidate-for-review` for complete
+  local candidate evidence, but final `releaseMovement.allowed` remains `false`
+  until every gate is backed by `final-release` evidence. This keeps Docker or
+  external WordPress, production credential lifecycle, durable journal, broader
+  graph/plugin coverage, rollback/repair, and benchmark rollout as required
+  work.
+- AO supervision update:
+  [docs/evidence/ao-supervision-handoff.md](evidence/ao-supervision-handoff.md)
+  now records the tmux-visible AO team and the no-helper operating rule:
+  supervise with tmux/process/git inspection and bounded `ao spawn`, not
+  hanging AO lifecycle helpers.
+- Progress report:
+  [docs/evidence/ao-progress-report.md](evidence/ao-progress-report.md) records
+  the current no-go decision and separates integrated proof from unintegrated
+  worker output.
+- Percent movement: no final readiness movement. This is stronger release-gate
+  machinery and operator evidence, not production release proof.
+
 ## 2026-05-28 - 1000-Item Completion Checklist
 
 - Last update: 2026-05-28 02:43 CEST.
