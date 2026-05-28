@@ -4,9 +4,11 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generateOwnerContextStalePluginFileRefusalCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
   validateGeneratedCase,
+  validateOwnerContextStalePluginFileRefusalCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
 import { digest } from '../src/stable-json.js';
@@ -130,6 +132,41 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0453 generated owner-context stale plugin file refusal stays redacted', () => {
+  const cases = generateOwnerContextStalePluginFileRefusalCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'current-owner-context-applies',
+    'stale-plugin-file-refused-before-mutation',
+  ]);
+  assert.equal(
+    cases.every((testCase) => testCase.tags.has('owner-context-stale-plugin-file-refusal')),
+    true,
+  );
+  assert.equal(
+    cases.every((testCase) =>
+      testCase.ownerFileResourceKey === 'file:wp-content/plugins/forms/forms.php'),
+    true,
+  );
+
+  const results = cases.map(validateOwnerContextStalePluginFileRefusalCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'current-owner-context-applies': 'applied',
+    'stale-plugin-file-refused-before-mutation': 'refused-before-mutation',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['current-owner-context-applies'].status, 'ready');
+  assert.equal(byVariant['current-owner-context-applies'].appliedMutations, 1);
+  assert.equal(byVariant['stale-plugin-file-refused-before-mutation'].status, 'blocked');
+  assert.equal(byVariant['stale-plugin-file-refused-before-mutation'].mutations, 0);
+  assert.equal(byVariant['stale-plugin-file-refused-before-mutation'].remotePreserved, true);
+  for (const result of results) {
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

@@ -76,6 +76,31 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0453 generated owner-context stale plugin file refusal
+
+RPP-0453 adds a generated support-only matrix for plugin owner-context binding.
+The current-context variant plans one real plugin-owned `wp_options` mutation,
+binds the `forms` owner plugin file as live owner context, and applies exactly
+one mutation when the remote plugin file still matches the dry-run context.
+
+The stale-context variant changes the owner plugin file only on remote while a
+local plugin-owned option update is pending. The planner emits a
+`stale-plugin-owner-context` blocker, preserves the remote plugin file drift
+with a `keep-remote` decision, emits zero mutations, and blocked apply leaves
+both the remote plugin file and plugin-owned option row unchanged. The proof
+records only resource keys, change classes, and hashes; generated option/file
+tokens are asserted absent from blocker, decision, apply-error, audit, and proof
+evidence.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0453|plugin owner context|plugin-owned data' test/generated-push-harness.test.js test/plugin-owner-context-metadata-refusal.test.js test/push-planner.test.js
+```
+
+This remains local/generated evidence. It does not broaden accepted
+plugin-owned resources or change the release NO-GO posture.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +114,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0453 — owner context stale plugin file refusal: generated current-context
+  proof applies one plugin-owned mutation, while stale remote plugin-file
+  context blocks before mutation and preserves redacted remote drift.

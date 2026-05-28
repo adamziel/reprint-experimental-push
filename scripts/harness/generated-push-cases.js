@@ -112,6 +112,13 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateOwnerContextStalePluginFileRefusalCases() {
+  return [
+    'current-owner-context-applies',
+    'stale-plugin-file-refused-before-mutation',
+  ].map((variant, index) => buildOwnerContextStalePluginFileRefusalCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -208,6 +215,124 @@ export function validateGeneratedCase(testCase) {
   return result;
 }
 
+export function validateOwnerContextStalePluginFileRefusalCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const ownerFileDecision = plan.decisions.find((entry) => entry.resourceKey === testCase.ownerFileResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    blockers: plan.blockers.length,
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      status: plan.status,
+      mutation: mutation ? ownerContextStalePluginFileMutationSummary(mutation) : null,
+      blocker: blocker ? ownerContextStalePluginFileBlockerSummary(blocker) : null,
+      ownerFileDecision: ownerFileDecision
+        ? ownerContextStalePluginFileDecisionSummary(ownerFileDecision)
+        : null,
+    }),
+  };
+
+  assertOwnerContextStalePluginFileRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.blockers.length, 0);
+    assert.equal(plan.conflicts.length, 0);
+    assert.equal(plan.mutations.length, 1);
+    assert.ok(mutation, `${testCase.id} should emit one plugin-owned mutation`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assert.equal(mutation.pluginOwnedResource.ownerContextRequired, true);
+    assertOwnerContextStalePluginFileAuditEvidence(mutation.pluginOwnedResource.auditEvidence);
+    const ownerFileContext = ownerContextStalePluginFileContext(mutation, testCase.ownerFileResourceKey);
+    assert.ok(ownerFileContext, `${testCase.id} should bind the plugin file owner context`);
+    assert.equal(ownerFileContext.change.localChange, 'unchanged');
+    assert.equal(ownerFileContext.change.remoteChange, 'unchanged');
+    assert.equal(ownerFileContext.baseHash, ownerFileContext.localHash);
+    assert.equal(ownerFileContext.baseHash, ownerFileContext.remoteHash);
+    assertOwnerContextStalePluginFileChangeHashEvidence(ownerFileContext.change);
+    assertOwnerContextStalePluginFileRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+    assertOwnerContextStalePluginFileRedacted(testCase, ownerFileContext);
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_options[testCase.dataRowId].option_value.mode,
+      testCase.expected.localMode,
+    );
+    assert.equal(
+      applied.site.db.wp_options[testCase.dataRowId].option_value.token,
+      testCase.expected.localToken,
+    );
+    assert.equal(applied.site.files[testCase.ownerFilePath], testCase.expected.ownerFileContents);
+    result.outcome = 'applied';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'refused-before-mutation');
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.mutations.length, 0);
+  assert.ok(blocker, `${testCase.id} should expose a stale owner-context blocker`);
+  assert.equal(blocker.class, 'stale-plugin-owner-context');
+  assert.equal(blocker.pluginOwner, testCase.plugin);
+  assert.equal(blocker.resourceKey, testCase.dataResourceKey);
+  assert.ok(ownerFileDecision, `${testCase.id} should preserve the remote plugin file drift`);
+  assert.equal(ownerFileDecision.decision, 'keep-remote');
+  assert.equal(ownerFileDecision.change.localChange, 'unchanged');
+  assert.equal(ownerFileDecision.change.remoteChange, 'update');
+  assertOwnerContextStalePluginFileChangeHashEvidence(ownerFileDecision.change);
+  const blockedOwnerFileContext = blocker.ownerContext.find(
+    (context) => context.resourceKey === testCase.ownerFileResourceKey,
+  );
+  assert.ok(blockedOwnerFileContext, `${testCase.id} should cite the stale plugin file owner context`);
+  assert.equal(blockedOwnerFileContext.change.localChange, 'unchanged');
+  assert.equal(blockedOwnerFileContext.change.remoteChange, 'update');
+  assert.equal(blockedOwnerFileContext.baseHash, blockedOwnerFileContext.localHash);
+  assert.notEqual(blockedOwnerFileContext.remoteHash, blockedOwnerFileContext.baseHash);
+  assertOwnerContextStalePluginFileChangeHashEvidence(blockedOwnerFileContext.change);
+  assertOwnerContextStalePluginFileChangeHashEvidence(blocker.change);
+  assertOwnerContextStalePluginFileRedacted(testCase, blocker);
+  assertOwnerContextStalePluginFileRedacted(testCase, ownerFileDecision);
+
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a blocked stale owner-context remote`);
+  assert.equal(remote.files[testCase.ownerFilePath], testCase.expected.remoteOwnerFileContents);
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.mode,
+    testCase.expected.remoteMode,
+  );
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.token,
+    testCase.expected.remoteToken,
+  );
+  assertOwnerContextStalePluginFileRedacted(testCase, error.details);
+  result.outcome = 'refused-before-mutation';
+  result.applied = false;
+  result.remotePreserved = true;
+  return result;
+}
+
 function buildGeneratedCase({ index, tier, rng }) {
   const id = `generated-push-${String(index + 1).padStart(3, '0')}`;
   const family = scenarioFamilies[index % scenarioFamilies.length];
@@ -256,6 +381,80 @@ function buildGeneratedCase({ index, tier, rng }) {
     local,
     remote,
   };
+}
+
+function buildOwnerContextStalePluginFileRefusalCase({ variant, index }) {
+  const base = buildBaseSite(4530 + index, 4);
+  const plugin = 'forms';
+  const ownerFilePath = pluginMainFile(plugin);
+  const ownerFileResourceKey = `file:${ownerFilePath}`;
+  const optionName = `rpp_0453_owner_context_guard_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const secrets = {
+    baseFile: `rpp0453-base-owner-file-secret-${index + 1}`,
+    remoteFile: `rpp0453-remote-owner-file-secret-${index + 1}`,
+    baseOption: `rpp0453-base-option-secret-${index + 1}`,
+    localOption: `rpp0453-local-option-secret-${index + 1}`,
+  };
+  base.files[ownerFilePath] = `<?php /* ${secrets.baseFile} */`;
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base', token: secrets.baseOption },
+    __pluginOwner: plugin,
+  };
+
+  setRow(base, 'wp_options', dataRowId, baseRow);
+  setRow(local, 'wp_options', dataRowId, {
+    ...baseRow,
+    option_value: { mode: 'local-owner-context-current', token: secrets.localOption },
+  });
+  setRow(remote, 'wp_options', dataRowId, baseRow);
+  allowPluginOwned(base, dataResourceKey, plugin, 'wp-option');
+  allowPluginOwned(local, dataResourceKey, plugin, 'wp-option');
+  allowPluginOwned(remote, dataResourceKey, plugin, 'wp-option');
+
+  const testCase = {
+    id: `rpp-0453-owner-context-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'owner-context-stale-plugin-file-refusal',
+    tags: new Set(['owner-context-stale-plugin-file-refusal', 'plugin-owned-generated']),
+    plugin,
+    ownerFilePath,
+    ownerFileResourceKey,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'current-owner-context-applies') {
+    testCase.tags.add('owner-context-current-applies');
+    testCase.expected = {
+      outcome: 'applied',
+      localMode: 'local-owner-context-current',
+      localToken: secrets.localOption,
+      ownerFileContents: base.files[ownerFilePath],
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'stale-plugin-file-refused-before-mutation');
+  remote.files[ownerFilePath] = `<?php /* ${secrets.remoteFile} */`;
+  testCase.tags.add('stale-plugin-file-refused-before-mutation');
+  testCase.expected = {
+    outcome: 'refused-before-mutation',
+    remoteOwnerFileContents: remote.files[ownerFilePath],
+    remoteMode: 'base',
+    remoteToken: secrets.baseOption,
+  };
+  return testCase;
 }
 
 const scenarioFamilyBuilders = {
@@ -868,6 +1067,103 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function ownerContextStalePluginFileMutationSummary(mutation) {
+  const ownerFileContext = ownerContextStalePluginFileContext(
+    mutation,
+    'file:wp-content/plugins/forms/forms.php',
+  );
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+    driver: mutation.pluginOwnedResource?.driver,
+    ownerContextRequired: mutation.pluginOwnedResource?.ownerContextRequired,
+    ownerFileContext: ownerFileContext
+      ? {
+          resourceKey: ownerFileContext.resourceKey,
+          baseHash: ownerFileContext.baseHash,
+          localHash: ownerFileContext.localHash,
+          remoteHash: ownerFileContext.remoteHash,
+          localChange: ownerFileContext.change.localChange,
+          remoteChange: ownerFileContext.change.remoteChange,
+        }
+      : null,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+  };
+}
+
+function ownerContextStalePluginFileBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    resourceKey: blocker.resourceKey,
+    pluginOwner: blocker.pluginOwner,
+    ownerContext: (blocker.ownerContext || []).map((context) => ({
+      resourceKey: context.resourceKey,
+      baseHash: context.baseHash,
+      localHash: context.localHash,
+      remoteHash: context.remoteHash,
+      localChange: context.change.localChange,
+      remoteChange: context.change.remoteChange,
+    })),
+    change: {
+      localChange: blocker.change.localChange,
+      remoteChange: blocker.change.remoteChange,
+      baseHash: blocker.change.base.hash,
+      localHash: blocker.change.local.hash,
+      remoteHash: blocker.change.remote.hash,
+    },
+  };
+}
+
+function ownerContextStalePluginFileDecisionSummary(decision) {
+  return {
+    decision: decision.decision,
+    resourceKey: decision.resourceKey,
+    localChange: decision.change.localChange,
+    remoteChange: decision.change.remoteChange,
+    baseHash: decision.change.base.hash,
+    localHash: decision.change.local.hash,
+    remoteHash: decision.change.remote.hash,
+  };
+}
+
+function ownerContextStalePluginFileContext(mutation, ownerFileResourceKey) {
+  return mutation.pluginOwnedResource?.ownerContext?.find(
+    (context) => context.resourceKey === ownerFileResourceKey,
+  );
+}
+
+function assertOwnerContextStalePluginFileAuditEvidence(evidence) {
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'wp-option');
+  assert.equal(evidence.supportsDelete, false);
+  for (const key of ['baseHash', 'localHash', 'remoteHash', 'ownerContextHash']) {
+    assert.match(evidence[key], /^[a-f0-9]{64}$/);
+  }
+}
+
+function assertOwnerContextStalePluginFileChangeHashEvidence(change) {
+  assert.ok(change);
+  for (const side of ['base', 'local', 'remote']) {
+    assert.equal(change[side].state, 'present');
+    assert.match(change[side].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[side], 'value'), false);
+  }
+}
+
+function assertOwnerContextStalePluginFileRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
+  }
 }
 
 function assertPlanContract(testCase, plan) {
