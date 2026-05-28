@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan, PushPlanError } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -11,9 +12,23 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { deserializeResourceValue, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected function to throw');
+}
 
 const requiredFamilies = [
   'local-file-update',
@@ -168,6 +183,85 @@ test('RPP-0456 generated driver delete support flag coverage is redacted', () =>
     assert.equal(result.productionBacked, false);
     assert.equal(result.releaseGate, 'NO-GO');
     assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
+});
+
+test('RPP-0233 generated ready fixtures reject forged localHash evidence', () => {
+  const selectedFamilies = [
+    'file-create-update-delete-mix-ready',
+    'row-create-update-delete-mix-ready',
+    'wp-posts-create-update-delete-ready',
+    'supported-plugin-option',
+  ];
+  const cases = generatePushHarnessCases();
+
+  for (const family of selectedFamilies) {
+    const testCase = cases.find((entry) => entry.family === family);
+    assert.ok(testCase, `missing generated ${family} case`);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assert.equal(plan.status, 'ready', `${family} should be a ready fixture`);
+    assert.ok(plan.mutations.length > 0, `${family} should emit at least one mutation`);
+    for (const mutation of plan.mutations) {
+      assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+      assert.equal(
+        mutation.localHash,
+        digest(deserializeResourceValue(mutation.value)),
+        `${family} mutation ${mutation.resourceKey} localHash must bind to planned value`,
+      );
+      if (!mutation.wordpressGraphIdentity) {
+        assert.equal(
+          mutation.localHash,
+          resourceHash(testCase.local, mutation.resource),
+          `${family} mutation ${mutation.resourceKey} localHash must match local resource snapshot`,
+        );
+      }
+    }
+
+    const target = plan.mutations[0];
+    const forged = cloneJson(plan);
+    forged.mutations.find((mutation) => mutation.id === target.id).localHash = '0'.repeat(64);
+    const remote = cloneJson(testCase.remote);
+    const beforeRemoteHash = digest(remote);
+    const error = captureError(() => applyPlan(remote, forged));
+
+    assert.ok(error instanceof PushPlanError, `${family} forged localHash should reject`);
+    assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION');
+    assert.ok(
+      error.details.issues.some((issue) => issue.code === 'LOCAL_HASH_MISMATCH'),
+      `${family} should report a localHash mismatch`,
+    );
+    assert.equal(digest(remote), beforeRemoteHash, `${family} forged plan mutated remote before refusal`);
+
+    const serializedEvidence = JSON.stringify({
+      family,
+      refusal: {
+        code: error.code,
+        details: error.details,
+        detailsHash: `sha256:${digest(error.details)}`,
+      },
+      mutations: plan.mutations.map((mutation) => ({
+        id: mutation.id,
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        plannedValueHash: digest(deserializeResourceValue(mutation.value)),
+      })),
+    });
+    for (const mutation of plan.mutations) {
+      assert.equal(
+        serializedEvidence.includes(JSON.stringify(mutation.value)),
+        false,
+        `${family} hash-only evidence leaked mutation payload for ${mutation.resourceKey}`,
+      );
+    }
   }
 });
 

@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 09:24 CEST.
+- Last update: 2026-05-28 09:34 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `cb6c29f31` (`test: add progress timestamp generated coverage`).
+  `e9f56fef8` (`test: prove local hash correctness`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 123
-  items complete and leaves 877 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 124
+  items complete and leaves 876 open.
 - Checked slices: 41 release-gate foundation items, 16 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 10 merge-invariant items. No release-ops items are checked
+  harness items, and 11 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -196,6 +196,18 @@ linked implementation artifacts.
   mutations, decisions, conflicts, blockers, and atomic groups, and compares
   aggregate evidence with harness report totals. Caveat: this is deterministic
   local generated-harness evidence, not final production release proof.
+- LocalHash correctness continuation: `e9f56fef8` integrated `RPP-0233`
+  localHash correctness variant 2. Focused commands:
+  `node --test --test-name-pattern=RPP-0233 test/push-planner.test.js` and
+  `node --test --test-name-pattern=RPP-0233 test/generated-push-harness.test.js`
+  (1 passing proof each), plus `node --test test/generated-push-harness.test.js`
+  (9 passing generated-harness tests) and `node --test test/push-planner.test.js`
+  (102 passing planner/apply tests). The executor validates ready-plan
+  `localHash` evidence against the planned mutation value, rejects missing,
+  malformed, forged, stale-value, and stale-snapshot hash evidence before
+  mutation, and keeps serialized refusal evidence hash-only/redacted. Caveat:
+  this is focused local planner/apply evidence, not final production release
+  proof.
 - Stale plugin metadata owner continuation: `43beb7c9c` integrated
   `RPP-0414` stale plugin metadata owner context refusal. Focused planner
   tests reject stale plugin-owned row and plugin file mutations before mutation
