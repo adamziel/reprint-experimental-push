@@ -81,6 +81,11 @@ relationship row, and preserve every unplanned remote resource. Stale cases
 make the mapped object and taxonomy targets non-equivalent and require the new
 relationship to fail closed with hash-only graph evidence.
 
+The `pluginOwnedOptionChanges` target coverage records per-tier counts for
+supported plugin-owned `wp_options` rows. Ready cases carry explicit
+plugin-owner/driver evidence, apply only the planned option value, preserve
+unplanned remote resources, and reject stale remote replay before mutation.
+
 At the time this note was added, the summary command reported:
 
 ```json
@@ -109,6 +114,25 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "pluginOwnedOptionChanges": {
+      "family": "supported-plugin-option",
+      "total": 10,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -178,6 +202,7 @@ At the time this note was added, the summary command reported:
     "file-type-swap": 19,
     "file-type-swap-ready": 10,
     "file-type-swap-conflict": 9,
+    "plugin-owned-option-change": 10,
     "row-create-update-delete-mix": 18,
     "row-create-update-delete-mix-ready": 9,
     "row-create-update-delete-mix-conflict": 9,

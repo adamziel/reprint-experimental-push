@@ -101,6 +101,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-relationships-graph-ready',
     tag: 'wp-term-relationships-graph',
   },
+  pluginOwnedOptionChanges: {
+    family: 'supported-plugin-option',
+    tag: 'plugin-owned-option-change',
+  },
 });
 
 export function generatePushHarnessCases({
@@ -323,6 +327,7 @@ const scenarioFamilyBuilders = {
     });
     allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
     tags.add('plugin-owned-supported');
+    tags.add('plugin-owned-option-change');
   },
   'unsupported-plugin-owned-row': ({ local, allocator, tags }) => {
     const optionName = `unsafe_generated_${allocator.next()}`;

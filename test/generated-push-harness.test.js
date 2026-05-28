@@ -76,6 +76,7 @@ const requiredFamilies = [
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
+  'plugin-owned-option-change',
   'plugin-owned-unsupported',
   'file-topology',
   'directory-descendant',
@@ -536,6 +537,37 @@ function assertHashOnlyGraphEvidence(evidence, forbiddenValues) {
     assert.equal(evidenceJson.includes(value), false, 'graph identity evidence should not include raw row values');
   }
 }
+
+test('RPP-0114 plugin-owned option target rejects stale replay before mutation', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedOptionChanges;
+
+  assert.ok(coverage, 'missing plugin-owned option target coverage');
+  assert.equal(coverage.family, 'supported-plugin-option');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-option-change']);
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+
+  const optionCase = generatePushHarnessCases()
+    .find((testCase) => testCase.family === 'supported-plugin-option');
+
+  assert.ok(optionCase, 'missing generated plugin-owned option case');
+  assert.ok(optionCase.tags.has('plugin-owned-option-change'));
+
+  const plan = createGeneratedPlan(optionCase);
+  const mutation = plan.mutations.find((entry) =>
+    entry.resource.table === 'wp_options' && entry.pluginOwnedResource?.driver === 'wp-option');
+  const result = validateGeneratedCase(optionCase);
+
+  assert.equal(result.status, 'ready');
+  assert.ok(mutation, 'plugin-owned option case should plan the option mutation');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(result.applied, true, 'plugin-owned option should apply through the harness');
+  assert.equal(result.unplannedRemotePreserved, true, 'plugin-owned option apply should preserve unplanned remote data');
+  assert.equal(result.staleReplayRejected, true, 'plugin-owned option should reject stale replay');
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+});
 
 function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
