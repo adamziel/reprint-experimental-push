@@ -696,6 +696,93 @@ test('blocks local plugin metadata changes when remote plugin files changed', ()
   assert.equal(remote.files['wp-content/plugins/forms/forms.php'], '<?php /* remote-private-forms-code */');
 });
 
+test('RPP-0216 blocked plans refuse apply before mutation with stable evidence', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const blockedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const privateBlockedValue = 'local-private-rpp0216-blocked-mode';
+  local.files['index.php'] = '<?php echo "rpp0216 safe local edit";';
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateBlockedValue;
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const firstJournal = [];
+  const secondJournal = [];
+  const trapJournal = (events) => ({
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+  const errorEnvelope = (error) => ({
+    name: error.name,
+    code: error.code,
+    message: error.message,
+    details: error.details,
+  });
+  const beforeRemote = JSON.stringify(remote);
+
+  assert.equal(firstPlan.status, 'blocked');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0216 blocked apply refusal');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 1,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'blocked apply refusal evidence should be stable across deterministic planning runs',
+  );
+  assert.deepEqual(firstPlan.blockers, secondPlan.blockers);
+  assert.equal(mutationFor(firstPlan, 'file:index.php').action, 'put');
+  assert.equal(mutationFor(firstPlan, blockedResourceKey), undefined);
+  assert.equal(
+    firstPlan.preconditions.some((precondition) => precondition.resourceKey === blockedResourceKey),
+    false,
+    'blocked resource emitted a precondition',
+  );
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  assert.equal(firstPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(firstPlan.blockers[0].resourceKey, blockedResourceKey);
+  assert.equal(
+    JSON.stringify({
+      blockers: firstPlan.blockers,
+      envelope: plannerSummaryEvidenceEnvelope(firstPlan),
+    }).includes(privateBlockedValue),
+    false,
+    'blocked plan evidence leaked raw private option value',
+  );
+
+  const firstError = captureError(() => applyPlan(remote, firstPlan, {
+    durableJournal: trapJournal(firstJournal),
+  }));
+  const secondError = captureError(() => applyPlan(cloneJson(remote), secondPlan, {
+    durableJournal: trapJournal(secondJournal),
+  }));
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.deepEqual(errorEnvelope(firstError), {
+    name: 'PushPlanError',
+    code: 'PLAN_NOT_READY',
+    message: 'Refusing to apply a blocked plan.',
+    details: { status: 'blocked' },
+  });
+  assert.deepEqual(errorEnvelope(firstError), errorEnvelope(secondError));
+  assert.equal(JSON.stringify(errorEnvelope(firstError)).includes(privateBlockedValue), false);
+  assert.deepEqual(firstJournal, [], 'blocked apply should refuse before durable journal evidence');
+  assert.deepEqual(secondJournal, [], 'blocked apply replay should refuse before durable journal evidence');
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.equal(remote.files['index.php'], base.files['index.php']);
+  assert.equal(
+    remote.db.wp_options['option_name:forms_settings'].option_value.mode,
+    base.db.wp_options['option_name:forms_settings'].option_value.mode,
+  );
+});
+
 test('blocks local plugin file changes when remote plugin metadata changed', () => {
   const base = baseSite();
   const local = baseSite();
