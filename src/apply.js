@@ -39,7 +39,6 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
-  validateSupportedPluginOwnedMutations(remote, plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
@@ -88,6 +87,7 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validatePreconditions(remote, plan);
+  validateSupportedPluginOwnedMutations(remote, plan);
   try {
     recordDurablePlanOpened(durableJournal, remote, plan, {
       ...options,
@@ -224,6 +224,7 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
         },
       );
     }
+    validatePluginOwnedOwnerContext(remote, mutation, owner);
   }
 }
 
@@ -287,6 +288,55 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
   }
   return false;
+}
+
+function validatePluginOwnedOwnerContext(remote, mutation, owner) {
+  const ownerContext = mutation.pluginOwnedResource?.ownerContext;
+  if (!Array.isArray(ownerContext) || ownerContext.length === 0) {
+    if (mutation.pluginOwnedResource?.ownerContextRequired !== true) {
+      return;
+    }
+    throw new PushPlanError(
+      'STALE_PLUGIN_OWNER_CONTEXT',
+      `Refusing to apply plugin-owned resource ${mutation.resourceKey} without live owner context evidence.`,
+      {
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+        pluginOwner: owner,
+      },
+    );
+  }
+
+  for (const context of ownerContext) {
+    if (!context?.resource || typeof context.resourceKey !== 'string' || !/^[a-f0-9]{64}$/.test(context.remoteHash || '')) {
+      throw new PushPlanError(
+        'STALE_PLUGIN_OWNER_CONTEXT',
+        `Refusing to apply plugin-owned resource ${mutation.resourceKey} with invalid owner context evidence.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          pluginOwner: owner,
+          contextResourceKey: context?.resourceKey || null,
+        },
+      );
+    }
+
+    const actualHash = resourceHash(remote, context.resource);
+    if (actualHash !== context.remoteHash) {
+      throw new PushPlanError(
+        'STALE_PLUGIN_OWNER_CONTEXT',
+        `Refusing to apply plugin-owned resource ${mutation.resourceKey} because owner context ${context.resourceKey} changed since dry run.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          pluginOwner: owner,
+          contextResourceKey: context.resourceKey,
+          expectedHash: context.remoteHash,
+          actualHash,
+        },
+      );
+    }
+  }
 }
 
 function validFixtureFormsLabTableEvidence(evidence, remote) {

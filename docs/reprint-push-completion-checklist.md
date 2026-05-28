@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 95.
-- Remaining open: 905.
+- Verified complete: 96.
+- Remaining open: 904.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -228,7 +228,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [ ] RPP-0204 (Near-Mid / merge-invariants) Implement local directory delete versus remote descendant create, variant 1. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0205 (Near-Mid / merge-invariants) Implement local file type swap versus remote descendant, variant 1. Success: progress log records the command and caveat.
 - [ ] RPP-0206 (Near-Mid / merge-invariants) Implement remote-only plugin metadata preservation, variant 1. Success: node test proves the invariant over generated and focused fixtures.
-- [ ] RPP-0207 (Near-Mid / merge-invariants) Implement local plugin data with stale owner context, variant 1. Success: executor rejects forged or stale mutation attempts.
+- [x] RPP-0207 (Near-Mid / merge-invariants) Implement local plugin data with stale owner context, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0208 (Near-Mid / merge-invariants) Implement unknown plugin-owned resource refusal, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0209 (Near-Mid / merge-invariants) Implement conflict evidence hash redaction, variant 1. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0210 (Near-Mid / merge-invariants) Implement planner summary count consistency, variant 1. Success: progress log records the command and caveat.

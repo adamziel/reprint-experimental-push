@@ -309,11 +309,20 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
       }
       if (isPluginOwnedDataResource(resource, owner)) {
         const support = pluginOwnedResourcePolicy.supportFor(resource, owner);
+        const ownerContext = pluginOwnerContextEvidence({
+          owner,
+          resources,
+          base,
+          local,
+          remote,
+        });
         mutation.pluginOwnedResource = {
           pluginOwner: owner,
           driver: support.driver,
           policySource: support.policySource,
           supportsDelete: support.supportsDelete,
+          ownerContext,
+          ownerContextRequired: ownerContext.length > 0,
           driverEvidence: support.driverEvidence,
         };
       }
