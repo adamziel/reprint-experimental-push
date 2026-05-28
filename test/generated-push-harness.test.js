@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createPushPlan } from '../src/planner.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -98,7 +100,7 @@ test('RPP-0101 generated harness emits ready and non-ready file create/update/de
   assert.equal(nonReady.applied, false, 'non-ready mix must not apply mutations');
 });
 
-test('RPP-0102 directory descendant conflict exposes per-tier target counts', () => {
+test('RPP-0102/RPP-0204 directory descendant conflict names refusal behavior and redacts descendant bytes', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.directoryDescendantConflict;
 
@@ -122,7 +124,32 @@ test('RPP-0102 directory descendant conflict exposes per-tier target counts', ()
   assert.ok(conflictCase.tags.has('directory-delete-with-remote-descendant'));
 
   const result = validateGeneratedCase(conflictCase);
+  const plan = createPushPlan({
+    base: conflictCase.base,
+    local: conflictCase.local,
+    remote: conflictCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const conflict = plan.conflicts.find((entry) =>
+    entry.class === 'file-topology-conflict'
+    && entry.change.localChange === 'delete'
+    && entry.relatedChange?.remoteChange === 'create');
+
   assert.equal(result.status, 'conflict');
   assert.ok(result.conflicts > 0, 'directory descendant case must conflict');
   assert.equal(result.applied, false, 'directory descendant conflict must not apply mutations');
+  assert.ok(conflict, 'missing directory delete / remote descendant create topology conflict');
+
+  const remoteDescendantPath = conflict.relatedResourceKey.slice('file:'.length);
+  const remoteDescendantBytes = conflictCase.remote.files[remoteDescendantPath];
+  assert.equal(typeof remoteDescendantBytes, 'string');
+  const serializedPlan = JSON.stringify(plan);
+
+  assert.equal(conflict.reason, 'Local file deletion or type change would hide or remove a live remote descendant.');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-file-topology-and-stop');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === conflict.resourceKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === conflict.resourceKey), false);
+  assert.equal(serializedPlan.includes(remoteDescendantBytes), false);
+  assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(conflict.relatedChange.remote.hash, /^[a-f0-9]{64}$/);
 });
