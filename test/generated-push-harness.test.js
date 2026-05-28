@@ -5,8 +5,10 @@ import { applyPlan, PushPlanError } from '../src/apply.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
+  generateDriverApplyValidationHookCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
+  validateDriverApplyValidationHookCase,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
@@ -223,6 +225,42 @@ test('RPP-0233 generated ready fixtures reject forged localHash evidence', () =>
         `${family} hash-only evidence leaked mutation payload for ${mutation.resourceKey}`,
       );
     }
+  }
+});
+
+test('RPP-0458 generated driver apply validation hook evidence is redacted', () => {
+  const cases = generateDriverApplyValidationHookCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'fixture-driver-accepted-hook',
+    'forged-driver-evidence-refused-before-hook',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('driver-apply-validation-hook-generated')), true);
+  assert.equal(
+    cases.every((testCase) => testCase.dataResourceKey.startsWith('row:["wp_reprint_push_forms_lab"')),
+    true,
+  );
+
+  const results = cases.map(validateDriverApplyValidationHookCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'fixture-driver-accepted-hook': 'accepted-hook-applied',
+    'forged-driver-evidence-refused-before-hook': 'refused-before-hook',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['fixture-driver-accepted-hook'].status, 'ready');
+  assert.equal(byVariant['fixture-driver-accepted-hook'].appliedMutations, 1);
+  assert.equal(
+    byVariant['forged-driver-evidence-refused-before-hook'].rejectionCode,
+    'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
+  );
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+    assert.match(result.validationEvidenceHash, /^[a-f0-9]{64}$/);
   }
 });
 

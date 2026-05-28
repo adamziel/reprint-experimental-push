@@ -52,6 +52,31 @@ This evidence does not broaden accepted plugin-owned resources. The fixture
 driver still requires exact owner, table, positive id row, active unchanged
 driver plugin evidence, and no delete mutation.
 
+## RPP-0458 generated driver apply validation hook coverage
+
+RPP-0458 adds generated local support evidence for the apply-time plugin-driver
+validation hook. The supported fixture variant plans one
+`fixture-forms-lab-table` mutation, reaches `beforeMutation` with
+`driverApplyValidation` evidence marked
+`PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED`, and applies exactly one
+`wp_reprint_push_forms_lab` row mutation.
+
+The unsupported variant forges the ready plan's fixture driver evidence before
+apply. Apply rejects it with `UNSUPPORTED_PLUGIN_OWNED_RESOURCE` and
+`PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED` evidence before the hook runs and before
+the remote row changes. Proof, accepted hook evidence, refused apply evidence,
+driver audit evidence, and journal entries remain hash-only/redacted; generated
+fixture plugin versions and row payload tokens are asserted absent.
+
+Evidence status: this is `local-generated` support evidence, not
+production-backed proof. It keeps the release posture at `NO-GO`.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0458|RPP-0438|fixture forms lab table journal redacts raw payload values' test/generated-push-harness.test.js test/push-planner.test.js
+```
+
 ## RPP-0439 driver audit evidence redaction
 
 Focused local verification:
@@ -86,6 +111,9 @@ evidence, not production-backed evidence.
 - RPP-0438 — driver apply validation hook: accepted fixture driver evidence
   carries one real mutation through apply, and forged driver evidence fails
   closed before mutation.
+- RPP-0458 — generated driver apply validation hook coverage: local fixture
+  proof applies one accepted mutation and rejects forged driver evidence before
+  hook/mutation with hash-only redacted evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.

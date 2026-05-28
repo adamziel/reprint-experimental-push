@@ -112,6 +112,13 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateDriverApplyValidationHookCases() {
+  return [
+    'fixture-driver-accepted-hook',
+    'forged-driver-evidence-refused-before-hook',
+  ].map((variant, index) => buildDriverApplyValidationHookCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -208,6 +215,128 @@ export function validateGeneratedCase(testCase) {
   return result;
 }
 
+export function validateDriverApplyValidationHookCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      evidenceScope: 'local-generated',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      status: plan.status,
+      mutation: mutation ? driverApplyValidationMutationSummary(mutation) : null,
+    }),
+  };
+
+  assertDriverApplyValidationRedacted(testCase, result);
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.blockers.length, 0);
+  assert.equal(plan.conflicts.length, 0);
+  assert.equal(plan.mutations.length, 1);
+  assert.ok(mutation, `${testCase.id} should emit one fixture driver mutation`);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource.driver, 'fixture-forms-lab-table');
+  assert.equal(mutation.pluginOwnedResource.driverEvidence.source, 'live-remote');
+  assert.equal(
+    mutation.pluginOwnedResource.driverEvidence.resourceKey,
+    'plugin:reprint-push-forms-fixture',
+  );
+  assert.match(mutation.pluginOwnedResource.driverEvidence.baseHash, /^[a-f0-9]{64}$/);
+  assert.equal(
+    mutation.pluginOwnedResource.driverEvidence.baseHash,
+    mutation.pluginOwnedResource.driverEvidence.remoteHash,
+  );
+  assertDriverApplyValidationAuditEvidence(mutation.pluginOwnedResource.auditEvidence);
+  assertDriverApplyValidationRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+  assertDriverApplyValidationRedacted(testCase, mutation.pluginOwnedResource.driverEvidence);
+
+  if (testCase.expected.outcome === 'accepted-hook-applied') {
+    const validationEvidence = [];
+    const applied = applyPlan(deepClone(testCase.remote), plan, {
+      beforeMutation({ mutation: appliedMutation, mutationIndex, driverApplyValidation }) {
+        assert.equal(mutationIndex, 1);
+        assert.equal(appliedMutation.resourceKey, testCase.dataResourceKey);
+        validationEvidence.push(driverApplyValidation);
+      },
+    });
+    assert.equal(validationEvidence.length, 1);
+    assertDriverApplyValidationHookEvidence(validationEvidence[0], {
+      outcome: 'accepted',
+      reasonCode: 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED',
+      testCase,
+    });
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_reprint_push_forms_lab[testCase.dataRowId].payload.mode,
+      testCase.expected.localMode,
+    );
+    assert.equal(
+      applied.site.db.wp_reprint_push_forms_lab[testCase.dataRowId].payload.token,
+      testCase.expected.localToken,
+    );
+    assert.equal(applied.journal.entries.length, 1);
+    assert.equal(applied.journal.entries[0].beforeValue.redacted, true);
+    assert.equal(applied.journal.entries[0].afterValue.redacted, true);
+    assertDriverApplyValidationRedacted(testCase, validationEvidence[0]);
+    assertDriverApplyValidationRedacted(testCase, applied.journal);
+    result.outcome = 'accepted-hook-applied';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    result.validationEvidenceHash = digest(validationEvidence[0]);
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'refused-before-hook');
+  const forgedPlan = driverApplyValidationForgedPlan(plan, mutation.id);
+  const forgedMutation = forgedPlan.mutations.find((entry) => entry.id === mutation.id);
+  assert.equal(forgedMutation.pluginOwnedResource.driverEvidence.remoteHash, '0'.repeat(64));
+  let hookCalls = 0;
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, forgedPlan, {
+    beforeMutation() {
+      hookCalls++;
+    },
+  }));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(hookCalls, 0);
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a refused remote`);
+  assert.equal(
+    remote.db.wp_reprint_push_forms_lab[testCase.dataRowId].payload.token,
+    testCase.expected.remoteToken,
+  );
+  assertDriverApplyValidationHookEvidence(error.details.applyValidationEvidence, {
+    outcome: 'refused-before-mutation',
+    reasonCode: 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED',
+    testCase,
+  });
+  assert.equal(error.details.applyValidationEvidence.driverEvidence.remoteHash, '0'.repeat(64));
+  assertDriverApplyValidationRedacted(testCase, error.details);
+  result.outcome = 'refused-before-hook';
+  result.applied = false;
+  result.rejectionCode = error.code;
+  result.validationEvidenceHash = digest(error.details.applyValidationEvidence);
+  return result;
+}
+
 function buildGeneratedCase({ index, tier, rng }) {
   const id = `generated-push-${String(index + 1).padStart(3, '0')}`;
   const family = scenarioFamilies[index % scenarioFamilies.length];
@@ -256,6 +385,70 @@ function buildGeneratedCase({ index, tier, rng }) {
     local,
     remote,
   };
+}
+
+function buildDriverApplyValidationHookCase({ variant, index }) {
+  const base = buildBaseSite(4580 + index, 4);
+  const fixturePlugin = 'reprint-push-forms-fixture';
+  const rowIdNumber = 4580 + index + 1;
+  const dataRowId = `id:${rowIdNumber}`;
+  const dataResourceKey = rowKey('wp_reprint_push_forms_lab', dataRowId);
+  const secrets = {
+    fixtureVersion: `rpp0458-fixture-version-secret-${index + 1}`,
+    basePayload: `rpp0458-base-payload-secret-${index + 1}`,
+    localPayload: `rpp0458-local-payload-secret-${index + 1}`,
+  };
+  const baseRow = {
+    id: rowIdNumber,
+    form_slug: `rpp-0458-generated-${index + 1}`,
+    payload: { owner: 'forms', mode: 'base', token: secrets.basePayload },
+    updated_marker: 'base',
+    __pluginOwner: 'forms',
+  };
+
+  base.plugins[fixturePlugin] = { version: secrets.fixtureVersion, active: true };
+  setRow(base, 'wp_reprint_push_forms_lab', dataRowId, baseRow);
+  allowPluginOwned(base, dataResourceKey, 'forms', 'fixture-forms-lab-table');
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  setRow(local, 'wp_reprint_push_forms_lab', dataRowId, {
+    ...baseRow,
+    payload: { owner: 'forms', mode: 'local-validated', token: secrets.localPayload },
+    updated_marker: 'local-validated',
+  });
+  allowPluginOwned(local, dataResourceKey, 'forms', 'fixture-forms-lab-table');
+  allowPluginOwned(remote, dataResourceKey, 'forms', 'fixture-forms-lab-table');
+
+  const testCase = {
+    id: `rpp-0458-driver-apply-validation-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'driver-apply-validation-hook-generated',
+    tags: new Set(['driver-apply-validation-hook-generated', 'plugin-owned-generated']),
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {
+      localMode: 'local-validated',
+      localToken: secrets.localPayload,
+      remoteToken: secrets.basePayload,
+    },
+  };
+
+  if (variant === 'fixture-driver-accepted-hook') {
+    testCase.tags.add('driver-apply-validation-accepted');
+    testCase.expected.outcome = 'accepted-hook-applied';
+    return testCase;
+  }
+
+  assert.equal(variant, 'forged-driver-evidence-refused-before-hook');
+  testCase.tags.add('driver-apply-validation-refused');
+  testCase.expected.outcome = 'refused-before-hook';
+  return testCase;
 }
 
 const scenarioFamilyBuilders = {
@@ -868,6 +1061,74 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function driverApplyValidationMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+    driver: mutation.pluginOwnedResource?.driver,
+    driverEvidence: mutation.pluginOwnedResource?.driverEvidence
+      ? {
+          source: mutation.pluginOwnedResource.driverEvidence.source,
+          resourceKey: mutation.pluginOwnedResource.driverEvidence.resourceKey,
+          baseHash: mutation.pluginOwnedResource.driverEvidence.baseHash,
+          remoteHash: mutation.pluginOwnedResource.driverEvidence.remoteHash,
+        }
+      : null,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+  };
+}
+
+function driverApplyValidationForgedPlan(plan, mutationId) {
+  const forged = deepClone(plan);
+  const mutation = forged.mutations.find((entry) => entry.id === mutationId);
+  mutation.pluginOwnedResource.driverEvidence.remoteHash = '0'.repeat(64);
+  return forged;
+}
+
+function assertDriverApplyValidationAuditEvidence(evidence) {
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'fixture-forms-lab-table');
+  assert.equal(evidence.supportsDelete, false);
+  for (const key of ['baseHash', 'localHash', 'remoteHash', 'ownerContextHash', 'driverEvidenceHash']) {
+    assert.match(evidence[key], /^[a-f0-9]{64}$/);
+  }
+}
+
+function assertDriverApplyValidationHookEvidence(evidence, { outcome, reasonCode, testCase }) {
+  assert.equal(evidence.reasonCode, reasonCode);
+  assert.equal(evidence.operation, 'driver-apply-validation');
+  assert.equal(evidence.outcome, outcome);
+  assert.equal(evidence.resourceKey, testCase.dataResourceKey);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'fixture-forms-lab-table');
+  assert.equal(evidence.action, 'put');
+  assert.equal(evidence.resource.table, 'wp_reprint_push_forms_lab');
+  assert.equal(evidence.resource.id, testCase.dataRowId);
+  assert.equal(evidence.planned.state, 'present');
+  assert.match(evidence.planned.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.remote.state, 'present');
+  assert.match(evidence.remote.hash, /^[a-f0-9]{64}$/);
+  assert.equal(evidence.driverEvidence.state, 'present');
+  assert.equal(evidence.driverEvidence.source, 'live-remote');
+  assert.equal(evidence.driverEvidence.resourceKey, 'plugin:reprint-push-forms-fixture');
+  assert.match(evidence.driverEvidence.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(evidence.driverEvidence.remoteHash, /^[a-f0-9]{64}$/);
+}
+
+function assertDriverApplyValidationRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
+  }
 }
 
 function assertPlanContract(testCase, plan) {
