@@ -117,6 +117,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  fileCreateUpdateDeleteMix: {
+    family: 'file-create-update-delete-mix-ready',
+    tag: 'file-create-update-delete-mix',
+  },
   largeReadyPlanTier: {
     family: 'large-ready-plan-tier',
     tag: 'large-ready-plan-target',

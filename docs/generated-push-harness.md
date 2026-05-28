@@ -47,8 +47,8 @@ The default generated run covers:
 - local edits, remote-only edits, independent merge, same independent content,
   large ready plan tiers with one ready case per tier, deletes, delete/edit
   conflicts, file topology conflicts, file create/update/
-  delete mixes with ready and conflicting outcomes, directory descendant
-  conflicts with per-tier target counts, file type-swap cases with ready and
+  delete mixes with ready and conflicting outcomes plus per-tier target counts,
+  directory descendant conflicts with per-tier target counts, file type-swap cases with ready and
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, non-plugin-owned
   `wp_options` scalar and serialized option updates with ready and
@@ -79,6 +79,11 @@ The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
 rows with structured array and object values. Ready cases update the serialized
 option while preserving the live remote; conflict cases drift the same option
 remotely and must refuse apply without plugin-owner evidence.
+
+The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
+file create/update/delete surface. Ready cases create one file, update one file,
+and delete one file, then reject stale replay before mutation; conflict cases
+drift the updated file remotely and refuse apply.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -203,6 +208,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "fileCreateUpdateDeleteMix": {
+      "family": "file-create-update-delete-mix-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     },
     "largeReadyPlanTier": {
