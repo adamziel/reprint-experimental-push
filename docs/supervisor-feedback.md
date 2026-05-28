@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 07:22 CEST
+Last updated: 2026-05-28 07:30 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 07:30 CEST - RPP-0230 Integrated
+
+- Going well: integration is now at `ca47c11b1`, adding `RPP-0230` generated
+  planner summary count consistency. The generated harness replans every
+  deterministic generated case twice, checks `plan.summary` against emitted
+  mutations, decisions, conflicts, blockers, and atomic groups, and compares
+  aggregate evidence with generated report totals.
+- Checklist movement: 122 verified items checked and 878 open. New check since
+  the prior feedback entry: `RPP-0230`.
+- Verification: focused RPP-0230 generated-harness validation passes 1/1,
+  `node --test test/generated-push-harness.test.js` passes 8/8,
+  `node --test test/push-planner.test.js` passes 101/101, checklist lint
+  reports 122 checked / 878 open with 0 risky claims, artifact redaction scans
+  evidence and reporting surfaces with 0 rejected files, release remains
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 07:22 CEST - RPP-0229 Integrated
 
