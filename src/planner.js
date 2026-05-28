@@ -467,6 +467,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
             driver: supported.driver,
             policySource: supported.source,
             reason: driverEvidence.reason,
+            driverDryRunValidationEvidence: driverEvidence.dryRunValidationEvidence,
           };
         }
         return {
@@ -569,14 +570,36 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
     && entry.pluginOwner === 'forms';
 }
 
-function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
+function fixtureFormsLabTableDriverEvidence({ resource, owner, base, local, remote }) {
+  const plannedValue = getResource(local, resource);
+  const dryRunValidationEvidence = plannedValue === ABSENT
+    ? null
+    : fixtureFormsLabTableDryRunValidationEvidence({
+      resource,
+      owner,
+      base,
+      local,
+      remote,
+    });
+  if (dryRunValidationEvidence && dryRunValidationEvidence.outcome !== 'accepted') {
+    return {
+      supported: false,
+      reason: 'Fixture forms lab table driver dry-run validation refused the planned row payload.',
+      dryRunValidationEvidence,
+    };
+  }
+
   if (
     resource.type !== 'row'
     || resource.table !== 'wp_reprint_push_forms_lab'
     || !/^id:[1-9]\d*$/.test(resource.id)
     || owner !== 'forms'
   ) {
-    return { supported: false, reason: 'Fixture forms lab table driver only supports positive id rows owned by forms.' };
+    return {
+      supported: false,
+      reason: 'Fixture forms lab table driver only supports positive id rows owned by forms.',
+      dryRunValidationEvidence,
+    };
   }
 
   const plugin = 'reprint-push-forms-fixture';
@@ -599,12 +622,92 @@ function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
       resourceKey: pluginResource.key,
       baseHash,
       remoteHash,
+      dryRunValidationEvidence,
     };
   }
 
   return {
     supported: false,
     reason: 'Fixture forms lab table driver requires unchanged active reprint-push-forms-fixture evidence.',
+    dryRunValidationEvidence,
+  };
+}
+
+function fixtureFormsLabTableDryRunValidationEvidence({ resource, owner, base, local, remote }) {
+  const plannedValue = getResource(local, resource);
+  const issueCodes = fixtureFormsLabTableDryRunValidationIssueCodes(resource, owner, plannedValue);
+  const accepted = issueCodes.length === 0;
+  return {
+    schemaVersion: 1,
+    reasonCode: accepted
+      ? 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_ACCEPTED'
+      : 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED',
+    operation: 'driver-dry-run-validation',
+    outcome: accepted ? 'accepted' : 'refused-before-mutation',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: 'fixture-forms-lab-table',
+    resource: pluginDriverResourceEvidence(resource),
+    rawValuesIncluded: false,
+    issueCodes,
+    planned: {
+      state: plannedValue === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(local, resource),
+    },
+    base: {
+      state: getResource(base, resource) === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(base, resource),
+    },
+    remote: {
+      state: getResource(remote, resource) === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(remote, resource),
+    },
+  };
+}
+
+function fixtureFormsLabTableDryRunValidationIssueCodes(resource, owner, plannedValue) {
+  const issues = [];
+  if (resource.type !== 'row' || resource.table !== 'wp_reprint_push_forms_lab') {
+    issues.push('RESOURCE_TABLE_UNSUPPORTED');
+  }
+  const idMatch = /^id:([1-9]\d*)$/.exec(resource.id || '');
+  if (!idMatch) {
+    issues.push('RESOURCE_ID_UNSUPPORTED');
+  }
+  if (owner !== 'forms') {
+    issues.push('PLUGIN_OWNER_UNSUPPORTED');
+  }
+  if (plannedValue === ABSENT || !plannedValue || typeof plannedValue !== 'object' || Array.isArray(plannedValue)) {
+    issues.push('PLANNED_ROW_INVALID');
+    return issues;
+  }
+  if (plannedValue.__pluginOwner !== owner) {
+    issues.push('PLUGIN_OWNER_MISMATCH');
+  }
+  if (idMatch && plannedValue.id !== Number.parseInt(idMatch[1], 10)) {
+    issues.push('ROW_ID_MISMATCH');
+  }
+  if (typeof plannedValue.form_slug !== 'string' || plannedValue.form_slug.length === 0) {
+    issues.push('FORM_SLUG_INVALID');
+  }
+  if (!plannedValue.payload || typeof plannedValue.payload !== 'object' || Array.isArray(plannedValue.payload)) {
+    issues.push('PAYLOAD_INVALID');
+  } else if (plannedValue.payload.owner !== owner) {
+    issues.push('PAYLOAD_OWNER_MISMATCH');
+  }
+  return issues;
+}
+
+function pluginDriverResourceEvidence(resource) {
+  if (!resource || typeof resource !== 'object') {
+    return null;
+  }
+  return {
+    type: resource.type || null,
+    key: resource.key || null,
+    table: resource.table || null,
+    id: resource.id || null,
+    name: resource.name || null,
   };
 }
 
@@ -2429,6 +2532,7 @@ function addPluginOwnedResourceBlocker(plan, {
     driver: support.driver || null,
     policySource: support.policySource || null,
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
+    ...(support.driverDryRunValidationEvidence ? { driverDryRunValidationEvidence: support.driverDryRunValidationEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,

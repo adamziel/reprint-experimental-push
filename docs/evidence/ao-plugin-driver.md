@@ -52,6 +52,29 @@ This evidence does not broaden accepted plugin-owned resources. The fixture
 driver still requires exact owner, table, positive id row, active unchanged
 driver plugin evidence, and no delete mutation.
 
+## RPP-0457 driver dry-run validation hook
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0457|fixture forms lab table requires exact driver|RPP-0438 driver apply validation' test/push-planner.test.js
+```
+
+The RPP-0457 generated proof adds dry-run validation evidence for the fixture
+forms-lab table driver. A valid positive-id row with a matching forms payload
+produces `PLUGIN_DRIVER_DRY_RUN_VALIDATION_ACCEPTED` evidence and remains ready
+with the existing hash-only driver proof. Bad planned payload variants,
+including payload-owner mismatch and row-id mismatch, produce
+`PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED` evidence, keep the plan blocked, and
+create no mutation.
+
+The validation evidence records only resource identity, owner/driver labels,
+issue codes, state flags, and hashes for planned/base/remote resources. The
+focused proof asserts blocker, validation, audit, remote-preservation, and
+row-preservation hashes without raw fixture payload values. This is local
+focused plugin-driver evidence only, not production-backed evidence, and the
+release gate remains NO-GO.
+
 ## RPP-0439 driver audit evidence redaction
 
 Focused local verification:
@@ -89,3 +112,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0457 — driver dry-run validation hook: generated local variants prove
+  valid fixture payloads are accepted with hash-only evidence while bad payloads
+  fail closed before mutation.
