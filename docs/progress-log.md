@@ -4,6 +4,81 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Comment Graph Evidence And Journal Claim Readback
+
+- Last update: 2026-05-28 02:06 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:comment-graph`
+  passed in tmux window `main:comment-graph-proof4` with
+  `[COMMENT_GRAPH_PROOF_STATUS:0]`.
+- Code change: the Brewcommerce-derived local production proof can now opt into
+  a same-plan comment graph fixture through
+  `REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF=1`. The fixture
+  creates a parent comment `row:["wp_comments","comment_ID:72801"]`, child
+  comment `row:["wp_comments","comment_ID:72802"]`, and marker commentmeta
+  row `row:["wp_commentmeta","meta_id:72811"]`.
+- Planner evidence: the graph-enabled topology reported 12 complex posts,
+  5 complex form-schema postmeta rows, 3 complex upload files, 4 forms-lab
+  rows, 1 local comment parent, 1 local comment child, and 1 local commentmeta
+  row. The ready plan had 25 mutations, 25 live-remote preconditions,
+  0 blockers, and mutation families `file: 3`, `row:wp_commentmeta: 1`,
+  `row:wp_comments: 2`, `row:wp_options: 1`, `row:wp_postmeta: 5`,
+  `row:wp_posts: 12`, and `row:wp_reprint_push_release_state: 1`.
+- Comment graph evidence: the parent comment references the fixture post, the
+  child comment references the same-plan parent comment, the commentmeta row
+  references the same-plan child comment, all three resources were planned
+  with live preconditions, and `staleGraphBlockers: 0`. The remote-drift plan
+  still failed closed with 9 preserve-remote conflicts and 3 blockers.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `a617629dfc086d29ffbbf907a425e54a90f6ca231d4de8c73dad3d39827018af`,
+  reported 83 durable DB journal rows, `mutationApplied: 25`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 25`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK` for auth session, durable journal, replay/retry,
+  replay equivalence, and `releaseMovement.gates: candidate-for-review`.
+- Recovery and retry evidence on the same release verifier path includes
+  same-key/body replay with 25 mutation events, same-key/different-body
+  `409 IDEMPOTENCY_KEY_CONFLICT` before mutation, stale-owner fencing with
+  previous claim id `psh_3547ecddfc8152e839d96b43bf2`, 25/25 fully updated
+  recovery inspect, and blocked apply-time revalidation state with `old: 24`,
+  `new: 0`, `blockedUnknown: 1`.
+- Journal hardening: the 25-mutation run exposed that stale retry proof could
+  lose the previous claim identity when a thinner recovery-inspect journal was
+  selected. The checked JS durable-journal contract now requires previous
+  claim identity whenever stale-claim rejection is asserted, checked recovery
+  journal readback uses the 500-row window and can fetch the previous claim row
+  by cursor, the release proof builder selects the strongest journal evidence
+  candidate, and the authenticated client requests a 370-row first journal
+  window for 25-mutation plans.
+- Focused checks passed:
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `node --check scripts/playground/production-shaped-live-release-verify-lib.js`,
+  `node --check src/authenticated-http-push-client.js`,
+  `node --check src/recovery-journal.js`,
+  `php -l scripts/playground/snapshot-lib.php`,
+  `php -l scripts/playground/push-db-journal-lib.php`,
+  `php -l scripts/playground/push-remote-rest-plugin.php`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `node --test --test-name-pattern "comment|commentmeta|post parent|same-plan post|graph closure|featured image|taxonomy" test/push-planner.test.js`,
+  `node --test --test-name-pattern "db journal proof requires the checked durable-journal contract|db journal readback window scales" test/authenticated-http-push-client.test.js`,
+  `node --test --test-name-pattern "checked durable journal" test/recovery-journal.test.js`,
+  `node --test --test-name-pattern "durable recovery journal release proof" test/production-shaped-proof.test.js`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:comment-graph`.
+- Caveat: this closes one local Playground same-plan comment/commentmeta
+  fixture with stable fixture identities. It does not prove general WordPress
+  identity rewriting for arbitrary comments, comment authors, comment
+  moderation state, threaded comment imports, GUIDs, menus, serialized blocks,
+  production importer/exporter identity maps, Docker/external WordPress
+  durability, rollback, or general plugin-driver correctness.
+- Percent movement: merge invariants move from 66% to 69%; recovery
+  boundaries move from 58% to 60%; reliable executor/protocol moves from 71%
+  to 72%; independent evidence moves from 67% to 69%. Fast path/chunking stays
+  at 37% because this proof adds graph and journal correctness, not a new
+  transfer benchmark.
+
 ## 2026-05-28 - Post Parent Graph Evidence
 
 - Last update: 2026-05-28 01:37 CEST.

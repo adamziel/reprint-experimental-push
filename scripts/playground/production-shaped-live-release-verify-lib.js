@@ -16,13 +16,18 @@ export function buildDurableRecoveryJournalReleaseProof({
 } = {}) {
   const releaseProof = releaseSummary?.releaseProof || releaseSummary || {};
   const durableJournal = releaseSummary?.durableJournal || {};
-  const journal = durableJournal?.proof?.journal
-    || releaseProof?.recoveryInspect?.recovery?.journal
-    || releaseProof?.dbJournal
-    || null;
-  const leaseFence = durableJournal?.proof?.leaseFence
-    || journal?.leaseFence
+  const durableJournalCandidate = durableJournal?.proof?.journal || null;
+  const dbJournalCandidate = releaseProof?.dbJournal || null;
+  const recoveryInspectJournalCandidate = releaseProof?.recoveryInspect?.recovery?.journal || null;
+  const journal = selectDurableRecoveryJournalCandidate([
+    dbJournalCandidate,
+    durableJournalCandidate,
+    recoveryInspectJournalCandidate,
+  ]);
+  const leaseFence = journal?.leaseFence
+    || (journal === durableJournalCandidate ? durableJournal?.proof?.leaseFence : null)
     || releaseProof?.dbJournal?.leaseFence
+    || durableJournal?.proof?.leaseFence
     || null;
   const claim = journal?.claim || releaseProof?.dbJournal?.claim || null;
   const writerLease = journal?.writerLease || releaseProof?.dbJournal?.writerLease || null;
@@ -214,6 +219,61 @@ export function buildDurableRecoveryJournalReleaseProof({
     partialStates,
     preservedRejectedRemoteEvidence,
   };
+}
+
+function selectDurableRecoveryJournalCandidate(candidates) {
+  let selected = null;
+  let selectedScore = -1;
+  for (const candidate of candidates) {
+    const score = durableRecoveryJournalCandidateScore(candidate);
+    if (score > selectedScore) {
+      selected = candidate || null;
+      selectedScore = score;
+    }
+  }
+  return selected;
+}
+
+function durableRecoveryJournalCandidateScore(journal) {
+  if (!journal || typeof journal !== 'object') {
+    return -1;
+  }
+
+  const claim = journal.claim || {};
+  const leaseFence = journal.leaseFence || {};
+  const writerLease = journal.writerLease || {};
+  const leaseWriterLease = leaseFence.writerLease || {};
+  const hasActiveClaimIdentity = nonEmptyString(claim.activeClaimId)
+    && nonEmptyString(claim.activeClaimKeyHash);
+  const hasPreviousClaimIdentity = nonEmptyString(claim.previousClaimId)
+    && nonEmptyString(claim.previousClaimKeyHash);
+  const writerLeaseMatchesClaim = hasActiveClaimIdentity
+    && writerLease.claimId === claim.activeClaimId
+    && writerLease.claimKeyHash === claim.activeClaimKeyHash
+    && leaseWriterLease.claimId === claim.activeClaimId
+    && leaseWriterLease.claimKeyHash === claim.activeClaimKeyHash;
+
+  let score = 0;
+  if (journal.ownership?.ownsJournal === true || journal.ownsJournal === true) score += 10;
+  if (journal.ownership?.restartReadable === true || journal.restartReadable === true) score += 10;
+  if (nonEmptyString(journal.ownership?.productionAdapter || journal.productionAdapter)) score += 5;
+  if (nonEmptyString(journal.ownership?.supportedSurface || journal.supportedSurface)) score += 5;
+  if (leaseFence.restartReadable === true) score += 5;
+  if (leaseFence.staleClaimRejected === true) score += 10;
+  if (writerLease.staleClaimRejected === true) score += 5;
+  if (leaseWriterLease.staleClaimRejected === true) score += 5;
+  if (hasActiveClaimIdentity) score += 10;
+  if (hasPreviousClaimIdentity) score += 50;
+  if (claim.staleClaimRejected === true && hasPreviousClaimIdentity) score += 50;
+  if (writerLeaseMatchesClaim) score += 25;
+  if (journal.applyCommitted === true) score += 5;
+  if (Number.isInteger(journal.mutationApplied) && journal.mutationApplied > 0) score += 5;
+  if (journal.paginationComplete === true && journal.paginationTruncated !== true) score += 5;
+  return score;
+}
+
+function nonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 export function shouldRequestCheckedLivePackagedBoundary({

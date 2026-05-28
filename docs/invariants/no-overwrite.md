@@ -43,6 +43,12 @@ the live remote immediately before apply.
   preconditions, the child `post_parent` points at the planned parent, and no
   stale graph blocker is present. This covers one stable-ID fixture closure,
   not arbitrary parent/child identity remapping.
+- The checked local production comment fixture may create a parent comment,
+  child comment, and marker commentmeta row in the same plan only when all
+  three resources carry live-remote preconditions, the child `comment_parent`
+  points at the planned parent comment, the commentmeta row points at the
+  planned child comment, and no stale graph blocker is present. This covers one
+  stable-ID fixture closure, not arbitrary comment identity remapping.
 
 Every automatic mutation must include a precondition tied to the mutation id,
 the resource key, the live remote hash observed during planning, and the
@@ -97,9 +103,10 @@ the resource key, the live remote hash observed during planning, and the
   remote, unless the mutation belongs to a specifically proven same-plan graph
   closure with both the target and relationship resource preconditioned. Today
   those exceptions are only the local featured-image attachment fixture, the
-  local category taxonomy fixture, and the local post-parent page fixture;
-  general same-plan identity creation and relationship rewriting remain held
-  until broader identity-map/rewrite proof exists.
+  local category taxonomy fixture, the local post-parent page fixture, and the
+  local comment/commentmeta fixture; general same-plan identity creation and
+  relationship rewriting remain held until broader identity-map/rewrite proof
+  exists.
 - File topology conflicts where applying a local file or type change would
   require overwriting, removing, or hiding a live remote ancestor or descendant.
   The conflicting file mutation and its precondition must be suppressed rather

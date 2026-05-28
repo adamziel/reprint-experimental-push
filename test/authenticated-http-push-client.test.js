@@ -22,7 +22,8 @@ const trustedDbJournalScope = 'checked live production-shaped journal surface; n
 test('db journal readback window scales with mutation count', () => {
   assert.equal(dbJournalReadbackLimitForPlan({ mutations: [] }), 80);
   assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 9 }, () => ({})) }), 80);
-  assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 35 }, () => ({})) }), 180);
+  assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 25 }, () => ({})) }), 370);
+  assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 35 }, () => ({})) }), 470);
   assert.equal(dbJournalReadbackLimitForPlan({ mutations: Array.from({ length: 300 }, () => ({})) }), 500);
 });
 

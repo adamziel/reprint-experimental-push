@@ -2672,7 +2672,10 @@ function summarizeDbJournal(response) {
 
 export function dbJournalReadbackLimitForPlan(plan) {
   const mutationCount = Array.isArray(plan?.mutations) ? plan.mutations.length : 0;
-  const scaledLimit = mutationCount * 4 + 40;
+  if (mutationCount <= 10) {
+    return minimumDbJournalReadbackLimit;
+  }
+  const scaledLimit = mutationCount * 10 + 120;
   return Math.min(
     maximumDbJournalReadbackLimit,
     Math.max(minimumDbJournalReadbackLimit, scaledLimit),

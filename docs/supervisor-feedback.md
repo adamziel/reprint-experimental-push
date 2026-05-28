@@ -1,9 +1,51 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 01:37 CEST
+Last updated: 2026-05-28 02:06 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 02:06 CEST - Comment Graph Evidence
+
+- Going well:
+  `npm run verify:release:local-production:complex-site:comment-graph`
+  passed in `main:comment-graph-proof4` with
+  `[COMMENT_GRAPH_PROOF_STATUS:0]`.
+- Also going well: the Brewcommerce-derived local production proof now covers a
+  same-plan comment parent/child/commentmeta graph surface. The planner emitted
+  two `wp_comments` rows and one `wp_commentmeta` row with live remote
+  preconditions, 25 ready mutations, 25 preconditions,
+  `childReferencesParent: true`, `commentmetaReferencesChild: true`, and
+  `staleGraphBlockers: 0`.
+- Release evidence improved: the checked verifier reported receipt
+  `a617629dfc086d29ffbbf907a425e54a90f6ca231d4de8c73dad3d39827018af`,
+  83 durable DB-journal rows, 25 `mutation-applied` events,
+  `applyRevalidationVerifiedCount: 25`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK`, replay equivalence, stale-owner fencing with
+  previous claim identity, and same-key/different-body conflict before
+  mutation.
+- Also fixed: the journal proof no longer accepts stale-claim fencing without
+  previous claim identity. Checked recovery journal readback now uses the
+  500-row surface and can fetch the previous claim row by cursor; the final
+  proof builder selects the strongest journal candidate.
+- Not yet done: this is still local Playground loopback evidence with stable
+  fixture IDs. General comment identity rewriting, comment author mapping,
+  moderation state, menus, serialized blocks, production importer/exporter
+  identity maps, Docker/external WordPress durability, rollback, and arbitrary
+  plugin drivers remain required work.
+- Progress change: merge invariants, recovery, reliable executor/protocol, and
+  independent evidence move up modestly. Fast-path percentage stays flat.
+- Next nudge: either move the same release and journal boundary to
+  Docker/external WordPress, or add the next narrow graph surface while keeping
+  the final release held.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Expand graph proof carefully; same-plan closures now include featured image, category taxonomy, post_parent page, and comment/commentmeta fixtures only. |
+| Recovery | Keep the previous-claim identity guard and move the same journal proof to Docker/external restart evidence. |
+| Reliable executor | Preserve receipt, auth/session, DB-journal, replay, conflict, and candidate-selection guards on every graph proof. |
+| Fast paths | Still needs a guarded transfer/chunk benchmark; this proof is not a speed proof. |
+| Audit and critic | Re-audit the integrated branch at the comment graph commit and keep final readiness held. |
 
 ## 2026-05-28 01:37 CEST - Post Parent Graph Evidence
 

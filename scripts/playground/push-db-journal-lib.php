@@ -630,6 +630,8 @@ function reprint_push_lab_db_journal_cursor_sequence($cursor): ?int
 
 function reprint_push_lab_db_journal_claim_rows(array $rows): array
 {
+    global $wpdb;
+
     $latest_claim_row = null;
     $latest_abandoned_row = null;
     $previous_claim_row = null;
@@ -682,6 +684,16 @@ function reprint_push_lab_db_journal_claim_rows(array $rows): array
         );
         if (is_int($previous_claim_sequence) && isset($rows_by_sequence[$previous_claim_sequence])) {
             $previous_claim_row = $rows_by_sequence[$previous_claim_sequence];
+        } elseif (is_int($previous_claim_sequence)) {
+            reprint_push_lab_db_journal_ensure_table();
+            $quoted_table = reprint_push_lab_db_journal_quoted_table_name();
+            $raw_previous_claim_row = $wpdb->get_row(
+                $wpdb->prepare("SELECT * FROM {$quoted_table} WHERE id = %d LIMIT 1", $previous_claim_sequence),
+                ARRAY_A
+            );
+            if (is_array($raw_previous_claim_row) && !empty($raw_previous_claim_row)) {
+                $previous_claim_row = reprint_push_lab_db_journal_public_row($raw_previous_claim_row);
+            }
         }
     }
 

@@ -20,6 +20,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postParentGraph: false,
+  commentGraph: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -69,12 +70,26 @@ test('complex-site seed PHP can add a post parent graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_parent_graph = false/);
 });
 
+test('complex-site seed PHP can add a comment graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    commentGraph: true,
+  });
+
+  assert.match(php, /reprint-push-comment-graph/);
+  assert.match(php, /comment_parent'=>\$parent_comment_id/);
+  assert.match(php, /reprint_push_comment_fixture/);
+  assert.match(php, /if \(\$complex_comment_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_comment_graph = false/);
+});
+
 test('complex-site fixture shape can be expanded for journal-window evidence', () => {
   const shape = complexSiteFixtureShapeFromEnv({
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
 
   assert.equal(shape.postCount, 25);
@@ -83,6 +98,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
   assert.equal(shape.postParentGraph, true);
+  assert.equal(shape.commentGraph, true);
 });
 
 test('complex-site planner proof reports dense counts, receipts prerequisites, and no-data-loss invariants', () => {
@@ -182,6 +198,33 @@ test('complex-site planner proof covers real post parent graph closure', () => {
   assert.equal(proof.invariants.postParentGraphHasLivePreconditions, true);
 });
 
+test('complex-site planner proof covers real comment parent and commentmeta graph closure', () => {
+  const graphShape = { ...smallShape, commentGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.commentGraphParents, 0);
+  assert.equal(proof.counts.source.commentGraphChildren, 0);
+  assert.equal(proof.counts.localEdited.commentGraphParents, 1);
+  assert.equal(proof.counts.localEdited.commentGraphChildren, 1);
+  assert.equal(proof.counts.localEdited.commentGraphCommentmeta, 1);
+  assert.equal(proof.commentGraphEvidence.type, 'comment-parent-commentmeta');
+  assert.equal(proof.commentGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.commentGraphEvidence.parentReferencesPost, true);
+  assert.equal(proof.commentGraphEvidence.childReferencesParent, true);
+  assert.equal(proof.commentGraphEvidence.commentmetaReferencesChild, true);
+  assert.equal(proof.commentGraphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.commentGraphCountsPresent, true);
+  assert.equal(proof.invariants.commentGraphPlanned, true);
+  assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
+});
+
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
   const plannerProof = { ok: true };
   const releaseSummary = syntheticReleaseSummary(9);
@@ -260,6 +303,8 @@ function syntheticComplexSnapshot(variant, shape) {
       wp_term_taxonomy: {},
       wp_term_relationships: {},
       wp_termmeta: {},
+      wp_comments: {},
+      wp_commentmeta: {},
     },
   };
   const local = variant === 'local-edited';
@@ -364,6 +409,49 @@ function syntheticComplexSnapshot(variant, shape) {
       term_id: 72901,
       meta_key: 'reprint_push_taxonomy_fixture',
       meta_value: 'local-taxonomy-graph',
+    };
+  }
+
+  if (shape.commentGraph && local) {
+    snapshot.db.wp_comments['comment_ID:72801'] = {
+      comment_ID: 72801,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Parent Comment',
+      comment_author_email: 'parent-comment@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:45:00',
+      comment_date_gmt: '2026-05-27 21:45:00',
+      comment_content: 'Local parent comment used for graph identity proof.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-graph',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 0,
+    };
+    snapshot.db.wp_comments['comment_ID:72802'] = {
+      comment_ID: 72802,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Child Comment',
+      comment_author_email: 'child-comment@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:46:00',
+      comment_date_gmt: '2026-05-27 21:46:00',
+      comment_content: 'Local child comment whose comment_parent points at the same-plan parent comment.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-graph',
+      comment_type: 'comment',
+      comment_parent: 72801,
+      user_id: 0,
+    };
+    snapshot.db.wp_commentmeta['meta_id:72811'] = {
+      meta_id: 72811,
+      comment_id: 72802,
+      meta_key: 'reprint_push_comment_fixture',
+      meta_value: 'local-comment-graph',
     };
   }
 

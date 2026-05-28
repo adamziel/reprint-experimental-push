@@ -571,7 +571,7 @@ function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $reques
 {
     if (reprint_push_lab_rest_checked_production_journal_surface($request)) {
         reprint_push_lab_rest_prime_checked_recovery_claim_evidence();
-        $journal = reprint_push_lab_db_journal_summary(80);
+        $journal = reprint_push_lab_db_journal_summary(500);
         $scope = reprint_push_lab_rest_package_mode_enabled()
             ? 'packaged production plugin recovery journal surface; not local Playground fixture only'
             : 'checked live production-shaped recovery journal surface; not local Playground fixture only';
@@ -600,7 +600,7 @@ function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $reques
 
 function reprint_push_lab_rest_prime_checked_recovery_claim_evidence(): void
 {
-    $summary = reprint_push_lab_db_journal_summary(80);
+    $summary = reprint_push_lab_db_journal_summary(500);
     if (reprint_push_lab_db_journal_has_stale_claim_rejection_evidence($summary['latestRows'] ?? [])) {
         return;
     }

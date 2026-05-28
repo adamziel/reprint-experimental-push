@@ -5,6 +5,7 @@
  * These helpers intentionally cover only the fixture surface used by the lab:
  * marked posts, their author identities, selected fixture graph postmeta,
  * selected fixture taxonomy graph rows,
+ * selected fixture comment graph rows,
  * allowlisted plugin-owned options/postmeta,
  * fixture-scoped lab plugin/table metadata, named lab plugin files, and upload files under
  * wp-content/uploads/reprint-push.
@@ -34,6 +35,8 @@ function reprint_push_export_snapshot(): array
             'wp_term_taxonomy' => [],
             'wp_term_relationships' => [],
             'wp_termmeta' => [],
+            'wp_comments' => [],
+            'wp_commentmeta' => [],
         ],
     ];
 
@@ -69,6 +72,7 @@ function reprint_push_export_snapshot(): array
 
     reprint_push_export_fixture_post_authors($snapshot);
     reprint_push_export_fixture_postmeta($snapshot);
+    reprint_push_export_fixture_comment_graph($snapshot);
     reprint_push_export_fixture_taxonomy_graph($snapshot);
     reprint_push_export_fixture_plugin_metadata($snapshot);
     reprint_push_export_fixture_custom_table($snapshot);
@@ -91,6 +95,8 @@ function reprint_push_export_snapshot(): array
     ksort($snapshot['db']['wp_term_taxonomy']);
     ksort($snapshot['db']['wp_term_relationships']);
     ksort($snapshot['db']['wp_termmeta']);
+    ksort($snapshot['db']['wp_comments']);
+    ksort($snapshot['db']['wp_commentmeta']);
 
     return $snapshot;
 }
@@ -147,6 +153,71 @@ function reprint_push_export_fixture_postmeta(array &$snapshot): void
             }
             $snapshot['db']['wp_postmeta'][reprint_push_postmeta_row_id($post_id, $meta_key)] = $row;
         }
+    }
+}
+
+function reprint_push_export_fixture_comment_graph(array &$snapshot): void
+{
+    global $wpdb;
+
+    if (count($snapshot['db']['wp_posts']) === 0) {
+        return;
+    }
+
+    $post_ids = [];
+    foreach (array_keys($snapshot['db']['wp_posts']) as $post_row_id) {
+        $post_ids[] = reprint_push_numeric_id($post_row_id, 'ID');
+    }
+
+    $post_placeholders = implode(', ', array_fill(0, count($post_ids), '%d'));
+    $rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT comment_ID, comment_post_ID, comment_author, comment_author_email, comment_author_url, comment_author_IP, comment_date, comment_date_gmt, comment_content, comment_karma, comment_approved, comment_agent, comment_type, comment_parent, user_id
+             FROM {$wpdb->comments}
+             WHERE comment_post_ID IN ({$post_placeholders})
+               AND comment_agent = %s
+             ORDER BY comment_ID ASC",
+            ...array_merge(array_values($post_ids), [reprint_push_comment_fixture_agent()])
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    if (count($rows) === 0) {
+        return;
+    }
+
+    $comment_ids = [];
+    foreach ($rows as $row) {
+        $row['comment_ID'] = (int) $row['comment_ID'];
+        $row['comment_post_ID'] = (int) $row['comment_post_ID'];
+        $row['comment_karma'] = (int) $row['comment_karma'];
+        $row['comment_parent'] = (int) $row['comment_parent'];
+        $row['user_id'] = (int) $row['user_id'];
+        $comment_ids[$row['comment_ID']] = $row['comment_ID'];
+        $snapshot['db']['wp_comments']['comment_ID:' . $row['comment_ID']] = $row;
+    }
+
+    $allowed_meta_keys = reprint_push_fixture_commentmeta_export_keys();
+    $comment_placeholders = implode(', ', array_fill(0, count($comment_ids), '%d'));
+    $meta_key_placeholders = implode(', ', array_fill(0, count($allowed_meta_keys), '%s'));
+    $commentmeta_rows = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT meta_id, comment_id, meta_key, meta_value
+             FROM {$wpdb->commentmeta}
+             WHERE comment_id IN ({$comment_placeholders})
+               AND meta_key IN ({$meta_key_placeholders})
+             ORDER BY meta_id ASC",
+            ...array_values($comment_ids),
+            ...$allowed_meta_keys
+        ),
+        ARRAY_A
+    ) ?: [];
+
+    foreach ($commentmeta_rows as $row) {
+        $row['meta_id'] = (int) $row['meta_id'];
+        $row['comment_id'] = (int) $row['comment_id'];
+        $row['meta_value'] = reprint_push_normalize_snapshot_value($row['meta_value']);
+        $snapshot['db']['wp_commentmeta']['meta_id:' . $row['meta_id']] = $row;
     }
 }
 
@@ -1327,6 +1398,14 @@ function reprint_push_assert_supported_apply_resource(array $resource): void
             reprint_push_termmeta_row_id($id);
             return;
         }
+        if ($table === 'wp_comments') {
+            reprint_push_comment_row_id($id);
+            return;
+        }
+        if ($table === 'wp_commentmeta') {
+            reprint_push_commentmeta_row_id($id);
+            return;
+        }
         $driver = reprint_push_plugin_owned_row_driver_for_table($table);
         if (is_array($driver)) {
             if ($id === '' || strpos($id, ':') === false) {
@@ -1403,6 +1482,14 @@ function reprint_push_apply_row_resource(string $table, string $id, bool $is_del
     }
     if ($table === 'wp_termmeta') {
         reprint_push_apply_termmeta_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_comments') {
+        reprint_push_apply_comment_row($id, $is_delete, $value);
+        return;
+    }
+    if ($table === 'wp_commentmeta') {
+        reprint_push_apply_commentmeta_row($id, $is_delete, $value);
         return;
     }
     $driver = reprint_push_plugin_owned_row_driver_for_table($table);
@@ -1759,6 +1846,141 @@ function reprint_push_apply_termmeta_row(string $id, bool $is_delete, $value): v
     }
 }
 
+function reprint_push_apply_comment_row(string $id, bool $is_delete, $value): void
+{
+    global $wpdb;
+
+    $comment_id = reprint_push_comment_row_id($id);
+    $existing = $wpdb->get_row(
+        $wpdb->prepare("SELECT comment_ID FROM {$wpdb->comments} WHERE comment_ID = %d", $comment_id),
+        ARRAY_A
+    );
+    if (is_array($existing) && !reprint_push_is_fixture_comment($comment_id)) {
+        throw new RuntimeException('Refusing to mutate non-fixture comment: ' . $id);
+    }
+
+    if ($is_delete) {
+        if (is_array($existing)) {
+            wp_delete_comment($comment_id, true);
+        }
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Comment row payload must be an object');
+    }
+    if ((int) ($value['comment_ID'] ?? 0) !== $comment_id) {
+        throw new RuntimeException('Comment row payload does not match row id: ' . $id);
+    }
+    $comment_post_id = (int) ($value['comment_post_ID'] ?? 0);
+    if ($comment_post_id <= 0 || !reprint_push_is_fixture_post($comment_post_id)) {
+        throw new RuntimeException('Comment row payload must point at a fixture post: ' . $id);
+    }
+    $comment_parent = (int) ($value['comment_parent'] ?? 0);
+    if ($comment_parent < 0) {
+        throw new RuntimeException('Comment row payload has an invalid parent id: ' . $id);
+    }
+    if ($comment_parent > 0) {
+        $parent_exists = $wpdb->get_var(
+            $wpdb->prepare("SELECT comment_ID FROM {$wpdb->comments} WHERE comment_ID = %d", $comment_parent)
+        );
+        if ($parent_exists !== null && !reprint_push_is_fixture_comment($comment_parent)) {
+            throw new RuntimeException('Comment row payload points at a non-fixture parent comment: ' . $id);
+        }
+    }
+    if ((string) ($value['comment_agent'] ?? '') !== reprint_push_comment_fixture_agent()) {
+        throw new RuntimeException('Comment row payload must include the fixture comment agent: ' . $id);
+    }
+
+    $result = $wpdb->replace(
+        $wpdb->comments,
+        [
+            'comment_ID' => $comment_id,
+            'comment_post_ID' => $comment_post_id,
+            'comment_author' => (string) ($value['comment_author'] ?? ''),
+            'comment_author_email' => (string) ($value['comment_author_email'] ?? ''),
+            'comment_author_url' => (string) ($value['comment_author_url'] ?? ''),
+            'comment_author_IP' => (string) ($value['comment_author_IP'] ?? ''),
+            'comment_date' => (string) ($value['comment_date'] ?? ''),
+            'comment_date_gmt' => (string) ($value['comment_date_gmt'] ?? ''),
+            'comment_content' => (string) ($value['comment_content'] ?? ''),
+            'comment_karma' => (int) ($value['comment_karma'] ?? 0),
+            'comment_approved' => (string) ($value['comment_approved'] ?? '1'),
+            'comment_agent' => (string) ($value['comment_agent'] ?? ''),
+            'comment_type' => (string) ($value['comment_type'] ?? 'comment'),
+            'comment_parent' => $comment_parent,
+            'user_id' => (int) ($value['user_id'] ?? 0),
+        ],
+        ['%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%d']
+    );
+    if ($result === false) {
+        throw new RuntimeException('Could not apply comment row: ' . $wpdb->last_error);
+    }
+    clean_comment_cache($comment_id);
+}
+
+function reprint_push_apply_commentmeta_row(string $id, bool $is_delete, $value): void
+{
+    global $wpdb;
+
+    $meta_id = reprint_push_commentmeta_row_id($id);
+    $existing = $wpdb->get_row(
+        $wpdb->prepare("SELECT meta_id, comment_id, meta_key FROM {$wpdb->commentmeta} WHERE meta_id = %d", $meta_id),
+        ARRAY_A
+    );
+    if (is_array($existing) && !in_array((string) ($existing['meta_key'] ?? ''), reprint_push_fixture_commentmeta_export_keys(), true)) {
+        throw new RuntimeException('Refusing to mutate non-fixture commentmeta: ' . $id);
+    }
+
+    if ($is_delete) {
+        if (is_array($existing)) {
+            $wpdb->delete($wpdb->commentmeta, ['meta_id' => $meta_id], ['%d']);
+        }
+        return;
+    }
+
+    if (!is_array($value)) {
+        throw new RuntimeException('Commentmeta row payload must be an object');
+    }
+    if ((int) ($value['meta_id'] ?? 0) !== $meta_id) {
+        throw new RuntimeException('Commentmeta row payload does not match row id: ' . $id);
+    }
+    $meta_key = (string) ($value['meta_key'] ?? '');
+    if (!in_array($meta_key, reprint_push_fixture_commentmeta_export_keys(), true)) {
+        throw new RuntimeException('Unsupported fixture commentmeta key: ' . $meta_key);
+    }
+    $comment_id = (int) ($value['comment_id'] ?? 0);
+    if ($comment_id <= 0) {
+        throw new RuntimeException('Commentmeta row payload must include a positive comment_id: ' . $id);
+    }
+    $comment_exists = $wpdb->get_var(
+        $wpdb->prepare("SELECT comment_ID FROM {$wpdb->comments} WHERE comment_ID = %d", $comment_id)
+    );
+    if ($comment_exists !== null && !reprint_push_is_fixture_comment($comment_id)) {
+        throw new RuntimeException('Refusing to mutate commentmeta for non-fixture comment: ' . $id);
+    }
+
+    $meta_value = $value['meta_value'] ?? '';
+    if (is_array($meta_value) || is_object($meta_value)) {
+        $meta_value = wp_json_encode(reprint_push_normalize_snapshot_value($meta_value));
+    }
+
+    $result = $wpdb->replace(
+        $wpdb->commentmeta,
+        [
+            'meta_id' => $meta_id,
+            'comment_id' => $comment_id,
+            'meta_key' => $meta_key,
+            'meta_value' => (string) $meta_value,
+        ],
+        ['%d', '%d', '%s', '%s']
+    );
+    if ($result === false) {
+        throw new RuntimeException('Could not apply commentmeta row: ' . $wpdb->last_error);
+    }
+    wp_cache_delete($comment_id, 'comment_meta');
+}
+
 function reprint_push_apply_forms_lab_row(string $id, bool $is_delete, $value): void
 {
     global $wpdb;
@@ -1967,6 +2189,24 @@ function reprint_push_termmeta_row_id(string $id): int
     return $row_id;
 }
 
+function reprint_push_comment_row_id(string $id): int
+{
+    $row_id = reprint_push_numeric_id($id, 'comment_ID');
+    if ($row_id < 1 || $id !== 'comment_ID:' . (string) $row_id) {
+        throw new RuntimeException('Unsupported comment row id: ' . $id);
+    }
+    return $row_id;
+}
+
+function reprint_push_commentmeta_row_id(string $id): int
+{
+    $row_id = reprint_push_numeric_id($id, 'meta_id');
+    if ($row_id < 1 || $id !== 'meta_id:' . (string) $row_id) {
+        throw new RuntimeException('Unsupported commentmeta row id: ' . $id);
+    }
+    return $row_id;
+}
+
 function reprint_push_is_fixture_term(int $term_id, string $slug = ''): bool
 {
     if ($term_id <= 0) {
@@ -1976,6 +2216,22 @@ function reprint_push_is_fixture_term(int $term_id, string $slug = ''): bool
         return true;
     }
     return get_term_meta($term_id, reprint_push_taxonomy_fixture_meta_key(), true) !== '';
+}
+
+function reprint_push_is_fixture_comment(int $comment_id): bool
+{
+    global $wpdb;
+
+    if ($comment_id <= 0) {
+        return false;
+    }
+    $agent = $wpdb->get_var(
+        $wpdb->prepare("SELECT comment_agent FROM {$wpdb->comments} WHERE comment_ID = %d", $comment_id)
+    );
+    if ((string) $agent === reprint_push_comment_fixture_agent()) {
+        return true;
+    }
+    return get_comment_meta($comment_id, reprint_push_comment_fixture_meta_key(), true) !== '';
 }
 
 function reprint_push_supported_fixture_taxonomies(): array
@@ -2846,6 +3102,16 @@ function reprint_push_taxonomy_fixture_meta_key(): string
     return 'reprint_push_taxonomy_fixture';
 }
 
+function reprint_push_comment_fixture_meta_key(): string
+{
+    return 'reprint_push_comment_fixture';
+}
+
+function reprint_push_comment_fixture_agent(): string
+{
+    return 'reprint-push-comment-graph';
+}
+
 function reprint_push_fixture_postmeta_export_keys(): array
 {
     return [
@@ -2858,6 +3124,13 @@ function reprint_push_fixture_termmeta_export_keys(): array
 {
     return [
         reprint_push_taxonomy_fixture_meta_key(),
+    ];
+}
+
+function reprint_push_fixture_commentmeta_export_keys(): array
+{
+    return [
+        reprint_push_comment_fixture_meta_key(),
     ];
 }
 

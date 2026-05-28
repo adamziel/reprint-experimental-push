@@ -249,6 +249,47 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
   assert.equal(proof.partialStates.blocked.proved, true);
   assert.equal(proof.preservedRejectedRemoteEvidence.proved, true);
 
+  const dbJournalWithCompleteClaim = {
+    ...journal,
+    scope: 'checked live production-shaped journal surface; not local Playground fixture only',
+    applyCommitted: true,
+    idempotencyOpened: 1,
+    mutationApplied: 2,
+    latestEvents: releaseSummary.releaseProof.dbJournal.latestEvents,
+    eventCounts: releaseSummary.releaseProof.dbJournal.eventCounts,
+    paginationComplete: true,
+    paginationTruncated: false,
+  };
+  const thinRecoveryInspectJournal = {
+    ...dbJournalWithCompleteClaim,
+    claim: {
+      ...dbJournalWithCompleteClaim.claim,
+      previousClaimId: null,
+      previousClaimKeyHash: null,
+      previousClaimSequence: null,
+      previousClaimEvent: null,
+    },
+  };
+  const selectedLiveDbJournalProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: {
+      ...releaseSummary,
+      durableJournal: {
+        proof: {
+          journal: thinRecoveryInspectJournal,
+          leaseFence: thinRecoveryInspectJournal.leaseFence,
+        },
+      },
+      releaseProof: {
+        ...releaseSummary.releaseProof,
+        dbJournal: dbJournalWithCompleteClaim,
+      },
+    },
+    applyRevalidation,
+  });
+
+  assert.equal(selectedLiveDbJournalProof.ok, true);
+  assert.equal(selectedLiveDbJournalProof.staleOwnerFencing.previousClaimId, claim.previousClaimId);
+
   const unsafeConflictProof = buildDurableRecoveryJournalReleaseProof({
     releaseSummary: {
       ...releaseSummary,

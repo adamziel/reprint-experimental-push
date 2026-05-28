@@ -321,6 +321,7 @@ function durableJournalClaimContractMatches(claim) {
     && optionalClaimFieldIsOwnIfPresent(claim, 'abandonedEvent')
     && statusMatchesStaleClaim
     && eventMatchesStaleClaim
+    && (claim.staleClaimRejected !== true || hasPreviousClaimIdentity)
     && (!hasPreviousClaimIdentity || (
       hasNonEmptyString(claim.previousClaimId)
       && hasNonEmptyString(claim.previousClaimKeyHash)
