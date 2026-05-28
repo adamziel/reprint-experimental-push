@@ -770,6 +770,64 @@ test('recognizes matching independent file edits as already in sync', () => {
   assert.equal(decision.change.remoteChange, 'update');
 });
 
+test('RPP-0214 already-in-sync decisions emit no mutations or preconditions with stable counts', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    'shared-private-rpp0214-file-content',
+    'Shared private RPP-0214 title',
+  ];
+  local.files['index.php'] = privateValues[0];
+  remote.files['index.php'] = privateValues[0];
+  local.plugins.forms = { version: '1.0.1', active: true };
+  remote.plugins.forms = { version: '1.0.1', active: true };
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  remote.db.wp_posts['ID:1'].post_title = privateValues[1];
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const decisionsJson = JSON.stringify(firstPlan.decisions);
+
+  assert.equal(firstPlan.status, 'ready');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 0,
+    decisions: 3,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(firstPlan.mutations, []);
+  assert.deepEqual(firstPlan.preconditions, []);
+  assert.deepEqual(
+    firstPlan.decisions.map((decision) => [
+      decision.resourceKey,
+      decision.decision,
+      decision.change.localChange,
+      decision.change.remoteChange,
+    ]),
+    [
+      ['file:index.php', 'already-in-sync', 'update', 'update'],
+      ['plugin:forms', 'already-in-sync', 'update', 'update'],
+      ['row:["wp_posts","ID:1"]', 'already-in-sync', 'update', 'update'],
+    ],
+  );
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'already-in-sync evidence counts should be stable across deterministic planning runs',
+  );
+  for (const privateValue of privateValues) {
+    assert.equal(decisionsJson.includes(privateValue), false, `decision evidence leaked ${privateValue}`);
+  }
+
+  const beforeRemote = JSON.stringify(remote);
+  const result = applyPlan(remote, firstPlan);
+  assert.equal(result.appliedMutations, 0);
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.equal(JSON.stringify(result.site), beforeRemote);
+});
+
 test('preserves remote-only plugin changes', () => {
   const base = baseSite();
   const remote = baseSite();
