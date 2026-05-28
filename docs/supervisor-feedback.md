@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 09:53 CEST
+Last updated: 2026-05-28 10:02 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:02 CEST - RPP-0237 Integrated
+
+- Going well: `RPP-0064` was rejected cleanly at dry-run, and integration moved
+  to fallback `RPP-0237` at `a56d10f94`. The planner/generated proof rejects
+  conflict plans, forged ready status, and stale mutation attempts before
+  durable journal events or target mutation with deterministic hash-only
+  refusal evidence.
+- Checklist movement: 127 verified items checked and 873 open. New check since
+  the prior feedback entry: `RPP-0237`.
+- Verification: focused RPP-0237 planner/generated validation passes 2/2, the
+  full touched planner/generated suites pass 113/113, checklist lint reports
+  127 checked / 873 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 09:53 CEST - RPP-0340 Integrated
 

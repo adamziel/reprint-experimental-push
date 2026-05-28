@@ -10,7 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
-import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -26,6 +26,17 @@ function captureError(fn) {
     return error;
   }
   assert.fail('Expected function to throw');
+}
+
+function claimFencedDurableJournal(events) {
+  return {
+    claimFenced: true,
+    claimHash: 'c'.repeat(64),
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  };
 }
 
 const requiredFamilies = [
@@ -224,6 +235,35 @@ test('RPP-0233 generated ready fixtures reject forged localHash evidence', () =>
       );
     }
   }
+});
+
+test('RPP-0237 generated conflict plans reject apply, forged ready status, and stale mutation attempts', () => {
+  const firstEvidence = generatedConflictApplyRefusalEvidence();
+  const replayEvidence = generatedConflictApplyRefusalEvidence();
+  const aggregate = aggregateGeneratedConflictApplyRefusalEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0237 test/generated-push-harness.test.js',
+    caveat: 'Generated local planner/apply proof only; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated conflict refusal evidence changed between runs');
+  assert.ok(aggregate.totalConflictCases > 0, 'generated harness must include conflict cases');
+  assert.ok(aggregate.totalPlannedMutations > 0, 'conflict generated cases should include independent planned mutations');
+  assert.ok(aggregate.totalStaleAttempts > 0, 'generated proof must exercise stale mutation attempts');
+  assert.equal(aggregate.totalAppliedMutations, 0, 'conflict apply refusals must not report applied mutations');
+  assert.equal(aggregate.totalMutationJournalEvents, 0, 'conflict refusals must not write mutation journal events');
+  assert.equal(
+    aggregate.forgedIssueCodes.READY_PLAN_HAS_CONFLICTS,
+    aggregate.totalConflictCases,
+    'forged ready conflict evidence must fail closed for every generated conflict plan',
+  );
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated remote'), false);
+  assert.equal(evidenceText.includes('confidential'), false);
+  assert.equal(evidenceText.includes('payload'), false);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -508,6 +548,159 @@ function generatedPlannerSummaryEvidence() {
   });
 }
 
+function generatedConflictApplyRefusalEvidence() {
+  return generatePushHarnessCases()
+    .map((testCase) => {
+      const plan = createPushPlan({
+        base: testCase.base,
+        local: testCase.local,
+        remote: testCase.remote,
+        now: fixedGeneratedHarnessNow,
+      });
+
+      if (plan.status !== 'conflict') {
+        return null;
+      }
+
+      const remote = cloneJson(testCase.remote);
+      const beforeRemoteHash = digest(remote);
+      const conflictJournalEvents = [];
+      let appliedMutationCount = 0;
+      const applyError = captureError(() => {
+        const result = applyPlan(remote, plan, {
+          durableJournal: claimFencedDurableJournal(conflictJournalEvents),
+        });
+        appliedMutationCount = result.appliedMutations;
+      });
+
+      assert.ok(applyError instanceof PushPlanError, `${testCase.id} conflict apply should throw PushPlanError`);
+      assert.equal(applyError.code, 'PLAN_NOT_READY', `${testCase.id} conflict apply should fail as not ready`);
+      assert.deepEqual(applyError.details, { status: 'conflict' }, `${testCase.id} conflict apply details changed`);
+      assert.equal(digest(remote), beforeRemoteHash, `${testCase.id} conflict apply mutated remote`);
+      assert.equal(appliedMutationCount, 0, `${testCase.id} conflict apply reported applied mutations`);
+      assert.deepEqual(conflictJournalEvents, [], `${testCase.id} conflict apply wrote durable journal events`);
+
+      const forgedReadyWithConflictEvidence = cloneJson(plan);
+      forgedReadyWithConflictEvidence.status = 'ready';
+      const forgedRemote = cloneJson(testCase.remote);
+      const forgedBeforeHash = digest(forgedRemote);
+      const forgedJournalEvents = [];
+      const forgedError = captureError(() => applyPlan(forgedRemote, forgedReadyWithConflictEvidence, {
+        durableJournal: claimFencedDurableJournal(forgedJournalEvents),
+      }));
+      const forgedIssueCodes = forgedError.details.issues.map((issue) => issue.code).sort();
+      assert.ok(forgedError instanceof PushPlanError, `${testCase.id} forged conflict plan should throw`);
+      assert.equal(forgedError.code, 'PLAN_INVARIANT_VIOLATION', `${testCase.id} forged conflict code changed`);
+      assert.ok(
+        forgedIssueCodes.includes('READY_PLAN_HAS_CONFLICTS'),
+        `${testCase.id} forged ready status must reject retained conflict evidence`,
+      );
+      assert.equal(digest(forgedRemote), forgedBeforeHash, `${testCase.id} forged conflict plan mutated remote`);
+      assert.deepEqual(forgedJournalEvents, [], `${testCase.id} forged conflict plan wrote durable journal events`);
+
+      const staleAttempt = plan.mutations.length > 0 && plan.blockers.length === 0
+        ? generatedStaleConflictMutationAttempt(testCase, plan)
+        : null;
+      const allJournalEvents = [
+        ...conflictJournalEvents,
+        ...forgedJournalEvents,
+        ...(staleAttempt?.journalEvents || []),
+      ];
+      for (const mutation of plan.mutations) {
+        const mutationPayloadText = JSON.stringify(mutation.value);
+        assert.equal(
+          JSON.stringify({
+            planId: testCase.id,
+            conflicts: plan.conflicts.map((conflict) => conflict.resourceKey),
+            mutationHashes: plan.mutations.map((entry) => [
+              entry.resourceKey,
+              entry.baseHash,
+              entry.localHash,
+              entry.remoteBeforeHash,
+            ]),
+          }).includes(mutationPayloadText),
+          false,
+          `${testCase.id} hash-only generated evidence leaked mutation payload for ${mutation.resourceKey}`,
+        );
+      }
+
+      return {
+        id: testCase.id,
+        tier: testCase.tier,
+        family: testCase.family,
+        tags: [...testCase.tags].sort(),
+        status: plan.status,
+        summary: plan.summary,
+        plannedMutations: plan.mutations.length,
+        plannedPreconditions: plan.preconditions.length,
+        conflicts: plan.conflicts.map((conflict) => ({
+          id: conflict.id,
+          resourceKey: conflict.resourceKey,
+          class: conflict.class,
+          resolutionPolicy: conflict.resolutionPolicy,
+          baseHash: conflict.baseHash,
+          localHash: conflict.localHash,
+          remoteHash: conflict.remoteHash,
+        })),
+        refusal: {
+          code: applyError.code,
+          detailsHash: `sha256:${digest(applyError.details)}`,
+        },
+        forgedReadyWithConflictEvidence: {
+          code: forgedError.code,
+          issueCodes: forgedIssueCodes,
+          detailsHash: `sha256:${digest(forgedError.details)}`,
+        },
+        staleMutationAttempt: staleAttempt
+          ? {
+              code: staleAttempt.error.code,
+              detailsHash: `sha256:${digest(staleAttempt.error.details)}`,
+              beforeRemoteHash: `sha256:${staleAttempt.beforeHash}`,
+              afterRemoteHash: `sha256:${staleAttempt.afterHash}`,
+              mutationJournalEventCount: staleAttempt.mutationJournalEventCount,
+            }
+          : null,
+        appliedMutationCount,
+        mutationJournalEventCount: allJournalEvents
+          .filter((event) => event.type.includes('mutation')).length,
+      };
+    })
+    .filter(Boolean);
+}
+
+function generatedStaleConflictMutationAttempt(testCase, plan) {
+  const staleForgedReady = cloneJson(plan);
+  staleForgedReady.status = 'ready';
+  staleForgedReady.conflicts = [];
+  staleForgedReady.summary.conflicts = 0;
+  staleForgedReady.blockers = [];
+  staleForgedReady.summary.blockers = 0;
+  const target = staleForgedReady.mutations[0];
+  const staleRemote = cloneJson(testCase.remote);
+  setResource(staleRemote, target.resource, deserializeResourceValue(target.value));
+  const beforeHash = digest(staleRemote);
+  const journalEvents = [];
+  const error = captureError(() => applyPlan(staleRemote, staleForgedReady, {
+    durableJournal: claimFencedDurableJournal(journalEvents),
+  }));
+  const afterHash = digest(staleRemote);
+  const mutationJournalEventCount = journalEvents
+    .filter((event) => event.type.includes('mutation')).length;
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale forged conflict plan should throw`);
+  assert.equal(error.code, 'PRECONDITION_FAILED', `${testCase.id} stale forged conflict code changed`);
+  assert.equal(afterHash, beforeHash, `${testCase.id} stale forged conflict plan mutated remote`);
+  assert.equal(mutationJournalEventCount, 0, `${testCase.id} stale forged conflict wrote mutation journal events`);
+
+  return {
+    error,
+    beforeHash,
+    afterHash,
+    journalEvents,
+    mutationJournalEventCount,
+  };
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -515,6 +708,49 @@ function emittedPlannerCounts(plan) {
     conflicts: plan.conflicts.length,
     blockers: plan.blockers.length,
     atomicGroups: plan.atomicGroups.length,
+  };
+}
+
+function aggregateGeneratedConflictApplyRefusalEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalConflictCases++;
+      aggregate.totalPlannedMutations += entry.plannedMutations;
+      aggregate.totalPlannedPreconditions += entry.plannedPreconditions;
+      aggregate.totalConflicts += entry.conflicts.length;
+      aggregate.totalAppliedMutations += entry.appliedMutationCount;
+      aggregate.totalMutationJournalEvents += entry.mutationJournalEventCount;
+      if (entry.staleMutationAttempt) {
+        aggregate.totalStaleAttempts++;
+      }
+      incrementCount(aggregate.families, entry.family);
+      for (const conflict of entry.conflicts) {
+        incrementCount(aggregate.conflictClasses, conflict.class);
+      }
+      for (const issueCode of entry.forgedReadyWithConflictEvidence.issueCodes) {
+        incrementCount(aggregate.forgedIssueCodes, issueCode);
+      }
+      return aggregate;
+    },
+    {
+      totalConflictCases: 0,
+      totalPlannedMutations: 0,
+      totalPlannedPreconditions: 0,
+      totalConflicts: 0,
+      totalAppliedMutations: 0,
+      totalMutationJournalEvents: 0,
+      totalStaleAttempts: 0,
+      families: {},
+      conflictClasses: {},
+      forgedIssueCodes: {},
+    },
+  );
+
+  return {
+    ...aggregate,
+    families: sortStringObject(aggregate.families),
+    conflictClasses: sortStringObject(aggregate.conflictClasses),
+    forgedIssueCodes: sortStringObject(aggregate.forgedIssueCodes),
   };
 }
 

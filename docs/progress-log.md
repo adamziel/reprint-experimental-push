@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 09:53 CEST.
+- Last update: 2026-05-28 10:02 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `165031908` (`test: prove importer exporter identity map`).
+  `a56d10f94` (`test: prove conflict plan apply refusal`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 126
-  items complete and leaves 874 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 127
+  items complete and leaves 873 open.
 - Checked slices: 42 release-gate foundation items, 17 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 11 merge-invariant items. No release-ops items are checked
+  harness items, and 12 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -227,6 +227,16 @@ linked implementation artifacts.
   mutation, and keeps serialized refusal evidence hash-only/redacted. Caveat:
   this is focused local planner/apply evidence, not final production release
   proof.
+- Conflict-plan refusal variant continuation: `a56d10f94` integrated
+  `RPP-0237` conflict plan apply refusal variant 2. Focused command:
+  `node --test --test-name-pattern=RPP-0237 test/push-planner.test.js test/generated-push-harness.test.js`
+  (2 passing focused proofs), plus
+  `node --test test/push-planner.test.js test/generated-push-harness.test.js`
+  (113 passing planner/generated tests). The proof rejects non-ready conflict
+  plans, forged ready status, and stale mutation attempts before durable
+  journal events or target mutation while keeping refusal evidence hash-only
+  and redacted. Caveat: this is deterministic local planner/generated evidence,
+  not final production release proof.
 - Stale plugin metadata owner continuation: `43beb7c9c` integrated
   `RPP-0414` stale plugin metadata owner context refusal. Focused planner
   tests reject stale plugin-owned row and plugin file mutations before mutation

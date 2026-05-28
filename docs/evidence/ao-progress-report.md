@@ -1,18 +1,18 @@
-# AO Progress Report - 2026-05-28 09:53 CEST
+# AO Progress Report - 2026-05-28 10:02 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`165031908` (`test: prove importer exporter identity map`). It separates
+`a56d10f94` (`test: prove conflict plan apply refusal`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 126 are
-  checked from integrated evidence and 874 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 127 are
+  checked from integrated evidence and 873 remain open.
 - `src/release-gates.js` and `test/release-gates.test.js` define and test 20
   fail-closed release-gate foundation checks. `ab0340786` extends the focused
   coverage to 11 tests and records `RPP-0008` through `RPP-0020` missing/failed
@@ -193,6 +193,13 @@ progress.
   before mutation, and keeps refusal evidence hash-only/redacted. Caveat: this
   remains focused local planner/apply evidence, not final production release
   proof.
+- `a56d10f94` integrates `RPP-0237` conflict plan apply refusal variant 2 in
+  `test/push-planner.test.js` and `test/generated-push-harness.test.js`. The
+  focused and generated proofs reject non-ready conflict plans, forged ready
+  status, and stale mutation attempts before durable journal events or target
+  mutation, with deterministic hash-only/redacted refusal evidence. Caveat:
+  this remains local planner/generated evidence, not final production release
+  proof.
 - `05050392b` integrates independent and critic audit evidence. Both audits
   reinforce the no-go posture: canonical `npm run verify:release` fails closed
   without live production-owned topology, no repo-local CI workflow was found,
@@ -338,8 +345,8 @@ progress.
   `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0101`, `RPP-0102`,
   `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0103`, `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0207`,
   `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`,
-  `RPP-0227`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0310`, `RPP-0340`, `RPP-0414`, `RPP-0421`, `RPP-0431`, `RPP-0438`, and `RPP-0439`
-  checklist updates, the current tree reports 126 checked IDs, 874
+  `RPP-0227`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0310`, `RPP-0340`, `RPP-0414`, `RPP-0421`, `RPP-0431`, `RPP-0438`, and `RPP-0439`
+  checklist updates, the current tree reports 127 checked IDs, 873
   unchecked IDs, and 0 risky
   completion claims.
 - `6d6b2077c` integrates the release artifact redaction scanner from `rpp-29`.
@@ -366,7 +373,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 42 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 6 / 100 |
-| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 11 / 100 |
+| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 12 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 17 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 19 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 10 / 100 |
@@ -385,7 +392,7 @@ Checked IDs in this report are:
   `RPP-0107`, `RPP-0112`.
 - Merge invariants: `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`,
   `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0229`, `RPP-0230`,
-  `RPP-0233`.
+  `RPP-0233`, `RPP-0237`.
 - Graph identity: `RPP-0301`, `RPP-0304`, `RPP-0305`, `RPP-0310`, `RPP-0312`,
   `RPP-0313`, `RPP-0314`, `RPP-0318`, `RPP-0319`, `RPP-0320`, `RPP-0321`,
   `RPP-0324`, `RPP-0325`, `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0340`.
@@ -432,6 +439,8 @@ Checked IDs in this report are:
 - `node --test --test-name-pattern=RPP-0233 test/push-planner.test.js` — 1 pass / 0 fail for RPP-0233 localHash correctness.
 - `node --test --test-name-pattern=RPP-0233 test/generated-push-harness.test.js` — 1 pass / 0 fail for RPP-0233 generated ready fixture localHash refusal.
 - `node --test test/generated-push-harness.test.js` — 9 pass / 0 fail after RPP-0233 localHash correctness.
+- `node --test --test-name-pattern=RPP-0237 test/push-planner.test.js test/generated-push-harness.test.js` — 2 pass / 0 fail for RPP-0237 conflict plan apply refusal variant 2.
+- `node --test test/push-planner.test.js test/generated-push-harness.test.js` — 113 pass / 0 fail after RPP-0237, including the full planner/apply suite and generated harness.
 - `node --test test/push-planner.test.js` — 102 pass / 0 fail, including RPP-0217 conflict plan apply refusal, RPP-0218 forged ready plan defense, RPP-0219 redacted raw value evidence, RPP-0220 atomic group blocker propagation, RPP-0227 local plugin data stale owner context refusal, RPP-0229 conflict evidence hash redaction, RPP-0233 localHash correctness, RPP-0431 plugin uninstall/delete refusal, RPP-0438 driver apply validation hook evidence, and RPP-0439 driver audit evidence redaction.
 - `node --test test/playground-snapshot-lib.test.js` — 4 pass / 0 fail for RPP-0421 driver registration API proof and existing snapshot apply gates.
 - `node --test test/plugin-owner-context-metadata-refusal.test.js` — 3 pass / 0 fail for RPP-0414 stale plugin metadata owner refusal and ready-path preservation.
@@ -450,7 +459,7 @@ Checked IDs in this report are:
 - `node --test test/release-evidence-provenance.test.js test/release-gate-cli.test.js test/release-gates.test.js` — 25 pass / 0 fail after provenance wiring.
 - `node ./scripts/release/check-release-gates.mjs --now 2026-05-28T00:00:00.000Z` — expected nonzero exit with `releaseStatus: "NO-GO"` and named missing production evidence.
 - `node --test test/checklist-completion-lint.test.js` — 13 pass / 0 fail after current-tree hardening.
-- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 126 checked IDs, 874 unchecked IDs.
+- `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 127 checked IDs, 873 unchecked IDs.
 - `node --test test/artifact-redaction-scan.test.js` — 10 pass / 0 fail.
 - `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html` — `ok: true`, 41 scanned files, 0 rejected files.
 - `node --test test/required-release-checks.test.js` — passed when integrated
@@ -501,11 +510,11 @@ branch.
 | --- | --- | --- |
 | `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
 | `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, and `RPP-0062` are integrated; current visible work is the next release-gate proof candidate. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `165031908`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0310`, `RPP-0340`, `RPP-0414`, `RPP-0421`, `RPP-0431`, `RPP-0438`, and `RPP-0439`; now evaluating the next completed branch one at a time. |
-| `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0229`, and `RPP-0230` are represented by pushed or integrated evidence; newer branch-local work is not counted until tested and integrated. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced through `a56d10f94`. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0050`, `RPP-0051`, `RPP-0058`, `RPP-0062`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0229`, `RPP-0230`, `RPP-0233`, `RPP-0237`, `RPP-0310`, `RPP-0340`, `RPP-0414`, `RPP-0421`, `RPP-0431`, `RPP-0438`, and `RPP-0439`; now evaluating the next completed branch one at a time. |
+| `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0220`, `RPP-0227`, `RPP-0229`, `RPP-0230`, and `RPP-0237` are represented by pushed or integrated evidence; newer branch-local work is not counted until tested and integrated. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence and `RPP-0340` production importer/exporter identity-map proof are integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `165031908`. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after `a56d10f94`. |
 | `rpp-32` | developer | Docker/local-production release-gate artifact work, `RPP-0414` stale plugin metadata owner evidence, `RPP-0438` driver apply validation hook evidence, and `RPP-0439` driver audit evidence redaction are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
 | `rpp-34` | completed candidate | `RPP-0421` driver registration API proof and `RPP-0431` plugin uninstall/delete refusal are integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
