@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:58 CEST
+Last updated: 2026-05-28 06:05 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:05 CEST - Queue Heartbeat
+
+- Going well: `origin/lane/evidence-integration-20260527` still points at
+  `3bd9dc676`. Integrated evidence remains `RPP-0040` with 109 checked and
+  891 open; release remains `NO-GO`.
+- Queued/session-only: `RPP-0041`, `RPP-0042`, `RPP-0043`, `RPP-0044`,
+  `RPP-0217`, `RPP-0218`, `RPP-0219`, `RPP-0322`, `RPP-0323`, `RPP-0421`,
+  and `RPP-0425`. Do not count them until `rpp-28` lands and pushes a tested
+  integration commit.
+- Active work: `RPP-0045`, `RPP-0117`, `RPP-0116`, `RPP-0220`, `RPP-0326`,
+  `RPP-0426`, and `RPP-0427`.
+- Verification: checklist completion lint reports 109 checked / 891 open with
+  0 risky claims, artifact redaction scan rejects 0 files, focused progress
+  HTML/release-gate tests pass 30/30, and `git diff --check` is clean.
+- Current nudge: keep watching `RPP-0421` from `rpp-28`, refetch before every
+  push, and keep queued/session-only proof out of release readiness scoring.
 
 ## 2026-05-28 05:58 CEST - RPP-0040 Integrated
 
