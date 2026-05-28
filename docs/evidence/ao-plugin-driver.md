@@ -101,6 +101,33 @@ table names are asserted absent from the focused evidence. This is local focused
 plugin-driver evidence only, not production-backed evidence, and the release gate
 remains NO-GO.
 
+## RPP-0470 plugin update dependency validator focused regression
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0470|atomic bundle|atomic plugin|plugin dependency' test/push-planner.test.js
+```
+
+The RPP-0470 focused regression proves the local plugin-update dependency
+validator on an already-active dependent fixture plugin update. A valid update
+requires the dependency plugin to match exact version, supported range, active
+state, and live-remote hash evidence before the dependent plugin update and
+plugin-owned option mutation apply.
+
+Unsupported and forged variants fail closed before mutation: unsupported
+version-range metadata is blocked during planning, forged ready plans with
+version mismatch or unsupported range throw atomic dependency errors during
+apply, and stale live-remote dependency evidence throws
+`ATOMIC_GROUP_DEPENDENCY_STALE`. The stale case preserves both the dependent
+plugin version and the drifted plugin-owned remote option row. The proof envelope
+stores only `sha256:` hashes for accepted requirements, mutation evidence,
+refusal details, row preservation, remote preservation, and the combined proof
+hash; fixture private dependency/update/row values are asserted absent.
+
+This is local focused plugin-driver evidence only, not production-backed
+evidence, and the release gate remains NO-GO.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -116,3 +143,7 @@ remains NO-GO.
   plugin-owned data before mutation.
 - RPP-0461 — driver registration API focused regression: accepted registration
   and invalid/ambiguous refusal evidence is hash-only, redacted, and local-only.
+- RPP-0470 — plugin update dependency validator focused regression: accepted
+  plugin update dependency evidence is hash-only, unsupported/forged/stale
+  dependency variants fail closed before mutation, and remote plugin-owned data
+  is preserved.
