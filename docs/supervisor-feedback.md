@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 07:30 CEST
+Last updated: 2026-05-28 09:18 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+
+## 2026-05-28 09:18 CEST - Post-RPP-0230 Live Roster 26
+
+- Count guard: fetched origin/lane remains `5057ee38a`; this worktree's
+  checklist lint reports 122 verified items checked and 878 open while release
+  status remains `NO-GO`. No 123rd item is counted in this heartbeat until
+  origin/lane actually moves.
+- Queue separation: `RPP-0230` is counted because it is integrated on
+  origin/lane. `RPP-0231`, `RPP-0232`, `RPP-0233`, `RPP-0052` through
+  `RPP-0060`, `RPP-0138`, `RPP-0139`, `RPP-0341`, `RPP-0452`, `RPP-0453`, and
+  other session-only work remain outside readiness scoring.
+- Live roster: active developer lanes remain above five: `rpp-24`/`RPP-0138`,
+  `rpp-25`/`RPP-0060`, `rpp-29`/`RPP-0233`, `rpp-30`/`RPP-0341`,
+  `rpp-32`/`RPP-0453`, `rpp-33`/`RPP-0139`, and `rpp-34`/`RPP-0452`;
+  integrator `rpp-28`; critics `rpp-31` and `rpp-37`; queue `rpp-35`;
+  progress `rpp-36`; lifecycle/dashboard panes remain visible locally.
+- Current nudge: keep refreshing counts only from origin/lane movement and keep
+  active integration/session-only release-gate, generated, merge-invariant,
+  graph, and plugin-driver work out of readiness scoring.
 
 ## 2026-05-28 07:30 CEST - RPP-0230 Integrated
 

@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 07:30 CEST.
+- Last update: 2026-05-28 09:18 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `ca47c11b1` (`test: prove generated planner summary counts`).
+  `5057ee38a` (`docs: refresh progress for generated planner summary`). The
+  newest behavioral proof on the lane is `ca47c11b1` (`test: prove generated
+  planner summary counts`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -243,12 +245,19 @@ linked implementation artifacts.
   `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
-- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+- Current AO team from tmux includes active developers `rpp-24`/`RPP-0138`,
+  `rpp-25`/`RPP-0060`, `rpp-29`/`RPP-0233`, `rpp-30`/`RPP-0341`,
+  `rpp-32`/`RPP-0453`, `rpp-33`/`RPP-0139`, and `rpp-34`/`RPP-0452`;
+  integrator `rpp-28` with `RPP-0230` integrated and `RPP-0231`/`RPP-0232`
+  visible only as session work; critics `rpp-31` and `rpp-37`; queue `rpp-35`;
+  current progress reporter `rpp-36`; visible supervisor `rpp-orchestrator`;
+  and `rpp-ao-lifecycle` / `rpp-ao-web` keeping local lifecycle and dashboard
+  processes visible on port 8080.
+- Queue heartbeat from lane truth: origin/lane is `5057ee38a`, with 122
+  checked and 878 open. `RPP-0230` is integrated; `RPP-0231`, `RPP-0232`,
+  `RPP-0233`, `RPP-0052` through `RPP-0060`, `RPP-0138`, `RPP-0139`,
+  `RPP-0341`, `RPP-0452`, `RPP-0453`, and other session-only branch work
+  remain uncounted until origin/lane moves again.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
@@ -275,7 +284,7 @@ linked implementation artifacts.
   `node --test test/push-planner.test.js`
   with 101 passing planner tests, provenance/linter/artifact focused tests,
   evidence manifest
-  generation, artifact redaction scan over evidence/report paths, and
+  generation, artifact redaction scan over evidence/audit/progress.html paths, progress.html local-link sanity, and
   `git diff --check`.
 - Release posture: final release remains **NO-GO**. This update makes tracking
   stricter and integrates fail-closed/local audit surfaces; it does not supply
