@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0080.
+Primary checklist range: RPP-0001 through RPP-0081.
 
 ## What changed
 
@@ -71,6 +71,7 @@ Primary checklist range: RPP-0001 through RPP-0080.
 | RPP-0078 | Evidence toward focused progress.html release timestamp regression now links the focused command, observed `pass` status, `progress.html#release-proof-timestamp`, exact timestamp gate evidence, and fail-closed non-ISO timestamp refusal with `mutationAttempted: false`. |
 | RPP-0079 | Evidence toward focused `.agents/RELEASE_GATES.md` status row regression now records the scenario matrix: dishonest `release_verdict: 4/4` rows fail with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, while the honest `0/4` row passes the gate and release remains `NO-GO` without provenance. |
 | RPP-0080 | Evidence toward focused `verify:release` nonzero failure reason regression now proves the checked missing-source verifier exits `1`, emits `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`, avoids mutating verifier startup, preserves exact gate evidence, and rejects zero-exit forgery. |
+| RPP-0081 | Evidence toward release verifier missing `REPRINT_PUSH_SOURCE_URL` carry-through now runs the checked verifier with local/changed URLs and credentials present but source empty, asserts the final missing-source marker, exact live-source boundary evidence, no verifier startup or mutation, and release-gate preservation of the exact `source-url` evidence. |
 
 ## Focused verification
 
@@ -175,6 +176,24 @@ rejecting forged zero-exit evidence before mutation.
 
 - Command: `node --test test/release-gate-verify-release-failure-focused-regression.test.js test/verify-release-failure-reason.test.js test/release-gate-verify-release-failure-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; verify:release marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`; release status: `NO-GO`.
+
+Release verifier missing source URL carry-through refresh:
+
+```sh
+node --test test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-source-url-generated.test.js test/release-gate-verify-release-failure-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 36 tests. This checks RPP-0081 by running the checked
+`npm run verify:release` path with `REPRINT_PUSH_LOCAL_URL`,
+`REPRINT_PUSH_REMOTE_CHANGED_URL`, and credentials present while
+`REPRINT_PUSH_SOURCE_URL` is empty. The verifier exits `1`, prints the final
+`[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`
+marker, records the missing live-source boundary and topology blocker, starts
+no live verifier server, redacts credentials, and the release-gate CLI
+preserves the exact `source-url` evidence with `final=19/20`.
+
+- Command: `node --test test/release-verifier-missing-source-url-carry-through-focused-regression.test.js test/release-gate-missing-source-url-regression.test.js test/release-gate-source-url-generated.test.js test/release-gate-verify-release-failure-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`; source gate: `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`; release status: `NO-GO`.
 
 Progress HTML release timestamp proof:
 

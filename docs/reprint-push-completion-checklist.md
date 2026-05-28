@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 212.
-- Remaining open: 788.
+- Verified complete: 213.
+- Remaining open: 787.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -92,7 +92,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0078 (Near / release-gates) Add focused regression coverage for progress.html release timestamp, variant 4. Success: progress report links the command and observed status.
 - [x] RPP-0079 (Near / release-gates) Add focused regression coverage for .agents/RELEASE_GATES.md status row, variant 4. Success: scenario matrix records the negative and positive path.
 - [x] RPP-0080 (Near / release-gates) Add focused regression coverage for verify:release nonzero failure reason, variant 4. Success: tmux-visible run prints a final bracketed status marker.
-- [ ] RPP-0081 (Near / release-gates) Carry through the release verifier for missing REPRINT_PUSH_SOURCE_URL gate, variant 5. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0081 (Near / release-gates) Carry through the release verifier for missing REPRINT_PUSH_SOURCE_URL gate, variant 5. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0082 (Near / release-gates) Carry through the release verifier for missing REPRINT_PUSH_LOCAL_URL gate, variant 5. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0083 (Near / release-gates) Carry through the release verifier for missing REPRINT_PUSH_REMOTE_CHANGED_URL gate, variant 5. Success: progress report links the command and observed status.
 - [ ] RPP-0084 (Near / release-gates) Carry through the release verifier for packaged fallback rejection, variant 5. Success: scenario matrix records the negative and positive path.
