@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 07:14 CEST
+Last updated: 2026-05-28 07:43 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+
+## 2026-05-28 07:43 CEST - RPP-0228 Integration Watch
+
+- Going well: origin/lane is `e99d5f17b`, with `RPP-0227` integrated by
+  `b1f58e9a5`; checklist truth remains 120 verified items checked and 880 open
+  while release status remains `NO-GO`.
+- Queue separation: `RPP-0228` is active in the integration lane and is not
+  counted yet. `RPP-0052` through `RPP-0057`, `RPP-0135`, `RPP-0231`,
+  `RPP-0339`, `RPP-0447`, `RPP-0448`, and other session-only work remain
+  outside readiness scoring until integrated on origin/lane.
+- Live roster: active developer lanes remain above five: `rpp-24`/`RPP-0135`,
+  `rpp-25`/`RPP-0057`, `rpp-29`/`RPP-0231`, `rpp-30`/`RPP-0339`,
+  `rpp-32`/`RPP-0447`, `rpp-33`/`RPP-0135`, and `rpp-34`/`RPP-0448`;
+  integrator `rpp-28`; critics `rpp-31` and `rpp-37`; queue `rpp-35`;
+  progress `rpp-36`; lifecycle/dashboard panes remain visible locally.
+- Current nudge: keep refreshing from origin/lane only and keep active RPP-0228
+  plus branch-local release-gate, generated, merge-invariant, graph, and
+  plugin-driver work out of readiness scoring.
 
 ## 2026-05-28 07:14 CEST - RPP-0227 Integrated
 
