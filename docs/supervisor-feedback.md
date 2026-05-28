@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:38 CEST
+Last updated: 2026-05-28 05:50 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:50 CEST - RPP-0215 Integrated
+
+- Going well: integration is now at `c371eb8d2e`, adding `RPP-0215`
+  keep-remote decision count consistency. The focused planner/apply proof
+  covers remote-only file, plugin, and row changes; counts deterministic
+  `keep-remote` decisions in `plan.summary`; emits no mutation or precondition
+  for those preserved remote resources; preserves remote values during apply;
+  and keeps planner evidence hash-only/redacted.
+- Checklist movement: 108 verified items checked and 892 open. New check since
+  the prior feedback entry: `RPP-0215`.
+- Verification: push-planner tests pass 91/91, checklist lint reports 108
+  checked / 892 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 05:38 CEST - RPP-0039 Integrated
 

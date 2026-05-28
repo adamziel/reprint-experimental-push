@@ -236,7 +236,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [ ] RPP-0212 (Near-Mid / merge-invariants) Implement remoteBeforeHash correctness, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0213 (Near-Mid / merge-invariants) Implement localHash correctness, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0214 (Near-Mid / merge-invariants) Implement already-in-sync decision, variant 1. Success: scenario matrix row names the behavior and command.
-- [ ] RPP-0215 (Near-Mid / merge-invariants) Implement keep-remote decision, variant 1. Success: progress log records the command and caveat.
+- [x] RPP-0215 (Near-Mid / merge-invariants) Implement keep-remote decision, variant 1. Success: progress log records the command and caveat.
 - [ ] RPP-0216 (Near-Mid / merge-invariants) Implement blocked plan apply refusal, variant 1. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0217 (Near-Mid / merge-invariants) Implement conflict plan apply refusal, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0218 (Near-Mid / merge-invariants) Implement forged ready plan defense, variant 1. Success: no raw private value appears in serialized plan evidence.
