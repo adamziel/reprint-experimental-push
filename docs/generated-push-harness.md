@@ -256,7 +256,13 @@ the dependency proof is same-group and stale replay fails before mutation.
 Missing-dependency cases remain non-ready, propagate blockers to every group
 mutation, and keep private install option values hash-only/redacted.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 10 `pluginOwnedCustomTableChanges` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+The `atomicPluginInstallStackV1` target coverage records the same generated
+atomic plugin install stack under variant-1 tags for RPP-0116. Its focused
+model evidence samples one ready stack and one non-ready missing-dependency
+stack from the real generated harness while retaining hash-only resource and
+blocker summaries.
+
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 10 `pluginOwnedCustomTableChanges` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 
