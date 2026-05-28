@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -16,6 +17,7 @@ import { stableStringify } from '../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fixturePath = path.join(repoRoot, 'fixtures/protocol/push-required-release-checks-contract.json');
+const scriptPath = path.join(repoRoot, 'scripts/release/required-release-checks-report.mjs');
 const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
 const requiredAreas = [
   'release-gates',
@@ -26,7 +28,8 @@ const requiredAreas = [
   'route-proof',
   'evidence-coverage',
   'operator-proof',
-  'artifact-redaction-provenance',
+  'artifact-redaction',
+  'provenance',
 ];
 
 function clone(value) {
@@ -91,8 +94,8 @@ test('fixture observations produce the stable required summary output', () => {
   assert.deepEqual(validateRequiredReleaseChecksSummary(summary), { ok: true, errors: [] });
   assert.equal(summary.ok, true);
   assert.equal(summary.releaseReady, true);
-  assert.equal(summary.requiredCount, 9);
-  assert.equal(summary.passedCount, 9);
+  assert.equal(summary.requiredCount, 10);
+  assert.equal(summary.passedCount, 10);
 });
 
 test('missing required observations, commands, and artifacts fail closed', () => {
@@ -101,8 +104,8 @@ test('missing required observations, commands, and artifacts fail closed', () =>
   let summary = summarizeRequiredReleaseChecks(missingObservation);
   assert.equal(summary.ok, false);
   assert.equal(summary.releaseReady, false);
-  assert.equal(summary.requiredCount, 9);
-  assert.equal(summary.passedCount, 8);
+  assert.equal(summary.requiredCount, 10);
+  assert.equal(summary.passedCount, 9);
   assert.deepEqual(summary.missingChecks.map((check) => check.code), [
     'REQUIRED_RELEASE_CHECK_OBSERVATION_MISSING',
   ]);
@@ -138,7 +141,7 @@ test('production-required stale and missing observedAt observations fail closed'
   let summary = summarizeRequiredReleaseChecks(stale);
   assert.equal(summary.ok, false);
   assert.equal(summary.releaseReady, false);
-  assert.equal(summary.passedCount, 8);
+  assert.equal(summary.passedCount, 9);
   assert.deepEqual(summary.missingChecks, []);
   assert.equal(summary.staleChecks.length, 1);
   assert.equal(summary.staleChecks[0].id, 'auth-inspect-proof');
@@ -208,8 +211,8 @@ test('non-blocking checks are reported without weakening blocking release readin
 
   assert.equal(summary.ok, true);
   assert.equal(summary.releaseReady, true);
-  assert.equal(summary.requiredCount, 9);
-  assert.equal(summary.passedCount, 9);
+  assert.equal(summary.requiredCount, 10);
+  assert.equal(summary.passedCount, 10);
   assert.deepEqual(summary.nonBlockingChecks, [
     {
       id: 'advisory-docs-index',
@@ -220,4 +223,63 @@ test('non-blocking checks are reported without weakening blocking release readin
       code: 'REQUIRED_RELEASE_CHECK_OBSERVATION_MISSING',
     },
   ]);
+});
+
+function runRequiredChecksCommand(args = []) {
+  return spawnSync(process.execPath, [scriptPath, ...args], {
+    cwd: repoRoot,
+    env: {
+      PATH: process.env.PATH,
+    },
+    encoding: 'utf8',
+  });
+}
+
+function parseCommandReport(result) {
+  assert.equal(result.error, undefined, result.error?.stack);
+  assert.doesNotThrow(() => JSON.parse(result.stdout), result.stdout || result.stderr);
+  const report = JSON.parse(result.stdout);
+  assert.equal(result.stdout.trim(), stableStringify(report));
+  return report;
+}
+
+test('required release checks command succeeds on the fixture and emits stable JSON', () => {
+  const result = runRequiredChecksCommand(['--fixture', fixturePath]);
+  const report = parseCommandReport(result);
+
+  assert.equal(result.status, 0, result.stdout || result.stderr);
+  assert.equal(report.command, 'required-release-checks-report');
+  assert.equal(report.mode, 'fixture');
+  assert.equal(report.ok, true);
+  assert.equal(report.releaseReady, true);
+  assert.equal(report.releaseStatus, 'release-ready');
+  assert.equal(report.requiredCount, 10);
+  assert.equal(report.passedCount, 10);
+  assert.equal(report.missingCount, 0);
+  assert.equal(report.staleCount, 0);
+  assert.deepEqual(report.summary, fixture.expected_summary);
+  assert.deepEqual(report.checks.map((check) => check.area), requiredAreas);
+  assert.ok(report.checks.every((check) => check.artifacts.length > 0));
+  assert.ok(report.checks.every((check) => check.artifacts.every((artifact) => artifact.exists === true)));
+});
+
+test('required release checks command fails closed in current repo mode without observations', () => {
+  const result = runRequiredChecksCommand(['--now', fixture.evaluation.now]);
+  const report = parseCommandReport(result);
+
+  assert.equal(result.status, 1, result.stdout || result.stderr);
+  assert.equal(report.mode, 'current-repo');
+  assert.equal(report.ok, false);
+  assert.equal(report.releaseReady, false);
+  assert.equal(report.releaseStatus, 'held');
+  assert.equal(report.requiredCount, 10);
+  assert.equal(report.passedCount, 0);
+  assert.equal(report.missingCount, 10);
+  assert.equal(report.staleCount, 0);
+  assert.deepEqual(
+    report.summary.missingChecks.map((check) => check.code),
+    Array.from({ length: 10 }, () => 'REQUIRED_RELEASE_CHECK_OBSERVATION_MISSING'),
+  );
+  assert.deepEqual(report.checks.map((check) => check.id), fixture.checks.map((check) => check.id));
+  assert.ok(report.checks.every((check) => check.observation.status === 'missing'));
 });

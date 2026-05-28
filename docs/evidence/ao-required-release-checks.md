@@ -1,15 +1,26 @@
 # AO required release checks evidence
 
 Date: 2026-05-28
-Lane: required-release-checks-contract
+Lane: required-checks-release-command
 
 ## What changed
 
 - Added `src/required-release-checks.js`, a standalone data contract and evaluator for local release-movement checks.
-- Added `fixtures/protocol/push-required-release-checks-contract.json` so CI/release gates can read the mandatory command and artifact matrix without consulting GitHub branch protection or external services.
-- Added `test/required-release-checks.test.js` with fixture validation plus fail-closed coverage for duplicate ids, missing commands/artifacts, stale observations, unknown severities, and tampered `releaseReady` summaries.
+- Added `scripts/release/required-release-checks-report.mjs`, an operator-runnable local command that emits stable JSON and exits nonzero unless mandatory production observations are present and fresh.
+- Added `fixtures/protocol/push-required-release-checks-contract.json` so CI/release gates can read the mandatory command, artifact, observation, and expected-summary matrix without consulting GitHub branch protection or external services.
+- Added `test/required-release-checks.test.js` with fixture validation, command coverage, and fail-closed assertions for duplicate ids, missing commands/artifacts, stale observations, unknown severities, and tampered `releaseReady` summaries.
 
-## Stable summary contract
+## Operator command
+
+```sh
+node ./scripts/release/required-release-checks-report.mjs
+node ./scripts/release/required-release-checks-report.mjs --fixture fixtures/protocol/push-required-release-checks-contract.json
+node ./scripts/release/required-release-checks-report.mjs --observations-file path/to/observations.json --now 2026-05-28T08:30:00.000Z
+```
+
+The default current-repo mode enumerates the contract and local artifact presence, but fails closed until observations are supplied. The fixture mode proves the stable release-ready shape.
+
+## Stable JSON summary contract
 
 `summary_fields` are fixed in this order:
 
@@ -41,7 +52,8 @@ Missing or invalid `observedAt` values are treated as stale production-required 
 | `route-proof-contracts` | `routes` | `node --test test/protocol-fixtures.test.js` | `fixtures/protocol/push-production-route-matrix-contract.json`; `fixtures/protocol/push-production-ladder-contract.json`; `docs/protocol.md`; `docs/executor.md` |
 | `evidence-coverage-proof` | `evidence` | `node --test test/generated-push-harness.test.js` | `test/generated-push-harness.test.js`; `docs/generated-push-harness.md`; `docs/scenario-matrix.md` |
 | `operator-proof` | `operator` | `node --test test/release-gates.test.js` | `docs/evidence/ao-release-gates.md`; `docs/evidence/ao-progress-report.md`; `progress.html` |
-| `artifact-redaction-provenance-proof` | `artifact-integrity` | `node --test test/push-planner.test.js` | `src/planner.js`; `test/push-planner.test.js`; `docs/scenario-matrix.md`; `fixtures/protocol/push-production-pull-bridge-contract.json` |
+| `artifact-redaction-proof` | `artifact-integrity` | `node --test test/evidence-redaction.test.js` | `src/evidence-redaction.js`; `test/evidence-redaction.test.js`; `docs/evidence/ao-evidence-redaction.md`; `docs/scenario-matrix.md` |
+| `provenance-proof` | `artifact-integrity` | `node --test test/protocol-compatibility.test.js` | `src/protocol-compatibility.js`; `test/protocol-compatibility.test.js`; `fixtures/protocol/push-production-pull-bridge-contract.json`; `docs/protocol.md` |
 
 ## Fail-closed behavior covered
 
@@ -55,22 +67,26 @@ Focused test coverage asserts that release movement is denied for:
 - passed observations that omit mandatory artifacts,
 - stale or missing production `observedAt` values,
 - unknown severities,
-- tampered summaries where `releaseReady: true` coexists with missing required checks.
+- tampered summaries where `releaseReady: true` coexists with missing required checks,
+- current-repo command mode without observations.
 
 ## Focused verification
 
 ```sh
 node --check src/required-release-checks.js
+node --check scripts/release/required-release-checks-report.mjs
 node --check test/required-release-checks.test.js
 node --test test/required-release-checks.test.js
+node ./scripts/release/required-release-checks-report.mjs --fixture fixtures/protocol/push-required-release-checks-contract.json
+node ./scripts/release/required-release-checks-report.mjs --now 2026-05-28T08:30:00.000Z
 git diff --check
 ```
 
-Observed focused test status: `node --test test/required-release-checks.test.js` passed 7 tests.
+Observed focused test status: `node --test test/required-release-checks.test.js` passed 9 tests.
 
 ## RPP evidence IDs claimed
 
-This contract provides evidence toward the earliest release-gate coverage items that need a machine-readable local command/artifact summary before release movement:
+This contract and command provide evidence toward the earliest release-gate coverage items that need a machine-readable local command/artifact summary before release movement:
 
 - RPP-0041 through RPP-0060: generated release-gate coverage now has a standalone required-check matrix and fail-closed summary validation.
 - RPP-0056: the summary fields include explicit `releaseReady`/missing/stale accounting.

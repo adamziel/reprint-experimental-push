@@ -143,18 +143,34 @@
       "staleAfterMs": 21600000
     },
     {
-      "id": "artifact-redaction-provenance-proof",
-      "title": "Artifact redaction and immutable provenance proof",
-      "area": "artifact-redaction-provenance",
+      "id": "artifact-redaction-proof",
+      "title": "Artifact redaction proof",
+      "area": "artifact-redaction",
       "ownerScope": "artifact-integrity",
       "severity": "blocking",
       "productionRequired": true,
-      "command": "node --test test/push-planner.test.js",
+      "command": "node --test test/evidence-redaction.test.js",
       "artifacts": [
-        "src/planner.js",
-        "test/push-planner.test.js",
-        "docs/scenario-matrix.md",
-        "fixtures/protocol/push-production-pull-bridge-contract.json"
+        "src/evidence-redaction.js",
+        "test/evidence-redaction.test.js",
+        "docs/evidence/ao-evidence-redaction.md",
+        "docs/scenario-matrix.md"
+      ],
+      "staleAfterMs": 604800000
+    },
+    {
+      "id": "provenance-proof",
+      "title": "Immutable pull-to-push provenance proof",
+      "area": "provenance",
+      "ownerScope": "artifact-integrity",
+      "severity": "blocking",
+      "productionRequired": true,
+      "command": "node --test test/protocol-compatibility.test.js",
+      "artifacts": [
+        "src/protocol-compatibility.js",
+        "test/protocol-compatibility.test.js",
+        "fixtures/protocol/push-production-pull-bridge-contract.json",
+        "docs/protocol.md"
       ],
       "staleAfterMs": 604800000
     }
@@ -247,14 +263,25 @@
       ],
       "observedAt": "2026-05-28T08:00:00.000Z"
     },
-    "artifact-redaction-provenance-proof": {
+    "artifact-redaction-proof": {
       "status": "passed",
-      "command": "node --test test/push-planner.test.js",
+      "command": "node --test test/evidence-redaction.test.js",
       "artifacts": [
-        "src/planner.js",
-        "test/push-planner.test.js",
-        "docs/scenario-matrix.md",
-        "fixtures/protocol/push-production-pull-bridge-contract.json"
+        "src/evidence-redaction.js",
+        "test/evidence-redaction.test.js",
+        "docs/evidence/ao-evidence-redaction.md",
+        "docs/scenario-matrix.md"
+      ],
+      "observedAt": "2026-05-28T08:00:00.000Z"
+    },
+    "provenance-proof": {
+      "status": "passed",
+      "command": "node --test test/protocol-compatibility.test.js",
+      "artifacts": [
+        "src/protocol-compatibility.js",
+        "test/protocol-compatibility.test.js",
+        "fixtures/protocol/push-production-pull-bridge-contract.json",
+        "docs/protocol.md"
       ],
       "observedAt": "2026-05-28T08:00:00.000Z"
     }
@@ -262,8 +289,8 @@
   "expected_summary": {
     "ok": true,
     "releaseReady": true,
-    "requiredCount": 9,
-    "passedCount": 9,
+    "requiredCount": 10,
+    "passedCount": 10,
     "missingChecks": [],
     "staleChecks": [],
     "nonBlockingChecks": []
