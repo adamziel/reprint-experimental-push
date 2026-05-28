@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0029
 
 ## What changed
 
@@ -38,6 +38,7 @@ Primary checklist range: RPP-0001 through RPP-0026
 | RPP-0020 | `verify-release-failure-reason` gate requires nonzero `verify:release` failure evidence with a named reason. |
 | RPP-0021 through RPP-0025 | Variant-2 proof coverage is represented by the same reusable evaluator and focused tests for missing source/local/remote, packaged fallback rejection, and wrong remote alias rejection. |
 | RPP-0026 | Evidence toward variant-2 auth source command readback drift now runs the `check-release-gates` command from a fixture evidence file and asserts exit `1`, `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`, exact drift evidence, and `mutationAttempted: false`. |
+| RPP-0029 | Evidence toward variant-2 `manage_options` capability proof now runs a command-level negative/positive matrix: missing capability exits `1` with `MANAGE_OPTIONS_CAPABILITY_REQUIRED`, exact evidence, and `mutationAttempted: false`; proven capability passes the auth gate while release remains `NO-GO` without provenance. |
 
 ## Focused verification
 
@@ -45,7 +46,7 @@ Primary checklist range: RPP-0001 through RPP-0026
 node --test test/release-gates.test.js
 ```
 
-Observed status: pass, 12 tests.
+Observed status: pass, 13 tests.
 
 Key assertions:
 
@@ -53,6 +54,7 @@ Key assertions:
 - Packaged fallback and wrong remote alias each keep `releaseMovement.allowed: false` with `finalGates: "19/20"` when all other final evidence is present.
 - Missing/failed auth, route, read-only, operator-proof, and verifier-failure evidence is named per gate and keeps `releaseMovement.allowed: false`.
 - Auth source command readback drift has command-level variant-2 coverage: the fixture-backed `check-release-gates` run exits nonzero with `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED` and records `mutationAttempted: false`.
+- `manage_options` capability has command-level variant-2 matrix coverage: the negative case records exact `MANAGE_OPTIONS_CAPABILITY_REQUIRED` evidence and no mutation attempt, while the positive case passes the auth gate and still reports `NO-GO` until provenance exists.
 - Complete local candidate evidence yields `candidateMovement.allowed: true`, `releaseMovement.allowed: false`, and `releaseMovement.gates: "candidate-for-review"`.
 - Complete final evidence yields `releaseMovement.allowed: true` and `releaseMovement.gates: "20/20"`.
 

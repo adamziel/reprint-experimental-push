@@ -273,6 +273,202 @@ test('check-release-gates command proves auth source readback drift before mutat
   });
 });
 
+test('check-release-gates command records manage_options proof matrix before mutation for RPP-0029', () => {
+  const checkedRoute = '/wp-json/reprint-push/v1/preflight';
+  const manageOptionsProof = {
+    ok: true,
+    hasManageOptions: true,
+    observed: 'manage_options',
+    checkedCapability: 'manage_options',
+    checkedRoute,
+    user: 'release-admin',
+    scope: 'final-release',
+  };
+  const scenarios = [
+    {
+      name: 'negative-missing-manage-options',
+      proof: {
+        ok: false,
+        hasManageOptions: false,
+        observed: 'subscriber',
+        checkedCapability: 'edit_posts',
+        checkedRoute,
+        user: 'release-editor',
+        scope: 'final-release',
+      },
+      expected: {
+        exitCode: 1,
+        releaseStatus: 'NO-GO',
+        primaryFailureBucket: 'auth',
+        primaryFailureCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+        releaseAllowed: false,
+        finalGates: '19/20',
+        gateStatus: 'failed',
+        gateCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+        gateReason: 'The checked production user does not prove manage_options capability.',
+        gateEvidence: {
+          ok: false,
+          hasManageOptions: false,
+          observed: 'subscriber',
+          checkedCapability: 'edit_posts',
+          checkedRoute,
+          user: 'release-editor',
+          scope: 'final-release',
+          required: ['authenticated user has manage_options on checked route'],
+        },
+        missingProductionEvidenceBuckets: [
+          {
+            bucket: 'auth',
+            gateCount: 1,
+            gates: [
+              {
+                bucket: 'auth',
+                id: 'manage-options-capability',
+                rpp: 'RPP-0009',
+                title: 'manage_options capability proof',
+                status: 'failed',
+                code: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+                reason: 'The checked production user does not prove manage_options capability.',
+                required: ['authenticated user has manage_options on checked route'],
+                observed: 'subscriber',
+                envKey: undefined,
+                evidenceKey: undefined,
+                scope: 'final-release',
+                requiredScope: undefined,
+              },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      name: 'positive-manage-options-proven',
+      proof: manageOptionsProof,
+      expected: {
+        exitCode: 1,
+        releaseStatus: 'NO-GO',
+        primaryFailureBucket: 'provenance',
+        primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+        releaseAllowed: true,
+        finalGates: '20/20',
+        gateStatus: 'passed',
+        gateCode: 'OK',
+        gateReason: 'manage_options capability proof is backed by final release evidence.',
+        gateEvidence: {
+          ...manageOptionsProof,
+          required: ['authenticated user has manage_options on checked route'],
+          requiredScope: 'final-release',
+        },
+        missingProductionEvidenceBuckets: [
+          {
+            bucket: 'provenance',
+            gateCount: 4,
+            gateCodes: [
+              'PRODUCTION_EVIDENCE_REQUIRED',
+              'PRODUCTION_EVIDENCE_REQUIRED',
+              'PRODUCTION_EVIDENCE_REQUIRED',
+              'PRODUCTION_EVIDENCE_REQUIRED',
+            ],
+          },
+        ],
+      },
+    },
+  ];
+
+  const observedMatrix = [];
+
+  for (const scenario of scenarios) {
+    const { dir, file } = writeReleaseGateEvidenceFixture({
+      scope: 'final-release',
+      env: releaseEnv(),
+      evidence: completeEvidence('final-release', {
+        manageOptionsCapability: scenario.proof,
+      }),
+    });
+
+    const result = runReleaseGateCli([
+      '--evidence-file',
+      file,
+      '--scope',
+      'final-release',
+      '--now',
+      fixedNow.toISOString(),
+    ], {
+      cwd: dir,
+      env: {},
+      now: fixedNow,
+    });
+    const gate = gateById(result.report.evaluation, 'manage-options-capability');
+
+    assert.equal(result.exitCode, scenario.expected.exitCode, scenario.name);
+    assert.equal(result.report.ok, false, scenario.name);
+    assert.equal(result.report.releaseStatus, scenario.expected.releaseStatus, scenario.name);
+    assert.equal(result.report.primaryFailureBucket, scenario.expected.primaryFailureBucket, scenario.name);
+    assert.equal(result.report.primaryFailureCode, scenario.expected.primaryFailureCode, scenario.name);
+    assert.equal(result.report.mutationAttempted, false, scenario.name);
+    assert.deepEqual(result.report.mutationPolicy, {
+      readOnly: true,
+      reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+    }, scenario.name);
+    assert.equal(result.report.releaseMovement.allowed, scenario.expected.releaseAllowed, scenario.name);
+    assert.equal(result.report.releaseMovement.finalGates, scenario.expected.finalGates, scenario.name);
+    assert.equal(gate.status, scenario.expected.gateStatus, scenario.name);
+    assert.equal(gate.code, scenario.expected.gateCode, scenario.name);
+    assert.equal(gate.reason, scenario.expected.gateReason, scenario.name);
+    assert.deepEqual(gate.evidence, scenario.expected.gateEvidence, scenario.name);
+
+    if (scenario.name === 'negative-missing-manage-options') {
+      assert.deepEqual(
+        result.report.missingProductionEvidenceBuckets,
+        scenario.expected.missingProductionEvidenceBuckets,
+        scenario.name,
+      );
+    } else {
+      const provenance = result.report.missingProductionEvidenceBuckets.find((bucket) => bucket.bucket === 'provenance');
+      assert.ok(provenance, scenario.name);
+      assert.deepEqual([{
+        bucket: provenance.bucket,
+        gateCount: provenance.gateCount,
+        gateCodes: provenance.gates.map((entry) => entry.code),
+      }], scenario.expected.missingProductionEvidenceBuckets, scenario.name);
+    }
+
+    observedMatrix.push({
+      scenario: scenario.name,
+      gateStatus: gate.status,
+      gateCode: gate.code,
+      releaseAllowed: result.report.releaseMovement.allowed,
+      releaseStatus: result.report.releaseStatus,
+      primaryFailureBucket: result.report.primaryFailureBucket,
+      primaryFailureCode: result.report.primaryFailureCode,
+      mutationAttempted: result.report.mutationAttempted,
+    });
+  }
+
+  assert.deepEqual(observedMatrix, [
+    {
+      scenario: 'negative-missing-manage-options',
+      gateStatus: 'failed',
+      gateCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+      releaseAllowed: false,
+      releaseStatus: 'NO-GO',
+      primaryFailureBucket: 'auth',
+      primaryFailureCode: 'MANAGE_OPTIONS_CAPABILITY_REQUIRED',
+      mutationAttempted: false,
+    },
+    {
+      scenario: 'positive-manage-options-proven',
+      gateStatus: 'passed',
+      gateCode: 'OK',
+      releaseAllowed: true,
+      releaseStatus: 'NO-GO',
+      primaryFailureBucket: 'provenance',
+      primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+      mutationAttempted: false,
+    },
+  ]);
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
