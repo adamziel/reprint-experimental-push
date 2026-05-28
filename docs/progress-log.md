@@ -4,6 +4,27 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Progress Reporter Heartbeat From a195ac53a
+
+- Last update: 2026-05-28 05:49 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` through
+  `a195ac53a` (`docs: refresh progress for status row proof`). The integrated
+  proof behind the current progress refresh is `6035273b9` (`test: prove
+  release gates status row`).
+- Checklist status remains 107 checked and 893 open. `RPP-0039` is integrated;
+  `RPP-0215` is queued/session-only and is not counted in lane truth.
+- Current active work from the supervisor view is `rpp-24/RPP-0113`,
+  `rpp-25/RPP-0040`, `rpp-29/RPP-0216`, `rpp-30/RPP-0315`,
+  `rpp-32/RPP-0415`, `rpp-28` integration, plus critic and progress reporting.
+- This heartbeat changes only progress/report surfaces. It carries no
+  implementation or test diffs and does not move release readiness.
+- Verification for this entry: `node scripts/release/checklist-completion-lint.mjs`
+  reports 107 checked IDs, 893 unchecked IDs, and 0 risky claims;
+  `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html`
+  reports 0 rejected files; `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passes 30/30; `git diff --check` is clean.
+- Release posture: final release remains **NO-GO**.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 05:38 CEST.
