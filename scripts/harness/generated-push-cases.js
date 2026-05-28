@@ -21,6 +21,7 @@ const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
 const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
 
 const scenarioFamilies = Object.freeze([
+  'large-ready-plan-tier',
   'local-file-update',
   'remote-only-post-update',
   'independent-local-and-remote',
@@ -75,6 +76,7 @@ const scenarioFamilies = Object.freeze([
 ]);
 
 const readyPreservingFamilies = new Set([
+  'large-ready-plan-tier',
   'local-file-update',
   'remote-only-post-update',
   'independent-local-and-remote',
@@ -106,10 +108,18 @@ const readyPreservingFamilies = new Set([
   'comment-user-graph-stale',
 ]);
 
+const skipSeededComplexityFamilies = new Set([
+  'large-ready-plan-tier',
+]);
+
 const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  largeReadyPlanTier: {
+    family: 'large-ready-plan-tier',
+    tag: 'large-ready-plan-target',
   },
   sameIndependentContent: {
     family: 'same-independent-content',
@@ -319,6 +329,9 @@ function buildGeneratedCase({ index, tier, rng }) {
 }
 
 const scenarioFamilyBuilders = {
+  'large-ready-plan-tier': ({ tier, base, local, remote, allocator, tags }) => {
+    addLargeReadyPlanTier(tier, base, local, remote, allocator, tags);
+  },
   'local-file-update': ({ local, allocator, tags }) => {
     const path = allocator.filePath('local');
     local.files[path] = `local file update ${allocator.next()}`;
@@ -805,6 +818,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (skipSeededComplexityFamilies.has(family)) {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -1698,6 +1715,104 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
   }
+}
+
+function addLargeReadyPlanTier(tier, base, local, remote, allocator, tags) {
+  const updateCount = 4 + tier;
+  const createCount = 4 + Math.floor(tier / 2);
+  const deleteCount = 3 + Math.floor(tier / 3);
+  const fileCreateCount = 3 + Math.floor(tier / 4);
+  const fileUpdateCount = 3 + Math.floor(tier / 3);
+  const fileDeleteCount = 2 + Math.floor(tier / 5);
+
+  for (let index = 0; index < updateCount; index++) {
+    const postId = allocator.graphId();
+    const rowId = `ID:${postId}`;
+    const row = makePost(postId, `Base large ready update ${postId}`, {
+      post_content: `base large ready update ${index}`,
+      post_type: index % 2 === 0 ? 'post' : 'page',
+    });
+    setRow(base, 'wp_posts', rowId, row);
+    setRow(local, 'wp_posts', rowId, {
+      ...row,
+      post_title: `Generated large ready update ${postId}`,
+      post_content: `generated large ready update ${index}`,
+    });
+    setRow(remote, 'wp_posts', rowId, row);
+  }
+
+  for (let index = 0; index < createCount; index++) {
+    const postId = allocator.graphId();
+    setRow(local, 'wp_posts', `ID:${postId}`, makePost(postId, `Generated large ready create ${postId}`, {
+      post_content: `generated large ready create ${index}`,
+      post_type: index % 2 === 0 ? 'post' : 'page',
+    }));
+  }
+
+  for (let index = 0; index < deleteCount; index++) {
+    const postId = allocator.graphId();
+    const rowId = `ID:${postId}`;
+    const row = makePost(postId, `Base large ready delete ${postId}`, {
+      post_content: `base large ready delete ${index}`,
+    });
+    setRow(base, 'wp_posts', rowId, row);
+    setRow(local, 'wp_posts', rowId, row);
+    setRow(remote, 'wp_posts', rowId, row);
+    deleteRow(local, 'wp_posts', rowId);
+  }
+
+  for (let index = 0; index < fileCreateCount; index++) {
+    local.files[allocator.filePath('large-ready-create')] = `generated large ready file create ${index}`;
+  }
+
+  for (let index = 0; index < fileUpdateCount; index++) {
+    const path = allocator.filePath('large-ready-update');
+    base.files[path] = `base large ready file update ${index}`;
+    local.files[path] = `generated large ready file update ${index}`;
+    remote.files[path] = base.files[path];
+  }
+
+  for (let index = 0; index < fileDeleteCount; index++) {
+    const path = allocator.filePath('large-ready-delete');
+    base.files[path] = `base large ready file delete ${index}`;
+    local.files[path] = base.files[path];
+    remote.files[path] = base.files[path];
+    delete local.files[path];
+  }
+
+  const remotePostId = allocator.graphId();
+  const remotePostRowId = `ID:${remotePostId}`;
+  const remotePost = makePost(remotePostId, `Base large ready remote preserve ${remotePostId}`);
+  setRow(base, 'wp_posts', remotePostRowId, remotePost);
+  setRow(local, 'wp_posts', remotePostRowId, remotePost);
+  setRow(remote, 'wp_posts', remotePostRowId, {
+    ...remotePost,
+    post_title: `Remote large ready preserved ${remotePostId}`,
+  });
+
+  const remotePath = allocator.filePath('large-ready-remote-preserve');
+  base.files[remotePath] = 'base large ready remote file';
+  local.files[remotePath] = base.files[remotePath];
+  remote.files[remotePath] = 'remote large ready preserved file';
+
+  addTaxonomyGraph(local, allocator);
+  addCommentGraph(local, allocator);
+
+  tags.add('large-ready-plan-target');
+  tags.add('large-ready-plan');
+  tags.add('ready-candidate');
+  tags.add('row-create');
+  tags.add('row-update');
+  tags.add('row-delete');
+  tags.add('file-create');
+  tags.add('file-update');
+  tags.add('file-delete');
+  tags.add('bulk-local-update');
+  tags.add('bulk-remote-preserve');
+  tags.add('remote-preserve');
+  tags.add('same-plan-graph');
+  tags.add('taxonomy-graph');
+  tags.add('comment-graph');
 }
 
 function addCommentGraph(local, allocator) {

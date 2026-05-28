@@ -47,6 +47,9 @@ const requiredFamilies = [
   'local-delete',
   'same-independent-content',
   'same-independent-content-target',
+  'large-ready-plan-tier',
+  'large-ready-plan',
+  'large-ready-plan-target',
   'supported-plugin-option',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
@@ -192,7 +195,7 @@ test('RPP-0118 same independent content target applies without unplanned remote 
   assert.equal(coverage.family, 'same-independent-content');
   assert.equal(coverage.total, report.summary.featureFamilies['same-independent-content']);
   assert.equal(coverage.total, 10);
-  assert.deepEqual(coverage.statuses, { conflict: 2, ready: 8 });
+  assert.deepEqual(coverage.statuses, { conflict: 1, ready: 9 });
   assert.ok(coverage.statuses.ready > 0, 'target should include ready same independent content cases');
   assert.deepEqual(coverage.perTier, {
     0: 1,
@@ -212,13 +215,23 @@ test('RPP-0118 same independent content target applies without unplanned remote 
 
   assert.ok(sameCase, 'missing generated same independent content case');
   assert.ok(sameCase.tags.has('same-independent-content-target'));
-  assertSameIndependentContentShape(sameCase);
+  const sameShape = assertSameIndependentContentShape(sameCase);
 
   const result = validateGeneratedCase(sameCase);
+  const plan = createPushPlan({
+    base: sameCase.base,
+    local: sameCase.local,
+    remote: sameCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
 
   assert.equal(result.status, 'ready');
-  assert.equal(result.mutations, 0, 'identical independent edits should not need a mutation');
-  assert.equal(result.decisions, 1, 'same independent content should record one already-in-sync decision');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === sameShape.resourceKey),
+    false,
+    'identical independent edits should not need a mutation for the synchronized row',
+  );
+  assert.ok(result.decisions >= 1, 'same independent content should record an already-in-sync decision');
   assert.equal(result.applied, true, 'same independent content should apply through the harness');
   assert.equal(result.unplannedRemotePreserved, true, 'same independent content must preserve unplanned remote data');
 });
@@ -232,6 +245,115 @@ function assertSameIndependentContentShape(testCase) {
       && testCase.base.db.wp_posts[id].post_title !== localRow.post_title);
 
   assert.equal(sharedRows.length, 1, `${testCase.id} should include one same independent post update`);
+  return {
+    rowId: sharedRows[0][0],
+    resourceKey: generatedRowResourceKey('wp_posts', sharedRows[0][0]),
+  };
+}
+
+test('RPP-0120 large ready plan tier target exposes deterministic ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.largeReadyPlanTier;
+
+  assert.ok(coverage, 'missing large ready plan tier target coverage');
+  assert.equal(coverage.family, 'large-ready-plan-tier');
+  assert.equal(coverage.total, report.summary.featureFamilies['large-ready-plan-tier']);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { ready: 10 });
+  assert.deepEqual(coverage.perTier, {
+    0: 1,
+    1: 1,
+    2: 1,
+    3: 1,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+  });
+  assert.equal(report.summary.featureFamilies['large-ready-plan-target'], 10);
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'large-ready-plan-tier');
+  assert.equal(cases.length, 10);
+
+  for (const testCase of cases) {
+    assert.ok(testCase.tags.has('large-ready-plan-target'));
+    assertLargeReadyPlanShape(testCase);
+
+    const result = validateGeneratedCase(testCase);
+    assert.equal(result.status, 'ready');
+    assert.ok(result.mutations >= 24 + testCase.tier, `${testCase.id} should have a large ready mutation plan`);
+    assert.equal(result.decisions, 2, `${testCase.id} should record remote-preservation decisions`);
+    assert.equal(result.applied, true, `${testCase.id} should apply through the harness`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} must preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay must fail before mutation`);
+  }
+});
+
+function assertLargeReadyPlanShape(testCase) {
+  const createRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => !testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated large ready create '));
+  const updateRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated large ready update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_posts)
+    .filter(([id, row]) => row.post_title.startsWith('Base large ready delete ')
+      && !testCase.local.db.wp_posts[id]
+      && testCase.remote.db.wp_posts[id]);
+  const remotePreserveRows = Object.entries(testCase.base.db.wp_posts)
+    .filter(([, row]) => row.post_title.startsWith('Base large ready remote preserve '));
+  const fileCreates = Object.keys(testCase.local.files)
+    .filter((path) => path.includes('/large-ready-create-') && !testCase.base.files[path]);
+  const fileUpdates = Object.entries(testCase.local.files)
+    .filter(([path, value]) => path.includes('/large-ready-update-')
+      && testCase.base.files[path]
+      && String(value).startsWith('generated large ready file update '));
+  const fileDeletes = Object.keys(testCase.base.files)
+    .filter((path) => path.includes('/large-ready-delete-')
+      && !testCase.local.files[path]
+      && testCase.remote.files[path]);
+  const remotePreserveFiles = Object.keys(testCase.base.files)
+    .filter((path) => path.includes('/large-ready-remote-preserve-'));
+  const taxonomyRows = Object.keys(testCase.local.db.wp_term_taxonomy)
+    .filter((id) => !testCase.base.db.wp_term_taxonomy[id]);
+  const commentRows = Object.keys(testCase.local.db.wp_comments)
+    .filter((id) => !testCase.base.db.wp_comments[id]);
+
+  assert.ok(createRows.length >= 4, `${testCase.id} should create multiple post rows`);
+  assert.ok(updateRows.length >= 4, `${testCase.id} should update multiple post rows`);
+  assert.ok(deleteRows.length >= 3, `${testCase.id} should delete multiple post rows`);
+  assert.ok(fileCreates.length >= 3, `${testCase.id} should create multiple files`);
+  assert.ok(fileUpdates.length >= 3, `${testCase.id} should update multiple files`);
+  assert.ok(fileDeletes.length >= 2, `${testCase.id} should delete multiple files`);
+  assert.equal(remotePreserveRows.length, 1, `${testCase.id} should include one remote-only row`);
+  assert.equal(remotePreserveFiles.length, 1, `${testCase.id} should include one remote-only file`);
+  assert.deepEqual(
+    testCase.local.db.wp_posts[remotePreserveRows[0][0]],
+    testCase.base.db.wp_posts[remotePreserveRows[0][0]],
+    `${testCase.id} remote-only row should be unchanged locally`,
+  );
+  assert.notDeepEqual(
+    testCase.remote.db.wp_posts[remotePreserveRows[0][0]],
+    testCase.base.db.wp_posts[remotePreserveRows[0][0]],
+    `${testCase.id} remote-only row should drift remotely`,
+  );
+  assert.equal(
+    testCase.local.files[remotePreserveFiles[0]],
+    testCase.base.files[remotePreserveFiles[0]],
+    `${testCase.id} remote-only file should be unchanged locally`,
+  );
+  assert.notEqual(
+    testCase.remote.files[remotePreserveFiles[0]],
+    testCase.base.files[remotePreserveFiles[0]],
+    `${testCase.id} remote-only file should drift remotely`,
+  );
+  assert.ok(taxonomyRows.length >= 1, `${testCase.id} should include same-plan taxonomy graph rows`);
+  assert.ok(commentRows.length >= 2, `${testCase.id} should include same-plan comment graph rows`);
 }
 
 test('RPP-0230 generated planner summary counts match emitted evidence deterministically', () => {
@@ -1039,19 +1161,19 @@ test('RPP-0117 stale remote after dry-run target exposes per-tier ready replay r
 
   assert.ok(coverage, 'missing stale remote after dry-run target coverage');
   assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run');
-  assert.equal(coverage.total, 256);
+  assert.equal(coverage.total, 268);
   assert.deepEqual(coverage.statuses, { ready: coverage.total });
   assert.deepEqual(coverage.perTier, {
-    0: 25,
+    0: 28,
     1: 28,
     2: 28,
-    3: 28,
+    3: 29,
     4: 28,
-    5: 28,
+    5: 29,
     6: 28,
-    7: 28,
+    7: 29,
     8: 20,
-    9: 15,
+    9: 21,
   });
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
