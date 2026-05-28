@@ -53,6 +53,8 @@ const scenarioFamilies = Object.freeze([
   'row-create-update-delete-mix-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
+  'wp-postmeta-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
@@ -77,8 +79,14 @@ const readyPreservingFamilies = new Set([
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+]);
+
+const skipSeededComplexityFamilies = new Set([
+  'wp-postmeta-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-conflict',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -89,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
+  },
+  wpPostmetaCreateUpdateDelete: {
+    family: 'wp-postmeta-create-update-delete-ready',
+    tag: 'wp-postmeta-create-update-delete',
   },
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
@@ -575,6 +587,20 @@ const scenarioFamilyBuilders = {
     });
     tags.add('expected-conflict');
   },
+  'wp-postmeta-create-update-delete-ready': ({ base, local, remote, allocator, tags }) => {
+    addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-wp-postmeta',
+    });
+    tags.add('ready-candidate');
+  },
+  'wp-postmeta-create-update-delete-conflict': ({ base, local, remote, allocator, tags }) => {
+    addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-wp-postmeta',
+    });
+    tags.add('expected-conflict');
+  },
   'wp-term-taxonomy-graph-ready': ({ local, allocator, tags }) => {
     addWpTermTaxonomyGraph(local, null, allocator, tags, { staleTarget: false });
     tags.add('ready-candidate');
@@ -668,6 +694,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (skipSeededComplexityFamilies.has(family)) {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -1215,6 +1245,55 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const createPostId = allocator.postId();
+  const updatePostId = allocator.postId();
+  const deletePostId = allocator.postId();
+  const createMetaKey = `_generated_${prefix}_create_${allocator.next()}`;
+  const updateMetaKey = `_generated_${prefix}_update_${allocator.next()}`;
+  const deleteMetaKey = `_generated_${prefix}_delete_${allocator.next()}`;
+  const createRowId = `post_id:${createPostId}:meta_key:${createMetaKey}`;
+  const updateRowId = `post_id:${updatePostId}:meta_key:${updateMetaKey}`;
+  const deleteRowId = `post_id:${deletePostId}:meta_key:${deleteMetaKey}`;
+  const updateBase = {
+    post_id: updatePostId,
+    meta_key: updateMetaKey,
+    meta_value: `base wp_postmeta update ${allocator.next()}`,
+  };
+  const deleteBase = {
+    post_id: deletePostId,
+    meta_key: deleteMetaKey,
+    meta_value: `base wp_postmeta delete ${allocator.next()}`,
+  };
+
+  setRow(base, 'wp_postmeta', updateRowId, updateBase);
+  setRow(local, 'wp_postmeta', updateRowId, updateBase);
+  setRow(remote, 'wp_postmeta', updateRowId, updateBase);
+  setRow(base, 'wp_postmeta', deleteRowId, deleteBase);
+  setRow(local, 'wp_postmeta', deleteRowId, deleteBase);
+  setRow(remote, 'wp_postmeta', deleteRowId, deleteBase);
+
+  setRow(local, 'wp_postmeta', createRowId, {
+    post_id: createPostId,
+    meta_key: createMetaKey,
+    meta_value: `generated wp_postmeta create ${prefix} ${allocator.next()}`,
+  });
+  setRow(local, 'wp_postmeta', updateRowId, {
+    ...updateBase,
+    meta_value: `generated wp_postmeta update ${prefix} ${allocator.next()}`,
+  });
+  deleteRow(local, 'wp_postmeta', deleteRowId);
+
+  tags.add('wp-postmeta-create-update-delete');
+  tags.add('wp-postmeta-create');
+  tags.add('wp-postmeta-update');
+  tags.add('wp-postmeta-delete');
+
+  if (conflict) {
+    remote.db.wp_postmeta[updateRowId].meta_value = `remote concurrent wp_postmeta update ${allocator.next()}`;
   }
 }
 

@@ -10,6 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
@@ -73,6 +74,12 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'wp-postmeta-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-conflict',
+  'wp-postmeta-create-update-delete',
+  'wp-postmeta-create',
+  'wp-postmeta-update',
+  'wp-postmeta-delete',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'wp-term-taxonomy-graph',
@@ -398,6 +405,216 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+test('RPP-0148 wp_postmeta create/update/delete target exposes deterministic safe-apply coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpPostmetaCreateUpdateDelete;
+
+  assert.ok(coverage, 'missing wp_postmeta create/update/delete target coverage');
+  assert.equal(coverage.family, 'wp-postmeta-create-update-delete-ready');
+  assert.equal(coverage.total, 18);
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-postmeta-create-update-delete']);
+  assert.equal(report.summary.featureFamilies['wp-postmeta-create-update-delete-ready'], 9);
+  assert.equal(report.summary.featureFamilies['wp-postmeta-create-update-delete-conflict'], 9);
+  assert.equal(report.summary.featureFamilies['wp-postmeta-create'], 18);
+  assert.equal(report.summary.featureFamilies['wp-postmeta-update'], 18);
+  assert.equal(report.summary.featureFamilies['wp-postmeta-delete'], 18);
+  assert.deepEqual(coverage.statuses, { conflict: 9, ready: 9 });
+  assert.deepEqual(coverage.perTier, {
+    0: 2,
+    1: 2,
+    2: 2,
+    3: 1,
+    4: 1,
+    5: 2,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+  });
+
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'wp-postmeta-create-update-delete-ready');
+  const conflictCases = cases.filter((testCase) => testCase.family === 'wp-postmeta-create-update-delete-conflict');
+
+  assert.equal(readyCases.length, 9, 'expected deterministic ready wp_postmeta CUD cases');
+  assert.equal(conflictCases.length, 9, 'expected deterministic conflict wp_postmeta CUD cases');
+
+  for (const readyCase of readyCases) {
+    const shape = assertWpPostmetaCreateUpdateDeleteShape(readyCase, { conflict: false });
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assert.equal(plan.status, 'ready');
+    assertWpPostmetaCudMutations(plan, shape, { conflict: false });
+    assertWpPostmetaCreateUpdateDeleteEvidenceRedacted(readyCase, shape, plan);
+
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.equal(ready.mutations, 3, 'ready wp_postmeta CUD should plan create, update, and delete mutations');
+    assert.equal(ready.applied, true, 'ready wp_postmeta CUD should apply through the harness');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready wp_postmeta CUD must preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready wp_postmeta CUD should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const conflictCase of conflictCases) {
+    const shape = assertWpPostmetaCreateUpdateDeleteShape(conflictCase, { conflict: true });
+    const plan = createPushPlan({
+      base: conflictCase.base,
+      local: conflictCase.local,
+      remote: conflictCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assert.equal(plan.status, 'conflict');
+    assertWpPostmetaCudMutations(plan, shape, { conflict: true });
+    assert.ok(
+      plan.conflicts.some((conflict) => conflict.resourceKey === shape.updateResourceKey),
+      `${conflictCase.id} should conflict on the updated wp_postmeta row`,
+    );
+    assertWpPostmetaCreateUpdateDeleteEvidenceRedacted(conflictCase, shape, plan);
+
+    const remote = cloneJson(conflictCase.remote);
+    const before = digest(remote);
+    const error = captureError(() => applyPlan(remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remote), before, 'conflict wp_postmeta CUD must refuse before mutation');
+  }
+});
+
+function assertWpPostmetaCreateUpdateDeleteShape(testCase, { conflict }) {
+  const createRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_postmeta[id]
+      && row.meta_value.startsWith('generated wp_postmeta create '));
+  const updateRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([id, row]) => testCase.base.db.wp_postmeta[id]
+      && row.meta_value.startsWith('generated wp_postmeta update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_postmeta)
+    .filter(([id, row]) => row.meta_value.startsWith('base wp_postmeta delete ')
+      && !testCase.local.db.wp_postmeta[id]
+      && testCase.remote.db.wp_postmeta[id]);
+
+  assert.equal(createRows.length, 1, `${testCase.id} should create one wp_postmeta row`);
+  assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_postmeta row`);
+  assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_postmeta row`);
+
+  const [createRowId, createRow] = createRows[0];
+  const [updateRowId, updateLocalRow] = updateRows[0];
+  const [deleteRowId, deleteBaseRow] = deleteRows[0];
+  const updateBaseRow = testCase.base.db.wp_postmeta[updateRowId];
+  const updateRemoteRow = testCase.remote.db.wp_postmeta[updateRowId];
+
+  for (const row of [createRow, updateLocalRow, deleteBaseRow]) {
+    assert.ok(testCase.base.db.wp_posts[`ID:${row.post_id}`], `${testCase.id} postmeta post_id should exist in base`);
+    assert.ok(testCase.local.db.wp_posts[`ID:${row.post_id}`], `${testCase.id} postmeta post_id should exist in local`);
+    assert.ok(testCase.remote.db.wp_posts[`ID:${row.post_id}`], `${testCase.id} postmeta post_id should exist in remote`);
+  }
+
+  if (conflict) {
+    assert.notEqual(updateRemoteRow.meta_value, updateBaseRow.meta_value, `${testCase.id} remote postmeta should drift`);
+    assert.notEqual(updateRemoteRow.meta_value, updateLocalRow.meta_value, `${testCase.id} remote drift should differ`);
+  } else {
+    assert.equal(updateRemoteRow.meta_value, updateBaseRow.meta_value, `${testCase.id} remote postmeta should stay base`);
+  }
+
+  return {
+    createRowId,
+    updateRowId,
+    deleteRowId,
+    createRow,
+    updateBaseRow,
+    updateLocalRow,
+    updateRemoteRow,
+    deleteBaseRow,
+    deleteRemoteRow: testCase.remote.db.wp_postmeta[deleteRowId],
+    createResourceKey: rowResourceKey('wp_postmeta', createRowId),
+    updateResourceKey: rowResourceKey('wp_postmeta', updateRowId),
+    deleteResourceKey: rowResourceKey('wp_postmeta', deleteRowId),
+  };
+}
+
+function assertWpPostmetaCudMutations(plan, shape, { conflict }) {
+  const mutationsByResource = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+
+  assert.equal(
+    mutationsByResource.get(shape.createResourceKey)?.action,
+    'put',
+    'wp_postmeta CUD should create the target row',
+  );
+  assert.equal(
+    mutationsByResource.get(shape.deleteResourceKey)?.action,
+    'delete',
+    'wp_postmeta CUD should delete the target row',
+  );
+
+  if (conflict) {
+    assert.equal(
+      mutationsByResource.has(shape.updateResourceKey),
+      false,
+      'conflicting wp_postmeta update must not carry a mutation for the conflicted row',
+    );
+  } else {
+    assert.equal(
+      mutationsByResource.get(shape.updateResourceKey)?.action,
+      'put',
+      'ready wp_postmeta CUD should update the target row',
+    );
+  }
+}
+
+function assertWpPostmetaCreateUpdateDeleteEvidenceRedacted(testCase, shape, plan) {
+  const redactedEvidence = redactEvidence({
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    rawWpPostmetaProbe: {
+      value: shape.createRow,
+      beforeValue: shape.updateBaseRow,
+      afterValue: shape.updateLocalRow,
+      remoteValue: shape.updateRemoteRow,
+      deleteValue: shape.deleteBaseRow,
+    },
+  });
+  const redactedJson = JSON.stringify(redactedEvidence);
+
+  assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} evidence should include redaction marker`);
+  assert.match(redactedJson, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash metadata`);
+  for (const row of [
+    shape.createRow,
+    shape.updateBaseRow,
+    shape.updateLocalRow,
+    shape.updateRemoteRow,
+    shape.deleteBaseRow,
+    shape.deleteRemoteRow,
+  ]) {
+    assertWpPostmetaRowEvidenceRedacted(testCase, row, redactedJson);
+  }
+}
+
+function assertWpPostmetaRowEvidenceRedacted(testCase, row, redactedJson) {
+  if (!row) {
+    return;
+  }
+  assert.equal(
+    redactedJson.includes(row.meta_value),
+    false,
+    `${testCase.id} redacted evidence leaked meta_value`,
+  );
+}
+
+function rowResourceKey(table, rowId) {
+  return `row:${JSON.stringify([table, rowId])}`;
 }
 
 test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {

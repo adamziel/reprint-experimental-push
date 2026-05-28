@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 37 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -51,18 +51,27 @@ The default generated run covers:
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
-  plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  outcomes, `wp_postmeta` create/update/delete mixes with per-tier target counts
+  and ready/conflict outcomes, `wp_term_taxonomy` graph cases with per-tier
+  target counts and ready/stale non-ready outcomes, supported and unsupported
+  plugin-owned data, plugin owner-context drift, supported forms-lab custom-table
+  rows, forms-lab delete refusal, atomic plugin install ready and
+  missing-dependency paths, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
+
+The `wpPostmetaCreateUpdateDelete` target coverage records per-tier counts for
+`wp_postmeta` create/update/delete rows that reference existing posts. Its
+invariant is that ready cases apply only the planned meta create, update, and
+delete while preserving every unplanned remote resource, reject stale replay
+before mutation, and keep meta values redacted to hash metadata. Concurrent
+remote edits to the updated meta row remain `conflict`, omit a mutation for the
+conflicted row, and refuse apply before mutation.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
@@ -77,9 +86,9 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "blocked": 23,
+    "conflict": 146,
+    "ready": 191
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -101,33 +110,53 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
+    "wpPostmetaCreateUpdateDelete": {
+      "family": "wp-postmeta-create-update-delete-ready",
+      "total": 18,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 1,
+        "4": 1,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 9,
+        "ready": 9
+      }
+    },
     "wpPostsCreateUpdateDelete": {
       "family": "wp-posts-create-update-delete-ready",
-      "total": 20,
+      "total": 18,
       "perTier": {
         "0": 2,
         "1": 2,
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
-        "6": 2,
+        "5": 1,
+        "6": 1,
         "7": 2,
         "8": 2,
         "9": 2
       },
       "statuses": {
         "conflict": 10,
-        "ready": 10
+        "ready": 8
       }
     },
     "wpTermTaxonomyGraph": {
       "family": "wp-term-taxonomy-graph-ready",
-      "total": 20,
+      "total": 18,
       "perTier": {
         "0": 2,
-        "1": 2,
-        "2": 2,
+        "1": 1,
+        "2": 1,
         "3": 2,
         "4": 2,
         "5": 2,
@@ -137,33 +166,39 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 8,
+        "blocked": 2,
+        "conflict": 7,
         "ready": 9
       }
     }
   },
   "featureFamilies": {
-    "file-type-swap": 20,
+    "file-type-swap": 19,
     "file-type-swap-ready": 10,
-    "file-type-swap-conflict": 10,
-    "row-create-update-delete-mix": 20,
-    "row-create-update-delete-mix-ready": 10,
-    "row-create-update-delete-mix-conflict": 10,
-    "wp-posts-create-update-delete": 20,
-    "wp-posts-create-update-delete-ready": 10,
-    "wp-posts-create-update-delete-conflict": 10,
-    "wp-term-taxonomy-graph": 20,
-    "wp-term-taxonomy-graph-ready": 10,
-    "wp-term-taxonomy-graph-stale": 10,
-    "wp-term-taxonomy-create": 20,
-    "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "file-type-swap-conflict": 9,
+    "row-create-update-delete-mix": 18,
+    "row-create-update-delete-mix-ready": 9,
+    "row-create-update-delete-mix-conflict": 9,
+    "wp-postmeta-create-update-delete": 18,
+    "wp-postmeta-create-update-delete-ready": 9,
+    "wp-postmeta-create-update-delete-conflict": 9,
+    "wp-postmeta-create": 18,
+    "wp-postmeta-update": 18,
+    "wp-postmeta-delete": 18,
+    "wp-posts-create-update-delete": 18,
+    "wp-posts-create-update-delete-ready": 9,
+    "wp-posts-create-update-delete-conflict": 9,
+    "wp-term-taxonomy-graph": 18,
+    "wp-term-taxonomy-graph-ready": 9,
+    "wp-term-taxonomy-graph-stale": 9,
+    "wp-term-taxonomy-create": 18,
+    "wp-terms-create": 18,
+    "wp-terms-remote-drift": 9
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 69,
+  "maxMutationCount": 44,
+  "maxReadyResourceCount": 69,
+  "maxReadyMutationCount": 44
 }
 ```
 
