@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan, PushPlanError } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -8,6 +10,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+
+const fixedNow = new Date('2026-05-28T00:00:00.000Z');
 
 const requiredFamilies = [
   'local-file-update',
@@ -102,6 +106,57 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0223 generated harness refuses local delete versus remote edit cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.localDeleteRemoteEdit;
+
+  assert.ok(coverage, 'missing local delete versus remote edit target coverage');
+  assert.equal(coverage.family, 'delete-edit-conflict');
+  assert.equal(coverage.total, report.summary.featureFamilies['delete-edit-conflict']);
+  assert.deepEqual(coverage.statuses, { conflict: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'delete-edit-conflict')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated delete/edit case');
+  assert.ok(generatedCase.tags.has('delete-edit'));
+  assert.ok(generatedCase.tags.has('expected-conflict'));
+
+  const { rowId, remoteTitle } = generatedDeleteEditTargets(generatedCase);
+  const rowKey = `row:["wp_posts","${rowId}"]`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedNow,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === rowKey);
+  const evidence = JSON.stringify(hashOnlyGeneratedPlanEvidenceForRpp0223(plan));
+  const remoteReplay = cloneJsonForRpp0223(generatedCase.remote);
+  const beforeReplay = JSON.stringify(remoteReplay);
+  const error = captureGeneratedError(() => applyPlan(remoteReplay, plan));
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(validation.status, 'conflict');
+  assert.equal(validation.applied, false);
+  assert.ok(conflict, `${generatedCase.id} missing row delete/edit conflict`);
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === rowKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === rowKey), false);
+  assert.equal(JSON.stringify(conflict).includes(remoteTitle), false);
+  assert.equal(evidence.includes(remoteTitle), false, 'hash-only generated evidence leaked remote row value');
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remoteReplay), beforeReplay, 'conflict apply mutated generated remote');
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -354,4 +409,75 @@ function nonReadyTargetCount(coverage) {
   return Object.entries(coverage.statuses)
     .filter(([status]) => status !== 'ready')
     .reduce((sum, [, count]) => sum + count, 0);
+}
+
+function cloneJsonForRpp0223(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function captureGeneratedError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected generated operation to throw');
+}
+
+function generatedDeleteEditTargets(testCase) {
+  const rowEntry = Object.entries(testCase.remote.db.wp_posts)
+    .find(([id, row]) =>
+      testCase.base.db.wp_posts[id]
+      && !testCase.local.db.wp_posts[id]
+      && row.post_title?.startsWith('Remote edit while local deletes '));
+
+  assert.ok(rowEntry, `${testCase.id} missing generated delete/edit row`);
+
+  return {
+    rowId: rowEntry[0],
+    remoteTitle: rowEntry[1].post_title,
+  };
+}
+
+function hashOnlyGeneratedPlanEvidenceForRpp0223(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      change: conflict.change,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
 }
