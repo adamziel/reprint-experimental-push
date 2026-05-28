@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:56 CEST.
+- Last update: 2026-05-28 07:01 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `bb6b422e7` (`test: add preflight route identity coverage`).
+  lane head `5e5ffa2b5` (`docs: refresh progress for preflight route identity
+  coverage`), with latest checked proof `bb6b422e7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -107,6 +108,12 @@ linked implementation artifacts.
   provenance, and the mismatched route fixture fails closed with
   `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, exact route evidence, held marker, and
   `mutationAttempted: false`.
+- Progress heartbeat: lane truth remains 117 checked / 883 open and release
+  `NO-GO`. `RPP-0051` is integrated; `RPP-0052`, `RPP-0053`, and later
+  release-gate candidates are still branch-local. Active visible work is
+  `rpp-24`/`RPP-0129`, `rpp-25`/`RPP-0054`, `rpp-29`/`RPP-0228`,
+  `rpp-30`/`RPP-0336`, `rpp-32`/`RPP-0442`, `rpp-33`/`RPP-0130`, and
+  `rpp-34`/`RPP-0440`; `rpp-28` is next evaluating `RPP-0438`.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner

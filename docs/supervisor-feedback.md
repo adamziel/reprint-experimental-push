@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:56 CEST
+Last updated: 2026-05-28 07:01 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 07:01 CEST - Lane Truth Heartbeat
+
+- Current lane truth: `origin/lane/evidence-integration-20260527` is
+  `5e5ffa2b5`, with latest checked proof `bb6b422e7`; release remains
+  `NO-GO`.
+- Checklist posture: 117 verified items checked and 883 open. `RPP-0051` is
+  integrated; `RPP-0052`, `RPP-0053`, and later release-gate candidates remain
+  branch-local/session-only until reviewed and integrated.
+- Active roster: `rpp-24`/`RPP-0129`, `rpp-25`/`RPP-0054`,
+  `rpp-29`/`RPP-0228`, `rpp-30`/`RPP-0336`, `rpp-32`/`RPP-0442`,
+  `rpp-33`/`RPP-0130`, and `rpp-34`/`RPP-0440`; `rpp-28` is next evaluating
+  `RPP-0438`.
 
 ## 2026-05-28 06:56 CEST - RPP-0051 Integrated
 
