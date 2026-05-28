@@ -8,6 +8,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -54,6 +55,10 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'plugin-owned-option-change-ready',
+  'plugin-owned-option-change-conflict',
+  'plugin-owned-option-change',
+  'plugin-owned-option-update',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -268,4 +273,83 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+test('RPP-0114 plugin-owned option target rejects stale replay before mutation', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedOptionChange;
+
+  assert.ok(coverage, 'missing plugin-owned option target coverage');
+  assert.equal(coverage.family, 'plugin-owned-option-change-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-option-change']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready plugin-owned option cases');
+  assert.ok(coverage.statuses.conflict > 0, 'target should include conflicting plugin-owned option cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'plugin-owned-option-change-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'plugin-owned-option-change-conflict');
+
+  assert.ok(readyCase, 'missing ready plugin-owned option case');
+  assert.ok(conflictCase, 'missing conflicting plugin-owned option case');
+  assertPluginOwnedOptionShape(readyCase, { conflict: false });
+  assertPluginOwnedOptionShape(conflictCase, { conflict: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready plugin-owned option should plan a mutation');
+  assert.equal(ready.applied, true, 'ready plugin-owned option should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready plugin-owned option should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready plugin-owned option should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'remote plugin-owned option drift should be a conflict');
+  assert.equal(conflict.applied, false, 'conflicting plugin-owned option must not apply mutations');
+});
+
+function assertPluginOwnedOptionShape(testCase, { conflict }) {
+  const optionRows = Object.entries(testCase.local.db.wp_options)
+    .filter(([id, row]) => id.startsWith('option_name:generated_plugin_owned_option_')
+      && row.__pluginOwner === 'forms');
+
+  assert.equal(optionRows.length, 1, `${testCase.id} should include one generated plugin-owned option`);
+  const [rowId, row] = optionRows[0];
+  const resourceKey = `row:["wp_options","${rowId}"]`;
+  const baseRow = testCase.base.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(baseRow, `${testCase.id} should have a base plugin-owned option row`);
+  assert.ok(remoteRow, `${testCase.id} should have a remote plugin-owned option row`);
+  assert.notDeepEqual(row.option_value, baseRow.option_value, `${testCase.id} should update option_value locally`);
+  if (conflict) {
+    assert.notDeepEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} should drift remotely`);
+    return;
+  }
+
+  assert.deepEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} remote should match base`);
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const mutation = plan.mutations.find((candidate) => candidate.resourceKey === resourceKey);
+  assert.ok(mutation, `${testCase.id} should plan the plugin-owned option mutation`);
+  assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource?.driver, 'wp-option');
+  assert.equal(mutation.pluginOwnedResource?.ownerContextRequired, true);
 }

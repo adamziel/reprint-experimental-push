@@ -53,6 +53,8 @@ const scenarioFamilies = Object.freeze([
   'row-create-update-delete-mix-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
+  'plugin-owned-option-change-ready',
+  'plugin-owned-option-change-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -75,6 +77,7 @@ const readyPreservingFamilies = new Set([
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
+  'plugin-owned-option-change-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -86,6 +89,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
+  },
+  pluginOwnedOptionChange: {
+    family: 'plugin-owned-option-change-ready',
+    tag: 'plugin-owned-option-change',
   },
 });
 
@@ -565,6 +572,20 @@ const scenarioFamilyBuilders = {
     addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, {
       conflict: true,
       prefix: 'conflict-wp-posts',
+    });
+    tags.add('expected-conflict');
+  },
+  'plugin-owned-option-change-ready': ({ base, local, remote, allocator, tags }) => {
+    addPluginOwnedOptionChange(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-plugin-owned-option',
+    });
+    tags.add('ready-candidate');
+  },
+  'plugin-owned-option-change-conflict': ({ base, local, remote, allocator, tags }) => {
+    addPluginOwnedOptionChange(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-plugin-owned-option',
     });
     tags.add('expected-conflict');
   },
@@ -1186,6 +1207,42 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const optionName = `generated_plugin_owned_option_${allocator.next()}`;
+  const rowId = `option_name:${optionName}`;
+  const resourceKey = rowKey('wp_options', rowId);
+  const row = {
+    option_name: optionName,
+    option_value: {
+      mode: 'base',
+      token: `plugin-owned-option-${allocator.next()}`,
+    },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_options', rowId, row);
+  setRow(remote, 'wp_options', rowId, row);
+  setRow(local, 'wp_options', rowId, {
+    ...row,
+    option_value: {
+      mode: 'local',
+      token: `plugin-owned-option-local-${prefix}-${allocator.next()}`,
+    },
+  });
+  allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+
+  tags.add('plugin-owned-option-change');
+  tags.add('plugin-owned-option-update');
+  tags.add('plugin-owned-supported');
+
+  if (conflict) {
+    remote.db.wp_options[rowId].option_value = {
+      mode: 'remote',
+      token: `plugin-owned-option-remote-${prefix}-${allocator.next()}`,
+    };
   }
 }
 
