@@ -251,6 +251,11 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
               supported: false,
               className: 'unsupported-plugin-owned-resource',
               reason: 'Plugin-owned resource driver does not support delete mutations.',
+              deleteSupportRefusalEvidence: pluginOwnedDeleteSupportRefusalEvidence({
+                resource,
+                owner,
+                support,
+              }),
             },
             baseValue,
             localValue,
@@ -2288,6 +2293,19 @@ function isPluginOwnerContextResource(resource, owner) {
   return resource.type === 'file' && pluginOwnerFor(resource) === owner;
 }
 
+function pluginOwnedDeleteSupportRefusalEvidence({ resource, owner, support }) {
+  return {
+    reasonCode: 'PLUGIN_DRIVER_DELETE_UNSUPPORTED',
+    operation: 'refuse-before-mutation',
+    attemptedAction: 'delete',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    policySource: support.policySource || null,
+    supportsDelete: support.supportsDelete === true,
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2320,6 +2338,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.deleteSupportRefusalEvidence ? { deleteSupportRefusalEvidence: support.deleteSupportRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
