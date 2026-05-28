@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0077.
+Primary checklist range: RPP-0001 through RPP-0078.
 
 ## What changed
 
@@ -68,6 +68,7 @@ Primary checklist range: RPP-0001 through RPP-0077.
 | RPP-0071 through RPP-0072 | Evidence toward focused preflight route identity and dry-run route eligibility regressions now proves exact final evidence before provenance, fail-closed wrong-route and ineligible-route negative fixtures, redacted credential output, held markers, and `mutationAttempted: false`. |
 | RPP-0073 through RPP-0076 | Evidence toward focused apply route pre-mutation, journal read-only, recovery inspect read-only, and releaseMovement summary regressions now proves positive and fail-closed paths, exact named codes and status markers, scenario matrices where required, and `mutationAttempted: false`. |
 | RPP-0077 | Evidence toward focused tmux stdout proof status marker regression now proves malformed markers fail with `TMUX_STATUS_MARKER_REQUIRED`, exact valid release-ready markers are emitted on stdout, gate evidence is exact, and `mutationAttempted: false`. |
+| RPP-0078 | Evidence toward focused progress.html release timestamp regression now links the focused command, observed `pass` status, `progress.html#release-proof-timestamp`, exact timestamp gate evidence, and fail-closed non-ISO timestamp refusal with `mutationAttempted: false`. |
 
 ## Focused verification
 
@@ -127,6 +128,21 @@ node --test test/release-gate-tmux-status-marker-focused-regression.test.js
 
 Observed status: pass, 1 test. This checks RPP-0077 with malformed and exact
 tmux-visible final marker paths; final release remains `NO-GO`.
+
+Focused progress.html release timestamp regression refresh:
+
+```sh
+node --test test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 32 tests. This checks RPP-0078 by linking the focused
+command and observed status to `progress.html#release-proof-timestamp`; invalid
+timestamp evidence fails with `PROGRESS_RELEASE_TIMESTAMP_REQUIRED`, exact gate
+evidence, and `mutationAttempted: false`, while valid timestamp evidence keeps
+the release `NO-GO` without provenance.
+
+- Command: `node --test test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; progress.html release status: `NO-GO`; proof timestamp: `2026-05-28T03:18:00.000Z`.
 
 Progress HTML release timestamp proof:
 

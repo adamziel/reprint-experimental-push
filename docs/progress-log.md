@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 20:57 CEST.
+- Last update: 2026-05-28 21:06 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 209
-  items checked and leaves 791 open.
-- Checked slices: 77 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 210
+  items checked and leaves 790 open.
+- Checked slices: 78 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 34 generated
   harness items, and 20 merge-invariant items. No release-ops items are checked
@@ -26,12 +26,20 @@ linked implementation artifacts.
   `node --test test/release-gate-tmux-status-marker-focused-regression.test.js`
   passed 1/1, proving malformed marker refusal and exact final marker stdout
   evidence with `mutationAttempted: false`. Final release remains `NO-GO`.
+- Focused progress timestamp refresh: the current lane now contains
+  `test/release-gate-progress-release-timestamp-focused-regression.test.js`
+  for `RPP-0078`. The command
+  `node --test test/release-gate-progress-release-timestamp-focused-regression.test.js test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 32/32, proving the progress report links the focused command and
+  observed `pass` status, non-ISO timestamp evidence fails closed with exact
+  `PROGRESS_RELEASE_TIMESTAMP_REQUIRED` evidence, and `mutationAttempted`
+  remains `false`. Final release remains `NO-GO`.
 - Branch integration audit: all 842 local/remote `session/rpp*` refs are now
   ancestors of `lane/evidence-integration-20260527`. The broader
   `rpp|session` audit also reports zero unmerged refs after preserving the
   old auth-session boundary/code lane ancestry and carrying forward the
-  missing packaged auth source candidate fallback tests. Counts stay 209/791
-  because this was integration hygiene plus auth helper coverage, not a new
+  missing packaged auth source candidate fallback tests. This did not move the
+  checklist count because it was integration hygiene plus auth helper coverage, not a new
   checklist slice.
 - Manage_options variant-2 refresh: the current lane now contains an explicit
   negative/positive scenario matrix for `RPP-0029` in
