@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 16:42 CEST.
+- Last update: 2026-05-28 16:59 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `a82afb2d7` (normal merge of
-  `origin/session/rpp-24-rpp-0120-large-ready-plan-tier`).
+  `ff2506b9d` (normal merge of
+  `origin/session/rpp-24-rpp-0121-file-cud-mix-v2`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 148
-  items complete and leaves 852 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 149
+  items complete and leaves 851 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 16 generated
+  7 chunking/performance items, 2 production-topology items, 17 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -938,6 +938,12 @@ linked implementation artifacts.
   ready cases combining row/file create-update-delete work, same-plan
   taxonomy/comment graph rows, remote-only drift preservation, and stale replay
   rejection before mutation.
+- Generated file-mix target continuation: `ff2506b9d` integrated `RPP-0121`
+  file create/update/delete mix target coverage. The generated harness keeps
+  the 510-case run and now exposes 20 file create/update/delete mix target cases
+  across all 10 tiers, with ready cases creating, updating, and deleting one
+  file while rejecting stale replay before mutation, and conflict cases drifting
+  the updated file remotely and refusing apply.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
   same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for
