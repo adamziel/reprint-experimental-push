@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 31 scenario families, then add seeded variation so
+span 10 complexity tiers and 33 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -49,11 +49,18 @@ The default generated run covers:
   delete mixes with ready and conflicting outcomes, directory descendant
   conflicts with per-tier target counts, file type-swap cases with ready and
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
-  outcomes plus stale replay rejection before mutation, supported and unsupported
-  plugin-owned data, plugin owner-context drift, supported forms-lab custom-table
-  rows, forms-lab delete refusal, atomic plugin install ready and
-  missing-dependency paths, same-plan post-parent, taxonomy, comment, and usermeta
-  graph closures, and stale graph references.
+  outcomes plus stale replay rejection before mutation, `wp_posts`
+  create/update/delete mixes with per-tier target counts and ready/conflict
+  outcomes, supported and unsupported plugin-owned data, plugin owner-context
+  drift, supported forms-lab custom-table rows, forms-lab delete refusal, atomic
+  plugin install ready and missing-dependency paths, same-plan post-parent,
+  taxonomy, comment, and usermeta graph closures, and stale graph references.
+
+The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
+`wp_posts` create/update/delete surface. Its invariant is that ready cases apply
+only the planned post create, update, and delete while preserving every
+unplanned remote resource; concurrent remote edits to the updated post remain
+`conflict` and refuse apply.
 
 At the time this note was added, the summary command reported:
 
@@ -61,28 +68,48 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 20,
-    "conflict": 148,
+    "blocked": 19,
+    "conflict": 149,
     "ready": 192
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
-      "total": 12,
+      "total": 11,
       "perTier": {
         "0": 1,
         "1": 1,
-        "2": 2,
-        "3": 1,
+        "2": 1,
+        "3": 2,
         "4": 1,
         "5": 1,
         "6": 1,
         "7": 1,
-        "8": 2,
+        "8": 1,
         "9": 1
       },
       "statuses": {
-        "conflict": 12
+        "conflict": 11
+      }
+    },
+    "wpPostsCreateUpdateDelete": {
+      "family": "wp-posts-create-update-delete-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     }
   },
@@ -92,12 +119,15 @@ At the time this note was added, the summary command reported:
     "file-type-swap-conflict": 11,
     "row-create-update-delete-mix": 22,
     "row-create-update-delete-mix-ready": 11,
-    "row-create-update-delete-mix-conflict": 11
+    "row-create-update-delete-mix-conflict": 11,
+    "wp-posts-create-update-delete": 20,
+    "wp-posts-create-update-delete-ready": 10,
+    "wp-posts-create-update-delete-conflict": 10
   },
   "maxResourceCount": 67,
-  "maxMutationCount": 42,
+  "maxMutationCount": 45,
   "maxReadyResourceCount": 67,
-  "maxReadyMutationCount": 42
+  "maxReadyMutationCount": 45
 }
 ```
 
