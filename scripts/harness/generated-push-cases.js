@@ -70,6 +70,7 @@ const readyPreservingFamilies = new Set([
   'same-plan-comment-graph',
   'supported-forms-lab-table',
   'atomic-plugin-stack-ready',
+  'atomic-plugin-missing-dependency',
   'plugin-file-update',
   'remote-delete-local-unchanged',
   'local-create',
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  atomicPluginInstallStack: {
+    family: 'atomic-plugin-stack-ready',
+    tag: 'atomic-plugin-install-stack',
   },
 });
 
@@ -468,13 +473,17 @@ const scenarioFamilyBuilders = {
   'atomic-plugin-stack-ready': ({ local, tags }) => {
     installAtomicStack(local);
     tags.add('atomic-ready');
+    tags.add('atomic-plugin-install-stack');
+    tags.add('atomic-plugin-install-stack-ready');
   },
   'atomic-plugin-missing-dependency': ({ local, tags }) => {
-    local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* generated dependent */';
+    local.files[pluginMainFile(atomicDependentPlugin)] =
+      '<?php /* rpp0136-private-atomic-dependent-file */';
     local.plugins[atomicDependentPlugin] = {
       version: '1.0.0',
       active: true,
       requires: [atomicDependencyPlugin],
+      privateBuild: 'rpp0136-private-atomic-dependent-plugin',
     };
     local.pushIntents = [
       {
@@ -485,10 +494,19 @@ const scenarioFamilyBuilders = {
           `file:${pluginMainFile(atomicDependentPlugin)}`,
           `plugin:${atomicDependentPlugin}`,
         ],
-        dependencies: { plugins: [atomicDependencyPlugin] },
+        dependencies: {
+          plugins: [
+            {
+              name: atomicDependencyPlugin,
+              privatePayload: 'rpp0136-private-atomic-missing-dependency-metadata',
+            },
+          ],
+        },
       },
     ];
     tags.add('atomic-blocked');
+    tags.add('atomic-plugin-install-stack');
+    tags.add('atomic-plugin-install-stack-blocked');
   },
   'plugin-file-update': ({ local, allocator, tags }) => {
     local.files['wp-content/plugins/forms/forms.php'] = `<?php /* local forms ${allocator.next()} */`;
@@ -912,7 +930,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1039,17 +1057,27 @@ function sortStringObject(object) {
 }
 
 function installAtomicStack(local) {
-  local.files[pluginMainFile(atomicDependencyPlugin)] = '<?php /* generated dependency */';
-  local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* generated dependent */';
-  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.files[pluginMainFile(atomicDependencyPlugin)] =
+    '<?php /* rpp0136-private-atomic-dependency-file */';
+  local.files[pluginMainFile(atomicDependentPlugin)] =
+    '<?php /* rpp0136-private-atomic-dependent-file */';
+  local.plugins[atomicDependencyPlugin] = {
+    version: '2.1.0',
+    active: true,
+    privateBuild: 'rpp0136-private-atomic-dependency-plugin',
+  };
   local.plugins[atomicDependentPlugin] = {
     version: '1.0.0',
     active: true,
     requires: [atomicDependencyPlugin],
+    privateBuild: 'rpp0136-private-atomic-dependent-plugin',
   };
   local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
     option_name: 'reprint_push_atomic_fixture_data',
-    option_value: { mode: 'generated-installed' },
+    option_value: {
+      mode: 'generated-installed',
+      privateToken: 'rpp0136-private-atomic-option',
+    },
     __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [

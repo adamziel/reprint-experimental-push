@@ -8,6 +8,10 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+
+const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
+const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
 
 const requiredFamilies = [
   'local-file-update',
@@ -29,6 +33,9 @@ const requiredFamilies = [
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
   'atomic-plugin-missing-dependency',
+  'atomic-plugin-install-stack',
+  'atomic-plugin-install-stack-ready',
+  'atomic-plugin-install-stack-blocked',
   'plugin-file-update',
   'plugin-context-metadata-drift',
   'remote-delete-local-unchanged',
@@ -348,6 +355,149 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0136 atomic plugin install stack target exposes ready and non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.atomicPluginInstallStack;
+
+  assert.ok(coverage, 'missing atomic plugin install stack target coverage');
+  assert.equal(coverage.family, 'atomic-plugin-stack-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['atomic-plugin-install-stack']);
+  assert.deepEqual(coverage.statuses, { blocked: 8, conflict: 2, ready: 10 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('rpp0136-private-atomic'), false);
+
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'atomic-plugin-stack-ready');
+  const missingDependencyCases = cases.filter((testCase) => testCase.family === 'atomic-plugin-missing-dependency');
+
+  assert.equal(readyCases.length, 10, 'one ready atomic install case should appear per tier');
+  assert.equal(missingDependencyCases.length, 10, 'one missing-dependency atomic install case should appear per tier');
+
+  for (const readyCase of readyCases) {
+    const privateValues = assertAtomicPluginInstallStackShape(readyCase, { blocked: false });
+    const ready = validateGeneratedCase(readyCase);
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+    });
+    const group = plan.atomicGroups.find((entry) => entry.id === 'install-generated-atomic-fixture-stack');
+    const groupJson = JSON.stringify(group);
+
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 5, 'ready atomic stack should plan files, plugin states, and owned data');
+    assert.equal(ready.applied, true, 'ready atomic stack should apply');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready atomic stack should preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready atomic stack should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+    assert.equal(plan.status, 'ready');
+    assert.equal(group.status, 'ready');
+    assert.equal(group.requireAtomic, true);
+    assert.ok(group.mutationIds.length >= 5, 'atomic group should own the stack mutations');
+    assert.ok(
+      group.dependencyRequirements.some((dependency) =>
+        dependency.plugin === atomicDependencyPlugin
+        && dependency.source === 'same-atomic-group'
+        && /^[a-f0-9]{64}$/.test(dependency.plannedHash || '')),
+      `${readyCase.id} should carry hash-only same-group dependency evidence`,
+    );
+
+    for (const privateValue of privateValues) {
+      assert.equal(groupJson.includes(privateValue), false, `${readyCase.id} atomic group leaked ${privateValue}`);
+    }
+  }
+
+  for (const missingDependencyCase of missingDependencyCases) {
+    const privateValues = assertAtomicPluginInstallStackShape(missingDependencyCase, { blocked: true });
+    const blocked = validateGeneratedCase(missingDependencyCase);
+    const plan = createPushPlan({
+      base: missingDependencyCase.base,
+      local: missingDependencyCase.local,
+      remote: missingDependencyCase.remote,
+    });
+    const group = plan.atomicGroups.find((entry) => entry.id === 'install-generated-dependent-without-dependency');
+    const groupJson = JSON.stringify(group);
+
+    assert.notEqual(blocked.status, 'ready');
+    assert.ok(blocked.blockers >= 1, 'missing dependency should block atomic install');
+    assert.equal(blocked.applied, false, 'blocked atomic install must not apply mutations');
+    assert.notEqual(plan.status, 'ready');
+    assert.equal(group.status, 'blocked');
+    assert.equal(group.requireAtomic, true);
+    assert.ok(
+      group.blockers.some((blocker) => blocker.class === 'missing-plugin-dependency'),
+      `${missingDependencyCase.id} should expose a missing dependency blocker`,
+    );
+    assert.equal(
+      group.dependencyRequirements.some((dependency) =>
+        dependency.plugin === atomicDependencyPlugin
+        && dependency.source === 'missing-live-remote'),
+      true,
+      `${missingDependencyCase.id} should carry missing-live-remote dependency evidence`,
+    );
+
+    for (const privateValue of privateValues) {
+      assert.equal(
+        groupJson.includes(privateValue),
+        false,
+        `${missingDependencyCase.id} atomic blocker leaked ${privateValue}`,
+      );
+    }
+  }
+});
+
+function assertAtomicPluginInstallStackShape(testCase, { blocked }) {
+  const dependencyPath = pluginMainFile(atomicDependencyPlugin);
+  const dependentPath = pluginMainFile(atomicDependentPlugin);
+  const optionRowId = 'option_name:reprint_push_atomic_fixture_data';
+  const optionResourceKey = `row:${JSON.stringify(['wp_options', optionRowId])}`;
+  const privateValues = [
+    testCase.local.files[dependentPath],
+    testCase.local.plugins[atomicDependentPlugin]?.privateBuild,
+  ].filter(Boolean);
+
+  assert.ok(testCase.local.files[dependentPath], `${testCase.id} should stage dependent plugin file`);
+  assert.ok(testCase.local.plugins[atomicDependentPlugin], `${testCase.id} should stage dependent plugin metadata`);
+  assert.ok(testCase.local.pushIntents?.length === 1, `${testCase.id} should carry one atomic push intent`);
+  assert.ok(testCase.tags.has('atomic-plugin-install-stack'));
+
+  if (blocked) {
+    assert.equal(testCase.local.files[dependencyPath], undefined);
+    assert.equal(testCase.local.plugins[atomicDependencyPlugin], undefined);
+    assert.ok(testCase.tags.has('atomic-plugin-install-stack-blocked'));
+    privateValues.push(
+      testCase.local.pushIntents[0].dependencies.plugins[0].privatePayload,
+    );
+  } else {
+    assert.ok(testCase.local.files[dependencyPath], `${testCase.id} should stage dependency plugin file`);
+    assert.ok(testCase.local.plugins[atomicDependencyPlugin], `${testCase.id} should stage dependency plugin metadata`);
+    assert.ok(testCase.local.db.wp_options[optionRowId], `${testCase.id} should stage dependent option data`);
+    assert.ok(testCase.tags.has('atomic-plugin-install-stack-ready'));
+    assert.ok(testCase.local.pushIntents[0].resources.includes(optionResourceKey));
+    privateValues.push(
+      testCase.local.files[dependencyPath],
+      testCase.local.plugins[atomicDependencyPlugin].privateBuild,
+      testCase.local.db.wp_options[optionRowId].option_value.privateToken,
+    );
+  }
+
+  return privateValues;
+}
+
+function pluginMainFile(name) {
+  return `wp-content/plugins/${name}/${name}.php`;
 }
 
 function nonReadyTargetCount(coverage) {

@@ -54,9 +54,9 @@ The default generated run covers:
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  delete refusal, atomic plugin install stack target counts with ready and
+  missing-dependency non-ready paths, same-plan post-parent, taxonomy, comment,
+  and usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -71,17 +71,46 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `atomicPluginInstallStack` target coverage records per-tier counts for the
+generated atomic plugin install surface. Ready cases stage dependency and
+dependent plugin files/metadata plus a plugin-owned option in one atomic group,
+apply without unplanned remote overwrite, and reject stale replay before
+mutation. Missing-dependency cases remain non-ready and refuse apply; atomic
+dependency evidence is hash-only and private plugin fixture values stay out of
+the generated summary and atomic group evidence.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
+    "blocked": 29,
+    "conflict": 139,
     "ready": 192
   },
   "targetCoverage": {
+    "atomicPluginInstallStack": {
+      "family": "atomic-plugin-stack-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 8,
+        "conflict": 2,
+        "ready": 10
+      }
+    },
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
       "total": 10,
@@ -144,6 +173,9 @@ At the time this note was added, the summary command reported:
     }
   },
   "featureFamilies": {
+    "atomic-plugin-install-stack": 20,
+    "atomic-plugin-install-stack-blocked": 10,
+    "atomic-plugin-install-stack-ready": 10,
     "file-type-swap": 20,
     "file-type-swap-ready": 10,
     "file-type-swap-conflict": 10,
@@ -160,8 +192,8 @@ At the time this note was added, the summary command reported:
     "wp-terms-create": 20,
     "wp-terms-remote-drift": 10
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
+  "maxResourceCount": 69,
+  "maxMutationCount": 44,
   "maxReadyResourceCount": 68,
   "maxReadyMutationCount": 43
 }
