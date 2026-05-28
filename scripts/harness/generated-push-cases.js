@@ -55,6 +55,8 @@ const scenarioFamilies = Object.freeze([
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
+  'wp-term-relationships-graph-ready',
+  'wp-term-relationships-graph-stale',
   'same-plan-user-meta-graph',
 ]);
 
@@ -78,6 +80,7 @@ const readyPreservingFamilies = new Set([
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
+  'wp-term-relationships-graph-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -93,6 +96,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpTermRelationshipsGraph: {
+    family: 'wp-term-relationships-graph-ready',
+    tag: 'wp-term-relationships-graph',
   },
 });
 
@@ -583,6 +590,14 @@ const scenarioFamilyBuilders = {
     addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
     tags.add('expected-blocked');
   },
+  'wp-term-relationships-graph-ready': ({ local, remote, allocator, tags }) => {
+    addWpTermRelationshipsGraph(local, remote, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-term-relationships-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpTermRelationshipsGraph(local, remote, allocator, tags, { staleTarget: true, base });
+    tags.add('expected-blocked');
+  },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
     const metaId = allocator.graphId();
@@ -923,13 +938,18 @@ function assertPlanContract(testCase, plan) {
 }
 
 function assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, resultSite, mutationKeys) {
+  const plannedMutationHashes = new Map(plan.mutations.map((mutation) => [
+    mutation.resourceKey,
+    digest(deserializeResourceValue(mutation.value)),
+  ]));
+
   for (const resource of enumerateResources(testCase.base, testCase.local, testCase.remote, resultSite)) {
     const resultHash = resourceHash(resultSite, resource);
     if (mutationKeys.has(resource.key)) {
       assert.equal(
         resultHash,
-        resourceHash(testCase.local, resource),
-        `${testCase.id} did not apply planned local value for ${resource.key}`,
+        plannedMutationHashes.get(resource.key),
+        `${testCase.id} did not apply planned value for ${resource.key}`,
       );
     } else {
       assert.equal(
@@ -1247,6 +1267,84 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   if (staleTarget) {
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
+  }
+}
+
+function addWpTermRelationshipsGraph(local, remote, allocator, tags, { staleTarget }) {
+  const localPostId = allocator.graphId();
+  const remotePostId = allocator.graphId();
+  const localTermId = allocator.graphId();
+  const remoteTermId = allocator.graphId();
+  const localTaxonomyId = allocator.graphId();
+  const remoteTaxonomyId = allocator.graphId();
+  const localPostRowId = `ID:${localPostId}`;
+  const remotePostRowId = `ID:${remotePostId}`;
+  const localTermRowId = `term_id:${localTermId}`;
+  const remoteTermRowId = `term_id:${remoteTermId}`;
+  const localTaxonomyRowId = `term_taxonomy_id:${localTaxonomyId}`;
+  const remoteTaxonomyRowId = `term_taxonomy_id:${remoteTaxonomyId}`;
+  const relationshipRowId = `object_id:${localPostId}|term_taxonomy_id:${localTaxonomyId}`;
+  const postTitle = `Generated mapped term relationship object ${localPostId}`;
+  const term = {
+    term_id: localTermId,
+    name: `Generated mapped term relationship target ${localTermId}`,
+    slug: `generated-mapped-term-relationship-${localTermId}`,
+    term_group: 0,
+  };
+  const taxonomy = {
+    term_taxonomy_id: localTaxonomyId,
+    term_id: localTermId,
+    taxonomy: 'category',
+    description: 'Generated mapped term relationship taxonomy',
+    parent: 0,
+    count: 1,
+  };
+
+  local.meta ||= {};
+  local.meta.wordpressGraphIdentityMap ||= { rows: [] };
+  local.meta.wordpressGraphIdentityMap.rows.push(
+    { table: 'wp_posts', localId: localPostRowId, remoteId: remotePostRowId },
+    { table: 'wp_terms', localId: localTermRowId, remoteId: remoteTermRowId },
+    { table: 'wp_term_taxonomy', localId: localTaxonomyRowId, remoteId: remoteTaxonomyRowId },
+  );
+
+  setRow(local, 'wp_posts', localPostRowId, makePost(localPostId, postTitle));
+  setRow(remote, 'wp_posts', remotePostRowId, makePost(remotePostId, staleTarget
+    ? `Remote stale mapped term relationship object ${remotePostId}`
+    : postTitle));
+  setRow(local, 'wp_terms', localTermRowId, term);
+  setRow(remote, 'wp_terms', remoteTermRowId, {
+    ...term,
+    term_id: remoteTermId,
+  });
+  setRow(local, 'wp_term_taxonomy', localTaxonomyRowId, taxonomy);
+  setRow(remote, 'wp_term_taxonomy', remoteTaxonomyRowId, {
+    ...taxonomy,
+    term_taxonomy_id: remoteTaxonomyId,
+    term_id: remoteTermId,
+    description: staleTarget
+      ? `Remote stale mapped term relationship taxonomy ${remoteTaxonomyId}`
+      : taxonomy.description,
+    count: staleTarget ? 2 : taxonomy.count,
+  });
+
+  setRow(local, 'wp_term_relationships', relationshipRowId, {
+    object_id: localPostId,
+    term_taxonomy_id: localTaxonomyId,
+    term_order: 0,
+  });
+
+  tags.add('wp-term-relationships-graph');
+  tags.add('wp-term-relationships-create');
+  tags.add('wp-term-relationships-identity-map');
+  tags.add('wordpress-graph-identity-map');
+  tags.add('term-relationship-taxonomy-graph');
+  tags.add('term-relationship-object-graph');
+  tags.add('taxonomy-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wordpress-graph-identity-map-stale');
   }
 }
 
