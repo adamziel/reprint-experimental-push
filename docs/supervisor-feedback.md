@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 09:24 CEST
+Last updated: 2026-05-28 09:34 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 09:34 CEST - RPP-0233 Integrated
+
+- Going well: integration is now at `e9f56fef8`, adding `RPP-0233`
+  localHash correctness. The planner/generated proofs bind ready mutation
+  `localHash` values to planned mutation payload hashes, while `applyPlan()`
+  rejects missing, malformed, forged, stale-value, and stale-snapshot
+  localHash evidence before mutation with hash-only/redacted refusal details.
+- Checklist movement: 124 verified items checked and 876 open. New check since
+  the prior feedback entry: `RPP-0233`.
+- Verification: focused RPP-0233 planner/apply validation passes 1/1,
+  focused generated-harness validation passes 1/1,
+  `node --test test/generated-push-harness.test.js` passes 9/9,
+  `node --test test/push-planner.test.js` passes 102/102, checklist lint
+  reports 124 checked / 876 open with 0 risky claims, artifact redaction scans
+  evidence and reporting surfaces with 0 rejected files, release remains
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 09:24 CEST - RPP-0058 Integrated
 
