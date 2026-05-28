@@ -111,8 +111,10 @@ hide or overwrite a live remote descendant.
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
-unplanned remote resource; concurrent remote edits to the updated post remain
-`conflict` and refuse apply.
+unplanned remote resource, and every ready case rejects stale replay before any
+mutation. Concurrent remote edits to the updated post remain `conflict` and
+refuse apply so local `wp_posts` create/update/delete plans cannot overwrite
+newer remote rows.
 
 The `fileTypeSwap` target coverage records per-tier counts for file topology
 type swaps. Ready cases replace an empty directory with the planned file value
