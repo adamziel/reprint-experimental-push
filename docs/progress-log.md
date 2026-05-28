@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:49 CEST.
+- Last update: 2026-05-28 10:59 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `a4260f8d8` (`test: add comment user generated coverage`).
+  `d31d927fe` (`test: prove serialized option validator`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 132
-  items complete and leaves 868 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 133
+  items complete and leaves 867 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
-  20 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  21 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 13 merge-invariant items. No release-ops items are checked
   yet.
@@ -332,6 +332,17 @@ linked implementation artifacts.
   fallback, and invalid/ambiguous registration refusal with hash-only accepted
   and refusal evidence. Caveat: this is focused local plugin-driver boundary
   evidence, not broad production plugin-driver readiness.
+- Serialized option validator continuation: `d31d927fe` integrated `RPP-0468`
+  serialized option validator focused regression. Focused command:
+  `node --test --test-name-pattern 'RPP-0468|plugin-owned option rows|plugin-owned data' test/push-planner.test.js`
+  (10 passing focused planner/apply tests), plus
+  `node --test test/push-planner.test.js` (105 passing planner/apply tests).
+  The proof accepts a valid serialized `wp_options` payload with hash-only
+  validator evidence, rejects malformed and shape-mismatched serialized option
+  payloads before mutation, keeps raw serialized payload strings out of plan,
+  audit, journal, and refusal evidence, and leaves final release `NO-GO`.
+  Caveat: this is focused local plugin-driver boundary evidence, not broad
+  production plugin-driver readiness.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
