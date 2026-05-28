@@ -137,6 +137,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'row-create-update-delete-mix-ready',
     tag: 'row-create-update-delete-mix',
   },
+  wpOptionsScalarChanges: {
+    family: 'wp-options-scalar-ready',
+    tag: 'wp-options-scalar',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',

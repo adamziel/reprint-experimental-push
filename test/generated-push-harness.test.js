@@ -863,6 +863,52 @@ test('RPP-0105 generated harness emits wp_options scalar option ready and confli
   assert.equal(conflict.applied, false, 'conflicting scalar option must not apply mutations');
 });
 
+test('RPP-0125 wp_options scalar target exposes per-tier ready and conflict coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsScalarChanges;
+
+  assert.ok(coverage, 'missing wp_options scalar target coverage');
+  assert.equal(coverage.family, 'wp-options-scalar-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-scalar']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.deepEqual(coverage.perTier, {
+    0: 2,
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+  });
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-options-scalar-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'wp-options-scalar-conflict');
+
+  assert.ok(readyCase, 'missing ready wp_options scalar option case');
+  assert.ok(conflictCase, 'missing conflicting wp_options scalar option case');
+  assertWpOptionsScalarShape(readyCase, { conflict: false });
+  assertWpOptionsScalarShape(conflictCase, { conflict: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready scalar option should plan an option mutation');
+  assert.equal(ready.applied, true, 'ready scalar option should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready scalar option should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready scalar option should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'remote scalar option drift should be a conflict');
+  assert.equal(conflict.applied, false, 'conflicting scalar option must not apply mutations');
+});
+
 function assertWpOptionsScalarShape(testCase, { conflict }) {
   const scalarRows = Object.entries(testCase.base.db.wp_options)
     .filter(([id, row]) => id.startsWith('option_name:scalar_generated_')

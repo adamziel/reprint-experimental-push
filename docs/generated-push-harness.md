@@ -76,6 +76,12 @@ with scalar string and number values. Ready cases update the scalar option while
 preserving the live remote; conflict cases drift the same option remotely and
 must refuse apply without plugin-owner evidence.
 
+The `wpOptionsScalarChanges` target coverage records per-tier counts for the
+regular scalar `wp_options.option_value` update surface. Ready cases apply the
+local scalar while preserving unplanned remote resources and rejecting stale
+replay before mutation; conflict cases drift the same scalar remotely and refuse
+apply so local scalar options cannot overwrite newer remote values.
+
 The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
 rows with structured array and object values. Ready cases update the serialized
 option while preserving the live remote; conflict cases drift the same option
@@ -403,6 +409,26 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 11,
         "ready": 9
+      }
+    },
+    "wpOptionsScalarChanges": {
+      "family": "wp-options-scalar-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
