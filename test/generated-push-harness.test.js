@@ -42,6 +42,12 @@ const requiredFamilies = [
   'file-type-swap',
   'type-swap-ready',
   'type-swap-conflict',
+  'row-create-update-delete-mix-ready',
+  'row-create-update-delete-mix-conflict',
+  'row-create-update-delete-mix',
+  'row-create',
+  'row-update',
+  'row-delete',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -155,3 +161,45 @@ test('RPP-0103 generated harness emits ready and non-ready file type-swap cases'
   assert.ok(nonReady.conflicts >= 1, 'non-ready type-swap should expose a file topology conflict');
   assert.equal(nonReady.applied, false, 'non-ready type-swap must not apply mutations');
 });
+
+test('RPP-0104 generated harness emits row create/update/delete mix with stale replay guard', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'row-create-update-delete-mix-ready');
+  const nonReadyCase = cases.find((testCase) => testCase.family === 'row-create-update-delete-mix-conflict');
+
+  assert.ok(readyCase, 'missing ready row create/update/delete mix case');
+  assert.ok(nonReadyCase, 'missing non-ready row create/update/delete mix case');
+  assert.ok(readyCase.tags.has('row-create-update-delete-mix'));
+  assert.ok(nonReadyCase.tags.has('row-create-update-delete-mix'));
+  assertRowMixShape(readyCase);
+  assertRowMixShape(nonReadyCase);
+
+  const ready = validateGeneratedCase(readyCase);
+  const nonReady = validateGeneratedCase(nonReadyCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready row mix should create, update, and delete rows');
+  assert.equal(ready.applied, true, 'ready row mix should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready row mix should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(nonReady.status, 'conflict');
+  assert.ok(nonReady.conflicts >= 1, 'non-ready row mix should expose a row conflict');
+  assert.equal(nonReady.applied, false, 'non-ready row mix must not apply mutations');
+});
+
+function assertRowMixShape(testCase) {
+  const createRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => !testCase.base.db.wp_posts[id] && row.post_title.startsWith('Generated row mix create '));
+  const updateRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated row mix update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_posts)
+    .filter(([id, row]) => row.post_title.startsWith('Base row mix delete ')
+      && !testCase.local.db.wp_posts[id]
+      && testCase.remote.db.wp_posts[id]);
+
+  assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
+  assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
+  assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
