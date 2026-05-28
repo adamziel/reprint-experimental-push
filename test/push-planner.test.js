@@ -3670,6 +3670,250 @@ test('executor rejects forged ready atomic plan when live dependency evidence is
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('RPP-0450 generated plugin update dependency validator is exact and redacted', () => {
+  const resourceKey = 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]';
+  const privateValues = [
+    'rpp-0450-base-plugin-owned-data',
+    'rpp-0450-local-plugin-owned-data',
+    'rpp-0450-invalid-version-plugin-owned-data',
+    'rpp-0450-remote-drift-plugin-owned-data',
+  ];
+
+  function dependencySite({ dependencyVersion, rowMode, privateNote }) {
+    const site = baseSite();
+    site.plugins[atomicDependencyPlugin] = {
+      version: dependencyVersion,
+      active: true,
+    };
+    site.plugins[atomicDependentPlugin] = {
+      version: '1.0.0',
+      active: true,
+      requires: [atomicDependencyPlugin],
+    };
+    site.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
+      option_name: 'reprint_push_atomic_fixture_data',
+      option_value: {
+        mode: rowMode,
+        privateNote,
+      },
+      __pluginOwner: atomicDependentPlugin,
+    };
+    return site;
+  }
+
+  function addPluginUpdateIntent(site, { expectedVersion, expectedHash }) {
+    site.pushIntents = [
+      {
+        id: 'rpp-0450-plugin-update-dependent-data',
+        kind: 'plugin-update',
+        requireAtomic: true,
+        resources: [
+          `plugin:${atomicDependencyPlugin}`,
+          resourceKey,
+        ],
+        dependencies: {
+          plugins: [
+            {
+              name: atomicDependencyPlugin,
+              expectedVersion,
+              expectedHash,
+              active: true,
+            },
+          ],
+        },
+        resourcePolicy: pluginOwnedResourcePolicy(
+          allowedPluginOwnedResource(resourceKey, atomicDependentPlugin, 'wp-option'),
+        ),
+      },
+    ];
+    return site;
+  }
+
+  function addLiveRemoteDependencyIntent(site, { expectedVersion, expectedHash }) {
+    site.pushIntents = [
+      {
+        id: 'rpp-0450-live-remote-dependent-data',
+        kind: 'plugin-data-update',
+        requireAtomic: true,
+        resources: [resourceKey],
+        dependencies: {
+          plugins: [
+            {
+              name: atomicDependencyPlugin,
+              expectedVersion,
+              expectedHash,
+              active: true,
+            },
+          ],
+        },
+        resourcePolicy: pluginOwnedResourcePolicy(
+          allowedPluginOwnedResource(resourceKey, atomicDependentPlugin, 'wp-option'),
+        ),
+      },
+    ];
+    return site;
+  }
+
+  const base = dependencySite({
+    dependencyVersion: '2.1.0',
+    rowMode: 'base',
+    privateNote: privateValues[0],
+  });
+  const local = dependencySite({
+    dependencyVersion: '2.2.0',
+    rowMode: 'local',
+    privateNote: privateValues[1],
+  });
+  addPluginUpdateIntent(local, {
+    expectedVersion: '2.2.0',
+    expectedHash: resourceHash(local, pluginResource(atomicDependencyPlugin)),
+  });
+  const remote = cloneJson(base);
+  const ready = planFor(base, local, remote);
+  const group = ready.atomicGroups[0];
+  const pluginMutation = mutationFor(ready, `plugin:${atomicDependencyPlugin}`);
+  const rowMutation = mutationFor(ready, resourceKey);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(group.status, 'ready');
+  assert.equal(pluginMutation.action, 'put');
+  assert.equal(rowMutation.action, 'put');
+  assert.equal(rowMutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(rowMutation.pluginOwnedResource.pluginOwner, atomicDependentPlugin);
+  assert.equal(group.dependencyRequirements[0].source, 'same-atomic-group');
+  assert.equal(group.dependencyRequirements[0].plugin, atomicDependencyPlugin);
+  assert.equal(group.dependencyRequirements[0].expectedVersion, '2.2.0');
+  assert.match(group.dependencyRequirements[0].plannedHash, /^[a-f0-9]{64}$/);
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+
+  const result = applyPlan(cloneJson(remote), ready);
+  assert.equal(result.appliedMutations, 2);
+  assert.equal(result.site.plugins[atomicDependencyPlugin].version, '2.2.0');
+  assert.equal(
+    result.site.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.mode,
+    'local',
+  );
+  for (const privateValue of [privateValues[0], privateValues[1]]) {
+    assert.equal(JSON.stringify(result.journal).includes(privateValue), false);
+  }
+
+  const invalidLocal = dependencySite({
+    dependencyVersion: '2.2.0',
+    rowMode: 'invalid-version',
+    privateNote: privateValues[2],
+  });
+  addPluginUpdateIntent(invalidLocal, {
+    expectedVersion: '9.9.9',
+    expectedHash: resourceHash(invalidLocal, pluginResource(atomicDependencyPlugin)),
+  });
+  const invalidPlan = planFor(base, invalidLocal, cloneJson(base));
+  const versionBlocker = invalidPlan.blockers.find((blocker) =>
+    blocker.class === 'incompatible-plugin-dependency-version');
+
+  assert.equal(invalidPlan.status, 'blocked');
+  assert.equal(versionBlocker.plugin, atomicDependencyPlugin);
+  assert.equal(versionBlocker.expectedVersion, '9.9.9');
+  assert.equal(versionBlocker.actualVersion, '2.2.0');
+  assert.equal(versionBlocker.source, 'same-atomic-group');
+  assert.equal(JSON.stringify(versionBlocker).includes(privateValues[2]), false);
+
+  const liveBase = dependencySite({
+    dependencyVersion: '2.1.0',
+    rowMode: 'base',
+    privateNote: privateValues[0],
+  });
+  const liveLocal = dependencySite({
+    dependencyVersion: '2.1.0',
+    rowMode: 'local',
+    privateNote: privateValues[1],
+  });
+  addLiveRemoteDependencyIntent(liveLocal, {
+    expectedVersion: '2.1.0',
+    expectedHash: resourceHash(liveBase, pluginResource(atomicDependencyPlugin)),
+  });
+  const liveRemote = cloneJson(liveBase);
+  const liveReady = planFor(liveBase, liveLocal, liveRemote);
+
+  assert.equal(liveReady.status, 'ready');
+  assert.equal(liveReady.mutations.length, 1);
+  assert.equal(liveReady.atomicGroups[0].dependencyRequirements[0].source, 'live-remote');
+  assert.match(liveReady.atomicGroups[0].dependencyRequirements[0].remoteHash, /^[a-f0-9]{64}$/);
+
+  const driftedRemote = dependencySite({
+    dependencyVersion: '2.2.0',
+    rowMode: 'remote-drift',
+    privateNote: privateValues[3],
+  });
+  const driftedRowBeforeHash = resourceHash(driftedRemote, rowMutation.resource);
+  const driftedRemoteBeforeHash = sha256Evidence(driftedRemote);
+  const staleError = captureError(() => applyPlan(driftedRemote, liveReady));
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'ATOMIC_GROUP_DEPENDENCY_STALE');
+  assert.equal(staleError.details.plugin, atomicDependencyPlugin);
+  assert.equal(
+    driftedRemote.db.wp_options['option_name:reprint_push_atomic_fixture_data'].option_value.privateNote,
+    privateValues[3],
+  );
+  assert.equal(resourceHash(driftedRemote, rowMutation.resource), driftedRowBeforeHash);
+  assert.equal(sha256Evidence(driftedRemote), driftedRemoteBeforeHash);
+  assert.equal(JSON.stringify(staleError.details).includes(privateValues[3]), false);
+
+  const evidence = {
+    rpp: 'RPP-0450',
+    evidenceSource: 'local-plugin-driver-generated-node-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    accepted: {
+      groupHash: sha256Evidence(group),
+      dependencyRequirementHash: sha256Evidence(group.dependencyRequirements[0]),
+      pluginMutationHash: sha256Evidence(pluginMutation),
+      rowMutationHash: sha256Evidence(rowMutation),
+      journalHash: sha256Evidence(result.journal),
+      remoteAfterDependencyHash: sha256Evidence(result.site.plugins[atomicDependencyPlugin]),
+      remoteAfterRowHash: sha256Evidence(result.site.db.wp_options['option_name:reprint_push_atomic_fixture_data']),
+    },
+    refused: {
+      invalidVersionBlockerHash: sha256Evidence(versionBlocker),
+      staleDependencyDetailsHash: sha256Evidence(staleError.details),
+      remoteRowHashBefore: `sha256:${driftedRowBeforeHash}`,
+      remoteRowHashAfter: `sha256:${resourceHash(driftedRemote, rowMutation.resource)}`,
+      remoteHashBefore: driftedRemoteBeforeHash,
+      remoteHashAfter: sha256Evidence(driftedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    accepted: evidence.accepted,
+    refused: evidence.refused,
+  });
+
+  assert.equal(evidence.refused.remoteRowHashAfter, evidence.refused.remoteRowHashBefore);
+  assert.equal(evidence.refused.remoteHashAfter, evidence.refused.remoteHashBefore);
+  for (const hash of [
+    evidence.accepted.groupHash,
+    evidence.accepted.dependencyRequirementHash,
+    evidence.accepted.pluginMutationHash,
+    evidence.accepted.rowMutationHash,
+    evidence.accepted.journalHash,
+    evidence.accepted.remoteAfterDependencyHash,
+    evidence.accepted.remoteAfterRowHash,
+    evidence.refused.invalidVersionBlockerHash,
+    evidence.refused.staleDependencyDetailsHash,
+    evidence.refused.remoteRowHashBefore,
+    evidence.refused.remoteRowHashAfter,
+    evidence.refused.remoteHashBefore,
+    evidence.refused.remoteHashAfter,
+    evidence.proofHash,
+  ]) {
+    assert.match(hash, /^sha256:[a-f0-9]{64}$/);
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(JSON.stringify(evidence).includes(privateValue), false, `RPP-0450 evidence leaked ${privateValue}`);
+  }
+});
+
 test('executor rejects row-only forged ready dependent fixture data plans before mutation', () => {
   const resourceKey = 'row:["wp_options","option_name:reprint_push_atomic_fixture_data"]';
   const base = baseSite();

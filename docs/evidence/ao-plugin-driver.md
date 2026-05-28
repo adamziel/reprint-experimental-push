@@ -76,6 +76,33 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0450 plugin update dependency validator, variant 3
+
+Focused local plugin-driver coverage now proves the plugin update dependency
+validator for an atomic plugin update plus plugin-owned data mutation. The
+accepted path updates the dependency plugin in the same atomic group, validates
+the exact expected version/hash/active requirement against
+`same-atomic-group`, and applies the plugin update plus the dependent
+plugin-owned `wp_options` row.
+
+Fail-closed coverage includes an incompatible same-group plugin update version
+and forged/stale live-remote dependency evidence. Stale dependency evidence
+fails before mutation with `ATOMIC_GROUP_DEPENDENCY_STALE`, and the drifted
+remote plugin-owned row and full remote snapshot hashes are unchanged after the
+refusal.
+
+Evidence status: local plugin-driver node proof only; it is not
+production-backed and keeps the release gate at NO-GO. The proof records only
+`sha256:` hashes for the atomic group, dependency requirement, mutations,
+journal, invalid-version blocker, stale-dependency refusal, and remote
+preservation; raw plugin-owned private option values are not included.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0450|plugin dependency|atomic plugin|plugin-owned data' test/push-planner.test.js
+```
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +116,7 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0450 — plugin update dependency validator: same-group plugin update
+  dependency requirements accept exact version/hash/active evidence, while
+  incompatible or stale dependency evidence fails closed before mutation and
+  preserves drifted plugin-owned remote data.
