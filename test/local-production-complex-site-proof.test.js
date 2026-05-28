@@ -5,6 +5,7 @@ import {
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
+  buildGuidSlugCollisionFailClosedProof,
   complexSiteFixtureShapeFromEnv,
   extractJsonObjects,
   findReleaseVerifierSummary,
@@ -284,6 +285,50 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphCountsPresent, true);
   assert.equal(proof.invariants.commentGraphPlanned, true);
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
+});
+
+test('complex-site graph proof covers ready and collision cases for GUID and slug identity', () => {
+  const source = syntheticComplexSnapshot('source', smallShape);
+  const localEdited = withGuidSlugCollisionFixture(
+    syntheticComplexSnapshot('local-edited', smallShape),
+    'local-edited',
+  );
+  const collisionRemote = withGuidSlugCollisionFixture(
+    syntheticComplexSnapshot('source', smallShape),
+    'remote-collision',
+  );
+  const proof = buildGuidSlugCollisionFailClosedProof({
+    sourceSnapshot: source,
+    localEditedSnapshot: localEdited,
+    collisionRemoteSnapshot: collisionRemote,
+  });
+  const proofJson = JSON.stringify(proof);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.counts.source.guidSlugReadyPosts, 0);
+  assert.equal(proof.counts.localEdited.guidSlugReadyPosts, 1);
+  assert.equal(proof.counts.localEdited.guidSlugCollisionSourcePosts, 1);
+  assert.equal(proof.counts.collisionRemote.guidSlugCollisionTargetPosts, 1);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.collisionPlan.status, 'blocked');
+  assert.equal(proof.readyEvidence.readyPostMutationPlanned, true);
+  assert.equal(proof.readyEvidence.collisionSourceMutationPlannedWhenNoRemoteCollision, true);
+  assert.equal(proof.collisionEvidence.class, 'stale-wordpress-graph-identity');
+  assert.equal(proof.collisionEvidence.references[0].relationshipType, 'post-natural-identity-collision');
+  assert.deepEqual(proof.collisionEvidence.references[0].identityKinds, ['guid', 'post_type+post_name']);
+  assert.equal(proof.invariants.readyPlanCarriesBothLocalRows, true);
+  assert.equal(proof.invariants.readyPlanPreconditionsHashOnly, true);
+  assert.equal(proof.invariants.collisionFailsClosed, true);
+  assert.equal(proof.invariants.collisionMutationSuppressed, true);
+  assert.equal(proof.invariants.collisionKeepsRemoteTarget, true);
+  assert.equal(proof.invariants.collisionEvidenceHashOnly, true);
+  assert.equal(proof.invariants.evidenceRedactsRawValues, true);
+  assert.equal(proofJson.includes('Local Private RPP-0338 Ready Post'), false);
+  assert.equal(proofJson.includes('Local Private RPP-0338 Collision Source'), false);
+  assert.equal(proofJson.includes('Remote Private RPP-0338 Collision Target'), false);
+  assert.equal(proofJson.includes('https://example.test/reprint-push/rpp-0338-collision'), false);
+  assert.equal(proofJson.includes('reprint-push-guid-slug-collision'), false);
 });
 
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
@@ -633,6 +678,48 @@ function syntheticComplexSnapshot(variant, shape) {
   };
 
   return snapshot;
+}
+
+function withGuidSlugCollisionFixture(snapshot, variant) {
+  const next = JSON.parse(JSON.stringify(snapshot));
+  if (variant === 'local-edited') {
+    next.db.wp_posts['ID:74701'] = {
+      ID: 74701,
+      post_title: 'Local Private RPP-0338 Ready Post',
+      post_name: 'reprint-push-guid-slug-ready',
+      post_content: 'local-private-rpp-0338-ready-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+      guid: 'https://example.test/reprint-push/rpp-0338-ready',
+    };
+    next.db.wp_posts['ID:74702'] = {
+      ID: 74702,
+      post_title: 'Local Private RPP-0338 Collision Source',
+      post_name: 'reprint-push-guid-slug-collision',
+      post_content: 'local-private-rpp-0338-collision-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+      guid: 'https://example.test/reprint-push/rpp-0338-collision',
+    };
+  }
+  if (variant === 'remote-collision') {
+    next.db.wp_posts['ID:74792'] = {
+      ID: 74792,
+      post_title: 'Remote Private RPP-0338 Collision Target',
+      post_name: 'reprint-push-guid-slug-collision',
+      post_content: 'remote-private-rpp-0338-collision-body',
+      post_status: 'publish',
+      post_type: 'page',
+      post_parent: 0,
+      post_author: 0,
+      guid: 'https://example.test/reprint-push/rpp-0338-collision',
+    };
+  }
+  return next;
 }
 
 function syntheticReleaseSummary(mutations, options = {}) {

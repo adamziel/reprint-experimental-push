@@ -88,6 +88,28 @@ const commentGraphResourceKeys = Object.freeze([
   commentGraphChildResourceKey,
   commentGraphMetaResourceKey,
 ]);
+const guidSlugReadyPostId = 74701;
+const guidSlugCollisionSourcePostId = 74702;
+const guidSlugCollisionTargetPostId = 74792;
+const guidSlugReadyPostSlug = 'reprint-push-guid-slug-ready';
+const guidSlugCollisionPostSlug = 'reprint-push-guid-slug-collision';
+const guidSlugReadyGuid = 'https://example.test/reprint-push/rpp-0338-ready';
+const guidSlugCollisionGuid = 'https://example.test/reprint-push/rpp-0338-collision';
+const guidSlugReadyPostResourceKey = `row:["wp_posts","ID:${guidSlugReadyPostId}"]`;
+const guidSlugCollisionSourcePostResourceKey = `row:["wp_posts","ID:${guidSlugCollisionSourcePostId}"]`;
+const guidSlugCollisionTargetPostResourceKey = `row:["wp_posts","ID:${guidSlugCollisionTargetPostId}"]`;
+const guidSlugCollisionPrivateTokens = Object.freeze([
+  'Local Private RPP-0338 Ready Post',
+  'Local Private RPP-0338 Collision Source',
+  'Remote Private RPP-0338 Collision Target',
+  'local-private-rpp-0338-ready-body',
+  'local-private-rpp-0338-collision-body',
+  'remote-private-rpp-0338-collision-body',
+  guidSlugReadyPostSlug,
+  guidSlugCollisionPostSlug,
+  guidSlugReadyGuid,
+  guidSlugCollisionGuid,
+]);
 
 export function complexSiteFixtureShapeFromEnv(env = process.env) {
   return Object.freeze({
@@ -763,6 +785,97 @@ export function buildPluginDriverBoundaryEvidence({
   };
 }
 
+export function buildGuidSlugCollisionFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  collisionRemoteSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(collisionRemoteSnapshot, 'collisionRemoteSnapshot is required');
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: sourceSnapshot,
+    now: proofNow,
+  });
+  const collisionPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: collisionRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutation = readyPlan.mutations.find((entry) =>
+    entry?.resourceKey === guidSlugReadyPostResourceKey) || null;
+  const readyCollisionSourceMutation = readyPlan.mutations.find((entry) =>
+    entry?.resourceKey === guidSlugCollisionSourcePostResourceKey) || null;
+  const readyPreconditions = readyPlan.preconditions.filter((entry) =>
+    entry?.resourceKey === guidSlugReadyPostResourceKey
+    || entry?.resourceKey === guidSlugCollisionSourcePostResourceKey);
+  const collisionBlocker = collisionPlan.blockers.find((entry) =>
+    entry?.resourceKey === guidSlugCollisionSourcePostResourceKey) || null;
+  const targetDecision = collisionPlan.decisions.find((entry) =>
+    entry?.resourceKey === guidSlugCollisionTargetPostResourceKey) || null;
+  const collisionEvidence = hashOnlyGuidSlugCollisionEvidence(collisionBlocker);
+  const readyEvidence = {
+    readyPostResourceKey: guidSlugReadyPostResourceKey,
+    collisionSourceResourceKey: guidSlugCollisionSourcePostResourceKey,
+    readyPostMutationPlanned: Boolean(readyMutation),
+    collisionSourceMutationPlannedWhenNoRemoteCollision: Boolean(readyCollisionSourceMutation),
+    preconditions: readyPreconditions.map((precondition) => ({
+      resourceKey: precondition.resourceKey,
+      checkedAgainst: precondition.checkedAgainst || null,
+      expectedHash: precondition.expectedHash || null,
+    })),
+  };
+  const evidenceJson = JSON.stringify({ readyEvidence, collisionEvidence });
+  const collisionIdentityKinds = collisionEvidence?.references?.[0]?.identityKinds || [];
+
+  const invariants = {
+    readyRowsPresent: summarizeComplexSnapshot(localEditedSnapshot).guidSlugReadyPosts >= 1
+      && summarizeComplexSnapshot(localEditedSnapshot).guidSlugCollisionSourcePosts >= 1,
+    collisionTargetPresent: summarizeComplexSnapshot(collisionRemoteSnapshot).guidSlugCollisionTargetPosts >= 1,
+    readyPlanReady: readyPlan.status === 'ready',
+    readyPlanCarriesBothLocalRows: Boolean(readyMutation) && Boolean(readyCollisionSourceMutation),
+    readyPlanPreconditionsHashOnly: readyEvidence.preconditions.length === 2
+      && readyEvidence.preconditions.every((precondition) =>
+        precondition.checkedAgainst === 'live-remote'
+        && /^[a-f0-9]{64}$/.test(precondition.expectedHash)),
+    collisionPlanBlocked: collisionPlan.status === 'blocked',
+    collisionFailsClosed: collisionBlocker?.class === 'stale-wordpress-graph-identity',
+    collisionKindsPreserved: collisionIdentityKinds.includes('guid')
+      && collisionIdentityKinds.includes('post_type+post_name'),
+    collisionMutationSuppressed: !collisionPlan.mutations.some((entry) =>
+      entry.resourceKey === guidSlugCollisionSourcePostResourceKey),
+    collisionKeepsRemoteTarget: targetDecision?.decision === 'keep-remote',
+    collisionEvidenceHashOnly: guidSlugCollisionEvidenceIsHashOnly(collisionEvidence),
+    evidenceRedactsRawValues: !guidSlugCollisionPrivateTokens.some((token) => evidenceJson.includes(token)),
+  };
+
+  return {
+    type: 'guid-slug-collision-fail-closed',
+    runtime: 'local-playground-wordpress',
+    releaseReady: false,
+    deterministicMapping: {
+      relationshipType: 'post-natural-identity-collision',
+      identityKinds: ['guid', 'post_type+post_name'],
+      action: 'fail-closed-without-explicit-identity-map',
+    },
+    counts: {
+      source: summarizeComplexSnapshot(sourceSnapshot),
+      localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+      collisionRemote: summarizeComplexSnapshot(collisionRemoteSnapshot),
+    },
+    readyPlan: summarizePlan(readyPlan),
+    collisionPlan: summarizePlan(collisionPlan),
+    readyEvidence,
+    collisionEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function findReleaseVerifierSummary(output) {
   const objects = extractJsonObjects(output);
   return [...objects].reverse().find((object) =>
@@ -794,6 +907,51 @@ function pluginDriverStateEvidence(snapshot) {
     updatedMarker: row?.updated_marker || null,
     proofMarker: row?.payload?.releaseBoundaryProof || null,
   };
+}
+
+function hashOnlyGuidSlugCollisionEvidence(blocker) {
+  if (!blocker) {
+    return null;
+  }
+  return {
+    resourceKey: blocker.resourceKey || null,
+    class: blocker.class || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    localChange: blocker.change?.localChange || null,
+    remoteChange: blocker.change?.remoteChange || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+        identityKinds: Array.isArray(reference.identityKinds)
+          ? [...reference.identityKinds].sort()
+          : [],
+        targetRemoteHash: reference.targetRemoteHash || null,
+      }))
+      : [],
+  };
+}
+
+function guidSlugCollisionEvidenceIsHashOnly(evidence) {
+  if (!evidence) {
+    return false;
+  }
+  const hashes = [
+    evidence.baseHash,
+    evidence.localHash,
+    evidence.remoteHash,
+    ...(evidence.references || []).map((reference) => reference.targetRemoteHash),
+  ].filter(Boolean);
+  return hashes.every((hash) => /^[a-f0-9]{64}$/.test(hash))
+    && !guidSlugCollisionPrivateTokens.some((token) => JSON.stringify(evidence).includes(token));
 }
 
 export function extractJsonObjects(output) {
@@ -892,6 +1050,18 @@ export function summarizeComplexSnapshot(snapshot) {
       Number(row?.meta_id) === commentGraphMetaId
       && Number(row?.comment_id) === commentGraphChildId
       && String(row?.meta_key || '') === commentGraphMetaKey).length,
+    guidSlugReadyPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === guidSlugReadyPostId
+      && String(row?.post_name || '') === guidSlugReadyPostSlug
+      && String(row?.guid || '') === guidSlugReadyGuid).length,
+    guidSlugCollisionSourcePosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === guidSlugCollisionSourcePostId
+      && String(row?.post_name || '') === guidSlugCollisionPostSlug
+      && String(row?.guid || '') === guidSlugCollisionGuid).length,
+    guidSlugCollisionTargetPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === guidSlugCollisionTargetPostId
+      && String(row?.post_name || '') === guidSlugCollisionPostSlug
+      && String(row?.guid || '') === guidSlugCollisionGuid).length,
     files: Object.keys(files).length,
     complexFiles: Object.keys(files).filter((file) =>
       file.startsWith('wp-content/uploads/reprint-push/brewcommerce-complex-')).length,
