@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 04:07 CEST.
+- Last update: 2026-05-28 04:16 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `2f079e09f` (`docs: update auth readback checklist totals`).
+  `912bdfbd4` (`feat: emit docker release gate artifact`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 87
-  items complete and leaves 913 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 88
+  items complete and leaves 912 open.
 - Checked slices: 26 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, and 1 generated
+  7 chunking/performance items, 2 production-topology items, and 2 generated
   harness item. No release-ops items are checked yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -35,13 +35,17 @@ linked implementation artifacts.
   `RPP-0101`, proving a generated file create/update/delete mix with at least
   one ready and one non-ready case. `281fcf797`/`2f079e09f` then integrated
   command-level `RPP-0026` auth source readback drift evidence and updated the
-  checklist totals. These guardrails and harness additions do not change final
-  release readiness.
+  checklist totals. `32326c2a5`/`69893ed24` integrated `RPP-0102` directory
+  descendant conflict coverage with per-tier summary evidence. These guardrails
+  and harness additions do not change final release readiness.
+- Docker/local-production artifact update: `912bdfbd4` integrates the `rpp-32`
+  harness change that emits deterministic release-gate input when Docker is
+  available while still failing closed as `DOCKER_CLI_MISSING` in this sandbox.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
   `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
   progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`, and the
-  restarted `rpp-ao-lifecycle` process registered in `running.json` as PID
-  `2140444`.
+  `rpp-ao-lifecycle` lightweight registry watchdog registered in
+  `running.json` as PID `2142025` after the full supervisor wrapper OOMed.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js` with 12 passing
   release-gate tests, the `rpp-28`

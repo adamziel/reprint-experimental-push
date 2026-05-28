@@ -37,7 +37,7 @@ The focused test suite and manual verification scan the current evidence/reporti
 node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html
 ```
 
-Observed current-tree status: pass with `ok: true`, 31 scanned files, 0 rejected files, and 0 hash-only metadata entries in those docs.
+Observed current-tree status: pass with `ok: true`, 32 scanned files, 0 rejected files, and 0 hash-only metadata entries in those docs.
 
 The scan includes the Docker local-production evidence doc, the current audit docs, and `progress.html`. It intentionally does not wire this scanner into the central release gates in this lane; an integrator can run the command above as a standalone release artifact check.
 
