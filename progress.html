@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it now includes a Brewcommerce-derived local production proof with 190 checked mutations, paged durable DB-journal readback, process-kill restart readback, featured-image, taxonomy, post-parent, and comment graph proofs, receipts, auth/session gates, stale-claim fencing with previous claim identity, remote-drift conflict refusal, and a 22-mutation local release-state plugin-driver proof with exact owner/driver allowlist, live precondition, apply revalidation, receipt, and journal evidence. Docker or external production WordPress, full WooCommerce import stability, rollback, and broader plugin-driver semantics remain required before final release readiness.</p>
-        <time class="update-stamp" datetime="2026-05-28T02:24:00+02:00">Last updated: May 28, 2026, 02:24 CEST</time>
+        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it now includes a 360-case generated push harness with 10 complexity tiers, 203 ready/apply cases, 129 conflict cases, 28 blocked cases, tier-9 ready plans, and general no-overwrite invariants. It also includes the Brewcommerce-derived local production proof with graph, journal, auth/session, and local release-state plugin-driver evidence. Docker or external production WordPress, full WooCommerce import stability, rollback, and broader plugin-driver semantics remain required before final release readiness.</p>
+        <time class="update-stamp" datetime="2026-05-28T02:35:00+02:00">Last updated: May 28, 2026, 02:35 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Targeted journal tests passing</span>
           <span class="pill">Complex local candidate proof</span>
@@ -503,6 +503,10 @@
           <span class="pill">74 plugin-driver journal rows</span>
           <span class="pill">GATE-4 local candidate</span>
           <span class="pill">Plugin-driver guard tests pass</span>
+          <span class="pill">360 generated push cases</span>
+          <span class="pill">10 complexity tiers</span>
+          <span class="pill">203 generated ready cases</span>
+          <span class="pill">Tier-9 ready/apply cases</span>
           <span class="pill">tmux proof status 0</span>
           <span class="pill">Evidence links below</span>
           <span class="pill">Final release requires external proof</span>
@@ -516,16 +520,16 @@
 
     <section class="summary" aria-label="Current evidence summary">
       <div class="metric">
-        <strong>Green</strong>
-        <span>targeted journal tests</span>
+        <strong>360</strong>
+        <span>generated harness cases</span>
       </div>
       <div class="metric">
         <strong>Up</strong>
         <span>plugin-driver local release proof</span>
       </div>
       <div class="metric">
-        <strong>190</strong>
-        <span>complex proof mutations</span>
+        <strong>43</strong>
+        <span>max ready mutations</span>
       </div>
       <div class="metric">
         <strong>0</strong>
@@ -541,9 +545,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">71%</span></div>
-          <div class="bar" aria-label="No data loss merge invariants 71 percent"><div class="fill green" style="width:71%"></div></div>
-          <p class="note">Independent delete/edit, local production release-state drift, checked apply refusal, a real Playground post/postmeta author graph identity, featured-image, category taxonomy, post-parent, and comment graph closures, a 190-mutation complex local plan, plugin-driver guard tests, and the 22-mutation release-state plugin-driver proof now pass. The remote-drift plan still fails closed with 9 preserve-remote conflicts. Gap: broader WordPress graph surfaces and live general plugin drivers.</p>
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">72%</span></div>
+          <div class="bar" aria-label="No data loss merge invariants 72 percent"><div class="fill green" style="width:72%"></div></div>
+          <p class="note">The generated harness now covers 360 three-way push cases with 5008 planned mutations, no unplanned remote overwrites in ready plans, stale-remote refusal before mutation, and non-ready apply refusal. Existing local production graph, journal, and plugin-driver proofs still stand. Gap: broader live production surfaces and general plugin-driver semantics.</p>
         </div>
 
         <div class="lane">
@@ -565,9 +569,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">72%</span></div>
-          <div class="bar" aria-label="Independent evidence and critique 72 percent"><div class="fill amber" style="width:72%"></div></div>
-          <p class="note">Durable local production, runtime capability, graph identity, featured-image graph, taxonomy graph, post-parent graph, comment graph, complex-site local production, journal-window, journal-pages, paged restart, plugin-driver guard proofs, and the release-state plugin-driver local verifier are tmux-visible. Gap: independent re-audit against Docker/external WordPress and broader plugin drivers.</p>
+          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">74%</span></div>
+          <div class="bar" aria-label="Independent evidence and critique 74 percent"><div class="fill amber" style="width:74%"></div></div>
+          <p class="note">Durable local production, runtime capability, graph identity, graph variants, complex-site local production, journal-window, journal-pages, paged restart, plugin-driver guard proofs, the release-state plugin-driver local verifier, and the generated 360-case harness are tmux-visible or command-visible. Gap: independent re-audit against Docker/external WordPress and broader plugin drivers.</p>
         </div>
       </section>
 
@@ -575,11 +579,11 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The local plugin-driver verifier passed in tmux with a 22-mutation release receipt, 74 DB-journal rows, exact release-state owner/driver evidence, live precondition, apply revalidation, and replay/recovery checks.</span></li>
-            <li><strong>Still strong</strong><span>The production-shaped guard tests continue to reject unknown plugin-owned custom-table data, mismatched owner/driver allowlists, direct `active_plugins` mutation, and unowned serialized option mutation.</span></li>
-            <li><strong>Not yet done</strong><span>Full Brewcommerce/WooCommerce import needs another pass, Docker is still not installed in this sandbox, and final readiness still requires external WordPress plus broader plugin-driver semantics.</span></li>
-            <li><strong>Progress change</strong><span>GATE-4 has moved from support-only summary guards to a checked local release-boundary candidate for one production-owned plugin-driver row.</span></li>
-            <li><strong>Next nudge</strong><span>Carry the same ownership boundary to Docker or external WordPress, or add another concrete plugin-owned driver while keeping the release held.</span></li>
+            <li><strong>Going well</strong><span>The generated push harness now passes 360 deterministic cases across 10 complexity tiers, including 203 ready/apply cases and 16 tier-9 ready cases.</span></li>
+            <li><strong>Still strong</strong><span>The local plugin-driver verifier remains checked with a 22-mutation release receipt, exact owner/driver evidence, live precondition, apply revalidation, and replay/recovery checks.</span></li>
+            <li><strong>Not yet done</strong><span>The generated harness is model coverage, not external WordPress release proof. Full Brewcommerce/WooCommerce import, Docker/external runtime, rollback, and broader plugin-driver semantics remain required.</span></li>
+            <li><strong>Progress change</strong><span>Merge invariants and independent evidence move up because broad generated coverage is now executable instead of a hand-written scenario list only.</span></li>
+            <li><strong>Next nudge</strong><span>Add generated families for every new general WordPress graph, plugin-driver, recovery, or runtime rule before claiming broad coverage.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -588,6 +592,9 @@
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
             <li><a href="scripts/playground/local-production-release-verify.mjs">Local production release verifier</a></li>
+            <li><a href="scripts/harness/generated-push-cases.js">Generated push harness</a></li>
+            <li><a href="test/generated-push-harness.test.js">Generated push harness test</a></li>
+            <li><a href="docs/generated-push-harness.md">Generated harness design note</a></li>
             <li><a href="scripts/playground/local-production-complex-site-proof.js">Complex local production proof helper</a></li>
             <li><a href="test/local-production-complex-site-proof.test.js">Complex local production proof test</a></li>
             <li><a href="scripts/playground/push-db-journal-lib.php">Durable DB journal library</a></li>
@@ -617,6 +624,7 @@
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
             <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production:complex-site:journal-pages` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review` for a 190-mutation complex site; graph proof variants now cover 24-mutation featured-image, 26-mutation taxonomy, 24-mutation post-parent, and 25-mutation comment closures, and the plugin-driver variant covers a 22-mutation release-state boundary.</p></div>
+            <div class="proof-item"><span class="status">Generated</span><p>`npm run test:generated-push-harness` covers 360 deterministic three-way push cases with ready, conflict, and blocked outcomes, tier-9 ready/apply plans, plugin-owned rows, file topology, atomic installs, and WordPress graph surfaces.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>Auth-session source readback, restart-readable paged DB journal ownership, lease fencing, stale-claim rejection, fresh retry nonces, and replay/retry are proven in the local topology.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>The process-kill smoke proves complete paged DB-journal readback after local SIGKILL/restart and after exact retry, with no false commit and no partial-state overwrite.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>The graph identity smokes map a real Playground post/postmeta author identity, a same-plan featured-image attachment plus `_thumbnail_id` closure, a same-plan category taxonomy closure, a same-plan post-parent page closure, and a same-plan comment/commentmeta closure, while menu/navigation and arbitrary taxonomy/comment surfaces remain fail-closed.</p></div>

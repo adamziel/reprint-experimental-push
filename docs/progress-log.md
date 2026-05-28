@@ -4,6 +4,51 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Generated Push Harness
+
+- Last update: 2026-05-28 02:35 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command: `npm run test:generated-push-harness`.
+- New harness: `scripts/harness/generated-push-cases.js` generates 360
+  deterministic Reprint push cases by default, with a hard minimum of 300.
+  The generator spans 10 complexity tiers and 24 scenario families, then adds
+  seeded variation instead of storing exact-shaped fixture outputs.
+- Coverage from the checked summary command:
+  - 360 total cases;
+  - statuses: 203 ready, 129 conflict, 28 blocked;
+  - 36 cases in every tier from 0 through 9;
+  - tier-9 still includes 16 ready/apply cases;
+  - max resource count 69, max mutation count 44;
+  - max ready resource count 66, max ready mutation count 43;
+  - totals across all cases: 5008 planned mutations, 312 conflicts,
+    375 blockers, and 929 decisions.
+- Scenario surfaces include local edits, remote-only edits, independent merge,
+  same independent content, deletes, delete/edit conflicts, file topology
+  conflicts, supported and unsupported plugin-owned data, plugin owner-context
+  drift, supported forms-lab custom-table rows, forms-lab delete refusal,
+  atomic plugin install ready and missing-dependency paths, same-plan
+  post-parent, taxonomy, comment, and usermeta graph closures, and stale graph
+  references.
+- General invariants checked for every generated case:
+  plan summary counts match actual arrays; every mutation has a matching
+  live-remote precondition and hash; ready plans apply only planned local
+  values while preserving every unplanned remote resource; ready plans reject
+  stale remotes before mutation; non-ready plans refuse apply and leave the
+  remote unchanged; conflicts and blockers do not still carry mutations for
+  the same blocked/conflicted resource; plugin-owned mutations carry explicit
+  owner and driver evidence.
+- Focused checks passed:
+  `node --check scripts/harness/generated-push-cases.js`,
+  `npm run test:generated-push-harness`,
+  `node scripts/harness/generated-push-cases.js`, and `git diff --check`.
+- Caveat: this is a pure generated model harness. It is intentionally broad,
+  reusable, and fast, but it does not replace the live local production,
+  Docker/external WordPress, auth/session, durable journal, or plugin-driver
+  release-boundary proofs.
+- Percent movement: merge invariants move from 71% to 72%; independent
+  evidence moves from 72% to 74%. Recovery boundaries stay at 60%, reliable
+  executor/protocol stays at 75%, and fast path/chunking stays at 37%.
+
 ## 2026-05-28 - Local Plugin Driver Release Evidence
 
 - Last update: 2026-05-28 02:24 CEST.

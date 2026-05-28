@@ -2,8 +2,14 @@
 
 The first executable matrix lives in `test/push-planner.test.js`.
 
+The broad generated checklist lives in `test/generated-push-harness.test.js`
+and `scripts/harness/generated-push-cases.js`. It currently generates 360
+deterministic cases across 10 complexity tiers and 24 scenario families, with
+a hard minimum of 300.
+
 | Scenario | Expected behavior | Current evidence |
 | --- | --- | --- |
+| Generated Reprint push harness | The harness should generate at least 300 non-exact-shaped three-way push cases from trivial to high-complexity and verify general plan/apply invariants across ready, conflict, and blocked outcomes. | `npm run test:generated-push-harness` |
 | Remote site is unchanged since pull | Local file and row changes are planned and applied. | `plans and applies local changes when remote still matches the pull base` |
 | Remote changed, local did not | Remote change is kept; no mutation is produced. | `keeps remote-only changes and does not overwrite them` |
 | Remote and local changed different resources | Local mutations apply while remote-only changes are preserved. | `combines non-overlapping local and remote changes` |

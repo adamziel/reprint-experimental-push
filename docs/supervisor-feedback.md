@@ -1,9 +1,39 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 02:24 CEST
+Last updated: 2026-05-28 02:35 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 02:35 CEST - Generated Push Harness
+
+- Going well: `npm run test:generated-push-harness` now passes a generated
+  360-case Reprint push harness with a hard 300-case minimum.
+- Also going well: the harness is invariant-driven rather than exact-shaped.
+  It generates 10 tiers and 24 scenario families, then checks every case for
+  plan summary consistency, live preconditions, no unplanned remote overwrites,
+  stale-remote refusal before mutation, non-ready apply refusal, and
+  plugin-owned owner/driver evidence.
+- Current coverage: 203 ready cases, 129 conflict cases, 28 blocked cases,
+  16 tier-9 ready/apply cases, max 69 resources, max 44 mutations, max ready
+  case 66 resources and 43 mutations.
+- Not yet done: this is model harness coverage. It needs to keep growing into
+  more general WordPress graph, plugin-driver, recovery, runtime, and
+  production-boundary cases; it does not replace local production or external
+  release proofs.
+- Progress change: merge invariants and independent evidence move up. Recovery,
+  reliable executor/protocol, and fast-path percentages stay flat.
+- Next nudge: start using this generator as the checklist for new general
+  solutions. New behavior should add scenario families or seeded operations,
+  not one-off exact snapshots.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Add generated families for every new merge/graph/plugin rule before counting it as broadly covered. |
+| Recovery | Add generated journal/recovery envelopes next; current harness checks apply refusal and stale preconditions only. |
+| Reliable executor | Keep release-boundary proofs separate; use the harness to stress planner/apply contracts quickly. |
+| Fast paths | No movement from this patch; the harness is correctness-oriented, not a throughput benchmark. |
+| Audit and critic | Review `docs/generated-push-harness.md` and the summary output before accepting broad coverage claims. |
 
 ## 2026-05-28 02:24 CEST - Local Plugin Driver Release Evidence
 
