@@ -1,3 +1,5 @@
+import { redactEvidence } from './evidence-redaction.js';
+
 const FINAL_RELEASE_SCOPE = 'final-release';
 const LOCAL_CANDIDATE_SCOPE = 'local-candidate';
 const UNKNOWN_SCOPE = 'unknown';
@@ -798,7 +800,7 @@ function gateResult(definition, result) {
     blocking: result.blocking,
     code: result.code,
     reason: result.reason,
-    evidence: result.evidence,
+    evidence: redactEvidence(result.evidence),
   });
 }
 
