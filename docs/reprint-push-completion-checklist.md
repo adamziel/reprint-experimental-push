@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 163.
-- Remaining open: 837.
+- Verified complete: 164.
+- Remaining open: 836.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -151,7 +151,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0132 (Near / generated-harness) Prove wp_term_taxonomy graph changes, variant 2. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0133 (Near / generated-harness) Prove wp_term_relationships graph changes, variant 2. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0134 (Near / generated-harness) Prove plugin-owned option changes, variant 2. Success: stale remote replay fails before mutation.
-- [ ] RPP-0135 (Near / generated-harness) Prove plugin-owned custom-table changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0135 (Near / generated-harness) Prove plugin-owned custom-table changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0136 (Near / generated-harness) Prove atomic plugin install stack, variant 2. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0137 (Near / generated-harness) Prove stale remote after dry-run, variant 2. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0138 (Near / generated-harness) Prove same independent content, variant 2. Success: ready cases apply with no unplanned remote overwrite.

@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 18:55 CEST.
+- Last update: 2026-05-28 19:08 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `426fab7b8` (normal merge of
-  `origin/session/rpp-24-rpp-0134-plugin-owned-option-changes-v2`).
+  `d5998ce84` (normal merge of
+  `origin/session/rpp-24-rpp-0135-plugin-owned-custom-table-changes-v2`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 163
-  items complete and leaves 837 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 164
+  items complete and leaves 836 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 31 generated
+  7 chunking/performance items, 2 production-topology items, 32 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -1032,6 +1032,13 @@ linked implementation artifacts.
   with ready cases carrying owner/driver evidence, preserving unplanned remote
   data, rejecting stale replay before mutation, and keeping private option
   tokens and notes in redacted hash-only evidence.
+- Generated plugin-owned custom-table continuation: `d5998ce84` integrated
+  `RPP-0135` forms-lab custom-table target proof. The generated harness keeps
+  the 510-case run and now proves 20 plugin-owned custom-table target cases
+  across all 10 tiers, split into 10 ready, three blocked, and seven conflict
+  cases, with ready cases carrying fixture driver evidence, preserving unplanned
+  remote data, rejecting stale replay before mutation, and refusing custom-table
+  deletes when the driver lacks delete support.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
   same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for
