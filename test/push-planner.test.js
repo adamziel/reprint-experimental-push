@@ -3155,6 +3155,102 @@ test('rejects apply when the remote changed after dry-run planning', () => {
   assert.equal(driftedRemote.files['index.php'], '<?php echo "surprise remote edit";');
 });
 
+test('RPP-0218 forged and stale ready plans reject before mutation with redacted evidence', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    '<?php echo "local-private-rpp0218-file";',
+    'Local private RPP-0218 title',
+    '<?php echo "remote-private-rpp0218-drift";',
+  ];
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+
+  const ready = planFor(base, local, remote);
+  const targetMutation = mutationFor(ready, 'file:index.php');
+  const forged = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions = plan.preconditions.filter(
+      (precondition) => precondition.mutationId !== targetMutation.id,
+    );
+  });
+  const replayedForgery = tamperReadyPlan(ready, (plan) => {
+    plan.preconditions = plan.preconditions.filter(
+      (precondition) => precondition.mutationId !== targetMutation.id,
+    );
+  });
+  const firstJournal = [];
+  const secondJournal = [];
+  const trapJournal = (events) => ({
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+  const errorEnvelope = (error) => ({
+    name: error.name,
+    code: error.code,
+    message: error.message,
+    details: error.details,
+  });
+
+  assert.equal(ready.status, 'ready');
+  assert.deepEqual(ready.summary, {
+    mutations: 2,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+
+  const beforeForgedRemote = JSON.stringify(remote);
+  const forgedError = captureError(() => applyPlan(remote, forged, {
+    durableJournal: trapJournal(firstJournal),
+  }));
+  const replayedForgedError = captureError(() => applyPlan(cloneJson(remote), replayedForgery, {
+    durableJournal: trapJournal(secondJournal),
+  }));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'PLAN_INVARIANT_VIOLATION');
+  assert.deepEqual(errorEnvelope(forgedError), errorEnvelope(replayedForgedError));
+  assert.deepEqual(forgedError.details.issues, [
+    {
+      code: 'MISSING_LIVE_REMOTE_PRECONDITION',
+      mutationId: targetMutation.id,
+      resourceKey: 'file:index.php',
+      expectedHash: targetMutation.remoteBeforeHash,
+    },
+  ]);
+  assert.deepEqual(firstJournal, [], 'forged ready plan should reject before durable journal evidence');
+  assert.deepEqual(secondJournal, [], 'forged ready replay should reject before durable journal evidence');
+  assert.equal(JSON.stringify(remote), beforeForgedRemote);
+  assert.equal(remote.files['index.php'], base.files['index.php']);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, base.db.wp_posts['ID:1'].post_title);
+
+  const staleRemote = cloneJson(remote);
+  staleRemote.files['index.php'] = privateValues[2];
+  const beforeStaleRemote = JSON.stringify(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, ready));
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.equal(staleError.details.resourceKey, 'file:index.php');
+  assert.equal(staleError.details.expectedHash, targetMutation.remoteBeforeHash);
+  assert.equal(JSON.stringify(staleRemote), beforeStaleRemote);
+  assert.equal(staleRemote.files['index.php'], privateValues[2]);
+  assert.equal(staleRemote.db.wp_posts['ID:1'].post_title, base.db.wp_posts['ID:1'].post_title);
+
+  const refusalEvidence = JSON.stringify({
+    forged: errorEnvelope(forgedError),
+    stale: errorEnvelope(staleError),
+  });
+  for (const privateValue of privateValues) {
+    assert.equal(refusalEvidence.includes(privateValue), false, `refusal evidence leaked ${privateValue}`);
+  }
+});
+
 test('injected failure before commit returns no partially mutated remote state', () => {
   const base = baseSite();
   const local = baseSite();

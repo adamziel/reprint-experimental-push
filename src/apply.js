@@ -39,6 +39,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validateReadyPlanEnvelope(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
@@ -1171,6 +1172,142 @@ function validatePreconditions(remote, plan) {
         },
       );
     }
+  }
+}
+
+function validateReadyPlanEnvelope(plan) {
+  const issues = [];
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
+  const conflicts = Array.isArray(plan.conflicts) ? plan.conflicts : [];
+  const blockers = Array.isArray(plan.blockers) ? plan.blockers : [];
+  const mutationsById = new Map();
+  const preconditionsByMutationId = new Map();
+
+  if (conflicts.length > 0) {
+    issues.push({
+      code: 'READY_PLAN_HAS_CONFLICTS',
+      count: conflicts.length,
+    });
+  }
+  if (blockers.length > 0) {
+    issues.push({
+      code: 'READY_PLAN_HAS_BLOCKERS',
+      count: blockers.length,
+    });
+  }
+
+  for (const mutation of mutations) {
+    if (!mutation?.id) {
+      issues.push({
+        code: 'MUTATION_ID_MISSING',
+        resourceKey: mutation?.resourceKey || null,
+      });
+      continue;
+    }
+    if (mutationsById.has(mutation.id)) {
+      issues.push({
+        code: 'DUPLICATE_MUTATION_ID',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+      });
+      continue;
+    }
+    mutationsById.set(mutation.id, mutation);
+    if (mutation.resource?.key && mutation.resource.key !== mutation.resourceKey) {
+      issues.push({
+        code: 'MUTATION_RESOURCE_KEY_MISMATCH',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        actualResourceKey: mutation.resource.key,
+      });
+    }
+  }
+
+  for (const precondition of preconditions) {
+    const mutationId = precondition?.mutationId || null;
+    if (!mutationId) {
+      issues.push({
+        code: 'PRECONDITION_MUTATION_ID_MISSING',
+        resourceKey: precondition?.resourceKey || null,
+      });
+      continue;
+    }
+    if (preconditionsByMutationId.has(mutationId)) {
+      issues.push({
+        code: 'DUPLICATE_LIVE_REMOTE_PRECONDITION',
+        mutationId,
+        resourceKey: precondition.resourceKey || null,
+      });
+      continue;
+    }
+    preconditionsByMutationId.set(mutationId, precondition);
+
+    const mutation = mutationsById.get(mutationId);
+    if (!mutation) {
+      issues.push({
+        code: 'PRECONDITION_WITHOUT_MUTATION',
+        mutationId,
+        resourceKey: precondition.resourceKey || null,
+      });
+      continue;
+    }
+    if (precondition.resourceKey !== mutation.resourceKey) {
+      issues.push({
+        code: 'PRECONDITION_RESOURCE_KEY_MISMATCH',
+        mutationId,
+        expectedResourceKey: mutation.resourceKey || null,
+        actualResourceKey: precondition.resourceKey || null,
+      });
+    }
+    if (precondition.resource?.key && precondition.resource.key !== mutation.resourceKey) {
+      issues.push({
+        code: 'PRECONDITION_RESOURCE_OBJECT_MISMATCH',
+        mutationId,
+        expectedResourceKey: mutation.resourceKey || null,
+        actualResourceKey: precondition.resource.key,
+      });
+    }
+    if (precondition.expectedHash !== mutation.remoteBeforeHash) {
+      issues.push({
+        code: 'PRECONDITION_HASH_MISMATCH',
+        mutationId,
+        resourceKey: mutation.resourceKey || precondition.resourceKey || null,
+        expectedHash: mutation.remoteBeforeHash || null,
+        actualHash: precondition.expectedHash || null,
+      });
+    }
+    if (precondition.checkedAgainst !== 'live-remote') {
+      issues.push({
+        code: 'PRECONDITION_NOT_LIVE_REMOTE',
+        mutationId,
+        resourceKey: mutation.resourceKey || precondition.resourceKey || null,
+        checkedAgainst: precondition.checkedAgainst || null,
+      });
+    }
+  }
+
+  for (const mutation of mutations) {
+    if (!mutation?.id || preconditionsByMutationId.has(mutation.id)) {
+      continue;
+    }
+    issues.push({
+      code: 'MISSING_LIVE_REMOTE_PRECONDITION',
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey || null,
+      expectedHash: mutation.remoteBeforeHash || null,
+    });
+  }
+
+  if (issues.length > 0) {
+    throw new PushPlanError(
+      'PLAN_INVARIANT_VIOLATION',
+      `Ready plan ${plan.id || '(unknown)'} failed invariant validation.`,
+      {
+        planId: plan.id || null,
+        issues,
+      },
+    );
   }
 }
 
