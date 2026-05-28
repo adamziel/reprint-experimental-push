@@ -54,6 +54,14 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'wp-terms-termmeta-graph-ready',
+  'wp-terms-termmeta-graph-stale',
+  'wp-terms-termmeta-graph',
+  'wp-terms-create',
+  'wp-termmeta-create',
+  'wp-terms-remote-drift',
+  'termmeta-term-graph',
+  'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -268,4 +276,82 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+test('RPP-0111 wp_terms/wp_termmeta graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermsTermmetaGraph;
+
+  assert.ok(coverage, 'missing wp_terms/wp_termmeta graph target coverage');
+  assert.equal(coverage.family, 'wp-terms-termmeta-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-terms-termmeta-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready term/termmeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-terms-termmeta-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-terms-termmeta-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_terms/wp_termmeta graph case');
+  assert.ok(staleCase, 'missing stale wp_terms/wp_termmeta graph case');
+  assertTermTermmetaGraphShape(readyCase, { staleTarget: false });
+  assertTermTermmetaGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready graph should create term and termmeta rows');
+  assert.equal(ready.applied, true, 'ready term/termmeta graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready term/termmeta graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+});
+
+function assertTermTermmetaGraphShape(testCase, { staleTarget }) {
+  const termRows = Object.entries(testCase.local.db.wp_terms)
+    .filter(([id, row]) => !testCase.base.db.wp_terms[id]
+      && row.name.startsWith('Generated term graph target '));
+  const termmetaRows = Object.entries(testCase.local.db.wp_termmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_termmeta[id]
+      && row.meta_key.startsWith('_generated_termmeta_graph_'));
+
+  assert.equal(termRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one term`);
+  assert.equal(termmetaRows.length, 1, `${testCase.id} should create one termmeta row`);
+
+  const termId = staleTarget
+    ? termmetaRows[0][1].term_id
+    : termRows[0][1].term_id;
+  assert.equal(termmetaRows[0][1].term_id, termId);
+
+  if (staleTarget) {
+    const termRowId = `term_id:${termId}`;
+    assert.ok(testCase.base.db.wp_terms[termRowId], `${testCase.id} stale target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  }
+}
+
+function nonReadyTargetCount(coverage) {
+  return Object.entries(coverage.statuses)
+    .filter(([status]) => status !== 'ready')
+    .reduce((sum, [, count]) => sum + count, 0);
 }
