@@ -1055,6 +1055,211 @@ test('check-release-gates command proves recovery inspect read-only marker for R
   ]);
 });
 
+test('check-release-gates command summarizes allowed and denied releaseMovement for RPP-0036', () => {
+  const deniedSourceDrift = {
+    ok: false,
+    same: false,
+    sameSource: false,
+    observed: 'summary-denied-source-drift',
+    sourceUrl,
+    preflightSourceUrl: sourceUrl,
+    dryRunSourceUrl: remoteChangedUrl,
+    applySourceUrl: sourceUrl,
+    recoverySourceUrl: sourceUrl,
+    scope: 'final-release',
+  };
+  const deniedFixture = writeReleaseGateEvidenceFixture({
+    scope: 'final-release',
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      sourceIdentity: deniedSourceDrift,
+    }),
+  });
+  const allowedFixture = writeReleaseGateEvidenceFixture({
+    scope: 'final-release',
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release'),
+  });
+  const runCheckedCommand = (file, cwd) => runReleaseGateCli([
+    '--evidence-file',
+    file,
+    '--scope',
+    'final-release',
+    '--now',
+    fixedNow.toISOString(),
+  ], {
+    cwd,
+    env: {},
+    now: fixedNow,
+  });
+
+  const denied = runCheckedCommand(deniedFixture.file, deniedFixture.dir);
+  const allowed = runCheckedCommand(allowedFixture.file, allowedFixture.dir);
+
+  assert.equal(denied.exitCode, 1);
+  assert.equal(denied.report.ok, false);
+  assert.equal(denied.report.releaseStatus, 'NO-GO');
+  assert.equal(denied.report.primaryFailureBucket, 'identity');
+  assert.equal(denied.report.primaryFailureCode, 'SAME_SOURCE_IDENTITY_REQUIRED');
+  assert.equal(denied.report.mutationAttempted, false);
+  assert.deepEqual(denied.report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.deepEqual(denied.report.releaseMovement, {
+    allowed: false,
+    state: 'held',
+    gates: '19/20',
+    finalGates: '19/20',
+    candidateGates: '19/20',
+    reason: 'Source URL identity drifted across the checked release path.',
+    missingEvidence: [
+      {
+        id: 'same-source-identity',
+        rpp: 'RPP-0010',
+        status: 'failed',
+        code: 'SAME_SOURCE_IDENTITY_REQUIRED',
+        reason: 'Source URL identity drifted across the checked release path.',
+        evidence: {
+          ...deniedSourceDrift,
+          required: ['preflight, dry-run, apply, and recovery use the same source URL'],
+        },
+      },
+    ],
+  });
+  assert.deepEqual(denied.report.summary.releaseMovement, denied.report.releaseMovement);
+  assert.deepEqual(denied.report.summary.missingEvidence, denied.report.releaseMovement.missingEvidence);
+  assert.deepEqual(denied.report.missingProductionEvidenceBuckets, [
+    {
+      bucket: 'identity',
+      gateCount: 1,
+      gates: [
+        {
+          bucket: 'identity',
+          id: 'same-source-identity',
+          rpp: 'RPP-0010',
+          title: 'Same source URL identity proof',
+          status: 'failed',
+          code: 'SAME_SOURCE_IDENTITY_REQUIRED',
+          reason: 'Source URL identity drifted across the checked release path.',
+          required: ['preflight, dry-run, apply, and recovery use the same source URL'],
+          observed: 'summary-denied-source-drift',
+          envKey: undefined,
+          evidenceKey: undefined,
+          scope: 'final-release',
+          requiredScope: undefined,
+        },
+      ],
+    },
+  ]);
+
+  assert.equal(allowed.exitCode, 1);
+  assert.equal(allowed.report.ok, false);
+  assert.equal(allowed.report.releaseStatus, 'NO-GO');
+  assert.equal(allowed.report.primaryFailureBucket, 'provenance');
+  assert.equal(allowed.report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
+  assert.equal(allowed.report.mutationAttempted, false);
+  assert.deepEqual(allowed.report.mutationPolicy, denied.report.mutationPolicy);
+  assert.deepEqual(allowed.report.releaseMovement, {
+    allowed: true,
+    state: 'release-ready',
+    gates: '20/20',
+    finalGates: '20/20',
+    candidateGates: '20/20',
+    reason: 'all release gates are backed by final release evidence',
+    missingEvidence: [],
+  });
+  assert.deepEqual(allowed.report.summary.releaseMovement, allowed.report.releaseMovement);
+  assert.deepEqual(allowed.report.summary.missingEvidence, []);
+  assert.deepEqual(
+    allowed.report.missingProductionEvidenceBuckets.map((bucket) => ({
+      bucket: bucket.bucket,
+      gateCount: bucket.gateCount,
+      codes: bucket.gates.map((gate) => gate.code),
+      ids: bucket.gates.map((gate) => gate.id),
+    })),
+    [
+      {
+        bucket: 'provenance',
+        gateCount: 4,
+        codes: [
+          'PRODUCTION_EVIDENCE_REQUIRED',
+          'PRODUCTION_EVIDENCE_REQUIRED',
+          'PRODUCTION_EVIDENCE_REQUIRED',
+          'PRODUCTION_EVIDENCE_REQUIRED',
+        ],
+        ids: [
+          'release-gate:tmux-status-marker',
+          'release-gate:progress-release-timestamp',
+          'release-gate:agents-release-gates-row',
+          'release-gate:verify-release-failure-reason',
+        ],
+      },
+    ],
+  );
+
+  const summaryEvidence = {
+    producedBy: 'evaluateReleaseGates',
+    schemaVersion: 1,
+    observed: 'releaseMovement summary will be emitted with this evaluation',
+    scope: 'final-release',
+    requiredScope: 'final-release',
+  };
+  for (const result of [denied, allowed]) {
+    const gate = gateById(result.report.evaluation, 'release-movement-summary');
+    assert.equal(gate.status, 'passed');
+    assert.equal(gate.code, 'OK');
+    assert.deepEqual(gate.evidence, summaryEvidence);
+  }
+
+  assert.deepEqual(
+    [
+      {
+        scenario: 'denied-source-identity-drift',
+        exitCode: denied.exitCode,
+        primaryFailureCode: denied.report.primaryFailureCode,
+        releaseAllowed: denied.report.releaseMovement.allowed,
+        finalGates: denied.report.releaseMovement.finalGates,
+        summaryAllowed: denied.report.summary.releaseMovement.allowed,
+        summaryMissingEvidence: denied.report.summary.missingEvidence.length,
+        mutationAttempted: denied.report.mutationAttempted,
+      },
+      {
+        scenario: 'allowed-final-evidence-without-provenance',
+        exitCode: allowed.exitCode,
+        primaryFailureCode: allowed.report.primaryFailureCode,
+        releaseAllowed: allowed.report.releaseMovement.allowed,
+        finalGates: allowed.report.releaseMovement.finalGates,
+        summaryAllowed: allowed.report.summary.releaseMovement.allowed,
+        summaryMissingEvidence: allowed.report.summary.missingEvidence.length,
+        mutationAttempted: allowed.report.mutationAttempted,
+      },
+    ],
+    [
+      {
+        scenario: 'denied-source-identity-drift',
+        exitCode: 1,
+        primaryFailureCode: 'SAME_SOURCE_IDENTITY_REQUIRED',
+        releaseAllowed: false,
+        finalGates: '19/20',
+        summaryAllowed: false,
+        summaryMissingEvidence: 1,
+        mutationAttempted: false,
+      },
+      {
+        scenario: 'allowed-final-evidence-without-provenance',
+        exitCode: 1,
+        primaryFailureCode: 'PRODUCTION_EVIDENCE_REQUIRED',
+        releaseAllowed: true,
+        finalGates: '20/20',
+        summaryAllowed: true,
+        summaryMissingEvidence: 0,
+        mutationAttempted: false,
+      },
+    ],
+  );
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
