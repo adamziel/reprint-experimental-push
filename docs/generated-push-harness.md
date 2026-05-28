@@ -85,6 +85,12 @@ only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
 
+
+The `sameIndependentContent` target coverage records per-tier counts for local
+and remote edits that independently converge on the same content. Its ready
+cases produce no mutation for the already-synchronized row, still apply through
+the harness, and preserve every unplanned remote resource.
+
 The `wpPostmetaCreateUpdateDelete` target coverage records per-tier counts for
 the `wp_postmeta` create/update/delete surface. Its invariant is that ready
 cases apply only the planned postmeta create, update, and delete while
@@ -161,7 +167,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -191,6 +197,26 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
+    "sameIndependentContent": {
+      "family": "same-independent-content",
+      "total": 10,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "conflict": 2,
+        "ready": 8
+      }
+    },
     "pluginOwnedOptionChange": {
       "family": "plugin-owned-option-change-ready",
       "total": 20,
@@ -200,7 +226,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -239,7 +265,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -260,7 +286,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -280,7 +306,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -300,7 +326,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -321,7 +347,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -342,7 +368,7 @@ At the time this note was added, the summary command reported:
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
+        "5": 1,
         "6": 2,
         "7": 2,
         "8": 2,
@@ -374,6 +400,8 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
+    "same-independent-content": 10,
+    "same-independent-content-target": 10,
     "scalar-option-number": 10,
     "scalar-option-string": 10,
     "scalar-option-update": 20,

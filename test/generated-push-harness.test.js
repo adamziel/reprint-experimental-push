@@ -46,6 +46,7 @@ const requiredFamilies = [
   'direct-row-conflict',
   'local-delete',
   'same-independent-content',
+  'same-independent-content-target',
   'supported-plugin-option',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
@@ -181,6 +182,57 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
 });
+
+
+test('RPP-0118 same independent content target applies without unplanned remote overwrite', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.sameIndependentContent;
+
+  assert.ok(coverage, 'missing same independent content target coverage');
+  assert.equal(coverage.family, 'same-independent-content');
+  assert.equal(coverage.total, report.summary.featureFamilies['same-independent-content']);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { conflict: 2, ready: 8 });
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready same independent content cases');
+  assert.deepEqual(coverage.perTier, {
+    0: 1,
+    1: 1,
+    2: 1,
+    3: 1,
+    4: 1,
+    5: 1,
+    6: 1,
+    7: 1,
+    8: 1,
+    9: 1,
+  });
+
+  const sameCase = generatePushHarnessCases()
+    .find((testCase) => testCase.family === 'same-independent-content');
+
+  assert.ok(sameCase, 'missing generated same independent content case');
+  assert.ok(sameCase.tags.has('same-independent-content-target'));
+  assertSameIndependentContentShape(sameCase);
+
+  const result = validateGeneratedCase(sameCase);
+
+  assert.equal(result.status, 'ready');
+  assert.equal(result.mutations, 0, 'identical independent edits should not need a mutation');
+  assert.equal(result.decisions, 1, 'same independent content should record one already-in-sync decision');
+  assert.equal(result.applied, true, 'same independent content should apply through the harness');
+  assert.equal(result.unplannedRemotePreserved, true, 'same independent content must preserve unplanned remote data');
+});
+
+function assertSameIndependentContentShape(testCase) {
+  const sharedRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, localRow]) => testCase.base.db.wp_posts[id]
+      && testCase.remote.db.wp_posts[id]
+      && localRow.post_title.startsWith('Shared independent ')
+      && testCase.remote.db.wp_posts[id].post_title === localRow.post_title
+      && testCase.base.db.wp_posts[id].post_title !== localRow.post_title);
+
+  assert.equal(sharedRows.length, 1, `${testCase.id} should include one same independent post update`);
+}
 
 test('RPP-0230 generated planner summary counts match emitted evidence deterministically', () => {
   const firstEvidence = generatedPlannerSummaryEvidence();

@@ -111,6 +111,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  sameIndependentContent: {
+    family: 'same-independent-content',
+    tag: 'same-independent-content-target',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -355,6 +359,7 @@ const scenarioFamilyBuilders = {
     local.db.wp_posts[`ID:${postId}`].post_title = title;
     remote.db.wp_posts[`ID:${postId}`].post_title = title;
     tags.add('already-in-sync');
+    tags.add('same-independent-content-target');
   },
   'supported-plugin-option': ({ base, local, remote, allocator, tags }) => {
     const optionName = `forms_generated_${allocator.next()}`;
