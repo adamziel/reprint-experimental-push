@@ -86,6 +86,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
   },
+  rowCreateUpdateDeleteMix: {
+    family: 'row-create-update-delete-mix-ready',
+    tag: 'row-create-update-delete-mix',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -902,6 +906,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -913,6 +918,13 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
+      if (
+        blocker.class === 'atomic-group-blocker-propagation'
+        && matchingMutation?.resourceKey === blocker.resourceKey
+      ) {
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,

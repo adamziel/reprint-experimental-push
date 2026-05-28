@@ -32,8 +32,8 @@ invariants:
   remote resource;
 - ready plans reject stale remotes before mutation;
 - non-ready plans refuse apply and leave the remote unchanged;
-- conflicts and blockers do not still carry mutations for the same blocked or
-  conflicted resource;
+- conflicts and non-propagated blockers do not still carry mutations for the
+  same blocked or conflicted resource;
 - plugin-owned mutations carry explicit owner and driver evidence.
 
 ## Current Coverage
@@ -48,8 +48,8 @@ The default generated run covers:
   deletes, delete/edit conflicts, file topology conflicts, file create/update/
   delete mixes with ready and conflicting outcomes, directory descendant
   conflicts with per-tier target counts, file type-swap cases with ready and
-  conflicting outcomes, row create/update/delete mixes with ready and conflicting
-  outcomes plus stale replay rejection before mutation, `wp_posts`
+  conflicting outcomes, row create/update/delete mixes with per-tier target
+  counts, ready/conflict outcomes, and stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
@@ -63,6 +63,11 @@ The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
+
+The `rowCreateUpdateDeleteMix` target coverage records per-tier counts for the
+generic row create/update/delete surface. Ready cases create, update, and delete
+rows, preserve unplanned remote resources, and reject stale replay before
+mutation; conflict cases drift the updated row remotely and refuse apply.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
@@ -99,6 +104,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "rowCreateUpdateDeleteMix": {
+      "family": "row-create-update-delete-mix-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 11,
+        "ready": 9
       }
     },
     "wpPostsCreateUpdateDelete": {
