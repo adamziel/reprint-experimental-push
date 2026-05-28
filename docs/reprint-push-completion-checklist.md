@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 89.
-- Remaining open: 911.
+- Verified complete: 90.
+- Remaining open: 910.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -39,7 +39,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0025 (Near / release-gates) Prove wrong remote alias rejection, variant 2. Success: tmux-visible run prints a final bracketed status marker.
 - [x] RPP-0026 (Near / release-gates) Prove auth source command readback drift, variant 2. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0027 (Near / release-gates) Prove missing production secret gate, variant 2. Success: test asserts the exact reason and evidence object.
-- [ ] RPP-0028 (Near / release-gates) Prove Application Password credential binding, variant 2. Success: progress report links the command and observed status.
+- [x] RPP-0028 (Near / release-gates) Prove Application Password credential binding, variant 2. Success: progress report links the command and observed status.
 - [ ] RPP-0029 (Near / release-gates) Prove manage_options capability proof, variant 2. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0030 (Near / release-gates) Prove same source URL identity proof, variant 2. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0031 (Near / release-gates) Prove preflight route identity proof, variant 2. Success: checked command exits with the named code and no mutation attempt.
