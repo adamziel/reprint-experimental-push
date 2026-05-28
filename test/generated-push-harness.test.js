@@ -28,6 +28,15 @@ function captureError(fn) {
   assert.fail('Expected function to throw');
 }
 
+function trapDurableJournal(events) {
+  return {
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  };
+}
+
 const requiredFamilies = [
   'local-file-update',
   'remote-only-post-update',
@@ -224,6 +233,30 @@ test('RPP-0233 generated ready fixtures reject forged localHash evidence', () =>
       );
     }
   }
+});
+
+test('RPP-0236 generated blocked plans refuse apply before mutation', () => {
+  const firstEvidence = generatedBlockedApplyRefusalEvidence();
+  const replayEvidence = generatedBlockedApplyRefusalEvidence();
+  const aggregate = aggregateGeneratedBlockedApplyRefusalEvidence(firstEvidence);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0236 test/generated-push-harness.test.js',
+    caveat: 'Generated local planner/apply proof only; release remains gated separately.',
+    aggregate,
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'generated blocked refusal evidence changed between runs');
+  assert.ok(aggregate.totalBlockedCases > 0, 'generated harness must include blocked cases');
+  assert.ok(aggregate.totalPlannedMutations > 0, 'blocked generated cases should include planned non-blocked mutations');
+  assert.equal(aggregate.totalAppliedMutations, 0, 'blocked apply refusals must not report applied mutations');
+  assert.equal(aggregate.totalDurableJournalEvents, 0, 'blocked apply refusals must not write durable journal events');
+  assert.equal(aggregate.totalMutationJournalEvents, 0, 'blocked apply refusals must not write mutation events');
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('delete-blocked-'), false);
+  assert.equal(evidenceText.includes('confidential'), false);
+  assert.equal(evidenceText.includes('payload'), false);
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -508,6 +541,74 @@ function generatedPlannerSummaryEvidence() {
   });
 }
 
+function generatedBlockedApplyRefusalEvidence() {
+  return generatePushHarnessCases()
+    .map((testCase) => {
+      const plan = createPushPlan({
+        base: testCase.base,
+        local: testCase.local,
+        remote: testCase.remote,
+        now: fixedGeneratedHarnessNow,
+      });
+
+      if (plan.status !== 'blocked') {
+        return null;
+      }
+
+      const remote = cloneJson(testCase.remote);
+      const beforeRemoteHash = digest(remote);
+      const journalEvents = [];
+      let appliedMutationCount = 0;
+      const error = captureError(() => {
+        const result = applyPlan(remote, plan, {
+          durableJournal: trapDurableJournal(journalEvents),
+        });
+        appliedMutationCount = result.appliedMutations;
+      });
+      const mutationJournalEvents = journalEvents
+        .filter((event) => event.type.includes('mutation'));
+
+      assert.ok(error instanceof PushPlanError, `${testCase.id} blocked apply should throw PushPlanError`);
+      assert.equal(error.code, 'PLAN_NOT_READY', `${testCase.id} blocked apply should fail as not ready`);
+      assert.deepEqual(error.details, { status: 'blocked' }, `${testCase.id} blocked apply details changed`);
+      assert.equal(digest(remote), beforeRemoteHash, `${testCase.id} blocked apply mutated the remote`);
+      assert.equal(appliedMutationCount, 0, `${testCase.id} blocked apply reported applied mutations`);
+      assert.deepEqual(journalEvents, [], `${testCase.id} blocked apply wrote durable journal events`);
+
+      return {
+        id: testCase.id,
+        tier: testCase.tier,
+        family: testCase.family,
+        tags: [...testCase.tags].sort(),
+        status: plan.status,
+        summary: plan.summary,
+        plannedMutations: plan.mutations.length,
+        plannedPreconditions: plan.preconditions.length,
+        blockers: plan.blockers.map((blocker) => ({
+          id: blocker.id,
+          resourceKey: blocker.resourceKey || null,
+          class: blocker.class,
+          groupId: blocker.groupId || null,
+          mutationId: blocker.mutationId || null,
+          sourceBlockerIds: blocker.sourceBlockerIds || [],
+          baseHash: blocker.baseHash || null,
+          localHash: blocker.localHash || null,
+          remoteHash: blocker.remoteHash || null,
+        })),
+        refusal: {
+          code: error.code,
+          detailsHash: `sha256:${digest(error.details)}`,
+        },
+        beforeRemoteHash: `sha256:${beforeRemoteHash}`,
+        afterRemoteHash: `sha256:${digest(remote)}`,
+        appliedMutationCount,
+        durableJournalEventCount: journalEvents.length,
+        mutationJournalEventCount: mutationJournalEvents.length,
+      };
+    })
+    .filter(Boolean);
+}
+
 function emittedPlannerCounts(plan) {
   return {
     mutations: plan.mutations.length,
@@ -515,6 +616,42 @@ function emittedPlannerCounts(plan) {
     conflicts: plan.conflicts.length,
     blockers: plan.blockers.length,
     atomicGroups: plan.atomicGroups.length,
+  };
+}
+
+function aggregateGeneratedBlockedApplyRefusalEvidence(evidence) {
+  const aggregate = evidence.reduce(
+    (aggregate, entry) => {
+      aggregate.totalBlockedCases++;
+      aggregate.totalPlannedMutations += entry.plannedMutations;
+      aggregate.totalPlannedPreconditions += entry.plannedPreconditions;
+      aggregate.totalBlockers += entry.blockers.length;
+      aggregate.totalAppliedMutations += entry.appliedMutationCount;
+      aggregate.totalDurableJournalEvents += entry.durableJournalEventCount;
+      aggregate.totalMutationJournalEvents += entry.mutationJournalEventCount;
+      incrementCount(aggregate.families, entry.family);
+      for (const blocker of entry.blockers) {
+        incrementCount(aggregate.blockerClasses, blocker.class);
+      }
+      return aggregate;
+    },
+    {
+      totalBlockedCases: 0,
+      totalPlannedMutations: 0,
+      totalPlannedPreconditions: 0,
+      totalBlockers: 0,
+      totalAppliedMutations: 0,
+      totalDurableJournalEvents: 0,
+      totalMutationJournalEvents: 0,
+      families: {},
+      blockerClasses: {},
+    },
+  );
+
+  return {
+    ...aggregate,
+    families: sortStringObject(aggregate.families),
+    blockerClasses: sortStringObject(aggregate.blockerClasses),
   };
 }
 

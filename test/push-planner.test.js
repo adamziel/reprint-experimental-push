@@ -1451,6 +1451,121 @@ test('RPP-0217 conflict plans refuse apply before mutation with stable evidence'
   assert.equal(remote.db.wp_posts['ID:1'].post_title, privateConflictValues[1]);
 });
 
+test('RPP-0236 blocked plans refuse apply before mutation with redacted evidence', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const blockedResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const privateValues = [
+    '<?php echo "local-private-rpp0236-file";',
+    'local-private-rpp0236-option-mode',
+  ];
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[1];
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const journalEvents = [];
+  const durableJournal = {
+    appendEvent(type, payload) {
+      journalEvents.push({ type, payload });
+      return { sequence: journalEvents.length, type, ...payload };
+    },
+  };
+  const beforeRemote = JSON.stringify(remote);
+  let appliedMutationCount = 0;
+  const hashOnlyEvidence = (plan, error = null) => ({
+    command: 'node --test --test-name-pattern=RPP-0236 test/push-planner.test.js',
+    caveat: 'Focused local planner/apply proof; release remains gated separately.',
+    status: plan.status,
+    summary: plan.summary,
+    emitted: plannerSummaryCounts(plan),
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      localHash: blocker.localHash || null,
+      baseHash: blocker.baseHash || null,
+      remoteHash: blocker.remoteHash || null,
+    })),
+    refusal: error
+      ? {
+          code: error.code,
+          detailsHash: sha256Evidence(error.details),
+        }
+      : null,
+    appliedMutationCount,
+    durableJournalEventCount: journalEvents.length,
+    mutationJournalEventCount: journalEvents.filter((event) => event.type.includes('mutation')).length,
+  });
+
+  assert.equal(firstPlan.status, 'blocked');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0236 blocked apply refusal');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 1,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'blocked refusal summary evidence should be stable across deterministic planning runs',
+  );
+  assert.equal(mutationFor(firstPlan, 'file:index.php').action, 'put');
+  assert.equal(mutationFor(firstPlan, blockedResourceKey), undefined);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  assert.equal(firstPlan.blockers[0].class, 'unsupported-plugin-owned-resource');
+  assert.equal(firstPlan.blockers[0].resourceKey, blockedResourceKey);
+  assert.match(firstPlan.blockers[0].localHash, /^[a-f0-9]{64}$/);
+
+  const error = captureError(() => {
+    const result = applyPlan(remote, firstPlan, { durableJournal });
+    appliedMutationCount = result.appliedMutations;
+  });
+  const evidenceText = JSON.stringify({
+    ...hashOnlyEvidence(firstPlan, error),
+    evidenceHash: sha256Evidence(hashOnlyEvidence(firstPlan, error)),
+  });
+
+  assert.ok(error instanceof PushPlanError);
+  assert.deepEqual(
+    {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    },
+    {
+      code: 'PLAN_NOT_READY',
+      message: 'Refusing to apply a blocked plan.',
+      details: { status: 'blocked' },
+    },
+  );
+  assert.equal(appliedMutationCount, 0);
+  assert.deepEqual(journalEvents, []);
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.equal(remote.files['index.php'], base.files['index.php']);
+  assert.equal(remote.db.wp_options['option_name:forms_settings'].option_value.mode, 'basic');
+  for (const privateValue of privateValues) {
+    assert.equal(evidenceText.includes(privateValue), false, `blocked refusal evidence leaked ${privateValue}`);
+  }
+});
+
 test('RPP-0229 conflict evidence serializes hash-only conflict refusals', () => {
   const base = cloneJson(baseSite());
   const local = cloneJson(base);
