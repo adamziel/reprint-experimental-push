@@ -101,6 +101,29 @@ table names are asserted absent from the focused evidence. This is local focused
 plugin-driver evidence only, not production-backed evidence, and the release gate
 remains NO-GO.
 
+## RPP-0471 plugin uninstall/delete refusal
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0471|proves plugin uninstall/delete mutations fail closed' test/push-planner.test.js
+```
+
+RPP-0471 adds a local-only regression for plugin uninstall/delete refusal. The
+proof attempts to remove the plugin metadata, package file, and plugin-owned
+option data for the fixture `forms` plugin. The planner refuses the plugin
+metadata delete without an explicit `plugin-delete` driver and also refuses the
+plugin-owned option delete because the explicit `wp-option` driver does not opt
+in to deletes.
+
+Apply preserves remote package and plugin-owned data in both paths: the blocked
+plan fails with `PLAN_NOT_READY`, and a forged ready plan that reintroduces the
+plugin metadata delete fails with `UNSUPPORTED_PLUGIN_DELETE` before the package
+file deletion can run. The evidence envelope is local-only and hash-only:
+blocker hashes, mutation hashes, refusal-detail hashes, and preserved-remote
+hashes are recorded while raw plugin versions, package contents, and option
+values are asserted absent. The release state remains NO-GO.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -116,3 +139,6 @@ remains NO-GO.
   plugin-owned data before mutation.
 - RPP-0461 — driver registration API focused regression: accepted registration
   and invalid/ambiguous refusal evidence is hash-only, redacted, and local-only.
+- RPP-0471 — plugin uninstall/delete refusal: local-only plugin metadata,
+  package file, and plugin-owned option delete attempts fail closed without a
+  `plugin-delete` driver and preserve remote data with hash-only evidence.

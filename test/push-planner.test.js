@@ -911,6 +911,182 @@ test('proves plugin uninstall/delete mutations fail closed without an explicit d
   assert.equal(JSON.stringify(evidence).includes(pluginSecret), false);
 });
 
+test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () => {
+  const plugin = pluginResource('forms');
+  const pluginFile = 'wp-content/plugins/forms/forms.php';
+  const pluginFileResource = { type: 'file', path: pluginFile, key: `file:${pluginFile}` };
+  const optionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const privateValues = [
+    'forms-delete-private-version-rpp-0471',
+    'rpp0471-private-base-plugin-package',
+    'rpp0471-private-base-plugin-owned-option',
+    'rpp0471-private-remote-plugin-package',
+    'rpp0471-private-remote-plugin-owned-option',
+  ];
+  const base = baseSite();
+  base.plugins.forms = { version: privateValues[0], active: true };
+  base.files[pluginFile] = `<?php /* ${privateValues[1]} */`;
+  base.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  const local = cloneJson(base);
+  delete local.plugins.forms;
+  delete local.files[pluginFile];
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(optionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = cloneJson(base);
+
+  const blockedPlan = planFor(base, local, remote);
+  const pluginDeleteBlocker = blockedPlan.blockers.find((entry) => entry.resourceKey === plugin.key);
+  const optionDeleteBlocker = blockedPlan.blockers.find((entry) => entry.resourceKey === optionResourceKey);
+  const packageFileMutation = mutationFor(blockedPlan, pluginFileResource.key);
+  const remoteWithPrivateData = cloneJson(remote);
+  remoteWithPrivateData.files[pluginFile] = `<?php /* ${privateValues[3]} */`;
+  remoteWithPrivateData.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[4];
+  const beforeBlockedApplyHash = digest(remoteWithPrivateData);
+  const blockedError = captureError(() => applyPlan(remoteWithPrivateData, blockedPlan));
+
+  assert.equal(blockedPlan.status, 'blocked');
+  assert.equal(pluginDeleteBlocker.class, 'unsupported-plugin-delete');
+  assert.equal(pluginDeleteBlocker.requiredDriver, 'plugin-delete');
+  assert.equal(pluginDeleteBlocker.change.localChange, 'delete');
+  assert.equal(pluginDeleteBlocker.change.remoteChange, 'unchanged');
+  assert.equal(mutationFor(blockedPlan, plugin.key), undefined);
+  assert.equal(optionDeleteBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(optionDeleteBlocker.driver, 'wp-option');
+  assert.equal(optionDeleteBlocker.change.localChange, 'delete');
+  assert.equal(optionDeleteBlocker.change.remoteChange, 'unchanged');
+  assert.equal(packageFileMutation.action, 'delete');
+  assert.ok(blockedError instanceof PushPlanError);
+  assert.equal(blockedError.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remoteWithPrivateData), beforeBlockedApplyHash);
+  assert.equal(remoteWithPrivateData.files[pluginFile].includes(privateValues[3]), true);
+  assert.equal(
+    remoteWithPrivateData.db.wp_options['option_name:forms_settings'].option_value.mode,
+    privateValues[4],
+  );
+
+  const forgedPluginDeleteMutation = {
+    id: 'mutation-rpp0471-forged-plugin-delete',
+    resource: plugin,
+    resourceKey: plugin.key,
+    action: 'delete',
+    value: { absent: true },
+    remoteBeforeHash: resourceHash(remote, plugin),
+    baseHash: resourceHash(base, plugin),
+    localHash: resourceHash(local, plugin),
+    changeKind: 'delete',
+    change: {
+      localChange: 'delete',
+      remoteChange: 'unchanged',
+    },
+  };
+  const forgedPlan = tamperReadyPlan(blockedPlan, (plan) => {
+    plan.mutations = [
+      forgedPluginDeleteMutation,
+      packageFileMutation,
+    ];
+    plan.preconditions = [
+      {
+        mutationId: forgedPluginDeleteMutation.id,
+        resource: plugin,
+        resourceKey: plugin.key,
+        expectedHash: resourceHash(remote, plugin),
+        checkedAgainst: 'live-remote',
+      },
+      {
+        mutationId: packageFileMutation.id,
+        resource: packageFileMutation.resource,
+        resourceKey: packageFileMutation.resourceKey,
+        expectedHash: resourceHash(remote, packageFileMutation.resource),
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    plan.summary.mutations = plan.mutations.length;
+    plan.summary.decisions = 0;
+  });
+  const forgedRemote = cloneJson(remote);
+  forgedRemote.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[4];
+  const beforeForgedApplyHash = digest(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedPlan));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_DELETE');
+  assert.deepEqual(forgedError.details, {
+    mutationId: forgedPluginDeleteMutation.id,
+    resourceKey: plugin.key,
+    pluginOwner: 'forms',
+    requiredDriver: 'plugin-delete',
+  });
+  assert.equal(digest(forgedRemote), beforeForgedApplyHash);
+  assert.equal(forgedRemote.files[pluginFile].includes(privateValues[1]), true);
+  assert.equal(
+    forgedRemote.db.wp_options['option_name:forms_settings'].option_value.mode,
+    privateValues[4],
+  );
+
+  const evidence = {
+    rpp: 'RPP-0471',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    releaseState: 'NO-GO',
+    explicitPluginDeleteDriverPresent: false,
+    planRefusal: {
+      status: blockedPlan.status,
+      summary: blockedPlan.summary,
+      pluginDeleteBlockerHash: sha256Evidence(pluginDeleteBlocker),
+      optionDeleteBlockerHash: sha256Evidence(optionDeleteBlocker),
+      packageFileMutationHash: sha256Evidence({
+        resourceKey: packageFileMutation.resourceKey,
+        action: packageFileMutation.action,
+        localHash: packageFileMutation.localHash,
+        remoteBeforeHash: packageFileMutation.remoteBeforeHash,
+      }),
+    },
+    applyRefusal: {
+      blockedPlanCode: blockedError.code,
+      forgedPlanCode: forgedError.code,
+      forgedDetailsHash: sha256Evidence(forgedError.details),
+      blockedRemotePreservedHash: sha256Evidence(remoteWithPrivateData),
+      forgedRemotePreservedHash: sha256Evidence(forgedRemote),
+    },
+    hashes: {
+      basePluginHash: `sha256:${resourceHash(base, plugin)}`,
+      localPluginAbsentHash: `sha256:${resourceHash(local, plugin)}`,
+      basePackageFileHash: `sha256:${resourceHash(base, pluginFileResource)}`,
+      localPackageFileAbsentHash: `sha256:${resourceHash(local, pluginFileResource)}`,
+      baseOptionHash: sha256Evidence(base.db.wp_options['option_name:forms_settings']),
+      localOptionAbsentHash: `sha256:${resourceHash(local, {
+        type: 'row',
+        table: 'wp_options',
+        id: 'option_name:forms_settings',
+        key: optionResourceKey,
+      })}`,
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    planRefusal: evidence.planRefusal,
+    applyRefusal: evidence.applyRefusal,
+    hashes: evidence.hashes,
+    explicitPluginDeleteDriverPresent: evidence.explicitPluginDeleteDriverPresent,
+  });
+  const evidenceJson = JSON.stringify(evidence);
+
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.planRefusal.pluginDeleteBlockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.planRefusal.optionDeleteBlockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.applyRefusal.forgedDetailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(blockedPlan).includes(privateValues[0]), false);
+  assert.equal(JSON.stringify(forgedPlan).includes(privateValues[0]), false);
+  for (const privateValue of privateValues) {
+    assert.equal(evidenceJson.includes(privateValue), false);
+    assert.equal(JSON.stringify(blockedError).includes(privateValue), false);
+    assert.equal(JSON.stringify(forgedError).includes(privateValue), false);
+  }
+});
+
 test('RPP-0215 keep-remote decisions are deterministic hash-only evidence', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'body { color: red; }';
