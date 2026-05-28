@@ -30,6 +30,15 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const PLUGIN_DRIVER_DRY_RUN_VALIDATION_HOOKS = new Map([
+  ['wp-option:validate-row', new Set(['wp-option'])],
+  ['wp-postmeta:validate-row', new Set(['wp-postmeta', 'wp-post-meta'])],
+  ['wp-termmeta:validate-row', new Set(['wp-termmeta', 'wp-term-meta'])],
+  ['wp-usermeta:validate-row', new Set(['wp-usermeta', 'wp-user-meta'])],
+  ['fixture-custom-table:validate-row', new Set(['fixture-arbitrary-plugin-table'])],
+  ['fixture-forms-lab-table:validate-row', new Set(['fixture-forms-lab-table'])],
+]);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -324,6 +333,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
           driverEvidence: support.driverEvidence,
+          ...(support.dryRunValidationEvidence ? { dryRunValidationEvidence: support.dryRunValidationEvidence } : {}),
         };
       }
       plan.mutations.push(mutation);
@@ -442,6 +452,22 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      const dryRunValidation = pluginDriverDryRunValidationSupport({
+        entry: supported,
+        resource,
+        owner,
+      });
+      if (!dryRunValidation.supported) {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          driver: supported.driver,
+          policySource: supported.source,
+          reason: dryRunValidation.reason,
+          dryRunValidationEvidence: dryRunValidation.evidence,
+        };
+      }
+
       if (supported.driver === 'fixture-forms-lab-table') {
         const driverEvidence = fixtureFormsLabTableDriverEvidence({
           resource,
@@ -465,6 +491,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           policySource: supported.source,
           supportsDelete: false,
           driverEvidence,
+          dryRunValidationEvidence: dryRunValidation.evidence,
         };
       }
 
@@ -473,6 +500,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         driver: supported.driver,
         policySource: supported.source,
         supportsDelete: supported.supportsDelete === true,
+        dryRunValidationEvidence: dryRunValidation.evidence,
       };
     },
   };
@@ -534,8 +562,57 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
     table: entry.table || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    dryRunValidation: normalizePluginDriverDryRunValidation(entry),
     source,
   };
+}
+
+function normalizePluginDriverDryRunValidation(entry) {
+  const raw = entry.dryRunValidation
+    ?? entry.dryRunValidationHook
+    ?? entry.validationHook
+    ?? null;
+  if (raw == null) {
+    return null;
+  }
+  if (typeof raw === 'string') {
+    return {
+      hook: raw,
+      status: 'missing',
+    };
+  }
+  if (typeof raw !== 'object') {
+    return {
+      hook: null,
+      status: 'invalid',
+    };
+  }
+  return {
+    hook: raw.hook || raw.name || raw.id || raw.type || null,
+    status: normalizePluginDriverDryRunValidationStatus(
+      raw.status ?? raw.result ?? raw.outcome ?? raw.ok ?? raw.passed,
+    ),
+  };
+}
+
+function normalizePluginDriverDryRunValidationStatus(value) {
+  if (value === true) {
+    return 'passed';
+  }
+  if (value === false) {
+    return 'failed';
+  }
+  if (typeof value !== 'string') {
+    return 'missing';
+  }
+  const normalized = value.trim().toLowerCase();
+  if (['pass', 'passed', 'ok', 'success', 'succeeded', 'valid'].includes(normalized)) {
+    return 'passed';
+  }
+  if (['fail', 'failed', 'error', 'invalid', 'rejected'].includes(normalized)) {
+    return 'failed';
+  }
+  return 'invalid';
 }
 
 function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
@@ -557,6 +634,90 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
     && /^id:\d+$/.test(resource.id)
     && owner === 'forms'
     && entry.pluginOwner === 'forms';
+}
+
+function pluginDriverDryRunValidationSupport({ entry, resource, owner }) {
+  if (!entry.dryRunValidation) {
+    return {
+      supported: true,
+      evidence: null,
+    };
+  }
+
+  const hook = entry.dryRunValidation.hook || null;
+  const supportedDrivers = PLUGIN_DRIVER_DRY_RUN_VALIDATION_HOOKS.get(hook);
+  if (
+    !hook
+    || supportedDrivers === undefined
+    || (supportedDrivers && !supportedDrivers.has(entry.driver))
+  ) {
+    return {
+      supported: false,
+      reason: 'Plugin-owned resource driver dry-run validation hook is not supported.',
+      evidence: pluginDriverDryRunValidationEvidence({
+        reasonCode: 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_UNSUPPORTED',
+        resource,
+        owner,
+        entry,
+        hook,
+        status: entry.dryRunValidation.status,
+        supportedHook: false,
+      }),
+    };
+  }
+
+  if (entry.dryRunValidation.status !== 'passed') {
+    return {
+      supported: false,
+      reason: 'Plugin-owned resource driver dry-run validation hook did not pass.',
+      evidence: pluginDriverDryRunValidationEvidence({
+        reasonCode: 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_FAILED',
+        resource,
+        owner,
+        entry,
+        hook,
+        status: entry.dryRunValidation.status,
+        supportedHook: true,
+      }),
+    };
+  }
+
+  return {
+    supported: true,
+    evidence: pluginDriverDryRunValidationEvidence({
+      reasonCode: 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_PASSED',
+      resource,
+      owner,
+      entry,
+      hook,
+      status: 'passed',
+      supportedHook: true,
+      operation: 'dry-run-validation',
+    }),
+  };
+}
+
+function pluginDriverDryRunValidationEvidence({
+  reasonCode,
+  resource,
+  owner,
+  entry,
+  hook,
+  status,
+  supportedHook,
+  operation = 'refuse-before-mutation',
+}) {
+  return {
+    reasonCode,
+    operation,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: entry.driver || null,
+    policySource: entry.source || null,
+    hook,
+    supportedHook,
+    status,
+  };
 }
 
 function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
@@ -2320,6 +2481,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.dryRunValidationEvidence ? { dryRunValidationEvidence: support.dryRunValidationEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
