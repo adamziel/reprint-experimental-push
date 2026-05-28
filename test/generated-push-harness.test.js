@@ -96,6 +96,12 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'wp-postmeta-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-conflict',
+  'wp-postmeta-create-update-delete',
+  'wp-postmeta-create',
+  'wp-postmeta-update',
+  'wp-postmeta-delete',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'wp-term-taxonomy-graph',
@@ -596,6 +602,70 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+
+test('RPP-0108 wp_postmeta create/update/delete target exposes ready, conflict, and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpPostmetaCreateUpdateDelete;
+
+  assert.ok(coverage, 'missing wp_postmeta create/update/delete target coverage');
+  assert.equal(coverage.family, 'wp-postmeta-create-update-delete-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-postmeta-create-update-delete']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_postmeta cases');
+  assert.ok(coverage.statuses.conflict > 0, 'target should include conflicting wp_postmeta cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-postmeta-create-update-delete-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'wp-postmeta-create-update-delete-conflict');
+
+  assert.ok(readyCase, 'missing ready wp_postmeta create/update/delete case');
+  assert.ok(conflictCase, 'missing conflicting wp_postmeta create/update/delete case');
+  assertWpPostmetaCreateUpdateDeleteShape(readyCase);
+  assertWpPostmetaCreateUpdateDeleteShape(conflictCase);
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready wp_postmeta case should create, update, and delete rows');
+  assert.equal(ready.applied, true, 'ready wp_postmeta case should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready wp_postmeta apply should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready wp_postmeta stale replay should be rejected');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'remote wp_postmeta drift should be a conflict');
+  assert.equal(conflict.applied, false, 'conflicting wp_postmeta case must not apply mutations');
+});
+
+function assertWpPostmetaCreateUpdateDeleteShape(testCase) {
+  const createRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_postmeta[id]
+      && row.meta_value.startsWith('generated wp_postmeta create '));
+  const updateRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([id, row]) => testCase.base.db.wp_postmeta[id]
+      && row.meta_value.startsWith('generated wp_postmeta update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_postmeta)
+    .filter(([id, row]) => row.meta_value.startsWith('base postmeta delete ')
+      && !testCase.local.db.wp_postmeta[id]
+      && testCase.remote.db.wp_postmeta[id]);
+
+  assert.equal(createRows.length, 1, `${testCase.id} should create one wp_postmeta row`);
+  assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_postmeta row`);
+  assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_postmeta row`);
 }
 
 test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {

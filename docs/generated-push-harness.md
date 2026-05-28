@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 410 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 41 scenario families, then add seeded variation so
+fixtures. The current default is 430 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 43 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 410 total cases;
-- 10 tiers, 41 cases per tier;
+- 430 total cases;
+- 10 tiers, 43 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -53,7 +53,9 @@ The default generated run covers:
   `wp_options` scalar and serialized option updates with ready and
   concurrent remote-drift outcomes, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
+  outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
+  counts, ready/conflict outcomes, and stale replay rejection before mutation,
+  `wp_term_taxonomy` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
@@ -77,6 +79,13 @@ only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
 
+The `wpPostmetaCreateUpdateDelete` target coverage records per-tier counts for
+the `wp_postmeta` create/update/delete surface. Its invariant is that ready
+cases apply only the planned postmeta create, update, and delete while
+preserving every unplanned remote resource; stale replays fail before mutation,
+and concurrent remote edits to the updated postmeta row remain `conflict` and
+refuse apply.
+
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
 create the term and taxonomy row in one plan and reject a stale replay before
@@ -94,11 +103,11 @@ At the time this note was added, the summary command reported:
 
 ```json
 {
-  "totalCases": 410,
+  "totalCases": 430,
   "statuses": {
-    "blocked": 29,
-    "conflict": 162,
-    "ready": 219
+    "blocked": 34,
+    "conflict": 164,
+    "ready": 232
   },
   "targetCoverage": {
     "commentUserGraph": {
@@ -118,7 +127,8 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 10,
-        "ready": 10
+        "conflict": 1,
+        "ready": 9
       }
     },
     "directoryDescendantConflict": {
@@ -138,6 +148,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "wpPostmetaCreateUpdateDelete": {
+      "family": "wp-postmeta-create-update-delete-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -176,8 +206,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 7,
+        "blocked": 2,
+        "conflict": 8,
         "ready": 10
       }
     }
@@ -208,6 +238,12 @@ At the time this note was added, the summary command reported:
     "wp-options-serialized": 20,
     "wp-options-serialized-ready": 10,
     "wp-options-serialized-conflict": 10,
+    "wp-postmeta-create": 20,
+    "wp-postmeta-create-update-delete": 20,
+    "wp-postmeta-create-update-delete-ready": 10,
+    "wp-postmeta-create-update-delete-conflict": 10,
+    "wp-postmeta-delete": 20,
+    "wp-postmeta-update": 20,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
@@ -221,9 +257,9 @@ At the time this note was added, the summary command reported:
     "wp-users-remote-drift": 10
   },
   "maxResourceCount": 77,
-  "maxMutationCount": 42,
-  "maxReadyResourceCount": 67,
-  "maxReadyMutationCount": 42
+  "maxMutationCount": 52,
+  "maxReadyResourceCount": 77,
+  "maxReadyMutationCount": 52
 }
 ```
 
