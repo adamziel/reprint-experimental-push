@@ -78,6 +78,12 @@ const requiredFamilies = [
   'row-create',
   'row-update',
   'row-delete',
+  'wp-options-scalar-ready',
+  'wp-options-scalar-conflict',
+  'wp-options-scalar',
+  'scalar-option-update',
+  'scalar-option-string',
+  'scalar-option-number',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
   'wp-posts-create-update-delete',
@@ -417,6 +423,60 @@ function assertRowMixShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
+
+test('RPP-0105 generated harness emits wp_options scalar option ready and conflict cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-options-scalar-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'wp-options-scalar-conflict');
+
+  assert.ok(readyCase, 'missing ready wp_options scalar option case');
+  assert.ok(conflictCase, 'missing conflicting wp_options scalar option case');
+  assert.ok(readyCase.tags.has('wp-options-scalar'));
+  assert.ok(conflictCase.tags.has('wp-options-scalar'));
+  assert.ok(readyCase.tags.has('scalar-option-update'));
+  assert.ok(conflictCase.tags.has('scalar-option-update'));
+  assertWpOptionsScalarShape(readyCase, { conflict: false });
+  assertWpOptionsScalarShape(conflictCase, { conflict: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready scalar option should plan an option mutation');
+  assert.equal(ready.applied, true, 'ready scalar option should apply through the harness');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'remote scalar option drift should be a conflict');
+  assert.equal(conflict.applied, false, 'conflicting scalar option must not apply mutations');
+});
+
+function assertWpOptionsScalarShape(testCase, { conflict }) {
+  const scalarRows = Object.entries(testCase.base.db.wp_options)
+    .filter(([id, row]) => id.startsWith('option_name:scalar_generated_')
+      && isScalar(row.option_value));
+
+  assert.equal(scalarRows.length, 1, `${testCase.id} should seed one scalar option row`);
+  const [rowId, baseRow] = scalarRows[0];
+  const localRow = testCase.local.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(localRow, `${testCase.id} missing local scalar option row`);
+  assert.ok(remoteRow, `${testCase.id} missing remote scalar option row`);
+  assert.equal(localRow.__pluginOwner, undefined, `${testCase.id} scalar option should not be plugin-owned`);
+  assert.equal(remoteRow.__pluginOwner, undefined, `${testCase.id} scalar option should not be plugin-owned`);
+  assert.equal(typeof localRow.option_value, typeof baseRow.option_value);
+  assert.ok(isScalar(localRow.option_value), `${testCase.id} local option_value must stay scalar`);
+  assert.notEqual(localRow.option_value, baseRow.option_value);
+  if (conflict) {
+    assert.notEqual(remoteRow.option_value, baseRow.option_value);
+    assert.notEqual(remoteRow.option_value, localRow.option_value);
+  } else {
+    assert.equal(remoteRow.option_value, baseRow.option_value);
+  }
+}
+
+function isScalar(value) {
+  return value === null || ['boolean', 'number', 'string'].includes(typeof value);
 }
 
 test('RPP-0107 wp_posts create/update/delete target exposes per-tier ready and conflict coverage', () => {
