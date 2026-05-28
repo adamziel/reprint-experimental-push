@@ -2292,56 +2292,105 @@ function reprint_push_production_owned_release_state_driver(): array
 
 function reprint_push_registered_plugin_owned_row_drivers(): array
 {
-    $drivers = [
-        'reprint-push-release-state' => reprint_push_production_owned_release_state_driver(),
-    ];
+    $drivers = reprint_push_builtin_plugin_owned_row_drivers();
+    foreach (reprint_push_plugin_owned_row_driver_registry() as $driver_name => $driver) {
+        $drivers[$driver_name] = $driver;
+    }
     $drivers = apply_filters('reprint_push_plugin_owned_row_drivers', $drivers);
     if (!is_array($drivers)) {
         return [];
     }
 
+    return reprint_push_normalize_plugin_owned_row_drivers($drivers);
+}
+
+function reprint_push_register_plugin_owned_row_driver(array $driver): array
+{
+    $registered = reprint_push_normalize_plugin_owned_row_driver($driver, null);
+    $registered_driver_name = (string) $registered['driver'];
+    $registered_table = (string) $registered['table'];
+
+    $existing_drivers = reprint_push_normalize_plugin_owned_row_drivers(
+        reprint_push_builtin_plugin_owned_row_drivers() + reprint_push_plugin_owned_row_driver_registry()
+    );
+    if (array_key_exists($registered_driver_name, $existing_drivers)) {
+        throw new RuntimeException('duplicate driver name: ' . $registered_driver_name);
+    }
+    foreach ($existing_drivers as $existing_driver) {
+        if ((string) ($existing_driver['table'] ?? '') === $registered_table) {
+            throw new RuntimeException('duplicate table mapping for table: ' . $registered_table);
+        }
+    }
+
+    $GLOBALS['reprint_push_plugin_owned_row_driver_registry'][$registered_driver_name] = $registered;
+    return $registered;
+}
+
+function reprint_push_plugin_owned_row_driver_registry(): array
+{
+    $registry = $GLOBALS['reprint_push_plugin_owned_row_driver_registry'] ?? [];
+    return is_array($registry) ? $registry : [];
+}
+
+function reprint_push_builtin_plugin_owned_row_drivers(): array
+{
+    return [
+        'reprint-push-release-state' => reprint_push_production_owned_release_state_driver(),
+    ];
+}
+
+function reprint_push_normalize_plugin_owned_row_drivers(array $drivers): array
+{
     $normalized = [];
     $table_map = [];
     foreach ($drivers as $key => $driver) {
         if (!is_array($driver)) {
             continue;
         }
-        $driver_name = (string) ($driver['driver'] ?? (is_string($key) ? $key : ''));
-        $table = (string) ($driver['table'] ?? '');
-        $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
-        if ($driver_name === '' || $table === '' || $plugin_owner === '') {
-            if ($driver_name === '') {
-                throw new RuntimeException('missing driver name for table: ' . $table);
-            }
-            if ($table === '') {
-                throw new RuntimeException('missing table for driver: ' . $driver_name);
-            }
-            throw new RuntimeException('missing pluginOwner for driver: ' . $driver_name);
-        }
-        if (!isset($driver['exportRowsCallback']) || !is_callable($driver['exportRowsCallback'])) {
-            throw new RuntimeException('missing exportRowsCallback for driver: ' . $driver_name);
-        }
-        if (!isset($driver['applyRowCallback']) || !is_callable($driver['applyRowCallback'])) {
-            throw new RuntimeException('missing applyRowCallback for driver: ' . $driver_name);
-        }
-        if (!isset($driver['validateMutationCallback']) || !is_callable($driver['validateMutationCallback'])) {
-            throw new RuntimeException('missing validateMutationCallback for driver: ' . $driver_name);
-        }
+        $driver = reprint_push_normalize_plugin_owned_row_driver($driver, is_string($key) ? $key : null);
+        $driver_name = (string) $driver['driver'];
+        $table = (string) $driver['table'];
         if (array_key_exists($driver_name, $normalized)) {
             throw new RuntimeException('duplicate driver name: ' . $driver_name);
         }
         if (array_key_exists($table, $table_map)) {
             throw new RuntimeException('duplicate table mapping for table: ' . $table);
         }
-        $normalized[$driver_name] = $driver + [
-            'driver' => $driver_name,
-            'table' => $table,
-            'pluginOwner' => $plugin_owner,
-        ];
+        $normalized[$driver_name] = $driver;
         $table_map[$table] = $driver_name;
     }
 
     return $normalized;
+}
+
+function reprint_push_normalize_plugin_owned_row_driver(array $driver, ?string $fallback_name): array
+{
+    $driver_name = (string) ($driver['driver'] ?? ($fallback_name ?? ''));
+    $table = (string) ($driver['table'] ?? '');
+    $plugin_owner = (string) ($driver['pluginOwner'] ?? '');
+    if ($driver_name === '' || $table === '' || $plugin_owner === '') {
+        if ($driver_name === '') {
+            throw new RuntimeException('missing driver name for table: ' . $table);
+        }
+        if ($table === '') {
+            throw new RuntimeException('missing table for driver: ' . $driver_name);
+        }
+        throw new RuntimeException('missing pluginOwner for driver: ' . $driver_name);
+    }
+    if (!isset($driver['exportRowsCallback']) || !is_callable($driver['exportRowsCallback'])) {
+        throw new RuntimeException('missing exportRowsCallback for driver: ' . $driver_name);
+    }
+    if (!isset($driver['applyRowCallback']) || !is_callable($driver['applyRowCallback'])) {
+        throw new RuntimeException('missing applyRowCallback for driver: ' . $driver_name);
+    }
+    if (!isset($driver['validateMutationCallback']) || !is_callable($driver['validateMutationCallback'])) {
+        throw new RuntimeException('missing validateMutationCallback for driver: ' . $driver_name);
+    }
+    return $driver + [
+        'driver' => $driver_name,
+        'table' => $table,
+        'pluginOwner' => $plugin_owner,
+    ];
 }
 
 function reprint_push_plugin_owned_row_driver_for_table(string $table): ?array
