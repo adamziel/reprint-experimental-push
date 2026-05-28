@@ -1369,6 +1369,83 @@ test('fixture forms lab table journal redacts raw payload values', () => {
   assert.equal(result.journal.entries[0].afterHash.length, 64);
 });
 
+test('RPP-0219 redacts raw plan refusal and journal evidence while preserving hashes', () => {
+  const base = baseSite();
+  const conflictLocal = cloneJson(base);
+  const conflictRemote = cloneJson(base);
+  const privateValues = [
+    'local-private-rpp0219-plan-title',
+    'remote-private-rpp0219-plan-title',
+    '<?php echo "local-private-rpp0219-journal-file";',
+    'Local private RPP-0219 journal title',
+  ];
+  const rawValues = [
+    ...privateValues,
+    base.files['index.php'],
+    base.db.wp_posts['ID:1'].post_title,
+  ];
+  conflictLocal.db.wp_posts['ID:1'].post_title = privateValues[0];
+  conflictRemote.db.wp_posts['ID:1'].post_title = privateValues[1];
+
+  const conflictPlan = planFor(base, conflictLocal, conflictRemote);
+  const conflictEvidence = {
+    summary: conflictPlan.summary,
+    conflicts: conflictPlan.conflicts,
+    decisions: conflictPlan.decisions,
+    blockers: conflictPlan.blockers,
+    envelope: plannerSummaryEvidenceEnvelope(conflictPlan),
+  };
+
+  assert.equal(conflictPlan.status, 'conflict');
+  assert.equal(conflictPlan.conflicts[0].class, 'row-conflict');
+  assert.equal(conflictPlan.conflicts[0].reason, 'Local and remote both changed this resource after the pull base.');
+  assert.match(conflictPlan.conflicts[0].localHash, /^[a-f0-9]{64}$/);
+  assert.match(conflictPlan.conflicts[0].remoteHash, /^[a-f0-9]{64}$/);
+
+  const refusalError = captureError(() => applyPlan(conflictRemote, conflictPlan));
+  assert.ok(refusalError instanceof PushPlanError);
+  assert.equal(refusalError.code, 'PLAN_NOT_READY');
+  assert.deepEqual(refusalError.details, { status: 'conflict' });
+
+  const readyLocal = cloneJson(base);
+  const readyRemote = cloneJson(base);
+  readyLocal.files['index.php'] = privateValues[2];
+  readyLocal.db.wp_posts['ID:1'].post_title = privateValues[3];
+  const readyPlan = planFor(base, readyLocal, readyRemote);
+  const beforeReadyRemote = JSON.stringify(readyRemote);
+  const journalError = captureError(() => applyPlan(readyRemote, readyPlan, { failAfterStaging: true }));
+  const journal = journalError.details.recovery.artifacts.journal;
+
+  assert.ok(journalError instanceof PushPlanError);
+  assert.equal(journalError.code, 'INJECTED_FAILURE_AFTER_STAGING');
+  assert.equal(JSON.stringify(readyRemote), beforeReadyRemote);
+  assert.equal(journal.status, 'staged');
+  assert.equal(journal.entries.length, 2);
+  for (const entry of journal.entries) {
+    assert.match(entry.beforeHash, /^[a-f0-9]{64}$/);
+    assert.match(entry.afterHash, /^[a-f0-9]{64}$/);
+    assert.equal(entry.beforeValue.redacted, true);
+    assert.equal(entry.beforeValue.reason, 'raw-site-value-field');
+    assert.match(entry.beforeValue.sha256, /^[a-f0-9]{64}$/);
+    assert.equal(entry.afterValue.redacted, true);
+    assert.equal(entry.afterValue.reason, 'raw-site-value-field');
+    assert.match(entry.afterValue.sha256, /^[a-f0-9]{64}$/);
+  }
+
+  const serializedEvidence = JSON.stringify({
+    conflictEvidence,
+    refusal: {
+      code: refusalError.code,
+      message: refusalError.message,
+      details: refusalError.details,
+    },
+    journal,
+  });
+  for (const rawValue of rawValues) {
+    assert.equal(serializedEvidence.includes(rawValue), false, `evidence leaked ${rawValue}`);
+  }
+});
+
 test('fixture forms lab table blocked recovery redacts raw remote payload values', () => {
   const resourceKey = 'row:["wp_reprint_push_forms_lab","id:1"]';
   const base = baseSite();

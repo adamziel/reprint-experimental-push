@@ -1,4 +1,5 @@
 import { ABSENT, deepClone, digest } from './stable-json.js';
+import { redactEvidence } from './evidence-redaction.js';
 import {
   deserializeResourceValue,
   getResource,
@@ -400,9 +401,9 @@ function prepareJournal(remote, plan, previousJournal) {
         action: mutation.action,
         status: 'pending',
         beforeHash: resourceHash(remote, mutation.resource),
-        beforeValue: journalValueEvidence(mutation, serializeResourceValue(beforeValue)),
+        beforeValue: journalValueEvidence(serializeResourceValue(beforeValue), 'beforeValue'),
         afterHash: digest(afterValue),
-        afterValue: journalValueEvidence(mutation, deepClone(mutation.value)),
+        afterValue: journalValueEvidence(deepClone(mutation.value), 'afterValue'),
       };
     }),
   };
@@ -504,15 +505,8 @@ function validateJournalMatchesPlan(journal, plan) {
   }
 }
 
-function journalValueEvidence(mutation, value) {
-  if (mutation.pluginOwnedResource?.driver === 'fixture-forms-lab-table') {
-    return {
-      redacted: true,
-      reason: 'fixture-plugin-owned-resource',
-      resourceKey: mutation.resourceKey,
-    };
-  }
-  return value;
+function journalValueEvidence(value, key) {
+  return redactEvidence(value, { key });
 }
 
 function replayCompletedPlan(remote, plan, journal) {
