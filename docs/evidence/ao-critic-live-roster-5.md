@@ -2,11 +2,11 @@
 
 Date: 2026-05-28
 Lane: critic-live-roster-5
-Latest inspected lane head: `c3cdc079d` on `origin/lane/evidence-integration-20260527`
+Latest inspected lane head: `15290691e` on `origin/lane/evidence-integration-20260527`
 
 ## Release status
 
-**NO-GO.** The latest lane includes RPP-0103 generated coverage, Docker artifact support, and lifecycle watchdog docs, but release movement is still blocked.
+**NO-GO.** The latest lane has 91 checked / 909 open checklist state and no risky checklist claims, but release movement is still blocked.
 
 Observed lightweight command results:
 
@@ -19,26 +19,20 @@ Observed lightweight command results:
     "primaryFailureBucket": "topology",
     "totals": { "gates": 20, "passed": 3, "candidate": 0, "missing": 17, "failed": 0, "blocking": 17 }
   },
-  "requiredReleaseChecksReport": {
-    "exit": 1,
-    "requiredCount": 10,
-    "passedCount": 0,
-    "missingChecks": 10
-  },
   "checklistCompletionLint": {
     "exit": 0,
     "riskyClaims": 0,
-    "checkedIds": 89,
-    "uncheckedIds": 911
+    "checkedIds": 91,
+    "uncheckedIds": 909
   },
   "artifactRedactionScan": {
     "exit": 0,
-    "scannedFiles": 37,
+    "scannedFiles": 38,
     "rejectedFiles": 0
   },
   "generatedHarnessFocusedTest": {
     "exit": 0,
-    "tests": 4
+    "tests": 5
   }
 }
 ```
@@ -47,19 +41,15 @@ Observed lightweight command results:
 
 | Candidate | Status from critic refresh |
 | --- | --- |
-| RPP-0028 / `75b9b21a2` | Clean merge-tree, narrow release-gate proof scope. Recommended next. |
-| RPP-0401 / `519b41c6e` | Clean merge-tree plugin-driver API candidate; replay from latest lane before integration. |
-| RPP-0204 / `2ed048ffd` | Now stale after RPP-0103; merge-tree reports generated-harness test conflict. |
-| RPP-0306 / `decb779f6` | Now stale after RPP-0103; merge-tree reports generated-harness doc/code/test conflicts. |
-| RPP-0203 / `bd502f747` | Stale; merge-tree reports `changed in both` for `test/generated-push-harness.test.js`. |
-| RPP-0303 / `db614dbda` | Stale; merge-tree reports generated-harness doc/code/test conflicts. |
-| RPP-32 artifact / `dcfc23022` | Patch-equivalent content is integrated as `912bdfbd4`; do not merge the stale branch ref. |
-| RPP-0103 / `866767ef3` | Integrated as `e345e724f` / `c3cdc079d`; do not merge the stale branch ref. |
+| RPP-0029 / `38f15c091` | Stale against RPP-0028; release-gate doc/test conflicts. |
+| RPP-0205 / `e0d49cf08` | Clean merge-tree; recommended next. Cautious branch-scoped progress wording and focused planner evidence. |
+| RPP-0307 / `980434304` | Now conflicts after RPP-0104 in generated-harness docs/code/tests. |
+| RPP-0405 / `7da9af46e` | Clean merge-tree plugin-driver/planner candidate; broader implementation surface than RPP-0205. |
 
 ## Recommendation
 
-Next integrate **RPP-0028** from latest lane. After that, consider **RPP-0401**. Hold generated-harness-overlapping candidates until they are manually reconciled with RPP-0101/RPP-0102/RPP-0103.
+Integrate **RPP-0205** next, then consider **RPP-0405** after focused review. Hold **RPP-0029** for manual release-gate merge and **RPP-0307** for generated-harness conflict resolution.
 
 ## Evidence boundaries
 
-This critic refresh did not run the full suite and did not claim production-backed release evidence. It records release NO-GO state, current guardrail/linter status, merge-tree risk, and live-roster observations only.
+This critic refresh did not run the full suite and did not claim production-backed release evidence. It records release NO-GO state, current guardrail/linter/redaction status, merge-tree risk, and live-roster observations only.
