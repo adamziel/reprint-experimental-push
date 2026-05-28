@@ -9,6 +9,7 @@ import {
   setResource,
 } from './resources.js';
 import { readRecoveryJournal } from './recovery-journal.js';
+import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
 
 const JOURNAL_SCHEMA_VERSION = 1;
 const SHA256_HEX_PATTERN = /^[a-f0-9]{64}$/;
@@ -300,7 +301,15 @@ function pluginOwnedOwner(value) {
 
 function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
   if (driver === 'wp-option') {
-    return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options';
+    if (!(mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options')) {
+      return false;
+    }
+    const serializedOptionValidationEvidence = serializedOptionValidationEvidenceForRows({
+      resourceKey: mutation.resourceKey,
+      table: mutation.resource.table,
+      rows: [{ snapshot: 'planned', row: plannedValue }],
+    });
+    return serializedOptionValidationEvidence.valid;
   }
   if (driver === 'wp-postmeta' || driver === 'wp-post-meta') {
     return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_postmeta';
@@ -404,6 +413,18 @@ function pluginOwnedApplyValidationEvidence({
   remoteValue,
   outcome,
 }) {
+  const serializedOptionValidationEvidence = mutation.resource?.type === 'row'
+    && mutation.resource.table === 'wp_options'
+    ? serializedOptionValidationEvidenceForRows({
+      resourceKey: mutation.resourceKey,
+      table: mutation.resource.table,
+      rows: [
+        { snapshot: 'planned', row: plannedValue },
+        { snapshot: 'remote', row: remoteValue },
+      ],
+    })
+    : null;
+
   return {
     reasonCode: outcome === 'accepted'
       ? 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED'
@@ -425,6 +446,7 @@ function pluginOwnedApplyValidationEvidence({
       hash: resourceHash(remote, mutation.resource),
     },
     driverEvidence: pluginOwnedDriverEvidenceSummary(mutation.pluginOwnedResource?.driverEvidence),
+    ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
   };
 }
 

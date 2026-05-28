@@ -8,6 +8,7 @@ import {
   resourceHash,
   serializeResourceValue,
 } from './resources.js';
+import { serializedOptionValidationEvidenceForRows } from './serialized-option-validator.js';
 
 const SUPPORTED_PLUGIN_DATA_DRIVERS = new Set([
   'wp-option',
@@ -452,6 +453,28 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      const serializedOptionValidationEvidence = supported.driver === 'wp-option'
+        ? serializedOptionValidationEvidenceForRows({
+          resourceKey: resource.key,
+          table: resource.table,
+          rows: [
+            { snapshot: 'base', row: getResource(base, resource) },
+            { snapshot: 'local', row: getResource(local, resource) },
+            { snapshot: 'remote', row: getResource(remote, resource) },
+          ],
+        })
+        : null;
+      if (serializedOptionValidationEvidence && !serializedOptionValidationEvidence.valid) {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          driver: supported.driver,
+          policySource: supported.source,
+          reason: `Serialized option validator refused ${resource.key}: ${serializedOptionValidationEvidence.reasonCode}.`,
+          serializedOptionValidationEvidence,
+        };
+      }
+
       if (supported.driver === 'fixture-forms-lab-table') {
         const driverEvidence = fixtureFormsLabTableDriverEvidence({
           resource,
@@ -483,6 +506,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         driver: supported.driver,
         policySource: supported.source,
         supportsDelete: supported.supportsDelete === true,
+        ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
       };
     },
   };
@@ -632,6 +656,9 @@ function pluginOwnedDriverAuditEvidence({
     remoteHash,
     ownerContextHash: digest(ownerContext || []),
     ...(support.driverEvidence ? { driverEvidenceHash: digest(support.driverEvidence) } : {}),
+    ...(support.serializedOptionValidationEvidence
+      ? { serializedOptionValidationHash: digest(support.serializedOptionValidationEvidence) }
+      : {}),
   };
 }
 
@@ -2430,6 +2457,9 @@ function addPluginOwnedResourceBlocker(plan, {
     policySource: support.policySource || null,
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
+    ...(support.serializedOptionValidationEvidence
+      ? { serializedOptionValidationEvidence: support.serializedOptionValidationEvidence }
+      : {}),
     reason,
     baseHash,
     localHash,

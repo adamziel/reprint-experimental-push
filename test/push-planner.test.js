@@ -1893,6 +1893,222 @@ test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plug
   }
 });
 
+
+test('RPP-0468 serialized option validator accepts valid payloads and refuses invalid payloads before mutation', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_serialized_settings"]';
+  const resource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:forms_serialized_settings',
+    key: resourceKey,
+  };
+  const validBaseSerialized = 'a:1:{s:4:"mode";s:4:"base";}';
+  const validLocalSerialized = 'a:1:{s:4:"mode";s:5:"local";}';
+  const invalidLocalSerialized = 'a:1:{s:4:"mode";s:20:"oops";}';
+  const invalidForgedSerialized = 'a:1:{s:4:"mode";s:21:"forged";}';
+  const privateValues = [
+    validBaseSerialized,
+    validLocalSerialized,
+    invalidLocalSerialized,
+    invalidForgedSerialized,
+  ];
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_serialized_settings'] = {
+    option_name: 'forms_serialized_settings',
+    option_value: validBaseSerialized,
+    serialization: 'php-serialize',
+    __pluginOwner: 'forms',
+  };
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_serialized_settings'].option_value = validLocalSerialized;
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
+  const appliedRemote = cloneJson(remote);
+  const applied = applyPlan(appliedRemote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(auditEvidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(auditEvidence.format, 'hash-only');
+  assert.equal(auditEvidence.rawValuesIncluded, false);
+  assert.match(auditEvidence.serializedOptionValidationHash, /^[a-f0-9]{64}$/);
+  assert.equal(applied.appliedMutations, 1);
+  assert.equal(
+    applied.site.db.wp_options['option_name:forms_serialized_settings'].option_value,
+    validLocalSerialized,
+  );
+
+  const invalidLocal = cloneJson(base);
+  invalidLocal.db.wp_options['option_name:forms_serialized_settings'].option_value = invalidLocalSerialized;
+  invalidLocal.meta = cloneJson(local.meta);
+  const invalidRemote = cloneJson(base);
+  const invalidRemoteBeforeHash = sha256Evidence(invalidRemote);
+  const invalidRowBeforeHash = `sha256:${resourceHash(invalidRemote, resource)}`;
+  const invalidPlan = planFor(base, invalidLocal, invalidRemote);
+  const invalidBlocker = invalidPlan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const invalidApplyError = captureError(() => applyPlan(invalidRemote, invalidPlan));
+
+  assert.equal(invalidPlan.status, 'blocked');
+  assert.equal(invalidPlan.summary.mutations, 0);
+  assert.equal(mutationFor(invalidPlan, resourceKey), undefined);
+  assert.equal(invalidBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(invalidBlocker.pluginOwner, 'forms');
+  assert.equal(invalidBlocker.driver, 'wp-option');
+  assert.equal(invalidBlocker.serializedOptionValidationEvidence.valid, false);
+  assert.equal(invalidBlocker.serializedOptionValidationEvidence.rawValuesIncluded, false);
+  assert.equal(
+    invalidBlocker.serializedOptionValidationEvidence.reasonCode,
+    'SERIALIZED_OPTION_STRING_LENGTH_MISMATCH',
+  );
+  assert.match(invalidBlocker.reason, /Serialized option validator refused/);
+  assert.ok(invalidApplyError instanceof PushPlanError);
+  assert.equal(invalidApplyError.code, 'PLAN_NOT_READY');
+  assert.equal(invalidApplyError.details.status, 'blocked');
+  assert.equal(sha256Evidence(invalidRemote), invalidRemoteBeforeHash);
+  assert.equal(`sha256:${resourceHash(invalidRemote, resource)}`, invalidRowBeforeHash);
+
+  const forgedInvalidPlan = tamperReadyPlan(plan, (readyPlan) => {
+    const forgedMutation = mutationFor(readyPlan, resourceKey);
+    const forgedValue = deserializeMutationValue(forgedMutation);
+    forgedValue.option_value = invalidForgedSerialized;
+    forgedMutation.value = serializeResourceValue(forgedValue);
+    forgedMutation.localHash = digest(forgedValue);
+  });
+  const forgedRemote = cloneJson(remote);
+  const forgedRemoteBeforeHash = sha256Evidence(forgedRemote);
+  const forgedRowBeforeHash = `sha256:${resourceHash(forgedRemote, resource)}`;
+  let hookCalls = 0;
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedInvalidPlan, {
+    beforeMutation() {
+      hookCalls += 1;
+    },
+  }));
+  const applyValidationEvidence = forgedError.details.applyValidationEvidence;
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(hookCalls, 0);
+  assert.equal(forgedError.details.resourceKey, resourceKey);
+  assert.equal(forgedError.details.pluginOwner, 'forms');
+  assert.equal(forgedError.details.driver, 'wp-option');
+  assert.equal(applyValidationEvidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED');
+  assert.equal(applyValidationEvidence.operation, 'driver-apply-validation');
+  assert.equal(applyValidationEvidence.outcome, 'refused-before-mutation');
+  assert.equal(applyValidationEvidence.serializedOptionValidationEvidence.valid, false);
+  assert.equal(
+    applyValidationEvidence.serializedOptionValidationEvidence.reasonCode,
+    'SERIALIZED_OPTION_STRING_LENGTH_MISMATCH',
+  );
+  assert.equal(applyValidationEvidence.serializedOptionValidationEvidence.rawValuesIncluded, false);
+  assert.equal(sha256Evidence(forgedRemote), forgedRemoteBeforeHash);
+  assert.equal(`sha256:${resourceHash(forgedRemote, resource)}`, forgedRowBeforeHash);
+  assert.equal(
+    forgedRemote.db.wp_options['option_name:forms_serialized_settings'].option_value,
+    validBaseSerialized,
+  );
+
+  const evidence = {
+    rpp: 'RPP-0468',
+    evidenceSource: 'local-focused-plugin-driver-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    acceptedSerializedOption: {
+      planHash: sha256Evidence({ status: plan.status, summary: plan.summary }),
+      mutationHash: sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        pluginOwner: mutation.pluginOwnedResource.pluginOwner,
+        driver: mutation.pluginOwnedResource.driver,
+        auditEvidence: auditEvidence,
+      }),
+      auditEvidenceHash: sha256Evidence(auditEvidence),
+      journalHash: sha256Evidence(applied.journal),
+    },
+    invalidPlannerRefusal: {
+      code: invalidApplyError.code,
+      blockerHash: sha256Evidence(invalidBlocker),
+      validatorEvidenceHash: sha256Evidence(invalidBlocker.serializedOptionValidationEvidence),
+      detailsHash: sha256Evidence(invalidApplyError.details),
+      rowHashBefore: invalidRowBeforeHash,
+      rowHashAfter: `sha256:${resourceHash(invalidRemote, resource)}`,
+      remoteHashBefore: invalidRemoteBeforeHash,
+      remoteHashAfter: sha256Evidence(invalidRemote),
+    },
+    invalidApplyRefusal: {
+      code: forgedError.code,
+      detailsHash: sha256Evidence(forgedError.details),
+      applyValidationEvidenceHash: sha256Evidence(applyValidationEvidence),
+      serializedOptionValidationHash: sha256Evidence(applyValidationEvidence.serializedOptionValidationEvidence),
+      rowHashBefore: forgedRowBeforeHash,
+      rowHashAfter: `sha256:${resourceHash(forgedRemote, resource)}`,
+      remoteHashBefore: forgedRemoteBeforeHash,
+      remoteHashAfter: sha256Evidence(forgedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    acceptedSerializedOption: evidence.acceptedSerializedOption,
+    invalidPlannerRefusal: evidence.invalidPlannerRefusal,
+    invalidApplyRefusal: evidence.invalidApplyRefusal,
+  });
+
+  for (const value of [
+    evidence.acceptedSerializedOption.planHash,
+    evidence.acceptedSerializedOption.mutationHash,
+    evidence.acceptedSerializedOption.auditEvidenceHash,
+    evidence.acceptedSerializedOption.journalHash,
+    evidence.invalidPlannerRefusal.blockerHash,
+    evidence.invalidPlannerRefusal.validatorEvidenceHash,
+    evidence.invalidPlannerRefusal.detailsHash,
+    evidence.invalidPlannerRefusal.rowHashBefore,
+    evidence.invalidPlannerRefusal.rowHashAfter,
+    evidence.invalidPlannerRefusal.remoteHashBefore,
+    evidence.invalidPlannerRefusal.remoteHashAfter,
+    evidence.invalidApplyRefusal.detailsHash,
+    evidence.invalidApplyRefusal.applyValidationEvidenceHash,
+    evidence.invalidApplyRefusal.serializedOptionValidationHash,
+    evidence.invalidApplyRefusal.rowHashBefore,
+    evidence.invalidApplyRefusal.rowHashAfter,
+    evidence.invalidApplyRefusal.remoteHashBefore,
+    evidence.invalidApplyRefusal.remoteHashAfter,
+    evidence.proofHash,
+  ]) {
+    assert.match(value, /^sha256:[a-f0-9]{64}$/);
+  }
+  assert.equal(evidence.invalidPlannerRefusal.remoteHashAfter, evidence.invalidPlannerRefusal.remoteHashBefore);
+  assert.equal(evidence.invalidApplyRefusal.remoteHashAfter, evidence.invalidApplyRefusal.remoteHashBefore);
+
+  const serializedEvidence = JSON.stringify(evidence);
+  const serializedAudit = JSON.stringify(auditEvidence);
+  const serializedJournal = JSON.stringify(applied.journal);
+  const serializedRefusals = JSON.stringify({
+    invalidBlocker,
+    forgedErrorDetails: forgedError.details,
+  });
+  for (const rawValue of privateValues) {
+    assert.equal(serializedEvidence.includes(rawValue), false, `RPP-0468 evidence leaked ${rawValue}`);
+    assert.equal(serializedAudit.includes(rawValue), false, `RPP-0468 audit leaked ${rawValue}`);
+    assert.equal(serializedJournal.includes(rawValue), false, `RPP-0468 journal leaked ${rawValue}`);
+    assert.equal(serializedRefusals.includes(rawValue), false, `RPP-0468 refusal leaked ${rawValue}`);
+  }
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();

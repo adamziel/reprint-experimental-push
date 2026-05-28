@@ -101,6 +101,33 @@ table names are asserted absent from the focused evidence. This is local focused
 plugin-driver evidence only, not production-backed evidence, and the release gate
 remains NO-GO.
 
+## RPP-0468 serialized option validator focused regression
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0468|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0468 focused proof adds a hash-only serialized option validator for
+plugin-owned `wp_options` rows declared as `serialization: php-serialize` or
+whose option value is PHP-serialized. The accepted path applies one valid
+serialized option update through the `wp-option` driver and records only
+hash/redacted plan, mutation, audit, validator, and journal evidence.
+
+Fail-closed coverage proves two invalid variants. A malformed serialized option
+payload in the local dry-run snapshot emits an `unsupported-plugin-owned-resource`
+blocker with validator evidence and no mutation. A forged ready plan whose
+mutation value is changed to a malformed serialized payload fails apply before
+mutation with `UNSUPPORTED_PLUGIN_OWNED_RESOURCE` and
+`PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED`. In both refusals the remote row and
+full remote hashes are unchanged.
+
+This is local focused plugin-driver evidence, not production-backed evidence.
+It preserves the release NO-GO caveat and does not widen accepted production
+plugin-driver resources. The proof asserts raw serialized option payloads are
+absent from audit, journal, blocker/refusal, and combined proof evidence.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -116,3 +143,6 @@ remains NO-GO.
   plugin-owned data before mutation.
 - RPP-0461 — driver registration API focused regression: accepted registration
   and invalid/ambiguous refusal evidence is hash-only, redacted, and local-only.
+- RPP-0468 — serialized option validator: valid serialized `wp-option` rows
+  apply with hash-only validator evidence; malformed serialized option payloads
+  fail closed in planning or apply before mutation while preserving remote data.
