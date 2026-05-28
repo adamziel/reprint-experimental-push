@@ -682,6 +682,76 @@ test('refuses direct conflicts and preserves the remote snapshot', () => {
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote title');
 });
 
+test('RPP-0209 serializes conflict evidence as hash-only redacted metadata', () => {
+  const base = baseSite();
+  base.files['wp-content/uploads/conflict.txt'] = 'base-private-file-content';
+  base.db.wp_postmeta = {
+    'meta_id:7': {
+      meta_id: 7,
+      post_id: 1,
+      meta_key: '_forms_payload',
+      meta_value: 'base-private-meta',
+      __pluginOwner: 'forms',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+  local.files['wp-content/uploads/conflict.txt'] = 'local-private-file-content';
+  remote.files['wp-content/uploads/conflict.txt'] = 'remote-private-file-content';
+  local.db.wp_posts['ID:1'].post_title = 'Local private editorial title';
+  remote.db.wp_posts['ID:1'].post_title = 'Remote private editorial title';
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-private-option-mode';
+  remote.db.wp_options['option_name:forms_settings'].option_value.mode = 'remote-private-option-mode';
+  local.db.wp_postmeta['meta_id:7'].meta_value = 'local-private-meta';
+  remote.db.wp_postmeta['meta_id:7'].meta_value = 'remote-private-meta';
+
+  const plan = planFor(base, local, remote);
+  const conflictsJson = JSON.stringify(plan.conflicts);
+
+  assert.equal(plan.status, 'conflict');
+  assert.deepEqual(
+    plan.conflicts.map((conflict) => [conflict.resourceKey, conflict.class]),
+    [
+      ['file:wp-content/uploads/conflict.txt', 'file-conflict'],
+      ['row:["wp_options","option_name:forms_settings"]', 'plugin-data-conflict'],
+      ['row:["wp_postmeta","meta_id:7"]', 'plugin-data-conflict'],
+      ['row:["wp_posts","ID:1"]', 'row-conflict'],
+    ],
+  );
+
+  for (const conflict of plan.conflicts) {
+    assertHashOnlyValueEvidence(conflict.change.base, `${conflict.resourceKey} base`);
+    assertHashOnlyValueEvidence(conflict.change.local, `${conflict.resourceKey} local`);
+    assertHashOnlyValueEvidence(conflict.change.remote, `${conflict.resourceKey} remote`);
+  }
+
+  for (const privateValue of [
+    'base-private-file-content',
+    'local-private-file-content',
+    'remote-private-file-content',
+    'Local private editorial title',
+    'Remote private editorial title',
+    'local-private-option-mode',
+    'remote-private-option-mode',
+    'base-private-meta',
+    'local-private-meta',
+    'remote-private-meta',
+  ]) {
+    assert.equal(conflictsJson.includes(privateValue), false, `conflict evidence leaked ${privateValue}`);
+  }
+});
+
+function assertHashOnlyValueEvidence(evidence, label) {
+  assert.ok(evidence, `${label} evidence missing`);
+  assert.match(evidence.hash, /^[a-f0-9]{64}$/, `${label} hash missing`);
+  assert.ok(['absent', 'present'].includes(evidence.state), `${label} state invalid`);
+  assert.deepEqual(
+    Object.keys(evidence).sort(),
+    evidence.fileType ? ['fileType', 'hash', 'state'] : ['hash', 'state'],
+    `${label} should only expose hash/state metadata`,
+  );
+}
+
 test('classifies plugin-owned data conflicts separately from generic rows', () => {
   const base = baseSite();
   const local = baseSite();
