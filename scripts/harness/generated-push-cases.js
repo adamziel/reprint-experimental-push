@@ -1141,6 +1141,12 @@ function assertPlanContract(testCase, plan) {
   assertUniqueIds(testCase.id, 'blocker', plan.blockers.map((entry) => entry.id));
 
   for (const mutation of plan.mutations) {
+    const plannedValue = deserializeResourceValue(mutation.value);
+    assert.equal(
+      mutation.localHash,
+      digest(plannedValue),
+      `${testCase.id} localHash does not match planned local payload for ${mutation.resourceKey}`,
+    );
     const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
     assert.ok(precondition, `${testCase.id} missing precondition for ${mutation.id}`);
     assert.equal(precondition.resourceKey, mutation.resourceKey);
