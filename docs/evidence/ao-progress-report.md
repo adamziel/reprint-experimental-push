@@ -1,12 +1,13 @@
-# AO Progress Report - 2026-05-28 05:58 CEST
+# AO Progress Report - 2026-05-28 06:01 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`87f53b06f` (`test: prove verify release failure reason`). It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`3bd9dc676` (`docs: refresh progress for verify release failure proof`). The
+integrated proof behind the current progress refresh is `87f53b06f` (`test:
+prove verify release failure reason`). It separates committed proof from
+visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
@@ -164,6 +165,9 @@ progress.
   branch verification, and repeats the sandbox rule to avoid hanging AO helper
   commands.
 - `57791e17` integrates the progress reporter refresh from `rpp-16`.
+- `3bd9dc676` refreshes the progress/report surfaces after the `RPP-0040`
+  verify-release failure proof. It adds no release movement and keeps final
+  release at **NO-GO**.
 - `9a7bfa599` integrates critic continuation evidence from `rpp-15`; it keeps
   release held and explicitly says no checklist item should be marked complete
   from that critic pass alone.
@@ -336,11 +340,11 @@ branch.
 | --- | --- | --- |
 | `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
 | `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, and `RPP-0040` are integrated; current visible work is the next release-gate proof candidate. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `87f53b06f`. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced through `3bd9dc676`. |
 | `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0310`, and `RPP-0414`; now evaluating the next completed branch one at a time. |
 | `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, and `RPP-0215` are represented by pushed or integrated evidence; current visible work is `RPP-0211` mutation/precondition mapping. |
 | `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `87f53b06f`. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after `3bd9dc676`. |
 | `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
@@ -391,6 +395,6 @@ Final release remains held for the following missing production-backed gates:
 11. Red-suite/auth/plugin/snapshot failures called out by the critic must be
     resolved before any final release movement.
 
-Decision: **NO-GO** for final release on 2026-05-28 05:58 CEST.
+Decision: **NO-GO** for final release on 2026-05-28 06:01 CEST.
 
 No readiness percentage moves in this report.

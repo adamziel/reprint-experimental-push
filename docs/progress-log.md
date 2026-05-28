@@ -4,6 +4,23 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Progress Reporter Refresh From 3bd9dc676
+
+- Last update: 2026-05-28 06:01 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` through
+  `3bd9dc676` (`docs: refresh progress for verify release failure proof`). The
+  integrated proof behind this refresh is `87f53b06f` (`test: prove verify
+  release failure reason`).
+- Checklist status remains 109 checked and 891 open. `RPP-0040` is integrated
+  lane truth; branch-local worker output after `3bd9dc676` is not counted.
+- This refresh changes only progress/report surfaces and carries no
+  implementation or test diffs.
+- Verification: checklist completion lint reports 109 checked IDs, 891
+  unchecked IDs, and 0 risky claims; artifact redaction reports 0 rejected
+  files; the progress.html timestamp/status-row focused Node check passes
+  30/30; `git diff --check` is clean.
+- Release posture: final release remains **NO-GO**.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 05:58 CEST.
