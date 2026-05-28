@@ -479,6 +479,66 @@ test('check-release-gates command proves preflight route identity drift before m
   });
 });
 
+test('check-release-gates command links apply route pre-mutation proof for RPP-0033', () => {
+  const command = 'node scripts/playground/production-shaped-apply-revalidation-smoke.mjs';
+  const applyProof = {
+    ok: true,
+    preMutation: true,
+    observed: 'PRECONDITION_FAILED',
+    observedStatus: 412,
+    command,
+    checkedRoute: '/reprint-push/v1/apply',
+    preconditionCheck: 'storage-boundary-cas',
+    phase: 'before-first-mutation',
+    appliedBeforeFailure: 0,
+    sourceUrl,
+    scope: 'final-release',
+  };
+  const { dir, file } = writeReleaseGateEvidenceFixture({
+    scope: 'final-release',
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      applyRoutePreMutation: applyProof,
+    }),
+  });
+
+  const result = runReleaseGateCli([
+    '--evidence-file',
+    file,
+    '--scope',
+    'final-release',
+    '--now',
+    fixedNow.toISOString(),
+  ], {
+    cwd: dir,
+    env: {},
+    now: fixedNow,
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.equal(result.report.ok, false);
+  assert.equal(result.report.releaseStatus, 'NO-GO');
+  assert.equal(result.report.primaryFailureBucket, 'provenance');
+  assert.equal(result.report.primaryFailureCode, 'PRODUCTION_EVIDENCE_REQUIRED');
+  assert.equal(result.report.mutationAttempted, false);
+  assert.deepEqual(result.report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.equal(result.report.releaseMovement.allowed, true);
+  assert.equal(result.report.releaseMovement.finalGates, '20/20');
+
+  const gate = gateById(result.report.evaluation, 'apply-route-pre-mutation');
+  assert.equal(gate.status, 'passed');
+  assert.equal(gate.code, 'OK');
+  assert.equal(gate.reason, 'Apply route pre-mutation proof is backed by final release evidence.');
+  assert.deepEqual(gate.evidence, {
+    ...applyProof,
+    required: ['apply route rejects before mutation when preconditions fail'],
+    requiredScope: 'final-release',
+  });
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;
