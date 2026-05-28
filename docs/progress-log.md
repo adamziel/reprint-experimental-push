@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:28 CEST.
+- Last update: 2026-05-28 06:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `c641f9c92` (`fix: propagate atomic group blockers`).
+  `85682de19` (`fix: fail closed plugin delete mutations`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 114
-  items complete and leaves 886 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 115
+  items complete and leaves 885 open.
 - Checked slices: 38 release-gate foundation items, 16 graph identity items,
-  16 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  17 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 7 merge-invariant items. No release-ops items are checked
   yet.
@@ -153,6 +153,16 @@ linked implementation artifacts.
   lookup by name/table, and fail-closed malformed registration cases while
   hashing error-message evidence. Caveat: this is focused local
   snapshot-library proof, not arbitrary plugin-driver production readiness.
+- Plugin-delete refusal continuation: `85682de19` integrated `RPP-0431`
+  plugin uninstall/delete refusal. Focused command:
+  `node --test --test-name-pattern 'plugin uninstall/delete' test/push-planner.test.js`
+  (1 passing focused proof), plus `node --test test/push-planner.test.js`
+  (96 passing planner tests). The proof blocks plugin delete plans without an
+  explicit `plugin-delete` driver, verifies redacted blocker evidence, and
+  confirms a forged ready plugin delete fails with `UNSUPPORTED_PLUGIN_DELETE`
+  before durable journal events or target mutation. Caveat: this is focused
+  local planner/apply plugin-driver boundary evidence, not production plugin
+  lifecycle readiness.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
@@ -177,7 +187,7 @@ linked implementation artifacts.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
-  release-gate tests, `node --test test/push-planner.test.js` with 95 passing
+  release-gate tests, `node --test test/push-planner.test.js` with 96 passing
   planner tests, `node --test test/plugin-owner-context-metadata-refusal.test.js`
   with 3 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   with 29 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
@@ -264,7 +274,7 @@ linked implementation artifacts.
   `RPP-0325`, `RPP-0332`, `RPP-0333`, `RPP-0334`, `RPP-0402`, `RPP-0403`,
   `RPP-0404`, `RPP-0408`, `RPP-0409`, `RPP-0410`, `RPP-0412`, `RPP-0422`,
   `RPP-0423`, `RPP-0424`, `RPP-0428`, `RPP-0429`, `RPP-0430`,
-  `RPP-0432`, `RPP-0505`, `RPP-0506`, `RPP-0512`,
+  `RPP-0431`, `RPP-0432`, `RPP-0505`, `RPP-0506`, `RPP-0512`,
   `RPP-0513`, `RPP-0515`, `RPP-0525`, `RPP-0526`, `RPP-0532`, `RPP-0533`,
   `RPP-0535`, `RPP-0603`, `RPP-0604`, `RPP-0606`, `RPP-0614`,
   `RPP-0618`, `RPP-0619`,
