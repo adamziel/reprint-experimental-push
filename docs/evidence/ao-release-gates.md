@@ -23,8 +23,19 @@ Primary checklist range: RPP-0001 through RPP-0025
 | RPP-0005 | `remote-alias` gate rejects `REPRINT_PUSH_REMOTE_URL` mismatch without weakening other evidence. |
 | RPP-0006 | `auth-source-readback` gate fails closed on issuance/readback source drift with named `PRODUCTION_AUTH_SESSION_BOUNDARY_REQUIRED`. |
 | RPP-0007 | `production-secret` gate fails closed when a live source URL is present without production credentials or an auth session source command. |
+| RPP-0008 | `application-password-binding` gate names missing/failed Application Password binding evidence and keeps release movement denied. |
+| RPP-0009 | `manage-options-capability` gate names missing/failed `manage_options` proof evidence and keeps release movement denied. |
+| RPP-0010 | `same-source-identity` gate names same-source identity evidence and rejects drift across the checked release path. |
+| RPP-0011 | `preflight-route-identity` gate names preflight route identity evidence and rejects wrong-route proof. |
+| RPP-0012 | `dry-run-route-eligibility` gate names dry-run eligibility evidence and rejects ineligible proof. |
+| RPP-0013 | `apply-route-pre-mutation` gate names pre-mutation evidence and rejects mutation-before-rejection proof. |
+| RPP-0014 | `journal-route-read-only` gate names journal read-only evidence and rejects write-observed proof. |
+| RPP-0015 | `recovery-inspect-read-only` gate names recovery inspect read-only evidence and rejects write-observed proof. |
 | RPP-0016 | Evaluator emits machine-readable `releaseMovement` and `candidateMovement` summaries. |
 | RPP-0017 | `formatReleaseGateStatusMarker()` emits a final bracketed stdout marker; focused test asserts marker shape and reason code. |
+| RPP-0018 | `progress-release-timestamp` gate rejects missing or non-ISO timestamp evidence. |
+| RPP-0019 | `agents-release-gates-row` gate rejects missing or stale status-row evidence. |
+| RPP-0020 | `verify-release-failure-reason` gate requires nonzero `verify:release` failure evidence with a named reason. |
 | RPP-0021 through RPP-0025 | Variant-2 proof coverage is represented by the same reusable evaluator and focused tests for missing source/local/remote, packaged fallback rejection, and wrong remote alias rejection. |
 
 ## Focused verification
@@ -33,12 +44,13 @@ Primary checklist range: RPP-0001 through RPP-0025
 node --test test/release-gates.test.js
 ```
 
-Observed status: pass, 8 tests.
+Observed status: pass, 11 tests.
 
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
 - Packaged fallback and wrong remote alias each keep `releaseMovement.allowed: false` with `finalGates: "19/20"` when all other final evidence is present.
+- Missing/failed auth, route, read-only, operator-proof, and verifier-failure evidence is named per gate and keeps `releaseMovement.allowed: false`.
 - Complete local candidate evidence yields `candidateMovement.allowed: true`, `releaseMovement.allowed: false`, and `releaseMovement.gates: "candidate-for-review"`.
 - Complete final evidence yields `releaseMovement.allowed: true` and `releaseMovement.gates: "20/20"`.
 
