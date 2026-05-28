@@ -220,6 +220,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-relationships-graph',
     tag: 'wp-term-relationships-graph-target',
   },
+  atomicPluginInstallStack: {
+    family: 'atomic-plugin-stack-ready',
+    tag: 'atomic-plugin-install-stack-v3',
+  },
   pluginOwnedOptionChange: {
     family: 'plugin-owned-option-change-ready',
     tag: 'plugin-owned-option-change',
@@ -1208,6 +1212,8 @@ const scenarioFamilyBuilders = {
   'atomic-plugin-stack-ready': ({ local, tags }) => {
     installAtomicStack(local);
     tags.add('atomic-ready');
+    tags.add('atomic-plugin-install-stack-v3');
+    tags.add('atomic-plugin-stack-ready-v3');
   },
   'atomic-plugin-missing-dependency': ({ local, tags }) => {
     local.files[pluginMainFile(atomicDependentPlugin)] = '<?php /* generated dependent */';
@@ -1229,6 +1235,8 @@ const scenarioFamilyBuilders = {
       },
     ];
     tags.add('atomic-blocked');
+    tags.add('atomic-plugin-install-stack-v3');
+    tags.add('atomic-plugin-stack-missing-dependency-v3');
   },
   'plugin-file-update': ({ local, allocator, tags }) => {
     local.files['wp-content/plugins/forms/forms.php'] = `<?php /* local forms ${allocator.next()} */`;
@@ -2054,7 +2062,10 @@ function installAtomicStack(local) {
   };
   local.db.wp_options['option_name:reprint_push_atomic_fixture_data'] = {
     option_name: 'reprint_push_atomic_fixture_data',
-    option_value: { mode: 'generated-installed' },
+    option_value: {
+      mode: 'generated-installed',
+      privateInstallToken: 'private-atomic-plugin-install-stack-v3',
+    },
     __pluginOwner: atomicDependentPlugin,
   };
   local.pushIntents = [

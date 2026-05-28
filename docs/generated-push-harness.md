@@ -74,9 +74,9 @@ The default generated run covers:
   and stale attachment blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
   supported forms-lab custom-table rows and delete refusal with per-tier target
-  counts, atomic plugin install ready and missing-dependency paths, same-plan
-  post-parent, taxonomy, comment, and usermeta graph closures, and stale graph
-  references.
+  counts, atomic plugin install ready and missing-dependency paths with
+  per-tier target counts, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpOptionsScalar` surface seeds regular, non-plugin-owned `wp_options` rows
 with scalar string and number values. Ready cases update the scalar option while
@@ -113,7 +113,6 @@ has added a descendant beneath it. Ready cases delete the unchanged remote
 directory, preserve unplanned remote data, and reject stale replay before
 mutation; conflicting cases refuse apply so a local directory delete cannot
 hide or overwrite a live remote descendant.
-
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
@@ -250,7 +249,14 @@ attachment in the base, drift that attachment remotely, and require the
 thumbnail reference to fail closed with hash-only target evidence. RPP-0342
 proves 10 ready and 10 stale featured-image graph cases across every tier.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 10 `pluginOwnedCustomTableChanges` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+The `atomicPluginInstallStack` target coverage records per-tier counts for the
+atomic plugin install stack. Ready cases install dependency and dependent plugin
+files, plugin metadata, and plugin-owned option data inside one atomic group;
+the dependency proof is same-group and stale replay fails before mutation.
+Missing-dependency cases remain non-ready, propagate blockers to every group
+mutation, and keep private install option values hash-only/redacted.
+
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 10 `pluginOwnedCustomTableChanges` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

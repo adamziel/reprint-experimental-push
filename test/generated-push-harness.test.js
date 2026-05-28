@@ -17,6 +17,11 @@ import { deserializeResourceValue, resourceHash, setResource } from '../src/reso
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
+const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
+const atomicDependentPlugin = 'reprint-push-atomic-dependent-fixture';
+const atomicDependencyPluginFile = `wp-content/plugins/${atomicDependencyPlugin}/${atomicDependencyPlugin}.php`;
+const atomicDependentPluginFile = `wp-content/plugins/${atomicDependentPlugin}/${atomicDependentPlugin}.php`;
+const atomicFixtureOptionRowId = 'option_name:reprint_push_atomic_fixture_data';
 
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
@@ -75,6 +80,9 @@ const requiredFamilies = [
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
   'atomic-plugin-missing-dependency',
+  'atomic-plugin-install-stack-v3',
+  'atomic-plugin-stack-ready-v3',
+  'atomic-plugin-stack-missing-dependency-v3',
   'plugin-file-update',
   'plugin-context-metadata-drift',
   'remote-delete-local-unchanged',
@@ -764,6 +772,136 @@ test('RPP-0240 generated atomic group blockers propagate before apply mutation',
   assert.equal(evidenceText.includes('generated dependent'), false);
   assert.equal(evidenceText.includes('<?php'), false);
   assert.equal(evidenceText.includes('payload'), false);
+});
+
+test('RPP-0156 atomic plugin install stack target emits ready and non-ready redacted coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.atomicPluginInstallStack;
+
+  assert.ok(coverage, 'missing atomic plugin install stack target coverage');
+  assert.equal(coverage.family, 'atomic-plugin-stack-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['atomic-plugin-install-stack-v3']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready atomic plugin stack cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready atomic plugin stack cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
+
+  const cases = generatePushHarnessCases();
+  const targetCases = cases.filter((testCase) => testCase.tags.has('atomic-plugin-install-stack-v3'));
+  const readyCases = targetCases.filter((testCase) => testCase.family === 'atomic-plugin-stack-ready');
+  const missingDependencyCases = targetCases.filter((testCase) => testCase.family === 'atomic-plugin-missing-dependency');
+
+  assert.equal(readyCases.length, 10, 'expected one ready atomic plugin stack case per tier');
+  assert.equal(missingDependencyCases.length, 10, 'expected one missing-dependency atomic plugin case per tier');
+
+  for (const testCase of readyCases) {
+    const shape = assertAtomicPluginStackShape(testCase, { missingDependency: false });
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(testCase);
+    const group = plan.atomicGroups.find((candidate) => candidate.id === shape.intent.id);
+    const groupResourceKeys = new Set(group.resources);
+    const groupMutations = plan.mutations.filter((mutation) => mutation.atomicGroupId === group.id);
+    const dependencyPluginMutation = groupMutations.find((mutation) =>
+      mutation.resourceKey === pluginResourceKey(atomicDependencyPlugin));
+
+    assert.equal(plan.status, 'ready', `${testCase.id} atomic plugin stack should be ready`);
+    assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+    assert.equal(result.applied, true, `${testCase.id} ready atomic stack should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} stale replay should reject`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay must fail before mutation`);
+    assert.equal(group.status, 'ready');
+    assert.equal(group.requireAtomic, true);
+    assert.equal(group.blockers.length, 0);
+    assert.equal(group.conflicts.length, 0);
+    assert.equal(group.dependencyRequirements[0].source, 'same-atomic-group');
+    assert.equal(group.dependencyRequirements[0].resourceKey, pluginResourceKey(atomicDependencyPlugin));
+    assert.match(group.dependencyRequirements[0].expectedHash, /^[a-f0-9]{64}$/);
+    assert.ok(dependencyPluginMutation, `${testCase.id} should plan dependency plugin install in same group`);
+    assert.equal(group.dependencyRequirements[0].mutationId, dependencyPluginMutation.id);
+
+    for (const resourceKey of shape.expectedResourceKeys) {
+      assert.ok(groupResourceKeys.has(resourceKey), `${testCase.id} missing atomic resource ${resourceKey}`);
+      assert.ok(
+        groupMutations.some((mutation) => mutation.resourceKey === resourceKey),
+        `${testCase.id} missing atomic mutation for ${resourceKey}`,
+      );
+    }
+
+    const staleRemote = cloneJson(testCase.remote);
+    setResource(staleRemote, dependencyPluginMutation.resource, { version: '9.9.9', active: false });
+    const beforeHash = digest(staleRemote);
+    const error = captureError(() => applyPlan(staleRemote, plan));
+
+    assert.ok(error instanceof PushPlanError, `${testCase.id} stale dependency replay should throw`);
+    assert.equal(error.code, 'PRECONDITION_FAILED');
+    assert.equal(digest(staleRemote), beforeHash, `${testCase.id} stale replay changed remote before refusal`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    assert.deepEqual(applied.site.plugins[atomicDependencyPlugin], testCase.local.plugins[atomicDependencyPlugin]);
+    assert.deepEqual(applied.site.plugins[atomicDependentPlugin], testCase.local.plugins[atomicDependentPlugin]);
+    assert.deepEqual(applied.site.files[atomicDependencyPluginFile], testCase.local.files[atomicDependencyPluginFile]);
+    assert.deepEqual(applied.site.files[atomicDependentPluginFile], testCase.local.files[atomicDependentPluginFile]);
+    assert.deepEqual(applied.site.db.wp_options[atomicFixtureOptionRowId], shape.optionRow);
+    assertAtomicPluginStackEvidenceRedacted(testCase, plan, shape);
+  }
+
+  for (const testCase of missingDependencyCases) {
+    const shape = assertAtomicPluginStackShape(testCase, { missingDependency: true });
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(testCase);
+    const group = plan.atomicGroups.find((candidate) => candidate.id === shape.intent.id);
+    const remoteBefore = cloneJson(testCase.remote);
+    const beforeHash = digest(remoteBefore);
+    const error = captureError(() => applyPlan(remoteBefore, plan));
+
+    assert.notEqual(plan.status, 'ready', `${testCase.id} missing dependency stack should be non-ready`);
+    assert.notEqual(result.status, 'ready', `${testCase.id} should validate as non-ready`);
+    assert.equal(result.applied, false, `${testCase.id} non-ready stack must not apply`);
+    assert.equal(group.status, 'blocked');
+    assert.equal(group.requireAtomic, true);
+    assert.ok(
+      group.blockers.some((blocker) =>
+        blocker.class === 'missing-plugin-dependency'
+          && blocker.plugin === atomicDependencyPlugin),
+      `${testCase.id} should block on missing dependency plugin`,
+    );
+    for (const resourceKey of shape.expectedResourceKeys) {
+      assert.ok(
+        group.blockers.some((blocker) =>
+          blocker.class === 'atomic-group-blocker-propagation'
+            && blocker.resourceKey === resourceKey),
+        `${testCase.id} should propagate atomic blocker to ${resourceKey}`,
+      );
+    }
+    assert.equal(
+      plan.mutations.some((mutation) => mutation.resourceKey === pluginResourceKey(atomicDependencyPlugin)),
+      false,
+      `${testCase.id} must not plan dependency plugin mutation outside the atomic group`,
+    );
+    assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready atomic stack should refuse apply`);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remoteBefore), beforeHash, `${testCase.id} non-ready apply changed remote`);
+    assertAtomicPluginStackEvidenceRedacted(testCase, plan, shape);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
@@ -3113,6 +3251,109 @@ function assertCommentsCommentmetaEvidenceRedacted(testCase, plan, shape) {
   assert.equal(serialized.includes('generated commentmeta graph '), false, `${testCase.id} leaked raw commentmeta value`);
   assert.equal(serialized.includes('Generated comment graph target'), false, `${testCase.id} leaked raw comment content`);
   assert.equal(serialized.includes('Remote stale comment graph target'), false, `${testCase.id} leaked remote comment drift`);
+}
+
+
+function assertAtomicPluginStackShape(testCase, { missingDependency }) {
+  assert.ok(testCase.tags.has('atomic-plugin-install-stack-v3'));
+  const intent = testCase.local.pushIntents?.[0];
+
+  assert.ok(intent, `${testCase.id} should declare an atomic plugin install intent`);
+  assert.equal(intent.kind, 'plugin-install');
+  assert.equal(intent.requireAtomic, true);
+
+  if (missingDependency) {
+    assert.ok(testCase.tags.has('atomic-blocked'));
+    assert.ok(testCase.tags.has('atomic-plugin-stack-missing-dependency-v3'));
+    assert.equal(testCase.local.files[atomicDependencyPluginFile], undefined);
+    assert.equal(testCase.local.plugins[atomicDependencyPlugin], undefined);
+    assert.ok(testCase.local.files[atomicDependentPluginFile], `${testCase.id} should stage dependent plugin file`);
+    assert.ok(testCase.local.plugins[atomicDependentPlugin], `${testCase.id} should stage dependent plugin metadata`);
+    assert.deepEqual(intent.resources, [
+      fileResourceKey(atomicDependentPluginFile),
+      pluginResourceKey(atomicDependentPlugin),
+    ]);
+    assert.deepEqual(intent.dependencies.plugins, [atomicDependencyPlugin]);
+    return {
+      intent,
+      expectedResourceKeys: [
+        fileResourceKey(atomicDependentPluginFile),
+        pluginResourceKey(atomicDependentPlugin),
+      ],
+      optionRow: null,
+    };
+  }
+
+  assert.ok(testCase.tags.has('atomic-ready'));
+  assert.ok(testCase.tags.has('atomic-plugin-stack-ready-v3'));
+  assert.ok(testCase.local.files[atomicDependencyPluginFile], `${testCase.id} should stage dependency plugin file`);
+  assert.ok(testCase.local.files[atomicDependentPluginFile], `${testCase.id} should stage dependent plugin file`);
+  assert.deepEqual(testCase.local.plugins[atomicDependencyPlugin], { version: '2.1.0', active: true });
+  assert.equal(testCase.local.plugins[atomicDependentPlugin].requires[0], atomicDependencyPlugin);
+
+  const optionRow = testCase.local.db.wp_options[atomicFixtureOptionRowId];
+  const optionResourceKey = rowResourceKey('wp_options', atomicFixtureOptionRowId);
+  assert.ok(optionRow, `${testCase.id} should create plugin-owned fixture option`);
+  assert.equal(optionRow.__pluginOwner, atomicDependentPlugin);
+  assert.equal(optionRow.option_value.mode, 'generated-installed');
+  assert.equal(optionRow.option_value.privateInstallToken, 'private-atomic-plugin-install-stack-v3');
+  assert.ok(
+    intent.resourcePolicy.pluginOwnedResources.allowedResources.some((entry) =>
+      entry.resourceKey === optionResourceKey
+        && entry.pluginOwner === atomicDependentPlugin
+        && entry.driver === 'wp-option'),
+    `${testCase.id} should include plugin-owned option driver policy in the atomic intent`,
+  );
+  assert.equal(intent.dependencies.plugins[0].name, atomicDependencyPlugin);
+  assert.equal(intent.dependencies.plugins[0].version, '2.1.0');
+  assert.match(intent.dependencies.plugins[0].hash, /^[a-f0-9]{64}$/);
+
+  return {
+    intent,
+    expectedResourceKeys: [
+      fileResourceKey(atomicDependencyPluginFile),
+      fileResourceKey(atomicDependentPluginFile),
+      pluginResourceKey(atomicDependencyPlugin),
+      pluginResourceKey(atomicDependentPlugin),
+      optionResourceKey,
+    ],
+    optionRow,
+  };
+}
+
+function fileResourceKey(path) {
+  return `file:${path}`;
+}
+
+function pluginResourceKey(name) {
+  return `plugin:${name}`;
+}
+
+function assertAtomicPluginStackEvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    atomicGroups: plan.atomicGroups,
+    mutations: plan.mutations,
+    blockers: plan.blockers,
+    rawAtomicInstallProbe: {
+      value: {
+        intent: shape.intent,
+        optionRow: shape.optionRow,
+        dependencyFile: testCase.local.files[atomicDependencyPluginFile],
+        dependentFile: testCase.local.files[atomicDependentPluginFile],
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw atomic install evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only values`);
+  assert.equal(serialized.includes('private-atomic-plugin-install-stack-v3'), false, `${testCase.id} leaked private install token`);
 }
 
 function nonReadyTargetCount(coverage) {
