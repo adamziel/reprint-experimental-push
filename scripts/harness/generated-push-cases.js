@@ -112,6 +112,17 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateWpUsermetaDriverSemanticsCases() {
+  return [
+    'supported-wp-usermeta-local-update',
+    'supported-wp-user-meta-local-update',
+    'remote-drift-preserved',
+    'divergent-conflict-redacted',
+    'missing-policy-blocked',
+    'wrong-driver-blocked',
+  ].map((variant, index) => buildWpUsermetaDriverSemanticsCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -164,6 +175,134 @@ export function runGeneratedPushHarness(options = {}) {
   };
 }
 
+export function validateWpUsermetaDriverSemanticsCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const decision = plan.decisions.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    conflicts: plan.conflicts.length,
+    blockers: plan.blockers.length,
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      status: plan.status,
+      mutation: mutation ? wpUsermetaDriverMutationSummary(mutation) : null,
+      decision: decision ? wpUsermetaDriverDecisionSummary(decision) : null,
+      conflict: conflict ? wpUsermetaDriverBlockSummary(conflict) : null,
+      blocker: blocker ? wpUsermetaDriverBlockSummary(blocker) : null,
+    }),
+  };
+
+  assertWpUsermetaDriverSemanticsRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied-local') {
+    assert.equal(plan.status, 'ready');
+    assert.ok(mutation, `${testCase.id} should plan a wp_usermeta mutation`);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource.driver, testCase.expected.driver);
+    assert.equal(mutation.resource.table, 'wp_usermeta');
+    assert.equal(mutation.resource.id, testCase.rowId);
+    assert.equal(deserializeResourceValue(mutation.value).user_id, testCase.userId);
+    assertWpUsermetaAuditEvidenceRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_usermeta[testCase.rowId].meta_value.mode,
+      testCase.expected.localMode,
+    );
+    assert.equal(applied.site.db.wp_usermeta[testCase.rowId].user_id, testCase.userId);
+    assert.equal(applied.journal.entries.length, 1);
+    assert.equal(applied.journal.entries[0].beforeValue.redacted, true);
+    assert.equal(applied.journal.entries[0].afterValue.redacted, true);
+    assertWpUsermetaDriverSemanticsRedacted(testCase, applied.journal);
+    result.outcome = 'applied-local';
+    result.applied = true;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'preserved-remote') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.mutations.length, 0);
+    assert.ok(decision, `${testCase.id} should keep remote wp_usermeta data`);
+    assert.equal(decision.decision, 'keep-remote');
+    assert.equal(decision.change.localChange, 'unchanged');
+    assert.equal(decision.change.remoteChange, 'update');
+    assertWpUsermetaChangeHashEvidence(decision.change);
+    assertWpUsermetaDriverSemanticsRedacted(testCase, decision);
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const applied = applyPlan(remote, plan);
+    assert.equal(applied.appliedMutations, 0);
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated remote-only drift`);
+    assert.equal(
+      applied.site.db.wp_usermeta[testCase.rowId].meta_value.mode,
+      testCase.expected.remoteMode,
+    );
+    assert.equal(
+      applied.site.db.wp_usermeta[testCase.rowId].meta_value.token,
+      testCase.expected.remoteToken,
+    );
+    assertWpUsermetaDriverSemanticsRedacted(testCase, applied.journal);
+    result.outcome = 'preserved-remote';
+    result.applied = false;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'conflict') {
+    assert.equal(plan.status, 'conflict');
+    assert.equal(mutation, undefined);
+    assert.ok(conflict, `${testCase.id} should expose a plugin data conflict`);
+    assert.equal(conflict.class, 'plugin-data-conflict');
+    assert.equal(conflict.pluginOwner, 'forms');
+    assert.equal(conflict.change.localChange, 'update');
+    assert.equal(conflict.change.remoteChange, 'update');
+    assertWpUsermetaChangeHashEvidence(conflict.change);
+    assertWpUsermetaDriverSemanticsRedacted(testCase, conflict);
+    const remoteBefore = digest(testCase.remote);
+    const error = captureError(() => applyPlan(testCase.remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(testCase.remote), remoteBefore, `${testCase.id} mutated conflict remote`);
+    assertWpUsermetaDriverSemanticsRedacted(testCase, error.details);
+    result.outcome = 'conflict';
+    result.applied = false;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'blocked');
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutation, undefined);
+  assert.ok(blocker, `${testCase.id} should expose a blocker`);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.driver || null, testCase.expected.driver);
+  assert.equal(blocker.change.localChange, 'update');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assertWpUsermetaChangeHashEvidence(blocker.change);
+  assertWpUsermetaDriverSemanticsRedacted(testCase, blocker);
+  const remoteBefore = digest(testCase.remote);
+  const error = captureError(() => applyPlan(testCase.remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(testCase.remote), remoteBefore, `${testCase.id} mutated blocked remote`);
+  assertWpUsermetaDriverSemanticsRedacted(testCase, error.details);
+  result.outcome = 'blocked';
+  result.applied = false;
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -206,6 +345,120 @@ export function validateGeneratedCase(testCase) {
   assert.equal(digest(testCase.remote), before, `${testCase.id} mutated a non-ready remote`);
   result.applied = false;
   return result;
+}
+
+function buildWpUsermetaDriverSemanticsCase({ variant, index }) {
+  const base = buildBaseSite(4470 + index, 4);
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const userId = 1;
+  const metaId = 447000 + index + 1;
+  const rowId = `umeta_id:${metaId}`;
+  const resourceKey = rowKey('wp_usermeta', rowId);
+  const secrets = {
+    base: `rpp0447-base-usermeta-secret-${index + 1}`,
+    local: `rpp0447-local-usermeta-secret-${index + 1}`,
+    remote: `rpp0447-remote-usermeta-secret-${index + 1}`,
+  };
+  const baseRow = {
+    umeta_id: metaId,
+    user_id: userId,
+    meta_key: `rpp_0447_forms_user_${index + 1}`,
+    meta_value: { mode: 'base', token: secrets.base },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_usermeta', rowId, baseRow);
+  setRow(local, 'wp_usermeta', rowId, baseRow);
+  setRow(remote, 'wp_usermeta', rowId, baseRow);
+
+  const testCase = {
+    id: `rpp-0447-wp-usermeta-driver-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'wp-usermeta-driver-semantics',
+    tags: new Set(['wp-usermeta-driver-semantics', 'plugin-owned-generated']),
+    resourceKey,
+    rowId,
+    userId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'supported-wp-usermeta-local-update'
+    || variant === 'supported-wp-user-meta-local-update') {
+    const driver = variant === 'supported-wp-usermeta-local-update'
+      ? 'wp-usermeta'
+      : 'wp-user-meta';
+    local.db.wp_usermeta[rowId].meta_value = {
+      mode: `local-${driver}-update`,
+      token: secrets.local,
+    };
+    allowPluginOwned(local, resourceKey, 'forms', driver);
+    testCase.tags.add('wp-usermeta-driver-supported');
+    testCase.expected = {
+      outcome: 'applied-local',
+      driver,
+      localMode: `local-${driver}-update`,
+    };
+    return testCase;
+  }
+
+  if (variant === 'remote-drift-preserved') {
+    remote.db.wp_usermeta[rowId].meta_value = {
+      mode: 'remote-wp-usermeta-drift',
+      token: secrets.remote,
+    };
+    allowPluginOwned(base, resourceKey, 'forms', 'wp-usermeta');
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-usermeta');
+    allowPluginOwned(remote, resourceKey, 'forms', 'wp-usermeta');
+    testCase.tags.add('wp-usermeta-driver-remote-preserved');
+    testCase.expected = {
+      outcome: 'preserved-remote',
+      remoteMode: 'remote-wp-usermeta-drift',
+      remoteToken: secrets.remote,
+    };
+    return testCase;
+  }
+
+  if (variant === 'divergent-conflict-redacted') {
+    local.db.wp_usermeta[rowId].meta_value = {
+      mode: 'local-wp-usermeta-conflict',
+      token: secrets.local,
+    };
+    remote.db.wp_usermeta[rowId].meta_value = {
+      mode: 'remote-wp-usermeta-conflict',
+      token: secrets.remote,
+    };
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-usermeta');
+    testCase.tags.add('wp-usermeta-driver-conflict');
+    testCase.expected = { outcome: 'conflict' };
+    return testCase;
+  }
+
+  local.db.wp_usermeta[rowId].meta_value = {
+    mode: `local-${variant}`,
+    token: secrets.local,
+  };
+  testCase.tags.add('wp-usermeta-driver-blocked');
+  if (variant === 'wrong-driver-blocked') {
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-postmeta');
+    testCase.expected = {
+      outcome: 'blocked',
+      driver: 'wp-postmeta',
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'missing-policy-blocked');
+  testCase.expected = {
+    outcome: 'blocked',
+    driver: null,
+  };
+  return testCase;
 }
 
 function buildGeneratedCase({ index, tier, rng }) {
@@ -868,6 +1121,71 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function wpUsermetaDriverMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    baseHash: mutation.baseHash,
+    localHash: mutation.localHash,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+  };
+}
+
+function wpUsermetaDriverDecisionSummary(decision) {
+  return {
+    resourceKey: decision.resourceKey,
+    decision: decision.decision,
+    baseHash: decision.baseHash,
+    remoteHash: decision.remoteHash,
+    change: decision.change,
+  };
+}
+
+function wpUsermetaDriverBlockSummary(entry) {
+  return {
+    class: entry.class,
+    resourceKey: entry.resourceKey,
+    pluginOwner: entry.pluginOwner || null,
+    driver: entry.driver || null,
+    baseHash: entry.baseHash,
+    localHash: entry.localHash,
+    remoteHash: entry.remoteHash,
+    change: entry.change,
+  };
+}
+
+function assertWpUsermetaChangeHashEvidence(change) {
+  for (const state of ['base', 'local', 'remote']) {
+    assert.ok(change[state], `missing ${state} hash evidence`);
+    assert.equal(Object.hasOwn(change[state], 'hash'), true, `missing ${state} hash`);
+    assert.match(change[state].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[state], 'value'), false, `${state} evidence leaked a value`);
+  }
+}
+
+function assertWpUsermetaAuditEvidenceRedacted(testCase, auditEvidence) {
+  assert.ok(auditEvidence, `${testCase.id} missing driver audit evidence`);
+  const serialized = JSON.stringify(auditEvidence);
+  assert.match(digest(auditEvidence), /^[a-f0-9]{64}$/);
+  assertWpUsermetaDriverSemanticsRedacted(testCase, auditEvidence);
+  assert.equal(serialized.includes('"meta_value"'), false, `${testCase.id} audit leaked meta value`);
+}
+
+function assertWpUsermetaDriverSemanticsRedacted(testCase, evidence) {
+  const serialized = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(
+      serialized.includes(token),
+      false,
+      `${testCase.id} leaked generated wp_usermeta token ${token}`,
+    );
+  }
 }
 
 function assertPlanContract(testCase, plan) {

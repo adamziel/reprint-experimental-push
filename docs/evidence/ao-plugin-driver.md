@@ -76,6 +76,30 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0447 generated wp_usermeta driver semantics
+
+RPP-0447 adds a deterministic generated support-only matrix for plugin-owned
+`wp_usermeta` rows. The matrix proves the supported `wp-usermeta` and
+`wp-user-meta` driver spellings both carry one real local usermeta mutation
+through apply when explicit owner/driver proof exists.
+
+The non-apply variants preserve the fail-closed/keep-remote boundary:
+remote-only plugin-owned usermeta drift is kept remote with zero mutations,
+divergent local/remote usermeta changes become a redacted plugin-data conflict,
+and missing or wrong driver policy produces an unsupported plugin-owned resource
+blocker before mutation. Decision, conflict, blocker, error, audit, and journal
+evidence is hash-only/redacted; generated base/local/remote usermeta tokens are
+asserted absent from the evidence payloads.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0447' test/generated-push-harness.test.js
+```
+
+This is generated support-only evidence. It does not broaden production
+plugin-driver acceptance or change the release NO-GO posture.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +113,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0447 — generated `wp_usermeta` driver semantics: both accepted driver
+  spellings apply only with explicit proof, while remote drift, conflict, and
+  unsupported policy variants remain fail-closed/redacted.

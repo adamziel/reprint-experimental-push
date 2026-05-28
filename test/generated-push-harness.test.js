@@ -5,8 +5,10 @@ import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
   generatePushHarnessCases,
+  generateWpUsermetaDriverSemanticsCases,
   runGeneratedPushHarness,
   validateGeneratedCase,
+  validateWpUsermetaDriverSemanticsCase,
 } from '../scripts/harness/generated-push-cases.js';
 
 const requiredFamilies = [
@@ -102,6 +104,47 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0447 generated wp_usermeta driver semantics cover supported and unsupported variants', () => {
+  const cases = generateWpUsermetaDriverSemanticsCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'supported-wp-usermeta-local-update',
+    'supported-wp-user-meta-local-update',
+    'remote-drift-preserved',
+    'divergent-conflict-redacted',
+    'missing-policy-blocked',
+    'wrong-driver-blocked',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('wp-usermeta-driver-semantics')), true);
+  assert.equal(cases.every((testCase) => testCase.resourceKey.startsWith('row:["wp_usermeta"')), true);
+
+  const results = cases.map(validateWpUsermetaDriverSemanticsCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'supported-wp-usermeta-local-update': 'applied-local',
+    'supported-wp-user-meta-local-update': 'applied-local',
+    'remote-drift-preserved': 'preserved-remote',
+    'divergent-conflict-redacted': 'conflict',
+    'missing-policy-blocked': 'blocked',
+    'wrong-driver-blocked': 'blocked',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['supported-wp-usermeta-local-update'].status, 'ready');
+  assert.equal(byVariant['supported-wp-usermeta-local-update'].mutations, 1);
+  assert.equal(byVariant['supported-wp-user-meta-local-update'].status, 'ready');
+  assert.equal(byVariant['supported-wp-user-meta-local-update'].mutations, 1);
+  assert.equal(byVariant['remote-drift-preserved'].status, 'ready');
+  assert.equal(byVariant['remote-drift-preserved'].mutations, 0);
+  assert.equal(byVariant['remote-drift-preserved'].decisions, 1);
+  assert.equal(byVariant['divergent-conflict-redacted'].status, 'conflict');
+  assert.equal(byVariant['missing-policy-blocked'].status, 'blocked');
+  assert.equal(byVariant['wrong-driver-blocked'].status, 'blocked');
+  for (const result of results) {
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {
