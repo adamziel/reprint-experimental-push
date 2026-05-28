@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:51 CEST.
+- Last update: 2026-05-28 06:55 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `ff1b3dbb7` (`test: add same source identity coverage`).
+  `c3355a77a` (`docs: refresh progress for same source identity coverage`),
+  with latest checked proof commit `ff1b3dbb7` for `RPP-0050` generated
+  same-source identity coverage.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -186,12 +188,14 @@ linked implementation artifacts.
   `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
-- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+- Current AO team from tmux/session refs includes active developers
+  `rpp-24/RPP-0126`, `rpp-25/RPP-0053` if refilled, `rpp-29/RPP-0227`,
+  `rpp-30/RPP-0335` if refilled, `rpp-32/RPP-0441`, `rpp-33/RPP-0128`, and
+  `rpp-34/RPP-0440`; integrator `rpp-28` is moving next on `RPP-0051`;
+  critics are `rpp-31` and `rpp-37`; queue is `rpp-35`; progress reporter is
+  `rpp-26`. Only lane-integrated output through `c3355a77a` is counted, so
+  `RPP-0051`, `RPP-0052`, and other branch-local work remain session-only until
+  tested and integrated.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
