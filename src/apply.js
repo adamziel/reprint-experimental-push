@@ -20,6 +20,7 @@ const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
     'reprint-push-atomic-dependent-fixture',
   ],
 ]);
+const SHA256_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 export class PushPlanError extends Error {
   constructor(code, message, details = {}) {
@@ -39,6 +40,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validateMutationRemoteBeforeHashEvidence(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
@@ -87,6 +89,7 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validatePreconditions(remote, plan);
+  validateMutationRemoteBeforeHashesAgainstLiveRemote(remote, plan);
   validateSupportedPluginOwnedMutations(remote, plan);
   try {
     recordDurablePlanOpened(durableJournal, remote, plan, {
@@ -360,6 +363,69 @@ function validFixtureFormsLabTableEvidence(evidence, remote) {
       && resourceHash(remote, pluginResource) === evidence.remoteHash;
   }
   return false;
+}
+
+function validateMutationRemoteBeforeHashEvidence(plan) {
+  const issues = [];
+  for (const mutation of Array.isArray(plan.mutations) ? plan.mutations : []) {
+    const hashState = hashEvidenceState(mutation?.remoteBeforeHash);
+    if (hashState === 'missing') {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_MISSING',
+        mutationId: mutation?.id || null,
+        resourceKey: mutation?.resourceKey || null,
+        remoteBeforeHashState: hashState,
+      });
+      continue;
+    }
+    if (hashState !== 'present') {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_INVALID',
+        mutationId: mutation?.id || null,
+        resourceKey: mutation?.resourceKey || null,
+        remoteBeforeHashState: hashState,
+      });
+    }
+  }
+  throwRemoteBeforeHashMismatch(issues);
+}
+
+function validateMutationRemoteBeforeHashesAgainstLiveRemote(remote, plan) {
+  const issues = [];
+  for (const mutation of Array.isArray(plan.mutations) ? plan.mutations : []) {
+    if (hashEvidenceState(mutation?.remoteBeforeHash) !== 'present') {
+      continue;
+    }
+    const actualHash = resourceHash(remote, mutation.resource);
+    if (actualHash !== mutation.remoteBeforeHash) {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_WRONG',
+        mutationId: mutation.id || null,
+        resourceKey: mutation.resourceKey || null,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        actualHash,
+      });
+    }
+  }
+  throwRemoteBeforeHashMismatch(issues);
+}
+
+function throwRemoteBeforeHashMismatch(issues) {
+  if (issues.length === 0) {
+    return;
+  }
+  throw new PushPlanError(
+    'PLAN_REMOTE_BEFORE_HASH_MISMATCH',
+    'Plan mutation remoteBeforeHash evidence does not match the live remote boundary.',
+    { issues },
+  );
+}
+
+function hashEvidenceState(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    return 'missing';
+  }
+  return SHA256_HASH_PATTERN.test(value) ? 'present' : 'invalid';
 }
 
 function prepareJournal(remote, plan, previousJournal) {

@@ -200,6 +200,129 @@ function assertEveryMutationHasLiveRemotePrecondition(plan) {
   }
 }
 
+function rpp0212MixedResourceFixture() {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  const privateValues = [
+    'local-private-rpp0212-file-secret',
+    'Local private RPP-0212 title',
+    'local-private-rpp0212-option-mode',
+  ];
+
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  return {
+    base,
+    local,
+    remote,
+    privateValues,
+    mutationResourceKeys: [
+      'file:index.php',
+      pluginOptionResourceKey,
+      'row:["wp_posts","ID:1"]',
+    ],
+  };
+}
+
+test('RPP-0212 remoteBeforeHash matches live remote for mixed resource mutations', () => {
+  const fixture = rpp0212MixedResourceFixture();
+  const plan = planFor(fixture.base, fixture.local, fixture.remote);
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.mutations.map((mutation) => mutation.resourceKey), fixture.mutationResourceKeys);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  for (const mutation of plan.mutations) {
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+    assert.equal(mutation.remoteBeforeHash, resourceHash(fixture.remote, mutation.resource));
+  }
+
+  const result = applyPlan(cloneJson(fixture.remote), plan);
+  assert.equal(result.site.files['index.php'], fixture.privateValues[0]);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, fixture.privateValues[1]);
+  assert.equal(
+    result.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    fixture.privateValues[2],
+  );
+});
+
+test('RPP-0212 executor rejects missing wrong or stale remoteBeforeHash before mutation', () => {
+  const fixture = rpp0212MixedResourceFixture();
+  const ready = planFor(fixture.base, fixture.local, fixture.remote);
+  const fileMutation = mutationFor(ready, 'file:index.php');
+  const invalidHashSecret = 'raw-private-rpp0212-remote-before-hash-secret';
+
+  assert.equal(ready.status, 'ready');
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+
+  const cases = [
+    {
+      name: 'missing remoteBeforeHash',
+      code: 'PLAN_REMOTE_BEFORE_HASH_MISMATCH',
+      issueCode: 'REMOTE_BEFORE_HASH_MISSING',
+      forge(plan) {
+        delete mutationFor(plan, 'file:index.php').remoteBeforeHash;
+      },
+    },
+    {
+      name: 'invalid raw remoteBeforeHash',
+      code: 'PLAN_REMOTE_BEFORE_HASH_MISMATCH',
+      issueCode: 'REMOTE_BEFORE_HASH_INVALID',
+      leakedValue: invalidHashSecret,
+      forge(plan) {
+        mutationFor(plan, 'file:index.php').remoteBeforeHash = invalidHashSecret;
+      },
+    },
+    {
+      name: 'wrong remoteBeforeHash',
+      code: 'PLAN_REMOTE_BEFORE_HASH_MISMATCH',
+      issueCode: 'REMOTE_BEFORE_HASH_WRONG',
+      forge(plan) {
+        mutationFor(plan, 'file:index.php').remoteBeforeHash = '0'.repeat(64);
+      },
+    },
+    {
+      name: 'stale remoteBeforeHash',
+      code: 'PRECONDITION_FAILED',
+      forge(_plan, remote) {
+        remote.files['index.php'] = 'remote-current-rpp0212-content';
+      },
+      assertError(error) {
+        assert.equal(error.details.expectedHash, fileMutation.remoteBeforeHash);
+        assert.match(error.details.actualHash, /^[a-f0-9]{64}$/);
+      },
+    },
+  ];
+
+  for (const testCase of cases) {
+    const remote = cloneJson(fixture.remote);
+    const forged = tamperReadyPlan(ready, (plan) => testCase.forge(plan, remote));
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, forged));
+    const detailsJson = JSON.stringify(error.details);
+
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, testCase.code, testCase.name);
+    assert.equal(JSON.stringify(remote), before, testCase.name);
+    if (testCase.issueCode) {
+      assert.ok(error.details.issues.some((issue) => issue.code === testCase.issueCode), testCase.name);
+    }
+    testCase.assertError?.(error);
+    for (const privateValue of [...fixture.privateValues, invalidHashSecret]) {
+      assert.equal(detailsJson.includes(privateValue), false, `${testCase.name} leaked ${privateValue}`);
+    }
+  }
+});
+
 test('plans and applies local changes when remote still matches the pull base', () => {
   const base = baseSite();
   const local = baseSite();
