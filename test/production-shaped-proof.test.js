@@ -1755,6 +1755,8 @@ test('production plugin package smoke includes the revoked packaged driver crede
   );
 
   assert.match(smokeSource, /driverReceiptRevokedCredentialGuard/);
+  assert.match(smokeSource, /arbitraryPluginFixturePackageProof/);
+  assert.match(smokeSource, /buildArbitraryPluginFixturePackageProof/);
   assert.match(smokeSource, /revoke-application-password/);
   assert.match(smokeSource, /applyRejectedCode: revokedCredentialApply\.body\?\.code/);
   assert.match(smokeSource, /payloadModeAfterReject/);
@@ -1769,7 +1771,7 @@ test('production plugin package smoke supports driver-guard-only mode', () => {
   assert.match(smokeSource, /const smokeMode = process\.env\.REPRINT_PUSH_PACKAGE_SMOKE_MODE \|\| 'full';/);
   assert.match(smokeSource, /const runDriverGuardOnly = smokeMode === 'driver-guard-only';/);
   assert.match(smokeSource, /mode: smokeMode,/);
-  assert.match(smokeSource, /if \(!runDriverGuardOnly\) \{/);
+  assert.match(smokeSource, /if \(!runDriverGuardOnly && shouldRunScenario\('core-package-routes'\)\) \{/);
 });
 
 maybeTest('production plugin package smoke rejects revoked packaged driver credentials without mutating the remote row', () => {
