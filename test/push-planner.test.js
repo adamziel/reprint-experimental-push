@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { applyPlan, PushPlanError } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
+import { digest } from '../src/stable-json.js';
 import {
   appendRecoveryClaimOpened,
   appendStaleClaimAdvanced,
@@ -14,7 +15,7 @@ import {
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
-import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { deserializeResourceValue, resourceHash, serializeResourceValue } from '../src/resources.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -408,6 +409,139 @@ test('RPP-0210 planner summary counts match emitted evidence deterministically',
       plannerSummaryEvidenceEnvelope(secondPlan),
       `${fixture.label} summary envelope changed between deterministic planning runs`,
     );
+  }
+});
+
+function rpp0213MixedResourceFixture() {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  const privateValues = [
+    'local-private-rpp0213-file-secret',
+    'Local private RPP-0213 title',
+    'local-private-rpp0213-option-mode',
+  ];
+
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  return {
+    base,
+    local,
+    remote,
+    privateValues,
+    mutationResourceKeys: [
+      'file:index.php',
+      pluginOptionResourceKey,
+      'row:["wp_posts","ID:1"]',
+    ],
+  };
+}
+
+test('RPP-0213 localHash binds mixed resource mutations to planned local snapshots', () => {
+  const fixture = rpp0213MixedResourceFixture();
+  const plan = planFor(fixture.base, fixture.local, fixture.remote);
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.mutations.map((mutation) => mutation.resourceKey), fixture.mutationResourceKeys);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  for (const mutation of plan.mutations) {
+    const plannedValue = deserializeMutationValue(mutation);
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.equal(mutation.localHash, resourceHash(fixture.local, mutation.resource));
+    assert.equal(mutation.localHash, digest(plannedValue));
+  }
+
+  const result = applyPlan(cloneJson(fixture.remote), plan);
+  assert.equal(result.site.files['index.php'], fixture.privateValues[0]);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, fixture.privateValues[1]);
+  assert.equal(
+    result.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    fixture.privateValues[2],
+  );
+});
+
+test('RPP-0213 executor rejects forged or stale localHash before mutation', () => {
+  const fixture = rpp0213MixedResourceFixture();
+  const ready = planFor(fixture.base, fixture.local, fixture.remote);
+  const invalidHashSecret = 'raw-private-rpp0213-local-hash-secret';
+  const forgedValueSecret = 'forged-private-rpp0213-value-secret';
+  const staleHashSecret = 'stale-private-rpp0213-local-hash-source';
+
+  assert.equal(ready.status, 'ready');
+  assertEveryMutationHasLiveRemotePrecondition(ready);
+
+  const cases = [
+    {
+      name: 'missing localHash',
+      issueCode: 'LOCAL_HASH_MISSING',
+      forge(plan) {
+        delete mutationFor(plan, 'file:index.php').localHash;
+      },
+    },
+    {
+      name: 'invalid raw localHash',
+      issueCode: 'LOCAL_HASH_INVALID',
+      forge(plan) {
+        mutationFor(plan, 'file:index.php').localHash = invalidHashSecret;
+      },
+    },
+    {
+      name: 'wrong localHash',
+      issueCode: 'LOCAL_HASH_WRONG',
+      forge(plan) {
+        mutationFor(plan, 'file:index.php').localHash = '0'.repeat(64);
+      },
+    },
+    {
+      name: 'stale mutation value with old localHash',
+      issueCode: 'LOCAL_HASH_WRONG',
+      forge(plan) {
+        mutationFor(plan, 'file:index.php').value = serializeResourceValue({
+          type: 'file',
+          content: forgedValueSecret,
+        });
+      },
+    },
+    {
+      name: 'stale localHash from different local snapshot',
+      issueCode: 'LOCAL_HASH_WRONG',
+      forge(plan) {
+        mutationFor(plan, 'file:index.php').localHash = digest({
+          type: 'file',
+          content: staleHashSecret,
+        });
+      },
+    },
+  ];
+
+  for (const testCase of cases) {
+    const remote = cloneJson(fixture.remote);
+    const forged = tamperReadyPlan(ready, testCase.forge);
+    const before = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, forged));
+    const detailsJson = JSON.stringify(error.details);
+
+    assert.ok(error instanceof PushPlanError, testCase.name);
+    assert.equal(error.code, 'PLAN_LOCAL_HASH_MISMATCH', testCase.name);
+    assert.ok(error.details.issues.some((issue) => issue.code === testCase.issueCode), testCase.name);
+    assert.equal(JSON.stringify(remote), before, testCase.name);
+    for (const privateValue of [
+      ...fixture.privateValues,
+      invalidHashSecret,
+      forgedValueSecret,
+      staleHashSecret,
+    ]) {
+      assert.equal(detailsJson.includes(privateValue), false, `${testCase.name} leaked ${privateValue}`);
+    }
   }
 });
 

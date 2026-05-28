@@ -20,6 +20,7 @@ const FIXTURE_PLUGIN_OWNED_ROW_DEPENDENCIES = new Map([
     'reprint-push-atomic-dependent-fixture',
   ],
 ]);
+const SHA256_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 export class PushPlanError extends Error {
   constructor(code, message, details = {}) {
@@ -39,6 +40,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validateMutationLocalHashEvidence(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
   const durableJournal = getDurableJournalWriter(options);
@@ -197,6 +199,55 @@ export function applyPlan(remote, plan, options = {}) {
       },
     },
   };
+}
+
+function validateMutationLocalHashEvidence(plan) {
+  const issues = [];
+  for (const mutation of Array.isArray(plan.mutations) ? plan.mutations : []) {
+    const hashState = hashEvidenceState(mutation?.localHash);
+    if (hashState === 'missing') {
+      issues.push({
+        code: 'LOCAL_HASH_MISSING',
+        mutationId: mutation?.id || null,
+        resourceKey: mutation?.resourceKey || null,
+        localHashState: hashState,
+      });
+      continue;
+    }
+    if (hashState !== 'present') {
+      issues.push({
+        code: 'LOCAL_HASH_INVALID',
+        mutationId: mutation?.id || null,
+        resourceKey: mutation?.resourceKey || null,
+        localHashState: hashState,
+      });
+      continue;
+    }
+    const plannedValueHash = digest(deserializeResourceValue(mutation.value));
+    if (plannedValueHash !== mutation.localHash) {
+      issues.push({
+        code: 'LOCAL_HASH_WRONG',
+        mutationId: mutation.id || null,
+        resourceKey: mutation.resourceKey || null,
+        localHash: mutation.localHash,
+        plannedValueHash,
+      });
+    }
+  }
+  if (issues.length > 0) {
+    throw new PushPlanError(
+      'PLAN_LOCAL_HASH_MISMATCH',
+      'Plan mutation localHash evidence does not match the planned local resource value.',
+      { issues },
+    );
+  }
+}
+
+function hashEvidenceState(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    return 'missing';
+  }
+  return SHA256_HASH_PATTERN.test(value) ? 'present' : 'invalid';
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {
