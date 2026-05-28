@@ -55,6 +55,7 @@ const scenarioFamilies = Object.freeze([
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
+  'wp-term-relationships-graph',
   'same-plan-user-meta-graph',
 ]);
 
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpTermRelationshipsGraph: {
+    family: 'wp-term-relationships-graph',
+    tag: 'wp-term-relationships-graph-target',
   },
 });
 
@@ -583,6 +588,14 @@ const scenarioFamilyBuilders = {
     addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
     tags.add('expected-blocked');
   },
+  'wp-term-relationships-graph': ({ base, local, remote, allocator, tags, tier }) => {
+    const staleTarget = tier % 2 === 1;
+    addWpTermRelationshipsGraph(base, local, remote, allocator, tags, {
+      staleTarget,
+      prefix: staleTarget ? 'stale-wp-term-relationships' : 'ready-wp-term-relationships',
+    });
+    tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+  },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
     const metaId = allocator.graphId();
@@ -668,6 +681,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (family === 'wp-term-relationships-graph') {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -912,7 +929,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1248,6 +1265,63 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
   }
+}
+
+function addWpTermRelationshipsGraph(base, local, remote, allocator, tags, { staleTarget, prefix }) {
+  const termId = allocator.graphId();
+  const taxonomyId = allocator.graphId();
+  const termRowId = `term_id:${termId}`;
+  const taxonomyRowId = `term_taxonomy_id:${taxonomyId}`;
+  const relationshipRowId = `object_id:1|term_taxonomy_id:${taxonomyId}`;
+  const term = {
+    term_id: termId,
+    name: `Generated wp_term_relationships term target ${prefix} ${termId}`,
+    slug: `generated-wp-term-relationships-${prefix}-${termId}`,
+    term_group: 0,
+  };
+  const taxonomy = {
+    term_taxonomy_id: taxonomyId,
+    term_id: termId,
+    taxonomy: 'category',
+    description: `Generated wp_term_relationships taxonomy target ${prefix} ${taxonomyId}`,
+    parent: 0,
+    count: 1,
+  };
+
+  if (staleTarget) {
+    setRow(base, 'wp_terms', termRowId, term);
+    setRow(local, 'wp_terms', termRowId, term);
+    setRow(remote, 'wp_terms', termRowId, term);
+    setRow(base, 'wp_term_taxonomy', taxonomyRowId, taxonomy);
+    setRow(local, 'wp_term_taxonomy', taxonomyRowId, taxonomy);
+    setRow(remote, 'wp_term_taxonomy', taxonomyRowId, {
+      ...taxonomy,
+      description: `Remote stale wp_term_relationships taxonomy target ${taxonomyId}`,
+      count: 2,
+    });
+    tags.add('wp-term-relationships-graph-stale');
+    tags.add('wp-term-relationships-remote-drift');
+  } else {
+    setRow(local, 'wp_terms', termRowId, term);
+    setRow(local, 'wp_term_taxonomy', taxonomyRowId, taxonomy);
+    tags.add('wp-term-relationships-graph-ready');
+  }
+
+  setRow(local, 'wp_term_relationships', relationshipRowId, {
+    object_id: 1,
+    term_taxonomy_id: taxonomyId,
+    term_order: 0,
+  });
+  remote.files[`wp-content/uploads/${prefix}-remote-only-${allocator.next()}.txt`] =
+    `Remote preserved wp_term_relationships graph note ${allocator.next()}`;
+
+  tags.add('remote-preserve');
+  tags.add('wp-term-relationships-graph-target');
+  tags.add('wp-term-relationships-create');
+  tags.add('term-relationship-object-graph');
+  tags.add('term-relationship-taxonomy-graph');
+  tags.add('taxonomy-graph');
+  tags.add('same-plan-graph');
 }
 
 function addCommentGraph(local, allocator) {

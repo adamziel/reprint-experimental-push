@@ -61,6 +61,14 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'wp-term-relationships-graph',
+  'wp-term-relationships-graph-target',
+  'wp-term-relationships-graph-ready',
+  'wp-term-relationships-graph-stale',
+  'wp-term-relationships-remote-drift',
+  'wp-term-relationships-create',
+  'term-relationship-object-graph',
+  'term-relationship-taxonomy-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -347,6 +355,109 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
     );
+  }
+}
+
+test('RPP-0133 wp_term_relationships graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermRelationshipsGraph;
+
+  assert.ok(coverage, 'missing wp_term_relationships graph target coverage');
+  assert.equal(coverage.family, 'wp-term-relationships-graph');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-relationships-graph-target']);
+  assert.deepEqual(coverage.statuses, { blocked: 5, ready: 5 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('Generated wp_term_relationships'), false);
+  assert.equal(summaryEvidence.includes('Remote stale wp_term_relationships'), false);
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'wp-term-relationships-graph');
+  const readyCases = cases.filter((testCase) => testCase.tags.has('wp-term-relationships-graph-ready'));
+  const staleCases = cases.filter((testCase) => testCase.tags.has('wp-term-relationships-graph-stale'));
+
+  assert.equal(cases.length, 10, 'one wp_term_relationships graph case should appear per tier');
+  assert.equal(readyCases.length, 5, 'even tiers should produce ready relationship graph cases');
+  assert.equal(staleCases.length, 5, 'odd tiers should produce stale relationship graph cases');
+
+  for (const readyCase of readyCases) {
+    assertTermRelationshipsGraphShape(readyCase, { staleTarget: false });
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 3, 'ready graph should create term, taxonomy, and relationship rows');
+    assert.equal(ready.applied, true, 'ready wp_term_relationships graph should apply');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready graph should preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready graph should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const staleCase of staleCases) {
+    assertTermRelationshipsGraphShape(staleCase, { staleTarget: true });
+    const stale = validateGeneratedCase(staleCase);
+    assert.notEqual(stale.status, 'ready', 'stale relationship graph should not be ready');
+    assert.ok(stale.blockers >= 1, 'stale relationship graph should record a graph identity blocker');
+    assert.equal(stale.applied, false, 'stale relationship graph must not apply mutations');
+  }
+});
+
+function assertTermRelationshipsGraphShape(testCase, { staleTarget }) {
+  const termRows = Object.entries(testCase.local.db.wp_terms)
+    .filter(([, row]) => row.name.startsWith('Generated wp_term_relationships term target '));
+  const taxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
+    .filter(([, row]) => row.description.startsWith('Generated wp_term_relationships taxonomy target '));
+  const relationshipRows = Object.entries(testCase.local.db.wp_term_relationships)
+    .filter(([id, row]) => !testCase.base.db.wp_term_relationships[id]
+      && row.object_id === 1
+      && row.term_order === 0);
+
+  assert.equal(termRows.length, 1, `${testCase.id} should carry one relationship target term`);
+  assert.equal(taxonomyRows.length, 1, `${testCase.id} should carry one relationship target taxonomy`);
+  assert.equal(relationshipRows.length, 1, `${testCase.id} should create one term relationship row`);
+
+  const [termRowId, term] = termRows[0];
+  const [taxonomyRowId, taxonomy] = taxonomyRows[0];
+  const [relationshipRowId, relationship] = relationshipRows[0];
+
+  assert.ok(testCase.base.db.wp_posts[`ID:${relationship.object_id}`], `${testCase.id} relationship post should exist`);
+  assert.equal(taxonomy.term_id, term.term_id, `${testCase.id} taxonomy should reference the target term`);
+  assert.equal(
+    relationship.term_taxonomy_id,
+    taxonomy.term_taxonomy_id,
+    `${testCase.id} relationship should reference the target taxonomy`,
+  );
+  assert.equal(testCase.base.db.wp_term_relationships[relationshipRowId], undefined);
+  assert.equal(testCase.remote.db.wp_term_relationships[relationshipRowId], undefined);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_terms[termRowId], `${testCase.id} stale term target should exist in base`);
+    assert.ok(
+      testCase.base.db.wp_term_taxonomy[taxonomyRowId],
+      `${testCase.id} stale taxonomy target should exist in base`,
+    );
+    assert.deepEqual(
+      testCase.remote.db.wp_terms[termRowId],
+      testCase.base.db.wp_terms[termRowId],
+      `${testCase.id} stale term target should not drift`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_term_taxonomy[taxonomyRowId],
+      testCase.base.db.wp_term_taxonomy[taxonomyRowId],
+      `${testCase.id} stale taxonomy target should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_terms[termRowId], undefined);
+    assert.equal(testCase.remote.db.wp_terms[termRowId], undefined);
+    assert.equal(testCase.base.db.wp_term_taxonomy[taxonomyRowId], undefined);
+    assert.equal(testCase.remote.db.wp_term_taxonomy[taxonomyRowId], undefined);
   }
 }
 
