@@ -51,12 +51,13 @@ The default generated run covers:
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
-  plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
-  delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  outcomes, remote-only preservation cases with per-tier target counts and
+  stale replay rejection before mutation, `wp_term_taxonomy` graph cases with
+  per-tier target counts and ready/stale non-ready outcomes, supported and
+  unsupported plugin-owned data, plugin owner-context drift, supported forms-lab
+  custom-table rows, forms-lab delete refusal, atomic plugin install ready and
+  missing-dependency paths, same-plan post-parent, taxonomy, comment, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -70,6 +71,13 @@ create the term and taxonomy row in one plan and reject a stale replay before
 mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
+
+The `remoteOnlyPreservation` target coverage records per-tier counts for ready
+plans that combine a planned local file mutation with an unrelated remote-only
+`wp_posts` update. The invariant is that the remote-only row is recorded as a
+`keep-remote` decision, never becomes a mutation, remains byte-for-byte equal to
+the live remote after apply, and the same ready plan rejects a stale replay
+before any mutation.
 
 At the time this note was added, the summary command reported:
 
@@ -99,6 +107,25 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "remoteOnlyPreservation": {
+      "family": "independent-local-and-remote",
+      "total": 11,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 2,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "ready": 11
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -158,7 +185,8 @@ At the time this note was added, the summary command reported:
     "wp-term-taxonomy-graph-stale": 10,
     "wp-term-taxonomy-create": 20,
     "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "wp-terms-remote-drift": 10,
+    "remote-only-preservation": 11
   },
   "maxResourceCount": 68,
   "maxMutationCount": 43,

@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { applyPlan } from '../src/apply.js';
+import { createPushPlan } from '../src/planner.js';
+import { deepClone } from '../src/stable-json.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -12,6 +16,7 @@ import {
 const requiredFamilies = [
   'local-file-update',
   'remote-only-post-update',
+  'remote-only-preservation',
   'independent-local-and-remote',
   'direct-row-conflict',
   'local-delete',
@@ -323,6 +328,59 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
   assert.equal(stale.applied, false, 'stale graph must not apply mutations');
 });
 
+test('RPP-0119 remote-only preservation target applies locals while keeping remote-only rows', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.remoteOnlyPreservation;
+
+  assert.ok(coverage, 'missing remote-only preservation target coverage');
+  assert.equal(coverage.family, 'independent-local-and-remote');
+  assert.equal(coverage.total, report.summary.featureFamilies['remote-only-preservation']);
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const remotePreservationCase = generatePushHarnessCases()
+    .find((testCase) => testCase.family === 'independent-local-and-remote');
+  assert.ok(remotePreservationCase, 'missing generated remote-only preservation case');
+  assertRemoteOnlyPreservationShape(remotePreservationCase);
+
+  const result = validateGeneratedCase(remotePreservationCase);
+  assert.equal(result.status, 'ready');
+  assert.equal(result.applied, true, 'remote-only preservation case should apply planned local work');
+  assert.equal(result.unplannedRemotePreserved, true, 'remote-only resources should stay at live remote values');
+  assert.equal(result.staleReplayRejected, true, 'ready remote-only preservation should reject stale replay');
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+
+  const plan = createGeneratedPlan(remotePreservationCase);
+  const remoteOnlyRowId = remoteOnlyPreservationRowId(remotePreservationCase);
+  const remoteOnlyResourceKey = `row:${JSON.stringify(['wp_posts', remoteOnlyRowId])}`;
+
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === remoteOnlyResourceKey),
+    false,
+    'remote-only row must not become a planned mutation',
+  );
+  assert.ok(
+    plan.decisions.some((decision) =>
+      decision.resourceKey === remoteOnlyResourceKey && decision.decision === 'keep-remote'),
+    'remote-only row should be recorded as a keep-remote decision',
+  );
+
+  const applied = applyPlan(deepClone(remotePreservationCase.remote), plan);
+  assert.deepEqual(
+    applied.site.db.wp_posts[remoteOnlyRowId],
+    remotePreservationCase.remote.db.wp_posts[remoteOnlyRowId],
+    'apply must preserve the remote-only wp_posts row exactly',
+  );
+});
+
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
   const termRows = Object.entries(testCase.local.db.wp_terms)
     .filter(([id, row]) => !testCase.base.db.wp_terms[id]
@@ -348,6 +406,43 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+function assertRemoteOnlyPreservationShape(testCase) {
+  assert.ok(testCase.tags.has('remote-only-preservation'));
+  assert.ok(testCase.tags.has('remote-preserve'));
+
+  const localOnlyFiles = Object.entries(testCase.local.files)
+    .filter(([path, value]) => !testCase.base.files[path]
+      && !testCase.remote.files[path]
+      && String(value).startsWith('independent local '));
+  assert.equal(localOnlyFiles.length, 1, `${testCase.id} should include one planned local-only file`);
+
+  const remoteOnlyRows = Object.entries(testCase.remote.db.wp_posts)
+    .filter(([id, row]) => row.post_title.startsWith('Independent remote ')
+      && testCase.base.db.wp_posts[id]
+      && testCase.local.db.wp_posts[id]
+      && testCase.base.db.wp_posts[id].post_title !== row.post_title
+      && testCase.local.db.wp_posts[id].post_title !== row.post_title);
+  assert.equal(remoteOnlyRows.length, 1, `${testCase.id} should include one explicit remote-only post update`);
+}
+
+function remoteOnlyPreservationRowId(testCase) {
+  const row = Object.entries(testCase.remote.db.wp_posts)
+    .find(([id, value]) => value.post_title.startsWith('Independent remote ')
+      && testCase.base.db.wp_posts[id]
+      && testCase.local.db.wp_posts[id]);
+  assert.ok(row, `${testCase.id} missing remote-only preservation row`);
+  return row[0];
+}
+
+function createGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
 }
 
 function nonReadyTargetCount(coverage) {

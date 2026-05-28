@@ -94,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  remoteOnlyPreservation: {
+    family: 'independent-local-and-remote',
+    tag: 'remote-only-preservation',
+  },
 });
 
 export function generatePushHarnessCases({
@@ -276,6 +280,8 @@ const scenarioFamilyBuilders = {
     local.files[localPath] = `independent local ${allocator.next()}`;
     ensurePostExists(remote, remotePostId);
     remote.db.wp_posts[`ID:${remotePostId}`].post_title = `Independent remote ${allocator.next()}`;
+    tags.add('remote-only-preservation');
+    tags.add('remote-preserve');
     tags.add('independent-merge');
   },
   'direct-row-conflict': ({ local, remote, allocator, tags }) => {
