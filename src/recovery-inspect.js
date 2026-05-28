@@ -1,8 +1,14 @@
 import { resourceHash } from './resources.js';
-import { classifyRecoveryJournalClaims, readRecoveryJournal } from './recovery-journal.js';
+import {
+  classifyRecoveryJournalClaims,
+  readRecoveryJournal,
+  readRecoveryJournalPaged,
+} from './recovery-journal.js';
 
-export function inspectRecoveryJournal({ journal, journalPath, plan, current }) {
-  const persisted = journal || readRecoveryJournal(journalPath);
+export function inspectRecoveryJournal({ journal, journalPath, plan, current, journalPageSize = null }) {
+  const persisted = journal || (journalPageSize
+    ? readRecoveryJournalPaged(journalPath, { pageSize: journalPageSize })
+    : readRecoveryJournal(journalPath));
   const mutations = plan.mutations || [];
 
   if (persisted.integrity.status !== 'ok') {
