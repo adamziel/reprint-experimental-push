@@ -252,6 +252,54 @@ function plannerSummaryEvidenceEnvelope(plan) {
   };
 }
 
+function hashOnlyPlanEvidenceForRpp0222(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+    atomicGroups: plan.atomicGroups.map((group) => ({
+      id: group.id,
+      status: group.status,
+      mutationIds: group.mutationIds,
+      conflicts: group.conflicts,
+      blockers: group.blockers.map((blocker) => blocker.id),
+    })),
+  };
+}
+
 function assertPlannerSummaryMatchesEvidence(plan, label) {
   assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
   assert.equal(
@@ -453,6 +501,81 @@ test('combines non-overlapping local and remote changes', () => {
   assert.equal(plan.status, 'ready');
   assert.equal(result.site.files['wp-content/themes/theme/style.css'], 'body { color: black; }');
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote title');
+});
+
+test('RPP-0222 independent local row plus remote file edit stays hash-only and unplanned-safe', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'base-style-rpp0222';
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateLocalTitle = 'local-private-rpp0222-row-title';
+  const privateRemoteFile = 'remote-private-rpp0222-file-payload';
+  const rowKey = 'row:["wp_posts","ID:1"]';
+  const fileKey = 'file:wp-content/themes/theme/style.css';
+  local.db.wp_posts['ID:1'].post_title = privateLocalTitle;
+  remote.files['wp-content/themes/theme/style.css'] = privateRemoteFile;
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const rowMutation = mutationFor(firstPlan, rowKey);
+  const fileDecision = decisionFor(firstPlan, fileKey);
+  const rowPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === rowKey);
+  const filePrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === fileKey);
+  const planEvidence = hashOnlyPlanEvidenceForRpp0222(firstPlan);
+  const planEvidenceJson = JSON.stringify(planEvidence);
+  const durableJournal = failingDurableJournal();
+  const result = applyPlan(remote, firstPlan, { durableJournal });
+  const durableEvidenceJson = JSON.stringify(durableJournal.events);
+  const staleRemote = cloneJson(remote);
+  staleRemote.db.wp_posts['ID:1'].post_title = 'stale-private-rpp0222-row-title';
+  const staleBefore = JSON.stringify(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, firstPlan));
+  const staleErrorJson = JSON.stringify(staleError.details);
+
+  assert.equal(firstPlan.status, 'ready');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0222 independent row/file invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 1,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(planEvidence, hashOnlyPlanEvidenceForRpp0222(secondPlan));
+  assert.equal(rowMutation?.action, 'put');
+  assert.equal(rowMutation.resourceKey, rowKey);
+  assert.equal(fileDecision?.decision, 'keep-remote');
+  assert.equal(fileDecision.change.localChange, 'unchanged');
+  assert.equal(fileDecision.change.remoteChange, 'update');
+  assert.equal(filePrecondition, undefined);
+  assert.equal(firstPlan.mutations.some((mutation) => mutation.resourceKey === fileKey), false);
+  assert.equal(rowPrecondition?.mutationId, rowMutation.id);
+  assert.equal(rowPrecondition.expectedHash, rowMutation.remoteBeforeHash);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  assert.equal(planEvidenceJson.includes(privateLocalTitle), false);
+  assert.equal(planEvidenceJson.includes(privateRemoteFile), false);
+  assert.equal(durableEvidenceJson.includes(privateLocalTitle), false);
+  assert.equal(durableEvidenceJson.includes(privateRemoteFile), false);
+  assert.deepEqual(
+    durableJournal.events
+      .filter((event) => ['target-planned', 'mutation-observed'].includes(event.type))
+      .map((event) => [event.type, event.resourceKey]),
+    [
+      ['target-planned', rowKey],
+      ['mutation-observed', rowKey],
+    ],
+  );
+  assert.equal(result.appliedMutations, 1);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, privateLocalTitle);
+  assert.equal(result.site.files['wp-content/themes/theme/style.css'], privateRemoteFile);
+
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(staleRemote), staleBefore);
+  assert.equal(staleErrorJson.includes(privateLocalTitle), false);
+  assert.equal(staleErrorJson.includes(privateRemoteFile), false);
+  assert.equal(staleErrorJson.includes('stale-private-rpp0222-row-title'), false);
 });
 
 test('plans local deletions only behind live remote preconditions', () => {
