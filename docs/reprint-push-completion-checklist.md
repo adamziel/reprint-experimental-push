@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 101.
-- Remaining open: 899.
+- Verified complete: 102.
+- Remaining open: 898.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -48,7 +48,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0034 (Near / release-gates) Prove journal route read-only proof, variant 2. Success: scenario matrix records the negative and positive path.
 - [x] RPP-0035 (Near / release-gates) Prove recovery inspect read-only proof, variant 2. Success: tmux-visible run prints a final bracketed status marker.
 - [x] RPP-0036 (Near / release-gates) Prove releaseMovement allowed/denied summary, variant 2. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0037 (Near / release-gates) Prove tmux stdout proof status marker, variant 2. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0037 (Near / release-gates) Prove tmux stdout proof status marker, variant 2. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0038 (Near / release-gates) Prove progress.html release timestamp, variant 2. Success: progress report links the command and observed status.
 - [ ] RPP-0039 (Near / release-gates) Prove .agents/RELEASE_GATES.md status row, variant 2. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0040 (Near / release-gates) Prove verify:release nonzero failure reason, variant 2. Success: tmux-visible run prints a final bracketed status marker.
