@@ -2074,6 +2074,135 @@ test('allows same-plan comment and user graph closure when author and comment ta
   assert.equal(result.site.db.wp_commentmeta['meta_id:51'].comment_id, 12);
 });
 
+test('RPP-0327 rewrites comment user identity maps to proven remote users', () => {
+  const sourceUserResourceKey = 'row:["wp_users","ID:701"]';
+  const targetUserResourceKey = 'row:["wp_users","ID:801"]';
+  const commentResourceKey = 'row:["wp_comments","comment_ID:702"]';
+  const base = baseSite();
+  base.db.wp_users = {};
+  base.db.wp_comments = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_users', localId: 'ID:701', remoteId: 'ID:801' }],
+    },
+  };
+  local.db.wp_users['ID:701'] = {
+    ID: 701,
+    user_login: 'mapped-comment-user',
+    user_email: 'mapped-comment-user@example.test',
+    display_name: 'Mapped Comment User',
+  };
+  remote.db.wp_users['ID:801'] = {
+    ID: 801,
+    user_login: 'mapped-comment-user',
+    user_email: 'mapped-comment-user@example.test',
+    display_name: 'Mapped Comment User',
+  };
+  local.db.wp_comments['comment_ID:702'] = {
+    comment_ID: 702,
+    comment_post_ID: 1,
+    comment_author: 'Mapped comment author',
+    comment_author_email: 'mapped-comment-author@example.test',
+    comment_content: 'Mapped comment user reference.',
+    comment_parent: 0,
+    user_id: 701,
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const commentMutation = mutationFor(plan, commentResourceKey);
+  const commentValue = deserializeMutationValue(commentMutation);
+  const userRewrite = commentMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+    rewrite.relationshipType === 'comment-user');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, sourceUserResourceKey), undefined);
+  assert.equal(decisionFor(plan, sourceUserResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, targetUserResourceKey).decision, 'keep-remote');
+  assert.equal(commentMutation.changeKind, 'create');
+  assert.equal(commentValue.user_id, 801);
+  assert.equal(userRewrite.sourceTargetResourceKey, sourceUserResourceKey);
+  assert.equal(userRewrite.targetResourceKey, targetUserResourceKey);
+  assert.match(userRewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(userRewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_users['ID:701'], undefined);
+  assert.equal(result.site.db.wp_users['ID:801'].user_login, 'mapped-comment-user');
+  assert.equal(result.site.db.wp_comments['comment_ID:702'].user_id, 801);
+});
+
+test('RPP-0327 blocks stale comment user identity maps with hash-only evidence', () => {
+  const sourceUserResourceKey = 'row:["wp_users","ID:701"]';
+  const targetUserResourceKey = 'row:["wp_users","ID:801"]';
+  const commentResourceKey = 'row:["wp_comments","comment_ID:702"]';
+  const base = baseSite();
+  base.db.wp_users = {};
+  base.db.wp_comments = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_users', localId: 'ID:701', remoteId: 'ID:801' }],
+    },
+  };
+  local.db.wp_users['ID:701'] = {
+    ID: 701,
+    user_login: 'local-private-comment-user',
+    user_email: 'local-private-comment-user@example.test',
+    display_name: 'Local Private Comment User',
+  };
+  remote.db.wp_users['ID:801'] = {
+    ID: 801,
+    user_login: 'remote-private-comment-user',
+    user_email: 'remote-private-comment-user@example.test',
+    display_name: 'Remote Private Comment User',
+  };
+  local.db.wp_comments['comment_ID:702'] = {
+    comment_ID: 702,
+    comment_post_ID: 1,
+    comment_author: 'Local Private Comment Author',
+    comment_author_email: 'local-private-comment-author@example.test',
+    comment_content: 'local-private-comment-user-body',
+    comment_parent: 0,
+    user_id: 701,
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceUserBlocker = plan.blockers.find((blocker) =>
+    blocker.resourceKey === sourceUserResourceKey);
+  const commentBlocker = plan.blockers.find((blocker) =>
+    blocker.resourceKey === commentResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourceUserResourceKey), undefined);
+  assert.equal(mutationFor(plan, commentResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetUserResourceKey).decision, 'keep-remote');
+  assert.equal(sourceUserBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(sourceUserBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(sourceUserBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceUserBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceUserBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(sourceUserBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(sourceUserBlocker.change.local, 'value'), false);
+  assert.equal(commentBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(commentBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(commentBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(commentBlocker.change.local, 'value'), false);
+  assert.equal(commentBlocker.references[0].relationshipType, 'comment-user');
+  assert.equal(commentBlocker.references[0].targetResourceKey, sourceUserResourceKey);
+  assert.equal(commentBlocker.references[0].targetSupport.supported, false);
+  assert.equal(planJson.includes('local-private-comment-user-body'), false);
+  assert.equal(planJson.includes('local-private-comment-user@example.test'), false);
+  assert.equal(planJson.includes('remote-private-comment-user@example.test'), false);
+  assert.equal(planJson.includes('Remote Private Comment User'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks post author and usermeta references when the remote user target diverged', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const usermetaResourceKey = 'row:["wp_usermeta","meta_id:61"]';

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildCommentUserIdentityMapProof,
   buildComplexSitePlannerProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
@@ -22,6 +23,7 @@ const smallShape = Object.freeze({
   postTagTaxonomyGraph: false,
   postParentGraph: false,
   commentGraph: false,
+  commentUserIdentityMap: false,
 });
 
 test('complex-site seed PHP is bounded and variant-aware', () => {
@@ -286,6 +288,45 @@ test('complex-site planner proof covers real comment parent and commentmeta grap
   assert.equal(proof.invariants.commentGraphHasLivePreconditions, true);
 });
 
+test('complex-site proof rewrites comment user identity maps and fails closed when stale', () => {
+  const graphShape = { ...smallShape, commentUserIdentityMap: true };
+  const proof = buildCommentUserIdentityMapProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const staleBlockerJson = JSON.stringify(proof.staleBlocker);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.readyPlan.status, 'ready');
+  assert.equal(proof.stalePlan.status, 'blocked');
+  assert.equal(proof.counts.source.commentUserIdentitySourceUsers, 0);
+  assert.equal(proof.counts.localEdited.commentUserIdentitySourceUsers, 1);
+  assert.equal(proof.counts.localEdited.commentUserIdentityComments, 1);
+  assert.equal(proof.counts.remoteChanged.commentUserIdentityTargetUsers, 1);
+  assert.equal(proof.invariants.readyMapsDeterministically, true);
+  assert.equal(proof.invariants.commentUserRewritten, true);
+  assert.equal(proof.invariants.sourceUserNotMutated, true);
+  assert.equal(proof.invariants.commentHasLivePrecondition, true);
+  assert.equal(proof.invariants.staleTargetFailsClosed, true);
+  assert.equal(proof.invariants.staleTargetPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.staleTargetNoCommentMutation, true);
+  assert.equal(proof.invariants.staleBlockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.staleBlockerRedactsRawValues, true);
+  assert.equal(proof.deterministicMapping.resourceKey, 'row:["wp_comments","comment_ID:73911"]');
+  assert.equal(proof.deterministicMapping.userId, 74901);
+  assert.equal(proof.deterministicMapping.rewriteType, 'comment-user');
+  assert.equal(proof.deterministicMapping.sourceTargetResourceKey, 'row:["wp_users","ID:73901"]');
+  assert.equal(proof.deterministicMapping.targetResourceKey, 'row:["wp_users","ID:74901"]');
+  assert.match(proof.deterministicMapping.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.deterministicMapping.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(staleBlockerJson.includes('comment-user-identity@example.test'), false);
+  assert.equal(staleBlockerJson.includes('Remote Private Comment User Drift'), false);
+  assert.equal(staleBlockerJson.includes('Comment whose user_id maps'), false);
+  assert.equal(staleBlockerJson.includes('remote-private-comment-user@example.test'), false);
+});
+
 test('complex-site release evidence extracts release verifier receipts and gates from noisy command output', () => {
   const plannerProof = { ok: true };
   const releaseSummary = syntheticReleaseSummary(9);
@@ -546,6 +587,46 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.commentUserIdentityMap && local) {
+    snapshot.meta.wordpressGraphIdentityMap = {
+      rows: [
+        { table: 'wp_users', localId: 'ID:73901', remoteId: 'ID:74901' },
+      ],
+    };
+    snapshot.db.wp_users['ID:73901'] = {
+      ID: 73901,
+      user_login: 'reprint-push-comment-user-identity',
+      user_email: 'comment-user-identity@example.test',
+      display_name: 'Reprint Push Comment User Identity',
+    };
+    snapshot.db.wp_comments['comment_ID:73911'] = {
+      comment_ID: 73911,
+      comment_post_ID: 71001,
+      comment_author: 'Reprint Push Comment User Author',
+      comment_author_email: 'comment-user-author@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:49:00',
+      comment_date_gmt: '2026-05-27 21:49:00',
+      comment_content: 'Comment whose user_id maps to a remote user identity.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-user-identity',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 73901,
+    };
+  }
+
+  if (shape.commentUserIdentityMap && remote) {
+    snapshot.db.wp_users['ID:74901'] = {
+      ID: 74901,
+      user_login: 'reprint-push-comment-user-identity',
+      user_email: 'comment-user-identity@example.test',
+      display_name: 'Reprint Push Comment User Identity',
     };
   }
 
