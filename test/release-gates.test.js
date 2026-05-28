@@ -356,6 +356,45 @@ test('check-release-gates command proves Application Password binding drift befo
   });
 });
 
+test('same source URL identity drift emits a final bracketed marker for RPP-0030', () => {
+  const sourceDrift = {
+    ok: false,
+    same: false,
+    sameSource: false,
+    observed: 'dry-run-used-remote-changed-source',
+    sourceUrl,
+    preflightSourceUrl: sourceUrl,
+    dryRunSourceUrl: remoteChangedUrl,
+    applySourceUrl: sourceUrl,
+    recoverySourceUrl: sourceUrl,
+    scope: 'final-release',
+  };
+  const evaluation = evaluateReleaseGates({
+    env: releaseEnv(),
+    evidence: completeEvidence('final-release', {
+      sourceIdentity: sourceDrift,
+    }),
+    scope: 'final-release',
+    now: fixedNow,
+  });
+  const gate = gateById(evaluation, 'same-source-identity');
+
+  assert.equal(gate.status, 'failed');
+  assert.equal(gate.code, 'SAME_SOURCE_IDENTITY_REQUIRED');
+  assert.equal(gate.reason, 'Source URL identity drifted across the checked release path.');
+  assert.deepEqual(gate.evidence, {
+    ...sourceDrift,
+    required: ['preflight, dry-run, apply, and recovery use the same source URL'],
+  });
+  assert.equal(evaluation.releaseMovement.allowed, false);
+  assert.equal(evaluation.releaseMovement.finalGates, '19/20');
+  assert.equal(evaluation.releaseMovement.reason, 'Source URL identity drifted across the checked release path.');
+  assert.equal(
+    formatReleaseGateStatusMarker(evaluation),
+    '[release-gates:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]',
+  );
+});
+
 test('source URL without production credentials fails at the explicit missing-secret gate', () => {
   const evidence = completeEvidence('final-release');
   delete evidence.productionSecret;

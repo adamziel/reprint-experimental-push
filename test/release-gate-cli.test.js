@@ -46,7 +46,7 @@ function releaseEnv() {
   };
 }
 
-function completeEvidence(scope) {
+function completeEvidence(scope, overrides = {}) {
   return {
     packagedFallback: { ok: true, observed: false, scope },
     authSourceCommandReadback: {
@@ -80,6 +80,7 @@ function completeEvidence(scope) {
       reason: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
       scope,
     },
+    ...overrides,
   };
 }
 
@@ -271,6 +272,73 @@ test('release gate CLI keeps stale or local-only production-required provenance 
     total: 4,
     accepted: 2,
     rejected: 2,
+  });
+});
+
+test('release gate CLI fails closed on same source URL drift with final bracketed status marker', () => {
+  const sourceDrift = {
+    ok: false,
+    same: false,
+    sameSource: false,
+    observed: 'dry-run-used-remote-changed-source',
+    sourceUrl,
+    preflightSourceUrl: sourceUrl,
+    dryRunSourceUrl: remoteChangedUrl,
+    applySourceUrl: sourceUrl,
+    recoverySourceUrl: sourceUrl,
+    scope: 'final-release',
+  };
+  const evidenceFile = writeEvidence({
+    scope: 'final-release',
+    evidence: completeEvidence('final-release', {
+      sourceIdentity: sourceDrift,
+    }),
+  });
+  const result = runGate(['--evidence-file', evidenceFile, '--scope', 'final-release'], releaseEnv());
+  const report = parseReport(result);
+  const gate = report.evaluation.gates.find((entry) => entry.id === 'same-source-identity');
+
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(report.ok, false);
+  assert.equal(report.exitCode, 1);
+  assert.equal(report.releaseStatus, 'NO-GO');
+  assert.equal(report.primaryFailureBucket, 'identity');
+  assert.equal(report.primaryFailureCode, 'SAME_SOURCE_IDENTITY_REQUIRED');
+  assert.equal(report.mutationAttempted, false);
+  assert.deepEqual(report.mutationPolicy, {
+    readOnly: true,
+    reason: 'check-release-gates evaluates supplied evidence only and never calls preflight, dry-run, apply, journal, or recovery mutation routes',
+  });
+  assert.equal(report.releaseMovement.allowed, false);
+  assert.equal(report.releaseMovement.finalGates, '19/20');
+  assert.equal(
+    report.statusMarker,
+    '[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]',
+  );
+  assert.deepEqual(report.missingProductionEvidenceBuckets, [
+    {
+      bucket: 'identity',
+      gateCount: 1,
+      gates: [
+        {
+          bucket: 'identity',
+          id: 'same-source-identity',
+          rpp: 'RPP-0010',
+          title: 'Same source URL identity proof',
+          status: 'failed',
+          code: 'SAME_SOURCE_IDENTITY_REQUIRED',
+          reason: 'Source URL identity drifted across the checked release path.',
+          required: ['preflight, dry-run, apply, and recovery use the same source URL'],
+          observed: 'dry-run-used-remote-changed-source',
+          scope: 'final-release',
+        },
+      ],
+    },
+  ]);
+  assert.deepEqual(gate.evidence, {
+    ...sourceDrift,
+    required: ['preflight, dry-run, apply, and recovery use the same source URL'],
+    scope: 'final-release',
   });
 });
 
