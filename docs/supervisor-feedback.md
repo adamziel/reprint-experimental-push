@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:28 CEST
+Last updated: 2026-05-28 06:46 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:46 CEST - Queue Heartbeat After RPP-0220
+
+- Going well: origin/lane is `f9df9d1b6`; `RPP-0220` is integrated from lane
+  truth, giving 114 verified items checked, 886 open, and release status
+  `NO-GO`.
+- Queue separation: visible refs or active branches for `RPP-0041`-`RPP-0050`,
+  `RPP-0113`-`RPP-0125`, `RPP-0216`, `RPP-0221`-`RPP-0224`, `RPP-0315`,
+  `RPP-0322`, `RPP-0323`, `RPP-0326`-`RPP-0329`, `RPP-0415`-`RPP-0420`,
+  `RPP-0425`-`RPP-0427`, `RPP-0431`, and `RPP-0433`-`RPP-0436` remain
+  queued/session-only; none move the lane counts in this heartbeat.
+- Live roster: active developers are `rpp-24`/`RPP-0124`, `rpp-25`/`RPP-0050`,
+  `rpp-29`/`RPP-0224`, `rpp-30`/`RPP-0329`, `rpp-32`/`RPP-0435`,
+  `rpp-33`/`RPP-0125`, and `rpp-34`/`RPP-0436`; `rpp-28` is active on
+  `RPP-0431`; critics are `rpp-31` and `rpp-37`; queue is
+  `rpp-35`; progress reporter is `rpp-36`.
+- Current nudge: keep watching for the next origin/lane move; refresh counts
+  only after the lane actually changes, and keep `RPP-0221`/later candidates and `RPP-0431`
+  out of readiness scoring until integrated.
 
 ## 2026-05-28 06:28 CEST - RPP-0220 Integrated
 
