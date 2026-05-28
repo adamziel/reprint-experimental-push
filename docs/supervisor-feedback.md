@@ -1,9 +1,25 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 04:58 CEST
+Last updated: 2026-05-28 05:12 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:12 CEST - RPP-0035 Integrated
+
+- Going well: integration is now at `f051dc124`, adding
+  `RPP-0035` recovery inspect read-only proof with final bracketed status
+  markers, exact `RECOVERY_INSPECT_READ_ONLY_REQUIRED` negative evidence,
+  stable recovery row counts on the positive path, and no mutation attempt from
+  `check-release-gates`.
+- Checklist movement: 99 verified items checked and
+  901 open. New check since the prior feedback entry: `RPP-0035`.
+- Verification: release-gate focused tests pass 26/26, checklist lint reports
+  99 checked / 901 open with 0 risky claims, artifact redaction scans the
+  touched docs with 0 rejected files, release gates still fail closed as
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue with `RPP-0036`, `RPP-0210`, `RPP-0310`, and `RPP-0414` one at
+  a time from the latest lane head.
 
 ## 2026-05-28 04:58 CEST - RPP-0033, RPP-0034, RPP-0207, and RPP-0107 Integrated
 
