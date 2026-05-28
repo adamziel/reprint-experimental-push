@@ -1,9 +1,45 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 02:13 CEST
+Last updated: 2026-05-28 02:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 02:24 CEST - Local Plugin Driver Release Evidence
+
+- Going well:
+  `npm run verify:release:local-production:complex-site:plugin-driver`
+  passed in `main:plugin-driver-local-proof` with
+  `[PLUGIN_DRIVER_LOCAL_PROOF_STATUS:0]`.
+- Also going well: the checked local release verifier now carries a
+  production-owned release-state plugin driver row through the ready plan,
+  live-remote precondition, apply-time revalidation, receipt, durable
+  DB-journal, replay, and recovery proof. The resource is
+  `row:["wp_reprint_push_release_state","state_id:1"]` with owner
+  `reprint-push` and driver `reprint-push-release-state`.
+- Release evidence improved: the verifier reported receipt
+  `6b2e4ade17525e5d1c08e99f4f745257a41a19cba2e1cf5c8819e323bf337b13`,
+  74 durable DB-journal rows, 22 `mutation-applied` events,
+  `applyRevalidationVerifiedCount: 22`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK`, replay equivalence, stale-owner fencing, and
+  same-key/different-body conflict before mutation.
+- Not yet done: this proves one local production-owned plugin-driver row, not
+  arbitrary plugin semantics, arbitrary custom tables, plugin activation/update
+  flows, rollback, Docker/external WordPress durability, or the final live
+  production source boundary.
+- Progress change: merge invariants, reliable executor/protocol, and
+  independent evidence move up. Recovery and fast-path percentages stay flat.
+- Next nudge: carry the same plugin-driver ownership boundary to
+  Docker/external WordPress, or add another concrete plugin-owned driver while
+  keeping the release held.
+
+| Lane | Nudge |
+| --- | --- |
+| Invariants | Keep exact owner/driver/table matching and remote-drift conflict refusal on every plugin-owned custom-table mutation. |
+| Recovery | The local release proof is paired with DB-journal/replay evidence; next recovery movement needs external crash durability. |
+| Reliable executor | Preserve the plugin-driver plan, receipt, live precondition, apply revalidation, and replay checks as one verifier contract. |
+| Fast paths | No movement from this patch; still needs guarded transfer/chunk evidence. |
+| Audit and critic | Re-audit this as local GATE-4 candidate evidence, not final production readiness. |
 
 ## 2026-05-28 02:13 CEST - Plugin Driver Boundary Guards
 

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 import { createPushPlan } from '../../src/planner.js';
+import { resourceHash } from '../../src/resources.js';
 
 export const complexSiteFixtureShape = Object.freeze({
   postCount: 12,
@@ -17,6 +18,17 @@ export const complexSiteFixtureShape = Object.freeze({
 
 const proofNow = new Date('2026-05-27T21:45:00.000Z');
 const formsFixtureOption = 'reprint_push_forms_fixture';
+const releaseStateDriver = 'reprint-push-release-state';
+const releaseStateOwner = 'reprint-push';
+const releaseStateTable = 'wp_reprint_push_release_state';
+const releaseStateRowId = 'state_id:1';
+const releaseStateResourceKey = `row:["${releaseStateTable}","${releaseStateRowId}"]`;
+const releaseStateResource = Object.freeze({
+  type: 'row',
+  table: releaseStateTable,
+  id: releaseStateRowId,
+  key: releaseStateResourceKey,
+});
 const featuredImagePostId = 71001;
 const featuredImageAttachmentId = 71901;
 const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
@@ -200,6 +212,13 @@ export function buildComplexSitePlannerProof({
   });
   const readyMutations = readyPlan.mutations || [];
   const remoteConflicts = remoteDriftPlan.conflicts || [];
+  const pluginDriverEvidence = buildPluginDriverBoundaryEvidence({
+    sourceSnapshot,
+    localEditedSnapshot,
+    remoteChangedSnapshot,
+    readyPlan,
+    remoteDriftPlan,
+  });
   const expectedMinimumReadyMutations =
     positiveInt(shape.postCount)
     + positiveInt(shape.schemaMetaCount)
@@ -239,6 +258,16 @@ export function buildComplexSitePlannerProof({
         && mutation.pluginOwnedResource.driver.length > 0),
     noUnsupportedPluginOwnedBlockers: readyPlan.blockers.every((blocker) =>
       blocker.class !== 'unsupported-plugin-owned-resource'),
+    pluginDriverAllowlistExact: pluginDriverEvidence.allowlist.exact === true,
+    pluginDriverMutationPlanned: pluginDriverEvidence.mutationBoundary.planned === true,
+    pluginDriverHasLivePrecondition: pluginDriverEvidence.preconditionHashes.liveRemote === true
+      && pluginDriverEvidence.preconditionHashes.matchesSource === true
+      && pluginDriverEvidence.preconditionHashes.matchesMutationBase === true
+      && pluginDriverEvidence.preconditionHashes.matchesRemoteBefore === true,
+    pluginDriverRemoteDriftFailsClosed: pluginDriverEvidence.rejectedRemoteEvidence.failureClosed === true,
+    pluginDriverNoUnsafeOptionMutation: pluginDriverEvidence.safeMutationSet.noActivePluginsDirectMutation === true
+      && pluginDriverEvidence.safeMutationSet.noUnownedOptionMutation === true,
+    pluginDriverCustomTablesDriverOwned: pluginDriverEvidence.safeMutationSet.customTableMutationsDriverOwned === true,
     featuredImageGraphCountsPresent: !shape.featuredImageGraph
       || (summarizeComplexSnapshot(localEditedSnapshot).featuredImageAttachments >= 1
         && summarizeComplexSnapshot(localEditedSnapshot).featuredImageMeta >= 1),
@@ -388,6 +417,7 @@ export function buildComplexSitePlannerProof({
       staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
         blocker.class === 'stale-wordpress-graph-identity').length,
     } : null,
+    pluginDriverEvidence,
     invariants,
     ok: Object.values(invariants).every(Boolean),
   };
@@ -405,11 +435,19 @@ export function buildComplexSiteReleaseEvidence({
   const apply = releaseProof.apply || {};
   const planObject = releaseProof.planObject || {};
   const mutations = Array.isArray(planObject.mutations) ? planObject.mutations : [];
+  const preconditions = Array.isArray(planObject.preconditions) ? planObject.preconditions : [];
   const receiptHash = dryRun.receiptHash || dryRun.receipt?.receiptHash || '';
   const journal = releaseSummary?.durableJournal || {};
   const boundary = releaseSummary?.boundary || {};
   const authSessionBoundary = releaseSummary?.authSessionBoundary || {};
   const applyRevalidation = apply.applyRevalidation || {};
+  const pluginDriverMutation = mutations.find((mutation) =>
+    mutation?.resourceKey === releaseStateResourceKey) || null;
+  const pluginDriverPrecondition = preconditions.find((precondition) =>
+    precondition?.resourceKey === releaseStateResourceKey) || null;
+  const applyRevalidationResourceKeys = Array.isArray(applyRevalidation.verifiedResourceKeys)
+    ? applyRevalidation.verifiedResourceKeys
+    : [];
   const invariants = {
     verifierExitedZero: verifyStatus === 0 && verifySignal === null,
     summaryParsed: Boolean(releaseSummary),
@@ -426,6 +464,18 @@ export function buildComplexSiteReleaseEvidence({
       && journal.mutationApplied === mutations.length,
     applyRevalidationCoveredEveryMutation: Number.isInteger(applyRevalidation.verifiedCount)
       && applyRevalidation.verifiedCount === mutations.length,
+    pluginDriverCarriedInReleasePlan: pluginDriverMutation?.pluginOwnedResource?.driver === releaseStateDriver
+      && pluginDriverMutation?.pluginOwnedResource?.pluginOwner === releaseStateOwner
+      && pluginDriverMutation?.resource?.table === releaseStateTable
+      && pluginDriverMutation?.resource?.id === releaseStateRowId,
+    pluginDriverHasReleasePrecondition: pluginDriverPrecondition?.checkedAgainst === 'live-remote'
+      && typeof pluginDriverPrecondition?.expectedHash === 'string'
+      && /^[a-f0-9]{64}$/.test(pluginDriverPrecondition.expectedHash)
+      && pluginDriverPrecondition.expectedHash === pluginDriverMutation?.baseHash
+      && pluginDriverPrecondition.expectedHash === pluginDriverMutation?.remoteBeforeHash,
+    pluginDriverApplyRevalidated: applyRevalidation.phase === 'before-first-mutation'
+      && applyRevalidation.checkedAgainst === 'live-remote'
+      && applyRevalidationResourceKeys.includes(releaseStateResourceKey),
     replayEquivalent: releaseSummary?.replayEquivalence?.equivalent === true,
     plannerProofPassed: plannerProof?.ok === true,
   };
@@ -460,7 +510,28 @@ export function buildComplexSiteReleaseEvidence({
       },
       plan: {
         mutations: mutations.length,
-        preconditions: Array.isArray(planObject.preconditions) ? planObject.preconditions.length : null,
+        preconditions: preconditions.length,
+      },
+      pluginDriver: {
+        resourceKey: releaseStateResourceKey,
+        driver: releaseStateDriver,
+        owner: releaseStateOwner,
+        mutationPlanned: Boolean(pluginDriverMutation),
+        mutation: pluginDriverMutation ? {
+          id: pluginDriverMutation.id,
+          action: pluginDriverMutation.action,
+          driver: pluginDriverMutation.pluginOwnedResource?.driver || null,
+          owner: pluginDriverMutation.pluginOwnedResource?.pluginOwner || null,
+          baseHash: pluginDriverMutation.baseHash || null,
+          remoteBeforeHash: pluginDriverMutation.remoteBeforeHash || null,
+          localHash: pluginDriverMutation.localHash || null,
+        } : null,
+        precondition: pluginDriverPrecondition ? {
+          mutationId: pluginDriverPrecondition.mutationId,
+          expectedHash: pluginDriverPrecondition.expectedHash,
+          checkedAgainst: pluginDriverPrecondition.checkedAgainst || null,
+        } : null,
+        applyRevalidated: applyRevalidationResourceKeys.includes(releaseStateResourceKey),
       },
       durableJournal: {
         rows: journal.rows ?? null,
@@ -490,6 +561,110 @@ export function buildComplexSiteReleaseEvidence({
   };
 }
 
+export function buildPluginDriverBoundaryEvidence({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+  readyPlan,
+  remoteDriftPlan,
+} = {}) {
+  const readyMutations = readyPlan?.mutations || [];
+  const readyPreconditions = readyPlan?.preconditions || [];
+  const remoteConflicts = remoteDriftPlan?.conflicts || [];
+  const mutation = readyMutations.find((entry) => entry?.resourceKey === releaseStateResourceKey) || null;
+  const precondition = readyPreconditions.find((entry) => entry?.resourceKey === releaseStateResourceKey) || null;
+  const rejectedRemoteConflict = remoteConflicts.find((entry) =>
+    entry?.resourceKey === releaseStateResourceKey) || null;
+  const allowlistEntry = pluginDriverAllowlistEntry(sourceSnapshot)
+    || pluginDriverAllowlistEntry(localEditedSnapshot)
+    || pluginDriverAllowlistEntry(remoteChangedSnapshot);
+  const sourceState = pluginDriverStateEvidence(sourceSnapshot);
+  const localState = pluginDriverStateEvidence(localEditedSnapshot);
+  const remoteChangedState = pluginDriverStateEvidence(remoteChangedSnapshot);
+  const optionMutations = readyMutations.filter((entry) =>
+    entry?.resource?.type === 'row' && entry.resource.table === 'wp_options');
+  const customTableMutations = readyMutations.filter((entry) =>
+    entry?.resource?.type === 'row' && String(entry.resource.table || '').startsWith('wp_reprint_push_'));
+
+  return {
+    type: 'production-owned-plugin-driver',
+    driver: releaseStateDriver,
+    owner: releaseStateOwner,
+    table: releaseStateTable,
+    rowId: releaseStateRowId,
+    resourceKey: releaseStateResourceKey,
+    allowlist: {
+      exact: allowlistEntry?.resourceKey === releaseStateResourceKey
+        && allowlistEntry?.pluginOwner === releaseStateOwner
+        && allowlistEntry?.driver === releaseStateDriver
+        && allowlistEntry?.table === releaseStateTable
+        && allowlistEntry?.supportsDelete === false,
+      entry: allowlistEntry || null,
+    },
+    sourcePluginStateEvidence: sourceState,
+    localPluginStateEvidence: localState,
+    remoteChangedPluginStateEvidence: remoteChangedState,
+    mutationBoundary: mutation ? {
+      planned: true,
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      owner: mutation.pluginOwnedResource?.pluginOwner || null,
+      baseHash: mutation.baseHash || null,
+      remoteBeforeHash: mutation.remoteBeforeHash || null,
+      localHash: mutation.localHash || null,
+      exactDriver: mutation.pluginOwnedResource?.driver === releaseStateDriver
+        && mutation.pluginOwnedResource?.pluginOwner === releaseStateOwner
+        && mutation.resource?.table === releaseStateTable
+        && mutation.resource?.id === releaseStateRowId,
+    } : {
+      planned: false,
+    },
+    preconditionHashes: precondition ? {
+      liveRemote: precondition.checkedAgainst === 'live-remote'
+        && typeof precondition.expectedHash === 'string'
+        && /^[a-f0-9]{64}$/.test(precondition.expectedHash),
+      mutationId: precondition.mutationId,
+      expectedHash: precondition.expectedHash,
+      sourceHash: sourceState.hash,
+      mutationBaseHash: mutation?.baseHash || null,
+      mutationRemoteBeforeHash: mutation?.remoteBeforeHash || null,
+      mutationLocalHash: mutation?.localHash || null,
+      matchesSource: precondition.expectedHash === sourceState.hash,
+      matchesMutationBase: precondition.expectedHash === mutation?.baseHash,
+      matchesRemoteBefore: precondition.expectedHash === mutation?.remoteBeforeHash,
+    } : {
+      liveRemote: false,
+      matchesSource: false,
+      matchesMutationBase: false,
+      matchesRemoteBefore: false,
+    },
+    rejectedRemoteEvidence: {
+      failureClosed: rejectedRemoteConflict?.resolutionPolicy === 'preserve-remote-and-stop',
+      resourceKey: rejectedRemoteConflict?.resourceKey || null,
+      class: rejectedRemoteConflict?.class || null,
+      resolutionPolicy: rejectedRemoteConflict?.resolutionPolicy || null,
+      remoteChangedHash: remoteChangedState.hash,
+      remoteChangedMode: remoteChangedState.mode,
+    },
+    safeMutationSet: {
+      noActivePluginsDirectMutation: readyMutations.every((entry) =>
+        !(entry?.resource?.type === 'row'
+          && entry.resource.table === 'wp_options'
+          && entry.resource.id === 'option_name:active_plugins')),
+      noUnownedOptionMutation: optionMutations.every((entry) =>
+        entry?.pluginOwnedResource?.pluginOwner
+        && entry?.pluginOwnedResource?.driver),
+      customTableMutationsDriverOwned: customTableMutations.every((entry) =>
+        entry?.pluginOwnedResource?.pluginOwner
+        && entry?.pluginOwnedResource?.driver),
+      customTableMutationCount: customTableMutations.length,
+      optionMutationCount: optionMutations.length,
+    },
+  };
+}
+
 export function findReleaseVerifierSummary(output) {
   const objects = extractJsonObjects(output);
   return [...objects].reverse().find((object) =>
@@ -499,6 +674,28 @@ export function findReleaseVerifierSummary(output) {
     && object.gate2DurableRecoveryJournal
     && object.releaseProof
     && object.boundary) || null;
+}
+
+function pluginDriverAllowlistEntry(snapshot) {
+  const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
+  if (!Array.isArray(resources)) {
+    return null;
+  }
+  return resources.find((entry) => entry?.resourceKey === releaseStateResourceKey) || null;
+}
+
+function pluginDriverStateEvidence(snapshot) {
+  const row = snapshot?.db?.[releaseStateTable]?.[releaseStateRowId] || null;
+  return {
+    present: Boolean(row),
+    resourceKey: releaseStateResourceKey,
+    hash: row ? resourceHash(snapshot, releaseStateResource) : null,
+    owner: row?.__pluginOwner || null,
+    mode: row?.payload?.mode || null,
+    version: row?.payload?.version ?? null,
+    updatedMarker: row?.updated_marker || null,
+    proofMarker: row?.payload?.releaseBoundaryProof || null,
+  };
 }
 
 export function extractJsonObjects(output) {

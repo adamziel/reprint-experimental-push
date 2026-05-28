@@ -125,6 +125,25 @@ test('complex-site planner proof reports dense counts, receipts prerequisites, a
   assert.equal(proof.invariants.remoteDriftPreservesRemote, true);
   assert.equal(proof.invariants.noDeleteMutations, true);
   assert.equal(proof.invariants.pluginOwnedMutationsHaveDrivers, true);
+  assert.equal(proof.invariants.pluginDriverAllowlistExact, true);
+  assert.equal(proof.invariants.pluginDriverMutationPlanned, true);
+  assert.equal(proof.invariants.pluginDriverHasLivePrecondition, true);
+  assert.equal(proof.invariants.pluginDriverRemoteDriftFailsClosed, true);
+  assert.equal(proof.invariants.pluginDriverNoUnsafeOptionMutation, true);
+  assert.equal(proof.invariants.pluginDriverCustomTablesDriverOwned, true);
+  assert.equal(proof.pluginDriverEvidence.driver, 'reprint-push-release-state');
+  assert.equal(proof.pluginDriverEvidence.owner, 'reprint-push');
+  assert.equal(proof.pluginDriverEvidence.allowlist.exact, true);
+  assert.equal(proof.pluginDriverEvidence.sourcePluginStateEvidence.mode, 'base');
+  assert.equal(proof.pluginDriverEvidence.localPluginStateEvidence.mode, 'local-update');
+  assert.equal(proof.pluginDriverEvidence.remoteChangedPluginStateEvidence.mode, 'remote-changed');
+  assert.equal(proof.pluginDriverEvidence.mutationBoundary.exactDriver, true);
+  assert.equal(proof.pluginDriverEvidence.preconditionHashes.liveRemote, true);
+  assert.equal(proof.pluginDriverEvidence.preconditionHashes.matchesSource, true);
+  assert.equal(proof.pluginDriverEvidence.preconditionHashes.matchesMutationBase, true);
+  assert.equal(proof.pluginDriverEvidence.preconditionHashes.matchesRemoteBefore, true);
+  assert.equal(proof.pluginDriverEvidence.rejectedRemoteEvidence.failureClosed, true);
+  assert.equal(proof.pluginDriverEvidence.safeMutationSet.noActivePluginsDirectMutation, true);
 });
 
 test('complex-site planner proof covers real featured image attachment graph closure', () => {
@@ -250,6 +269,13 @@ test('complex-site release evidence extracts release verifier receipts and gates
   assert.equal(evidence.verifier.durableJournal.paginationComplete, true);
   assert.equal(evidence.verifier.durableJournal.paginationTruncated, false);
   assert.equal(evidence.verifier.durableJournal.mutationApplied, 9);
+  assert.equal(evidence.verifier.pluginDriver.driver, 'reprint-push-release-state');
+  assert.equal(evidence.verifier.pluginDriver.owner, 'reprint-push');
+  assert.equal(evidence.verifier.pluginDriver.mutationPlanned, true);
+  assert.equal(evidence.verifier.pluginDriver.applyRevalidated, true);
+  assert.equal(evidence.invariants.pluginDriverCarriedInReleasePlan, true);
+  assert.equal(evidence.invariants.pluginDriverHasReleasePrecondition, true);
+  assert.equal(evidence.invariants.pluginDriverApplyRevalidated, true);
   assert.equal(evidence.invariants.authSessionGateOk, true);
   assert.equal(evidence.invariants.durableJournalGateOk, true);
 });
@@ -488,6 +514,7 @@ function syntheticComplexSnapshot(variant, shape) {
       owner: 'reprint-push',
       mode: local ? 'local-update' : remote ? 'remote-changed' : 'base',
       version: local ? 2 : remote ? 3 : 1,
+      releaseBoundaryProof: 'plugin-driver-boundary',
     },
     updated_marker: local ? 'local-update' : remote ? 'remote-changed' : 'base',
     __pluginOwner: 'reprint-push',
@@ -497,10 +524,32 @@ function syntheticComplexSnapshot(variant, shape) {
 }
 
 function syntheticReleaseSummary(mutations) {
-  const mutationList = Array.from({ length: mutations }, (_, index) => ({
-    id: `mutation-${index + 1}`,
-    resourceKey: `row:["wp_posts","ID:${71001 + index}"]`,
-  }));
+  const mutationList = [
+    {
+      id: 'mutation-release-state',
+      resourceKey: 'row:["wp_reprint_push_release_state","state_id:1"]',
+      action: 'update',
+      resource: {
+        type: 'row',
+        table: 'wp_reprint_push_release_state',
+        id: 'state_id:1',
+        key: 'row:["wp_reprint_push_release_state","state_id:1"]',
+      },
+      pluginOwnedResource: {
+        pluginOwner: 'reprint-push',
+        driver: 'reprint-push-release-state',
+        table: 'wp_reprint_push_release_state',
+        supportsDelete: false,
+      },
+      baseHash: 'b'.repeat(64),
+      remoteBeforeHash: 'b'.repeat(64),
+      localHash: 'c'.repeat(64),
+    },
+    ...Array.from({ length: Math.max(0, mutations - 1) }, (_, index) => ({
+      id: `mutation-${index + 1}`,
+      resourceKey: `row:["wp_posts","ID:${71001 + index}"]`,
+    })),
+  ];
   return {
     ok: true,
     releaseMovement: {
@@ -532,6 +581,9 @@ function syntheticReleaseSummary(mutations) {
         status: 200,
         applyRevalidation: {
           verifiedCount: mutations,
+          phase: 'before-first-mutation',
+          checkedAgainst: 'live-remote',
+          verifiedResourceKeys: mutationList.map((mutation) => mutation.resourceKey),
         },
       },
       planObject: {
@@ -539,6 +591,8 @@ function syntheticReleaseSummary(mutations) {
         preconditions: mutationList.map((mutation) => ({
           mutationId: mutation.id,
           resourceKey: mutation.resourceKey,
+          checkedAgainst: 'live-remote',
+          expectedHash: mutation.baseHash || 'd'.repeat(64),
         })),
       },
     },

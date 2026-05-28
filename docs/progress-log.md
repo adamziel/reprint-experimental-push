@@ -4,6 +4,67 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Local Plugin Driver Release Evidence
+
+- Last update: 2026-05-28 02:24 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527`.
+- New checked command:
+  `npm run verify:release:local-production:complex-site:plugin-driver`
+  passed in tmux window `main:plugin-driver-local-proof` with
+  `[PLUGIN_DRIVER_LOCAL_PROOF_STATUS:0]`.
+- Code change: the Brewcommerce-derived local production proof now extracts a
+  production-owned release-state plugin driver boundary for
+  `row:["wp_reprint_push_release_state","state_id:1"]`. The proof records the
+  exact owner `reprint-push`, driver `reprint-push-release-state`, custom
+  table `wp_reprint_push_release_state`, plugin-owned allowlist entry,
+  live-remote precondition, remote-drift conflict evidence, and apply-time
+  revalidation.
+- Planner evidence: the ready plan had 22 mutations, 22 live-remote
+  preconditions, 0 blockers, and mutation families `file: 3`,
+  `row:wp_options: 1`, `row:wp_postmeta: 5`, `row:wp_posts: 12`, and
+  `row:wp_reprint_push_release_state: 1`. The remote-drift plan still failed
+  closed with 9 preserve-remote conflicts.
+- Plugin-driver evidence: the source release-state row hashed to
+  `66e0ed254af87dc8528a54ef2f51f7a61d48b6f515d52e7959f31ff23b320549`,
+  the local edited row hashed to
+  `5a646c3411196965f91b027b8906486a47ee26b7d2ab5e82265c9e2b21fab9ba`,
+  and the remote changed row hashed to
+  `c5928d13e184cf03c37734c60271610918deb14fc97afad5313131255e3d3ab9`.
+  The checked invariants prove the allowlist owner/driver match is exact,
+  mutation `mutation-22` is driver-owned, the precondition is checked against
+  the live remote and matches the source/base/remote-before hash, remote drift
+  fails closed as `plugin-data-conflict`, direct `active_plugins` mutation is
+  absent, unowned option mutation is absent, and the custom-table mutation is
+  driver-owned.
+- Release evidence: the verifier exited `0`, emitted dry-run receipt
+  `6b2e4ade17525e5d1c08e99f4f745257a41a19cba2e1cf5c8819e323bf337b13`,
+  reported 74 durable DB-journal rows, `mutationApplied: 22`,
+  `applyCommitted: true`, `checkedAccepted: true`,
+  `applyRevalidationVerifiedCount: 22`, `AUTH_SESSION_BOUNDARY_OK`,
+  `LIVE_RELEASE_BOUNDARY_OK`, replay equivalence, and
+  `releaseMovement.gates: candidate-for-review`.
+- Recovery and retry evidence on the same release verifier path includes
+  same-key/body replay with 22 mutation events, same-key/different-body
+  `409 IDEMPOTENCY_KEY_CONFLICT` before mutation, stale-owner fencing with
+  previous claim identity, 22/22 fully updated recovery inspect, and blocked
+  apply-time revalidation state with `old: 21`, `new: 0`,
+  `blockedUnknown: 1`.
+- Focused checks passed:
+  `node --check scripts/playground/local-production-complex-site-proof.js`,
+  `node --check scripts/playground/local-production-release-verify.mjs`,
+  `npm run test:playground:local-production-complex-site-proof`,
+  `git diff --check`, and
+  `npm run verify:release:local-production:complex-site:plugin-driver`.
+- Caveat: this is local Playground loopback evidence for one
+  production-owned release-state plugin-driver row. It does not prove arbitrary
+  plugin semantics, arbitrary custom tables, plugin activation/update flows,
+  rollback, Docker/external WordPress durability, or the final live production
+  source boundary.
+- Percent movement: merge invariants move from 70% to 71%; reliable
+  executor/protocol moves from 73% to 75%; independent evidence moves from 70%
+  to 72%. Recovery boundaries stay at 60%, and fast path/chunking stays at
+  37%.
+
 ## 2026-05-28 - Plugin Driver Boundary Test Hardening
 
 - Last update: 2026-05-28 02:13 CEST.

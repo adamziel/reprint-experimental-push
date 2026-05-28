@@ -474,8 +474,8 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it now includes a Brewcommerce-derived local production proof with 190 checked mutations, paged durable DB-journal readback, process-kill restart readback, featured-image, taxonomy, post-parent, and comment graph proofs, receipts, auth/session gates, stale-claim fencing with previous claim identity, remote-drift conflict refusal, and plugin-driver guard tests for unknown plugin data and unsafe option mutations. Docker or external production WordPress, full WooCommerce import stability, rollback, and live general plugin-driver proof remain required before final release readiness.</p>
-        <time class="update-stamp" datetime="2026-05-28T02:13:00+02:00">Last updated: May 28, 2026, 02:13 CEST</time>
+        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong>; it now includes a Brewcommerce-derived local production proof with 190 checked mutations, paged durable DB-journal readback, process-kill restart readback, featured-image, taxonomy, post-parent, and comment graph proofs, receipts, auth/session gates, stale-claim fencing with previous claim identity, remote-drift conflict refusal, and a 22-mutation local release-state plugin-driver proof with exact owner/driver allowlist, live precondition, apply revalidation, receipt, and journal evidence. Docker or external production WordPress, full WooCommerce import stability, rollback, and broader plugin-driver semantics remain required before final release readiness.</p>
+        <time class="update-stamp" datetime="2026-05-28T02:24:00+02:00">Last updated: May 28, 2026, 02:24 CEST</time>
         <div class="meta" aria-label="Project status">
           <span class="pill">Targeted journal tests passing</span>
           <span class="pill">Complex local candidate proof</span>
@@ -498,7 +498,10 @@
           <span class="pill">Full Woo import timed out at auth gate</span>
           <span class="pill">Runtime proof fails closed</span>
           <span class="pill">Graph post identities mapped</span>
-          <span class="pill">Release-state plugin driver guarded</span>
+          <span class="pill">Release-state plugin driver revalidated</span>
+          <span class="pill">22 plugin-driver proof mutations</span>
+          <span class="pill">74 plugin-driver journal rows</span>
+          <span class="pill">GATE-4 local candidate</span>
           <span class="pill">Plugin-driver guard tests pass</span>
           <span class="pill">tmux proof status 0</span>
           <span class="pill">Evidence links below</span>
@@ -518,7 +521,7 @@
       </div>
       <div class="metric">
         <strong>Up</strong>
-        <span>durable local release proof</span>
+        <span>plugin-driver local release proof</span>
       </div>
       <div class="metric">
         <strong>190</strong>
@@ -538,9 +541,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">70%</span></div>
-          <div class="bar" aria-label="No data loss merge invariants 70 percent"><div class="fill green" style="width:70%"></div></div>
-          <p class="note">Independent delete/edit, local production release-state drift, checked apply refusal, a real Playground post/postmeta author graph identity, featured-image, category taxonomy, post-parent, and comment graph closures, a 190-mutation complex local plan, and plugin-driver guard tests now pass. The remote-drift plan still fails closed with 9 preserve-remote conflicts. Gap: broader WordPress graph surfaces and live general plugin drivers.</p>
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">71%</span></div>
+          <div class="bar" aria-label="No data loss merge invariants 71 percent"><div class="fill green" style="width:71%"></div></div>
+          <p class="note">Independent delete/edit, local production release-state drift, checked apply refusal, a real Playground post/postmeta author graph identity, featured-image, category taxonomy, post-parent, and comment graph closures, a 190-mutation complex local plan, plugin-driver guard tests, and the 22-mutation release-state plugin-driver proof now pass. The remote-drift plan still fails closed with 9 preserve-remote conflicts. Gap: broader WordPress graph surfaces and live general plugin drivers.</p>
         </div>
 
         <div class="lane">
@@ -550,9 +553,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">73%</span></div>
-          <div class="bar" aria-label="Reliable executor and protocol 73 percent"><div class="fill amber" style="width:73%"></div></div>
-          <p class="note">The release verifier reports `LIVE_RELEASE_BOUNDARY_OK` locally with 190-mutation, featured-graph, taxonomy-graph, post-parent, and comment graph receipts, auth/session continuity, paged durable journal readback, fresh signed retry nonces, replay equivalence, and no false commit after local SIGKILL/restart. GATE-4 support tests now reject unknown plugin data, mismatched owner/driver allowlists, direct `active_plugins`, and unowned serialized options. Gap: Docker/external production runtime, credential lifecycle, and live general plugin drivers.</p>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">75%</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol 75 percent"><div class="fill amber" style="width:75%"></div></div>
+          <p class="note">The release verifier reports `LIVE_RELEASE_BOUNDARY_OK` locally with 190-mutation, featured-graph, taxonomy-graph, post-parent, comment graph, and release-state plugin-driver receipts, auth/session continuity, paged durable journal readback, fresh signed retry nonces, replay equivalence, apply-time revalidation, and no false commit after local SIGKILL/restart. GATE-4 support tests still reject unknown plugin data, mismatched owner/driver allowlists, direct `active_plugins`, and unowned serialized options. Gap: Docker/external production runtime, credential lifecycle, and broader plugin drivers.</p>
         </div>
 
         <div class="lane">
@@ -562,9 +565,9 @@
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">70%</span></div>
-          <div class="bar" aria-label="Independent evidence and critique 70 percent"><div class="fill amber" style="width:70%"></div></div>
-          <p class="note">Durable local production, runtime capability, graph identity, featured-image graph, taxonomy graph, post-parent graph, comment graph, complex-site local production, journal-window, journal-pages, paged restart, and plugin-driver guard proofs are tmux-visible. Gap: independent re-audit against Docker/external WordPress and live general plugin drivers.</p>
+          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">72%</span></div>
+          <div class="bar" aria-label="Independent evidence and critique 72 percent"><div class="fill amber" style="width:72%"></div></div>
+          <p class="note">Durable local production, runtime capability, graph identity, featured-image graph, taxonomy graph, post-parent graph, comment graph, complex-site local production, journal-window, journal-pages, paged restart, plugin-driver guard proofs, and the release-state plugin-driver local verifier are tmux-visible. Gap: independent re-audit against Docker/external WordPress and broader plugin drivers.</p>
         </div>
       </section>
 
@@ -572,11 +575,11 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Going well</strong><span>The plugin-driver boundary tests now cover unknown plugin-owned custom-table refusal, exact owner/driver allowlist matching, direct `active_plugins` rejection, and unowned serialized option rejection.</span></li>
-            <li><strong>Still strong</strong><span>The comment graph proof passed in tmux with a 25-mutation release receipt, 83 DB-journal rows, live preconditions for the parent comment, child comment, and commentmeta rows, and zero stale graph blockers.</span></li>
-            <li><strong>Not yet done</strong><span>Full Brewcommerce/WooCommerce import needs another pass, Docker is still not installed in this sandbox, and final readiness still requires external WordPress plus live general plugin-driver proof.</span></li>
-            <li><strong>Progress change</strong><span>GATE-4 support coverage moves from fixture-only to explicit failure-closed proof-summary guards for unsafe plugin data classes.</span></li>
-            <li><strong>Next nudge</strong><span>Move one plugin-owned driver mutation into the checked local release verifier, then carry the same boundary to Docker or external WordPress.</span></li>
+            <li><strong>Going well</strong><span>The local plugin-driver verifier passed in tmux with a 22-mutation release receipt, 74 DB-journal rows, exact release-state owner/driver evidence, live precondition, apply revalidation, and replay/recovery checks.</span></li>
+            <li><strong>Still strong</strong><span>The production-shaped guard tests continue to reject unknown plugin-owned custom-table data, mismatched owner/driver allowlists, direct `active_plugins` mutation, and unowned serialized option mutation.</span></li>
+            <li><strong>Not yet done</strong><span>Full Brewcommerce/WooCommerce import needs another pass, Docker is still not installed in this sandbox, and final readiness still requires external WordPress plus broader plugin-driver semantics.</span></li>
+            <li><strong>Progress change</strong><span>GATE-4 has moved from support-only summary guards to a checked local release-boundary candidate for one production-owned plugin-driver row.</span></li>
+            <li><strong>Next nudge</strong><span>Carry the same ownership boundary to Docker or external WordPress, or add another concrete plugin-owned driver while keeping the release held.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -613,11 +616,12 @@
         <section class="panel" aria-labelledby="proof-gates">
           <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-            <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production:complex-site:journal-pages` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review` for a 190-mutation complex site; graph proof variants now cover 24-mutation featured-image, 26-mutation taxonomy, 24-mutation post-parent, and 25-mutation comment closures.</p></div>
+            <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production:complex-site:journal-pages` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review` for a 190-mutation complex site; graph proof variants now cover 24-mutation featured-image, 26-mutation taxonomy, 24-mutation post-parent, and 25-mutation comment closures, and the plugin-driver variant covers a 22-mutation release-state boundary.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>Auth-session source readback, restart-readable paged DB journal ownership, lease fencing, stale-claim rejection, fresh retry nonces, and replay/retry are proven in the local topology.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>The process-kill smoke proves complete paged DB-journal readback after local SIGKILL/restart and after exact retry, with no false commit and no partial-state overwrite.</p></div>
             <div class="proof-item"><span class="status">Covered locally</span><p>The graph identity smokes map a real Playground post/postmeta author identity, a same-plan featured-image attachment plus `_thumbnail_id` closure, a same-plan category taxonomy closure, a same-plan post-parent page closure, and a same-plan comment/commentmeta closure, while menu/navigation and arbitrary taxonomy/comment surfaces remain fail-closed.</p></div>
-            <div class="proof-item"><span class="status">Support proof</span><p>Production-shaped plugin-driver tests reject unknown plugin-owned resources, mismatched owner/driver allowlists, direct `active_plugins` mutations, and unowned serialized option mutations before they can be counted as safe plugin-driver evidence.</p></div>
+            <div class="proof-item"><span class="status">Local candidate</span><p>The release-state plugin-driver proof carries `row:["wp_reprint_push_release_state","state_id:1"]` through exact owner/driver allowlist matching, live precondition, apply revalidation, durable journal, remote-drift conflict preservation, and replay/recovery evidence.</p></div>
+            <div class="proof-item"><span class="status">Support proof</span><p>Production-shaped plugin-driver tests reject unknown plugin-owned resources, mismatched owner/driver allowlists, direct `active_plugins` mutations, and unowned serialized option mutations before they can be counted as safe broader plugin-driver evidence.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>Docker or external WordPress runtime with the same durable journal and credential lifecycle evidence.</p></div>
             <div class="proof-item"><span class="status">Held</span><p>Full Brewcommerce/WooCommerce import booted four sites but needs another checked run after the source auth/session preflight timeout.</p></div>
             <div class="proof-item"><span class="status">Pending</span><p>General plugin drivers, broader WordPress graph surfaces, external runtime crash durability, and rollback.</p></div>
@@ -628,11 +632,11 @@
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Snapshots feed guarded plans; local production Playground sites now prove release-state apply refusal, durable paged DB journal lease fencing, paged restart readback after process kill, real post/postmeta graph identities, featured-image, taxonomy, post-parent, and comment same-plan closures, a 190-mutation complex-site receipt path, and support-only plugin-driver failure-closed guards. Docker/external storage and live broader plugin safety remain pending.</p>
+              <p>Snapshots feed guarded plans; local production Playground sites now prove release-state apply refusal, durable paged DB journal lease fencing, paged restart readback after process kill, real post/postmeta graph identities, featured-image, taxonomy, post-parent, and comment same-plan closures, a 190-mutation complex-site receipt path, and a local release-state plugin-driver boundary. Docker/external storage and broader plugin safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Local production Playground evidence covers release-state apply revalidation, paged durable journal evidence, process-kill restart readback, real post/postmeta graph identities, featured-image, taxonomy, post-parent, comment same-plan graph closures, and support-only plugin-driver guards. Docker/external runtime and broader plugin drivers are still pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Local production Playground evidence covers release-state apply revalidation, paged durable journal evidence, process-kill restart readback, real post/postmeta graph identities, featured-image, taxonomy, post-parent, comment same-plan graph closures, and a local release-state plugin-driver boundary. Docker/external runtime and broader plugin drivers are still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>

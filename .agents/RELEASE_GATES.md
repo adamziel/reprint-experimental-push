@@ -6,7 +6,7 @@ Status values: `unproven`, `support_only`, `partially_proven`, `proven`, `blocke
 
 `release_verdict`: `0/4`
 
-Last refreshed: 2026-05-28 02:13 CEST on
+Last refreshed: 2026-05-28 02:24 CEST on
 `lane/evidence-integration-20260527`.
 
 ## GATE-1: Production Executor/Auth Boundary
@@ -44,6 +44,10 @@ Local candidate evidence, 2026-05-28:
 - `npm run verify:release:local-production:complex-site:comment-graph` passed
   in tmux with a 25-mutation local Playground receipt, auth/session continuity,
   durable DB-journal proof, replay/retry proof, and comment graph closure.
+- `npm run verify:release:local-production:complex-site:plugin-driver` passed
+  in tmux with a 22-mutation local Playground receipt, auth/session continuity,
+  durable DB-journal proof, replay/retry proof, and release-state
+  plugin-driver ownership boundary.
 - This supports candidate review and local safety work only. It does not change
   `release_verdict` because the release objective still requires a
   production-owned, non-lab-backed source boundary.
@@ -72,10 +76,21 @@ Support evidence, 2026-05-28:
 - Checked command:
   `node --test --test-name-pattern "production plugin-driver boundary" test/production-shaped-proof.test.js`
   passed 5/5.
-- This is still not live GATE-4 movement. The gate needs the same plugin-owned
-  driver mutation proof on the checked release boundary with live source,
-  apply-time revalidation, durable journal, and preserved rejected-remote
-  evidence.
+
+Local candidate evidence, 2026-05-28:
+
+- `npm run verify:release:local-production:complex-site:plugin-driver` passed
+  in tmux window `main:plugin-driver-local-proof` with
+  `[PLUGIN_DRIVER_LOCAL_PROOF_STATUS:0]`.
+- The checked local release verifier carried
+  `row:["wp_reprint_push_release_state","state_id:1"]` with owner
+  `reprint-push`, driver `reprint-push-release-state`, exact allowlist entry,
+  live-remote precondition, apply-time revalidation, durable DB-journal
+  evidence, and rejected remote-drift preservation.
+- This is still not final live GATE-4 movement. The gate needs the same
+  plugin-owned driver mutation proof on a production-owned, non-lab-backed
+  source boundary and broader plugin-driver semantics beyond this release-state
+  row.
 
 ## Gate Movement Rule
 
