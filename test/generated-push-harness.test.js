@@ -8,6 +8,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -61,6 +63,13 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'wp-users-usermeta-graph-ready',
+  'wp-users-usermeta-graph-stale',
+  'wp-users-usermeta-graph',
+  'wp-users-create',
+  'wp-usermeta-create',
+  'wp-users-remote-drift',
+  'usermeta-user-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -346,6 +355,173 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       testCase.remote.db.wp_terms[termRowId],
       testCase.base.db.wp_terms[termRowId],
       `${testCase.id} stale target should drift remotely`,
+    );
+  }
+}
+
+test('RPP-0129 wp_users and wp_usermeta graph target exposes redacted ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpUsersUsermetaGraph;
+
+  assert.ok(coverage, 'missing wp_users/usermeta graph target coverage');
+  assert.equal(coverage.family, 'wp-users-usermeta-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-users-usermeta-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_users/usermeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready usermeta graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(JSON.stringify(report).includes('local-private-usermeta-token'), false);
+  assert.equal(JSON.stringify(report).includes('generated-private-user-pass'), false);
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-users-usermeta-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-users-usermeta-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_users/usermeta graph case');
+  assert.ok(staleCase, 'missing stale wp_users/usermeta graph case');
+  const readyShape = assertWpUsersUsermetaGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertWpUsersUsermetaGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready graph should create user and usermeta rows');
+  assert.equal(ready.applied, true, 'ready wp_users/usermeta graph should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready graph should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready wp_users/usermeta graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale user target should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale user target should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale usermeta graph must not apply mutations');
+
+  assertUsermetaGraphEvidenceRedacted(readyCase, readyShape);
+  assertUsermetaGraphEvidenceRedacted(staleCase, staleShape);
+});
+
+function assertWpUsersUsermetaGraphShape(testCase, { staleTarget }) {
+  const createdUsers = Object.entries(testCase.local.db.wp_users)
+    .filter(([id, row]) => !testCase.base.db.wp_users[id]
+      && row.user_pass?.startsWith('generated-private-user-pass-'));
+  const usermetaRows = Object.entries(testCase.local.db.wp_usermeta)
+    .filter(([id, row]) => !testCase.base.db.wp_usermeta[id]
+      && row.meta_key.startsWith('_generated_private_user_profile_')
+      && row.meta_value?.private_token?.startsWith('local-private-usermeta-token-'));
+
+  assert.equal(createdUsers.length, staleTarget ? 0 : 1, `${testCase.id} should create one user only when ready`);
+  assert.equal(usermetaRows.length, 1, `${testCase.id} should create one usermeta row`);
+
+  const [metaRowId, usermetaRow] = usermetaRows[0];
+  const userId = staleTarget ? usermetaRow.user_id : createdUsers[0][1].ID;
+  const userRowId = `ID:${userId}`;
+  assert.equal(usermetaRow.user_id, userId);
+  assert.ok(testCase.local.db.wp_users[userRowId], `${testCase.id} should have the user target locally`);
+  assert.equal(testCase.local.db.wp_users[userRowId].user_pass.startsWith('generated-private-user-pass-'), true);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_users[userRowId], `${testCase.id} stale target should exist in base`);
+    assert.deepEqual(
+      testCase.local.db.wp_users[userRowId],
+      testCase.base.db.wp_users[userRowId],
+      `${testCase.id} stale target should be unchanged locally`,
+    );
+    assert.notDeepEqual(
+      testCase.remote.db.wp_users[userRowId],
+      testCase.base.db.wp_users[userRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  }
+
+  return {
+    userRowId,
+    metaRowId,
+    userRow: testCase.local.db.wp_users[userRowId],
+    remoteUserRow: testCase.remote.db.wp_users[userRowId],
+    usermetaRow,
+  };
+}
+
+function assertUsermetaGraphEvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const userResourceKey = `row:${JSON.stringify(['wp_users', shape.userRowId])}`;
+  const usermetaResourceKey = `row:${JSON.stringify(['wp_usermeta', shape.metaRowId])}`;
+  const relatedMutations = plan.mutations.filter((mutation) =>
+    mutation.resourceKey === userResourceKey || mutation.resourceKey === usermetaResourceKey);
+  const relatedBlockers = plan.blockers.filter((blocker) =>
+    blocker.resourceKey === usermetaResourceKey
+    || blocker.references?.some((reference) => reference.targetResourceKey === userResourceKey));
+  const relatedDecisions = plan.decisions.filter((decision) => decision.resourceKey === userResourceKey);
+
+  for (const mutation of relatedMutations) {
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+  }
+
+  if (plan.status === 'ready') {
+    assert.equal(relatedMutations.length, 2, `${testCase.id} should mutate user and usermeta rows`);
+  } else {
+    assert.notEqual(plan.status, 'ready');
+    assert.ok(relatedBlockers.length >= 1, `${testCase.id} should have usermeta graph blockers`);
+  }
+
+  const redacted = redactEvidence({
+    status: plan.status,
+    mutations: relatedMutations.map((mutation) => ({
+      resourceKey: mutation.resourceKey,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+      change: mutation.change,
+      value: mutation.value,
+    })),
+    blockers: relatedBlockers,
+    decisions: relatedDecisions,
+  });
+  const redactedJson = JSON.stringify(redacted);
+
+  if (relatedMutations.length > 0) {
+    assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), 'mutation values should be redacted in evidence');
+    assert.ok(redactedJson.includes('sha256'), 'redacted mutation evidence should keep hashes');
+  }
+  assertUsermetaGraphRawValuesAbsent(testCase, shape, redactedJson);
+}
+
+function assertUsermetaGraphRawValuesAbsent(testCase, shape, redactedJson) {
+  const values = [
+    shape.userRow.user_pass,
+    shape.userRow.user_activation_key,
+    shape.remoteUserRow?.user_email,
+    shape.remoteUserRow?.display_name,
+    shape.remoteUserRow?.user_activation_key,
+    shape.usermetaRow.meta_value.private_token,
+    shape.usermetaRow.meta_value.private_notes,
+    'generated-private-user-pass',
+    'local-private-usermeta-token',
+    'remote-private-user',
+  ].filter(Boolean).map(String);
+
+  for (const value of values) {
+    assert.equal(
+      redactedJson.includes(value),
+      false,
+      `${testCase.id} redacted evidence should not expose ${value}`,
     );
   }
 }
