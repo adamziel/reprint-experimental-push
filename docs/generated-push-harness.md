@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 490 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 49 scenario families, then add seeded variation so
+fixtures. The current default is 510 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 51 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 490 total cases;
-- 10 tiers, 49 cases per tier;
+- 510 total cases;
+- 10 tiers, 51 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -60,7 +60,9 @@ The default generated run covers:
   with per-tier target counts and ready/stale non-ready outcomes, `wp_users`
   + `wp_usermeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_term_taxonomy` graph cases with per-tier
-  target counts and ready/stale non-ready outcomes, `wp_comments.user_id` author cases with
+  target counts and ready/stale non-ready outcomes, plugin-owned `wp_options`
+  update cases with ready/conflict outcomes and stale replay rejection before
+  mutation, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
   supported forms-lab custom-table rows, forms-lab delete refusal, atomic plugin
@@ -120,6 +122,13 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+
+The `pluginOwnedOptionChange` target coverage records per-tier counts for
+generated plugin-owned `wp_options` rows using the supported forms driver.
+Ready cases apply the local option update with owner/driver evidence and reject
+stale replays before mutation; conflict cases drift the same plugin-owned option
+remotely and must refuse apply without losing the remote value.
+
 The `commentUserGraph` target coverage records per-tier counts for generated
 `wp_comments.user_id` author references. Ready cases create the user and comment
 in one plan and reject a stale replay before mutation; stale cases keep the user
@@ -130,11 +139,11 @@ At the time this note was added, the summary command reported:
 
 ```json
 {
-  "totalCases": 490,
+  "totalCases": 510,
   "statuses": {
-    "blocked": 44,
-    "conflict": 193,
-    "ready": 253
+    "blocked": 41,
+    "conflict": 210,
+    "ready": 259
   },
   "targetCoverage": {
     "commentUserGraph": {
@@ -153,9 +162,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 9,
-        "conflict": 2,
-        "ready": 9
+        "blocked": 10,
+        "ready": 10
       }
     },
     "directoryDescendantConflict": {
@@ -177,6 +185,26 @@ At the time this note was added, the summary command reported:
         "conflict": 10
       }
     },
+    "pluginOwnedOptionChange": {
+      "family": "plugin-owned-option-change-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 10,
+        "ready": 10
+      }
+    },
     "wpCommentsCommentmetaGraph": {
       "family": "wp-comments-commentmeta-graph-ready",
       "total": 20,
@@ -194,8 +222,8 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 3,
-        "conflict": 7,
-        "ready": 10
+        "conflict": 8,
+        "ready": 9
       }
     },
     "wpPostmetaCreateUpdateDelete": {
@@ -254,9 +282,9 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 1,
-        "conflict": 11,
-        "ready": 8
+        "blocked": 3,
+        "conflict": 8,
+        "ready": 9
       }
     },
     "wpTermTaxonomyGraph": {
@@ -275,9 +303,9 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 5,
-        "conflict": 7,
-        "ready": 8
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 10
       }
     },
     "wpUsersUsermetaGraph": {
@@ -296,8 +324,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 4,
-        "conflict": 6,
+        "blocked": 3,
+        "conflict": 7,
         "ready": 10
       }
     }
@@ -313,6 +341,11 @@ At the time this note was added, the summary command reported:
     "file-type-swap": 20,
     "file-type-swap-ready": 10,
     "file-type-swap-conflict": 10,
+    "plugin-owned-option-change": 20,
+    "plugin-owned-option-change-ready": 10,
+    "plugin-owned-option-change-conflict": 10,
+    "plugin-owned-option-update": 20,
+    "plugin-owned-supported": 382,
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
@@ -360,10 +393,10 @@ At the time this note was added, the summary command reported:
     "wp-terms-create": 40,
     "wp-terms-remote-drift": 20
   },
-  "maxResourceCount": 69,
-  "maxMutationCount": 42,
-  "maxReadyResourceCount": 66,
-  "maxReadyMutationCount": 42
+  "maxResourceCount": 70,
+  "maxMutationCount": 45,
+  "maxReadyResourceCount": 70,
+  "maxReadyMutationCount": 45
 }
 ```
 

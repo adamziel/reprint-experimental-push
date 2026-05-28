@@ -13,7 +13,7 @@ import {
 } from '../../src/resources.js';
 
 export const MIN_GENERATED_PUSH_CASES = 300;
-export const DEFAULT_GENERATED_PUSH_CASES = 490;
+export const DEFAULT_GENERATED_PUSH_CASES = 510;
 export const DEFAULT_GENERATED_PUSH_SEED = 0x52706e74;
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
@@ -67,6 +67,8 @@ const scenarioFamilies = Object.freeze([
   'wp-users-usermeta-graph-stale',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
+  'plugin-owned-option-change-ready',
+  'plugin-owned-option-change-conflict',
   'same-plan-user-meta-graph',
   'comment-user-graph-ready',
   'comment-user-graph-stale',
@@ -98,6 +100,7 @@ const readyPreservingFamilies = new Set([
   'wp-terms-termmeta-graph-ready',
   'wp-users-usermeta-graph-ready',
   'wp-term-taxonomy-graph-ready',
+  'plugin-owned-option-change-ready',
   'same-plan-user-meta-graph',
   'comment-user-graph-ready',
   'comment-user-graph-stale',
@@ -131,6 +134,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  pluginOwnedOptionChange: {
+    family: 'plugin-owned-option-change-ready',
+    tag: 'plugin-owned-option-change',
   },
   commentUserGraph: {
     family: 'comment-user-graph-ready',
@@ -678,6 +685,20 @@ const scenarioFamilyBuilders = {
   'wp-term-taxonomy-graph-stale': ({ base, local, remote, allocator, tags }) => {
     addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
     tags.add('expected-blocked');
+  },
+  'plugin-owned-option-change-ready': ({ base, local, remote, allocator, tags }) => {
+    addPluginOwnedOptionChange(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-plugin-owned-option',
+    });
+    tags.add('ready-candidate');
+  },
+  'plugin-owned-option-change-conflict': ({ base, local, remote, allocator, tags }) => {
+    addPluginOwnedOptionChange(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-plugin-owned-option',
+    });
+    tags.add('expected-conflict');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
@@ -1452,6 +1473,43 @@ function addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
 }
 
 
+
+
+function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const optionName = `generated_plugin_owned_option_${allocator.next()}`;
+  const rowId = `option_name:${optionName}`;
+  const resourceKey = rowKey('wp_options', rowId);
+  const row = {
+    option_name: optionName,
+    option_value: {
+      mode: 'base',
+      token: `plugin-owned-option-${allocator.next()}`,
+    },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_options', rowId, row);
+  setRow(remote, 'wp_options', rowId, row);
+  setRow(local, 'wp_options', rowId, {
+    ...row,
+    option_value: {
+      mode: 'local',
+      token: `plugin-owned-option-local-${prefix}-${allocator.next()}`,
+    },
+  });
+  allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+
+  tags.add('plugin-owned-option-change');
+  tags.add('plugin-owned-option-update');
+  tags.add('plugin-owned-supported');
+
+  if (conflict) {
+    remote.db.wp_options[rowId].option_value = {
+      mode: 'remote',
+      token: `plugin-owned-option-remote-${prefix}-${allocator.next()}`,
+    };
+  }
+}
 
 function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
   const commentId = allocator.graphId();
