@@ -3570,6 +3570,147 @@ test('fixture forms lab table journal redacts raw payload values', () => {
   assert.equal(result.journal.entries[0].afterHash.length, 64);
 });
 
+test('RPP-0443 generated custom table allowlist exact match applies and near misses fail closed', () => {
+  const exactTable = 'wp_reprint_push_forms_lab';
+  const rowId = 'id:1';
+  const exactResourceKey = `row:["${exactTable}","${rowId}"]`;
+  const privateValues = [
+    'rpp-0443-private-base-exact',
+    'rpp-0443-private-local-exact',
+    'rpp-0443-private-near-miss-a',
+    'rpp-0443-private-near-miss-b',
+    'rpp-0443-private-near-miss-c',
+  ];
+
+  function siteWithFormsLabRow(table, mode, secret) {
+    const site = baseSite();
+    site.plugins['reprint-push-forms-fixture'] = { version: '1.0.0', active: true };
+    site.db[table] = {
+      [rowId]: {
+        id: 1,
+        form_slug: 'contact',
+        payload: {
+          owner: 'forms',
+          mode,
+          private_note: secret,
+        },
+        updated_marker: mode,
+        __pluginOwner: 'forms',
+      },
+    };
+    return site;
+  }
+
+  const base = siteWithFormsLabRow(exactTable, 'base', privateValues[0]);
+  const local = cloneJson(base);
+  local.db[exactTable][rowId].payload.mode = 'local-update';
+  local.db[exactTable][rowId].payload.private_note = privateValues[1];
+  local.db[exactTable][rowId].updated_marker = 'local-update';
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(exactResourceKey, 'forms', 'fixture-forms-lab-table', {
+        table: exactTable,
+        supportsDelete: false,
+      }),
+    ),
+  };
+  const remote = cloneJson(base);
+  const readyPlan = planFor(base, local, remote);
+  assert.equal(readyPlan.status, 'ready');
+  assert.equal(readyPlan.mutations.length, 1);
+  const exactMutation = mutationFor(readyPlan, exactResourceKey);
+  assert.equal(exactMutation.pluginOwnedResource.driver, 'fixture-forms-lab-table');
+  assert.equal(exactMutation.pluginOwnedResource.policySource, 'local-snapshot');
+  assert.equal(exactMutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(exactMutation.pluginOwnedResource.driverEvidence.source, 'live-remote');
+
+  const applyResult = applyPlan(cloneJson(remote), readyPlan);
+  assert.equal(applyResult.appliedMutations, 1);
+  assert.equal(applyResult.site.db[exactTable][rowId].payload.mode, 'local-update');
+  assert.equal(applyResult.site.db[exactTable][rowId].updated_marker, 'local-update');
+  assert.equal(applyResult.journal.entries.length, 1);
+
+  const nearMissTables = [
+    'wp_reprint_push_forms_lab_backup',
+    'wp_reprint_push_forms_labs',
+    'wp_reprint_push_forms_lab2',
+  ];
+  const nearMissEvidence = nearMissTables.map((table, index) => {
+    const resourceKey = `row:["${table}","${rowId}"]`;
+    const nearBase = siteWithFormsLabRow(table, `base-near-${index + 1}`, privateValues[index + 2]);
+    const nearLocal = cloneJson(nearBase);
+    nearLocal.db[table][rowId].payload.mode = `local-near-${index + 1}`;
+    nearLocal.db[table][rowId].updated_marker = `local-near-${index + 1}`;
+    nearLocal.meta = {
+      pushPolicy: pluginOwnedResourcePolicy(
+        allowedPluginOwnedResource(resourceKey, 'forms', 'fixture-forms-lab-table', {
+          table,
+          supportsDelete: false,
+        }),
+      ),
+    };
+    const nearPlan = planFor(nearBase, nearLocal, cloneJson(nearBase));
+    const blocker = nearPlan.blockers[0];
+    const blockerJson = JSON.stringify(blocker);
+
+    assert.equal(nearPlan.status, 'blocked');
+    assert.equal(nearPlan.summary.mutations, 0);
+    assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+    assert.equal(blocker.driver, 'fixture-forms-lab-table');
+    assert.equal(blocker.resourceKey, resourceKey);
+    assert.match(blocker.reason, /Fixture forms lab table driver only supports positive id rows owned by forms/);
+    assert.equal(blockerJson.includes(privateValues[index + 2]), false);
+
+    return {
+      table,
+      resourceKey,
+      status: nearPlan.status,
+      class: blocker.class,
+      driver: blocker.driver,
+      blockerHash: sha256Evidence(blocker),
+    };
+  });
+
+  const evidence = {
+    rpp: 'RPP-0443',
+    evidenceSource: 'local-production-plugin-driver-node-test',
+    productionBacked: false,
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    exactAllowlist: {
+      resourceKey: exactResourceKey,
+      table: exactTable,
+      driver: exactMutation.pluginOwnedResource.driver,
+      pluginOwner: exactMutation.pluginOwnedResource.pluginOwner,
+      appliedMutations: applyResult.appliedMutations,
+      baseRowHash: sha256Evidence(base.db[exactTable][rowId]),
+      localRowHash: sha256Evidence(local.db[exactTable][rowId]),
+      remoteAfterRowHash: sha256Evidence(applyResult.site.db[exactTable][rowId]),
+      mutationHash: sha256Evidence(exactMutation),
+      journalEntryHash: sha256Evidence(applyResult.journal.entries[0]),
+    },
+    nearMisses: nearMissEvidence,
+  };
+  evidence.proofHash = sha256Evidence({
+    exactAllowlist: evidence.exactAllowlist,
+    nearMisses: evidence.nearMisses,
+  });
+
+  assert.match(evidence.exactAllowlist.baseRowHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.exactAllowlist.localRowHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.exactAllowlist.remoteAfterRowHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.exactAllowlist.mutationHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.exactAllowlist.journalEntryHash, /^sha256:[a-f0-9]{64}$/);
+  for (const nearMiss of evidence.nearMisses) {
+    assert.match(nearMiss.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  }
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(evidence).includes(privateValues[0]), false);
+  assert.equal(JSON.stringify(evidence).includes(privateValues[1]), false);
+  assert.equal(JSON.stringify(applyResult.journal).includes(privateValues[0]), false);
+  assert.equal(JSON.stringify(applyResult.journal).includes(privateValues[1]), false);
+});
+
 test('RPP-0219 redacts raw plan refusal and journal evidence while preserving hashes', () => {
   const base = baseSite();
   const conflictLocal = cloneJson(base);
