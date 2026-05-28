@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 09:24 CEST.
+- Last update: 2026-05-28 09:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `cb6c29f31` (`test: add progress timestamp generated coverage`).
+  `229fa37da` (`docs: refresh progress for rpp-0058`); newest behavioral proof
+  remains `cb6c29f31` (`test: add progress timestamp generated coverage`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -255,11 +256,15 @@ linked implementation artifacts.
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+  `rpp-29`, `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`; integrator `rpp-28`;
+  queue `rpp-35`; critics `rpp-31` and `rpp-37`; progress reporter `rpp-36`;
+  visible supervisor `rpp-orchestrator`; and `rpp-ao-lifecycle` / `rpp-ao-web`
+  local lifecycle/dashboard sessions.
+- Live-roster 28 heartbeat: latest fetch keeps origin/lane at `229fa37da` with
+  123 checked and 877 open. `RPP-0058` is integrated and counted; `RPP-0061` is
+  the next rpp-28 integration target and remains uncounted alongside
+  `RPP-0062`, `RPP-0140`, `RPP-0141`, `RPP-0142`, `RPP-0233`, `RPP-0234`,
+  `RPP-0340`, `RPP-0341`, `RPP-0452`, `RPP-0453`, `RPP-0454`, and `RPP-0455`.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
@@ -288,6 +293,10 @@ linked implementation artifacts.
   evidence manifest
   generation, artifact redaction scan over evidence/report paths, and
   `git diff --check`.
+- Live-roster 28 verification reruns checklist-completion lint, artifact
+  redaction scan over `docs/evidence`, `audits`, and `progress.html`, focused
+  progress HTML tests, local-link sanity for `progress.html`, and
+  `git diff --check` before commit.
 - Release posture: final release remains **NO-GO**. This update makes tracking
   stricter and integrates fail-closed/local audit surfaces; it does not supply
   external production WordPress, production credentials, final release gate

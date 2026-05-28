@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 09:24 CEST
+Last updated: 2026-05-28 09:40 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 09:40 CEST - Live Roster 28 After RPP-0058
+
+- Lane truth: fetch confirmed `origin/lane/evidence-integration-20260527` at
+  `229fa37da` (`docs: refresh progress for rpp-0058`). Checklist lint truth is
+  123 verified items checked and 877 open; release remains `NO-GO`.
+- Integrated vs queued: `RPP-0058` is counted. `RPP-0061` is the current rpp-28
+  integration target and is not counted until origin/lane moves. Other visible
+  session-only work remains uncounted: `RPP-0062`, `RPP-0140`, `RPP-0141`,
+  `RPP-0142`, `RPP-0233`, `RPP-0234`, `RPP-0340`, `RPP-0341`, `RPP-0452`,
+  `RPP-0453`, `RPP-0454`, and `RPP-0455`.
+- Active roster: developers `rpp-24`, `rpp-25`, `rpp-29`, `rpp-30`, `rpp-32`,
+  `rpp-33`, and `rpp-34`; integrator `rpp-28`; queue `rpp-35`; critics
+  `rpp-31` and `rpp-37`; progress `rpp-36`; lifecycle/dashboard sessions
+  `rpp-ao-lifecycle` and `rpp-ao-web`; supervisor `rpp-orchestrator`.
+- Current nudge: keep integrating one clean candidate at a time from the latest
+  lane head and leave branch-local evidence out of readiness scoring.
 
 ## 2026-05-28 09:24 CEST - RPP-0058 Integrated
 
