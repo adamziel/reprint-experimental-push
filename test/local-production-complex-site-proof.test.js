@@ -187,10 +187,17 @@ test('complex-site planner proof covers real taxonomy graph closure', () => {
   assert.equal(proof.counts.localEdited.taxonomyGraphTermmeta, 1);
   assert.equal(proof.taxonomyGraphEvidence.type, 'category-term-relationship-termmeta');
   assert.equal(proof.taxonomyGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.taxonomyGraphEvidence.termTaxonomyReferencesTerm, true);
+  assert.equal(proof.taxonomyGraphEvidence.termTaxonomyMutationCarriesTermReference, true);
+  assert.equal(proof.taxonomyGraphEvidence.plannedTermTaxonomy.resourceKey, 'row:["wp_term_taxonomy","term_taxonomy_id:72911"]');
+  assert.equal(proof.taxonomyGraphEvidence.plannedTermTaxonomy.termTaxonomyId, 72911);
+  assert.equal(proof.taxonomyGraphEvidence.plannedTermTaxonomy.termId, 72901);
+  assert.equal(proof.taxonomyGraphEvidence.plannedTermTaxonomy.taxonomy, 'category');
   assert.equal(proof.taxonomyGraphEvidence.staleGraphBlockers, 0);
   assert.equal(proof.invariants.taxonomyGraphCountsPresent, true);
   assert.equal(proof.invariants.taxonomyGraphPlanned, true);
   assert.equal(proof.invariants.taxonomyGraphHasLivePreconditions, true);
+  assert.equal(proof.invariants.taxonomyGraphTermTaxonomyCarriesTermReference, true);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -278,6 +285,53 @@ test('complex-site release evidence extracts release verifier receipts and gates
   assert.equal(evidence.invariants.pluginDriverApplyRevalidated, true);
   assert.equal(evidence.invariants.authSessionGateOk, true);
   assert.equal(evidence.invariants.durableJournalGateOk, true);
+});
+
+test('complex-site release evidence proves taxonomy term reference carries through apply', () => {
+  const plannerProof = { ok: true, shape: { ...smallShape, taxonomyGraph: true } };
+  const releaseSummary = syntheticReleaseSummary(9, { taxonomyGraph: true });
+  const output = JSON.stringify(releaseSummary, null, 2);
+
+  const evidence = buildComplexSiteReleaseEvidence({
+    plannerProof,
+    verifyOutput: output,
+    verifyStatus: 0,
+    verifySignal: null,
+  });
+
+  assert.equal(evidence.ok, true);
+  assert.equal(evidence.verifier.taxonomyGraph.required, true);
+  assert.equal(evidence.verifier.taxonomyGraph.termTaxonomyMutationPlanned, true);
+  assert.equal(evidence.verifier.taxonomyGraph.termTaxonomyMutationCarriesTermReference, true);
+  assert.equal(evidence.verifier.taxonomyGraph.termTaxonomyId, 72911);
+  assert.equal(evidence.verifier.taxonomyGraph.termId, 72901);
+  assert.equal(evidence.verifier.taxonomyGraph.taxonomy, 'category');
+  assert.equal(evidence.verifier.taxonomyGraph.preconditionLive, true);
+  assert.equal(evidence.verifier.taxonomyGraph.applyRevalidated, true);
+  assert.equal(evidence.verifier.taxonomyGraph.finalMatchesLocal, true);
+  assert.equal(evidence.invariants.taxonomyGraphTermTaxonomyCarriedInReleasePlan, true);
+  assert.equal(evidence.invariants.taxonomyGraphTermTaxonomyHasReleasePrecondition, true);
+  assert.equal(evidence.invariants.taxonomyGraphTermTaxonomyApplyRevalidated, true);
+  assert.equal(evidence.invariants.taxonomyGraphTermTaxonomyFinalMatchesLocal, true);
+});
+
+test('complex-site release evidence fails closed when taxonomy term reference is missing', () => {
+  const plannerProof = { ok: true, shape: { ...smallShape, taxonomyGraph: true } };
+  const releaseSummary = syntheticReleaseSummary(9, { taxonomyGraph: true });
+  const taxonomyMutation = releaseSummary.releaseProof.planObject.mutations.find((mutation) =>
+    mutation.resourceKey === 'row:["wp_term_taxonomy","term_taxonomy_id:72911"]');
+  taxonomyMutation.value.value.term_id = 72902;
+
+  const evidence = buildComplexSiteReleaseEvidence({
+    plannerProof,
+    verifyOutput: JSON.stringify(releaseSummary),
+    verifyStatus: 0,
+    verifySignal: null,
+  });
+
+  assert.equal(evidence.ok, false);
+  assert.equal(evidence.verifier.taxonomyGraph.termTaxonomyMutationCarriesTermReference, false);
+  assert.equal(evidence.invariants.taxonomyGraphTermTaxonomyCarriedInReleasePlan, false);
 });
 
 test('complex-site release evidence fails closed without a dry-run receipt', () => {
@@ -523,7 +577,33 @@ function syntheticComplexSnapshot(variant, shape) {
   return snapshot;
 }
 
-function syntheticReleaseSummary(mutations) {
+function syntheticReleaseSummary(mutations, options = {}) {
+  const taxonomyGraphMutations = options.taxonomyGraph ? [
+    {
+      id: 'mutation-taxonomy-graph-term-taxonomy',
+      resourceKey: 'row:["wp_term_taxonomy","term_taxonomy_id:72911"]',
+      action: 'put',
+      resource: {
+        type: 'row',
+        table: 'wp_term_taxonomy',
+        id: 'term_taxonomy_id:72911',
+        key: 'row:["wp_term_taxonomy","term_taxonomy_id:72911"]',
+      },
+      value: {
+        value: {
+          term_taxonomy_id: 72911,
+          term_id: 72901,
+          taxonomy: 'category',
+          description: 'Local taxonomy graph fixture.',
+          parent: 0,
+          count: 1,
+        },
+      },
+      baseHash: 'e'.repeat(64),
+      remoteBeforeHash: 'e'.repeat(64),
+      localHash: 'f'.repeat(64),
+    },
+  ] : [];
   const mutationList = [
     {
       id: 'mutation-release-state',
@@ -545,7 +625,8 @@ function syntheticReleaseSummary(mutations) {
       remoteBeforeHash: 'b'.repeat(64),
       localHash: 'c'.repeat(64),
     },
-    ...Array.from({ length: Math.max(0, mutations - 1) }, (_, index) => ({
+    ...taxonomyGraphMutations,
+    ...Array.from({ length: Math.max(0, mutations - 1 - taxonomyGraphMutations.length) }, (_, index) => ({
       id: `mutation-${index + 1}`,
       resourceKey: `row:["wp_posts","ID:${71001 + index}"]`,
     })),
@@ -585,6 +666,10 @@ function syntheticReleaseSummary(mutations) {
           checkedAgainst: 'live-remote',
           verifiedResourceKeys: mutationList.map((mutation) => mutation.resourceKey),
         },
+      },
+      after: {
+        status: 200,
+        finalMatchesLocal: true,
       },
       planObject: {
         mutations: mutationList,
