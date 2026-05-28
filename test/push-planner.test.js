@@ -3789,6 +3789,64 @@ test('rewrites explicit WordPress graph identity map references to proven remote
   assert.equal(result.site.db.wp_termmeta['meta_id:4101'].term_id, 3101);
 });
 
+test('rewrites comment parent thread references through explicit WordPress graph identity maps', () => {
+  const sourceParentResourceKey = 'row:["wp_comments","comment_ID:801"]';
+  const targetParentResourceKey = 'row:["wp_comments","comment_ID:901"]';
+  const childCommentResourceKey = 'row:["wp_comments","comment_ID:802"]';
+  const base = baseSite();
+  base.db.wp_comments = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_comments', localId: 'comment_ID:801', remoteId: 'comment_ID:901' }],
+    },
+  };
+  local.db.wp_comments['comment_ID:801'] = {
+    comment_ID: 801,
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: 0,
+    comment_content: 'Mapped parent comment',
+  };
+  remote.db.wp_comments['comment_ID:901'] = {
+    comment_ID: 901,
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: 0,
+    comment_content: 'Mapped parent comment',
+  };
+  local.db.wp_comments['comment_ID:802'] = {
+    comment_ID: 802,
+    comment_post_ID: 1,
+    comment_parent: 801,
+    user_id: 0,
+    comment_content: 'Mapped child reply',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const childMutation = mutationFor(plan, childCommentResourceKey);
+  const rewrittenChild = deserializeMutationValue(childMutation);
+  const parentRewrite = childMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+    rewrite.relationshipType === 'comment-parent');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, sourceParentResourceKey), undefined);
+  assert.equal(decisionFor(plan, sourceParentResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, targetParentResourceKey).decision, 'keep-remote');
+  assert.equal(childMutation.changeKind, 'create');
+  assert.equal(rewrittenChild.comment_parent, 901);
+  assert.ok(parentRewrite, 'missing comment_parent identity rewrite evidence');
+  assert.equal(parentRewrite.sourceTargetResourceKey, sourceParentResourceKey);
+  assert.equal(parentRewrite.targetResourceKey, targetParentResourceKey);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_comments['comment_ID:801'], undefined);
+  assert.equal(result.site.db.wp_comments['comment_ID:901'].comment_content, 'Mapped parent comment');
+  assert.equal(result.site.db.wp_comments['comment_ID:802'].comment_parent, 901);
+});
+
 test('blocks explicit WordPress graph identity maps when the remote target is not equivalent', () => {
   const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
   const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';
@@ -4189,6 +4247,52 @@ test('allows same-plan comment and user graph closure when author and comment ta
   assert.equal(result.site.db.wp_comments['comment_ID:11'].comment_post_ID, 2);
   assert.equal(result.site.db.wp_comments['comment_ID:12'].comment_parent, 11);
   assert.equal(result.site.db.wp_commentmeta['meta_id:51'].comment_id, 12);
+});
+
+test('blocks comment parent thread references when the remote parent comment diverged', () => {
+  const parentCommentResourceKey = 'row:["wp_comments","comment_ID:31"]';
+  const childCommentResourceKey = 'row:["wp_comments","comment_ID:32"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:31': {
+      comment_ID: 31,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'base-private-parent-comment',
+    },
+  };
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_comments['comment_ID:32'] = {
+    comment_ID: 32,
+    comment_post_ID: 1,
+    comment_parent: 31,
+    comment_content: 'local-private-child-reply',
+  };
+  remote.db.wp_comments['comment_ID:31'] = {
+    ...remote.db.wp_comments['comment_ID:31'],
+    comment_content: 'remote-private-edited-parent-comment',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === childCommentResourceKey);
+  const parentReference = blocker?.references.find((reference) =>
+    reference.relationshipType === 'comment-parent');
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, childCommentResourceKey), undefined);
+  assert.equal(decisionFor(plan, parentCommentResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(parentReference, 'missing comment_parent graph identity evidence');
+  assert.equal(parentReference.relationshipKey, 'wp_comments.comment_parent');
+  assert.equal(parentReference.targetResourceKey, parentCommentResourceKey);
+  assert.equal(parentReference.targetChange.remoteChange, 'update');
+  assert.equal(planJson.includes('local-private-child-reply'), false);
+  assert.equal(planJson.includes('base-private-parent-comment'), false);
+  assert.equal(planJson.includes('remote-private-edited-parent-comment'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks post author and usermeta references when the remote user target diverged', () => {

@@ -40,6 +40,7 @@ const scenarioFamilies = Object.freeze([
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'stale-comment-parent-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -624,6 +625,35 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('comment-graph');
+    tags.add('comment-parent-graph');
+    tags.add('comment-parent-ready');
+  },
+  'stale-comment-parent-graph': ({ base, local, remote, allocator, tags }) => {
+    const parentId = allocator.graphId();
+    const childId = allocator.graphId();
+    const parentRowId = `comment_ID:${parentId}`;
+    const parentComment = makeComment(parentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 1,
+      comment_content: `Generated thread parent ${parentId}`,
+    });
+    setRow(base, 'wp_comments', parentRowId, parentComment);
+    setRow(local, 'wp_comments', parentRowId, parentComment);
+    setRow(remote, 'wp_comments', parentRowId, {
+      ...parentComment,
+      comment_content: `Remote edited thread parent ${parentId}`,
+    });
+    setRow(local, 'wp_comments', `comment_ID:${childId}`, makeComment(childId, {
+      comment_post_ID: 1,
+      comment_parent: parentId,
+      user_id: 1,
+      comment_content: `Generated child reply ${childId}`,
+    }));
+    tags.add('stale-graph');
+    tags.add('comment-graph');
+    tags.add('comment-parent-graph');
+    tags.add('comment-parent-stale');
   },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
@@ -1028,6 +1058,7 @@ function addGeneratedComplexity({
       addCommentGraph(local, allocator);
       tags.add('same-plan-graph');
       tags.add('comment-graph');
+      tags.add('comment-parent-graph');
     } else if (choice === 9 && tier >= 8) {
       addTaxonomyGraph(local, allocator);
       tags.add('same-plan-graph');
@@ -1125,6 +1156,7 @@ function addReadyPreservingComplexityOperation({
     addCommentGraph(local, allocator);
     tags.add('same-plan-graph');
     tags.add('comment-graph');
+    tags.add('comment-parent-graph');
     return;
   }
   if (choice === 5) {
