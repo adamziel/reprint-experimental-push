@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:28 CEST
+Last updated: 2026-05-28 06:40 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:40 CEST - RPP-0431 Integrated
+
+- Going well: integration is now at `85682de19`, adding `RPP-0431` plugin
+  uninstall/delete refusal. The focused planner/apply proof blocks plugin delete
+  plans without an explicit `plugin-delete` driver, keeps blocker evidence
+  redacted, and confirms a forged ready plugin delete fails with
+  `UNSUPPORTED_PLUGIN_DELETE` before durable journal events or target mutation.
+- Checklist movement: 115 verified items checked and 885 open. New check since
+  the prior feedback entry: `RPP-0431`.
+- Verification: focused plugin uninstall/delete validation passes 1/1,
+  `node --test test/push-planner.test.js` passes 96/96, checklist lint reports
+  115 checked / 885 open with 0 risky claims, artifact redaction scans evidence
+  and reporting surfaces with 0 rejected files, release remains `NO-GO`, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 06:28 CEST - RPP-0220 Integrated
 
