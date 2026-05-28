@@ -59,7 +59,9 @@
     "apply": "node ./bin/reprint-push-lab.js apply",
     "verify:release:docker-local-production": "node ./scripts/docker/production-complex-site-harness.mjs",
     "test:docker:production-complex-site-harness": "node --test test/production-complex-site-harness.test.js",
-    "check:release-gates": "node ./scripts/release/check-release-gates.mjs"
+    "check:release-gates": "node ./scripts/release/check-release-gates.mjs",
+    "publish:progress-page": "node ./scripts/release/publish-progress-page.mjs",
+    "publish:progress-page:dry-run": "node ./scripts/release/publish-progress-page.mjs --dry-run"
   },
   "engines": {
     "node": ">=20"

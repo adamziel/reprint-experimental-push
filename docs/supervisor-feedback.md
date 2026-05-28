@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 11:39 CEST
+Last updated: 2026-05-28 11:45 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 11:45 CEST - RPP-0216 Integrated
+
+- Going well: integration is now at `4cd502b7`, preserving ancestry for
+  `origin/session/rpp-29-rpp-0216-blocked-plan-apply-refusal` and adding
+  `RPP-0216` blocked plan apply refusal evidence. The focused proof covers a
+  blocked plan that also contains an otherwise valid local mutation, refuses
+  apply with stable `PLAN_NOT_READY` evidence before mutation, writes no durable
+  journal event, and leaves the remote snapshot unchanged.
+- Checklist movement: 137 verified items checked and 863 open. New check since
+  the prior feedback entry: `RPP-0216`.
+- Verification: focused RPP-0216 planner/apply validation passes 1/1,
+  checklist lint reports 137 checked / 863 open with 0 risky claims, release
+  remains `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue integrating already-pushed branches only, and after
+  each lane push run the progress-page publisher so GitHub Pages on `main`
+  reflects the latest `progress.html`.
 
 ## 2026-05-28 11:39 CEST - RPP-0214 Integrated
 

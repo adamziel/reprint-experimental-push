@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 136.
-- Remaining open: 864.
+- Verified complete: 137.
+- Remaining open: 863.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -237,7 +237,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [ ] RPP-0213 (Near-Mid / merge-invariants) Implement localHash correctness, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0214 (Near-Mid / merge-invariants) Implement already-in-sync decision, variant 1. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0215 (Near-Mid / merge-invariants) Implement keep-remote decision, variant 1. Success: progress log records the command and caveat.
-- [ ] RPP-0216 (Near-Mid / merge-invariants) Implement blocked plan apply refusal, variant 1. Success: node test proves the invariant over generated and focused fixtures.
+- [x] RPP-0216 (Near-Mid / merge-invariants) Implement blocked plan apply refusal, variant 1. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0217 (Near-Mid / merge-invariants) Implement conflict plan apply refusal, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0218 (Near-Mid / merge-invariants) Implement forged ready plan defense, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0219 (Near-Mid / merge-invariants) Implement redacted raw value evidence, variant 1. Success: scenario matrix row names the behavior and command.
