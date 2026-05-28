@@ -56,7 +56,8 @@
     "test:recovery:file-journal": "node ./scripts/recovery/file-journal-restart-smoke.mjs",
     "bench:graph-mapping-inventory": "node ./scripts/bench/graph-mapping-inventory.js",
     "plan": "node ./bin/reprint-push-lab.js plan",
-    "apply": "node ./bin/reprint-push-lab.js apply"
+    "apply": "node ./bin/reprint-push-lab.js apply",
+    "check:release-gates": "node ./scripts/release/check-release-gates.mjs"
   },
   "engines": {
     "node": ">=20"
