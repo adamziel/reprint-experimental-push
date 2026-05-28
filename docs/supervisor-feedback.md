@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:15 CEST
+Last updated: 2026-05-28 06:20 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:20 CEST - Queue Heartbeat After RPP-0218
+
+- Going well: origin/lane is `6cdf3ab18`; `RPP-0218` is integrated from lane
+  truth, giving 112 verified items checked, 888 open, and release status
+  `NO-GO`.
+- Queue separation: `RPP-0041`-`RPP-0047`, `RPP-0113`-`RPP-0120`, `RPP-0216`,
+  `RPP-0219`-`RPP-0222`, `RPP-0315`, `RPP-0322`, `RPP-0323`, `RPP-0326`,
+  `RPP-0327`, `RPP-0415`-`RPP-0420`, `RPP-0425`, `RPP-0426`, `RPP-0427`, and
+  `RPP-0431` remain queued/session-only from visible refs or active worktrees;
+  none move the lane counts in this heartbeat.
+- Live roster: tmux shows developer work in `rpp-24`, `rpp-25`, `rpp-29`,
+  `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`, critic lanes `rpp-31` and
+  `rpp-37`, progress reporter `rpp-36`, integrator `rpp-28`, prior progress
+  reporter `rpp-26`, integration-prep `rpp-35`, and local AO lifecycle/web/
+  supervisor panes.
+- Current nudge: keep watching for the next origin/lane move; refresh counts
+  only after the lane actually changes, and keep `RPP-0219`/later candidates
+  out of readiness scoring until integrated.
 
 ## 2026-05-28 06:15 CEST - RPP-0218 Integrated
 
