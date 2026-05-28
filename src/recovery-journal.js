@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { assertEvidenceHasNoRawValues } from './evidence-redaction.js';
 import { digest } from './stable-json.js';
 import { deserializeResourceValue, resourceHash } from './resources.js';
 
@@ -18,18 +19,6 @@ const CLAIM_APPEND_EVENT_TYPES = new Set([
   'stale-claim-rejected',
 ]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
-
-const RAW_VALUE_KEYS = new Set([
-  'body',
-  'content',
-  'contents',
-  'data',
-  'raw',
-  'value',
-  'values',
-  'beforeValue',
-  'afterValue',
-]);
 
 export class RecoveryJournalClaimStaleError extends Error {
   constructor(message, details = {}) {
@@ -1082,7 +1071,10 @@ export function readRecoveryJournalPaged(filePath, options = {}) {
 }
 
 export function assertJournalRecordHasNoRawValues(record) {
-  visitRecord(record, []);
+  assertEvidenceHasNoRawValues(record, {
+    label: 'Recovery journal record',
+    code: 'JOURNAL_RAW_VALUE_FIELD',
+  });
 }
 
 export function classifyRecoveryJournalClaims(records) {
@@ -1335,26 +1327,6 @@ function hasOwnProperties(candidate, keys) {
   }
 
   return keys.every((key) => Object.hasOwn(candidate, key));
-}
-
-function visitRecord(value, pathParts) {
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => visitRecord(item, [...pathParts, String(index)]));
-    return;
-  }
-
-  if (!value || typeof value !== 'object') {
-    return;
-  }
-
-  for (const [key, child] of Object.entries(value)) {
-    if (RAW_VALUE_KEYS.has(key)) {
-      const error = new Error(`Recovery journal record contains raw-value field ${[...pathParts, key].join('.')}.`);
-      error.code = 'JOURNAL_RAW_VALUE_FIELD';
-      throw error;
-    }
-    visitRecord(child, [...pathParts, key]);
-  }
 }
 
 function emptyRead(filePath, status, reason) {
