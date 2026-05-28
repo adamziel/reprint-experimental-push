@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:40 CEST.
+- Last update: 2026-05-28 06:50 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `85682de19` (`fix: fail closed plugin delete mutations`).
+  `7ac6d62bd` (`docs: refresh progress for plugin delete refusal`), with latest
+  checked proof commit `85682de19` for `RPP-0431` plugin uninstall/delete
+  refusal.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -178,12 +180,14 @@ linked implementation artifacts.
   `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
-- Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+- Current AO team from tmux/session refs includes active developers
+  `rpp-24/RPP-0126`, `rpp-25/RPP-0052`, `rpp-29/RPP-0226`,
+  `rpp-30/RPP-0331`, `rpp-32/RPP-0438`, `rpp-33/RPP-0127`, and
+  `rpp-34/RPP-0439`; integrator `rpp-28` has observed `RPP-0223` work; critics
+  are `rpp-31` and `rpp-37`; queue is `rpp-35`; progress lanes are `rpp-26` and
+  `rpp-36`. Only lane-integrated output through `7ac6d62bd` is counted, so
+  `RPP-0223` and other active or queued work remain session-only until tested
+  and integrated.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
