@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 36 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -51,8 +51,8 @@ The default generated run covers:
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
+  outcomes, `wp_term_taxonomy` graph cases with per-tier target counts plus
+  ready, stale non-ready, and parent/child v3 outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
   delete refusal, atomic plugin install ready and missing-dependency paths,
   same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
@@ -67,9 +67,12 @@ unplanned remote resource; concurrent remote edits to the updated post remain
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
 create the term and taxonomy row in one plan and reject a stale replay before
-mutation; stale cases keep the term in the base, drift that term remotely, and
-require the new taxonomy reference to fail closed instead of overwriting the
-drifted remote.
+mutation; the RPP-0152 v3 parent-graph cases add parent and child terms with
+matching taxonomy rows so the `term_id` and `parent` graph references are covered
+in the same plan. Stale cases keep the term in the base, drift that term
+remotely, and require the new taxonomy reference to fail closed instead of
+overwriting the drifted remote. Raw term names, slugs, and descriptions remain
+hash-only/redacted in emitted evidence.
 
 At the time this note was added, the summary command reported:
 
@@ -78,8 +81,8 @@ At the time this note was added, the summary command reported:
   "totalCases": 360,
   "statuses": {
     "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "conflict": 141,
+    "ready": 195
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -117,29 +120,29 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 10,
-        "ready": 10
+        "conflict": 12,
+        "ready": 8
       }
     },
     "wpTermTaxonomyGraph": {
       "family": "wp-term-taxonomy-graph-ready",
-      "total": 20,
+      "total": 30,
       "perTier": {
-        "0": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2,
-        "5": 2,
-        "6": 2,
-        "7": 2,
-        "8": 2,
-        "9": 2
+        "0": 3,
+        "1": 3,
+        "2": 3,
+        "3": 3,
+        "4": 3,
+        "5": 3,
+        "6": 3,
+        "7": 3,
+        "8": 3,
+        "9": 3
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 8,
-        "ready": 9
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 20
       }
     }
   },
@@ -153,17 +156,20 @@ At the time this note was added, the summary command reported:
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
-    "wp-term-taxonomy-graph": 20,
+    "wp-term-taxonomy-graph": 30,
     "wp-term-taxonomy-graph-ready": 10,
     "wp-term-taxonomy-graph-stale": 10,
-    "wp-term-taxonomy-create": 20,
-    "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "wp-term-taxonomy-parent-graph-v3": 10,
+    "wp-term-taxonomy-create": 30,
+    "wp-terms-create": 30,
+    "wp-terms-remote-drift": 10,
+    "term-taxonomy-parent-graph": 10,
+    "term-taxonomy-term-graph": 30
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 70,
+  "maxMutationCount": 45,
+  "maxReadyResourceCount": 70,
+  "maxReadyMutationCount": 45
 }
 ```
 

@@ -55,6 +55,7 @@ const scenarioFamilies = Object.freeze([
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
+  'wp-term-taxonomy-parent-graph-v3',
   'same-plan-user-meta-graph',
 ]);
 
@@ -78,6 +79,7 @@ const readyPreservingFamilies = new Set([
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
+  'wp-term-taxonomy-parent-graph-v3',
   'same-plan-user-meta-graph',
 ]);
 
@@ -582,6 +584,10 @@ const scenarioFamilyBuilders = {
   'wp-term-taxonomy-graph-stale': ({ base, local, remote, allocator, tags }) => {
     addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
     tags.add('expected-blocked');
+  },
+  'wp-term-taxonomy-parent-graph-v3': ({ local, allocator, tags }) => {
+    addWpTermTaxonomyParentGraphV3(local, allocator, tags);
+    tags.add('ready-candidate');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
@@ -1262,6 +1268,53 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
   }
+}
+
+function addWpTermTaxonomyParentGraphV3(local, allocator, tags) {
+  const parentTermId = allocator.graphId();
+  const childTermId = allocator.graphId();
+  const parentTaxonomyId = allocator.graphId();
+  const childTaxonomyId = allocator.graphId();
+  const parentTermRowId = `term_id:${parentTermId}`;
+  const childTermRowId = `term_id:${childTermId}`;
+
+  setRow(local, 'wp_terms', parentTermRowId, {
+    term_id: parentTermId,
+    name: `Generated term taxonomy v3 parent ${parentTermId}`,
+    slug: `generated-term-taxonomy-v3-parent-${parentTermId}`,
+    term_group: 0,
+  });
+  setRow(local, 'wp_terms', childTermRowId, {
+    term_id: childTermId,
+    name: `Generated term taxonomy v3 child ${childTermId}`,
+    slug: `generated-term-taxonomy-v3-child-${childTermId}`,
+    term_group: 0,
+  });
+
+  setRow(local, 'wp_term_taxonomy', `term_taxonomy_id:${parentTaxonomyId}`, {
+    term_taxonomy_id: parentTaxonomyId,
+    term_id: parentTermId,
+    taxonomy: 'category',
+    description: `generated term taxonomy v3 parent ${parentTaxonomyId}`,
+    parent: 0,
+    count: 1,
+  });
+  setRow(local, 'wp_term_taxonomy', `term_taxonomy_id:${childTaxonomyId}`, {
+    term_taxonomy_id: childTaxonomyId,
+    term_id: childTermId,
+    taxonomy: 'category',
+    description: `generated term taxonomy v3 child ${childTaxonomyId}`,
+    parent: parentTermId,
+    count: 1,
+  });
+
+  tags.add('wp-term-taxonomy-graph');
+  tags.add('wp-terms-create');
+  tags.add('wp-term-taxonomy-create');
+  tags.add('term-taxonomy-term-graph');
+  tags.add('term-taxonomy-parent-graph');
+  tags.add('taxonomy-graph');
+  tags.add('same-plan-graph');
 }
 
 function addCommentGraph(local, allocator) {

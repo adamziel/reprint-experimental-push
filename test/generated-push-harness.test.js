@@ -12,6 +12,7 @@ import {
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
 
@@ -86,11 +87,13 @@ const requiredFamilies = [
   'wp-posts-delete',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
+  'wp-term-taxonomy-parent-graph-v3',
   'wp-term-taxonomy-graph',
   'wp-terms-create',
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'term-taxonomy-parent-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -440,6 +443,108 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
 }
 
+
+test('RPP-0152 wp_term_taxonomy graph generated v3 covers parent graph with stale-safe redacted evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermTaxonomyGraph;
+
+  assert.ok(coverage, 'missing wp_term_taxonomy target coverage for RPP-0152');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-taxonomy-graph']);
+  assert.equal(report.summary.featureFamilies['wp-term-taxonomy-parent-graph-v3'], 10);
+  assert.equal(report.summary.featureFamilies['term-taxonomy-parent-graph'], 10);
+  assert.ok(coverage.statuses.ready > 0, 'target should still include ready wp_term_taxonomy graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should still include stale/non-ready graph cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 3])),
+  );
+  assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
+
+  const cases = generatePushHarnessCases();
+  const targetCases = cases.filter((testCase) => testCase.tags.has('wp-term-taxonomy-graph'));
+  const parentGraphCases = targetCases.filter((testCase) => testCase.family === 'wp-term-taxonomy-parent-graph-v3');
+  const staleGraphCases = targetCases.filter((testCase) => testCase.family === 'wp-term-taxonomy-graph-stale');
+
+  assert.equal(parentGraphCases.length, 10, 'expected one v3 parent graph case per tier');
+  assert.equal(staleGraphCases.length, 10, 'expected one stale graph case per tier');
+
+  for (const testCase of parentGraphCases) {
+    const shape = assertTermTaxonomyParentGraphV3Shape(testCase);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(testCase);
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+
+    assert.equal(plan.status, 'ready', `${testCase.id} v3 parent graph should be ready`);
+    assert.equal(result.status, 'ready', `${testCase.id} v3 parent graph should validate ready`);
+    assert.equal(result.applied, true, `${testCase.id} v3 parent graph should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote rows`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} stale replay should reject`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay must fail before mutation`);
+
+    for (const rowId of shape.termRowIds) {
+      assert.ok(mutationKeys.has(rowResourceKey('wp_terms', rowId)), `${testCase.id} should plan wp_terms ${rowId}`);
+    }
+    for (const rowId of shape.termTaxonomyRowIds) {
+      assert.ok(
+        mutationKeys.has(rowResourceKey('wp_term_taxonomy', rowId)),
+        `${testCase.id} should plan wp_term_taxonomy ${rowId}`,
+      );
+    }
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    for (const rowId of shape.termRowIds) {
+      assert.deepEqual(applied.site.db.wp_terms[rowId], testCase.local.db.wp_terms[rowId]);
+    }
+    for (const rowId of shape.termTaxonomyRowIds) {
+      assert.deepEqual(applied.site.db.wp_term_taxonomy[rowId], testCase.local.db.wp_term_taxonomy[rowId]);
+    }
+    assertTermTaxonomyEvidenceRedacted(testCase, plan, shape);
+  }
+
+  for (const testCase of staleGraphCases) {
+    const shape = assertTermTaxonomyGraphShape(testCase, { staleTarget: true });
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(testCase);
+    const remoteBefore = cloneJson(testCase.remote);
+    const beforeHash = digest(remoteBefore);
+    const error = captureError(() => applyPlan(remoteBefore, plan));
+    const taxonomyResourceKey = rowResourceKey('wp_term_taxonomy', shape.termTaxonomyRowId);
+
+    assert.notEqual(plan.status, 'ready', `${testCase.id} stale term_taxonomy graph should be non-ready`);
+    assert.notEqual(result.status, 'ready', `${testCase.id} stale term_taxonomy graph should validate non-ready`);
+    assert.equal(result.applied, false, `${testCase.id} stale term_taxonomy graph must not apply`);
+    assert.ok(error instanceof PushPlanError, `${testCase.id} stale graph should refuse apply`);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remoteBefore), beforeHash, `${testCase.id} non-ready apply mutated remote`);
+    assert.ok(
+      plan.blockers.some((blocker) => blocker.resourceKey === taxonomyResourceKey),
+      `${testCase.id} should block the term_taxonomy row that references the stale term`,
+    );
+    assert.equal(
+      plan.mutations.some((mutation) => mutation.resourceKey === taxonomyResourceKey),
+      false,
+      `${testCase.id} must not plan a mutation for the stale term_taxonomy row`,
+    );
+    assert.equal(
+      JSON.stringify(plan.blockers).includes(shape.remoteTerm.name),
+      false,
+      `${testCase.id} blocker evidence should stay hash-only`,
+    );
+    assertTermTaxonomyEvidenceRedacted(testCase, plan, shape);
+  }
+});
+
 test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.wpTermTaxonomyGraph;
@@ -488,9 +593,11 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
   const termRows = Object.entries(testCase.local.db.wp_terms)
     .filter(([id, row]) => !testCase.base.db.wp_terms[id]
+      && typeof row.name === 'string'
       && row.name.startsWith('Generated term taxonomy graph target '));
   const termTaxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
     .filter(([id, row]) => !testCase.base.db.wp_term_taxonomy[id]
+      && typeof row.description === 'string'
       && row.description.startsWith('generated term taxonomy graph '));
 
   assert.equal(termRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one term`);
@@ -501,8 +608,9 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
     : termRows[0][1].term_id;
   assert.equal(termTaxonomyRows[0][1].term_id, termId);
 
+  const termRowId = `term_id:${termId}`;
+  const termTaxonomyRowId = termTaxonomyRows[0][0];
   if (staleTarget) {
-    const termRowId = `term_id:${termId}`;
     assert.ok(testCase.base.db.wp_terms[termRowId], `${testCase.id} stale target should exist in base`);
     assert.notDeepEqual(
       testCase.remote.db.wp_terms[termRowId],
@@ -510,6 +618,87 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+
+  return {
+    termRowId,
+    termTaxonomyRowId,
+    localTerm: testCase.local.db.wp_terms[termRowId],
+    remoteTerm: testCase.remote.db.wp_terms[termRowId],
+    baseTerm: testCase.base.db.wp_terms[termRowId],
+    termTaxonomyRow: termTaxonomyRows[0][1],
+  };
+}
+
+function assertTermTaxonomyParentGraphV3Shape(testCase) {
+  assert.ok(testCase.tags.has('wp-term-taxonomy-graph'));
+  assert.equal(testCase.family, 'wp-term-taxonomy-parent-graph-v3');
+  assert.ok(testCase.tags.has('term-taxonomy-term-graph'));
+  assert.ok(testCase.tags.has('term-taxonomy-parent-graph'));
+  assert.ok(testCase.tags.has('same-plan-graph'));
+
+  const termRows = Object.entries(testCase.local.db.wp_terms)
+    .filter(([id, row]) => !testCase.base.db.wp_terms[id]
+      && typeof row.name === 'string'
+      && row.name.startsWith('Generated term taxonomy v3 '));
+  const termTaxonomyRows = Object.entries(testCase.local.db.wp_term_taxonomy)
+    .filter(([id, row]) => !testCase.base.db.wp_term_taxonomy[id]
+      && typeof row.description === 'string'
+      && row.description.startsWith('generated term taxonomy v3 '));
+
+  assert.equal(termRows.length, 2, `${testCase.id} v3 graph should create parent and child terms`);
+  assert.equal(termTaxonomyRows.length, 2, `${testCase.id} v3 graph should create parent and child taxonomies`);
+
+  const parentTermEntry = termRows.find(([, row]) => row.name.startsWith('Generated term taxonomy v3 parent '));
+  const childTermEntry = termRows.find(([, row]) => row.name.startsWith('Generated term taxonomy v3 child '));
+  const parentTaxonomyEntry = termTaxonomyRows.find(([, row]) => row.description.startsWith('generated term taxonomy v3 parent '));
+  const childTaxonomyEntry = termTaxonomyRows.find(([, row]) => row.description.startsWith('generated term taxonomy v3 child '));
+
+  assert.ok(parentTermEntry, `${testCase.id} missing v3 parent term`);
+  assert.ok(childTermEntry, `${testCase.id} missing v3 child term`);
+  assert.ok(parentTaxonomyEntry, `${testCase.id} missing v3 parent taxonomy`);
+  assert.ok(childTaxonomyEntry, `${testCase.id} missing v3 child taxonomy`);
+  assert.equal(parentTaxonomyEntry[1].term_id, parentTermEntry[1].term_id);
+  assert.equal(parentTaxonomyEntry[1].parent, 0);
+  assert.equal(childTaxonomyEntry[1].term_id, childTermEntry[1].term_id);
+  assert.equal(childTaxonomyEntry[1].parent, parentTermEntry[1].term_id);
+  assert.equal(parentTaxonomyEntry[1].taxonomy, 'category');
+  assert.equal(childTaxonomyEntry[1].taxonomy, 'category');
+
+  return {
+    termRowIds: [parentTermEntry[0], childTermEntry[0]],
+    termTaxonomyRowIds: [parentTaxonomyEntry[0], childTaxonomyEntry[0]],
+    parentTerm: parentTermEntry[1],
+    childTerm: childTermEntry[1],
+    parentTaxonomy: parentTaxonomyEntry[1],
+    childTaxonomy: childTaxonomyEntry[1],
+  };
+}
+
+function rowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
+}
+
+function assertTermTaxonomyEvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    rawTermTaxonomyProbe: { value: shape },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw term taxonomy evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should retain hashes only`);
+  assert.equal(serialized.includes('Generated term taxonomy'), false, `${testCase.id} leaked raw term name`);
+  assert.equal(serialized.includes('generated-term-taxonomy'), false, `${testCase.id} leaked raw term slug`);
+  assert.equal(serialized.includes('Remote stale term taxonomy'), false, `${testCase.id} leaked remote stale term`);
+  assert.equal(serialized.includes('generated term taxonomy v3'), false, `${testCase.id} leaked v3 taxonomy description`);
 }
 
 function nonReadyTargetCount(coverage) {
