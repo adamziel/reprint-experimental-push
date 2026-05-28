@@ -2829,6 +2829,61 @@ test('keeps custom taxonomy graph surfaces blocked as plugin-owned or ambiguous'
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('RPP-0331 keeps custom taxonomy references fail closed with hash-only evidence', () => {
+  const termResourceKey = 'row:["wp_terms","term_id:44"]';
+  const taxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:54"]';
+  const relationshipResourceKey = 'row:["wp_term_relationships","object_id:1|term_taxonomy_id:54"]';
+  const base = baseSite();
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_terms['term_id:44'] = {
+    term_id: 44,
+    name: 'Local Private Custom Taxonomy Term',
+    slug: 'local-private-custom-taxonomy-term',
+    term_group: 0,
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:54'] = {
+    term_taxonomy_id: 54,
+    term_id: 44,
+    taxonomy: 'product_cat',
+    description: 'local-private-custom-taxonomy-description',
+    parent: 0,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:1|term_taxonomy_id:54'] = {
+    object_id: 1,
+    term_taxonomy_id: 54,
+    term_order: 0,
+  };
+
+  const plan = planFor(base, local, remote);
+  const taxonomyBlocker = plan.blockers.find((blocker) => blocker.resourceKey === taxonomyResourceKey);
+  const relationshipBlocker = plan.blockers.find((blocker) => blocker.resourceKey === relationshipResourceKey);
+  const blockerJson = JSON.stringify({ taxonomyBlocker, relationshipBlocker });
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, taxonomyResourceKey), undefined);
+  assert.equal(mutationFor(plan, relationshipResourceKey), undefined);
+  assert.equal(taxonomyBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(taxonomyBlocker.reason, /unsupported taxonomy graph surface product_cat/);
+  assert.equal(taxonomyBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(taxonomyBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(taxonomyBlocker.change.local, 'value'), false);
+  assert.equal(relationshipBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(relationshipBlocker.references[0].relationshipType, 'term-relationship-taxonomy');
+  assert.equal(relationshipBlocker.references[0].targetResourceKey, taxonomyResourceKey);
+  assert.equal(relationshipBlocker.references[0].targetSupport.supported, false);
+  assert.equal(Object.hasOwn(relationshipBlocker.change.local, 'value'), false);
+  assert.equal(blockerJson.includes('Local Private Custom Taxonomy Term'), false);
+  assert.equal(blockerJson.includes('local-private-custom-taxonomy-description'), false);
+  assert.equal(blockerJson.includes('local-private-custom-taxonomy-term'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks an atomic plugin install when dependencies are absent', () => {
   const base = baseSite();
   const local = baseSite();

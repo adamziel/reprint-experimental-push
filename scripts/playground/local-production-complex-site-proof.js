@@ -74,6 +74,21 @@ const postTagTaxonomyGraphResourceKeys = Object.freeze([
   postTagTaxonomyGraphTaxonomyResourceKey,
   postTagTaxonomyGraphRelationshipResourceKey,
 ]);
+const customTaxonomyFailClosedPostId = 71001;
+const customTaxonomyFailClosedTermId = 74301;
+const customTaxonomyFailClosedTermTaxonomyId = 74311;
+const customTaxonomyFailClosedTermName = 'Private Custom Product Category';
+const customTaxonomyFailClosedSlug = 'private-custom-product-category';
+const customTaxonomyFailClosedDescription = 'Local private custom taxonomy reference fixture.';
+const customTaxonomyFailClosedTaxonomy = 'product_cat';
+const customTaxonomyFailClosedTermResourceKey = `row:["wp_terms","term_id:${customTaxonomyFailClosedTermId}"]`;
+const customTaxonomyFailClosedTaxonomyResourceKey = `row:["wp_term_taxonomy","term_taxonomy_id:${customTaxonomyFailClosedTermTaxonomyId}"]`;
+const customTaxonomyFailClosedRelationshipResourceKey = `row:["wp_term_relationships","object_id:${customTaxonomyFailClosedPostId}|term_taxonomy_id:${customTaxonomyFailClosedTermTaxonomyId}"]`;
+const customTaxonomyFailClosedResourceKeys = Object.freeze([
+  customTaxonomyFailClosedTermResourceKey,
+  customTaxonomyFailClosedTaxonomyResourceKey,
+  customTaxonomyFailClosedRelationshipResourceKey,
+]);
 const commentGraphPostId = 71001;
 const commentGraphParentId = 72801;
 const commentGraphChildId = 72802;
@@ -478,6 +493,136 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildCustomTaxonomyFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const stableRemoteSnapshot = customTaxonomyFailClosedCloneJson(sourceSnapshot);
+  const unsupportedPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: stableRemoteSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftSnapshot = customTaxonomyFailClosedCloneJson(stableRemoteSnapshot);
+  remoteDriftSnapshot.db = remoteDriftSnapshot.db || {};
+  remoteDriftSnapshot.db.wp_terms = remoteDriftSnapshot.db.wp_terms || {};
+  remoteDriftSnapshot.db.wp_term_taxonomy = remoteDriftSnapshot.db.wp_term_taxonomy || {};
+  remoteDriftSnapshot.db.wp_terms[`term_id:${customTaxonomyFailClosedTermId}`] = {
+    term_id: customTaxonomyFailClosedTermId,
+    name: 'Remote Private Custom Product Category Drift',
+    slug: 'remote-private-custom-product-category-drift',
+    term_group: 0,
+  };
+  remoteDriftSnapshot.db.wp_term_taxonomy[`term_taxonomy_id:${customTaxonomyFailClosedTermTaxonomyId}`] = {
+    term_taxonomy_id: customTaxonomyFailClosedTermTaxonomyId,
+    term_id: customTaxonomyFailClosedTermId,
+    taxonomy: customTaxonomyFailClosedTaxonomy,
+    description: 'Remote private custom taxonomy drift fixture.',
+    parent: 0,
+    count: 1,
+  };
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteDriftSnapshot,
+    now: proofNow,
+  });
+  const taxonomyBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === customTaxonomyFailClosedTaxonomyResourceKey) || null;
+  const relationshipBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === customTaxonomyFailClosedRelationshipResourceKey) || null;
+  const remoteDriftTaxonomyBlocker = remoteDriftPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === customTaxonomyFailClosedTaxonomyResourceKey) || null;
+  const remoteDriftRelationshipBlocker = remoteDriftPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === customTaxonomyFailClosedRelationshipResourceKey) || null;
+  const remoteDriftTaxonomyConflict = remoteDriftPlan.conflicts.find((conflict) =>
+    conflict?.resourceKey === customTaxonomyFailClosedTaxonomyResourceKey) || null;
+  const sanitizedBlockers = [
+    taxonomyBlocker,
+    relationshipBlocker,
+    remoteDriftTaxonomyBlocker,
+    remoteDriftRelationshipBlocker,
+  ]
+    .filter(Boolean)
+    .map(customTaxonomyFailClosedHashOnlyBlockerEvidence);
+  const sanitizedJson = JSON.stringify(sanitizedBlockers);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const customTaxonomyMutations = unsupportedPlan.mutations.filter((mutation) =>
+    customTaxonomyFailClosedResourceKeys.includes(mutation.resourceKey));
+  const relationshipReference = relationshipBlocker?.references?.find((reference) =>
+    reference.relationshipType === 'term-relationship-taxonomy') || null;
+  const invariants = {
+    customTaxonomyRowsPresent: counts.source.customTaxonomyFailClosedTaxonomies === 0
+      && counts.localEdited.customTaxonomyFailClosedTerms >= 1
+      && counts.localEdited.customTaxonomyFailClosedTaxonomies >= 1
+      && counts.localEdited.customTaxonomyFailClosedRelationships >= 1,
+    unsupportedTaxonomyFailsClosed: unsupportedPlan.status === 'blocked'
+      && taxonomyBlocker?.class === 'stale-wordpress-graph-identity'
+      && taxonomyBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(taxonomyBlocker?.reason || '').includes(customTaxonomyFailClosedTaxonomy),
+    relationshipInheritsFailClosedTarget: relationshipBlocker?.class === 'stale-wordpress-graph-identity'
+      && relationshipReference?.targetResourceKey === customTaxonomyFailClosedTaxonomyResourceKey
+      && relationshipReference?.targetSupport?.supported === false,
+    noCustomTaxonomyReferenceMutations: customTaxonomyMutations.every((mutation) =>
+      mutation.resourceKey === customTaxonomyFailClosedTermResourceKey),
+    stableRemotePreventsReleaseMovement: unsupportedPlan.status !== 'ready',
+    remoteDriftAlsoFailsClosed: remoteDriftPlan.status !== 'ready'
+      && (remoteDriftTaxonomyBlocker?.class === 'stale-wordpress-graph-identity'
+        || remoteDriftRelationshipBlocker?.class === 'stale-wordpress-graph-identity'
+        || remoteDriftTaxonomyConflict?.class === 'row-conflict'),
+    remoteDriftPreventsReleaseMovement: remoteDriftPlan.status !== 'ready',
+    blockerEvidenceIsHashOnly: sanitizedBlockers.length >= 2
+      && sanitizedBlockers.every((blocker) =>
+        [blocker.baseHash, blocker.localHash, blocker.remoteHash]
+          .every(customTaxonomyFailClosedIsSha256Hex)
+        && ['base', 'local', 'remote'].every((slot) =>
+          customTaxonomyFailClosedIsSha256Hex(blocker.change?.[slot]?.hash))),
+    blockerEvidenceRedactsRawValues: ![
+      customTaxonomyFailClosedTermName,
+      customTaxonomyFailClosedSlug,
+      customTaxonomyFailClosedDescription,
+      'Remote Private Custom Product Category Drift',
+      'remote-private-custom-product-category-drift',
+      'Remote private custom taxonomy drift fixture.',
+    ].some((privateValue) => sanitizedJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'custom-taxonomy-fail-closed-reference',
+    releaseReady: false,
+    taxonomy: customTaxonomyFailClosedTaxonomy,
+    resourceKeys: {
+      term: customTaxonomyFailClosedTermResourceKey,
+      termTaxonomy: customTaxonomyFailClosedTaxonomyResourceKey,
+      relationship: customTaxonomyFailClosedRelationshipResourceKey,
+    },
+    counts,
+    unsupportedPlan: summarizePlan(unsupportedPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    mutationFamilies: countMutationFamilies(unsupportedPlan.mutations || []),
+    blockedReference: relationshipReference ? {
+      relationshipType: relationshipReference.relationshipType,
+      sourceResourceKey: relationshipReference.sourceResourceKey,
+      targetResourceKey: relationshipReference.targetResourceKey,
+      targetSupportSupported: relationshipReference.targetSupport?.supported === true,
+      targetSupportReason: relationshipReference.targetSupport?.reason || null,
+    } : null,
+    blockerEvidence: sanitizedBlockers,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +919,69 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function customTaxonomyFailClosedHashOnlyBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: customTaxonomyFailClosedHashOnlyChangeEvidence(blocker.change),
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+        targetSupport: reference.targetSupport
+          ? {
+            supported: reference.targetSupport.supported === true,
+            reason: reference.targetSupport.reason || null,
+          }
+          : null,
+        targetChange: customTaxonomyFailClosedHashOnlyChangeEvidence(reference.targetChange),
+      }))
+      : [],
+  };
+}
+
+function customTaxonomyFailClosedIsSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
+function customTaxonomyFailClosedHashOnlyChangeEvidence(change) {
+  if (!change || typeof change !== 'object') {
+    return null;
+  }
+  return {
+    localChange: change.localChange || null,
+    remoteChange: change.remoteChange || null,
+    base: customTaxonomyFailClosedHashOnlySlot(change.base),
+    local: customTaxonomyFailClosedHashOnlySlot(change.local),
+    remote: customTaxonomyFailClosedHashOnlySlot(change.remote),
+  };
+}
+
+function customTaxonomyFailClosedHashOnlySlot(slot) {
+  if (!slot || typeof slot !== 'object') {
+    return null;
+  }
+  return {
+    state: slot.state || null,
+    hash: slot.hash || null,
+  };
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -878,6 +1086,16 @@ export function summarizeComplexSnapshot(snapshot) {
     postTagTaxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
       Number(row?.object_id) === postTagTaxonomyGraphPostId
       && Number(row?.term_taxonomy_id) === postTagTaxonomyGraphTermTaxonomyId).length,
+    customTaxonomyFailClosedTerms: Object.values(terms).filter((row) =>
+      Number(row?.term_id) === customTaxonomyFailClosedTermId
+      && String(row?.slug || '') === customTaxonomyFailClosedSlug).length,
+    customTaxonomyFailClosedTaxonomies: Object.values(termTaxonomy).filter((row) =>
+      Number(row?.term_taxonomy_id) === customTaxonomyFailClosedTermTaxonomyId
+      && Number(row?.term_id) === customTaxonomyFailClosedTermId
+      && String(row?.taxonomy || '') === customTaxonomyFailClosedTaxonomy).length,
+    customTaxonomyFailClosedRelationships: Object.values(termRelationships).filter((row) =>
+      Number(row?.object_id) === customTaxonomyFailClosedPostId
+      && Number(row?.term_taxonomy_id) === customTaxonomyFailClosedTermTaxonomyId).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId
@@ -977,6 +1195,10 @@ function positiveEnvInt(value, fallback) {
     return fallback;
   }
   return positiveInt(value);
+}
+
+function customTaxonomyFailClosedCloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function phpString(value) {

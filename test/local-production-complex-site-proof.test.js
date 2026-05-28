@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   buildComplexSitePlannerProof,
+  buildCustomTaxonomyFailClosedProof,
   buildComplexSiteReleaseEvidence,
   buildComplexSiteSeedPhp,
   complexSiteFixtureShapeFromEnv,
@@ -20,6 +21,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  customTaxonomyFailClosed: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -233,6 +235,42 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site proof keeps custom taxonomy references fail closed with hash-only evidence', () => {
+  const graphShape = { ...smallShape, customTaxonomyFailClosed: true };
+  const proof = buildCustomTaxonomyFailClosedProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+  });
+  const blockerJson = JSON.stringify(proof.blockerEvidence);
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.releaseReady, false);
+  assert.equal(proof.taxonomy, 'product_cat');
+  assert.equal(proof.unsupportedPlan.status, 'blocked');
+  assert.equal(proof.remoteDriftPlan.status, 'conflict');
+  assert.equal(proof.counts.source.customTaxonomyFailClosedTaxonomies, 0);
+  assert.equal(proof.counts.localEdited.customTaxonomyFailClosedTerms, 1);
+  assert.equal(proof.counts.localEdited.customTaxonomyFailClosedTaxonomies, 1);
+  assert.equal(proof.counts.localEdited.customTaxonomyFailClosedRelationships, 1);
+  assert.equal(proof.invariants.customTaxonomyRowsPresent, true);
+  assert.equal(proof.invariants.unsupportedTaxonomyFailsClosed, true);
+  assert.equal(proof.invariants.relationshipInheritsFailClosedTarget, true);
+  assert.equal(proof.invariants.noCustomTaxonomyReferenceMutations, true);
+  assert.equal(proof.invariants.stableRemotePreventsReleaseMovement, true);
+  assert.equal(proof.invariants.remoteDriftAlsoFailsClosed, true);
+  assert.equal(proof.invariants.remoteDriftPreventsReleaseMovement, true);
+  assert.equal(proof.invariants.blockerEvidenceIsHashOnly, true);
+  assert.equal(proof.invariants.blockerEvidenceRedactsRawValues, true);
+  assert.equal(proof.blockedReference.relationshipType, 'term-relationship-taxonomy');
+  assert.equal(proof.blockedReference.targetResourceKey, 'row:["wp_term_taxonomy","term_taxonomy_id:74311"]');
+  assert.equal(proof.blockedReference.targetSupportSupported, false);
+  assert.equal(blockerJson.includes('Private Custom Product Category'), false);
+  assert.equal(blockerJson.includes('private-custom-product-category'), false);
+  assert.equal(blockerJson.includes('Remote Private Custom Product Category Drift'), false);
+  assert.equal(blockerJson.includes('remote-private-custom-product-category-drift'), false);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -545,6 +583,28 @@ function syntheticComplexSnapshot(variant, shape) {
     snapshot.db.wp_term_relationships['object_id:71002|term_taxonomy_id:72941'] = {
       object_id: 71002,
       term_taxonomy_id: 72941,
+      term_order: 0,
+    };
+  }
+
+  if (shape.customTaxonomyFailClosed && local) {
+    snapshot.db.wp_terms['term_id:74301'] = {
+      term_id: 74301,
+      name: 'Private Custom Product Category',
+      slug: 'private-custom-product-category',
+      term_group: 0,
+    };
+    snapshot.db.wp_term_taxonomy['term_taxonomy_id:74311'] = {
+      term_taxonomy_id: 74311,
+      term_id: 74301,
+      taxonomy: 'product_cat',
+      description: 'Local private custom taxonomy reference fixture.',
+      parent: 0,
+      count: 1,
+    };
+    snapshot.db.wp_term_relationships['object_id:71001|term_taxonomy_id:74311'] = {
+      object_id: 71001,
+      term_taxonomy_id: 74311,
       term_order: 0,
     };
   }
