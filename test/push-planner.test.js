@@ -244,6 +244,76 @@ test('combines non-overlapping local and remote changes', () => {
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote title');
 });
 
+test('applies an independent local row while preserving remote file edits behind preconditions', () => {
+  const rowKey = 'row:["wp_posts","ID:1"]';
+  const fileKey = 'file:index.php';
+  const base = baseSite();
+  const local = baseSite();
+  const remote = baseSite();
+  local.db.wp_posts['ID:1'].post_title = 'Local row edit should be applied';
+  remote.files['index.php'] = '<?php echo "remote file edit must be preserved";';
+
+  const plan = planFor(base, local, remote);
+  const rowMutation = mutationFor(plan, rowKey);
+  const fileMutation = mutationFor(plan, fileKey);
+  const fileDecision = decisionFor(plan, fileKey);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.mutations, 1);
+  assert.ok(rowMutation);
+  assert.equal(rowMutation.action, 'put');
+  assert.equal(rowMutation.change.localChange, 'update');
+  assert.equal(rowMutation.change.remoteChange, 'unchanged');
+  assert.equal(fileMutation, undefined);
+  assert.equal(fileDecision.decision, 'keep-remote');
+  assert.equal(fileDecision.change.localChange, 'unchanged');
+  assert.equal(fileDecision.change.remoteChange, 'update');
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+
+  const result = applyPlan(JSON.parse(JSON.stringify(remote)), plan);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Local row edit should be applied');
+  assert.equal(result.site.files['index.php'], '<?php echo "remote file edit must be preserved";');
+
+  const staleRemote = JSON.parse(JSON.stringify(remote));
+  staleRemote.db.wp_posts['ID:1'].post_title = 'Remote row drift after dry run';
+  const staleBefore = JSON.stringify(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, plan));
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.equal(JSON.stringify(staleRemote), staleBefore);
+
+  const forged = tamperReadyPlan(plan, (copy) => {
+    copy.mutations.push({
+      id: 'mutation-forged-remote-file',
+      resource: { type: 'file', path: 'index.php', key: fileKey },
+      resourceKey: fileKey,
+      action: 'put',
+      value: {
+        value: {
+          type: 'file',
+          content: 'forged overwrite of remote file',
+        },
+      },
+      remoteBeforeHash: fileDecision.remoteHash,
+      baseHash: fileDecision.baseHash,
+      localHash: resourceHash(local, { type: 'file', path: 'index.php', key: fileKey }),
+      changeKind: 'update',
+      change: {
+        localChange: 'update',
+        remoteChange: 'update',
+      },
+      atomicGroupId: null,
+    });
+    copy.summary.mutations = copy.mutations.length;
+  });
+  const forgedRemote = JSON.parse(JSON.stringify(remote));
+  const forgedBefore = JSON.stringify(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forged));
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'PRECONDITION_MISSING');
+  assert.equal(JSON.stringify(forgedRemote), forgedBefore);
+});
+
 test('plans local deletions only behind live remote preconditions', () => {
   const base = baseSite();
   const local = baseSite();
