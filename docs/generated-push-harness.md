@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 470 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 47 scenario families, then add seeded variation so
+fixtures. The current default is 490 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 49 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,8 +40,8 @@ invariants:
 
 The default generated run covers:
 
-- 470 total cases;
-- 10 tiers, 47 cases per tier;
+- 490 total cases;
+- 10 tiers, 49 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
@@ -56,7 +56,9 @@ The default generated run covers:
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, and stale replay rejection before mutation,
   `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, `wp_users` + `wp_usermeta` graph cases with per-tier target counts and
+  ready/stale non-ready outcomes, `wp_terms` + `wp_termmeta` graph cases
+  with per-tier target counts and ready/stale non-ready outcomes, `wp_users`
+  + `wp_usermeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_term_taxonomy` graph cases with per-tier
   target counts and ready/stale non-ready outcomes, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
@@ -96,6 +98,14 @@ replays before mutation; stale cases keep the comment in the base, drift that
 comment remotely, and require the new commentmeta reference to fail closed
 instead of overwriting the drifted remote.
 
+
+The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
+`wp_terms` rows and their `wp_termmeta` graph relationships. Ready cases create
+the term and termmeta row in one plan and reject stale replays before mutation;
+stale cases keep the term in the base, drift that term remotely, and require
+the new termmeta reference to fail closed instead of overwriting the drifted
+remote.
+
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready
 cases create the user and usermeta row in one plan and reject stale replays
@@ -120,11 +130,11 @@ At the time this note was added, the summary command reported:
 
 ```json
 {
-  "totalCases": 470,
+  "totalCases": 490,
   "statuses": {
-    "blocked": 38,
-    "conflict": 187,
-    "ready": 245
+    "blocked": 44,
+    "conflict": 193,
+    "ready": 253
   },
   "targetCoverage": {
     "commentUserGraph": {
@@ -143,8 +153,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 10,
-        "conflict": 1,
+        "blocked": 9,
+        "conflict": 2,
         "ready": 9
       }
     },
@@ -183,8 +193,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 4,
-        "conflict": 6,
+        "blocked": 3,
+        "conflict": 7,
         "ready": 10
       }
     },
@@ -204,8 +214,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 11,
-        "ready": 9
+        "conflict": 10,
+        "ready": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -228,6 +238,27 @@ At the time this note was added, the summary command reported:
         "ready": 10
       }
     },
+    "wpTermsTermmetaGraph": {
+      "family": "wp-terms-termmeta-graph-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 1,
+        "conflict": 11,
+        "ready": 8
+      }
+    },
     "wpTermTaxonomyGraph": {
       "family": "wp-term-taxonomy-graph-ready",
       "total": 20,
@@ -244,8 +275,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 9,
+        "blocked": 5,
+        "conflict": 7,
         "ready": 8
       }
     },
@@ -265,9 +296,9 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 2,
-        "conflict": 9,
-        "ready": 9
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 10
       }
     }
   },
@@ -312,6 +343,10 @@ At the time this note was added, the summary command reported:
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
+    "wp-terms-termmeta-graph": 20,
+    "wp-terms-termmeta-graph-ready": 10,
+    "wp-terms-termmeta-graph-stale": 10,
+    "wp-termmeta-create": 20,
     "wp-users-usermeta-graph": 20,
     "wp-users-usermeta-graph-ready": 10,
     "wp-users-usermeta-graph-stale": 10,
@@ -322,13 +357,13 @@ At the time this note was added, the summary command reported:
     "wp-term-taxonomy-graph-ready": 10,
     "wp-term-taxonomy-graph-stale": 10,
     "wp-term-taxonomy-create": 20,
-    "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "wp-terms-create": 40,
+    "wp-terms-remote-drift": 20
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 44,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 44
+  "maxResourceCount": 69,
+  "maxMutationCount": 42,
+  "maxReadyResourceCount": 66,
+  "maxReadyMutationCount": 42
 }
 ```
 
