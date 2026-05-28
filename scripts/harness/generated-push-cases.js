@@ -55,6 +55,8 @@ const scenarioFamilies = Object.freeze([
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
+  'wp-terms-termmeta-graph-ready',
+  'wp-terms-termmeta-graph-stale',
   'same-plan-user-meta-graph',
 ]);
 
@@ -78,7 +80,13 @@ const readyPreservingFamilies = new Set([
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
+  'wp-terms-termmeta-graph-ready',
   'same-plan-user-meta-graph',
+]);
+
+const focusedTargetFamilies = new Set([
+  'wp-terms-termmeta-graph-ready',
+  'wp-terms-termmeta-graph-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +101,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpTermsTermmetaGraph: {
+    family: 'wp-terms-termmeta-graph-ready',
+    tag: 'wp-terms-termmeta-graph',
   },
 });
 
@@ -583,6 +595,14 @@ const scenarioFamilyBuilders = {
     addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
     tags.add('expected-blocked');
   },
+  'wp-terms-termmeta-graph-ready': ({ local, allocator, tags }) => {
+    addWpTermsTermmetaGraph(local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-terms-termmeta-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget: true, base });
+    tags.add('expected-blocked');
+  },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
     const metaId = allocator.graphId();
@@ -668,6 +688,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (focusedTargetFamilies.has(family)) {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -1256,6 +1280,50 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   tags.add('wp-term-taxonomy-create');
   tags.add('term-taxonomy-term-graph');
   tags.add('taxonomy-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wp-terms-remote-drift');
+  }
+}
+
+function addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
+  const termId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const termRowId = `term_id:${termId}`;
+  const metaRowId = `meta_id:${metaId}`;
+  const term = {
+    term_id: termId,
+    name: `Generated term termmeta graph target ${termId}`,
+    slug: `generated-term-termmeta-graph-${termId}`,
+    term_group: 0,
+  };
+
+  if (staleTarget) {
+    setRow(base, 'wp_terms', termRowId, term);
+    setRow(local, 'wp_terms', termRowId, term);
+    setRow(remote, 'wp_terms', termRowId, {
+      ...term,
+      name: `Remote stale term termmeta graph target ${termId}`,
+      slug: `remote-stale-term-termmeta-graph-${termId}`,
+    });
+  } else {
+    setRow(local, 'wp_terms', termRowId, term);
+  }
+
+  setRow(local, 'wp_termmeta', metaRowId, {
+    meta_id: metaId,
+    term_id: termId,
+    meta_key: `_generated_termmeta_graph_${metaId}`,
+    meta_value: `generated termmeta graph ${metaId}`,
+  });
+
+  tags.add('wp-terms-termmeta-graph');
+  tags.add('wp-terms-create');
+  tags.add('wp-termmeta-create');
+  tags.add('termmeta-term-graph');
+  tags.add('termmeta-graph');
   tags.add('same-plan-graph');
 
   if (staleTarget) {
