@@ -11,6 +11,7 @@ Lane: graph-identity
 - Adds fail-closed post GUID and `post_type` + `post_name` collision detection when a local post would duplicate a different remote post without an explicit proven identity map.
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
+- Adds focused local-production evidence that `nav_menu_item` posts and `_menu_item_object_id` menu metadata remain fail-closed with hash-only graph blockers, including a stale remote drift case that keeps release movement blocked instead of rewriting unsupported menu surfaces.
 
 ## Verification commands
 
@@ -18,6 +19,7 @@ Lane: graph-identity
 - `node --test test/local-production-complex-site-proof.test.js` — passed (17 tests), including post_tag release-evidence carry-through and fail-closed mutation checks.
 - `node --test test/push-planner.test.js` — passed (90 tests), including same-plan `post_tag` taxonomy closure.
 - `node --test test/graph-mapping-inventory.test.js` — passed (2 tests).
+- `node --test test/local-production-complex-site-proof.test.js test/push-planner.test.js test/graph-mapping-inventory.test.js` — passed (117 tests), including nav menu item fail-closed planner evidence, stale remote drift evidence, and hash-only blocker evidence.
 - `node --test test/generated-push-harness.test.js` — passed (6 generated harness tests covering 300+ cases).
 - `npm run bench:graph-mapping-inventory` — passed and emitted `identityMapCapabilities` with explicit map table suffixes and fail-closed collision surfaces.
 
@@ -26,8 +28,8 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 ## Remaining unmapped or fail-closed WordPress surfaces
 
 - Supported core post-object taxonomy surfaces are `category`, `post_tag`, and `post_format`; RPP-0310 adds local-production release evidence for `post_tag` specifically.
-- `nav_menu` taxonomy, custom/plugin taxonomy rows such as `product_cat`, menu item graph metadata, and unsupported post graph rows such as `nav_menu_item`, `revision`, and `wp_navigation` remain intentionally unmapped until an explicit owner/driver or identity-map proof exists.
-- Those unmapped surfaces continue to stop as `stale-wordpress-graph-identity` blockers with hash-only change evidence; the existing planner tests assert private term names/slugs are not leaked in blocker JSON for unsupported taxonomy surfaces.
+- `nav_menu` taxonomy, custom/plugin taxonomy rows such as `product_cat`, menu item graph metadata, and unsupported post graph rows such as `nav_menu_item`, `revision`, and `wp_navigation` remain intentionally unmapped until an explicit owner/driver or identity-map proof exists. RPP-0335 records focused evidence that `nav_menu_item` post rows and menu item metadata stay in this fail-closed bucket rather than claiming production release movement.
+- Those unmapped surfaces continue to stop as `stale-wordpress-graph-identity` blockers with hash-only change evidence; the planner and local-production proof tests assert private term/menu names, slugs, bodies, and descriptions are not leaked in blocker JSON for unsupported graph surfaces.
 
 ## RPP items with new evidence
 
@@ -35,6 +37,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 - RPP-0304 / RPP-0324: postmeta `post_id` references and `post_id:<id>:meta_key:<key>` row IDs are rewritten to the mapped remote post ID.
 - RPP-0305 / RPP-0325: comment `comment_post_ID` references are rewritten to mapped remote post identities.
 - RPP-0310: core `post_tag` taxonomy rows are now covered by local-production planner/release evidence, while unsupported taxonomy surfaces remain documented as fail-closed with hash-only evidence.
+- RPP-0335: `nav_menu_item` post rows and menu item metadata references remain fail-closed with hash-only blocker evidence unless an explicit owner/driver or stable identity mapping exists.
 - RPP-0312 / RPP-0332: termmeta `term_id` references are rewritten to mapped remote term identities.
 - RPP-0313 / RPP-0333 and RPP-0314 / RPP-0334: term relationship `object_id` and `term_taxonomy_id` references, including compound row IDs, are rewritten to mapped remote post/taxonomy identities.
 - RPP-0318: GUID and slug collision handling now fails closed without explicit identity-map evidence.

@@ -2193,6 +2193,52 @@ test('keeps WordPress menu item graph surfaces fail-closed', () => {
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('RPP-0335 keeps nav_menu_item references fail closed with hash-only evidence', () => {
+  const menuItemResourceKey = 'row:["wp_posts","ID:45"]';
+  const menuMetaResourceKey = 'row:["wp_postmeta","meta_id:91"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:45'] = {
+    ID: 45,
+    post_title: 'Local Private RPP-0335 Menu Item',
+    post_content: 'local-private-rpp0335-menu-item-body',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    post_parent: 0,
+  };
+  local.db.wp_postmeta['meta_id:91'] = {
+    meta_id: 91,
+    post_id: 45,
+    meta_key: '_menu_item_object_id',
+    meta_value: 1,
+  };
+
+  const plan = planFor(base, local, remote);
+  const menuItemBlocker = plan.blockers.find((blocker) => blocker.resourceKey === menuItemResourceKey);
+  const menuMetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === menuMetaResourceKey);
+  const blockerJson = JSON.stringify({ menuItemBlocker, menuMetaBlocker });
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, menuItemResourceKey), undefined);
+  assert.equal(mutationFor(plan, menuMetaResourceKey), undefined);
+  assert.equal(menuItemBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(menuItemBlocker.reason, /unsupported post graph surface nav_menu_item/);
+  assert.equal(menuItemBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(menuItemBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(menuItemBlocker.change.local, 'value'), false);
+  assert.equal(menuMetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(menuMetaBlocker.reason, /unsupported menu item metadata graph surface _menu_item_object_id/);
+  assert.equal(menuMetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(menuMetaBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(menuMetaBlocker.change.local, 'value'), false);
+  assert.equal(blockerJson.includes('Local Private RPP-0335 Menu Item'), false);
+  assert.equal(blockerJson.includes('local-private-rpp0335-menu-item-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('allows same-plan comment and user graph closure when author and comment targets are created locally', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const userResourceKey = 'row:["wp_users","ID:7"]';

@@ -74,6 +74,18 @@ const postTagTaxonomyGraphResourceKeys = Object.freeze([
   postTagTaxonomyGraphTaxonomyResourceKey,
   postTagTaxonomyGraphRelationshipResourceKey,
 ]);
+const navMenuItemFailClosedPostId = 74401;
+const navMenuItemFailClosedMetaId = 74411;
+const navMenuItemFailClosedTitle = 'Local Private Navigation Menu Item';
+const navMenuItemFailClosedSlug = 'local-private-navigation-menu-item';
+const navMenuItemFailClosedBody = 'Local private navigation menu item body.';
+const navMenuItemFailClosedMetaKey = '_menu_item_object_id';
+const navMenuItemFailClosedPostResourceKey = `row:["wp_posts","ID:${navMenuItemFailClosedPostId}"]`;
+const navMenuItemFailClosedMetaResourceKey = `row:["wp_postmeta","meta_id:${navMenuItemFailClosedMetaId}"]`;
+const navMenuItemFailClosedResourceKeys = Object.freeze([
+  navMenuItemFailClosedPostResourceKey,
+  navMenuItemFailClosedMetaResourceKey,
+]);
 const commentGraphPostId = 71001;
 const commentGraphParentId = 72801;
 const commentGraphChildId = 72802;
@@ -478,6 +490,131 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildNavMenuItemFailClosedProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const stableRemoteSnapshot = navMenuItemFailClosedCloneJson(sourceSnapshot);
+  const unsupportedPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: stableRemoteSnapshot,
+    now: proofNow,
+  });
+  const remoteDriftSnapshot = navMenuItemFailClosedCloneJson(stableRemoteSnapshot);
+  remoteDriftSnapshot.db = remoteDriftSnapshot.db || {};
+  remoteDriftSnapshot.db.wp_posts = remoteDriftSnapshot.db.wp_posts || {};
+  remoteDriftSnapshot.db.wp_posts[`ID:${navMenuItemFailClosedPostId}`] = {
+    ID: navMenuItemFailClosedPostId,
+    post_title: 'Remote Private Navigation Menu Item Drift',
+    post_name: 'remote-private-navigation-menu-item-drift',
+    post_content: 'Remote private navigation menu item drift body.',
+    post_status: 'publish',
+    post_type: 'nav_menu_item',
+    post_parent: 0,
+    post_author: 0,
+  };
+  const remoteDriftPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: remoteDriftSnapshot,
+    now: proofNow,
+  });
+  const menuItemBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === navMenuItemFailClosedPostResourceKey) || null;
+  const menuMetaBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === navMenuItemFailClosedMetaResourceKey) || null;
+  const remoteDriftMenuItemBlocker = remoteDriftPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === navMenuItemFailClosedPostResourceKey) || null;
+  const remoteDriftMenuMetaBlocker = remoteDriftPlan.blockers.find((blocker) =>
+    blocker?.resourceKey === navMenuItemFailClosedMetaResourceKey) || null;
+  const remoteDriftMenuItemConflict = remoteDriftPlan.conflicts.find((conflict) =>
+    conflict?.resourceKey === navMenuItemFailClosedPostResourceKey) || null;
+  const sanitizedBlockers = [
+    menuItemBlocker,
+    menuMetaBlocker,
+    remoteDriftMenuItemBlocker,
+    remoteDriftMenuMetaBlocker,
+  ]
+    .filter(Boolean)
+    .map(navMenuItemFailClosedHashOnlyBlockerEvidence);
+  const sanitizedJson = JSON.stringify(sanitizedBlockers);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const navMenuItemMutations = unsupportedPlan.mutations.filter((mutation) =>
+    navMenuItemFailClosedResourceKeys.includes(mutation.resourceKey));
+  const invariants = {
+    navMenuItemRowsPresent: counts.source.navMenuItemFailClosedPosts === 0
+      && counts.localEdited.navMenuItemFailClosedPosts >= 1
+      && counts.localEdited.navMenuItemFailClosedMetadata >= 1,
+    unsupportedMenuItemFailsClosed: unsupportedPlan.status === 'blocked'
+      && menuItemBlocker?.class === 'stale-wordpress-graph-identity'
+      && menuItemBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(menuItemBlocker?.reason || '').includes('nav_menu_item'),
+    unsupportedMenuMetaFailsClosed: unsupportedPlan.status === 'blocked'
+      && menuMetaBlocker?.class === 'stale-wordpress-graph-identity'
+      && menuMetaBlocker?.resolutionPolicy === 'preserve-remote-wordpress-graph-and-stop'
+      && String(menuMetaBlocker?.reason || '').includes(navMenuItemFailClosedMetaKey),
+    noNavMenuItemMutations: navMenuItemMutations.length === 0,
+    stableRemotePreventsReleaseMovement: unsupportedPlan.status !== 'ready',
+    remoteDriftAlsoFailsClosed: remoteDriftPlan.status !== 'ready'
+      && (remoteDriftMenuItemBlocker?.class === 'stale-wordpress-graph-identity'
+        || remoteDriftMenuMetaBlocker?.class === 'stale-wordpress-graph-identity'
+        || remoteDriftMenuItemConflict?.class === 'row-conflict'),
+    remoteDriftPreventsReleaseMovement: remoteDriftPlan.status !== 'ready',
+    blockerEvidenceIsHashOnly: sanitizedBlockers.length >= 2
+      && sanitizedBlockers.every((blocker) =>
+        [blocker.baseHash, blocker.localHash, blocker.remoteHash]
+          .every(navMenuItemFailClosedIsSha256Hex)
+        && ['base', 'local', 'remote'].every((slot) =>
+          navMenuItemFailClosedIsSha256Hex(blocker.change?.[slot]?.hash))),
+    blockerEvidenceRedactsRawValues: ![
+      navMenuItemFailClosedTitle,
+      navMenuItemFailClosedSlug,
+      navMenuItemFailClosedBody,
+      'Remote Private Navigation Menu Item Drift',
+      'remote-private-navigation-menu-item-drift',
+      'Remote private navigation menu item drift body.',
+    ].some((privateValue) => sanitizedJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'nav-menu-item-fail-closed-reference',
+    releaseReady: false,
+    resourceKeys: {
+      menuItem: navMenuItemFailClosedPostResourceKey,
+      menuItemObjectMeta: navMenuItemFailClosedMetaResourceKey,
+    },
+    counts,
+    unsupportedPlan: summarizePlan(unsupportedPlan),
+    remoteDriftPlan: summarizePlan(remoteDriftPlan),
+    mutationFamilies: countMutationFamilies(unsupportedPlan.mutations || []),
+    blockedMenuItem: menuItemBlocker ? {
+      resourceKey: menuItemBlocker.resourceKey,
+      class: menuItemBlocker.class,
+      reason: menuItemBlocker.reason,
+      resolutionPolicy: menuItemBlocker.resolutionPolicy,
+    } : null,
+    blockedMenuMeta: menuMetaBlocker ? {
+      resourceKey: menuMetaBlocker.resourceKey,
+      class: menuMetaBlocker.class,
+      reason: menuMetaBlocker.reason,
+      resolutionPolicy: menuMetaBlocker.resolutionPolicy,
+    } : null,
+    blockerEvidence: sanitizedBlockers,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +911,69 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function navMenuItemFailClosedHashOnlyBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: navMenuItemFailClosedHashOnlyChangeEvidence(blocker.change),
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+        targetSupport: reference.targetSupport
+          ? {
+            supported: reference.targetSupport.supported === true,
+            reason: reference.targetSupport.reason || null,
+          }
+          : null,
+        targetChange: navMenuItemFailClosedHashOnlyChangeEvidence(reference.targetChange),
+      }))
+      : [],
+  };
+}
+
+function navMenuItemFailClosedIsSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
+function navMenuItemFailClosedHashOnlyChangeEvidence(change) {
+  if (!change || typeof change !== 'object') {
+    return null;
+  }
+  return {
+    localChange: change.localChange || null,
+    remoteChange: change.remoteChange || null,
+    base: navMenuItemFailClosedHashOnlySlot(change.base),
+    local: navMenuItemFailClosedHashOnlySlot(change.local),
+    remote: navMenuItemFailClosedHashOnlySlot(change.remote),
+  };
+}
+
+function navMenuItemFailClosedHashOnlySlot(slot) {
+  if (!slot || typeof slot !== 'object') {
+    return null;
+  }
+  return {
+    state: slot.state || null,
+    hash: slot.hash || null,
+  };
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -878,6 +1078,14 @@ export function summarizeComplexSnapshot(snapshot) {
     postTagTaxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
       Number(row?.object_id) === postTagTaxonomyGraphPostId
       && Number(row?.term_taxonomy_id) === postTagTaxonomyGraphTermTaxonomyId).length,
+    navMenuItemFailClosedPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === navMenuItemFailClosedPostId
+      && String(row?.post_type || '') === 'nav_menu_item'
+      && String(row?.post_name || '') === navMenuItemFailClosedSlug).length,
+    navMenuItemFailClosedMetadata: Object.values(postmeta).filter((row) =>
+      Number(row?.meta_id) === navMenuItemFailClosedMetaId
+      && Number(row?.post_id) === navMenuItemFailClosedPostId
+      && String(row?.meta_key || '') === navMenuItemFailClosedMetaKey).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId
@@ -977,6 +1185,10 @@ function positiveEnvInt(value, fallback) {
     return fallback;
   }
   return positiveInt(value);
+}
+
+function navMenuItemFailClosedCloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function phpString(value) {
