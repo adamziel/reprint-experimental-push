@@ -3,6 +3,7 @@ import {
   deserializeResourceValue,
   getResource,
   hasPlugin,
+  pluginOwnerFor,
   resourceHash,
   serializeResourceValue,
   setResource,
@@ -39,6 +40,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validatePluginContextDeleteMutations(plan);
   validateSupportedPluginOwnedMutations(remote, plan);
   validateAtomicGroupDependencyPlan(remote, plan);
 
@@ -197,6 +199,36 @@ export function applyPlan(remote, plan, options = {}) {
       },
     },
   };
+}
+
+function validatePluginContextDeleteMutations(plan) {
+  for (const mutation of plan.mutations || []) {
+    if (mutation.action !== 'delete') {
+      continue;
+    }
+    const owner = pluginOwnerFor(mutation.resource);
+    if (!owner || !isPluginContextDeleteResource(mutation.resource, owner)) {
+      continue;
+    }
+    throw new PushPlanError(
+      'PLUGIN_UNINSTALL_DELETE_REFUSED',
+      `Refusing to delete plugin context resource ${mutation.resourceKey}.`,
+      {
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+        pluginOwner: owner,
+        reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+        operation: 'delete',
+      },
+    );
+  }
+}
+
+function isPluginContextDeleteResource(resource, owner) {
+  if (resource?.type === 'plugin') {
+    return resource.name === owner;
+  }
+  return resource?.type === 'file' && pluginOwnerFor(resource) === owner;
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {

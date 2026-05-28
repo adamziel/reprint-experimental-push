@@ -185,6 +185,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           base,
           local,
           remote,
+          localValue,
         });
         if (!pluginContextSupport.supported) {
           addPluginContextBlocker(plan, {
@@ -251,6 +252,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
               supported: false,
               className: 'unsupported-plugin-owned-resource',
               reason: 'Plugin-owned resource driver does not support delete mutations.',
+              deleteRefusalEvidence: pluginOwnedDeleteRefusalEvidence(resource, owner, support),
             },
             baseValue,
             localValue,
@@ -2168,7 +2170,18 @@ function pluginContextMutationSupport({
   base,
   local,
   remote,
+  localValue,
 }) {
+  if (localValue === ABSENT && isPluginOwnerContextResource(resource, owner)) {
+    return {
+      supported: false,
+      className: 'plugin-uninstall-delete-refusal',
+      reason: `Plugin context resource ${resource.key} cannot be deleted by push; plugin uninstall/delete/remove is not supported for plugin-owned resources.`,
+      resolutionPolicy: 'preserve-remote-plugin-context-and-stop',
+      deleteRefusalEvidence: pluginContextDeleteRefusalEvidence(resource, owner),
+    };
+  }
+
   const staleContext = pluginOwnerContextEvidence({
     owner,
     resources,
@@ -2279,6 +2292,30 @@ function isPluginOwnerContextResource(resource, owner) {
   return resource.type === 'file' && pluginOwnerFor(resource) === owner;
 }
 
+function pluginContextDeleteRefusalEvidence(resource, owner) {
+  return {
+    reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    operation: 'delete',
+    resourceType: resource.type,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    supportsDelete: false,
+  };
+}
+
+function pluginOwnedDeleteRefusalEvidence(resource, owner, support) {
+  return {
+    reasonCode: 'PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED',
+    operation: 'delete',
+    resourceType: resource.type,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    policySource: support.policySource || null,
+    supportsDelete: false,
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2311,6 +2348,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.deleteRefusalEvidence ? { deleteRefusalEvidence: support.deleteRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,
@@ -2346,6 +2384,8 @@ function addPluginContextBlocker(plan, {
     resourceKey: resource.key,
     pluginOwner: owner,
     ownerContext: support.ownerContext || [],
+    ...(support.resolutionPolicy ? { resolutionPolicy: support.resolutionPolicy } : {}),
+    ...(support.deleteRefusalEvidence ? { deleteRefusalEvidence: support.deleteRefusalEvidence } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
