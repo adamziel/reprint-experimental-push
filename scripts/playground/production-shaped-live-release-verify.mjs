@@ -73,9 +73,14 @@ if (
   emitMissingExplicitCredentialGateAndExit();
 }
 
-const applicationPasswordBindingBlocker = resolveApplicationPasswordBindingBlocker();
+const checkedExplicitAuthSessionSource = loadCheckedExplicitAuthSessionSource();
+const applicationPasswordBindingBlocker = resolveApplicationPasswordBindingBlocker(checkedExplicitAuthSessionSource);
 if (applicationPasswordBindingBlocker) {
   emitApplicationPasswordBindingGateAndExit(applicationPasswordBindingBlocker);
+}
+const manageOptionsCapabilityBlocker = resolveManageOptionsCapabilityBlocker(checkedExplicitAuthSessionSource);
+if (manageOptionsCapabilityBlocker) {
+  emitManageOptionsCapabilityGateAndExit(manageOptionsCapabilityBlocker);
 }
 
 const liveBoundaryEnv = resolveCheckedLiveBoundaryEnv({
@@ -673,7 +678,7 @@ function emitReleaseFailureAndExit(verify) {
   process.exit(exitCode);
 }
 
-function resolveApplicationPasswordBindingBlocker() {
+function loadCheckedExplicitAuthSessionSource() {
   if (
     !explicitLiveSourceUrl
     || !explicitLiveUsername
@@ -683,7 +688,7 @@ function resolveApplicationPasswordBindingBlocker() {
     return null;
   }
 
-  const authSessionSource = loadAuthSessionSourceFromRuntimeEnvironment(
+  return loadAuthSessionSourceFromRuntimeEnvironment(
     explicitAuthSessionSourceCommand,
     process.env,
     repoRoot,
@@ -695,7 +700,9 @@ function resolveApplicationPasswordBindingBlocker() {
       checkedSourceUrl: explicitLiveSourceUrl,
     },
   );
+}
 
+function resolveApplicationPasswordBindingBlocker(authSessionSource) {
   if (!authSessionSource?.ok) {
     return null;
   }
@@ -716,6 +723,32 @@ function resolveApplicationPasswordBindingBlocker() {
     sameSource,
     sameUser,
     sameApplicationPassword,
+  };
+}
+
+function resolveManageOptionsCapabilityBlocker(authSessionSource) {
+  if (!authSessionSource?.ok) {
+    return null;
+  }
+
+  const sameSource = sameReleaseTopologyUrl(authSessionSource.sourceUrl, explicitLiveSourceUrl);
+  const sameUser = authSessionSource.username === explicitLiveUsername;
+  const sameApplicationPassword = authSessionSource.applicationPassword === explicitLiveApplicationPassword;
+  if (!sameSource || !sameUser || !sameApplicationPassword) {
+    return null;
+  }
+
+  const capabilities = authSessionSource.capabilities || {};
+  if (!Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')) {
+    return null;
+  }
+  if (capabilities.manage_options === true) {
+    return null;
+  }
+
+  return {
+    authSessionSource,
+    capabilities,
   };
 }
 
@@ -797,6 +830,82 @@ function emitApplicationPasswordBindingGateAndExit(blocker) {
   process.exit(exitCode);
 }
 
+function emitManageOptionsCapabilityGateAndExit(blocker) {
+  const exitCode = 1;
+  const reason = 'MANAGE_OPTIONS_CAPABILITY_REQUIRED';
+  const observed = 'subscriber-without-manage_options';
+  const manageOptionsCapability = {
+    ok: false,
+    hasManageOptions: false,
+    observed,
+    checkedUser: explicitLiveUsername,
+    route: '/wp-json/reprint-push/v1/preflight',
+    method: 'GET',
+    expectedCapability: 'manage_options',
+    capabilities: { manage_options: false },
+    scope: 'final-release',
+    required: ['authenticated user has manage_options on checked route'],
+  };
+  const releaseMovement = {
+    allowed: false,
+    gates: '0/4',
+    reason,
+  };
+  const statusMarker = formatVerifyReleaseFailureStatusMarker({ exitCode, reason });
+  const authSessionSourceSummary = summarizeApplicationPasswordBindingAuthSource(
+    explicitAuthSessionSourceCommand,
+    blocker.authSessionSource,
+  );
+
+  emitVerifyReleaseFailurePayload({
+    ok: false,
+    statusMarker,
+    mutationAttempted: false,
+    topology: {
+      sourceUrl: explicitLiveSourceUrl,
+      remoteBase: null,
+      remoteChanged: null,
+      localEdited: null,
+    },
+    boundary: {
+      firstRemainingProductionBoundary: 'manage_options capability on the checked live release path',
+      status: 'blocked',
+      verdict: reason,
+      authSession: {
+        required: 'authenticated user has manage_options on checked route',
+        observed,
+        verdict: reason,
+      },
+      manageOptionsCapability,
+    },
+    preflight: {
+      status: 0,
+      authSessionType: observed,
+      routeProfile: 'production-shaped',
+      session: {
+        id: '',
+        type: observed,
+      },
+    },
+    releaseProof: {
+      ok: false,
+      status: exitCode,
+      code: reason,
+    },
+    authSessionSource: authSessionSourceSummary,
+    topologyEvidence: buildReleaseTopologyEvidence({
+      verify: {
+        topology: { sourceUrl: explicitLiveSourceUrl },
+        authSessionSource: authSessionSourceSummary,
+      },
+      applyRevalidation: null,
+      releaseMovement,
+    }),
+    releaseMovement,
+  }, statusMarker);
+  process.exit(exitCode);
+}
+
 function summarizeApplicationPasswordBindingAuthSource(command, source) {
   return {
     command: redactAuthSessionSourceCommand(command),
@@ -804,6 +913,7 @@ function summarizeApplicationPasswordBindingAuthSource(command, source) {
     sourceUrl: source?.sourceUrl || '',
     username: source?.username || '',
     applicationPasswordPresent: Boolean(source?.applicationPassword),
+    ...(source?.capabilities ? { capabilities: source.capabilities } : {}),
   };
 }
 

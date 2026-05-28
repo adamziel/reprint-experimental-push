@@ -96,12 +96,14 @@ export function loadAuthSessionSource(
       error: 'Auth session source command must return applicationPassword',
     };
   }
+  const capabilities = normalizeAuthSessionSourceCapabilities(parsed.capabilities ?? parsed.authCapabilities);
 
   return {
     ok: true,
     sourceUrl,
     username,
     applicationPassword,
+    ...(capabilities ? { capabilities } : {}),
     ...(Object.prototype.hasOwnProperty.call(parsed, 'warning')
       ? { warning: parsed.warning }
       : {}),
@@ -396,6 +398,19 @@ function normalizeAuthSessionSourceField(value) {
   }
 
   return normalized;
+}
+
+function normalizeAuthSessionSourceCapabilities(capabilities) {
+  if (!capabilities || typeof capabilities !== 'object' || Array.isArray(capabilities)) {
+    return null;
+  }
+
+  const normalized = {};
+  if (Object.prototype.hasOwnProperty.call(capabilities, 'manage_options')) {
+    normalized.manage_options = capabilities.manage_options === true;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : null;
 }
 
 function normalizeAuthSessionSourceTimeout(timeout) {
