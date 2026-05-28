@@ -8,6 +8,8 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 
 const requiredFamilies = [
   'local-file-update',
@@ -48,6 +50,12 @@ const requiredFamilies = [
   'row-create',
   'row-update',
   'row-delete',
+  'wp-options-serialized-ready',
+  'wp-options-serialized-conflict',
+  'wp-options-serialized-change',
+  'wp-options-serialized',
+  'wp-options-update',
+  'serialized-option',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
   'wp-posts-create-update-delete',
@@ -216,6 +224,138 @@ function assertRowMixShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
+
+test('RPP-0126 wp_options serialized option target emits redacted ready and non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsSerializedChanges;
+
+  assert.ok(coverage, 'missing wp_options serialized option target coverage');
+  assert.equal(coverage.family, 'wp-options-serialized-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-serialized-change']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready serialized option cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready serialized option cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(JSON.stringify(report).includes('private_notes'), false, 'summary must not expose serialized private keys');
+  assert.equal(JSON.stringify(report).includes('local-private-serialized'), false, 'summary must not expose private values');
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-options-serialized-ready');
+  const nonReadyCase = cases.find((testCase) => testCase.family === 'wp-options-serialized-conflict');
+
+  assert.ok(readyCase, 'missing ready wp_options serialized option case');
+  assert.ok(nonReadyCase, 'missing non-ready wp_options serialized option case');
+  const readyShape = assertWpOptionsSerializedShape(readyCase, { conflict: false });
+  const nonReadyShape = assertWpOptionsSerializedShape(nonReadyCase, { conflict: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const nonReady = validateGeneratedCase(nonReadyCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready serialized option should plan at least one row mutation');
+  assert.equal(ready.applied, true, 'ready serialized option should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready serialized option should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready serialized option should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(nonReady.status, 'ready', 'non-ready serialized option case should fail closed');
+  assert.equal(nonReady.applied, false, 'non-ready serialized option case must not apply mutations');
+
+  assertSerializedOptionEvidenceRedacted(readyCase, readyShape);
+  assertSerializedOptionEvidenceRedacted(nonReadyCase, nonReadyShape);
+});
+
+function assertWpOptionsSerializedShape(testCase, { conflict }) {
+  const serializedRows = Object.entries(testCase.local.db.wp_options)
+    .filter(([id, row]) => id.startsWith('option_name:generated_serialized_')
+      && row.option_value.includes('private_notes')
+      && row.option_value.includes('auth_token'));
+
+  assert.equal(serializedRows.length, 1, `${testCase.id} should update one serialized wp_options row`);
+
+  const [rowId, localRow] = serializedRows[0];
+  const baseRow = testCase.base.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(baseRow, `${testCase.id} serialized option should exist in base`);
+  assert.ok(remoteRow, `${testCase.id} serialized option should exist in remote`);
+  assert.equal(localRow.option_name, baseRow.option_name);
+  assert.match(baseRow.option_value, /^a:\d+:{/);
+  assert.match(localRow.option_value, /^a:\d+:{/);
+  assert.notEqual(localRow.option_value, baseRow.option_value, `${testCase.id} local option should change`);
+
+  if (conflict) {
+    assert.notEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} remote option should drift`);
+    assert.notEqual(remoteRow.option_value, localRow.option_value, `${testCase.id} remote drift should differ from local`);
+  } else {
+    assert.equal(remoteRow.option_value, baseRow.option_value, `${testCase.id} remote option should stay at base`);
+  }
+
+  return { rowId, baseRow, localRow, remoteRow };
+}
+
+function assertSerializedOptionEvidenceRedacted(testCase, shape) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: new Date('2026-05-28T00:00:00.000Z'),
+  });
+  const mutation = plan.mutations.find((entry) =>
+    entry.resourceKey === `row:${JSON.stringify(['wp_options', shape.rowId])}`);
+
+  if (!mutation) {
+    assert.notEqual(plan.status, 'ready', `${testCase.id} missing mutation should only happen for non-ready plans`);
+    assert.ok(plan.conflicts.length + plan.blockers.length > 0, `${testCase.id} should carry fail-closed evidence`);
+    const redactedPlanEvidence = redactEvidence({
+      status: plan.status,
+      conflicts: plan.conflicts,
+      blockers: plan.blockers,
+    });
+    assertSerializedOptionRawValuesAbsent(testCase, shape, JSON.stringify(redactedPlanEvidence));
+    return;
+  }
+
+  assert.ok(mutation, `${testCase.id} should include a serialized option mutation`);
+  assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+  assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+
+  const redactedEvidence = redactEvidence({
+    mutation: {
+      resourceKey: mutation.resourceKey,
+      value: mutation.value,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    },
+  });
+  const redactedJson = JSON.stringify(redactedEvidence);
+
+  assertSerializedOptionRawValuesAbsent(testCase, shape, redactedJson);
+  assert.equal(redactedEvidence.mutation.value.redaction, EVIDENCE_REDACTION_MARKER);
+  assert.match(redactedEvidence.mutation.value.sha256, /^[a-f0-9]{64}$/);
+}
+
+function assertSerializedOptionRawValuesAbsent(testCase, shape, redactedJson) {
+  for (const row of [shape.baseRow, shape.localRow, shape.remoteRow]) {
+    assert.equal(
+      redactedJson.includes(row.option_value),
+      false,
+      `${testCase.id} redacted evidence leaked serialized option payload`,
+    );
+  }
+  assert.equal(redactedJson.includes('private_notes'), false, `${testCase.id} redacted evidence leaked private key`);
+  assert.equal(redactedJson.includes('auth_token'), false, `${testCase.id} redacted evidence leaked token key`);
 }
 
 test('RPP-0107 wp_posts create/update/delete target exposes per-tier ready and conflict coverage', () => {

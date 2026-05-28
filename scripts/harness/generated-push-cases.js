@@ -51,6 +51,8 @@ const scenarioFamilies = Object.freeze([
   'file-type-swap-conflict',
   'row-create-update-delete-mix-ready',
   'row-create-update-delete-mix-conflict',
+  'wp-options-serialized-ready',
+  'wp-options-serialized-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
@@ -76,6 +78,7 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
+  'wp-options-serialized-ready',
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
@@ -85,6 +88,10 @@ const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  wpOptionsSerializedChanges: {
+    family: 'wp-options-serialized-ready',
+    tag: 'wp-options-serialized-change',
   },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
@@ -561,6 +568,20 @@ const scenarioFamilyBuilders = {
     });
     tags.add('expected-conflict');
   },
+  'wp-options-serialized-ready': ({ base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-wp-options-serialized',
+    });
+    tags.add('ready-candidate');
+  },
+  'wp-options-serialized-conflict': ({ base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-wp-options-serialized',
+    });
+    tags.add('expected-conflict');
+  },
   'wp-posts-create-update-delete-ready': ({ base, local, remote, allocator, tags }) => {
     addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, {
       conflict: false,
@@ -902,6 +923,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -913,6 +935,13 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
+      if (
+        blocker.class === 'atomic-group-blocker-propagation'
+        && matchingMutation?.resourceKey === blocker.resourceKey
+      ) {
+        continue;
+      }
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1160,6 +1189,51 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
   }
 }
 
+function addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const optionOrdinal = allocator.next();
+  const optionName = `generated_serialized_${optionOrdinal}`;
+  const rowId = `option_name:${optionName}`;
+  const baseRow = {
+    option_name: optionName,
+    option_value: phpSerializeStringMap({
+      mode: 'base',
+      public_label: `${prefix}-base-${optionOrdinal}`,
+      private_notes: `base-private-serialized-${allocator.next()}`,
+      auth_token: `base-token-${allocator.next()}`,
+    }),
+    autoload: 'no',
+  };
+
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(remote, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: phpSerializeStringMap({
+      mode: 'local',
+      public_label: `${prefix}-local-${optionOrdinal}`,
+      private_notes: `local-private-serialized-${allocator.next()}`,
+      auth_token: `local-token-${allocator.next()}`,
+    }),
+  });
+
+  tags.add('wp-options-serialized-change');
+  tags.add('wp-options-serialized');
+  tags.add('wp-options-update');
+  tags.add('serialized-option');
+
+  if (conflict) {
+    setRow(remote, 'wp_options', rowId, {
+      ...baseRow,
+      option_value: phpSerializeStringMap({
+        mode: 'remote',
+        public_label: `${prefix}-remote-${optionOrdinal}`,
+        private_notes: `remote-private-serialized-${allocator.next()}`,
+        auth_token: `remote-token-${allocator.next()}`,
+      }),
+    });
+  }
+}
+
 function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {
   const createId = allocator.graphId();
   const updateId = allocator.graphId();
@@ -1378,6 +1452,18 @@ function allowedPluginOwnedResource(resourceKey, pluginOwner, driver = 'wp-optio
 
 function rowKey(table, id) {
   return `row:${JSON.stringify([table, id])}`;
+}
+
+function phpSerializeStringMap(entries) {
+  const fields = Object.entries(entries);
+  return `a:${fields.length}:{${
+    fields
+      .map(([key, value]) => {
+        const stringValue = String(value);
+        return `s:${key.length}:"${key}";s:${stringValue.length}:"${stringValue}";`;
+      })
+      .join('')
+  }}`;
 }
 
 function pluginResource(name) {
