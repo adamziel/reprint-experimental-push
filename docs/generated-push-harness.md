@@ -32,8 +32,8 @@ invariants:
   remote resource;
 - ready plans reject stale remotes before mutation;
 - non-ready plans refuse apply and leave the remote unchanged;
-- conflicts and blockers do not still carry mutations for the same blocked or
-  conflicted resource;
+- conflicts and non-propagated blockers do not still carry mutations for the
+  same blocked or conflicted resource;
 - plugin-owned mutations carry explicit owner and driver evidence.
 
 ## Current Coverage
@@ -50,10 +50,10 @@ The default generated run covers:
   delete mixes with ready and conflicting outcomes plus per-tier target counts,
   directory descendant deletes with ready and conflicting outcomes plus
   per-tier target counts, file type-swap cases with ready/conflict outcomes
-  plus per-tier target counts, row create/update/delete mixes with ready and
-  conflicting outcomes plus stale replay rejection before mutation,
-  non-plugin-owned `wp_options` scalar and serialized option updates with ready
-  and concurrent remote-drift outcomes, `wp_posts`
+  plus per-tier target counts, row create/update/delete mixes with
+  ready/conflict outcomes plus per-tier target counts and stale replay rejection
+  before mutation, non-plugin-owned `wp_options` scalar and serialized option
+  updates with ready and concurrent remote-drift outcomes, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
   counts, ready/conflict outcomes, and stale replay rejection before mutation,
@@ -136,6 +136,11 @@ cases create the user and usermeta row in one plan and reject stale replays
 before mutation; stale cases keep the user in the base, drift that user
 remotely, and require the new usermeta reference to fail closed instead of
 overwriting the drifted remote.
+
+The `rowCreateUpdateDeleteMix` target coverage records per-tier counts for the
+generic row create/update/delete surface. Ready cases create, update, and delete
+rows, preserve unplanned remote resources, and reject stale replay before
+mutation; conflict cases drift the updated row remotely and refuse apply.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
@@ -378,6 +383,26 @@ At the time this note was added, the summary command reported:
       "statuses": {
         "conflict": 10,
         "ready": 10
+      }
+    },
+    "rowCreateUpdateDeleteMix": {
+      "family": "row-create-update-delete-mix-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "conflict": 11,
+        "ready": 9
       }
     },
     "wpPostsCreateUpdateDelete": {

@@ -133,6 +133,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'file-type-swap-ready',
     tag: 'file-type-swap',
   },
+  rowCreateUpdateDeleteMix: {
+    family: 'row-create-update-delete-mix-ready',
+    tag: 'row-create-update-delete-mix',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -1081,6 +1085,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const mutationById = new Map(plan.mutations.map((mutation) => [mutation.id, mutation]));
   for (const conflict of plan.conflicts) {
     assert.equal(
       mutationKeys.has(conflict.resourceKey),
@@ -1092,7 +1097,17 @@ function assertPlanContract(testCase, plan) {
 
   for (const blocker of plan.blockers) {
     if (blocker.resourceKey) {
+      const matchingMutation = blocker.mutationId ? mutationById.get(blocker.mutationId) : null;
       if (blocker.class === 'atomic-group-blocker-propagation') {
+        assert.ok(
+          matchingMutation,
+          `${testCase.id} propagation blocker should reference an emitted grouped mutation id ${blocker.mutationId}`,
+        );
+        assert.equal(
+          matchingMutation.resourceKey,
+          blocker.resourceKey,
+          `${testCase.id} propagation blocker mutation id should match resource ${blocker.resourceKey}`,
+        );
         assert.equal(
           mutationKeys.has(blocker.resourceKey),
           true,

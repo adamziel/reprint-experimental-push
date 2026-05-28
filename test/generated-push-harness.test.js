@@ -759,6 +759,53 @@ test('RPP-0104 generated harness emits row create/update/delete mix with stale r
   assert.equal(nonReady.applied, false, 'non-ready row mix must not apply mutations');
 });
 
+test('RPP-0124 row create/update/delete mix target exposes stale replay and conflict coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.rowCreateUpdateDeleteMix;
+
+  assert.ok(coverage, 'missing row create/update/delete mix target coverage');
+  assert.equal(coverage.family, 'row-create-update-delete-mix-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['row-create-update-delete-mix']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 11, ready: 9 });
+  assert.deepEqual(coverage.perTier, {
+    0: 2,
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 2,
+    5: 2,
+    6: 2,
+    7: 2,
+    8: 2,
+    9: 2,
+  });
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'row-create-update-delete-mix-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'row-create-update-delete-mix-conflict');
+
+  assert.ok(readyCase, 'missing ready row create/update/delete mix case');
+  assert.ok(conflictCase, 'missing conflict row create/update/delete mix case');
+  assertRowMixShape(readyCase);
+  assertRowMixShape(conflictCase);
+  assertRowMixConflictShape(conflictCase);
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready row mix should create, update, and delete rows');
+  assert.equal(ready.applied, true, 'ready row mix should apply through the harness');
+  assert.equal(ready.unplannedRemotePreserved, true, 'ready row mix should preserve unplanned remote data');
+  assert.equal(ready.staleReplayRejected, true, 'ready row mix should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'conflict row mix should expose a row conflict');
+  assert.equal(conflict.applied, false, 'conflict row mix must not apply mutations');
+});
+
 function assertRowMixShape(testCase) {
   const createRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, row]) => !testCase.base.db.wp_posts[id] && row.post_title.startsWith('Generated row mix create '));
@@ -773,6 +820,22 @@ function assertRowMixShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
+
+function assertRowMixConflictShape(testCase) {
+  const updateRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([id, row]) => testCase.base.db.wp_posts[id]
+      && row.post_title.startsWith('Generated row mix update '));
+
+  assert.equal(updateRows.length, 1, `${testCase.id} should update one conflict target row`);
+
+  const [rowId] = updateRows[0];
+  assert.match(testCase.remote.db.wp_posts[rowId].post_title, /^Remote concurrent row mix update /);
+  assert.notEqual(
+    testCase.remote.db.wp_posts[rowId].post_title,
+    testCase.base.db.wp_posts[rowId].post_title,
+    `${testCase.id} conflict target should drift remotely`,
+  );
 }
 
 test('RPP-0105 generated harness emits wp_options scalar option ready and conflict cases', () => {
