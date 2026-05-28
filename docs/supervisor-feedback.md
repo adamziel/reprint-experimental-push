@@ -1,35 +1,42 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 04:16 CEST
+Last updated: 2026-05-28 04:26 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-28 04:16 CEST - RPP-0026, RPP-0101, and RPP-0102 Integrated
+## 2026-05-28 04:26 CEST - RPP-0103 and RPP-0028 Integrated; Release Still Held
 
-- Going well: integration is now at `912bdfbd4`, with checklist lint,
-  release-evidence provenance wiring, current-tree linter hardening, artifact
-  redaction scanning, required release checks reporting, `RPP-0101`
-  generated file create/update/delete coverage, `RPP-0102` directory
-  descendant conflict coverage, `RPP-0026` auth readback drift coverage, and
-  Docker/local-production release-gate artifact output landed on the lane.
-- Checklist movement: 88 verified items checked and 912 open. New checks:
-  `RPP-0026`, `RPP-0101`, and `RPP-0102`. The new guardrails protect progress
-  honesty and artifact privacy; they do not by themselves close release-ops or
-  production-readiness items.
-- AO lifecycle: `rpp-ao-lifecycle` is visible in tmux. The full
-  project-supervisor wrapper OOMed again, so it was replaced with a lightweight
-  AO registry watchdog as PID `2142025` in `running.json`; the dashboard and
-  tmux sessions remain up on local port 8080. `ao spawn` successfully created
-  `rpp-32`.
+- Going well: integration is now at `49710acee`, after `e345e724f`/
+  `c3cdc079d` integrated `RPP-0103` file type-swap generated-harness coverage
+  and `d18921cfd`/`49710acee` integrated `RPP-0028` Application Password binding
+  release-gate evidence. The lane also still includes Docker/local-production
+  release-gate artifact output from `912bdfbd4` and lifecycle-watchdog
+  reporting from `e6601f78c`.
+- Checklist movement: 90 verified items checked and 910 open. New checked
+  items since the previous progress refresh are `RPP-0103` and `RPP-0028`. Do
+  not move counts for branch-local candidates. `RPP-0029` (`38f15c091`),
+  `RPP-0203` (`bd502f747`), `RPP-0204` (branch head `2ed048ffd`, test commit
+  `97a8f1a16`), `RPP-0205` (`e0d49cf08`), `RPP-0303` (`db614dbda`),
+  `RPP-0306` (`decb779f6`), and `RPP-0401` (`631550978`, superseding
+  `519b41c6e`) remain pushed-only until integrated. Critic branch `78d0cebd2`
+  remains audit/critique evidence, not release readiness.
+- AO lifecycle: `rpp-ao-lifecycle` is visible in tmux. The handoff-reported
+  full supervisor PID `2140444` OOMed/killed; the current pane runs the
+  lightweight AO registry watchdog as PID `2142025`, and the dashboard
+  responded with HTTP 200 on local port 8080 during this refresh.
 - Current AO shape: active developers are `rpp-24`, `rpp-25`, `rpp-29`,
   `rpp-30`, and `rpp-32`; `rpp-28` is the integrator, `rpp-31` is critic,
   `rpp-26` is progress reporter, and `rpp-orchestrator` is supervising through
-  visible tmux panes.
-- Next nudge: keep integrating one completed branch at a time. Candidate work
-  still in flight includes `RPP-0103` generated harness expansion,
-  merge-invariant coverage, graph post-author evidence, auth/secret release
-  gate coverage, and local production artifact output.
+  visible tmux panes. Stale `rpp-10` through `rpp-23` plus `rpp-27` are
+  archived/completed, not live developers.
+- Next nudge: keep integrating one candidate branch at a time. Active next
+  tasks observed are `rpp-24` on `RPP-0104`, `rpp-30` on `RPP-0307`,
+  `rpp-32` on postmeta-driver follow-up work, `rpp-28` integrating one
+  candidate at a time, and `rpp-31` continuing critic review. Keep pushed-only
+  release-gate, invariant, graph, critic, and plugin-driver branches out of
+  checklist counts until lane integration lands. Release remains **NO-GO**
+  without production-backed gates.
 
 ## 2026-05-28 03:36 CEST - rpp-28 Integrated, AO Lifecycle Recreated
 
