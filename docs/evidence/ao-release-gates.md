@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, and RPP-0051
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, RPP-0040, RPP-0050, RPP-0051, and RPP-0056
 
 ## What changed
 
@@ -53,14 +53,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0040 | Evidence toward variant-2 `verify:release` failure reason now runs the checked `npm run verify:release` missing-source path, asserts exit `1`, final `[verify-release:held ...]` marker, exact `REPRINT_PUSH_LIVE_SOURCE_REQUIRED` evidence, and `mutationAttempted: false`; the release-gate CLI preserves that evidence while release remains `NO-GO` without provenance. |
 | RPP-0050 | Evidence toward variant-3 same source URL identity proof now generates matching and drifted final-release fixtures, asserts the release-ready final bracketed marker for the matching source path, and proves apply-source drift exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`, exact identity evidence, held marker, and `mutationAttempted: false`. |
 | RPP-0051 | Evidence toward variant-3 preflight route identity proof now generates matching and mismatched final-release fixtures, asserts exact route identity evidence on the matching fixture, and proves wrong preflight route evidence exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, held marker, and `mutationAttempted: false`. |
+| RPP-0056 | Evidence toward variant-3 releaseMovement allowed/denied summary now generates denied and allowed final-release fixtures, proving the denied command exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`, the allowed summary stays `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED`, and both reports preserve `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-release-movement-summary-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 35 tests.
+Observed status: pass, 37 tests.
 
 Progress HTML release timestamp proof:
 
@@ -92,6 +93,12 @@ Generated preflight route identity proof:
 - Observed status: `pass`; generated fixtures supply every other final-release gate while comparing matching and mismatched preflight route identity evidence.
 - Evidence link: the matching fixture preserves exact route identity evidence and remains `NO-GO` without provenance; the mismatched fixture exits `1` with `PREFLIGHT_ROUTE_IDENTITY_REQUIRED`, `finalGates: "19/20"`, exact `preflight-route-identity` evidence, `[release-gates-ci:held final=19/20 candidate=19/20 reason=PREFLIGHT_ROUTE_IDENTITY_REQUIRED]`, and `mutationAttempted: false`.
 
+Generated releaseMovement summary proof:
+
+- Command: `node --test test/release-gate-release-movement-summary-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; generated fixtures compare denied source-identity drift with allowed final-release evidence that still lacks production provenance.
+- Evidence link: the denied fixture exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`, exact `releaseMovement.allowed: false` and `finalGates: "19/20"`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=SAME_SOURCE_IDENTITY_REQUIRED]` marker, exact summary-gate evidence, and `mutationAttempted: false`; the allowed fixture exits `1` with `PRODUCTION_EVIDENCE_REQUIRED`, exact `releaseMovement.allowed: true` and `finalGates: "20/20"`, a release-ready status marker, `NO-GO`, and `mutationAttempted: false`.
+
 Key assertions:
 
 - Missing topology URLs produce `status: "held"`, `releaseMovement.allowed: false`, and exact evidence objects for `REPRINT_PUSH_SOURCE_URL`, `REPRINT_PUSH_LOCAL_URL`, and `REPRINT_PUSH_REMOTE_CHANGED_URL`.
@@ -108,6 +115,7 @@ Key assertions:
 - Journal route read-only proof has command-level variant-2 matrix coverage: the negative case records exact write-observed evidence and the positive case links the journal command, `GET` method, stable row counts, no release-state mutation, and `mutationAttempted: false`.
 - Recovery inspect read-only proof has tmux-visible variant-2 matrix coverage: the negative case emits `[release-gates-ci:held ... reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]`, while the positive case emits a final release-ready marker with exact read-only evidence, stable recovery row counts, no release-state mutation, and `mutationAttempted: false`.
 - ReleaseMovement summary coverage now records a denied source-identity drift (`SAME_SOURCE_IDENTITY_REQUIRED`, `releaseMovement.allowed: false`, `finalGates: "19/20"`) and an allowed final-evidence summary (`releaseMovement.allowed: true`, `finalGates: "20/20"`) that still exits `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied; both command results record `mutationAttempted: false` and exact summary-gate evidence.
+- Generated releaseMovement summary coverage now asserts the same denied/allowed matrix from fixture-backed CLI commands: denied exits `1` with `SAME_SOURCE_IDENTITY_REQUIRED`; allowed exits `1` with `PRODUCTION_EVIDENCE_REQUIRED`, remains `NO-GO`, and preserves exact summary evidence plus `mutationAttempted: false`.
 - Tmux stdout proof status marker has command-level variant-2 coverage: the fixture-backed `check-release-gates` run emits `[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]` on stdout, preserves exact marker evidence for `tmux-status-marker`, exits `NO-GO` without provenance, and records `mutationAttempted: false`.
 - Progress.html release timestamp proof ties `progress.html#release-proof-timestamp` to exact `progressReleaseTimestamp` gate evidence; the focused command observes status `pass`, the page reports `NO-GO`, and the release-gate CLI records `mutationAttempted: false`.
 - `.agents/RELEASE_GATES.md` status row coverage now records a scenario matrix: the negative case rejects a dishonest `release_verdict: 4/4` row with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and the positive case accepts the generated `release_verdict: 0/4` row while the CLI remains `NO-GO` without provenance and records `mutationAttempted: false`.
