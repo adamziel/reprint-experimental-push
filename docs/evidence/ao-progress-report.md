@@ -1,18 +1,18 @@
-# AO Progress Report - 2026-05-28 03:27 CEST
+# AO Progress Report - 2026-05-28 03:36 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`bb6864a07` (`feat: add evidence coverage manifest`), plus this checklist
+`a19deaf9e` (`feat: add operator proof status marker`), plus this checklist
 status update. It separates committed proof from visible AO worker output that
 is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 81 are
-  checked from integrated evidence and 919 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 85 are
+  checked from integrated evidence and 915 remain open.
 - `src/release-gates.js` and `test/release-gates.test.js` define and test 20
   fail-closed release-gate foundation checks. `ab0340786` extends the focused
   coverage to 11 tests and records `RPP-0008` through `RPP-0020` missing/failed
@@ -82,6 +82,10 @@ is still branch-local or in progress.
 - `bb6864a07` integrates the evidence coverage manifest from `rpp-18`; it is a
   local, deterministic audit surface for scanned RPP evidence references, not
   a final release readiness claim.
+- `a19deaf9e` integrates additional `rpp-28` work: recovery repair,
+  release-gate CI command, evidence redaction, protocol compatibility, route
+  proof matrix, and operator proof status. Most of that work is intentionally
+  still support evidence until wired into the production release path.
 
 ## 1000-Item Checklist Status
 
@@ -96,9 +100,9 @@ tracks the near-to-far slices used to supervise the AO team:
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 15 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 14 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 10 / 100 |
-| `RPP-0601`-`RPP-0700` | Durable journal and recovery | 10 / 100 |
+| `RPP-0601`-`RPP-0700` | Durable journal and recovery | 12 / 100 |
 | `RPP-0701`-`RPP-0800` | Storage, chunking, and performance | 7 / 100 |
-| `RPP-0801`-`RPP-0900` | Production topology and integrations | 0 / 100 |
+| `RPP-0801`-`RPP-0900` | Production topology and integrations | 2 / 100 |
 | `RPP-0901`-`RPP-1000` | Audit, release, and operations | 0 / 100 |
 
 Checked IDs in this report are:
@@ -113,10 +117,12 @@ Checked IDs in this report are:
 - Executor/auth: `RPP-0505`, `RPP-0506`, `RPP-0512`, `RPP-0513`,
   `RPP-0515`, `RPP-0525`, `RPP-0526`, `RPP-0532`, `RPP-0533`,
   `RPP-0535`.
-- Recovery: `RPP-0603`, `RPP-0604`, `RPP-0606`, `RPP-0614`, `RPP-0618`,
-  `RPP-0619`, `RPP-0623`, `RPP-0624`, `RPP-0626`, `RPP-0634`.
+- Recovery: `RPP-0603`, `RPP-0604`, `RPP-0606`, `RPP-0613`, `RPP-0614`,
+  `RPP-0618`, `RPP-0619`, `RPP-0623`, `RPP-0624`, `RPP-0626`, `RPP-0634`,
+  `RPP-0673`.
 - Chunking: `RPP-0706`, `RPP-0707`, `RPP-0708`, `RPP-0720`, `RPP-0726`,
   `RPP-0727`, `RPP-0728`.
+- Production topology: `RPP-0801`, `RPP-0820`.
 
 ## Checked Commands
 
@@ -137,6 +143,7 @@ Checked IDs in this report are:
 - `node --check scripts/release/evidence-coverage-manifest.mjs`
 - `node --test test/evidence-coverage-manifest.test.js`
 - `node --test test/production-complex-site-harness.test.js test/evidence-coverage-manifest.test.js` — passed in the `rpp-22` integration lane.
+- `node --test test/recovery-repair.test.js test/release-gate-cli.test.js test/protocol-compatibility.test.js test/evidence-redaction.test.js test/route-proof-matrix.test.js test/operator-proof-status.test.js test/protocol-fixtures.test.js test/recovery-journal.test.js test/release-gates.test.js` — passed in the `rpp-28` integration lane.
 
 `git diff --check` is run again after this report update before commit. The
 latest graph/plugin/audit/auth commits are also covered by their integrated
@@ -153,23 +160,23 @@ branch.
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
 | `rpp-10` | developer: Docker/local-production runtime | Integrated by `764aead1c`; fail-closed Docker prerequisite evidence only. |
-| `rpp-11` | developer: rollback-repair | Pushed `origin/session/rpp-11`; still branch-local until a safe integration pass lands it. |
-| `rpp-12` | developer: release CI gates | Pushed `origin/session/rpp-12`; still branch-local until a safe integration pass lands it. |
-| `rpp-13` | developer: evidence redaction | Pushed `origin/session/rpp-13`; still branch-local until a safe integration pass lands it. |
-| `rpp-14` | developer: protocol compatibility | Pushed `origin/session/rpp-14`; still branch-local until a safe integration pass lands it. |
+| `rpp-11` | developer: rollback-repair | Integrated by `c4482d775`; repair classification and exact operator-decision proof added. |
+| `rpp-12` | developer: release CI gates | Integrated by `11659db83`; local fail-closed release-gate command added. |
+| `rpp-13` | developer: evidence redaction | Integrated by `a29e448f7`; release evidence and journal redaction support added. |
+| `rpp-14` | developer: protocol compatibility | Integrated by `a3c303404`; standalone version/capability negotiation support added. |
 | `rpp-15` | critic continuation | Integrated by `9a7bfa599`; no checklist item was marked complete from this critic pass alone. |
-| `rpp-16` | progress reporter continuation | Integrated by `57791e17`; superseded here by the 81/1000 checklist status update. |
+| `rpp-16` | progress reporter continuation | Integrated by `57791e17`; superseded here by the 85/1000 checklist status update. |
 | `rpp-17` | developer/integrator | Still live in tmux; branch-local unless pushed and integrated later. |
 | `rpp-18` | evidence coverage manifest | Integrated by `bb6864a07`; local audit surface, not readiness movement. |
-| `rpp-19` | protocol fixture/recovery/release reconciliation | Pushed `origin/session/rpp-19`; `rpp-22` skipped it because package/release/recovery changes need a dedicated reconciliation pass. |
-| `rpp-20` | route proof matrix | Live tmux developer lane; branch-local until pushed and integrated. |
-| `rpp-21` | operator proof status | Live tmux developer lane; branch-local until pushed and integrated. |
+| `rpp-19` | protocol fixture/recovery/release reconciliation | Integrated by `3318a8cb8` after dedicated reconciliation. |
+| `rpp-20` | route proof matrix | Integrated by `303866a5`; standalone route contract support added. |
+| `rpp-21` | operator proof status | Integrated by `a19deaf9e`; local operator status marker support added. |
 | `rpp-22` | post-handoff integrator | Integrated `rpp-15`, `rpp-10`, and `rpp-18` into this branch. |
 | `rpp-23` | critic continuation 2 | Live critic lane. |
 | `rpp-24` | release evidence provenance | Live developer lane. |
 | `rpp-25` | checklist completion lint | Live developer lane. |
 | `rpp-26` | progress reporter continuation | AO-spawned replacement progress reporter. |
-| `rpp-27` | progress evidence integration | AO-spawned integration lane. |
+| `rpp-27` | progress evidence integration | Pushed branch-local progress evidence; superseded by current `a19deaf9e` plus this checklist update unless separately reconciled. |
 | `rpp-1` | pushed branch `b885aa8b9` | Release-gate extended coverage is represented in the integration branch by `ab0340786`; do not count additional branch-local state. |
 | `rpp-2` | pushed branch `5dc081ea9` | Recovery work is represented in the integration branch by `1362ccb6c`; do not count additional branch-local state. |
 | `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`; do not count additional branch-local state. |
@@ -216,6 +223,6 @@ Final release remains held for the following missing production-backed gates:
 11. Red-suite/auth/plugin/snapshot failures called out by the critic must be
     resolved before any final release movement.
 
-Decision: **NO-GO** for final release on 2026-05-28 03:27 CEST.
+Decision: **NO-GO** for final release on 2026-05-28 03:36 CEST.
 
 No readiness percentage moves in this report.

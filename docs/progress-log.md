@@ -6,35 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 03:27 CEST.
+- Last update: 2026-05-28 03:36 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `bb6864a07` plus the current checklist/progress update.
+  `a19deaf9e` plus the current checklist/progress update.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 81
-  items complete and leaves 919 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 85
+  items complete and leaves 915 open.
 - Checked slices: 25 release-gate foundation items, 15 graph identity items,
-  14 plugin-driver boundary items, 10 executor/auth items, 10 recovery items,
-  and 7 chunking/performance items. No production-topology or release-ops
+  14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  7 chunking/performance items, and 2 production-topology items. No release-ops
   items are checked yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
   evidence coverage manifest. The Docker harness is fail-closed in this sandbox
   because Docker is missing; it is not a Docker production pass.
-- Current AO team from tmux now extends through `rpp-27`: `rpp-24` is working
-  on release evidence provenance, `rpp-25` on checklist completion lint,
-  `rpp-26` as replacement progress reporter, and `rpp-27` as progress evidence
-  integration. Developer capacity remains above the five-worker floor, with a
-  critic and progress reporter present.
-- Verification to run before committing this entry:
-  checklist counts, focused Docker/evidence manifest tests, `node --test
-  test/release-gates.test.js`, and `git diff --check`.
+- `rpp-28` then landed recovery repair, release-gate CI checks, evidence
+  redaction, protocol compatibility, route proof matrix, and operator proof
+  status on the integration branch. The checklist only moved for exact matches:
+  `RPP-0613`, `RPP-0673`, `RPP-0801`, and `RPP-0820`.
+- Current AO team from tmux now extends through `rpp-31`, with a restarted
+  lifecycle supervisor and a freshly recreated `rpp-orchestrator`.
+- Verification for this entry: checklist counts, focused Docker/evidence
+  manifest tests, `node --test test/release-gates.test.js`, the `rpp-28`
+  integrated focused test set, evidence manifest generation, and
+  `git diff --check`.
 - Release posture: final release remains **NO-GO**. This update makes tracking
   stricter and integrates fail-closed/local audit surfaces; it does not supply
   external production WordPress, production credentials, final release gate
-  evidence, rollback repair, broad plugin semantics, protocol compatibility,
-  redaction, production chunk receipts, or red-suite fixes.
+  evidence, broad plugin semantics, production chunk receipts, or red-suite
+  fixes.
 
 ## 2026-05-28 - Gate, Recovery, Chunk, Plugin, Audit, Graph, Auth, and Supervision Hold Refresh
 

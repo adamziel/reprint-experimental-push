@@ -1,12 +1,32 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 03:27 CEST
+Last updated: 2026-05-28 03:36 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
+## 2026-05-28 03:36 CEST - rpp-28 Integrated, AO Lifecycle Recreated
+
+- Going well: integration is now at `a19deaf9e`, with `rpp-28` landing
+  recovery repair, release-gate CI checks, evidence redaction, protocol
+  compatibility, route proof matrix, and operator proof status.
+- Checklist movement: 85 verified items are checked and 915 remain open.
+  Newly checked from this pass: `RPP-0613`, `RPP-0673`, `RPP-0801`, and
+  `RPP-0820`.
+- AO lifecycle: the prior lifecycle process OOMed again. The stale
+  `rpp-orchestrator` metadata was archived, AO was restarted with
+  `NODE_OPTIONS=--max-old-space-size=6144`, and a fresh `rpp-orchestrator`
+  session was handed current control instructions.
+- Current AO shape: tmux shows sessions through `rpp-31`; developer capacity is
+  still above five, with critic and progress lanes present.
+- Not yet done: most newly integrated contract modules are still support
+  evidence until wired into the production release path and proven by the
+  release gates.
+
 ## 2026-05-28 03:27 CEST - Checklist Starts Tracking Verified Completion
 
+- Update: superseded at 03:36 CEST by the `a19deaf9e` integration and 85/1000
+  checklist status.
 - Going well: the 1000-item checklist now has 81 verified items checked and 919
   open. The report no longer treats the tracker as an all-unchecked inventory.
 - Also integrated: `rpp-22` landed the critic continuation, fail-closed Docker
