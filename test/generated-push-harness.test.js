@@ -9,6 +9,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { deserializeResourceValue } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -26,6 +27,8 @@ const requiredFamilies = [
   'file-topology-conflict',
   'directory-descendant-conflict',
   'same-plan-post-parent-graph',
+  'post-parent-page-hierarchy-ready',
+  'post-parent-page-hierarchy-stale',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -68,6 +71,10 @@ const requiredFamilies = [
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
+  'post-parent-page-hierarchy',
+  'post-parent-identity-map',
+  'post-parent-rewrite-ready',
+  'post-parent-stale-target',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'file-topology',
@@ -351,6 +358,76 @@ test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale co
   assert.equal(stale.applied, false, 'stale graph must not apply mutations');
 });
 
+test('RPP-0341 generated post_parent page hierarchy covers rewrites and stale targets', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postParentPageHierarchy;
+
+  assert.ok(coverage, 'missing post_parent page hierarchy target coverage');
+  assert.equal(coverage.family, 'post-parent-page-hierarchy-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['post-parent-page-hierarchy']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready post_parent hierarchy rewrites');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale post_parent hierarchy blockers');
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'post-parent-page-hierarchy-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'post-parent-page-hierarchy-stale');
+
+  assert.ok(readyCase, 'missing ready post_parent page hierarchy case');
+  assert.ok(staleCase, 'missing stale post_parent page hierarchy case');
+  assertPostParentPageHierarchyShape(readyCase, { staleTarget: false });
+  assertPostParentPageHierarchyShape(staleCase, { staleTarget: true });
+
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const readyDetails = postParentPageHierarchyDetails(readyCase);
+  const childMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyDetails.childResourceKey);
+  const ready = validateGeneratedCase(readyCase);
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlanJson = JSON.stringify(stalePlan);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(readyPlan.status, 'ready');
+  assert.equal(readyPlan.decisions.some((decision) =>
+    decision.resourceKey === readyDetails.sourceParentResourceKey
+    && decision.targetResourceKey === readyDetails.targetParentResourceKey
+    && decision.decision === 'map-local-identity-to-remote'), true);
+  assert.ok(childMutation, 'ready post_parent hierarchy must mutate the child page');
+  assert.equal(deserializeResourceValue(childMutation.value).post_parent, readyDetails.targetParentId);
+  assert.equal(childMutation.wordpressGraphIdentity.rewrites.some((rewrite) =>
+    rewrite.relationshipType === 'post-parent'
+    && rewrite.sourceTargetResourceKey === readyDetails.sourceParentResourceKey
+    && rewrite.targetResourceKey === readyDetails.targetParentResourceKey), true);
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true);
+  assert.equal(ready.staleReplayRejected, true);
+
+  assert.equal(stalePlan.status, 'blocked');
+  assert.equal(stalePlan.blockers.some((blocker) =>
+    blocker.class === 'stale-wordpress-graph-identity'), true);
+  assert.equal(stale.status, 'blocked');
+  assert.equal(stale.applied, false);
+  assert.equal(stalePlanJson.includes('Generated post_parent mapped parent'), false);
+  assert.equal(stalePlanJson.includes('Remote stale post_parent mapped parent'), false);
+  assert.equal(stalePlan.blockers.every((blocker) =>
+    /^[a-f0-9]{64}$/.test(blocker.baseHash)
+    && /^[a-f0-9]{64}$/.test(blocker.localHash)
+    && /^[a-f0-9]{64}$/.test(blocker.remoteHash)), true);
+});
+
 function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
   const termRows = Object.entries(testCase.local.db.wp_terms)
     .filter(([id, row]) => !testCase.base.db.wp_terms[id]
@@ -376,6 +453,52 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+function assertPostParentPageHierarchyShape(testCase, { staleTarget }) {
+  const details = postParentPageHierarchyDetails(testCase);
+
+  assert.ok(details.mapRow, `${testCase.id} should carry an explicit post identity map`);
+  assert.ok(details.sourceParent, `${testCase.id} should carry the exported source parent page`);
+  assert.ok(details.child, `${testCase.id} should carry a child page`);
+  assert.ok(details.targetParent, `${testCase.id} should carry the imported remote parent page`);
+  assert.equal(details.child.post_parent, details.sourceParentId);
+  assert.equal(details.sourceParent.post_type, 'page');
+  assert.equal(details.child.post_type, 'page');
+  assert.equal(testCase.remote.db.wp_posts[`ID:${details.sourceParentId}`], undefined);
+  assert.equal(testCase.local.db.wp_posts[`ID:${details.targetParentId}`], undefined);
+
+  if (staleTarget) {
+    assert.match(details.targetParent.post_title, /^Remote stale post_parent mapped parent /);
+    assert.notEqual(details.targetParent.post_title, details.sourceParent.post_title);
+  } else {
+    assert.equal(details.targetParent.post_title, details.sourceParent.post_title);
+  }
+}
+
+function postParentPageHierarchyDetails(testCase) {
+  const mapRows = testCase.base.meta?.wordpressGraphIdentityMap?.rows || [];
+  const mapRow = mapRows.find((row) =>
+    row.table === 'wp_posts'
+    && /^ID:\d+$/.test(row.localId || '')
+    && /^ID:\d+$/.test(row.remoteId || '')) || null;
+  const sourceParentId = Number.parseInt(mapRow?.localId?.slice('ID:'.length) || '0', 10);
+  const targetParentId = Number.parseInt(mapRow?.remoteId?.slice('ID:'.length) || '0', 10);
+  const childEntry = Object.entries(testCase.local.db.wp_posts)
+    .find(([, row]) =>
+      String(row.post_title || '').startsWith('Generated post_parent mapped child ')
+      && Number(row.post_parent) === sourceParentId);
+  return {
+    mapRow,
+    sourceParentId,
+    targetParentId,
+    sourceParentResourceKey: `row:["wp_posts","ID:${sourceParentId}"]`,
+    childResourceKey: childEntry ? `row:["wp_posts","${childEntry[0]}"]` : null,
+    targetParentResourceKey: `row:["wp_posts","ID:${targetParentId}"]`,
+    sourceParent: testCase.local.db.wp_posts[`ID:${sourceParentId}`] || null,
+    child: childEntry?.[1] || null,
+    targetParent: testCase.remote.db.wp_posts[`ID:${targetParentId}`] || null,
+  };
 }
 
 function nonReadyTargetCount(coverage) {

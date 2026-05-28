@@ -33,6 +33,8 @@ const scenarioFamilies = Object.freeze([
   'file-topology-conflict',
   'directory-descendant-conflict',
   'same-plan-post-parent-graph',
+  'post-parent-page-hierarchy-ready',
+  'post-parent-page-hierarchy-stale',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
@@ -66,6 +68,8 @@ const readyPreservingFamilies = new Set([
   'same-independent-content',
   'supported-plugin-option',
   'same-plan-post-parent-graph',
+  'post-parent-page-hierarchy-ready',
+  'post-parent-page-hierarchy-stale',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
   'supported-forms-lab-table',
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  postParentPageHierarchy: {
+    family: 'post-parent-page-hierarchy-ready',
+    tag: 'post-parent-page-hierarchy',
   },
 });
 
@@ -364,6 +372,18 @@ const scenarioFamilyBuilders = {
     }));
     tags.add('same-plan-graph');
     tags.add('post-parent-graph');
+  },
+  'post-parent-page-hierarchy-ready': ({ base, local, remote, allocator, tags }) => {
+    addPostParentPageHierarchyGraph(base, local, remote, allocator, tags, {
+      staleTarget: false,
+    });
+    tags.add('ready-candidate');
+  },
+  'post-parent-page-hierarchy-stale': ({ base, local, remote, allocator, tags }) => {
+    addPostParentPageHierarchyGraph(base, local, remote, allocator, tags, {
+      staleTarget: true,
+    });
+    tags.add('expected-blocked');
   },
   'stale-graph-reference': ({ local, remote, allocator, tags }) => {
     const remotePostId = allocator.graphId();
@@ -931,13 +951,15 @@ function assertPlanContract(testCase, plan) {
 }
 
 function assertMergedResultPreservesRemoteUnlessPlanned(testCase, plan, resultSite, mutationKeys) {
+  const mutationByResourceKey = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
   for (const resource of enumerateResources(testCase.base, testCase.local, testCase.remote, resultSite)) {
     const resultHash = resourceHash(resultSite, resource);
+    const mutation = mutationByResourceKey.get(resource.key);
     if (mutationKeys.has(resource.key)) {
       assert.equal(
         resultHash,
-        resourceHash(testCase.local, resource),
-        `${testCase.id} did not apply planned local value for ${resource.key}`,
+        digest(deserializeResourceValue(mutation.value)),
+        `${testCase.id} did not apply planned payload for ${resource.key}`,
       );
     } else {
       assert.equal(
@@ -1255,6 +1277,54 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   if (staleTarget) {
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
+  }
+}
+
+function addPostParentPageHierarchyGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const sourceParentId = allocator.graphId();
+  const childId = allocator.graphId();
+  const targetParentId = allocator.graphId();
+  const sourceParentRowId = `ID:${sourceParentId}`;
+  const childRowId = `ID:${childId}`;
+  const targetParentRowId = `ID:${targetParentId}`;
+  const parentTitle = `Generated post_parent mapped parent ${sourceParentId}`;
+  const parent = makePost(sourceParentId, parentTitle, {
+    post_name: `generated-post-parent-mapped-parent-${sourceParentId}`,
+    post_type: 'page',
+    post_parent: 0,
+  });
+
+  base.meta ||= {};
+  base.meta.wordpressGraphIdentityMap ||= { rows: [] };
+  base.meta.wordpressGraphIdentityMap.rows.push({
+    table: 'wp_posts',
+    localId: sourceParentRowId,
+    remoteId: targetParentRowId,
+  });
+
+  setRow(local, 'wp_posts', sourceParentRowId, parent);
+  setRow(local, 'wp_posts', childRowId, makePost(childId, `Generated post_parent mapped child ${childId}`, {
+    post_name: `generated-post-parent-mapped-child-${childId}`,
+    post_type: 'page',
+    post_parent: sourceParentId,
+  }));
+  setRow(remote, 'wp_posts', targetParentRowId, {
+    ...parent,
+    ID: targetParentId,
+    ...(staleTarget ? {
+      post_title: `Remote stale post_parent mapped parent ${targetParentId}`,
+    } : {}),
+  });
+
+  tags.add('post-parent-page-hierarchy');
+  tags.add('post-parent-identity-map');
+  tags.add('post-parent-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('post-parent-stale-target');
+  } else {
+    tags.add('post-parent-rewrite-ready');
   }
 }
 

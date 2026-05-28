@@ -11,6 +11,7 @@ Lane: graph-identity
 - Adds fail-closed post GUID and `post_type` + `post_name` collision detection when a local post would duplicate a different remote post without an explicit proven identity map.
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
+- Adds generated harness target coverage for post/page `post_parent` hierarchy identity maps. Ready generated cases prove the child page mutation rewrites `post_parent` to the mapped remote parent row; stale generated cases drift the mapped remote parent and fail closed with hash-only `stale-wordpress-graph-identity` blockers.
 
 ## Verification commands
 
@@ -18,7 +19,7 @@ Lane: graph-identity
 - `node --test test/local-production-complex-site-proof.test.js` — passed (17 tests), including post_tag release-evidence carry-through and fail-closed mutation checks.
 - `node --test test/push-planner.test.js` — passed (90 tests), including same-plan `post_tag` taxonomy closure.
 - `node --test test/graph-mapping-inventory.test.js` — passed (2 tests).
-- `node --test test/generated-push-harness.test.js` — passed (6 generated harness tests covering 300+ cases).
+- `node --test test/generated-push-harness.test.js` — passed (9 generated harness tests covering 300+ cases, including post_parent identity-map ready/stale target coverage).
 - `npm run bench:graph-mapping-inventory` — passed and emitted `identityMapCapabilities` with explicit map table suffixes and fail-closed collision surfaces.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
@@ -27,11 +28,13 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 
 - Supported core post-object taxonomy surfaces are `category`, `post_tag`, and `post_format`; RPP-0310 adds local-production release evidence for `post_tag` specifically.
 - `nav_menu` taxonomy, custom/plugin taxonomy rows such as `product_cat`, menu item graph metadata, and unsupported post graph rows such as `nav_menu_item`, `revision`, and `wp_navigation` remain intentionally unmapped until an explicit owner/driver or identity-map proof exists.
+- Generated `post_parent` hierarchy coverage is still local deterministic harness evidence only; stale or non-equivalent mapped parent targets remain blocked, and release remains NO-GO until required production observations are integrated.
 - Those unmapped surfaces continue to stop as `stale-wordpress-graph-identity` blockers with hash-only change evidence; the existing planner tests assert private term names/slugs are not leaked in blocker JSON for unsupported taxonomy surfaces.
 
 ## RPP items with new evidence
 
 - RPP-0301 / RPP-0321: post/page `post_parent` references are now rewritten through an explicit identity map to a proven remote parent row.
+- RPP-0341: generated post_parent page hierarchy coverage now emits ready identity-map rewrite cases and stale mapped-parent fail-closed cases with hash-only blocker evidence.
 - RPP-0304 / RPP-0324: postmeta `post_id` references and `post_id:<id>:meta_key:<key>` row IDs are rewritten to the mapped remote post ID.
 - RPP-0305 / RPP-0325: comment `comment_post_ID` references are rewritten to mapped remote post identities.
 - RPP-0310: core `post_tag` taxonomy rows are now covered by local-production planner/release evidence, while unsupported taxonomy surfaces remain documented as fail-closed with hash-only evidence.
