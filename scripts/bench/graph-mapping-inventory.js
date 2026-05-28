@@ -4,7 +4,11 @@ import {
   GRAPH_FAMILY_DEFINITIONS,
   runGuardedExecutorBenchmark,
 } from './guarded-executor-benchmark.js';
-import { SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS } from '../../src/planner.js';
+import {
+  SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
+  SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+  WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
+} from '../../src/planner.js';
 
 const DEFAULT_NOW = new Date('2026-05-24T00:00:00.000Z');
 
@@ -12,6 +16,8 @@ export function buildGraphMappingInventory({
   report,
   familyDefinitions = GRAPH_FAMILY_DEFINITIONS,
   supportedRelationshipTypes = SUPPORTED_SAME_PLAN_WORDPRESS_GRAPH_RELATIONSHIPS,
+  identityMapTableSuffixes = SUPPORTED_WORDPRESS_GRAPH_IDENTITY_MAP_TABLE_SUFFIXES,
+  failClosedCollisionSurfaces = WORDPRESS_GRAPH_IDENTITY_FAIL_CLOSED_COLLISION_SURFACES,
 } = {}) {
   if (!report || typeof report !== 'object') {
     throw new Error('Graph mapping inventory requires a benchmark report object.');
@@ -36,6 +42,12 @@ export function buildGraphMappingInventory({
     generatedAt: report.generatedAt || DEFAULT_NOW.toISOString(),
     benchmarkProfile: report.profile || 'unknown',
     supportedRelationshipTypes: [...supportedRelationshipTypes],
+    identityMapCapabilities: {
+      explicitMapTableSuffixes: [...identityMapTableSuffixes],
+      failClosedCollisionSurfaces: [...failClosedCollisionSurfaces],
+      rewritesRequireEquivalentRemoteTarget: true,
+      rewritesRecordHashOnlyEvidence: true,
+    },
     mappedFamilyCounters: { ...familyCounters },
     blockedFamilies,
     guardedFamilies,

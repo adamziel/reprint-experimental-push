@@ -14,7 +14,7 @@ import {
   readRecoveryJournal,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
-import { resourceHash } from '../src/resources.js';
+import { deserializeResourceValue, resourceHash } from '../src/resources.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -146,6 +146,10 @@ function captureError(fn) {
 
 function mutationFor(plan, resourceKey) {
   return plan.mutations.find((mutation) => mutation.resourceKey === resourceKey);
+}
+
+function deserializeMutationValue(mutation) {
+  return deserializeResourceValue(mutation.value);
 }
 
 function decisionFor(plan, resourceKey) {
@@ -1254,6 +1258,240 @@ test('maps real Playground postmeta when its WordPress post identity is created 
     result.site.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'],
     local.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'],
   );
+});
+
+test('rewrites explicit WordPress graph identity map references to proven remote rows', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';
+  const childPostResourceKey = 'row:["wp_posts","ID:2002"]';
+  const rewrittenPostmetaResourceKey = 'row:["wp_postmeta","post_id:3001:meta_key:_reprint_push_forms_schema"]';
+  const commentResourceKey = 'row:["wp_comments","comment_ID:51"]';
+  const sourceTermResourceKey = 'row:["wp_terms","term_id:2101"]';
+  const sourceTaxonomyResourceKey = 'row:["wp_term_taxonomy","term_taxonomy_id:2201"]';
+  const rewrittenRelationshipResourceKey = 'row:["wp_term_relationships","object_id:3001|term_taxonomy_id:3201"]';
+  const termmetaResourceKey = 'row:["wp_termmeta","meta_id:4101"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  base.db.wp_comments = {};
+  base.db.wp_terms = {};
+  base.db.wp_term_taxonomy = {};
+  base.db.wp_term_relationships = {};
+  base.db.wp_termmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        { table: 'wp_posts', localId: 'ID:2001', remoteId: 'ID:3001' },
+        { table: 'wp_terms', localId: 'term_id:2101', remoteId: 'term_id:3101' },
+        { table: 'wp_term_taxonomy', localId: 'term_taxonomy_id:2201', remoteId: 'term_taxonomy_id:3201' },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:2001'] = {
+    ID: 2001,
+    post_title: 'Mapped graph parent',
+    post_name: 'mapped-graph-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3001'] = {
+    ID: 3001,
+    post_title: 'Mapped graph parent',
+    post_name: 'mapped-graph-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:2002'] = {
+    ID: 2002,
+    post_title: 'Mapped graph child',
+    post_name: 'mapped-graph-child',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 2001,
+    post_author: 0,
+  };
+  local.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'] = {
+    post_id: 2001,
+    meta_key: '_reprint_push_forms_schema',
+    meta_value: { source: 'local-mapped-postmeta' },
+  };
+  local.db.wp_comments['comment_ID:51'] = {
+    comment_ID: 51,
+    comment_post_ID: 2001,
+    comment_parent: 0,
+    comment_content: 'Mapped graph comment',
+  };
+  local.db.wp_terms['term_id:2101'] = {
+    term_id: 2101,
+    name: 'Mapped graph category',
+    slug: 'mapped-graph-category',
+  };
+  remote.db.wp_terms['term_id:3101'] = {
+    term_id: 3101,
+    name: 'Mapped graph category',
+    slug: 'mapped-graph-category',
+  };
+  local.db.wp_term_taxonomy['term_taxonomy_id:2201'] = {
+    term_taxonomy_id: 2201,
+    term_id: 2101,
+    taxonomy: 'category',
+    parent: 0,
+    count: 1,
+  };
+  remote.db.wp_term_taxonomy['term_taxonomy_id:3201'] = {
+    term_taxonomy_id: 3201,
+    term_id: 3101,
+    taxonomy: 'category',
+    parent: 0,
+    count: 1,
+  };
+  local.db.wp_term_relationships['object_id:2001|term_taxonomy_id:2201'] = {
+    object_id: 2001,
+    term_taxonomy_id: 2201,
+    term_order: 0,
+  };
+  local.db.wp_termmeta['meta_id:4101'] = {
+    meta_id: 4101,
+    term_id: 2101,
+    meta_key: '_mapped_term_flag',
+    meta_value: 'mapped-termmeta',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const postmetaMutation = mutationFor(plan, rewrittenPostmetaResourceKey);
+  const relationshipMutation = mutationFor(plan, rewrittenRelationshipResourceKey);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, sourcePostResourceKey), undefined);
+  assert.equal(mutationFor(plan, sourceTermResourceKey), undefined);
+  assert.equal(mutationFor(plan, sourceTaxonomyResourceKey), undefined);
+  assert.equal(decisionFor(plan, sourcePostResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, targetPostResourceKey).decision, 'keep-remote');
+  assert.equal(mutationFor(plan, childPostResourceKey).changeKind, 'create');
+  assert.equal(postmetaMutation.changeKind, 'create');
+  assert.equal(relationshipMutation.changeKind, 'create');
+  assert.equal(deserializeMutationValue(mutationFor(plan, childPostResourceKey)).post_parent, 3001);
+  assert.equal(deserializeMutationValue(postmetaMutation).post_id, 3001);
+  assert.equal(deserializeMutationValue(mutationFor(plan, commentResourceKey)).comment_post_ID, 3001);
+  assert.equal(deserializeMutationValue(relationshipMutation).object_id, 3001);
+  assert.equal(deserializeMutationValue(relationshipMutation).term_taxonomy_id, 3201);
+  assert.equal(deserializeMutationValue(mutationFor(plan, termmetaResourceKey)).term_id, 3101);
+  assert.equal(postmetaMutation.wordpressGraphIdentity.rewrites[0].sourceTargetResourceKey, sourcePostResourceKey);
+  assert.equal(postmetaMutation.wordpressGraphIdentity.rewrites[0].targetResourceKey, targetPostResourceKey);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_posts['ID:2001'], undefined);
+  assert.equal(result.site.db.wp_posts['ID:3001'].post_title, 'Mapped graph parent');
+  assert.equal(result.site.db.wp_posts['ID:2002'].post_parent, 3001);
+  assert.equal(result.site.db.wp_postmeta['post_id:3001:meta_key:_reprint_push_forms_schema'].post_id, 3001);
+  assert.equal(result.site.db.wp_comments['comment_ID:51'].comment_post_ID, 3001);
+  assert.equal(result.site.db.wp_term_relationships['object_id:3001|term_taxonomy_id:3201'].term_taxonomy_id, 3201);
+  assert.equal(result.site.db.wp_termmeta['meta_id:4101'].term_id, 3101);
+});
+
+test('blocks explicit WordPress graph identity maps when the remote target is not equivalent', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';
+  const postmetaResourceKey = 'row:["wp_postmeta","post_id:2001:meta_key:_reprint_push_forms_schema"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_posts', localId: 'ID:2001', remoteId: 'ID:3001' }],
+    },
+  };
+  local.db.wp_posts['ID:2001'] = {
+    ID: 2001,
+    post_title: 'local-private-mapped-title',
+    post_name: 'mapped-post',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3001'] = {
+    ID: 3001,
+    post_title: 'remote-private-mapped-title',
+    post_name: 'mapped-post',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_postmeta['post_id:2001:meta_key:_reprint_push_forms_schema'] = {
+    post_id: 2001,
+    meta_key: '_reprint_push_forms_schema',
+    meta_value: 'local-private-mapped-postmeta',
+  };
+
+  const plan = planFor(base, local, remote);
+  const sourceBlocker = plan.blockers.find((blocker) => blocker.resourceKey === sourcePostResourceKey);
+  const postmetaBlocker = plan.blockers.find((blocker) => blocker.resourceKey === postmetaResourceKey);
+  const planJson = JSON.stringify(plan);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourcePostResourceKey), undefined);
+  assert.equal(mutationFor(plan, postmetaResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetPostResourceKey).decision, 'keep-remote');
+  assert.equal(sourceBlocker.class, 'stale-wordpress-graph-identity');
+  assert.match(sourceBlocker.reason, /not equivalent/);
+  assert.equal(postmetaBlocker.references[0].targetSupport.supported, false);
+  assert.equal(planJson.includes('local-private-mapped-title'), false);
+  assert.equal(planJson.includes('remote-private-mapped-title'), false);
+  assert.equal(planJson.includes('local-private-mapped-postmeta'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('blocks post GUID and slug collisions without an explicit graph identity map', () => {
+  const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
+  const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_posts['ID:2001'] = {
+    ID: 2001,
+    post_title: 'local-private-colliding-title',
+    post_name: 'shared-collision-slug',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+    guid: 'https://example.test/shared-collision',
+  };
+  remote.db.wp_posts['ID:3001'] = {
+    ID: 3001,
+    post_title: 'remote-private-colliding-title',
+    post_name: 'shared-collision-slug',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+    guid: 'https://example.test/shared-collision',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === sourcePostResourceKey);
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutationFor(plan, sourcePostResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetPostResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.match(blocker.reason, /collides with existing remote post identity/);
+  assert.deepEqual(blocker.references[0].identityKinds, ['guid', 'post_type+post_name']);
+  assert.equal(blockerJson.includes('local-private-colliding-title'), false);
+  assert.equal(blockerJson.includes('remote-private-colliding-title'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
 test('blocks featured image references when the attachment target diverged on remote', () => {
