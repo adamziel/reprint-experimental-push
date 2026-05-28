@@ -1787,6 +1787,12 @@ test('blocks featured image references when the attachment target diverged on re
   assert.equal(decisionFor(plan, targetResourceKey).decision, 'keep-remote');
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(blocker.change.local, 'value'), false);
   assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
   assert.equal(reference.relationshipType, 'featured-image-attachment');
   assert.equal(reference.targetResourceKey, targetResourceKey);
@@ -1794,6 +1800,98 @@ test('blocks featured image references when the attachment target diverged on re
   assert.equal(reference.targetChange.remoteChange, 'update');
   assert.equal(planJson.includes('remote-private-attachment-title'), false);
   assert.equal(planJson.includes('remote-private-attachment-body'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('RPP-0322 rewrites featured image identity maps to proven remote attachments', () => {
+  const localPostResourceKey = 'row:["wp_posts","ID:2001"]';
+  const localAttachmentResourceKey = 'row:["wp_posts","ID:2002"]';
+  const remotePostResourceKey = 'row:["wp_posts","ID:3001"]';
+  const remoteAttachmentResourceKey = 'row:["wp_posts","ID:3002"]';
+  const sourceMetaResourceKey = 'row:["wp_postmeta","post_id:2001:meta_key:_thumbnail_id"]';
+  const rewrittenMetaResourceKey = 'row:["wp_postmeta","post_id:3001:meta_key:_thumbnail_id"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [
+        { table: 'wp_posts', localId: 'ID:2001', remoteId: 'ID:3001' },
+        { table: 'wp_posts', localId: 'ID:2002', remoteId: 'ID:3002' },
+      ],
+    },
+  };
+  local.db.wp_posts['ID:2001'] = {
+    ID: 2001,
+    post_title: 'Mapped featured image parent',
+    post_name: 'mapped-featured-image-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3001'] = {
+    ID: 3001,
+    post_title: 'Mapped featured image parent',
+    post_name: 'mapped-featured-image-parent',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  local.db.wp_posts['ID:2002'] = {
+    ID: 2002,
+    post_title: 'Mapped featured attachment',
+    post_name: 'mapped-featured-attachment',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 2001,
+    post_author: 0,
+  };
+  remote.db.wp_posts['ID:3002'] = {
+    ID: 3002,
+    post_title: 'Mapped featured attachment',
+    post_name: 'mapped-featured-attachment',
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: 3001,
+    post_author: 0,
+  };
+  local.db.wp_postmeta['post_id:2001:meta_key:_thumbnail_id'] = {
+    post_id: 2001,
+    meta_key: '_thumbnail_id',
+    meta_value: '2002',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const rewrittenMetaMutation = mutationFor(plan, rewrittenMetaResourceKey);
+  const rewrittenMetaValue = deserializeMutationValue(rewrittenMetaMutation);
+  const rewriteTypes = rewrittenMetaMutation.wordpressGraphIdentity.rewrites
+    .map((rewrite) => rewrite.relationshipType)
+    .sort();
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, localPostResourceKey), undefined);
+  assert.equal(mutationFor(plan, localAttachmentResourceKey), undefined);
+  assert.equal(mutationFor(plan, sourceMetaResourceKey), undefined);
+  assert.equal(decisionFor(plan, localPostResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, localAttachmentResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, remotePostResourceKey).decision, 'keep-remote');
+  assert.equal(decisionFor(plan, remoteAttachmentResourceKey).decision, 'keep-remote');
+  assert.equal(rewrittenMetaMutation.changeKind, 'create');
+  assert.equal(rewrittenMetaValue.post_id, 3001);
+  assert.equal(rewrittenMetaValue.meta_key, '_thumbnail_id');
+  assert.equal(rewrittenMetaValue.meta_value, '3002');
+  assert.deepEqual(rewriteTypes, ['featured-image-attachment', 'postmeta-post']);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_posts['ID:2001'], undefined);
+  assert.equal(result.site.db.wp_posts['ID:2002'], undefined);
+  assert.equal(result.site.db.wp_posts['ID:3002'].post_parent, 3001);
+  assert.equal(result.site.db.wp_postmeta['post_id:3001:meta_key:_thumbnail_id'].post_id, 3001);
+  assert.equal(result.site.db.wp_postmeta['post_id:3001:meta_key:_thumbnail_id'].meta_value, '3002');
 });
 
 test('keeps WordPress menu item graph surfaces fail-closed', () => {

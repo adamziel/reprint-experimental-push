@@ -36,6 +36,21 @@ const featuredImageAttachmentSlug = 'brewcommerce-featured-attachment';
 const featuredImageMetaKey = '_thumbnail_id';
 const featuredImageAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageAttachmentId}"]`;
 const featuredImageMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImagePostId}:meta_key:${featuredImageMetaKey}"]`;
+const featuredImageIdentitySourcePostId = 71601;
+const featuredImageIdentitySourceAttachmentId = 71602;
+const featuredImageIdentityTargetPostId = 72601;
+const featuredImageIdentityTargetAttachmentId = 72602;
+const featuredImageIdentityPostSlug = 'reprint-push-featured-image-identity-parent';
+const featuredImageIdentityAttachmentSlug = 'reprint-push-featured-image-identity-attachment';
+const featuredImageIdentityPostTitle = 'Reprint Push Featured Image Identity Parent';
+const featuredImageIdentityAttachmentTitle = 'Reprint Push Featured Image Identity Attachment';
+const featuredImageIdentityAttachmentDriftTitle = 'Remote Private Featured Image Drift';
+const featuredImageIdentitySourcePostResourceKey = `row:["wp_posts","ID:${featuredImageIdentitySourcePostId}"]`;
+const featuredImageIdentitySourceAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageIdentitySourceAttachmentId}"]`;
+const featuredImageIdentityTargetPostResourceKey = `row:["wp_posts","ID:${featuredImageIdentityTargetPostId}"]`;
+const featuredImageIdentityTargetAttachmentResourceKey = `row:["wp_posts","ID:${featuredImageIdentityTargetAttachmentId}"]`;
+const featuredImageIdentitySourceMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImageIdentitySourcePostId}:meta_key:${featuredImageMetaKey}"]`;
+const featuredImageIdentityTargetMetaResourceKey = `row:["wp_postmeta","post_id:${featuredImageIdentityTargetPostId}:meta_key:${featuredImageMetaKey}"]`;
 const postParentGraphParentId = 71801;
 const postParentGraphChildId = 71802;
 const postParentGraphParentSlug = 'reprint-push-post-parent-graph-parent';
@@ -478,6 +493,148 @@ export function buildComplexSitePlannerProof({
   };
 }
 
+export function buildFeaturedImageIdentityMapProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyRemoteSnapshot = featuredImageIdentityMapReadyRemoteSnapshot(
+    sourceSnapshot,
+    remoteChangedSnapshot,
+  );
+  const staleRemoteSnapshot = cloneJson(readyRemoteSnapshot);
+  if (staleRemoteSnapshot?.db?.wp_posts?.[`ID:${featuredImageIdentityTargetAttachmentId}`]) {
+    staleRemoteSnapshot.db.wp_posts[`ID:${featuredImageIdentityTargetAttachmentId}`].post_title =
+      featuredImageIdentityAttachmentDriftTitle;
+    staleRemoteSnapshot.db.wp_posts[`ID:${featuredImageIdentityTargetAttachmentId}`].post_content =
+      'Remote private featured image drift body';
+  }
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: readyRemoteSnapshot,
+    now: proofNow,
+  });
+  const stalePlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: staleRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const rewrittenMetaMutation = readyMutations.find((mutation) =>
+    mutation?.resourceKey === featuredImageIdentityTargetMetaResourceKey) || null;
+  const rewrittenMetaValue = rewrittenMetaMutation
+    ? deserializeResourceValue(rewrittenMetaMutation.value)
+    : null;
+  const rewriteTypes = Array.isArray(rewrittenMetaMutation?.wordpressGraphIdentity?.rewrites)
+    ? rewrittenMetaMutation.wordpressGraphIdentity.rewrites.map((rewrite) => rewrite.relationshipType).sort()
+    : [];
+  const staleBlocker = stalePlan.blockers.find((blocker) =>
+    blocker?.resourceKey === featuredImageIdentitySourceAttachmentResourceKey)
+    || stalePlan.blockers.find((blocker) =>
+      blocker?.resourceKey === featuredImageIdentitySourceMetaResourceKey)
+    || null;
+  const staleBlockerEvidence = staleBlocker
+    ? hashOnlyWordPressGraphBlockerEvidence(staleBlocker)
+    : null;
+  const staleBlockerJson = JSON.stringify(staleBlockerEvidence);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    identityMapRowsPresent: counts.source.featuredImageIdentitySourceAttachments === 0
+      && counts.localEdited.featuredImageIdentitySourceAttachments >= 1
+      && counts.localEdited.featuredImageIdentityMeta >= 1
+      && counts.remoteChanged.featuredImageIdentityTargetAttachments >= 1,
+    readyMapsDeterministically: readyPlan.status === 'ready'
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === featuredImageIdentitySourcePostResourceKey
+        && decision.decision === 'map-local-identity-to-remote')
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === featuredImageIdentitySourceAttachmentResourceKey
+        && decision.decision === 'map-local-identity-to-remote')
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === featuredImageIdentityTargetPostResourceKey
+        && decision.decision === 'keep-remote')
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === featuredImageIdentityTargetAttachmentResourceKey
+        && decision.decision === 'keep-remote'),
+    featuredImageMetaRewritten: rewrittenMetaMutation?.changeKind === 'create'
+      && rewrittenMetaValue?.post_id === featuredImageIdentityTargetPostId
+      && rewrittenMetaValue?.meta_key === featuredImageMetaKey
+      && String(rewrittenMetaValue?.meta_value || '') === String(featuredImageIdentityTargetAttachmentId)
+      && rewriteTypes.includes('postmeta-post')
+      && rewriteTypes.includes('featured-image-attachment'),
+    sourceRowsNotMutated: !readyMutations.some((mutation) => [
+      featuredImageIdentitySourcePostResourceKey,
+      featuredImageIdentitySourceAttachmentResourceKey,
+      featuredImageIdentitySourceMetaResourceKey,
+    ].includes(mutation.resourceKey)),
+    mappedMetaHasLivePrecondition: readyPlan.preconditions?.some((precondition) =>
+      precondition.resourceKey === featuredImageIdentityTargetMetaResourceKey
+      && precondition.checkedAgainst === 'live-remote'
+      && isSha256Hex(precondition.expectedHash)
+      && precondition.expectedHash === rewrittenMetaMutation?.baseHash
+      && precondition.expectedHash === rewrittenMetaMutation?.remoteBeforeHash),
+    staleTargetFailsClosed: stalePlan.status === 'blocked'
+      && staleBlocker?.class === 'stale-wordpress-graph-identity',
+    staleTargetPreventsReleaseMovement: stalePlan.status !== 'ready',
+    staleTargetNoFeaturedImageMutation: !((stalePlan.mutations || []).some((mutation) =>
+      mutation.resourceKey === featuredImageIdentityTargetMetaResourceKey
+      || mutation.resourceKey === featuredImageIdentitySourceMetaResourceKey)),
+    staleBlockerEvidenceIsHashOnly: Boolean(staleBlockerEvidence)
+      && [staleBlockerEvidence.baseHash, staleBlockerEvidence.localHash, staleBlockerEvidence.remoteHash]
+        .every(isSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) =>
+        isSha256Hex(staleBlockerEvidence.change?.[slot]?.hash)),
+    staleBlockerRedactsRawValues: ![
+      featuredImageIdentityPostTitle,
+      featuredImageIdentityAttachmentTitle,
+      featuredImageIdentityAttachmentDriftTitle,
+      featuredImageIdentityPostSlug,
+      featuredImageIdentityAttachmentSlug,
+      'Remote private featured image drift body',
+    ].some((privateValue) => staleBlockerJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'featured-image-identity-map-reference',
+    releaseReady: false,
+    resourceKeys: {
+      sourcePost: featuredImageIdentitySourcePostResourceKey,
+      sourceAttachment: featuredImageIdentitySourceAttachmentResourceKey,
+      targetPost: featuredImageIdentityTargetPostResourceKey,
+      targetAttachment: featuredImageIdentityTargetAttachmentResourceKey,
+      sourceMeta: featuredImageIdentitySourceMetaResourceKey,
+      targetMeta: featuredImageIdentityTargetMetaResourceKey,
+    },
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    stalePlan: summarizePlan(stalePlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    rewrittenMeta: rewrittenMetaMutation
+      ? {
+        resourceKey: rewrittenMetaMutation.resourceKey,
+        postId: rewrittenMetaValue?.post_id,
+        metaKey: rewrittenMetaValue?.meta_key,
+        metaValue: rewrittenMetaValue?.meta_value,
+        rewriteTypes,
+      }
+      : null,
+    staleBlocker: staleBlockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -774,6 +931,52 @@ export function findReleaseVerifierSummary(output) {
     && object.boundary) || null;
 }
 
+function featuredImageIdentityMapReadyRemoteSnapshot(sourceSnapshot, remoteChangedSnapshot) {
+  const snapshot = cloneJson(sourceSnapshot);
+  snapshot.db = snapshot.db || {};
+  snapshot.db.wp_posts = snapshot.db.wp_posts || {};
+  for (const rowId of [
+    `ID:${featuredImageIdentityTargetPostId}`,
+    `ID:${featuredImageIdentityTargetAttachmentId}`,
+  ]) {
+    const row = remoteChangedSnapshot?.db?.wp_posts?.[rowId];
+    if (row) {
+      snapshot.db.wp_posts[rowId] = cloneJson(row);
+    }
+  }
+  return snapshot;
+}
+
+function hashOnlyWordPressGraphBlockerEvidence(blocker) {
+  return {
+    id: blocker.id || null,
+    class: blocker.class || null,
+    resourceKey: blocker.resourceKey || null,
+    reason: blocker.reason || null,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    change: blocker.change || null,
+    references: Array.isArray(blocker.references)
+      ? blocker.references.map((reference) => ({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        sourceTable: reference.sourceTable || null,
+        sourceRowId: reference.sourceRowId || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        targetTable: reference.targetTable || null,
+        targetId: reference.targetId || null,
+      }))
+      : [],
+  };
+}
+
+function isSha256Hex(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+}
+
 function pluginDriverAllowlistEntry(snapshot) {
   const resources = snapshot?.meta?.pluginOwnedResources?.allowedResources;
   if (!Array.isArray(resources)) {
@@ -848,6 +1051,18 @@ export function summarizeComplexSnapshot(snapshot) {
     featuredImageMeta: Object.values(postmeta).filter((row) =>
       String(row?.meta_key || '') === featuredImageMetaKey
       && String(row?.meta_value || '') === String(featuredImageAttachmentId)).length,
+    featuredImageIdentitySourceAttachments: Object.values(posts).filter((row) =>
+      Number(row?.ID) === featuredImageIdentitySourceAttachmentId
+      && String(row?.post_type || '') === 'attachment'
+      && String(row?.post_name || '') === featuredImageIdentityAttachmentSlug).length,
+    featuredImageIdentityTargetAttachments: Object.values(posts).filter((row) =>
+      Number(row?.ID) === featuredImageIdentityTargetAttachmentId
+      && String(row?.post_type || '') === 'attachment'
+      && String(row?.post_name || '') === featuredImageIdentityAttachmentSlug).length,
+    featuredImageIdentityMeta: Object.values(postmeta).filter((row) =>
+      Number(row?.post_id) === featuredImageIdentitySourcePostId
+      && String(row?.meta_key || '') === featuredImageMetaKey
+      && String(row?.meta_value || '') === String(featuredImageIdentitySourceAttachmentId)).length,
     postParentGraphParents: Object.values(posts).filter((row) =>
       Number(row?.ID) === postParentGraphParentId
       && String(row?.post_name || '') === postParentGraphParentSlug
@@ -977,6 +1192,10 @@ function positiveEnvInt(value, fallback) {
     return fallback;
   }
   return positiveInt(value);
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function phpString(value) {
