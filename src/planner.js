@@ -30,6 +30,8 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const WP_USERMETA_PLUGIN_DATA_DRIVERS = new Set(['wp-usermeta', 'wp-user-meta']);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -459,6 +461,35 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      if (WP_USERMETA_PLUGIN_DATA_DRIVERS.has(supported.driver)) {
+        const driverEvidence = wpUsermetaDriverEvidence({
+          resource,
+          owner,
+          base,
+          local,
+          remote,
+          policySource: supported.source,
+          driver: supported.driver,
+        });
+        if (!driverEvidence.supported) {
+          return {
+            supported: false,
+            className: 'unsupported-plugin-owned-resource',
+            driver: supported.driver,
+            policySource: supported.source,
+            reason: driverEvidence.reason,
+            driverEvidence,
+          };
+        }
+        return {
+          supported: true,
+          driver: supported.driver,
+          policySource: supported.source,
+          supportsDelete: supported.supportsDelete === true,
+          driverEvidence,
+        };
+      }
+
       return {
         supported: true,
         driver: supported.driver,
@@ -467,6 +498,130 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
       };
     },
   };
+}
+
+function wpUsermetaDriverEvidence({ resource, owner, base, local, remote, policySource, driver }) {
+  const effectiveDriver = driver || 'wp-usermeta';
+  const unsupported = (reason, extra = {}) => ({
+    supported: false,
+    driver: effectiveDriver,
+    table: 'wp_usermeta',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    policySource,
+    reason,
+    ...extra,
+  });
+
+  if (resource.type !== 'row' || resource.table !== 'wp_usermeta') {
+    return unsupported('wp_usermeta driver only supports wp_usermeta row resources.');
+  }
+
+  const rowId = parseWpUsermetaResourceId(resource.id);
+  if (!rowId.supported) {
+    return unsupported(rowId.reason);
+  }
+
+  const rowValues = [
+    ['base', getResource(base, resource)],
+    ['local', getResource(local, resource)],
+    ['remote', getResource(remote, resource)],
+  ].filter(([, value]) => value !== ABSENT);
+  if (rowValues.length === 0) {
+    return unsupported('wp_usermeta driver requires at least one concrete usermeta row value.');
+  }
+
+  for (const [source, value] of rowValues) {
+    const support = validateWpUsermetaDriverValue(value, {
+      owner,
+      rowId,
+      source,
+    });
+    if (!support.supported) {
+      return unsupported(support.reason, { rowId: resource.id, rowIdKind: rowId.kind });
+    }
+  }
+
+  const localValue = getResource(local, resource);
+  const concreteValue = localValue !== ABSENT
+    ? localValue
+    : rowValues.find(([source]) => source === 'remote')?.[1] || rowValues[0][1];
+  return {
+    supported: true,
+    driver: effectiveDriver,
+    table: 'wp_usermeta',
+    resourceKey: resource.key,
+    rowId: resource.id,
+    rowIdKind: rowId.kind,
+    userId: normalizePositiveInteger(concreteValue.user_id),
+    metaKey: concreteValue.meta_key,
+    pluginOwner: owner,
+    policySource,
+  };
+}
+
+function parseWpUsermetaResourceId(id) {
+  const raw = String(id || '');
+  const usermetaId = raw.match(/^umeta_id:([1-9]\d*)$/);
+  if (usermetaId) {
+    return {
+      supported: true,
+      kind: 'umeta_id',
+      usermetaId: Number.parseInt(usermetaId[1], 10),
+      valueKeys: ['umeta_id'],
+    };
+  }
+  const legacyMetaId = raw.match(/^meta_id:([1-9]\d*)$/);
+  if (legacyMetaId) {
+    return {
+      supported: true,
+      kind: 'meta_id',
+      usermetaId: Number.parseInt(legacyMetaId[1], 10),
+      valueKeys: ['meta_id', 'umeta_id'],
+    };
+  }
+  return {
+    supported: false,
+    reason: 'wp_usermeta driver requires row id umeta_id:<positive-int> or meta_id:<positive-int>.',
+  };
+}
+
+function validateWpUsermetaDriverValue(value, { owner, rowId, source }) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      supported: false,
+      reason: `wp_usermeta driver requires ${source} row value to be an object.`,
+    };
+  }
+  if (value.__pluginOwner !== owner) {
+    return {
+      supported: false,
+      reason: `wp_usermeta driver requires ${source} row owner to match plugin policy owner.`,
+    };
+  }
+  const userId = normalizePositiveInteger(value.user_id);
+  if (!userId) {
+    return {
+      supported: false,
+      reason: `wp_usermeta driver requires ${source} row user_id to be a positive integer.`,
+    };
+  }
+  if (typeof value.meta_key !== 'string' || value.meta_key.trim() === '') {
+    return {
+      supported: false,
+      reason: `wp_usermeta driver requires ${source} row meta_key to be a non-empty string.`,
+    };
+  }
+  const rowPrimaryKey = rowId.valueKeys
+    .map((key) => normalizePositiveInteger(value[key]))
+    .find((candidate) => candidate != null);
+  if (rowPrimaryKey !== rowId.usermetaId) {
+    return {
+      supported: false,
+      reason: `wp_usermeta driver requires ${source} row umeta_id to match the resource id.`,
+    };
+  }
+  return { supported: true };
 }
 
 function pluginOwnedPolicyEntriesFromSnapshot(snapshot, source) {
@@ -2311,6 +2466,7 @@ function addPluginOwnedResourceBlocker(plan, {
     pluginOwner: owner,
     driver: support.driver || null,
     policySource: support.policySource || null,
+    ...(support.driverEvidence ? { driverEvidence: support.driverEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     reason,
     baseHash,

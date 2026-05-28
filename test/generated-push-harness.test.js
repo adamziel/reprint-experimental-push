@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createPushPlan } from '../src/planner.js';
+
 import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
@@ -17,6 +19,8 @@ const requiredFamilies = [
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
+  'supported-plugin-usermeta',
+  'unsupported-plugin-usermeta',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
@@ -52,6 +56,8 @@ const requiredFamilies = [
   'same-plan-graph',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
+  'plugin-usermeta-driver-supported',
+  'plugin-usermeta-driver-unsupported',
   'file-topology',
   'directory-descendant',
   'directory-delete-with-remote-descendant',
@@ -186,6 +192,54 @@ test('RPP-0104 generated harness emits row create/update/delete mix with stale r
   assert.equal(nonReady.status, 'conflict');
   assert.ok(nonReady.conflicts >= 1, 'non-ready row mix should expose a row conflict');
   assert.equal(nonReady.applied, false, 'non-ready row mix must not apply mutations');
+});
+
+test('RPP-0407 generated harness covers supported and unsupported wp_usermeta driver variants', () => {
+  const cases = generatePushHarnessCases();
+  const supportedCase = cases.find((testCase) => testCase.family === 'supported-plugin-usermeta');
+  const unsupportedCase = cases.find((testCase) => testCase.family === 'unsupported-plugin-usermeta');
+
+  assert.ok(supportedCase, 'missing generated supported wp_usermeta driver case');
+  assert.ok(unsupportedCase, 'missing generated unsupported wp_usermeta driver case');
+  assert.ok(supportedCase.tags.has('plugin-usermeta-driver-supported'));
+  assert.ok(unsupportedCase.tags.has('plugin-usermeta-driver-unsupported'));
+
+  const supportedResult = validateGeneratedCase(supportedCase);
+  const unsupportedResult = validateGeneratedCase(unsupportedCase);
+  const supportedPlan = createPushPlan({
+    base: supportedCase.base,
+    local: supportedCase.local,
+    remote: supportedCase.remote,
+  });
+  const unsupportedPlan = createPushPlan({
+    base: unsupportedCase.base,
+    local: unsupportedCase.local,
+    remote: unsupportedCase.remote,
+  });
+  const supportedMutation = supportedPlan.mutations.find((mutation) =>
+    mutation.resource?.table === 'wp_usermeta'
+    && mutation.pluginOwnedResource?.driver === 'wp-usermeta');
+  const unsupportedBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker.resource?.table === 'wp_usermeta'
+    && blocker.driver === 'wp-usermeta');
+
+  assert.equal(supportedResult.status, 'ready');
+  assert.equal(supportedResult.applied, true);
+  assert.ok(supportedMutation, 'supported case should plan a wp_usermeta plugin-owned mutation');
+  assert.equal(supportedMutation.pluginOwnedResource.driverEvidence.supported, true);
+  assert.equal(supportedMutation.pluginOwnedResource.driverEvidence.rowIdKind, 'umeta_id');
+  assert.equal(supportedMutation.pluginOwnedResource.driverEvidence.userId, 1);
+  assert.equal(JSON.stringify(supportedMutation.pluginOwnedResource.driverEvidence).includes('meta_value'), false);
+  assert.equal(JSON.stringify(supportedMutation.pluginOwnedResource.driverEvidence).includes('ordinal'), false);
+
+  assert.equal(unsupportedResult.status, 'blocked');
+  assert.equal(unsupportedResult.applied, false);
+  assert.ok(unsupportedBlocker, 'unsupported case should expose a wp_usermeta driver blocker');
+  assert.equal(unsupportedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(unsupportedBlocker.driverEvidence.supported, false);
+  assert.match(unsupportedBlocker.reason, /umeta_id to match the resource id/);
+  assert.equal(JSON.stringify(unsupportedBlocker).includes('local-invalid'), false);
+  assert.equal(JSON.stringify(unsupportedBlocker).includes('meta_value'), false);
 });
 
 function assertRowMixShape(testCase) {
