@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0028, plus RPP-0030 through RPP-0061, plus RPP-0062 through RPP-0070. RPP-0029 remains open until a variant-2 manage_options scenario-matrix proof is linked.
+Primary checklist range: RPP-0001 through RPP-0028, plus RPP-0030 through RPP-0061, plus RPP-0062 through RPP-0072. RPP-0029 remains open until a variant-2 manage_options scenario-matrix proof is linked.
 
 ## What changed
 
@@ -64,6 +64,7 @@ Primary checklist range: RPP-0001 through RPP-0028, plus RPP-0030 through RPP-00
 | RPP-0067 | Evidence toward variant-4 missing production secret coverage now runs the release-gate CLI with source/local/remote URLs and every other final-release gate supplied, asserting exit `1`, exact `REPRINT_PUSH_SECRET_REQUIRED` reason/evidence, final held marker, `NO-GO`, redaction, and `mutationAttempted: false`. |
 | RPP-0068 through RPP-0069 | Evidence toward focused Application Password binding and manage_options regressions now proves both fail-closed negative fixtures and positive gate-satisfied paths while the overall release remains `NO-GO` without production provenance. |
 | RPP-0070 | Evidence toward variant-4 same source URL identity proof now runs the release-gate CLI with drifted and matching final-release fixtures, asserting exact `SAME_SOURCE_IDENTITY_REQUIRED` recovery-source drift evidence, held marker, `NO-GO`, redaction, and `mutationAttempted: false` while the matching proof remains held by provenance. |
+| RPP-0071 through RPP-0072 | Evidence toward focused preflight route identity and dry-run route eligibility regressions now proves exact final evidence before provenance, fail-closed wrong-route and ineligible-route negative fixtures, redacted credential output, held markers, and `mutationAttempted: false`. |
 
 ## Focused verification
 
@@ -83,6 +84,16 @@ Observed status: pass, 72 tests. This refresh checks RPP-0027, RPP-0041
 through RPP-0049, RPP-0052 through RPP-0057, RPP-0059 through RPP-0061,
 RPP-0063 through RPP-0066, and RPP-0068 through RPP-0069 from evidence already
 present in the current lane; final release remains `NO-GO`.
+
+Focused route-regression refresh:
+
+```sh
+node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js
+```
+
+Observed status: pass, 33 tests. This checks RPP-0071 and RPP-0072 from focused
+route-regression evidence already present in the current lane; final release
+remains `NO-GO`.
 
 Progress HTML release timestamp proof:
 
