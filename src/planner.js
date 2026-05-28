@@ -181,6 +181,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
         const pluginContextSupport = pluginContextMutationSupport({
           resource,
           owner,
+          localValue,
           resources,
           base,
           local,
@@ -2173,11 +2174,21 @@ function isPluginContextMutationResource(resource, owner) {
 function pluginContextMutationSupport({
   resource,
   owner,
+  localValue,
   resources,
   base,
   local,
   remote,
 }) {
+  if (resource.type === 'plugin' && localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'unsupported-plugin-delete',
+      requiredDriver: 'plugin-delete',
+      reason: `Plugin uninstall/delete mutation ${resource.key} requires an explicit plugin delete driver for ${owner}.`,
+    };
+  }
+
   const staleContext = pluginOwnerContextEvidence({
     owner,
     resources,
@@ -2390,6 +2401,7 @@ function addPluginContextBlocker(plan, {
     resourceKey: resource.key,
     pluginOwner: owner,
     ownerContext: support.ownerContext || [],
+    ...(support.requiredDriver ? { requiredDriver: support.requiredDriver } : {}),
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
