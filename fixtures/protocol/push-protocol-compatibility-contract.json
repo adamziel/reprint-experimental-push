@@ -1,0 +1,236 @@
+{
+  "contract_id": "push-protocol-compatibility-contract-v1",
+  "schema_version": 1,
+  "machine_readable": true,
+  "purpose": "Fail-closed compatibility contract for Reprint push protocol version negotiation. Supported versions must negotiate exact capability sets; unknown versions, downgraded versions, and missing auth, journal, or lease capabilities do not authorize preflight, dry-run, apply, journal inspect, or recovery.",
+  "checked_command": "node --test test/protocol-compatibility.test.js",
+  "negotiation": {
+    "minimum_version": "1.0.0",
+    "current_version": "1.1.0",
+    "fail_closed_on_unknown_version": true,
+    "fail_closed_on_downgrade": true,
+    "exact_capability_set_required": true,
+    "fallback_policy": "no-fallback-after-incompatible-offer"
+  },
+  "required_capability_groups": [
+    "auth",
+    "journal",
+    "lease"
+  ],
+  "supported_versions": [
+    {
+      "version": "1.0.0",
+      "status": "supported",
+      "introduced": "2026-05-27",
+      "capabilities": [
+        "apply.batch-live-revalidation",
+        "auth.canonical-push-signature",
+        "auth.hmac-sha256",
+        "auth.manage-options",
+        "auth.session-bound-source",
+        "dry-run.receipt-not-lock",
+        "journal.append-only",
+        "journal.read-only-inspect",
+        "journal.restart-readable",
+        "lease.claim-generation",
+        "lease.compare-and-swap-storage-guard",
+        "lease.expiry-fence",
+        "preflight.base-manifest-binding",
+        "recovery.inspect-first",
+        "snapshot-hashes.planning-only"
+      ],
+      "required_capabilities": {
+        "auth": [
+          "auth.canonical-push-signature",
+          "auth.hmac-sha256",
+          "auth.manage-options",
+          "auth.session-bound-source"
+        ],
+        "journal": [
+          "journal.append-only",
+          "journal.read-only-inspect",
+          "journal.restart-readable"
+        ],
+        "lease": [
+          "lease.claim-generation",
+          "lease.compare-and-swap-storage-guard",
+          "lease.expiry-fence"
+        ]
+      }
+    },
+    {
+      "version": "1.1.0",
+      "status": "current",
+      "introduced": "2026-05-28",
+      "capabilities": [
+        "apply.batch-live-revalidation",
+        "apply.storage-boundary-revalidation",
+        "auth.application-password-binding",
+        "auth.canonical-push-signature",
+        "auth.hmac-sha256",
+        "auth.manage-options",
+        "auth.session-bound-source",
+        "dry-run.receipt-not-lock",
+        "journal.append-only",
+        "journal.durable-commit-boundary",
+        "journal.read-only-inspect",
+        "journal.restart-readable",
+        "lease.claim-generation",
+        "lease.compare-and-swap-storage-guard",
+        "lease.expiry-fence",
+        "lease.monotonic-sequence",
+        "preflight.base-manifest-binding",
+        "recovery.inspect-first",
+        "snapshot-hashes.planning-only",
+        "topology.local-only-ingress-8080"
+      ],
+      "required_capabilities": {
+        "auth": [
+          "auth.application-password-binding",
+          "auth.canonical-push-signature",
+          "auth.hmac-sha256",
+          "auth.manage-options",
+          "auth.session-bound-source"
+        ],
+        "journal": [
+          "journal.append-only",
+          "journal.durable-commit-boundary",
+          "journal.read-only-inspect",
+          "journal.restart-readable"
+        ],
+        "lease": [
+          "lease.claim-generation",
+          "lease.compare-and-swap-storage-guard",
+          "lease.expiry-fence",
+          "lease.monotonic-sequence"
+        ]
+      }
+    }
+  ],
+  "negative_contracts": [
+    {
+      "case": "unknown-version",
+      "offer": {
+        "version": "9.9.9",
+        "capabilities": [
+          "apply.batch-live-revalidation",
+          "apply.storage-boundary-revalidation",
+          "auth.application-password-binding",
+          "auth.canonical-push-signature",
+          "auth.hmac-sha256",
+          "auth.manage-options",
+          "auth.session-bound-source",
+          "dry-run.receipt-not-lock",
+          "journal.append-only",
+          "journal.durable-commit-boundary",
+          "journal.read-only-inspect",
+          "journal.restart-readable",
+          "lease.claim-generation",
+          "lease.compare-and-swap-storage-guard",
+          "lease.expiry-fence",
+          "lease.monotonic-sequence",
+          "preflight.base-manifest-binding",
+          "recovery.inspect-first",
+          "snapshot-hashes.planning-only",
+          "topology.local-only-ingress-8080"
+        ]
+      },
+      "expected_code": "PUSH_PROTOCOL_VERSION_UNSUPPORTED",
+      "mutation_allowed": false
+    },
+    {
+      "case": "downgraded-version",
+      "offer": {
+        "version": "0.9.0",
+        "capabilities": [
+          "auth.hmac-sha1",
+          "journal.best-effort",
+          "lease.none"
+        ]
+      },
+      "expected_code": "PUSH_PROTOCOL_VERSION_DOWNGRADED",
+      "mutation_allowed": false
+    },
+    {
+      "case": "missing-auth-capability",
+      "offer": {
+        "version": "1.1.0",
+        "capabilities": [
+          "apply.batch-live-revalidation",
+          "apply.storage-boundary-revalidation",
+          "auth.application-password-binding",
+          "auth.canonical-push-signature",
+          "auth.hmac-sha256",
+          "auth.session-bound-source",
+          "dry-run.receipt-not-lock",
+          "journal.append-only",
+          "journal.durable-commit-boundary",
+          "journal.read-only-inspect",
+          "journal.restart-readable",
+          "lease.claim-generation",
+          "lease.compare-and-swap-storage-guard",
+          "lease.expiry-fence",
+          "lease.monotonic-sequence",
+          "preflight.base-manifest-binding",
+          "recovery.inspect-first",
+          "snapshot-hashes.planning-only",
+          "topology.local-only-ingress-8080"
+        ]
+      },
+      "expected_code": "PUSH_PROTOCOL_REQUIRED_CAPABILITY_MISSING",
+      "missing_required_capabilities": [
+        "auth.manage-options"
+      ],
+      "mutation_allowed": false
+    },
+    {
+      "case": "unexpected-capability",
+      "offer": {
+        "version": "1.1.0",
+        "capabilities": [
+          "apply.batch-live-revalidation",
+          "apply.storage-boundary-revalidation",
+          "auth.application-password-binding",
+          "auth.canonical-push-signature",
+          "auth.hmac-sha256",
+          "auth.manage-options",
+          "auth.session-bound-source",
+          "debug.experimental-write-authority",
+          "dry-run.receipt-not-lock",
+          "journal.append-only",
+          "journal.durable-commit-boundary",
+          "journal.read-only-inspect",
+          "journal.restart-readable",
+          "lease.claim-generation",
+          "lease.compare-and-swap-storage-guard",
+          "lease.expiry-fence",
+          "lease.monotonic-sequence",
+          "preflight.base-manifest-binding",
+          "recovery.inspect-first",
+          "snapshot-hashes.planning-only",
+          "topology.local-only-ingress-8080"
+        ]
+      },
+      "expected_code": "PUSH_PROTOCOL_CAPABILITY_MISMATCH",
+      "mutation_allowed": false
+    }
+  ],
+  "required_invariants": [
+    "supported protocol versions negotiate their exact machine-readable capability set",
+    "unknown protocol versions fail closed before any push route may authorize mutation",
+    "protocol versions below the minimum fail closed as downgrade attempts",
+    "auth, journal, and lease capabilities are required evidence and are never silently ignored",
+    "capability extras or omissions fail closed instead of creating an implicit extension",
+    "an incompatible offer in a multi-version negotiation prevents fallback to a lower version",
+    "browser-visible inspection stays on the sandbox-provided 8080 ingress through a local-only proxy"
+  ],
+  "evidence": {
+    "lane": "protocol-compatibility",
+    "rpp_items": [
+      "RPP-0518",
+      "RPP-0538",
+      "RPP-0558",
+      "RPP-0915"
+    ]
+  }
+}
