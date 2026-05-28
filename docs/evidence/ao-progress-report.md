@@ -1,10 +1,10 @@
-# AO Progress Report - 2026-05-28 13:19 CEST
+# AO Progress Report - 2026-05-28 13:22 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`793c2a7d` (tree-unchanged normal ancestry merge of `origin/session/rpp-5`). It separates
+`3d512918` (tree-unchanged normal ancestry merge of `origin/session/rpp-6`). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -308,6 +308,13 @@ progress.
   read-only inspect checks pass 19/19, the full authenticated client suite
   passes 127/127, and the standard checklist, redaction, and lane-range diff
   checks are clean.
+- `3d512918` preserves ancestry for `origin/session/rpp-6`. A dry merge-tree
+  check showed the result tree matched the current lane, so the normal
+  `--no-ff` merge records the already-represented guarded chunk benchmark
+  branch without changing files or checklist counts. Focused benchmark CLI and
+  production-claim checks pass 5/5, the full guarded benchmark suite passes
+  6/6, and the standard checklist, redaction, and lane-range diff checks are
+  clean.
 - `22fa5b642` integrates `RPP-0229` conflict evidence hash redaction in
   `test/push-planner.test.js` and `docs/scenario-matrix.md`. The focused proof
   serializes direct row conflict evidence with resource keys, reason class,
@@ -731,7 +738,7 @@ branch.
 | `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`, with branch ancestry now preserved by `5773b093`; do not count additional branch-local state. |
 | `rpp-4` | pushed branch `e8bcabc33` | Plugin-driver work is represented in the integration branch by `b348c56b8`, with branch ancestry now preserved by `ebf3710b`; do not count additional branch-local state. |
 | `rpp-5` | pushed branch `573d58069` | Executor auth/lease read-only inspect work is represented in the integration branch by `bb40db8c1`, with branch ancestry now preserved by `793c2a7d`; do not count additional branch-local state. |
-| `rpp-6` | pushed branch `9440daf3e` | Chunk benchmark gate work is represented in the integration branch by `4d5c96d78`; do not count additional branch-local state. |
+| `rpp-6` | pushed branch `9440daf3e` | Chunk benchmark gate work is represented in the integration branch by `4d5c96d78`, with branch ancestry now preserved by `3d512918`; do not count additional branch-local state. |
 | `rpp-7` / `rpp-8` | pushed audit branches | Independent and critic audit evidence is represented in the integration branch by `05050392b`; do not count additional branch-local state. |
 | `rpp-9` | pushed branch `dcc23dc2a` | Prior progress evidence visible; branch-local until integrated. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane. |

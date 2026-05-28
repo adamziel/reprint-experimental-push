@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 13:19 CEST.
+- Last update: 2026-05-28 13:22 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `793c2a7d` (tree-unchanged normal ancestry merge of `origin/session/rpp-5`).
+  `3d512918` (tree-unchanged normal ancestry merge of `origin/session/rpp-6`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -32,6 +32,14 @@ linked implementation artifacts.
   `node --test --test-name-pattern 'read-only|journal inspect|recovery inspect' test/authenticated-http-push-client.test.js`
   (19/19), `node --test test/authenticated-http-push-client.test.js`
   (127/127), checklist lint, artifact redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
+- Ancestry backlog reduction: `3d512918` normal-merged
+  `origin/session/rpp-6` after the dry merge-tree result matched the current
+  lane tree. This records the already-represented guarded chunk benchmark
+  branch ancestry without moving checklist counts. Validation passed with
+  `node --test --test-name-pattern 'guarded benchmark|CLI benchmark|production claim|rollout safety|transfer projection' test/guarded-executor-benchmark.test.js`
+  (5/5), `node --test test/guarded-executor-benchmark.test.js` (6/6),
+  checklist lint, artifact redaction scan, and
   `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
