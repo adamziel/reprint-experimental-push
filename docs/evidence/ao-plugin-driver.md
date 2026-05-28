@@ -76,6 +76,32 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0466 wp_termmeta driver semantics focused regression
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0466|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0466 focused proof exercises the `wp-termmeta` plugin-data driver
+against a plugin-owned `wp_termmeta` row. The accepted path requires owner
+`forms`, table `wp_termmeta`, driver `wp-termmeta`, and `supportsDelete: false`;
+it applies one termmeta-row update and records only hash/redacted plan,
+mutation, audit, and journal evidence.
+
+Fail-closed coverage proves the driver semantics in two negative cases. If the
+same resource is declared with the wrong driver `wp-option`, the planner emits
+an `unsupported-plugin-owned-resource` blocker and no mutation. If the remote
+`wp_termmeta` row drifts after the dry-run plan, apply refuses with
+`PRECONDITION_FAILED` before mutation and the remote row/full-remote hashes are
+unchanged. The proof asserts raw plugin-owned termmeta values are absent from
+the audit, journal, blocker/refusal, and combined proof evidence.
+
+This is local focused plugin-driver evidence, not production-backed evidence.
+It preserves the release NO-GO caveat and does not widen accepted production
+plugin-driver resources.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +115,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0466 — wp_termmeta driver semantics: `wp-termmeta` applies exactly one
+  plugin-owned termmeta-row update with hash-only evidence, wrong drivers block,
+  and drifted remote termmeta data is preserved before mutation.
