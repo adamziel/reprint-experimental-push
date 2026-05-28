@@ -36,3 +36,36 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+
+## RPP-0437 driver dry-run validation hook
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0437|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0437 proof adds a driver dry-run validation hook for plugin-owned
+`wp_options` rows. A policy entry may declare `dryRunValidation` with hook
+`wp-option-object-mode`; the planner hashes the expected and planned
+`option_value.mode` values and emits only hash evidence.
+
+The focused proof covers three variants:
+
+- supported and passing: the local row matches the declared expected mode, the
+  plan is ready, the mutation carries `dryRunValidation.status: passed`, and
+  apply writes the planned row;
+- supported but failing: the same hook sees a mismatched planned mode, the
+  planner emits a `stale`-free `unsupported-plugin-owned-resource` blocker
+  with `dryRunValidation.status: failed`, no mutation is planned, and the
+  blocked plan refuses apply with the remote unchanged;
+- unsupported hook: unknown validation hooks fail closed at planning with
+  `dryRunValidation.status: unsupported`.
+
+The executor also validates dry-run hook evidence on plugin-owned mutations, so
+a forged ready plan carrying failed validation evidence is rejected before
+mutation with `UNSUPPORTED_PLUGIN_OWNED_RESOURCE`. The test evidence stores
+`sha256:` hashes for passed validation, blocked validation, unsupported
+validation, executor error details, remote preservation, and the combined proof;
+it asserts private option values do not appear in blocker or proof JSON. This is
+local focused evidence, not production-backed evidence.

@@ -213,7 +213,13 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
     const driver = mutation.pluginOwnedResource?.driver || null;
     const supported = mutation.pluginOwnedResource?.pluginOwner === owner
       && isActivePluginOwnerPresent(remote, owner, plan)
-      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue);
+      && isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue)
+      && validPluginOwnedDryRunValidationEvidence(
+        mutation.pluginOwnedResource?.dryRunValidation,
+        mutation,
+        owner,
+        plannedValue,
+      );
     if (!supported) {
       throw new PushPlanError(
         'UNSUPPORTED_PLUGIN_OWNED_RESOURCE',
@@ -290,6 +296,27 @@ function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, planned
       && validFixtureFormsLabTableEvidence(mutation.pluginOwnedResource?.driverEvidence, remote);
   }
   return false;
+}
+
+function validPluginOwnedDryRunValidationEvidence(evidence, mutation, owner, plannedValue) {
+  if (evidence === undefined || evidence === null) {
+    return true;
+  }
+  if (
+    evidence.hook !== 'wp-option-object-mode'
+    || evidence.status !== 'passed'
+    || evidence.resourceKey !== mutation.resourceKey
+    || evidence.pluginOwner !== owner
+    || !/^[a-f0-9]{64}$/.test(evidence.expectedModeHash || '')
+    || !/^[a-f0-9]{64}$/.test(evidence.plannedModeHash || '')
+    || evidence.expectedModeHash !== evidence.plannedModeHash
+    || mutation.resource?.type !== 'row'
+    || mutation.resource.table !== 'wp_options'
+  ) {
+    return false;
+  }
+  const plannedMode = plannedValue?.option_value?.mode;
+  return digest(plannedMode ?? null) === evidence.plannedModeHash;
 }
 
 function validatePluginOwnedOwnerContext(remote, mutation, owner) {

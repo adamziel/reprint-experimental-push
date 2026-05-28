@@ -15,6 +15,7 @@ import {
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 
@@ -170,6 +171,10 @@ function pluginOwnedResourcePolicy(...allowedResources) {
       allowedResources,
     },
   };
+}
+
+function sha256Evidence(value) {
+  return `sha256:${digest(value)}`;
 }
 
 const atomicDependencyPlugin = 'reprint-push-atomic-dependency-fixture';
@@ -1145,6 +1150,191 @@ test('allows plugin-owned option rows only with explicit snapshot driver policy'
 
   assert.equal(readyPlan.status, 'ready');
   assert.equal(mutationFor(readyPlan, resourceKey).changeKind, 'update');
+});
+
+test('RPP-0437 plugin-owned dry-run validation hook passes and fails closed with hash-only evidence', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const validationHook = 'wp-option-object-mode';
+  const expectedMode = 'dry-run-valid-mode-rpp-0437';
+  const privateBaseMode = 'dry-run-private-base-rpp-0437';
+  const privateInvalidMode = 'dry-run-private-invalid-rpp-0437';
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'].option_value.mode = privateBaseMode;
+
+  const supportedLocal = cloneJson(base);
+  supportedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = expectedMode;
+  supportedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option', {
+        dryRunValidation: {
+          hook: validationHook,
+          requiredMode: expectedMode,
+        },
+      }),
+    ),
+  };
+  const supportedRemote = cloneJson(base);
+  const supportedPlan = planFor(base, supportedLocal, supportedRemote);
+  const supportedMutation = mutationFor(supportedPlan, resourceKey);
+  const supportedValidation = supportedMutation.pluginOwnedResource.dryRunValidation;
+  const supportedResult = applyPlan(supportedRemote, supportedPlan);
+
+  assert.equal(supportedPlan.status, 'ready');
+  assert.equal(supportedMutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(supportedValidation.hook, validationHook);
+  assert.equal(supportedValidation.status, 'passed');
+  assert.equal(supportedValidation.resourceKey, resourceKey);
+  assert.equal(supportedValidation.pluginOwner, 'forms');
+  assert.match(supportedValidation.expectedModeHash, /^[a-f0-9]{64}$/);
+  assert.equal(supportedValidation.plannedModeHash, supportedValidation.expectedModeHash);
+  assert.equal(
+    supportedResult.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    expectedMode,
+  );
+
+  const failedLocal = cloneJson(base);
+  failedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = privateInvalidMode;
+  failedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option', {
+        dryRunValidation: {
+          hook: validationHook,
+          requiredMode: expectedMode,
+        },
+      }),
+    ),
+  };
+  const failedRemote = cloneJson(base);
+  const failedRemoteBefore = JSON.stringify(failedRemote);
+  const failedPlan = planFor(base, failedLocal, failedRemote);
+  const failedBlocker = failedPlan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const failedError = captureError(() => applyPlan(failedRemote, failedPlan));
+
+  assert.equal(failedPlan.status, 'blocked');
+  assert.equal(failedPlan.summary.mutations, 0);
+  assert.equal(mutationFor(failedPlan, resourceKey), undefined);
+  assert.equal(failedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(failedBlocker.driver, 'wp-option');
+  assert.equal(failedBlocker.dryRunValidation.hook, validationHook);
+  assert.equal(failedBlocker.dryRunValidation.status, 'failed');
+  assert.equal(failedBlocker.dryRunValidation.expectedModeHash, supportedValidation.expectedModeHash);
+  assert.notEqual(failedBlocker.dryRunValidation.plannedModeHash, supportedValidation.expectedModeHash);
+  assert.match(failedBlocker.reason, /dry-run validation rejected/);
+  assert.equal(failedError.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(failedRemote), failedRemoteBefore);
+
+  const unsupportedLocal = cloneJson(base);
+  unsupportedLocal.db.wp_options['option_name:forms_settings'].option_value.mode = expectedMode;
+  unsupportedLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option', {
+        dryRunValidation: {
+          hook: 'unsupported-fixture-validation-hook',
+          requiredMode: expectedMode,
+        },
+      }),
+    ),
+  };
+  const unsupportedPlan = planFor(base, unsupportedLocal, cloneJson(base));
+  const unsupportedBlocker = unsupportedPlan.blockers.find((entry) => entry.resourceKey === resourceKey);
+
+  assert.equal(unsupportedPlan.status, 'blocked');
+  assert.equal(unsupportedPlan.summary.mutations, 0);
+  assert.equal(unsupportedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(unsupportedBlocker.dryRunValidation.status, 'unsupported');
+  assert.match(unsupportedBlocker.reason, /is not supported/);
+
+  const forgedPlan = tamperReadyPlan(failedPlan, (plan) => {
+    plan.mutations = [
+      {
+        id: 'mutation-forged-failed-dry-run-validation',
+        resource: supportedMutation.resource,
+        resourceKey,
+        action: 'put',
+        value: supportedMutation.value,
+        remoteBeforeHash: resourceHash(supportedRemote, supportedMutation.resource),
+        baseHash: resourceHash(base, supportedMutation.resource),
+        localHash: resourceHash(supportedLocal, supportedMutation.resource),
+        changeKind: 'update',
+        change: supportedMutation.change,
+        pluginOwnedResource: {
+          pluginOwner: 'forms',
+          driver: 'wp-option',
+          policySource: 'local-snapshot',
+          supportsDelete: false,
+          ownerContext: supportedMutation.pluginOwnedResource.ownerContext,
+          ownerContextRequired: supportedMutation.pluginOwnedResource.ownerContextRequired,
+          dryRunValidation: failedBlocker.dryRunValidation,
+        },
+      },
+    ];
+    plan.preconditions = [
+      {
+        mutationId: 'mutation-forged-failed-dry-run-validation',
+        resource: supportedMutation.resource,
+        resourceKey,
+        expectedHash: resourceHash(supportedRemote, supportedMutation.resource),
+        checkedAgainst: 'live-remote',
+      },
+    ];
+    plan.summary.mutations = 1;
+    plan.summary.blockers = 0;
+  });
+  const forgedRemote = cloneJson(base);
+  const forgedRemoteBefore = JSON.stringify(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedPlan));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(JSON.stringify(forgedRemote), forgedRemoteBefore);
+
+  const evidence = {
+    rpp: 'RPP-0437',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    supportedDryRun: {
+      status: supportedPlan.status,
+      hook: supportedValidation.hook,
+      validationStatus: supportedValidation.status,
+      mutationHash: sha256Evidence(supportedMutation),
+      validationHash: sha256Evidence(supportedValidation),
+    },
+    failedDryRun: {
+      status: failedPlan.status,
+      blockerClass: failedBlocker.class,
+      validationStatus: failedBlocker.dryRunValidation.status,
+      blockerHash: sha256Evidence(failedBlocker),
+    },
+    unsupportedDryRun: {
+      status: unsupportedPlan.status,
+      blockerClass: unsupportedBlocker.class,
+      validationStatus: unsupportedBlocker.dryRunValidation.status,
+      blockerHash: sha256Evidence(unsupportedBlocker),
+    },
+    forgedExecutorRefusal: {
+      code: forgedError.code,
+      detailsHash: sha256Evidence(forgedError.details),
+      remoteHashBefore: sha256Evidence(JSON.parse(forgedRemoteBefore)),
+      remoteHashAfter: sha256Evidence(forgedRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    supportedDryRun: evidence.supportedDryRun,
+    failedDryRun: evidence.failedDryRun,
+    unsupportedDryRun: evidence.unsupportedDryRun,
+    forgedExecutorRefusal: evidence.forgedExecutorRefusal,
+  });
+
+  assert.equal(evidence.forgedExecutorRefusal.remoteHashAfter, evidence.forgedExecutorRefusal.remoteHashBefore);
+  assert.match(evidence.supportedDryRun.mutationHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.supportedDryRun.validationHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.failedDryRun.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.unsupportedDryRun.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.forgedExecutorRefusal.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(evidence.proofHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(failedBlocker).includes(privateInvalidMode), false);
+  assert.equal(JSON.stringify(evidence).includes(privateBaseMode), false);
+  assert.equal(JSON.stringify(evidence).includes(privateInvalidMode), false);
 });
 
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {

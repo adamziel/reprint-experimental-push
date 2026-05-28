@@ -30,6 +30,10 @@ const PLUGIN_DATA_DRIVER_TABLES = new Map([
   ['wp-user-meta', 'wp_usermeta'],
 ]);
 
+const SUPPORTED_PLUGIN_DRY_RUN_VALIDATION_HOOKS = new Set([
+  'wp-option-object-mode',
+]);
+
 export function createPushPlan({ base, local, remote, now = new Date() }) {
   const plan = {
     schemaVersion: 1,
@@ -261,6 +265,25 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           });
           continue;
         }
+        if (support.dryRunValidation && support.dryRunValidation.status !== 'passed') {
+          addPluginOwnedResourceBlocker(plan, {
+            resource,
+            owner,
+            support: {
+              ...support,
+              supported: false,
+              className: 'unsupported-plugin-owned-resource',
+              reason: support.dryRunValidation.reason,
+            },
+            baseValue,
+            localValue,
+            remoteValue,
+            baseHash,
+            localHash,
+            remoteHash,
+          });
+          continue;
+        }
       }
 
       const graphIdentitySupport = wordpressGraphIdentitySupport({
@@ -323,6 +346,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           supportsDelete: support.supportsDelete,
           ownerContext,
           ownerContextRequired: ownerContext.length > 0,
+          ...(support.dryRunValidation ? { dryRunValidation: support.dryRunValidation } : {}),
           driverEvidence: support.driverEvidence,
         };
       }
@@ -468,11 +492,18 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      const dryRunValidation = pluginOwnedDryRunValidationEvidence({
+        validation: supported.dryRunValidation,
+        resource,
+        owner,
+        localValue: getResource(local, resource),
+      });
       return {
         supported: true,
         driver: supported.driver,
         policySource: supported.source,
         supportsDelete: supported.supportsDelete === true,
+        ...(dryRunValidation ? { dryRunValidation } : {}),
       };
     },
   };
@@ -534,7 +565,85 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
     table: entry.table || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    dryRunValidation: normalizePluginOwnedDryRunValidation(
+      entry.dryRunValidation || entry.dryRunValidationHook || entry.validateDryRun,
+    ),
     source,
+  };
+}
+
+function normalizePluginOwnedDryRunValidation(validation) {
+  if (!validation) {
+    return null;
+  }
+  if (typeof validation === 'string') {
+    return { hook: validation };
+  }
+  if (validation && typeof validation === 'object') {
+    return {
+      hook: validation.hook || validation.name || null,
+      requiredMode: validation.requiredMode || validation.mode || null,
+    };
+  }
+  return { hook: null };
+}
+
+function pluginOwnedDryRunValidationEvidence({ validation, resource, owner, localValue }) {
+  if (!validation) {
+    return null;
+  }
+  const hook = validation.hook || null;
+  const baseEvidence = {
+    hook,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+  };
+
+  if (!SUPPORTED_PLUGIN_DRY_RUN_VALIDATION_HOOKS.has(hook)) {
+    return {
+      ...baseEvidence,
+      status: 'unsupported',
+      reason: `Plugin-owned resource driver dry-run validation hook ${hook || 'unknown'} is not supported.`,
+    };
+  }
+
+  if (hook === 'wp-option-object-mode') {
+    const requiredMode = validation.requiredMode;
+    const plannedMode = localValue?.option_value?.mode;
+    const evidence = {
+      ...baseEvidence,
+      expectedModeHash: digest(requiredMode ?? null),
+      plannedModeHash: digest(plannedMode ?? null),
+    };
+    if (
+      resource.type !== 'row'
+      || resource.table !== 'wp_options'
+      || typeof requiredMode !== 'string'
+      || requiredMode.length === 0
+    ) {
+      return {
+        ...evidence,
+        status: 'failed',
+        reason: 'Plugin-owned wp-option dry-run validation requires a non-empty expected option_value.mode.',
+      };
+    }
+    if (plannedMode !== requiredMode) {
+      return {
+        ...evidence,
+        status: 'failed',
+        reason: 'Plugin-owned wp-option dry-run validation rejected the planned option_value.mode.',
+      };
+    }
+    return {
+      ...evidence,
+      status: 'passed',
+    };
+  }
+
+  return {
+    ...baseEvidence,
+    status: 'unsupported',
+    reason: `Plugin-owned resource driver dry-run validation hook ${hook} is not supported.`,
   };
 }
 
@@ -2383,6 +2492,7 @@ function addPluginOwnedResourceBlocker(plan, {
     policySource: support.policySource || null,
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
+    ...(support.dryRunValidation ? { dryRunValidation: support.dryRunValidation } : {}),
     reason,
     baseHash,
     localHash,
