@@ -31,6 +31,7 @@ const scenarioFamilies = Object.freeze([
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
   'file-topology-conflict',
+  'directory-descendant-conflict',
   'same-plan-post-parent-graph',
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
@@ -67,6 +68,13 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'same-plan-user-meta-graph',
 ]);
+
+const targetCoverageDefinitions = Object.freeze({
+  directoryDescendantConflict: {
+    family: 'directory-descendant-conflict',
+    tag: 'directory-delete-with-remote-descendant',
+  },
+});
 
 export function generatePushHarnessCases({
   count = DEFAULT_GENERATED_PUSH_CASES,
@@ -110,6 +118,18 @@ export function runGeneratedPushHarness(options = {}) {
   );
   summary.tiers = Object.fromEntries(
     Object.entries(summary.tiers).sort(([left], [right]) => Number(left) - Number(right)),
+  );
+  summary.targetCoverage = Object.fromEntries(
+    Object.entries(summary.targetCoverage)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([target, coverage]) => [
+        target,
+        {
+          ...coverage,
+          perTier: sortNumericObject(coverage.perTier),
+          statuses: sortStringObject(coverage.statuses),
+        },
+      ]),
   );
 
   return {
@@ -297,6 +317,18 @@ const scenarioFamilyBuilders = {
     delete local.files[directory];
     remote.files[`${directory}/remote-child.txt`] = `remote child ${allocator.next()}`;
     tags.add('file-topology');
+  },
+  'directory-descendant-conflict': ({ base, local, remote, allocator, tags }) => {
+    const directory = `wp-content/uploads/descendant-${allocator.next()}`;
+    const descendant = `${directory}/remote-child-${allocator.next()}.txt`;
+    base.files[directory] = { type: 'directory' };
+    local.files[directory] = { type: 'directory' };
+    remote.files[directory] = { type: 'directory' };
+    delete local.files[directory];
+    remote.files[descendant] = `remote descendant ${allocator.next()}`;
+    tags.add('file-topology');
+    tags.add('directory-descendant');
+    tags.add('directory-delete-with-remote-descendant');
   },
   'same-plan-post-parent-graph': ({ local, allocator, tags }) => {
     const parentId = allocator.graphId();
@@ -867,6 +899,7 @@ function recordSummary(summary, testCase, result) {
   for (const tag of testCase.tags) {
     increment(summary.featureFamilies, tag);
   }
+  recordTargetCoverage(summary, testCase, result);
   summary.maxResourceCount = Math.max(summary.maxResourceCount, result.resourceCount);
   summary.maxMutationCount = Math.max(summary.maxMutationCount, result.mutations);
   if (result.status === 'ready') {
@@ -888,6 +921,7 @@ function emptySummary() {
     statusByTier: {},
     tiers: {},
     featureFamilies: {},
+    targetCoverage: {},
     maxResourceCount: 0,
     maxMutationCount: 0,
     maxReadyResourceCount: 0,
@@ -898,6 +932,35 @@ function emptySummary() {
     totalBlockers: 0,
     totalDecisions: 0,
   };
+}
+
+function recordTargetCoverage(summary, testCase, result) {
+  for (const [target, definition] of Object.entries(targetCoverageDefinitions)) {
+    if (testCase.family !== definition.family && !testCase.tags.has(definition.tag)) {
+      continue;
+    }
+    const coverage = summary.targetCoverage[target] ||= {
+      family: definition.family,
+      total: 0,
+      perTier: {},
+      statuses: {},
+    };
+    coverage.total += 1;
+    increment(coverage.perTier, testCase.tier);
+    increment(coverage.statuses, result.status);
+  }
+}
+
+function sortNumericObject(object) {
+  return Object.fromEntries(
+    Object.entries(object).sort(([left], [right]) => Number(left) - Number(right)),
+  );
+}
+
+function sortStringObject(object) {
+  return Object.fromEntries(
+    Object.entries(object).sort(([left], [right]) => left.localeCompare(right)),
+  );
 }
 
 function installAtomicStack(local) {
