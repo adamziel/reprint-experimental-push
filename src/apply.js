@@ -1287,7 +1287,88 @@ function sanitizeRecoveryRemote(remote, plan) {
 }
 
 function validatePreconditions(remote, plan) {
-  for (const precondition of plan.preconditions || []) {
+  const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
+  const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
+  const mutationIds = new Set();
+  const preconditionByMutationId = new Map();
+
+  for (const mutation of mutations) {
+    if (!mutation?.id) {
+      throw new PushPlanError(
+        'PRECONDITION_MUTATION_INVALID',
+        'Ready plan contains a mutation without a stable id.',
+        { resourceKey: mutation?.resourceKey || null },
+      );
+    }
+    mutationIds.add(mutation.id);
+  }
+
+  for (const precondition of preconditions) {
+    if (!precondition?.mutationId) {
+      throw new PushPlanError(
+        'PRECONDITION_INVALID',
+        'Ready plan contains a precondition without a mutation id.',
+        { resourceKey: precondition?.resourceKey || null },
+      );
+    }
+    if (!mutationIds.has(precondition.mutationId)) {
+      throw new PushPlanError(
+        'PRECONDITION_UNMATCHED',
+        `Ready plan contains a precondition for unknown mutation ${precondition.mutationId}.`,
+        {
+          mutationId: precondition.mutationId,
+          resourceKey: precondition.resourceKey || null,
+        },
+      );
+    }
+    if (preconditionByMutationId.has(precondition.mutationId)) {
+      throw new PushPlanError(
+        'PRECONDITION_DUPLICATE',
+        `Ready plan contains duplicate preconditions for mutation ${precondition.mutationId}.`,
+        {
+          mutationId: precondition.mutationId,
+          resourceKey: precondition.resourceKey || null,
+        },
+      );
+    }
+    preconditionByMutationId.set(precondition.mutationId, precondition);
+  }
+
+  for (const mutation of mutations) {
+    const precondition = preconditionByMutationId.get(mutation.id);
+    if (!precondition) {
+      throw new PushPlanError(
+        'PRECONDITION_MISSING',
+        `Ready plan mutation ${mutation.id} has no live-remote precondition.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+        },
+      );
+    }
+    if (precondition.resourceKey !== mutation.resourceKey) {
+      throw new PushPlanError(
+        'PRECONDITION_RESOURCE_MISMATCH',
+        `Ready plan precondition for ${mutation.id} targets ${precondition.resourceKey}, not ${mutation.resourceKey}.`,
+        {
+          mutationId: mutation.id,
+          expectedResourceKey: mutation.resourceKey,
+          preconditionResourceKey: precondition.resourceKey,
+        },
+      );
+    }
+    if (precondition.expectedHash !== mutation.remoteBeforeHash) {
+      throw new PushPlanError(
+        'PRECONDITION_HASH_MISMATCH',
+        `Ready plan precondition hash does not match mutation remoteBeforeHash for ${mutation.resourceKey}.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          expectedHash: mutation.remoteBeforeHash,
+          preconditionHash: precondition.expectedHash,
+        },
+      );
+    }
     const actualHash = resourceHash(remote, precondition.resource);
     if (actualHash !== precondition.expectedHash) {
       throw new PushPlanError(
