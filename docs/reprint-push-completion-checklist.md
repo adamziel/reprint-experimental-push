@@ -61,7 +61,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [ ] RPP-0047 (Near / release-gates) Add generated coverage for missing production secret gate, variant 3. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0048 (Near / release-gates) Add generated coverage for Application Password credential binding, variant 3. Success: progress report links the command and observed status.
 - [ ] RPP-0049 (Near / release-gates) Add generated coverage for manage_options capability proof, variant 3. Success: scenario matrix records the negative and positive path.
-- [ ] RPP-0050 (Near / release-gates) Add generated coverage for same source URL identity proof, variant 3. Success: tmux-visible run prints a final bracketed status marker.
+- [x] RPP-0050 (Near / release-gates) Add generated coverage for same source URL identity proof, variant 3. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0051 (Near / release-gates) Add generated coverage for preflight route identity proof, variant 3. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0052 (Near / release-gates) Add generated coverage for dry-run route eligibility proof, variant 3. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0053 (Near / release-gates) Add generated coverage for apply route pre-mutation proof, variant 3. Success: progress report links the command and observed status.
