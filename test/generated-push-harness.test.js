@@ -54,6 +54,13 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'wp-postmeta-create-update-delete',
+  'wp-postmeta-cud',
+  'wp-postmeta-create-update-delete-ready',
+  'wp-postmeta-create-update-delete-stale',
+  'wp-postmeta-create',
+  'wp-postmeta-update',
+  'wp-postmeta-delete',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'wp-term-taxonomy-graph',
@@ -276,6 +283,108 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+test('RPP-0128 wp_postmeta create/update/delete target has ready apply and stale replay coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpPostmetaCreateUpdateDelete;
+
+  assert.ok(coverage, 'missing wp_postmeta create/update/delete target coverage');
+  assert.equal(coverage.family, 'wp-postmeta-create-update-delete');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-postmeta-create-update-delete']);
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(Object.values(coverage.perTier), Array(10).fill(1));
+  assert.equal(coverage.statuses.ready, 5, 'target should include deterministic ready wp_postmeta cases');
+  assert.equal(coverage.statuses.conflict, 5, 'target should include deterministic stale wp_postmeta cases');
+  assert.equal(
+    JSON.stringify(report).includes('Generated wp_postmeta'),
+    false,
+    'summary evidence must not expose raw wp_postmeta values',
+  );
+
+  const cases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'wp-postmeta-create-update-delete');
+  const readyCases = cases.filter((testCase) => testCase.tags.has('wp-postmeta-create-update-delete-ready'));
+  const staleCases = cases.filter((testCase) => testCase.tags.has('wp-postmeta-create-update-delete-stale'));
+
+  assert.equal(cases.length, 10, 'wp_postmeta CUD family should be emitted once per tier');
+  assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 2, 4, 6, 8]);
+  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [1, 3, 5, 7, 9]);
+
+  for (const readyCase of readyCases) {
+    assertWpPostmetaCreateUpdateDeleteShape(readyCase, { stale: false });
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 3, 'ready wp_postmeta case should create, update, and delete rows');
+    assert.equal(ready.applied, true, 'ready wp_postmeta case should apply through the harness');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready wp_postmeta apply should preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready wp_postmeta case should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const staleCase of staleCases) {
+    assertWpPostmetaCreateUpdateDeleteShape(staleCase, { stale: true });
+    const stale = validateGeneratedCase(staleCase);
+    assert.equal(stale.status, 'conflict');
+    assert.ok(stale.conflicts >= 1, 'stale wp_postmeta remote drift should conflict');
+    assert.equal(stale.applied, false, 'stale wp_postmeta case must not apply mutations');
+  }
+});
+
+function assertWpPostmetaCreateUpdateDeleteShape(testCase, { stale }) {
+  const createRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([id, row]) => !testCase.base.db.wp_postmeta[id]
+      && row.meta_value.startsWith('Generated wp_postmeta create '));
+  const updateRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([id, row]) => testCase.base.db.wp_postmeta[id]
+      && row.meta_value.startsWith('Generated wp_postmeta update '));
+  const deleteRows = Object.entries(testCase.base.db.wp_postmeta)
+    .filter(([id, row]) => row.meta_value.startsWith('Base wp_postmeta delete ')
+      && !testCase.local.db.wp_postmeta[id]
+      && testCase.remote.db.wp_postmeta[id]);
+
+  assert.equal(createRows.length, 1, `${testCase.id} should create one wp_postmeta row`);
+  assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_postmeta row`);
+  assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_postmeta row`);
+
+  const [, createRow] = createRows[0];
+  const [updateRowId, localUpdateRow] = updateRows[0];
+  const [deleteRowId, deleteBaseRow] = deleteRows[0];
+  assert.ok(testCase.base.db.wp_posts[`ID:${createRow.post_id}`], `${testCase.id} should keep the meta parent post in base`);
+  assert.equal(
+    testCase.remote.db.wp_postmeta[deleteRowId].meta_value,
+    deleteBaseRow.meta_value,
+    `${testCase.id} should not mutate the deleted meta row remotely before apply`,
+  );
+  assert.equal(
+    testCase.remote.db.wp_postmeta[`meta_id:${createRow.meta_id}`],
+    undefined,
+    `${testCase.id} created meta row should be local-only before apply`,
+  );
+
+  if (stale) {
+    assert.notEqual(
+      testCase.remote.db.wp_postmeta[updateRowId].meta_value,
+      testCase.base.db.wp_postmeta[updateRowId].meta_value,
+      `${testCase.id} stale case should drift the updated meta row remotely`,
+    );
+    assert.notEqual(
+      testCase.remote.db.wp_postmeta[updateRowId].meta_value,
+      localUpdateRow.meta_value,
+      `${testCase.id} stale case remote value should differ from local`,
+    );
+    return;
+  }
+
+  assert.deepEqual(
+    testCase.remote.db.wp_postmeta[updateRowId],
+    testCase.base.db.wp_postmeta[updateRowId],
+    `${testCase.id} ready case remote updated meta row should match base before apply`,
+  );
 }
 
 test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {

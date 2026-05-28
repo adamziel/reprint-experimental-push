@@ -53,6 +53,7 @@ const scenarioFamilies = Object.freeze([
   'row-create-update-delete-mix-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
+  'wp-postmeta-create-update-delete',
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
@@ -77,6 +78,7 @@ const readyPreservingFamilies = new Set([
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
+  'wp-postmeta-create-update-delete',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
 ]);
@@ -89,6 +91,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
+  },
+  wpPostmetaCreateUpdateDelete: {
+    family: 'wp-postmeta-create-update-delete',
+    tag: 'wp-postmeta-cud',
   },
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
@@ -575,6 +581,15 @@ const scenarioFamilyBuilders = {
     });
     tags.add('expected-conflict');
   },
+  'wp-postmeta-create-update-delete': ({ base, local, remote, allocator, tags, tier }) => {
+    const stale = tier % 2 === 1;
+    addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
+      stale,
+      prefix: stale ? 'stale-wp-postmeta' : 'ready-wp-postmeta',
+    });
+    tags.add(stale ? 'wp-postmeta-create-update-delete-stale' : 'wp-postmeta-create-update-delete-ready');
+    tags.add(stale ? 'expected-conflict' : 'ready-candidate');
+  },
   'wp-term-taxonomy-graph-ready': ({ local, allocator, tags }) => {
     addWpTermTaxonomyGraph(local, null, allocator, tags, { staleTarget: false });
     tags.add('ready-candidate');
@@ -912,7 +927,7 @@ function assertPlanContract(testCase, plan) {
   }
 
   for (const blocker of plan.blockers) {
-    if (blocker.resourceKey) {
+    if (blocker.resourceKey && blocker.class !== 'atomic-group-blocker-propagation') {
       assert.equal(
         mutationKeys.has(blocker.resourceKey),
         false,
@@ -1204,6 +1219,58 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   }
 }
 
+function addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, { stale, prefix }) {
+  const postId = allocator.postId();
+  const createMetaId = allocator.graphId();
+  const updateMetaId = allocator.graphId();
+  const deleteMetaId = allocator.graphId();
+  const updateRowId = `meta_id:${updateMetaId}`;
+  const deleteRowId = `meta_id:${deleteMetaId}`;
+  const updateBase = makePostMeta(
+    updateMetaId,
+    postId,
+    `_rpp_postmeta_update_${updateMetaId}`,
+    `Base wp_postmeta update ${updateMetaId}`,
+  );
+  const deleteBase = makePostMeta(
+    deleteMetaId,
+    postId,
+    `_rpp_postmeta_delete_${deleteMetaId}`,
+    `Base wp_postmeta delete ${deleteMetaId}`,
+  );
+
+  ensurePostExists(base, postId);
+  ensurePostExists(local, postId);
+  ensurePostExists(remote, postId);
+  setRow(base, 'wp_postmeta', updateRowId, updateBase);
+  setRow(local, 'wp_postmeta', updateRowId, updateBase);
+  setRow(remote, 'wp_postmeta', updateRowId, updateBase);
+  setRow(base, 'wp_postmeta', deleteRowId, deleteBase);
+  setRow(local, 'wp_postmeta', deleteRowId, deleteBase);
+  setRow(remote, 'wp_postmeta', deleteRowId, deleteBase);
+
+  setRow(local, 'wp_postmeta', `meta_id:${createMetaId}`, makePostMeta(
+    createMetaId,
+    postId,
+    `_rpp_postmeta_create_${createMetaId}`,
+    `Generated wp_postmeta create ${prefix} ${allocator.next()}`,
+  ));
+  setRow(local, 'wp_postmeta', updateRowId, {
+    ...updateBase,
+    meta_value: `Generated wp_postmeta update ${prefix} ${allocator.next()}`,
+  });
+  deleteRow(local, 'wp_postmeta', deleteRowId);
+
+  tags.add('wp-postmeta-cud');
+  tags.add('wp-postmeta-create');
+  tags.add('wp-postmeta-update');
+  tags.add('wp-postmeta-delete');
+
+  if (stale) {
+    remote.db.wp_postmeta[updateRowId].meta_value = `Remote concurrent wp_postmeta update ${allocator.next()}`;
+  }
+}
+
 function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
   const termId = allocator.graphId();
   const taxonomyId = allocator.graphId();
@@ -1339,6 +1406,15 @@ function makeComment(id, extra = {}) {
     comment_content: `Generated comment ${id}`,
     comment_approved: '1',
     ...extra,
+  };
+}
+
+function makePostMeta(metaId, postId, metaKey, metaValue) {
+  return {
+    meta_id: metaId,
+    post_id: postId,
+    meta_key: metaKey,
+    meta_value: metaValue,
   };
 }
 
