@@ -239,14 +239,37 @@
       overflow-wrap: anywhere;
     }
 
-    .lane-status {
+    .percent {
       color: var(--muted);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 3px 8px;
-      background: var(--paper);
-      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
       white-space: nowrap;
+    }
+
+    .bar {
+      width: 100%;
+      height: 11px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #eef1f4;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0;
+      background: var(--blue);
+    }
+
+    .fill.green {
+      background: var(--green);
+    }
+
+    .fill.amber {
+      background: var(--amber);
+    }
+
+    .fill.red {
+      background: var(--red);
     }
 
     .note {
@@ -299,33 +322,6 @@
 
     .link-list a {
       font-weight: 700;
-    }
-
-    details {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--paper);
-      box-shadow: var(--shadow);
-    }
-
-    details summary {
-      cursor: pointer;
-      list-style: none;
-      padding: 14px 16px;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    details summary::-webkit-details-marker {
-      display: none;
-    }
-
-    details[open] summary {
-      border-bottom: 1px solid var(--line);
-    }
-
-    details > .details-body {
-      padding: 0 16px 16px;
     }
 
     .proof-list {
@@ -459,6 +455,7 @@
         order: -1;
       }
 
+      .summary,
       .latest-evidence-panel,
       .evidence-map-panel,
       .lane .note {
@@ -477,75 +474,156 @@
       <div>
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
-        <time class="update-stamp" datetime="2026-05-27T12:29:04+02:00">Last updated: May 27, 2026, 12:29:04 CEST</time>
-        <p class="lead">Freshness update: the public page is current as of the active supervision cycle. Release gates still remain `0/4`. `c54fbd738357665d0f26813b34e2985a6d01d221` is the current reliable-executor head on the visible current-head rows. The current reliable head is still checked-path support evidence and does not prove the missing production-owned source mutation boundary on the real Reprint endpoint with auth/session issuance/readback, durable restart-readable journal storage with lease fencing, plugin-driver ownership on the release boundary, preserved rejected-remote evidence, and apply-time revalidation before first mutation. Evidence links now point to the 2026-05-27 12:29:04 CEST audit refresh.</p>
+        <p class="lead">Current integrated evidence is on <strong>lane/evidence-integration-20260527</strong> through <strong>4cd502b7</strong>; it now includes a 1000-item near-to-far completion checklist with 137 verified items checked, a 20-gate fail-closed release evaluator with auth readback drift, Application Password binding, same-source identity, generated same-source identity, same-source recovery drift regression, preflight route identity, generated preflight route identity, dry-run route eligibility, apply route pre-mutation, journal route read-only, recovery inspect read-only, releaseMovement summary, tmux stdout proof status marker, progress.html release timestamp coverage, generated progress timestamp coverage, missing local URL coverage, missing production secret coverage, `.agents/RELEASE_GATES.md` status-row coverage, and verify:release failure reason coverage, a 360-case generated push harness with file create/update/delete, directory-descendant conflict, file type-swap, row create/update/delete, `wp_posts` create/update/delete, `wp_term_taxonomy` graph coverage, comment-user graph reference coverage, localHash correctness, and generated atomic blocker propagation, stale plugin-owner-context rejection, planner summary count consistency, generated planner summary count consistency, keep-remote decision consistency, file type-swap descendant refusal, already-in-sync decision count consistency, blocked plan apply refusal, conflict plan apply refusal, conflict plan apply refusal variant proof, conflict evidence hash redaction, forged ready plan defense, redacted raw value evidence, atomic group blocker propagation variant proof, local plugin data stale owner-context refusal, stale plugin metadata owner refusal, plugin-driver boundary hardening, driver registration API proof, driver registration focused regression, serialized option validator proof, activation hook side-effect boundary proof, plugin uninstall/delete refusal, driver apply validation hook evidence, driver audit evidence redaction, Brewcommerce-derived local production proof, recovery-journal retry hardening and repair classification, guarded chunk-transfer benchmark gates, audit evidence, graph identity-map rewrites including post_tag taxonomy graph evidence, production importer/exporter identity-map proof, and comment-user generated graph evidence, read-only executor auth inspect evidence, a fail-closed Docker local-production harness with release-gate artifact output, evidence coverage manifest, route proof matrix, protocol compatibility contract, operator proof status utility, release-evidence provenance checks, checklist completion lint, artifact redaction scanning, and required release checks reporting. Docker or external production WordPress, production credential lifecycle, production chunk rollout, and broader plugin-driver semantics remain required before final release readiness.</p>
+        <time class="update-stamp" datetime="2026-05-28T11:45:00+02:00">Last updated: May 28, 2026, 11:45 CEST</time>
         <div class="meta" aria-label="Project status">
-          <span class="pill">Evidence class: lab-only</span>
-          <span class="pill">Trend: `c54fbd738357665d0f26813b34e2985a6d01d221` is the current reliable head on the visible current-head rows; release gates stay at `0/4`</span>
-          <span class="pill">Top blocker: production-owned, non-lab-backed source mutation boundary on the real Reprint endpoint still blocks release-gate movement</span>
-          <span class="pill">Gate status: 0/4 verified; 4 pending</span>
-          <span class="pill">Open gates: executor/auth, recovery journal, Docker/Playground, plugin drivers</span>
-          <span class="pill">Supervised scope: 8 fast/low worker lanes plus the dedicated live progress watcher</span>
-          <span class="pill">Previous audit: <a href="docs/progress-log.md#2026-05-27-public-status-audit-122013">2026-05-27 12:20:13</a></span>
-          <span class="pill">Newest audit: <a href="docs/progress-log.md#2026-05-27-public-status-audit-122904">2026-05-27 12:29:04</a></span>
+          <span class="pill">Targeted journal tests passing</span>
+          <span class="pill">Complex local candidate proof</span>
+          <span class="pill">Durable DB journal accepted</span>
+          <span class="pill">190 checked mutations</span>
+          <span class="pill">580 journal rows verified</span>
+          <span class="pill">Paged journal readback</span>
+          <span class="pill">10-page restart readback</span>
+          <span class="pill">Featured image graph closed</span>
+          <span class="pill">24 graph proof mutations</span>
+          <span class="pill">Taxonomy graph closed</span>
+          <span class="pill">26 taxonomy proof mutations</span>
+          <span class="pill">Post parent graph closed</span>
+          <span class="pill">24 post-parent mutations</span>
+          <span class="pill">Comment graph closed</span>
+          <span class="pill">25 comment graph mutations</span>
+          <span class="pill">83 journal rows verified</span>
+          <span class="pill">9 remote-drift conflicts held</span>
+          <span class="pill">Docker unavailable in sandbox</span>
+          <span class="pill">Full Woo import timed out at auth gate</span>
+          <span class="pill">Runtime proof fails closed</span>
+          <span class="pill">Graph post identities mapped</span>
+          <span class="pill">Release-state plugin driver revalidated</span>
+          <span class="pill">22 plugin-driver proof mutations</span>
+          <span class="pill">74 plugin-driver journal rows</span>
+          <span class="pill">GATE-4 local candidate</span>
+          <span class="pill">Plugin-driver guard tests pass</span>
+          <span class="pill">360 generated push cases</span>
+          <span class="pill">1000 completion goals</span>
+          <span class="pill">137 RPP goals checked</span>
+          <span class="pill">863 RPP goals open</span>
+          <span class="pill">RPP-0001 to RPP-1000</span>
+          <span class="pill">20 release gates modeled</span>
+          <span class="pill">Release gate evaluator passes</span>
+          <span class="pill">Verify release failure reason covered</span>
+          <span class="pill">Recovery journal 21/21 tests</span>
+          <span class="pill">Same-claim retry hardened</span>
+          <span class="pill">Incomplete commit refused</span>
+          <span class="pill">43 release-gate suite tests</span>
+          <span class="pill">RPP-0070 source identity</span>
+          <span class="pill">Generated progress timestamp covered</span>
+          <span class="pill">Missing local URL gate covered</span>
+          <span class="pill">Missing production secret covered</span>
+          <span class="pill">Chunk gates 7 pass / 3 blocked</span>
+          <span class="pill">Graph identity rewrites integrated</span>
+          <span class="pill">Importer/exporter identity map proved</span>
+          <span class="pill">RPP-0347 comment-user graph</span>
+          <span class="pill">Generated harness 12/12 tests</span>
+          <span class="pill">Graph checks 23/23 tests</span>
+          <span class="pill">Graph planner 122/122 tests</span>
+          <span class="pill">Push planner 102/102 tests</span>
+          <span class="pill">LocalHash correctness proved</span>
+          <span class="pill">Keep-remote decisions counted</span>
+          <span class="pill">RPP-0205 type-swap descendant</span>
+          <span class="pill">RPP-0214 already-in-sync counts</span>
+          <span class="pill">RPP-0216 blocked-plan apply</span>
+          <span class="pill">Conflict apply refusal proved</span>
+          <span class="pill">RPP-0237 conflict refusal proved</span>
+          <span class="pill">Planner/generated 115 tests</span>
+          <span class="pill">RPP-0240 blocker proof</span>
+          <span class="pill">Forged ready plans refused</span>
+          <span class="pill">Raw value evidence redacted</span>
+          <span class="pill">Atomic blockers propagated</span>
+          <span class="pill">Plugin-driver stale metadata refused</span>
+          <span class="pill">Driver registration API proved</span>
+          <span class="pill">RPP-0461 driver regression</span>
+          <span class="pill">RPP-0468 serialized option validator</span>
+          <span class="pill">RPP-0415 activation hook effects</span>
+          <span class="pill">Broad suite failures pre-existing</span>
+          <span class="pill">Push planner 105/105 tests</span>
+          <span class="pill">Plugin deletes refused</span>
+          <span class="pill">Audits keep NO-GO</span>
+          <span class="pill">Read-only auth inspect integrated</span>
+          <span class="pill">Provenance gate wired</span>
+          <span class="pill">Checklist lint active</span>
+          <span class="pill">Artifact redaction scan active</span>
+          <span class="pill">Required checks report active</span>
+          <span class="pill">Live team rpp-24 through rpp-32</span>
+          <span class="pill">10 complexity tiers</span>
+          <span class="pill">192 generated ready cases</span>
+          <span class="pill">20 wp_posts target cases</span>
+          <span class="pill">20 wp_term_taxonomy target cases</span>
+          <span class="pill">Tier-9 ready/apply cases</span>
+          <span class="pill">tmux proof status 0</span>
+          <span class="pill">Evidence links below</span>
+          <span class="pill">Final release requires external proof</span>
         </div>
       </div>
       <div class="header-actions" aria-label="Progress evidence">
-        <a class="log-link" href="docs/progress-log.md#2026-05-27-public-status-audit-122904">Open newest audit</a>
-        <a class="log-link" href="#proof-gates">Open release-gate checklist</a>
-        <p><strong>Evidence trail:</strong> <a href="docs/progress-log.md">log</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="#proof-gates">gate checklist</a>.</p>
+        <a class="log-link" href="docs/progress-log.md">Open progress log</a>
+        <p>Scan view only. Detailed evidence lives in the linked docs.</p>
       </div>
     </header>
 
     <section class="summary" aria-label="Current evidence summary">
-          <div class="metric">
-            <strong><a href="audits/objective-audit.md">Lab proof</a></strong>
-          <span>Latest lane evidence keeps the checked release boundary, core graph identity mapping evidence, live `/db-journal` durability requirement, and the supporting no-data-loss, recovery, same-plan, critic, and no-data-loss-invariants proofs visible without changing the 0/4 release gates; the latest reliable-executor head is `c54fbd738357665d0f26813b34e2985a6d01d221`, and the live release verifier still fails to prove the missing production-owned source mutation boundary. Evidence links now point to the 2026-05-27 12:29:04 CEST audit refresh.</span>
-        </div>
       <div class="metric">
-        <strong>Pending</strong>
-          <span>Production-owned, non-lab-backed source mutation boundary on the real Reprint endpoint remains the blocker</span>
+        <strong>137</strong>
+        <span>verified checklist goals</span>
       </div>
       <div class="metric">
-        <strong>0/4</strong>
-          <span>release gates verified by evidence so far</span>
+        <strong>863</strong>
+        <span>open checklist goals</span>
       </div>
       <div class="metric">
-        <strong>4 open</strong>
-          <span>gates remain pending; the checklist below names each blocker explicitly</span>
+        <strong>20</strong>
+        <span>release gate definitions</span>
+      </div>
+      <div class="metric">
+        <strong>360</strong>
+        <span>generated harness cases</span>
       </div>
     </section>
 
     <div class="layout">
       <section class="section" aria-labelledby="lanes">
         <div class="section-head">
-          <h2 id="lanes">Evidence Gaps</h2>
-          <span>Current blockers behind the supervised release gates; evidence gaps remain explicit</span>
+          <h2 id="lanes">Work Lanes</h2>
+          <span>Evidence, not optimism</span>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="lane-status">Gap open</span></div>
-          <p class="note">Independent delete/edit cases are covered in lab evidence. Gap: real graph identity mapping.</p>
+          <div class="lane-head"><strong>No Data Loss: merge invariants</strong><span class="percent">74%</span></div>
+          <div class="bar" aria-label="No data loss merge invariants 74 percent"><div class="fill green" style="width:74%"></div></div>
+          <p class="note">The generated harness now covers 360 three-way push cases with 4984 planned mutations, including file create/update/delete mix coverage, directory-descendant conflict cases with per-tier summary evidence, ready/non-ready file type-swap coverage, row create/update/delete mixes that reject stale replay before mutation, 20 `wp_posts` create/update/delete target cases, 20 `wp_term_taxonomy` graph target cases, and comment-user graph reference coverage across all 10 tiers. Planner summary evidence now proves emitted mutations, decisions, conflicts, blockers, and atomic groups match `plan.summary` across ready, conflict, blocked, and atomic fixtures; generated planner summary evidence now replans all 360 generated cases twice and compares aggregate summary totals with generated harness report totals; localHash correctness now binds ready mutation evidence to planned values and rejects missing, malformed, forged, stale-value, and stale-snapshot hash evidence before mutation; the keep-remote invariant also verifies deterministic file, plugin, and row decisions with hash-only/redacted planner evidence and no mutation or precondition for preserved remote resources; RPP-0205 additionally refuses a local directory-to-file type swap when the remote created a descendant, emits hash-only file-topology-conflict evidence, produces no unsafe mutation or precondition, and leaves remote state unchanged; RPP-0214 proves matching local/remote file, plugin, and row changes emit only `already-in-sync` decisions with zero mutations and zero preconditions; RPP-0216 proves blocked plans refuse apply before mutation, write no durable journal event, and leave the remote snapshot unchanged; conflict plan apply refusal proves non-ready conflict plans reject before durable journal events or mutation, and the RPP-0237 variant also rejects forged ready status and stale mutation attempts before durable journal events; conflict evidence hash redaction serializes row conflicts with keys, reason class, policy, states, and hashes only; forged ready plan defense validates mutation/precondition evidence before durable journal work or mutation; raw value evidence now stays redacted across conflict, refusal, and recovery-journal surfaces; atomic group blocker propagation now blocks otherwise valid sibling mutations when a group member has a direct blocker; local plugin data stale owner-context proof rejects live owner-plugin drift and forged owner-context hashes before mutation; importer/exporter identity-map proof rewrites dependent local-production graph rows to proven imported remote targets while blocking stale targets; RPP-0347 comment-user graph fixtures now include ready and stale cases and block stale remote user references before mutation with hash-only evidence. Ready plans still reject unplanned remote overwrites, stale-remote replay fails before mutation, and non-ready apply refuses mutation. Existing local production graph, journal, and plugin-driver proofs still stand. Gap: broader live production surfaces and general plugin-driver semantics.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="lane-status">Gap open</span></div>
-          <p class="note">Replay and failure-state coverage is sharper in the model only. Gap: production journal durability.</p>
+          <div class="lane-head"><strong>No Data Loss: recovery boundaries</strong><span class="percent">60%</span></div>
+          <div class="bar" aria-label="No data loss recovery boundaries 60 percent"><div class="fill green" style="width:60%"></div></div>
+          <p class="note">Integrated recovery hardening now covers deterministic paged restart readback, stale lease/claim identity, append-only same-claim retry evidence, target-envelope drift rejection, and refusal to mark incomplete apply as `journal-completed`. The local topology also retains durable DB journal and process-kill readback evidence. Gap: Docker/external crash durability, operator repair finalization, and broader resource recovery.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="lane-status">Gate blocked</span></div>
-          <p class="note">Docs name the production push flow, but proof is still local-lab scoped. Gap: production auth, journal, and leases.</p>
+          <div class="lane-head"><strong>Reliable executor and protocol</strong><span class="percent">76%</span></div>
+          <div class="bar" aria-label="Reliable executor and protocol 76 percent"><div class="fill amber" style="width:76%"></div></div>
+          <p class="note">The release verifier reports `LIVE_RELEASE_BOUNDARY_OK` locally with 190-mutation, featured-graph, taxonomy-graph, post-parent, comment graph, and release-state plugin-driver receipts, auth/session continuity, paged durable journal readback, fresh signed retry nonces, replay equivalence, apply-time revalidation, and no false commit after local SIGKILL/restart. The release-gate command now also proves auth source readback drift, Application Password binding drift, same-source identity drift, preflight route identity drift, missing local URL evidence, missing production secret evidence, dry-run route eligibility failure, apply route pre-mutation failure, and journal route read-only failure close without mutation. GATE-4 support tests still reject unknown plugin data, mismatched owner/driver allowlists, stale plugin metadata owner contexts, direct `active_plugins`, plugin uninstall/delete mutations without explicit delete drivers, unowned serialized options, malformed or shape-mismatched serialized option payloads, and unproven activation hook side effects before mutation, while driver-proofed activation hook effects are quarantined as support-only/non-release evidence. Gap: Docker/external production runtime, credential lifecycle, and broader plugin drivers.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Fast path and chunking</strong><span class="lane-status">Proof missing</span></div>
-          <p class="note">Rejected fast paths now name the broken safety gate. Gap: real large-site runtime benchmark and rollout proof.</p>
+          <div class="lane-head"><strong>Fast path and chunking</strong><span class="percent">37%</span></div>
+          <div class="bar" aria-label="Fast path and chunking 37 percent"><div class="fill" style="width:37%"></div></div>
+          <p class="note">The Brewcommerce-derived topology now has a 190-mutation receipt, paged journal proof that crosses more than one durable readback window, and restart-safe cursor readback in the hard-kill smoke. Gap: guarded transfer chunk benchmark and rollout proof.</p>
         </div>
 
         <div class="lane">
-          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="lane-status">Lab-only</span></div>
-          <p class="note">Current audits reflect lab evidence only. Gap: production-backed internals plus graph and plugin driver proof. This panel summarizes the supervised release gates, not the full lane roster.</p>
+          <div class="lane-head"><strong>Independent evidence and critique</strong><span class="percent">74%</span></div>
+          <div class="bar" aria-label="Independent evidence and critique 74 percent"><div class="fill amber" style="width:74%"></div></div>
+          <p class="note">Durable local production, runtime capability, graph identity, graph variants, production importer/exporter identity-map proof, complex-site local production, journal-window, journal-pages, paged restart, plugin-driver guard proofs, stale plugin metadata owner refusal, activation hook side-effect boundary proof, the release-state plugin-driver local verifier, and the generated 360-case harness are tmux-visible or command-visible. Gap: independent re-audit against Docker/external WordPress and broader plugin drivers.</p>
         </div>
       </section>
 
@@ -553,14 +631,11 @@
         <section class="panel" aria-labelledby="supervisor-feedback">
           <h2 id="supervisor-feedback">Supervisor Feedback</h2>
           <ul class="compact-list">
-            <li><strong>Lab evidence</strong><span>`d8bfe95164e1ba2df1dcf78d5310207176e74942` remains checked-path support evidence; see the <a href="audits/objective-audit.md">objective audit</a> and linked executor, recovery, playground, protocol, and feedback docs.</span></li>
-            <li><strong>Top blocker</strong><span>Real WordPress executor/auth still blocks any production push claim.</span></li>
-            <li><strong>Release gates</strong><span>Four pending gates stay explicit below: executor/auth, recovery journal, Docker/Playground, and plugin drivers.</span></li>
-            <li><strong>Audit note</strong><span>The newest dated entry above is the public audit; the checklist below stays the source of truth for open gates and evidence gaps, with the current reliable-executor head at `c54fbd738357665d0f26813b34e2985a6d01d221` keeping the posture at `0/4` while the remaining boundary is still the production-owned, non-lab-backed source mutation boundary on the real Reprint endpoint.</span></li>
-            <li><strong>Going well</strong><span>Reliable head `c54fbd738357665d0f26813b34e2985a6d01d221` remains support evidence rather than the missing production boundary.</span></li>
-            <li><strong>Not going well</strong><span>The production-owned endpoint proof is still missing; this head is still checked-verifier support evidence.</span></li>
-            <li><strong>Progress change</strong><span>Public surfaces now reflect `c54fbd738357665d0f26813b34e2985a6d01d221` and the conservative `0/4` gate posture while critic and auditor treat the current support evidence as below the production-owned real-endpoint boundary.</span></li>
-            <li><strong>Next nudge</strong><span>Have reliable executor use the explicit live path to prove one real endpoint boundary before claiming a gate.</span></li>
+            <li><strong>Going well</strong><span>The 1000-item tracker now has 137 verified items checked. Release-gate coverage, auth readback drift, Application Password binding drift, same-source identity drift, generated same-source identity drift, same-source recovery drift regression, preflight route identity drift, generated preflight route identity drift, missing local URL evidence, missing production secret evidence, dry-run route eligibility failure, apply route pre-mutation failure, journal route read-only failure, recovery inspect read-only failure, releaseMovement summary proof, tmux stdout proof status marker, progress.html release timestamp proof, generated progress timestamp proof, `.agents/RELEASE_GATES.md` status-row proof, verify:release failure reason proof, stale plugin-owner-context rejection, planner summary count consistency, generated planner summary count consistency, localHash correctness, keep-remote decision consistency, file type-swap descendant refusal, already-in-sync decision count consistency, blocked plan apply refusal, conflict plan apply refusal, conflict plan apply refusal variant proof, conflict evidence hash redaction, forged ready plan defense, redacted raw value evidence, atomic group blocker propagation, atomic group blocker propagation variant proof, local plugin data stale owner-context refusal, recovery-journal retry and repair boundaries, guarded chunk benchmark gates, plugin-driver guards, driver registration API proof, driver registration focused regression, serialized option validator proof, activation hook side-effect boundary proof, plugin uninstall/delete refusal, driver apply validation hook evidence, driver audit evidence redaction, audits, graph identity rewrites including post_tag taxonomy graph evidence, production importer/exporter identity-map proof, and comment-user generated graph evidence, stale plugin metadata owner refusal, Docker fail-closed harness artifact output, evidence coverage manifest, route proof matrix, protocol compatibility, operator proof status, release-evidence provenance checks, checklist completion lint, artifact redaction scanning, required release checks reporting, and RPP-0101 through RPP-0104 plus RPP-0107 and RPP-0112 generated harness coverage are integrated through 4cd502b7.</span></li>
+            <li><strong>Still strong</strong><span>The release-gate evaluator, generated harness, local complex-site proof, durable journal, graph variants, and release-state plugin-driver candidate evidence remain available.</span></li>
+            <li><strong>Not yet done</strong><span>Docker/external WordPress, production credentials, final-release gate evidence, rollback repair, redaction, protocol compatibility, production chunk receipts/executors, broad graph/plugin semantics, CI gates, broader auth lifecycle fixes, and critic-observed red-suite fixes remain required.</span></li>
+            <li><strong>Progress change</strong><span>No final readiness movement; integrated hardening and audits are not final production proof.</span></li>
+            <li><strong>Next nudge</strong><span>Integrate one tested worker slice at a time and keep branch-local output out of readiness scoring.</span></li>
           </ul>
           <p class="note"><a href="docs/supervisor-feedback.md">Open full feedback log</a></p>
         </section>
@@ -568,12 +643,53 @@
         <section class="panel latest-evidence-panel" aria-labelledby="latest-evidence">
           <h2 id="latest-evidence">Latest Evidence</h2>
           <ul class="link-list">
-            <li><a href="docs/approach-scorecard.md">Approach scorecard</a></li>
+            <li><a href="scripts/playground/local-production-release-verify.mjs">Local production release verifier</a></li>
+            <li><a href="docs/reprint-push-completion-checklist.md">1000-item completion checklist</a></li>
+            <li><a href="src/release-gates.js">Release gate evaluator</a></li>
+            <li><a href="test/release-gates.test.js">Release gate evaluator test</a></li>
+            <li><a href="docs/evidence/ao-release-gates.md">AO release-gates evidence</a></li>
+            <li><a href="docs/evidence/ao-release-evidence-provenance.md">AO release evidence provenance</a></li>
+            <li><a href="docs/evidence/ao-checklist-completion-lint.md">AO checklist completion lint evidence</a></li>
+            <li><a href="docs/evidence/ao-artifact-redaction-scan.md">AO artifact redaction scan evidence</a></li>
+            <li><a href="docs/evidence/ao-required-release-checks.md">AO required release checks evidence</a></li>
+            <li><a href="docs/evidence/rpp-0217-conflict-plan-apply-refusal.md">RPP-0217 conflict plan apply refusal evidence</a></li>
+            <li><a href="docs/evidence/rpp-0218-forged-ready-plan-defense.md">RPP-0218 forged ready plan defense evidence</a></li>
+            <li><a href="docs/evidence/rpp-0219-redacted-raw-value-evidence.md">RPP-0219 redacted raw value evidence</a></li>
+            <li><a href="docs/evidence/rpp-0220-atomic-group-blocker-propagation.md">RPP-0220 atomic group blocker propagation evidence</a></li>
+            <li><a href="docs/evidence/rpp-0227-local-plugin-data-stale-owner-context.md">RPP-0227 local plugin data stale owner-context evidence</a></li>
+            <li><a href="docs/evidence/rpp-0230-planner-summary-count-consistency-v2.md">RPP-0230 generated planner summary evidence</a></li>
+            <li><a href="docs/evidence/rpp-0233-local-hash-correctness-v2.md">RPP-0233 localHash correctness evidence</a></li>
+            <li><a href="docs/evidence/ao-generated-harness-rpp-0101.md">AO generated harness RPP-0101 evidence</a></li>
+            <li><a href="docs/evidence/ao-generated-harness-rpp-0102.md">AO generated harness RPP-0102 evidence</a></li>
+            <li><a href="docs/evidence/ao-generated-harness-rpp-0103.md">AO generated harness RPP-0103 evidence</a></li>
+            <li><a href="docs/evidence/ao-generated-harness-rpp-0104.md">AO generated harness RPP-0104 evidence</a></li>
+            <li><a href="docs/evidence/ao-journal-recovery.md">AO journal recovery evidence</a></li>
+            <li><a href="docs/evidence/ao-chunking-benchmark.md">AO chunking benchmark evidence</a></li>
+            <li><a href="docs/evidence/ao-plugin-driver.md">AO plugin-driver evidence</a></li>
+            <li><a href="docs/evidence/ao-graph-identity.md">AO graph identity evidence</a></li>
+            <li><a href="docs/evidence/ao-executor-auth-leases.md">AO executor auth/lease evidence</a></li>
+            <li><a href="docs/evidence/ao-independent-audit.md">AO independent audit evidence</a></li>
+            <li><a href="docs/evidence/ao-critic.md">AO critic evidence</a></li>
+            <li><a href="src/recovery-journal.js">Recovery journal implementation</a></li>
+            <li><a href="test/recovery-journal.test.js">Recovery journal tests</a></li>
+            <li><a href="docs/evidence/ao-progress-report.md">AO progress no-go report</a></li>
+            <li><a href="scripts/harness/generated-push-cases.js">Generated push harness</a></li>
+            <li><a href="test/generated-push-harness.test.js">Generated push harness test</a></li>
+            <li><a href="docs/generated-push-harness.md">Generated harness design note</a></li>
+            <li><a href="scripts/playground/local-production-complex-site-proof.js">Complex local production proof helper</a></li>
+            <li><a href="test/local-production-complex-site-proof.test.js">Complex local production proof test</a></li>
+            <li><a href="scripts/playground/push-db-journal-lib.php">Durable DB journal library</a></li>
+            <li><a href="scripts/playground/db-journal-process-kill-smoke.mjs">Paged DB journal process-kill smoke</a></li>
+            <li><a href="scripts/playground/runtime-capability-proof.mjs">Runtime capability proof</a></li>
+            <li><a href="docs/audits/runtime-capability-proof-20260527.md">Runtime capability audit</a></li>
+            <li><a href="scripts/playground/snapshot-lib.php">Playground snapshot graph exporter</a></li>
+            <li><a href="test/production-shaped-proof.test.js">Production-shaped proof tests</a></li>
             <li><a href="scripts/playground/production-plugin-package-smoke.mjs">Packaged plugin smoke</a></li>
             <li><a href="scripts/playground/production-shaped-route-smoke.mjs">Production-shaped route smoke</a></li>
             <li><a href="plugins/reprint-push/reprint-push.php">Plugin wrapper</a></li>
             <li><a href="scripts/bench/guarded-executor-benchmark.js">Guarded benchmark</a></li>
             <li><a href="docs/scenario-matrix.md">Scenario matrix</a></li>
+            <li><a href="docs/approach-scorecard.md">Approach scorecard</a></li>
             <li><a href="docs/protocol.md">Protocol sketch</a></li>
             <li><a href="docs/playground-topology.md">Playground topology</a></li>
             <li><a href="audits/objective-audit.md">Objective audit</a></li>
@@ -582,108 +698,52 @@
             <li><a href="docs/supervisor-feedback.md">Supervisor feedback</a></li>
             <li><a href="docs/progress-log.md">Progress log</a></li>
           </ul>
-          <p class="note">Detailed caveats and command evidence live in these linked docs. The newest public audit is linked in the header.</p>
+          <p class="note">Detailed caveats and command evidence live in these linked docs.</p>
         </section>
 
-        <details class="panel" id="recent-public-audits" aria-labelledby="recent-audits">
-          <summary id="recent-audits">Recent Public Audits</summary>
-          <div class="details-body">
-            <ul class="link-list">
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-104544">2026-05-27 10:45:44</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-103825">2026-05-27 10:38:25</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-102613">2026-05-27 10:26:13</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-102105">2026-05-27 10:21:05</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-101031">2026-05-27 10:10:31</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-100843">2026-05-27 10:08:43</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-084607">2026-05-27 08:46:07</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-082729">2026-05-27 08:27:29</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-075934">2026-05-27 07:59:34</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-074737">2026-05-27 07:47:37</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-070652">2026-05-27 07:06:52</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-065050">2026-05-27 06:50:50</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-063940">2026-05-27 06:39:40</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-063625">2026-05-27 06:36:25</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-063258">2026-05-27 06:32:58</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-062809">2026-05-27 06:28:09</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-062054">2026-05-27 06:20:54</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-061337">2026-05-27 06:13:37</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-060907">2026-05-27 06:09:07</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-054945">2026-05-27 05:49:45</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-053708">2026-05-27 05:37:08</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-044036">2026-05-27 04:40:36</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-040542">2026-05-27 04:05:42</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-014211">2026-05-27 01:42:11</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-014006">2026-05-27 01:40:06</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-013818">2026-05-27 01:38:18</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-012928">2026-05-27 01:29:28</a></li>
-            <li><a href="docs/progress-log.md#2026-05-27-public-status-audit-012557">2026-05-27 01:25:57</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-231607">2026-05-26 23:16:07</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-223449">2026-05-26 22:34:49</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-214244">2026-05-26 21:42:44</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-184545">2026-05-26 18:45:45</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-183712">2026-05-26 18:37:12</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-183030">2026-05-26 18:32:20</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-181824">2026-05-26 18:18:24</a></li>
-              <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-180447">2026-05-26 18:04:47</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-175340">2026-05-26 17:53:40</a></li>
-          <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-142859">2026-05-26 14:28:59</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-141754">2026-05-26 14:17:54</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-141507">2026-05-26 14:15:07</a></li>
-            <li><a href="docs/progress-log.md#2026-05-26-public-status-audit-140924">2026-05-26 14:09:24</a></li>
-            <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-145837">2026-05-25 14:58:37</a></li>
-            <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-145345">2026-05-25 14:53:45</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-131748">2026-05-25 13:17:48</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-130247">2026-05-25 13:02:47</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-122857">2026-05-25 12:28:57</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-113721">2026-05-25 11:37:21</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-112922">2026-05-25 11:29:22</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-104325">2026-05-25 10:43:25</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-102955">2026-05-25 10:29:55</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-102425">2026-05-25 10:24:25</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-095906">2026-05-25 09:59:06</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-095757">2026-05-25 09:57:57</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-095547">2026-05-25 09:55:47</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-095415">2026-05-25 09:54:15</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-094558">2026-05-25 09:45:58</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-093855">2026-05-25 09:38:55</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-093320">2026-05-25 09:33:20</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-093123">2026-05-25 09:31:23</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-093017">2026-05-25 09:30:17</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092922">2026-05-25 09:29:22</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092841">2026-05-25 09:28:41</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092804">2026-05-25 09:28:04</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092639">2026-05-25 09:26:39</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092603">2026-05-25 09:26:03</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092446">2026-05-25 09:24:46</a></li>
-              <li><a href="docs/progress-log.md#2026-05-25-public-status-audit-092414">2026-05-25 09:24:14</a></li>
-            </ul>
-            <p class="note">Older entries stay in the log; the public page keeps only the newest audits on the first screen so current status stays easy to audit.</p>
-          </div>
-        </details>
-
         <section class="panel" aria-labelledby="proof-gates">
-          <h2 id="proof-gates">Release Gate Checklist</h2>
+          <h2 id="proof-gates">Pending Proof Gates</h2>
           <div class="proof-list">
-          <div class="proof-item"><span class="status">Lab proof</span><p>Freshness update: the public page is current as of the active supervision cycle, but release gates remain `0/4`. The current reliable head `c54fbd738357665d0f26813b34e2985a6d01d221` is still checked-path support evidence and still misses the production-owned endpoint boundary. That is core graph identity mapping hardening, not production-owned endpoint evidence. Evidence: <a href="docs/progress-log.md#2026-05-27-public-status-audit-122904">latest log entry</a>, <a href="audits/objective-audit.md">objective audit</a>, <a href="audits/critic.md">critic audit</a>.</p></div>
-            <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth. Next executable proof: make <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a> fail closed if the packaged route is lab-backed or if the source gate is not production-shaped. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>.</p></div>
-            <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Next executable proof: publish the durable storage result or the exact missing lease/fencing primitive. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
-          <div class="proof-item"><span class="status">Lab proof</span><p>Release gates remain `0/4`. `c54fbd738357665d0f26813b34e2985a6d01d221` is the current reliable head on the public current-head rows. Supporting evidence remains useful but verifier-scoped and still stops short of the missing production-owned source mutation boundary. Evidence: <a href="audits/objective-audit.md">objective audit</a>, <a href="audits/critic.md">critic audit</a>, <a href="docs/progress-log.md#2026-05-27-public-status-audit-122904">latest log entry</a>.</p></div>
-            <div class="proof-item"><span class="status">Gate 1</span><p>Pending: production WordPress executor and auth, with fail-closed source-gate proof in the production-shaped release command. Evidence: <a href="docs/executor.md">executor notes</a>, <a href="docs/protocol.md">protocol sketch</a>, <a href="scripts/playground/production-shaped-release-verify.mjs">release-verify runner</a>.</p></div>
-            <div class="proof-item"><span class="status">Gate 2</span><p>Pending: durable recovery journal with crash, lease, fencing, and rollback tests. Evidence: <a href="docs/recovery/apply-journal.md">recovery journal</a>.</p></div>
-            <div class="proof-item"><span class="status">Gate 3</span><p>Pending: Docker/full Playground integration beyond fixture labs. Evidence: <a href="docs/playground-topology.md">playground topology</a>.</p></div>
-            <div class="proof-item"><span class="status">Gate 4</span><p>Pending: WordPress graph identity mapping and plugin drivers. Evidence: <a href="docs/protocol.md">protocol sketch</a>, <a href="docs/supervisor-feedback.md">feedback log</a>.</p></div>
+            <div class="proof-item"><span class="status">Local candidate</span><p>`verify:release:local-production:complex-site:journal-pages` runs against live local WordPress URLs and reports `releaseMovement.allowed: true` with `gates: candidate-for-review` for a 190-mutation complex site; graph proof variants now cover 24-mutation featured-image, 26-mutation taxonomy, 24-mutation post-parent, and 25-mutation comment closures, and the plugin-driver variant covers a 22-mutation release-state boundary.</p></div>
+            <div class="proof-item"><span class="status">Tracker</span><p>`docs/reprint-push-completion-checklist.md` tracks 1000 near-to-far goals from `RPP-0001` release-gate foundation through `RPP-1000` final go/no-go release decision evidence; 137 are checked and 863 remain open.</p></div>
+            <div class="proof-item"><span class="status">Gate evaluator</span><p>`node --test test/release-gate-same-source-identity-regression.test.js test/release-gate-missing-production-secret-regression.test.js test/release-gate-missing-local-url-regression.test.js test/release-gate-progress-release-timestamp-generated.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js` proves 20 fail-closed release gate definitions plus the RPP-0062 missing local URL path, RPP-0067 missing production secret path, and RPP-0070 same-source recovery drift path with 43 focused tests, candidate-vs-final movement, exact missing evidence objects, packaged fallback rejection, wrong remote alias rejection, auth source drift, missing credentials, mutation-free auth readback drift, mutation-free Application Password binding drift, mutation-free same-source identity drift, mutation-free generated same-source identity drift, mutation-free same-source recovery drift, mutation-free preflight route identity drift, mutation-free generated preflight route identity drift, mutation-free missing local URL evidence, mutation-free missing production secret evidence, mutation-free dry-run route eligibility failure, mutation-free apply route pre-mutation failure, mutation-free journal route read-only failure, mutation-free recovery inspect read-only failure, bracketed tmux status markers, exact releaseMovement summary evidence, tmux stdout marker evidence, and generated progress timestamp evidence.</p></div>
+            <div class="proof-item" id="release-proof-timestamp" data-rpp="RPP-0038" data-proof-timestamp="2026-05-28T03:18:00.000Z" data-release-status="NO-GO" data-evidence-report="docs/evidence/ao-release-gates.md"><span class="status">Release timestamp</span><p>Evidence toward `RPP-0038` links `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js` observed status `pass` to the generated proof timestamp <time datetime="2026-05-28T03:18:00.000Z">2026-05-28T03:18:00.000Z</time>; release remains held and `NO-GO`.</p></div>
+            <div class="proof-item"><span class="status">Guardrails</span><p>`node --test test/release-evidence-provenance.test.js test/release-gate-cli.test.js test/release-gates.test.js` passes focused provenance/gate tests, `node scripts/release/checklist-completion-lint.mjs` reports 0 risky claims, and `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html` scans evidence artifacts for raw URLs and secrets.</p></div>
+            <div class="proof-item"><span class="status">Required checks</span><p>`scripts/release/required-release-checks-report.mjs` now enumerates required local checks and artifacts for release gates, recovery journal, auth, graph identity, plugin driver, route proof, evidence coverage, operator proof, artifact redaction, and provenance; current-repo mode remains held without production observations.</p></div>
+            <div class="proof-item"><span class="status">Integrated</span><p>`node --test test/recovery-journal.test.js` and `npm run test:recovery:file-journal` prove paged restart readback, stale claim identity, same-claim retry hardening, incomplete-commit refusal, blocked partial recovery, completed replay as no-op, and drift as blocked unknown.</p></div>
+            <div class="proof-item"><span class="status">Benchmark</span><p>`node --test test/guarded-executor-benchmark.test.js` proves guarded chunk benchmark safety gates appear before throughput; 7 lab gates pass and 3 production gates remain blocked for storage receipts, row batch execution, and atomic group commit evidence. Focused planner/generated validation also passed the RPP-0240 atomic blocker propagation proof with 2 focused tests and 115 broader planner/generated tests.</p></div>
+            <div class="proof-item"><span class="status">Integrated</span><p>Graph identity-map rewrites, post_tag taxonomy graph evidence, production importer/exporter identity-map proof, comment-user generated graph evidence, file type-swap descendant refusal, planner conflict apply refusal, conflict plan apply refusal variant proof, conflict evidence hash redaction, forged ready plan defense, localHash correctness, raw value evidence redaction, atomic group blocker propagation, atomic group blocker propagation variant proof, local plugin data stale owner-context refusal, plugin-driver boundary guards, driver registration API proof, driver registration focused regression, serialized option validator proof, activation hook side-effect boundary proof, plugin uninstall/delete refusal, driver apply validation hook evidence, driver audit evidence redaction, stale plugin metadata owner refusal, and read-only auth inspect coverage are now integrated support evidence, but menus, custom taxonomy/menu references, arbitrary plugin semantics, activation/update rollback, generated files, cron/cache effects, WooCommerce/HPOS, broader production auth lifecycle, and external production runtime remain pending.</p></div>
+            <div class="proof-item"><span class="status">Generated</span><p>`npm run test:generated-push-harness` covers 360 deterministic three-way push cases with ready, conflict, and blocked outcomes, RPP-0101 file create/update/delete mixes, RPP-0102 directory-descendant conflicts, RPP-0103 file type-swaps, RPP-0104 row create/update/delete mixes, RPP-0107 `wp_posts` create/update/delete target coverage, RPP-0112 `wp_term_taxonomy` graph target coverage, RPP-0230 generated planner summary count consistency, RPP-0233 localHash correctness across sampled ready fixture families, RPP-0240 generated atomic group blocker propagation, and RPP-0347 comment-user graph reference cases.</p></div>
+            <div class="proof-item"><span class="status">Covered locally</span><p>Auth-session source readback, restart-readable paged DB journal ownership, lease fencing, stale-claim rejection, fresh retry nonces, and replay/retry are proven in the local topology.</p></div>
+            <div class="proof-item"><span class="status">Covered locally</span><p>The process-kill smoke proves complete paged DB-journal readback after local SIGKILL/restart and after exact retry, with no false commit and no partial-state overwrite.</p></div>
+            <div class="proof-item"><span class="status">Covered locally</span><p>The graph identity smokes map a real Playground post/postmeta author identity, a same-plan featured-image attachment plus `_thumbnail_id` closure, a same-plan category taxonomy closure, a same-plan post-parent page closure, and a same-plan comment/commentmeta closure, while menu/navigation and arbitrary taxonomy/comment surfaces remain fail-closed.</p></div>
+            <div class="proof-item"><span class="status">Local candidate</span><p>The release-state plugin-driver proof carries `row:["wp_reprint_push_release_state","state_id:1"]` through exact owner/driver allowlist matching, live precondition, apply revalidation, durable journal, remote-drift conflict preservation, and replay/recovery evidence.</p></div>
+            <div class="proof-item"><span class="status">Support proof</span><p>Production-shaped plugin-driver tests reject unknown plugin-owned resources, mismatched owner/driver allowlists, direct `active_plugins` mutations, plugin uninstall/delete mutations without explicit delete drivers, unowned serialized option mutations, malformed or shape-mismatched serialized option payloads, malformed driver registrations, forged driver apply validation evidence, raw driver audit evidence, and unproven activation hook side effects before they can be counted as safe broader plugin-driver evidence; driver-proofed activation hook side effects are quarantined as support-only/non-release evidence.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>Docker or external WordPress runtime with the same durable journal and credential lifecycle evidence.</p></div>
+            <div class="proof-item"><span class="status">Held</span><p>Full Brewcommerce/WooCommerce import booted four sites but needs another checked run after the source auth/session preflight timeout.</p></div>
+            <div class="proof-item"><span class="status">Pending</span><p>General plugin drivers, broader WordPress graph surfaces, external runtime crash durability, rollback/repair finalization, release CI gates, evidence redaction, protocol compatibility, production chunk rollout gates, and critic-observed red-suite fixes.</p></div>
           </div>
+        </section>
+
+        <section class="panel" aria-labelledby="ao-roster">
+          <h2 id="ao-roster">Active AO Roster and Hold Gates</h2>
+          <ul class="compact-list">
+            <li><strong>Active developers</strong><span>`rpp-24`, `rpp-25`, `rpp-29`, `rpp-30`, and AO-spawned `rpp-32` are tmux-visible developer lanes, with `rpp-28` integrating one completed branch at a time.</span></li>
+            <li><strong>Critic and progress</strong><span>`rpp-31` is the current critic lane, `rpp-26` is the progress reporter, `rpp-orchestrator` remains visible, and `rpp-ao-lifecycle` plus `rpp-ao-web` keep AO registry and dashboard processes visible.</span></li>
+            <li><strong>Integrated branch output</strong><span>`rpp-24` provenance and RPP-0101 through RPP-0104 plus RPP-0107 and RPP-0112 harness work, `rpp-25` checklist lint plus RPP-0026 auth readback, RPP-0028 Application Password binding, RPP-0030 same-source, RPP-0031 preflight route, RPP-0032 dry-run route, RPP-0033 apply route, RPP-0034 journal route, RPP-0035 recovery inspect, RPP-0036 releaseMovement, RPP-0037 tmux status marker, RPP-0038 progress timestamp, RPP-0039 status-row, RPP-0040 verify-release failure reason, RPP-0050 generated same-source identity, RPP-0051 generated preflight route identity, RPP-0058 generated progress timestamp, RPP-0062 missing local URL gate, RPP-0067 missing production secret gate, and RPP-0070 same-source recovery drift work, `rpp-29` artifact redaction plus RPP-0205 file type-swap descendant refusal, RPP-0207 stale plugin-owner context, RPP-0210 planner summary, RPP-0214 already-in-sync decision count consistency, RPP-0215 keep-remote, RPP-0216 blocked plan apply refusal, RPP-0217 conflict plan apply refusal, RPP-0218 forged ready plan defense, RPP-0219 redacted raw value evidence, RPP-0220 atomic group blocker propagation, RPP-0227 local plugin data stale owner-context, RPP-0229 conflict evidence hash redaction, RPP-0230 generated planner summary count consistency, RPP-0233 localHash correctness, RPP-0237 conflict plan apply refusal variant, and RPP-0240 atomic group blocker propagation variant work, `rpp-30` required checks plus RPP-0310 post_tag taxonomy graph, RPP-0340 production importer/exporter identity-map, and RPP-0347 comment-user generated graph work, `rpp-32` Docker artifact output plus RPP-0414 stale plugin metadata owner, RPP-0415 activation hook effects, RPP-0438 driver apply validation hook, and RPP-0439 driver audit evidence redaction work, and `rpp-34` RPP-0421 driver registration API proof, RPP-0431 plugin uninstall/delete refusal, RPP-0461 driver registration focused regression, and RPP-0468 serialized option validator regression are now represented on the integration branch through `4cd502b7`; newer worker tasks remain branch-local until tested and integrated.</span></li>
+            <li><strong>Release hold</strong><span>Final release remains held until Docker/external WordPress, production credentials, final gate evidence, rollback repair, redaction, protocol compatibility, production chunk gates, broad graph/plugin coverage, required CI gates, broader auth lifecycle fixes, and red-suite fixes are production-backed.</span></li>
+          </ul>
         </section>
 
         <section class="panel evidence-map-panel" aria-labelledby="evidence-map-title">
           <figure class="evidence-map">
             <figcaption>
               <h2 id="evidence-map-title">Evidence Path</h2>
-              <p>Lab snapshots cover guarded plans and fixture apply/refusal paths. Real executor/auth and the remaining gates stay pending until production evidence appears.</p>
+              <p>Snapshots feed guarded plans; local production Playground sites now prove release-state apply refusal, durable paged DB journal lease fencing, paged restart readback after process kill, retry hardening, real post/postmeta graph identities, featured-image, taxonomy, post-parent, and comment same-plan closures, a 190-mutation complex-site receipt path, and a local release-state plugin-driver boundary. Docker/external storage and broader plugin safety remain pending.</p>
             </figcaption>
             <svg role="img" viewBox="0 0 720 190" aria-labelledby="map-title map-desc">
               <title id="map-title">Current evidence path</title>
-              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Lab evidence covers no-server Playground apply and protocol behavior. Real executor/auth and the remaining gates stay pending.</desc>
+              <desc id="map-desc">Base, local, and remote snapshots feed a guarded plan. Local production Playground evidence covers release-state apply revalidation, paged durable journal evidence, process-kill restart readback, retry hardening, guarded chunk benchmark safety gates, explicit graph identity-map rewrites, real post/postmeta graph identities, featured-image, taxonomy, post-parent, comment same-plan graph closures, and a local release-state plugin-driver boundary. Docker/external runtime and broader plugin drivers are still pending.</desc>
               <rect x="24" y="34" width="126" height="58" rx="8" fill="#ffffff" stroke="#d8dee4"></rect>
               <text x="87" y="59" text-anchor="middle" class="map-label">Pull base</text>
               <text x="87" y="78" text-anchor="middle" class="map-small">snapshot</text>
