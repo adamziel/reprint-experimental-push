@@ -58,6 +58,8 @@ projects:
       Keep panes stdout-auditable. Before long commands, print a one-line lane,
       intent, and command marker. Do not leave workers idle at prompts while
       release work remains.
+      Do not commit AO runtime scratch directories such as .ao/ or
+      .lane-output/.
 
 notifiers:
   dashboard:
