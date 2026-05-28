@@ -76,6 +76,30 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0454 owner context stale metadata refusal
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0454|stale plugin metadata owner context|allowed plugin driver row update' test/plugin-owner-context-metadata-refusal.test.js
+```
+
+The RPP-0454 generated proof covers two stale owner-metadata variants for a
+plugin-owned `wp_options` row. The planner variant sees live remote plugin
+metadata drift and blocks the row before any mutation with
+`STALE_PLUGIN_METADATA_OWNER_CONTEXT` evidence. The apply variant starts from a
+ready dry-run plan, then changes the live remote owner plugin metadata before
+apply; apply revalidates the owner context and fails closed with
+`STALE_PLUGIN_OWNER_CONTEXT` before staging the plugin-owned row.
+
+Both variants assert the plugin-owned remote row hash and full remote hash are
+unchanged after refusal, so remote plugin-owned data is preserved. The proof
+envelope stores only `sha256:` hashes for blockers, owner metadata refusal
+evidence, ready-plan context, apply error details, row preservation, and remote
+preservation. Raw plugin-owned option values are excluded from the evidence.
+This is local focused plugin-driver evidence only, not production-backed
+evidence, and the release gate remains NO-GO.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +113,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0454 — owner context stale metadata refusal: generated local variants
+  prove planner-time metadata blockers and apply-time owner-context
+  revalidation preserve the plugin-owned remote row with hash-only evidence.
