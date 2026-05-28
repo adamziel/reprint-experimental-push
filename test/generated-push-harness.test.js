@@ -5,8 +5,10 @@ import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
   generatePushHarnessCases,
+  generatePluginUninstallDeleteRefusalCases,
   runGeneratedPushHarness,
   validateGeneratedCase,
+  validatePluginUninstallDeleteRefusalCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
 import { digest } from '../src/stable-json.js';
@@ -130,6 +132,40 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0451 generated plugin uninstall/delete refusal preserves drift and redacts evidence', () => {
+  const cases = generatePluginUninstallDeleteRefusalCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'plugin-delete-blocked',
+    'plugin-delete-remote-drift-preserved',
+    'forged-plugin-delete-rejected',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('plugin-uninstall-delete-refusal')), true);
+  assert.equal(cases.every((testCase) => testCase.pluginResourceKey === 'plugin:forms'), true);
+
+  const results = cases.map(validatePluginUninstallDeleteRefusalCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'plugin-delete-blocked': 'blocked',
+    'plugin-delete-remote-drift-preserved': 'blocked-preserved-remote-drift',
+    'forged-plugin-delete-rejected': 'rejected-at-apply',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['plugin-delete-blocked'].status, 'blocked');
+  assert.equal(byVariant['plugin-delete-blocked'].mutations, 0);
+  assert.equal(byVariant['plugin-delete-remote-drift-preserved'].status, 'blocked');
+  assert.equal(byVariant['plugin-delete-remote-drift-preserved'].remotePreserved, true);
+  assert.equal(byVariant['plugin-delete-remote-drift-preserved'].decisions, 1);
+  assert.equal(
+    byVariant['forged-plugin-delete-rejected'].rejectionCode,
+    'UNSUPPORTED_PLUGIN_DELETE',
+  );
+  for (const result of results) {
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

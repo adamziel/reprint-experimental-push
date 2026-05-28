@@ -112,6 +112,14 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generatePluginUninstallDeleteRefusalCases() {
+  return [
+    'plugin-delete-blocked',
+    'plugin-delete-remote-drift-preserved',
+    'forged-plugin-delete-rejected',
+  ].map((variant, index) => buildPluginUninstallDeleteRefusalCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -164,6 +172,111 @@ export function runGeneratedPushHarness(options = {}) {
   };
 }
 
+export function validatePluginUninstallDeleteRefusalCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.pluginResourceKey);
+  const decision = plan.decisions.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    blockers: plan.blockers.length,
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      status: plan.status,
+      blocker: blocker ? pluginUninstallDeleteBlockerSummary(blocker) : null,
+      decision: decision ? pluginUninstallDeleteDecisionSummary(decision) : null,
+    }),
+  };
+
+  assertPluginUninstallDeleteRedacted(testCase, result);
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.mutations.length, 0);
+  assert.ok(blocker, `${testCase.id} should expose a plugin delete blocker`);
+  assert.equal(blocker.class, 'unsupported-plugin-delete');
+  assert.equal(blocker.pluginOwner, testCase.plugin);
+  assert.equal(blocker.requiredDriver, 'plugin-delete');
+  assert.equal(blocker.change.localChange, 'delete');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assertPluginUninstallDeleteChangeHashEvidence(blocker.change);
+  assertPluginUninstallDeleteRedacted(testCase, blocker);
+
+  if (testCase.expected.outcome === 'blocked-preserved-remote-drift') {
+    assert.ok(decision, `${testCase.id} should keep remote plugin-owned data`);
+    assert.equal(decision.decision, 'keep-remote');
+    assert.equal(decision.change.localChange, 'unchanged');
+    assert.equal(decision.change.remoteChange, 'update');
+    assertPluginUninstallDeleteChangeHashEvidence(decision.change);
+    assertPluginUninstallDeleteRedacted(testCase, decision);
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const error = captureError(() => applyPlan(remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated blocked remote drift`);
+    assert.equal(
+      remote.db.wp_options[testCase.dataRowId].option_value.mode,
+      testCase.expected.remoteMode,
+    );
+    assert.equal(
+      remote.db.wp_options[testCase.dataRowId].option_value.token,
+      testCase.expected.remoteToken,
+    );
+    assertPluginUninstallDeleteRedacted(testCase, error.details);
+    result.outcome = 'blocked-preserved-remote-drift';
+    result.remotePreserved = true;
+    result.applied = false;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'rejected-at-apply') {
+    const forgedPlan = pluginUninstallDeleteForgedReadyPlan(plan, testCase);
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const error = captureError(() => applyPlan(remote, forgedPlan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'UNSUPPORTED_PLUGIN_DELETE');
+    assert.deepEqual(error.details, {
+      mutationId: 'mutation-rpp-0451-forged-plugin-delete',
+      resourceKey: testCase.pluginResourceKey,
+      pluginOwner: testCase.plugin,
+      requiredDriver: 'plugin-delete',
+    });
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated forged-delete remote`);
+    assert.equal(remote.plugins[testCase.plugin].version, testCase.expected.pluginVersion);
+    assert.equal(
+      remote.db.wp_options[testCase.dataRowId].option_value.mode,
+      testCase.expected.remoteMode,
+    );
+    assertPluginUninstallDeleteRedacted(testCase, error.details);
+    result.outcome = 'rejected-at-apply';
+    result.rejectionCode = error.code;
+    result.applied = false;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'blocked');
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated blocked remote`);
+  assert.equal(remote.plugins[testCase.plugin].version, testCase.expected.pluginVersion);
+  assertPluginUninstallDeleteRedacted(testCase, error.details);
+  result.outcome = 'blocked';
+  result.applied = false;
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -206,6 +319,87 @@ export function validateGeneratedCase(testCase) {
   assert.equal(digest(testCase.remote), before, `${testCase.id} mutated a non-ready remote`);
   result.applied = false;
   return result;
+}
+
+function buildPluginUninstallDeleteRefusalCase({ variant, index }) {
+  const base = buildBaseSite(4510 + index, 4);
+  const plugin = 'forms';
+  const pluginResourceKey = `plugin:${plugin}`;
+  const optionName = `rpp_0451_plugin_delete_guard_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const secrets = {
+    plugin: `rpp0451-forms-delete-version-secret-${index + 1}`,
+    base: `rpp0451-base-plugin-data-secret-${index + 1}`,
+    remote: `rpp0451-remote-plugin-data-secret-${index + 1}`,
+  };
+  base.plugins[plugin] = { version: secrets.plugin, active: true };
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base', token: secrets.base },
+    __pluginOwner: plugin,
+  };
+
+  setRow(base, 'wp_options', dataRowId, baseRow);
+  setRow(local, 'wp_options', dataRowId, baseRow);
+  setRow(remote, 'wp_options', dataRowId, baseRow);
+  allowPluginOwned(base, dataResourceKey, plugin, 'wp-option');
+  allowPluginOwned(local, dataResourceKey, plugin, 'wp-option');
+  allowPluginOwned(remote, dataResourceKey, plugin, 'wp-option');
+  delete local.plugins[plugin];
+
+  const testCase = {
+    id: `rpp-0451-plugin-delete-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'plugin-uninstall-delete-refusal',
+    tags: new Set(['plugin-uninstall-delete-refusal', 'plugin-owned-generated']),
+    plugin,
+    pluginResource: pluginResource(plugin),
+    pluginResourceKey,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'plugin-delete-remote-drift-preserved') {
+    remote.db.wp_options[dataRowId].option_value = {
+      mode: 'remote-plugin-delete-drift',
+      token: secrets.remote,
+    };
+    testCase.tags.add('plugin-delete-remote-preserved');
+    testCase.expected = {
+      outcome: 'blocked-preserved-remote-drift',
+      pluginVersion: secrets.plugin,
+      remoteMode: 'remote-plugin-delete-drift',
+      remoteToken: secrets.remote,
+    };
+    return testCase;
+  }
+
+  if (variant === 'forged-plugin-delete-rejected') {
+    testCase.tags.add('plugin-delete-forged-ready-refusal');
+    testCase.expected = {
+      outcome: 'rejected-at-apply',
+      pluginVersion: secrets.plugin,
+      remoteMode: 'base',
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'plugin-delete-blocked');
+  testCase.tags.add('plugin-delete-blocked');
+  testCase.expected = {
+    outcome: 'blocked',
+    pluginVersion: secrets.plugin,
+  };
+  return testCase;
 }
 
 function buildGeneratedCase({ index, tier, rng }) {
@@ -868,6 +1062,88 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function pluginUninstallDeleteBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    resourceKey: blocker.resourceKey,
+    pluginOwner: blocker.pluginOwner,
+    requiredDriver: blocker.requiredDriver,
+    baseHash: blocker.baseHash,
+    localHash: blocker.localHash,
+    remoteHash: blocker.remoteHash,
+    change: blocker.change,
+  };
+}
+
+function pluginUninstallDeleteDecisionSummary(decision) {
+  return {
+    resourceKey: decision.resourceKey,
+    decision: decision.decision,
+    baseHash: decision.baseHash,
+    remoteHash: decision.remoteHash,
+    change: decision.change,
+  };
+}
+
+function pluginUninstallDeleteForgedReadyPlan(plan, testCase) {
+  const forgedPlan = deepClone(plan);
+  const remoteBeforeHash = resourceHash(testCase.remote, testCase.pluginResource);
+  forgedPlan.status = 'ready';
+  forgedPlan.blockers = [];
+  forgedPlan.mutations = [
+    {
+      id: 'mutation-rpp-0451-forged-plugin-delete',
+      resource: testCase.pluginResource,
+      resourceKey: testCase.pluginResourceKey,
+      action: 'delete',
+      value: { absent: true },
+      remoteBeforeHash,
+      baseHash: resourceHash(testCase.base, testCase.pluginResource),
+      localHash: resourceHash(testCase.local, testCase.pluginResource),
+      changeKind: 'delete',
+      change: {
+        localChange: 'delete',
+        remoteChange: 'unchanged',
+      },
+    },
+  ];
+  forgedPlan.preconditions = [
+    {
+      mutationId: 'mutation-rpp-0451-forged-plugin-delete',
+      resource: testCase.pluginResource,
+      resourceKey: testCase.pluginResourceKey,
+      expectedHash: remoteBeforeHash,
+      checkedAgainst: 'live-remote',
+    },
+  ];
+  forgedPlan.summary = {
+    ...forgedPlan.summary,
+    mutations: 1,
+    blockers: 0,
+  };
+  return forgedPlan;
+}
+
+function assertPluginUninstallDeleteChangeHashEvidence(change) {
+  for (const state of ['base', 'local', 'remote']) {
+    assert.ok(change[state], `missing ${state} hash evidence`);
+    assert.equal(Object.hasOwn(change[state], 'hash'), true, `missing ${state} hash`);
+    assert.match(change[state].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[state], 'value'), false, `${state} evidence leaked a value`);
+  }
+}
+
+function assertPluginUninstallDeleteRedacted(testCase, evidence) {
+  const serialized = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(
+      serialized.includes(token),
+      false,
+      `${testCase.id} leaked plugin delete token ${token}`,
+    );
+  }
 }
 
 function assertPlanContract(testCase, plan) {

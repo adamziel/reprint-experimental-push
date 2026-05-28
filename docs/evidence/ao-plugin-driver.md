@@ -76,6 +76,32 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0451 generated plugin uninstall/delete refusal
+
+RPP-0451 adds a deterministic generated support-only matrix for plugin
+uninstall/delete refusal. The matrix proves a direct `plugin:forms` delete is
+blocked before mutation with `unsupported-plugin-delete` and required driver
+`plugin-delete`, and a forged ready delete plan is rejected by apply with
+`UNSUPPORTED_PLUGIN_DELETE` before the remote changes.
+
+The remote-drift variant pairs the refused plugin delete with a remote-only
+plugin-owned `wp_options` row change. The planner records a hash-only
+`keep-remote` decision for that row, emits zero mutations, and the blocked apply
+path leaves the remote row and plugin metadata unchanged. Blocker, decision,
+error, and proof evidence is hash-only/redacted; generated plugin-version and
+plugin-owned option tokens are asserted absent from evidence payloads.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0451' test/generated-push-harness.test.js
+node --test --test-name-pattern 'plugin uninstall/delete|remote-only plugin removal|plugin-owned option rows' test/push-planner.test.js
+```
+
+This is generated support-only evidence. It does not add an accepted plugin
+delete driver, broaden production plugin-driver acceptance, or change the
+release NO-GO posture.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +115,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0451 — generated plugin uninstall/delete refusal: direct plugin deletes
+  require an unavailable `plugin-delete` driver, forged ready deletes fail before
+  mutation, and remote plugin-owned data drift remains preserved/redacted.
