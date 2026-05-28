@@ -215,6 +215,119 @@ test('source URL without production credentials fails at the explicit missing-se
   assert.equal(evaluation.releaseMovement.allowed, false);
 });
 
+
+test('remaining release gates name missing evidence keys and hold release movement', () => {
+  const cases = [
+    ['application-password-binding', 'applicationPasswordCredentialBinding', 'APPLICATION_PASSWORD_BINDING_REQUIRED'],
+    ['manage-options-capability', 'manageOptionsCapability', 'MANAGE_OPTIONS_CAPABILITY_REQUIRED'],
+    ['same-source-identity', 'sourceIdentity', 'SAME_SOURCE_IDENTITY_REQUIRED'],
+    ['preflight-route-identity', 'preflightRouteIdentity', 'PREFLIGHT_ROUTE_IDENTITY_REQUIRED'],
+    ['dry-run-route-eligibility', 'dryRunRouteEligibility', 'DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED'],
+    ['apply-route-pre-mutation', 'applyRoutePreMutation', 'APPLY_ROUTE_PRE_MUTATION_REQUIRED'],
+    ['journal-route-read-only', 'journalRouteReadOnly', 'JOURNAL_ROUTE_READ_ONLY_REQUIRED'],
+    ['recovery-inspect-read-only', 'recoveryInspectReadOnly', 'RECOVERY_INSPECT_READ_ONLY_REQUIRED'],
+    ['tmux-status-marker', 'tmuxStatusMarker', 'TMUX_STATUS_MARKER_REQUIRED'],
+    ['progress-release-timestamp', 'progressReleaseTimestamp', 'PROGRESS_RELEASE_TIMESTAMP_REQUIRED'],
+    ['agents-release-gates-row', 'agentsReleaseGateStatusRow', 'AGENTS_RELEASE_GATES_ROW_REQUIRED'],
+    ['verify-release-failure-reason', 'verifyReleaseFailure', 'VERIFY_RELEASE_FAILURE_REASON_REQUIRED'],
+  ];
+
+  for (const [gateId, evidenceKey, expectedCode] of cases) {
+    const evidence = completeEvidence('final-release');
+    delete evidence[evidenceKey];
+
+    const evaluation = evaluateReleaseGates({
+      env: releaseEnv(),
+      evidence,
+      scope: 'final-release',
+      now: fixedNow,
+    });
+    const gate = gateById(evaluation, gateId);
+
+    assert.equal(gate.status, 'missing', gateId);
+    assert.equal(gate.code, expectedCode, gateId);
+    assert.equal(gate.evidence.evidenceKey, evidenceKey, gateId);
+    assert.equal(gate.evidence.scope, 'missing', gateId);
+    assert.equal(evaluation.releaseMovement.allowed, false, gateId);
+    assert.equal(evaluation.releaseMovement.finalGates, '19/20', gateId);
+    assert.ok(
+      evaluation.releaseMovement.missingEvidence.some((entry) => entry.id === gateId && entry.code === expectedCode),
+      gateId,
+    );
+  }
+});
+
+test('explicit failed route, auth, and read-only proof evidence stays fail-closed', () => {
+  const cases = [
+    ['application-password-binding', 'applicationPasswordCredentialBinding', { ok: false, observed: 'credential-bound-to-other-source' }, 'APPLICATION_PASSWORD_BINDING_REQUIRED'],
+    ['manage-options-capability', 'manageOptionsCapability', { ok: false, observed: 'subscriber' }, 'MANAGE_OPTIONS_CAPABILITY_REQUIRED'],
+    ['same-source-identity', 'sourceIdentity', { same: false, observed: 'apply-used-other-source' }, 'SAME_SOURCE_IDENTITY_REQUIRED'],
+    ['preflight-route-identity', 'preflightRouteIdentity', { sameRoute: false, observed: '/wrong/v1/preflight' }, 'PREFLIGHT_ROUTE_IDENTITY_REQUIRED'],
+    ['dry-run-route-eligibility', 'dryRunRouteEligibility', { eligible: false, observed: 'dry-run-rejected' }, 'DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED'],
+    ['apply-route-pre-mutation', 'applyRoutePreMutation', { preMutation: false, observed: 'mutated-before-rejection' }, 'APPLY_ROUTE_PRE_MUTATION_REQUIRED'],
+    ['journal-route-read-only', 'journalRouteReadOnly', { readOnly: false, observed: 'journal-write-observed' }, 'JOURNAL_ROUTE_READ_ONLY_REQUIRED'],
+    ['recovery-inspect-read-only', 'recoveryInspectReadOnly', { readOnly: false, observed: 'inspect-write-observed' }, 'RECOVERY_INSPECT_READ_ONLY_REQUIRED'],
+  ];
+
+  for (const [gateId, evidenceKey, failingEvidence, expectedCode] of cases) {
+    const evaluation = evaluateReleaseGates({
+      env: releaseEnv(),
+      evidence: completeEvidence('final-release', {
+        [evidenceKey]: { ...failingEvidence, scope: 'final-release' },
+      }),
+      scope: 'final-release',
+      now: fixedNow,
+    });
+    const gate = gateById(evaluation, gateId);
+
+    assert.equal(gate.status, 'failed', gateId);
+    assert.equal(gate.code, expectedCode, gateId);
+    assert.equal(gate.evidence.scope, 'final-release', gateId);
+    assert.equal(evaluation.releaseMovement.allowed, false, gateId);
+    assert.equal(evaluation.releaseMovement.finalGates, '19/20', gateId);
+  }
+});
+
+test('operator proof gates reject stale marker, timestamp, status row, and zero-exit verifier evidence', () => {
+  const cases = [
+    [
+      'tmux-status-marker',
+      { tmuxStatusMarker: { ok: true, marker: 'release-gates:held reason=missing-brackets', scope: 'final-release' } },
+      'TMUX_STATUS_MARKER_REQUIRED',
+    ],
+    [
+      'progress-release-timestamp',
+      { progressReleaseTimestamp: { iso: 'not-a-date', scope: 'final-release' } },
+      'PROGRESS_RELEASE_TIMESTAMP_REQUIRED',
+    ],
+    [
+      'agents-release-gates-row',
+      { agentsReleaseGateStatusRow: { ok: false, observed: 'stale-row', scope: 'final-release' } },
+      'AGENTS_RELEASE_GATES_ROW_REQUIRED',
+    ],
+    [
+      'verify-release-failure-reason',
+      { verifyReleaseFailure: { ok: true, exitCode: 0, reason: 'missing-nonzero-failure', scope: 'final-release' } },
+      'VERIFY_RELEASE_FAILURE_REASON_REQUIRED',
+    ],
+  ];
+
+  for (const [gateId, override, expectedCode] of cases) {
+    const evaluation = evaluateReleaseGates({
+      env: releaseEnv(),
+      evidence: completeEvidence('final-release', override),
+      scope: 'final-release',
+      now: fixedNow,
+    });
+    const gate = gateById(evaluation, gateId);
+
+    assert.equal(gate.status, 'failed', gateId);
+    assert.equal(gate.code, expectedCode, gateId);
+    assert.equal(evaluation.releaseMovement.allowed, false, gateId);
+    assert.equal(evaluation.releaseMovement.finalGates, '19/20', gateId);
+  }
+});
+
 test('local candidate evidence can be complete while final release readiness remains held', () => {
   const candidate = evaluateReleaseGates({
     env: releaseEnv(),
