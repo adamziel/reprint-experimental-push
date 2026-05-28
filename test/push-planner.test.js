@@ -252,6 +252,56 @@ function plannerSummaryEvidenceEnvelope(plan) {
   };
 }
 
+function hashOnlyPlanEvidenceForRpp0223(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy,
+      change: conflict.change,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+    atomicGroups: plan.atomicGroups.map((group) => ({
+      id: group.id,
+      status: group.status,
+      mutationIds: group.mutationIds,
+      conflicts: group.conflicts,
+      blockers: group.blockers.map((blocker) => blocker.id),
+    })),
+  };
+}
+
 function assertPlannerSummaryMatchesEvidence(plan, label) {
   assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
   assert.equal(
@@ -494,6 +544,65 @@ test('stops a local deletion when the remote edited the same resource', () => {
   assert.equal(JSON.stringify(conflict).includes('Remote secret editorial update'), false);
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote secret editorial update');
+});
+
+test('RPP-0223 local delete versus remote edit refuses before mutation with redacted evidence', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'base-style-rpp0223';
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateLocalFile = 'local-private-rpp0223-independent-file';
+  const privateRemoteTitle = 'remote-private-rpp0223-row-title';
+  const rowKey = 'row:["wp_posts","ID:1"]';
+  const fileKey = 'file:wp-content/themes/theme/style.css';
+  delete local.db.wp_posts['ID:1'];
+  local.files['wp-content/themes/theme/style.css'] = privateLocalFile;
+  remote.db.wp_posts['ID:1'].post_title = privateRemoteTitle;
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const conflict = firstPlan.conflicts.find((entry) => entry.resourceKey === rowKey);
+  const independentMutation = mutationFor(firstPlan, fileKey);
+  const rowPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === rowKey);
+  const evidence = hashOnlyPlanEvidenceForRpp0223(firstPlan);
+  const evidenceJson = JSON.stringify(evidence);
+  const durableJournal = failingDurableJournal();
+  const beforeRemote = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, firstPlan, { durableJournal }));
+  const errorJson = JSON.stringify(error.details);
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0223 local delete remote edit invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(evidence, hashOnlyPlanEvidenceForRpp0223(secondPlan));
+  assert.ok(conflict, 'missing delete/edit conflict');
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.equal(mutationFor(firstPlan, rowKey), undefined);
+  assert.equal(rowPrecondition, undefined);
+  assert.equal(independentMutation?.action, 'put');
+  assert.equal(independentMutation.resourceKey, fileKey);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.deepEqual(durableJournal.events, []);
+  assert.equal(evidenceJson.includes(privateLocalFile), false);
+  assert.equal(evidenceJson.includes(privateRemoteTitle), false);
+  assert.equal(JSON.stringify(conflict).includes(privateRemoteTitle), false);
+  assert.equal(errorJson.includes(privateLocalFile), false);
+  assert.equal(errorJson.includes(privateRemoteTitle), false);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, privateRemoteTitle);
+  assert.equal(remote.files['wp-content/themes/theme/style.css'], 'base-style-rpp0223');
 });
 
 test('stops a local directory deletion that would remove a remote-only descendant', () => {

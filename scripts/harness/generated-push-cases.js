@@ -82,6 +82,10 @@ const readyPreservingFamilies = new Set([
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
+  localDeleteRemoteEdit: {
+    family: 'delete-edit-conflict',
+    tag: 'delete-edit',
+  },
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
