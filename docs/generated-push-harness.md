@@ -64,6 +64,11 @@ only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
 
+The `sameIndependentContent` target coverage records per-tier counts for local
+and remote edits that independently converge on the same content. Its ready
+cases produce no mutation for the already-synchronized row, still apply through
+the harness, and preserve every unplanned remote resource.
+
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
 create the term and taxonomy row in one plan and reject a stale replay before
@@ -99,6 +104,26 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "conflict": 10
+      }
+    },
+    "sameIndependentContent": {
+      "family": "same-independent-content",
+      "total": 11,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 2,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "statuses": {
+        "conflict": 3,
+        "ready": 8
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -150,6 +175,8 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix": 20,
     "row-create-update-delete-mix-ready": 10,
     "row-create-update-delete-mix-conflict": 10,
+    "same-independent-content": 11,
+    "same-independent-content-target": 11,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
     "wp-posts-create-update-delete-conflict": 10,
