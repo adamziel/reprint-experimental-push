@@ -1273,6 +1273,81 @@ test('production-shaped release verify request state marks synthesized packaged 
   });
 });
 
+test('packaged production plugin auth/session request helper falls back past invalid explicit sourceUrl values to runtime env', () => {
+  const explicitLiveSourceUrl = 'https://example.com/push';
+  const previousSourceUrl = process.env.REPRINT_PUSH_SOURCE_URL;
+
+  process.env.REPRINT_PUSH_SOURCE_URL = explicitLiveSourceUrl;
+
+  try {
+    const request = resolvePackagedProductionPluginAuthSessionRequest({
+      sourceUrl: ' https://invalid.example.com/push ',
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+      authSessionSourceCommand: buildAuthSessionSourceCommand({
+        sourceUrl: explicitLiveSourceUrl,
+        username: liveCredentials.username,
+        applicationPassword: liveCredentials.password,
+      }),
+    });
+
+    assert.equal(request.requested, true);
+    assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+    assert.deepEqual(request.source, {
+      ok: true,
+      sourceUrl: explicitLiveSourceUrl,
+      username: liveCredentials.username,
+      applicationPassword: liveCredentials.password,
+    });
+  } finally {
+    if (previousSourceUrl === undefined) {
+      delete process.env.REPRINT_PUSH_SOURCE_URL;
+    } else {
+      process.env.REPRINT_PUSH_SOURCE_URL = previousSourceUrl;
+    }
+  }
+});
+
+test('packaged production plugin auth/session request helper synthesizes from explicit remote runtime candidate when direct sourceUrl is malformed', () => {
+  const request = resolvePackagedProductionPluginAuthSessionRequest({
+    sourceUrl: ' https://invalid.example.test/push ',
+    remoteUrl: 'https://example.test/remote',
+    localUrl: '',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(request.requested, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+  assert.match(request.command, /--source-url=https:\/\/example\.test\/remote\//);
+  assert.deepEqual(request.source, {
+    ok: true,
+    sourceUrl: 'https://example.test/remote/',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+});
+
+test('packaged production plugin auth/session request helper synthesizes from explicit local runtime candidate when direct sourceUrl is malformed', () => {
+  const request = resolvePackagedProductionPluginAuthSessionRequest({
+    sourceUrl: ' https://invalid.example.test/push ',
+    remoteUrl: '',
+    localUrl: 'https://example.test/local',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+
+  assert.equal(request.requested, true);
+  assert.equal(isPackagedProductionPluginSourceCommand(request.command), true);
+  assert.match(request.command, /--source-url=https:\/\/example\.test\/local\//);
+  assert.deepEqual(request.source, {
+    ok: true,
+    sourceUrl: 'https://example.test/local/',
+    username: liveCredentials.username,
+    applicationPassword: liveCredentials.password,
+  });
+});
+
 test('auth session source command cli prints the requested source payload', () => {
   let stdout = '';
   let stderr = '';
