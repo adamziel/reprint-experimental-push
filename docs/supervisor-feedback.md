@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:28 CEST
+Last updated: 2026-05-28 05:30 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:30 CEST - RPP-0112 Integrated
+
+- Going well: integration is now at `63840e538` on top of `43beb7c9c`,
+  adding `RPP-0112` generated `wp_term_taxonomy` graph coverage. The generated
+  harness keeps 360 cases and now has a focused `wp_term_taxonomy` target with
+  20 cases across all 10 tiers.
+- Checklist movement: 105 verified items checked and 895 open. New check since
+  the prior feedback entry: `RPP-0112`.
+- Verification: release-gate focused tests pass 28/28, plugin metadata owner
+  refusal tests pass 3/3, planner tests pass 90/90, generated-harness tests
+  pass 7/7, checklist lint reports 105 checked / 895 open with 0 risky claims,
+  artifact redaction scans 35 files with 0 rejected files, and `git diff
+  --check` is clean.
+- Current nudge: continue with `RPP-0038`, `RPP-0109`, `RPP-0113`,
+  `RPP-0315`, and the next plugin-driver candidate one at a time from the
+  latest lane head.
 
 ## 2026-05-28 05:28 CEST - RPP-0414 Integrated
 

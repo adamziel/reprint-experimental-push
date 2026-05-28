@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:28 CEST.
+- Last update: 2026-05-28 05:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `43beb7c9c` (`feat: add stale plugin metadata owner evidence`).
+  `63840e538` (`feat: add wp term taxonomy graph harness coverage`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 104
-  items complete and leaves 896 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 105
+  items complete and leaves 895 open.
 - Checked slices: 35 release-gate foundation items, 16 graph identity items,
   15 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 5 generated
+  7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 2 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
@@ -71,6 +71,9 @@ linked implementation artifacts.
 - Release-movement continuation: `4a5367b39` integrated `RPP-0036`
   releaseMovement allowed/denied summary proof with exact summary evidence,
   named exit codes, and no mutation attempt.
+- Tmux-status continuation: `2864ad636` integrated `RPP-0037` tmux stdout
+  proof status marker coverage with exact final bracketed marker evidence and
+  no mutation attempt from the release-gates CLI.
 - Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
   owner context rejection in the planner/apply path.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
@@ -87,6 +90,17 @@ linked implementation artifacts.
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
   conflict cases, with ready plans preserving unplanned remote data.
+- Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
+  taxonomy evidence. Focused planner and local-production proof tests now carry
+  same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for
+  a `post_tag` surface through live precondition, apply-time revalidation, and
+  post-apply snapshot matching while unsupported taxonomy/menu surfaces remain
+  fail-closed.
+- Generated term-taxonomy continuation: `63840e538` integrated `RPP-0112`
+  `wp_term_taxonomy` graph coverage. The generated harness now exposes 20
+  `wp_term_taxonomy` target cases across all 10 tiers, split into ready and
+  stale/non-ready graph cases, with stale remote term drift held before
+  mutation.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
   `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
   progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
@@ -100,7 +114,7 @@ linked implementation artifacts.
   planner tests, `node --test test/plugin-owner-context-metadata-refusal.test.js`
   with 3 passing tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
-  `node --test test/generated-push-harness.test.js` with 6 passing tests,
+  `node --test test/generated-push-harness.test.js` with 7 passing tests,
   evidence manifest
   generation, artifact redaction scan over evidence/report paths, and
   `git diff --check`.
