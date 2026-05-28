@@ -44,6 +44,7 @@ export function applyPlan(remote, plan, options = {}) {
 
   validateReadyPlanEnvelope(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
+  validateNoDirectActivePluginsMutations(plan);
 
   const durableJournal = getDurableJournalWriter(options);
   const hasPreviousJournal = Boolean(options.journal);
@@ -222,6 +223,30 @@ function validateSupportedPluginContextMutations(plan) {
       },
     );
   }
+}
+
+function validateNoDirectActivePluginsMutations(plan) {
+  for (const mutation of plan.mutations || []) {
+    if (!isActivePluginsOptionResource(mutation.resource)) {
+      continue;
+    }
+    throw new PushPlanError(
+      'UNSUPPORTED_ACTIVE_PLUGINS_MUTATION',
+      `Refusing to apply unsupported direct active_plugins mutation ${mutation.resourceKey}.`,
+      {
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey,
+        reasonCode: 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED',
+        requiredDriver: 'plugin-activation-driver',
+      },
+    );
+  }
+}
+
+function isActivePluginsOptionResource(resource) {
+  return resource?.type === 'row'
+    && resource.table === 'wp_options'
+    && resource.id === 'option_name:active_plugins';
 }
 
 function validateSupportedPluginOwnedMutations(remote, plan) {
