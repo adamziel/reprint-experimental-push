@@ -1,9 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:02 CEST
+Last updated: 2026-05-28 10:10 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:10 CEST - RPP-0067 Integrated
+
+- Going well: `RPP-0238` was rejected cleanly at dry-run because the
+  candidate-local patch no longer applied to `test/generated-push-harness.test.js`
+  at line 10, and integration moved to fallback `RPP-0067` at `16962f5f4`.
+  The release-gate proof supplies source/local/remote URLs plus every other
+  final-release gate while omitting the production secret, then fails closed
+  with exact `REPRINT_PUSH_SECRET_REQUIRED` evidence, a final held marker,
+  redacted partial credential output, and `mutationAttempted: false`.
+- Checklist movement: 128 verified items checked and 872 open. New check since
+  the prior feedback entry: `RPP-0067`.
+- Verification: focused RPP-0067 release-gate validation passes 2/2, the
+  broader release-gate suite passes 39/39, checklist lint reports 128 checked /
+  872 open with 0 risky claims, artifact redaction scans evidence and reporting
+  surfaces with 0 rejected files, release remains `NO-GO`, and `git diff --check`
+  is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 10:02 CEST - RPP-0237 Integrated
 

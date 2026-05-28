@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 107.
-- Remaining open: 893.
+- Verified complete: 128.
+- Remaining open: 872.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -78,7 +78,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [ ] RPP-0064 (Near / release-gates) Add focused regression coverage for packaged fallback rejection, variant 4. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0065 (Near / release-gates) Add focused regression coverage for wrong remote alias rejection, variant 4. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0066 (Near / release-gates) Add focused regression coverage for auth source command readback drift, variant 4. Success: checked command exits with the named code and no mutation attempt.
-- [ ] RPP-0067 (Near / release-gates) Add focused regression coverage for missing production secret gate, variant 4. Success: test asserts the exact reason and evidence object.
+- [x] RPP-0067 (Near / release-gates) Add focused regression coverage for missing production secret gate, variant 4. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0068 (Near / release-gates) Add focused regression coverage for Application Password credential binding, variant 4. Success: progress report links the command and observed status.
 - [ ] RPP-0069 (Near / release-gates) Add focused regression coverage for manage_options capability proof, variant 4. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0070 (Near / release-gates) Add focused regression coverage for same source URL identity proof, variant 4. Success: tmux-visible run prints a final bracketed status marker.

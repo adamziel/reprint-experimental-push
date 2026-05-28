@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:02 CEST.
+- Last update: 2026-05-28 10:10 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `a56d10f94` (`test: prove conflict plan apply refusal`).
+  `16962f5f4` (`test: add missing production secret regression`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 127
-  items complete and leaves 873 open.
-- Checked slices: 42 release-gate foundation items, 17 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 128
+  items complete and leaves 872 open.
+- Checked slices: 43 release-gate foundation items, 17 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 12 merge-invariant items. No release-ops items are checked
@@ -128,6 +128,16 @@ linked implementation artifacts.
   leaving `REPRINT_PUSH_LOCAL_URL` empty, asserts exact
   `REPRINT_PUSH_LOCAL_URL_REQUIRED` evidence, keeps credential output redacted,
   records `mutationAttempted: false`, and leaves final release `NO-GO`.
+- Missing production secret continuation: `16962f5f4` integrated `RPP-0067`
+  missing production secret gate regression coverage. Focused command:
+  `node --test --test-name-pattern=RPP-0067 test/release-gate-missing-production-secret-regression.test.js`
+  (2 passing release-gate tests). The broader release-gate suite with missing
+  production secret, missing local URL, generated progress timestamp, generated
+  preflight, generated same-source, status-row, CLI, and core gate coverage
+  passes 39/39. The fixture supplies production URLs while omitting the
+  production secret, asserts exact `REPRINT_PUSH_SECRET_REQUIRED` evidence,
+  keeps credential output redacted, records `mutationAttempted: false`, and
+  leaves final release `NO-GO`.
 - Graph importer/exporter continuation: `165031908` integrated `RPP-0340`
   production importer/exporter identity-map proof. Focused command:
   `node --test test/local-production-complex-site-proof.test.js`
