@@ -6,22 +6,42 @@ This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
 
-## 2026-05-28 08:08 CEST - Live Roster 25 Heartbeat
+## 2026-05-28 08:08 CEST - Live Roster 25 Latest Lane Truth
 
-- Going well: origin/lane remains `48e05cd25`, with `RPP-0229` integrated by
-  `22fa5b642`; checklist truth is 121 verified items checked and 879 open while
-  release status remains `NO-GO`.
-- Queue separation: `RPP-0230` is active in `rpp-28` integration but is not
-  counted until origin/lane actually fast-forwards. `RPP-0052` through
-  `RPP-0059`, `RPP-0138`, `RPP-0139`, `RPP-0232`, `RPP-0340`, `RPP-0449`,
-  `RPP-0450`, and other session-only work remain outside readiness scoring.
+- Going well: origin/lane advanced to `5057ee38a`, with `RPP-0230` integrated
+  by `ca47c11b1`; checklist truth is 122 verified items checked and 878 open
+  while release status remains `NO-GO`.
+- Queue separation: `RPP-0230` is now counted only because origin/lane moved.
+  `RPP-0052` through `RPP-0059`, `RPP-0138`, `RPP-0139`, `RPP-0232`,
+  `RPP-0340`, `RPP-0449`, `RPP-0450`, and other session-only work remain
+  outside readiness scoring until integrated on origin/lane.
 - Live roster: active developer lanes remain above five: `rpp-24`/`RPP-0138`,
   `rpp-25`/`RPP-0059`, `rpp-29`/`RPP-0232`, `rpp-30`/`RPP-0340`,
   `rpp-32`/`RPP-0449`, `rpp-33`/`RPP-0139`, and `rpp-34`/`RPP-0450`;
   integrator `rpp-28`; critics `rpp-31` and `rpp-37`; queue `rpp-35`;
   progress `rpp-36`; lifecycle/dashboard panes remain visible locally.
 - Current nudge: keep refreshing counts only from origin/lane movement and keep
-  active integration/session-only work out of readiness scoring.
+  remaining branch-local release-gate, generated, merge-invariant, graph, and
+  plugin-driver work out of readiness scoring.
+
+## 2026-05-28 07:30 CEST - RPP-0230 Integrated
+
+- Going well: integration is now at `ca47c11b1`, adding `RPP-0230` generated
+  planner summary count consistency. The generated harness replans every
+  deterministic generated case twice, checks `plan.summary` against emitted
+  mutations, decisions, conflicts, blockers, and atomic groups, and compares
+  aggregate evidence with generated report totals.
+- Checklist movement: 122 verified items checked and 878 open. New check since
+  the prior feedback entry: `RPP-0230`.
+- Verification: focused RPP-0230 generated-harness validation passes 1/1,
+  `node --test test/generated-push-harness.test.js` passes 8/8,
+  `node --test test/push-planner.test.js` passes 101/101, checklist lint
+  reports 122 checked / 878 open with 0 risky claims, artifact redaction scans
+  evidence and reporting surfaces with 0 rejected files, release remains
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from the latest lane head;
+  fetch/reverify the remote lane before push and keep branch-local work out of
+  readiness scoring.
 
 ## 2026-05-28 07:22 CEST - RPP-0229 Integrated
 

@@ -8,18 +8,18 @@ linked implementation artifacts.
 
 - Last update: 2026-05-28 08:08 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `48e05cd25` (`docs: refresh progress for conflict evidence redaction`). The
-  newest behavioral proof on the lane is `22fa5b642` (`test: prove conflict
-  evidence hash redaction`).
+  `5057ee38a` (`docs: refresh progress for generated planner summary`). The
+  newest behavioral proof on the lane is `ca47c11b1` (`test: prove generated
+  planner summary counts`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 121
-  items complete and leaves 879 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 122
+  items complete and leaves 878 open.
 - Checked slices: 40 release-gate foundation items, 16 graph identity items,
   19 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
-  harness items, and 9 merge-invariant items. No release-ops items are checked
+  harness items, and 10 merge-invariant items. No release-ops items are checked
   yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
@@ -177,6 +177,16 @@ linked implementation artifacts.
   proves `applyPlan()` refuses the conflict plan with `PLAN_NOT_READY` before
   durable journal events or mutation. Caveat: this is focused local
   planner/apply evidence, not final production release proof.
+- Generated planner-summary continuation: `ca47c11b1` integrated `RPP-0230`
+  planner summary count consistency variant 2. Focused command:
+  `node --test --test-name-pattern='RPP-0230' test/generated-push-harness.test.js`
+  (1 passing focused proof), plus `node --test test/generated-push-harness.test.js`
+  (8 passing generated-harness tests) and `node --test test/push-planner.test.js`
+  (101 passing planner/apply tests). The generated harness replans all 360
+  deterministic cases twice, verifies `plan.summary` exactly matches emitted
+  mutations, decisions, conflicts, blockers, and atomic groups, and compares
+  aggregate evidence with harness report totals. Caveat: this is deterministic
+  local generated-harness evidence, not final production release proof.
 - Stale plugin metadata owner continuation: `43beb7c9c` integrated
   `RPP-0414` stale plugin metadata owner context refusal. Focused planner
   tests reject stale plugin-owned row and plugin file mutations before mutation
@@ -238,16 +248,16 @@ linked implementation artifacts.
 - Current AO team from tmux includes active developers `rpp-24`/`RPP-0138`,
   `rpp-25`/`RPP-0059`, `rpp-29`/`RPP-0232`, `rpp-30`/`RPP-0340`,
   `rpp-32`/`RPP-0449`, `rpp-33`/`RPP-0139`, and `rpp-34`/`RPP-0450`;
-  integrator `rpp-28` actively integrating `RPP-0230`; critics `rpp-31` and
+  integrator `rpp-28` with `RPP-0230` now integrated; critics `rpp-31` and
   `rpp-37`; queue `rpp-35`; prior progress `rpp-26`; current progress reporter
   `rpp-36`; visible supervisor `rpp-orchestrator`; and `rpp-ao-lifecycle` /
   `rpp-ao-web` keeping local lifecycle and dashboard processes visible on port
   8080.
-- Queue heartbeat from lane truth: origin/lane is `48e05cd25`, with 121
-  checked and 879 open. `RPP-0229` is integrated; `RPP-0230`, `RPP-0052`
-  through `RPP-0059`, `RPP-0138`, `RPP-0139`, `RPP-0232`, `RPP-0340`,
-  `RPP-0449`, `RPP-0450`, and other session-only branch work remain uncounted
-  until origin/lane moves.
+- Queue heartbeat from lane truth: origin/lane is `5057ee38a`, with 122
+  checked and 878 open. `RPP-0230` is integrated; `RPP-0052` through
+  `RPP-0059`, `RPP-0138`, `RPP-0139`, `RPP-0232`, `RPP-0340`, `RPP-0449`,
+  `RPP-0450`, and other session-only branch work remain uncounted until
+  origin/lane moves again.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
@@ -267,9 +277,12 @@ linked implementation artifacts.
   `node --test --test-name-pattern='RPP-0227' test/push-planner.test.js`
   focused test with 1 passing proof,
   `node --test --test-name-pattern='RPP-0229' test/push-planner.test.js`
-  focused test with 1 passing proof, `node --test test/push-planner.test.js`
+  focused test with 1 passing proof,
+  `node --test --test-name-pattern='RPP-0230' test/generated-push-harness.test.js`
+  focused test with 1 passing proof,
+  `node --test test/generated-push-harness.test.js` with 8 passing tests,
+  `node --test test/push-planner.test.js`
   with 101 passing planner tests, provenance/linter/artifact focused tests,
-  `node --test test/generated-push-harness.test.js` with 7 passing tests,
   evidence manifest
   generation, artifact redaction scan over evidence/audit/progress.html paths, progress.html local-link sanity, and
   `git diff --check`.
