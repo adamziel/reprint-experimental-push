@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'postmeta-post-graph-ready',
+  'postmeta-post-graph-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,8 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'postmeta-post-graph-ready',
+  'postmeta-post-graph-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  postmetaPostGraph: {
+    family: 'postmeta-post-graph-ready',
+    tag: 'postmeta-post-graph',
   },
 });
 
@@ -595,6 +603,14 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
+  },
+  'postmeta-post-graph-ready': ({ local, allocator, tags }) => {
+    addPostmetaPostGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'postmeta-post-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addPostmetaPostGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1215,6 +1231,50 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addPostmetaPostGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const postId = allocator.graphId();
+  const postRowId = `ID:${postId}`;
+  const metaKey = `_generated_postmeta_post_ref_${postId}`;
+  const metaRowId = `post_id:${postId}:meta_key:${metaKey}`;
+  const post = makePost(postId, `Generated postmeta post target ${postId}`, {
+    post_content: `generated postmeta post target content ${postId}`,
+    post_type: 'post',
+    post_status: 'draft',
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_posts', postRowId, post);
+    setRow(local, 'wp_posts', postRowId, post);
+    setRow(remote, 'wp_posts', postRowId, {
+      ...post,
+      post_title: `Remote stale postmeta post target ${postId}`,
+      post_content: `remote stale postmeta post private payload ${postId}`,
+    });
+  } else {
+    setRow(local, 'wp_posts', postRowId, post);
+  }
+
+  setRow(local, 'wp_postmeta', metaRowId, {
+    post_id: postId,
+    meta_key: metaKey,
+    meta_value: `postmeta-post-reference-${postId}`,
+  });
+
+  tags.add('postmeta-post-graph');
+  tags.add('postmeta-post');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('postmeta-post-stale-target');
+    tags.add('wp-posts-remote-drift');
+  } else {
+    tags.add('postmeta-post-ready');
+    tags.add('wp-posts-create');
+    tags.add('wp-postmeta-create');
   }
 }
 

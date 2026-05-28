@@ -12,6 +12,7 @@ Lane: graph-identity
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
 - Adds a local-production proof for importer/exporter `pushIdentityMap` metadata carried by the immutable base package: exported local source rows map to imported remote targets, dependent child post and postmeta rows rewrite to the remote target, stale imported targets fail closed, and evidence records only map/provenance hashes, resource keys, and rewrite hashes.
+- Adds generated and local-production proof for postmeta `post_id` references: the generated harness emits ready and stale `postmeta-post-graph` cases, and the local-production proof requires `row:["wp_posts","ID:71701"]` plus `row:["wp_postmeta","post_id:71701:meta_key:reprint_push_postmeta_post_fixture"]` to carry through the plan, live preconditions, apply revalidation, and post-apply match while stale targets remain hash-only blockers.
 
 ## Verification commands
 
@@ -20,7 +21,9 @@ Lane: graph-identity
 - `node --test test/push-planner.test.js` — passed (101 tests), including same-plan `post_tag` taxonomy closure and explicit identity-map reference rewriting.
 - `node --test test/graph-mapping-inventory.test.js` — passed (2 tests).
 - `node --test test/local-production-complex-site-proof.test.js test/push-planner.test.js test/graph-mapping-inventory.test.js` — passed (121 tests), including the importer/exporter identity-map proof.
-- `node --test test/generated-push-harness.test.js` — passed (6 generated harness tests covering 300+ cases).
+- `node --test test/generated-push-harness.test.js` — passed (10 generated harness tests covering 300+ cases, including postmeta `post_id` ready/stale cases).
+- `node --test test/local-production-complex-site-proof.test.js` — passed (22 tests), including postmeta `post_id` release-evidence carry-through and fail-closed mutation checks.
+- `node --test test/generated-push-harness.test.js test/local-production-complex-site-proof.test.js test/push-planner.test.js test/graph-mapping-inventory.test.js` — passed (136 tests) for the generated/local-production postmeta proof slice.
 - `npm run bench:graph-mapping-inventory` — passed and emitted `identityMapCapabilities` with explicit map table suffixes and fail-closed collision surfaces.
 
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
@@ -43,3 +46,4 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 - RPP-0318: GUID and slug collision handling now fails closed without explicit identity-map evidence.
 - RPP-0319 / RPP-0320: cross-table create/reference batches can carry an importer/exporter identity map while preserving remote target rows and recording hash-only rewrite evidence.
 - RPP-0340: production importer/exporter identity-map proof covers immutable-base `pushIdentityMap` metadata, dependent row rewrites, stale-target fail-closed behavior, and hash-only provenance evidence.
+- RPP-0344: generated/local-production postmeta `post_id` evidence covers ready same-plan apply, stale fail-closed blockers, release-evidence carry-through, and redacted/hash-only graph details.

@@ -21,6 +21,7 @@ const smallShape = Object.freeze({
   featuredImageGraph: false,
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
+  postmetaPostGraph: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -72,6 +73,18 @@ test('complex-site seed PHP can add a post_tag taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_tag_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add a postmeta post_id graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    postmetaPostGraph: true,
+  });
+
+  assert.match(php, /reprint-push-postmeta-post-graph/);
+  assert.match(php, /reprint_push_postmeta_post_fixture/);
+  assert.match(php, /if \(\$complex_postmeta_post_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_postmeta_post_graph = false/);
+});
+
 test('complex-site seed PHP can add a post parent graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -104,6 +117,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POSTMETA_POST_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
@@ -114,6 +128,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
   assert.equal(shape.postTagTaxonomyGraph, true);
+  assert.equal(shape.postmetaPostGraph, true);
   assert.equal(shape.postParentGraph, true);
   assert.equal(shape.commentGraph, true);
 });
@@ -234,6 +249,31 @@ test('complex-site planner proof covers real post_tag taxonomy graph closure', (
   assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
   assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
+test('complex-site planner proof covers real postmeta post_id graph closure', () => {
+  const graphShape = { ...smallShape, postmetaPostGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.postmetaPostGraphPosts, 0);
+  assert.equal(proof.counts.source.postmetaPostGraphMeta, 0);
+  assert.equal(proof.counts.localEdited.postmetaPostGraphPosts, 1);
+  assert.equal(proof.counts.localEdited.postmetaPostGraphMeta, 1);
+  assert.equal(proof.postmetaPostGraphEvidence.type, 'postmeta-post-id');
+  assert.equal(proof.postmetaPostGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.postmetaPostGraphEvidence.postmetaReferencesPost, true);
+  assert.equal(proof.postmetaPostGraphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.postmetaPostGraphCountsPresent, true);
+  assert.equal(proof.invariants.postmetaPostGraphPlanned, true);
+  assert.equal(proof.invariants.postmetaPostGraphHasLivePreconditions, true);
+  assert.equal(proof.invariants.postmetaPostGraphNoStaleBlocker, true);
 });
 
 test('complex-site planner proof covers real post parent graph closure', () => {
@@ -431,6 +471,53 @@ test('complex-site release evidence fails closed when post_tag taxonomy is chang
   assert.equal(evidence.invariants.postTagTaxonomyGraphCarriedInReleasePlan, false);
 });
 
+test('complex-site release evidence proves postmeta post_id carries through apply', () => {
+  const plannerProof = { ok: true, shape: { ...smallShape, postmetaPostGraph: true } };
+  const releaseSummary = syntheticReleaseSummary(10, { postmetaPostGraph: true });
+  const output = JSON.stringify(releaseSummary, null, 2);
+
+  const evidence = buildComplexSiteReleaseEvidence({
+    plannerProof,
+    verifyOutput: output,
+    verifyStatus: 0,
+    verifySignal: null,
+  });
+
+  assert.equal(evidence.ok, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.required, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.postMutationPlanned, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.postmetaMutationPlanned, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.postId, 71701);
+  assert.equal(evidence.verifier.postmetaPostGraph.metaKey, 'reprint_push_postmeta_post_fixture');
+  assert.equal(evidence.verifier.postmetaPostGraph.postmetaReferencesPost, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.preconditionLive, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.applyRevalidated, true);
+  assert.equal(evidence.verifier.postmetaPostGraph.finalMatchesLocal, true);
+  assert.equal(evidence.invariants.postmetaPostGraphCarriedInReleasePlan, true);
+  assert.equal(evidence.invariants.postmetaPostGraphHasReleasePrecondition, true);
+  assert.equal(evidence.invariants.postmetaPostGraphApplyRevalidated, true);
+  assert.equal(evidence.invariants.postmetaPostGraphFinalMatchesLocal, true);
+});
+
+test('complex-site release evidence fails closed when postmeta post_id target changes', () => {
+  const plannerProof = { ok: true, shape: { ...smallShape, postmetaPostGraph: true } };
+  const releaseSummary = syntheticReleaseSummary(10, { postmetaPostGraph: true });
+  const postmetaMutation = releaseSummary.releaseProof.planObject.mutations.find((mutation) =>
+    mutation.resourceKey === 'row:["wp_postmeta","post_id:71701:meta_key:reprint_push_postmeta_post_fixture"]');
+  postmetaMutation.value.value.post_id = 71702;
+
+  const evidence = buildComplexSiteReleaseEvidence({
+    plannerProof,
+    verifyOutput: JSON.stringify(releaseSummary),
+    verifyStatus: 0,
+    verifySignal: null,
+  });
+
+  assert.equal(evidence.ok, false);
+  assert.equal(evidence.verifier.postmetaPostGraph.postmetaReferencesPost, false);
+  assert.equal(evidence.invariants.postmetaPostGraphCarriedInReleasePlan, false);
+});
+
 test('complex-site release evidence fails closed without a dry-run receipt', () => {
   const releaseSummary = syntheticReleaseSummary(2);
   releaseSummary.releaseProof.dryRun.receiptHash = '';
@@ -608,6 +695,24 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.postmetaPostGraph && local) {
+    snapshot.db.wp_posts['ID:71701'] = {
+      ID: 71701,
+      post_title: 'Reprint Push Postmeta Post Graph Target',
+      post_name: 'reprint-push-postmeta-post-graph',
+      post_content: 'Local post target used for postmeta post_id graph proof.',
+      post_status: 'publish',
+      post_type: 'post',
+      post_parent: 0,
+      post_author: 0,
+    };
+    snapshot.db.wp_postmeta['post_id:71701:meta_key:reprint_push_postmeta_post_fixture'] = {
+      post_id: 71701,
+      meta_key: 'reprint_push_postmeta_post_fixture',
+      meta_value: 'local-postmeta-post-reference',
     };
   }
 
@@ -798,6 +903,55 @@ function syntheticReleaseSummary(mutations, options = {}) {
       localHash: 'f'.repeat(64),
     },
   ] : [];
+  const postmetaPostGraphMutations = options.postmetaPostGraph ? [
+    {
+      id: 'mutation-postmeta-post-graph-post',
+      resourceKey: 'row:["wp_posts","ID:71701"]',
+      action: 'put',
+      resource: {
+        type: 'row',
+        table: 'wp_posts',
+        id: 'ID:71701',
+        key: 'row:["wp_posts","ID:71701"]',
+      },
+      value: {
+        value: {
+          ID: 71701,
+          post_title: 'Reprint Push Postmeta Post Graph Target',
+          post_name: 'reprint-push-postmeta-post-graph',
+          post_content: 'Local post target used for postmeta post_id graph proof.',
+          post_status: 'publish',
+          post_type: 'post',
+          post_parent: 0,
+          post_author: 0,
+        },
+      },
+      baseHash: '6'.repeat(64),
+      remoteBeforeHash: '6'.repeat(64),
+      localHash: '7'.repeat(64),
+    },
+    {
+      id: 'mutation-postmeta-post-graph-postmeta',
+      resourceKey: 'row:["wp_postmeta","post_id:71701:meta_key:reprint_push_postmeta_post_fixture"]',
+      action: 'put',
+      resource: {
+        type: 'row',
+        table: 'wp_postmeta',
+        id: 'post_id:71701:meta_key:reprint_push_postmeta_post_fixture',
+        key: 'row:["wp_postmeta","post_id:71701:meta_key:reprint_push_postmeta_post_fixture"]',
+      },
+      value: {
+        value: {
+          post_id: 71701,
+          meta_key: 'reprint_push_postmeta_post_fixture',
+          meta_value: 'local-postmeta-post-reference',
+        },
+      },
+      baseHash: '8'.repeat(64),
+      remoteBeforeHash: '8'.repeat(64),
+      localHash: '9'.repeat(64),
+    },
+  ] : [];
   const mutationList = [
     {
       id: 'mutation-release-state',
@@ -820,7 +974,13 @@ function syntheticReleaseSummary(mutations, options = {}) {
       localHash: 'c'.repeat(64),
     },
     ...postTagTaxonomyGraphMutations,
-    ...Array.from({ length: Math.max(0, mutations - 1 - postTagTaxonomyGraphMutations.length) }, (_, index) => ({
+    ...postmetaPostGraphMutations,
+    ...Array.from({
+      length: Math.max(
+        0,
+        mutations - 1 - postTagTaxonomyGraphMutations.length - postmetaPostGraphMutations.length,
+      ),
+    }, (_, index) => ({
       id: `mutation-${index + 1}`,
       resourceKey: `row:["wp_posts","ID:${71001 + index}"]`,
     })),

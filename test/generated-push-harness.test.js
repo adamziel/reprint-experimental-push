@@ -82,6 +82,14 @@ const requiredFamilies = [
   'term-taxonomy-term-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
+  'postmeta-post-graph-ready',
+  'postmeta-post-graph-stale',
+  'postmeta-post-graph',
+  'postmeta-post',
+  'postmeta-post-ready',
+  'postmeta-post-stale-target',
+  'wp-postmeta-create',
+  'wp-posts-remote-drift',
   'same-plan-graph',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
@@ -470,6 +478,122 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0344 generated harness emits postmeta post_id ready and stale graph cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postmetaPostGraph;
+
+  assert.ok(coverage, 'missing postmeta post_id graph target coverage');
+  assert.equal(coverage.family, 'postmeta-post-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['postmeta-post-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready postmeta post_id graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready postmeta post_id cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'postmeta-post-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'postmeta-post-graph-stale');
+
+  assert.ok(readyCase, 'missing ready postmeta post_id graph case');
+  assert.ok(staleCase, 'missing stale postmeta post_id graph case');
+  const readyShape = assertPostmetaPostGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertPostmetaPostGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const postMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.postResourceKey);
+  const postmetaMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.postmetaResourceKey);
+  const plannedPostmeta = deserializeResourceValue(postmetaMutation.value);
+  const staleBlocker = stalePlan.blockers.find((blocker) =>
+    blocker.resourceKey === staleShape.postmetaResourceKey);
+  const stalePlanJson = JSON.stringify(stalePlan);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true, 'ready postmeta post_id graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready postmeta post_id graph should reject stale replay');
+  assert.ok(postMutation, 'ready graph should plan the target post row');
+  assert.ok(postmetaMutation, 'ready graph should plan the postmeta row');
+  assert.equal(plannedPostmeta.post_id, readyShape.postId);
+  assert.equal(plannedPostmeta.meta_key, readyShape.metaKey);
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale postmeta post_id graph must not apply mutations');
+  assert.ok(staleBlocker, 'stale graph should block the postmeta row');
+  assert.equal(staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleBlocker.references[0].relationshipType, 'postmeta-post');
+  assert.equal(staleBlocker.references[0].targetResourceKey, staleShape.postResourceKey);
+  assert.match(staleBlocker.references[0].targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.equal(stalePlanJson.includes('Generated postmeta post target'), false);
+  assert.equal(stalePlanJson.includes('Remote stale postmeta post target'), false);
+  assert.equal(stalePlanJson.includes('remote stale postmeta post private payload'), false);
+});
+
+function assertPostmetaPostGraphShape(testCase, { staleTarget }) {
+  const postmetaRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([, row]) => String(row.meta_key || '').startsWith('_generated_postmeta_post_ref_'));
+
+  assert.equal(postmetaRows.length, 1, `${testCase.id} should create one postmeta post_id row`);
+
+  const [postmetaRowId, postmetaRow] = postmetaRows[0];
+  const postId = Number(postmetaRow.post_id);
+  const postRowId = `ID:${postId}`;
+  const post = testCase.local.db.wp_posts[postRowId];
+
+  assert.ok(Number.isSafeInteger(postId), `${testCase.id} post_id should be a numeric post ID`);
+  assert.equal(postmetaRowId, `post_id:${postId}:meta_key:${postmetaRow.meta_key}`);
+  assert.ok(post, `${testCase.id} missing local post target ${postRowId}`);
+  assert.equal(post.ID, postId);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_posts[postRowId], `${testCase.id} stale post target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_posts[postRowId],
+      testCase.base.db.wp_posts[postRowId],
+      `${testCase.id} stale post target should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_posts[postRowId], undefined);
+    assert.equal(testCase.remote.db.wp_posts[postRowId], undefined);
+  }
+
+  return {
+    postId,
+    metaKey: postmetaRow.meta_key,
+    postResourceKey: generatedRowResourceKey('wp_posts', postRowId),
+    postmetaResourceKey: generatedRowResourceKey('wp_postmeta', postmetaRowId),
+  };
+}
+
+function generatedRowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
 }
 
 function nonReadyTargetCount(coverage) {
