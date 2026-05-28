@@ -94,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  remoteOnlyPreservation: {
+    family: 'independent-local-and-remote',
+    tag: 'remote-only-preservation',
+  },
 });
 
 export function generatePushHarnessCases({
@@ -270,12 +274,20 @@ const scenarioFamilyBuilders = {
     remote.db.wp_posts[`ID:${postId}`].post_title = `Remote editorial ${allocator.next()}`;
     tags.add('remote-preserve');
   },
-  'independent-local-and-remote': ({ local, remote, allocator, tags }) => {
+  'independent-local-and-remote': ({ base, local, remote, allocator, tags }) => {
     const localPath = allocator.filePath('independent-local');
-    const remotePostId = allocator.postId();
+    const remotePostId = allocator.graphId();
+    const remoteRowId = `ID:${remotePostId}`;
+    const remoteRow = makePost(remotePostId, `Independent base ${remotePostId}`);
     local.files[localPath] = `independent local ${allocator.next()}`;
-    ensurePostExists(remote, remotePostId);
-    remote.db.wp_posts[`ID:${remotePostId}`].post_title = `Independent remote ${allocator.next()}`;
+    setRow(base, 'wp_posts', remoteRowId, remoteRow);
+    setRow(local, 'wp_posts', remoteRowId, remoteRow);
+    setRow(remote, 'wp_posts', remoteRowId, {
+      ...remoteRow,
+      post_title: `Independent remote ${allocator.next()}`,
+    });
+    tags.add('remote-only-preservation');
+    tags.add('remote-preserve');
     tags.add('independent-merge');
   },
   'direct-row-conflict': ({ local, remote, allocator, tags }) => {
