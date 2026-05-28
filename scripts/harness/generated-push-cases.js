@@ -36,6 +36,7 @@ const scenarioFamilies = Object.freeze([
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'stale-comment-user-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -408,6 +409,31 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('comment-graph');
+    tags.add('comment-user-graph');
+    tags.add('comment-user-ready');
+  },
+  'stale-comment-user-graph': ({ base, local, remote, allocator, tags }) => {
+    const userId = allocator.graphId();
+    const commentId = allocator.graphId();
+    const userRowId = `ID:${userId}`;
+    const user = makeUser(userId);
+    setRow(base, 'wp_users', userRowId, user);
+    setRow(local, 'wp_users', userRowId, user);
+    setRow(remote, 'wp_users', userRowId, {
+      ...user,
+      user_email: `remote-edited-user-${userId}@example.test`,
+      display_name: `Remote edited generated user ${userId}`,
+    });
+    setRow(local, 'wp_comments', `comment_ID:${commentId}`, makeComment(commentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: userId,
+      comment_content: `Generated user-owned comment ${commentId}`,
+    }));
+    tags.add('stale-graph');
+    tags.add('comment-graph');
+    tags.add('comment-user-graph');
+    tags.add('comment-user-stale');
   },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
@@ -694,6 +720,7 @@ function addGeneratedComplexity({
       addCommentGraph(local, allocator);
       tags.add('same-plan-graph');
       tags.add('comment-graph');
+      tags.add('comment-user-graph');
     } else if (choice === 9 && tier >= 8) {
       addTaxonomyGraph(local, allocator);
       tags.add('same-plan-graph');
@@ -789,6 +816,7 @@ function addReadyPreservingComplexityOperation({
     addCommentGraph(local, allocator);
     tags.add('same-plan-graph');
     tags.add('comment-graph');
+    tags.add('comment-user-graph');
     return;
   }
   if (choice === 5) {

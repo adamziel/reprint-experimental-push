@@ -25,6 +25,7 @@ const requiredFamilies = [
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'stale-comment-user-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -44,6 +45,9 @@ const requiredFamilies = [
   'type-swap-conflict',
   'same-plan-user-meta-graph',
   'same-plan-graph',
+  'comment-user-graph',
+  'comment-user-ready',
+  'comment-user-stale',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'file-topology',
@@ -154,4 +158,26 @@ test('RPP-0103 generated harness emits ready and non-ready file type-swap cases'
   assert.equal(nonReady.status, 'conflict');
   assert.ok(nonReady.conflicts >= 1, 'non-ready type-swap should expose a file topology conflict');
   assert.equal(nonReady.applied, false, 'non-ready type-swap must not apply mutations');
+});
+
+test('RPP-0307 generated harness emits ready and stale comment user graph cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) =>
+    testCase.family === 'same-plan-comment-graph' && testCase.tags.has('comment-user-ready'));
+  const staleCase = cases.find((testCase) => testCase.family === 'stale-comment-user-graph');
+
+  assert.ok(readyCase, 'missing ready same-plan comment user graph case');
+  assert.ok(staleCase, 'missing stale comment user graph case');
+  assert.ok(readyCase.tags.has('comment-user-graph'));
+  assert.ok(staleCase.tags.has('comment-user-graph'));
+  assert.ok(staleCase.tags.has('comment-user-stale'));
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready comment graph should create threaded comments');
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale comment user graph should expose a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale comment user graph must not apply mutations');
 });

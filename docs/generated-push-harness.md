@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 29 scenario families, then add seeded variation so
+span 10 complexity tiers and 30 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -51,8 +51,8 @@ The default generated run covers:
   conflicting outcomes, supported and unsupported plugin-owned data, plugin
   owner-context drift, supported forms-lab custom-table rows, forms-lab delete
   refusal, atomic plugin install ready and missing-dependency paths, same-plan
-  post-parent, taxonomy, comment, and usermeta graph closures, and stale graph
-  references.
+  post-parent, taxonomy, comment, and usermeta graph closures, stale comment
+  user-reference blockers with hash-only evidence, and stale graph references.
 
 At the time this note was added, the summary command reported:
 
@@ -60,40 +60,44 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 26,
-    "conflict": 138,
-    "ready": 196
+    "blocked": 24,
+    "conflict": 142,
+    "ready": 194
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
-      "total": 13,
+      "total": 12,
       "perTier": {
         "0": 1,
         "1": 2,
         "2": 1,
         "3": 1,
         "4": 1,
-        "5": 2,
-        "6": 1,
+        "5": 1,
+        "6": 2,
         "7": 1,
         "8": 1,
-        "9": 2
+        "9": 1
       },
       "statuses": {
-        "conflict": 13
+        "conflict": 12
       }
     }
   },
   "featureFamilies": {
+    "comment-user-graph": 192,
+    "comment-user-ready": 12,
+    "comment-user-stale": 12,
+    "stale-comment-user-graph": 12,
     "file-type-swap": 24,
     "file-type-swap-ready": 12,
     "file-type-swap-conflict": 12
   },
-  "maxResourceCount": 70,
-  "maxMutationCount": 45,
-  "maxReadyResourceCount": 65,
-  "maxReadyMutationCount": 40
+  "maxResourceCount": 66,
+  "maxMutationCount": 44,
+  "maxReadyResourceCount": 66,
+  "maxReadyMutationCount": 44
 }
 ```
 
