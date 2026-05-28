@@ -729,25 +729,37 @@ function evaluateVerifyReleaseFailureGate(definition, context) {
   }
   const exitCode = numberField(evidence, ['exitCode', 'status']);
   const reason = firstNonEmpty(evidence.reason, evidence.code, evidence.observed);
+  const command = firstNonEmpty(evidence.command, evidence.checkedCommand);
+  const mutationAttempted = typeof evidence.mutationAttempted === 'boolean'
+    ? evidence.mutationAttempted
+    : undefined;
+  const statusMarker = firstNonEmpty(evidence.statusMarker, evidence.marker);
+  const observed = stripUndefined({
+    exitCode: Number.isInteger(exitCode) ? exitCode : 'missing-exit-code',
+    reason: reason || 'missing-failure-reason',
+    command,
+    mutationAttempted,
+    statusMarker,
+  });
   const ok = booleanField(evidence, ['ok', 'present']);
   if (ok === false || !Number.isInteger(exitCode) || exitCode === 0 || !reason) {
     return failedGate(definition, context, {
       code: evidence.code || 'VERIFY_RELEASE_FAILURE_REASON_REQUIRED',
       reason: evidence.reason || 'verify:release nonzero failure evidence must include a nonzero exit code and named reason.',
       evidence: {
-        required: 'nonzero verify:release exit with named reason',
-        observed: {
-          exitCode: Number.isInteger(exitCode) ? exitCode : 'missing-exit-code',
-          reason: reason || 'missing-failure-reason',
-        },
+        ...evidence,
+        required: evidence.required || 'nonzero verify:release exit with named reason',
+        observed,
         scope: normalizeScope(evidence.scope || context.scope),
       },
     });
   }
   return satisfiedGate(definition, context, {
-    required: 'nonzero verify:release exit with named reason',
-    observed: reason,
+    ...evidence,
+    required: evidence.required || 'nonzero verify:release exit with named reason',
+    observed,
     exitCode,
+    reason,
     scope: evidence.scope,
   });
 }
