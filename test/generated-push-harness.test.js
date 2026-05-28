@@ -13,7 +13,6 @@ import {
 } from '../scripts/harness/generated-push-cases.js';
 import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
-import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
@@ -1666,9 +1665,9 @@ test('RPP-0111/RPP-0131 wp_terms/wp_termmeta graph target exposes per-tier ready
   assert.ok(coverage, 'missing wp_terms/wp_termmeta graph target coverage');
   assert.equal(coverage.family, 'wp-terms-termmeta-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-terms-termmeta-graph']);
-  assert.equal(coverage.total, 19, 'target should include ready cases for every tier plus stale cases through tier 8');
+  assert.equal(coverage.total, 20, 'target should include ready and stale cases for every tier');
   assert.equal(coverage.statuses.ready, 10, 'target should include one ready terms/termmeta graph per tier');
-  assert.equal(nonReadyTargetCount(coverage), 9, 'target should include stale terms/termmeta graph cases through tier 8');
+  assert.equal(nonReadyTargetCount(coverage), 10, 'target should include one stale terms/termmeta graph case per tier');
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -1687,9 +1686,9 @@ test('RPP-0111/RPP-0131 wp_terms/wp_termmeta graph target exposes per-tier ready
   const staleCases = cases.filter((testCase) => testCase.family === 'wp-terms-termmeta-graph-stale');
 
   assert.equal(readyCases.length, 10, 'missing one ready wp_terms/wp_termmeta graph case per tier');
-  assert.equal(staleCases.length, 9, 'missing stale wp_terms/wp_termmeta graph cases through tier 8');
+  assert.equal(staleCases.length, 10, 'missing one stale wp_terms/wp_termmeta graph case per tier');
   assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
-  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
   for (const readyCase of readyCases) {
     assertTermTermmetaGraphShape(readyCase, { staleTarget: false });
@@ -1750,21 +1749,13 @@ test('RPP-0112/RPP-0132 wp_term_taxonomy graph target exposes redacted per-tier 
   assert.ok(coverage, 'missing wp_term_taxonomy graph target coverage');
   assert.equal(coverage.family, 'wp-term-taxonomy-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-term-taxonomy-graph']);
-  assert.equal(coverage.total, 18, 'target should include current ready and stale term-taxonomy graph cases');
-  assert.deepEqual(coverage.statuses, { blocked: 1, conflict: 8, ready: 9 });
-  assert.equal(nonReadyTargetCount(coverage), 9, 'target should include stale term-taxonomy graph cases');
-  assert.deepEqual(coverage.perTier, {
-    0: 2,
-    1: 2,
-    2: 2,
-    3: 2,
-    4: 2,
-    5: 1,
-    6: 1,
-    7: 2,
-    8: 2,
-    9: 2,
-  });
+  assert.equal(coverage.total, 20, 'target should include ready and stale term-taxonomy graph cases per tier');
+  assert.deepEqual(coverage.statuses, { blocked: 3, conflict: 7, ready: 10 });
+  assert.equal(nonReadyTargetCount(coverage), 10, 'target should include one stale term-taxonomy graph case per tier');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
   assert.equal(
     Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
     coverage.total,
@@ -1778,10 +1769,10 @@ test('RPP-0112/RPP-0132 wp_term_taxonomy graph target exposes redacted per-tier 
   const readyCases = cases.filter((testCase) => testCase.family === 'wp-term-taxonomy-graph-ready');
   const staleCases = cases.filter((testCase) => testCase.family === 'wp-term-taxonomy-graph-stale');
 
-  assert.equal(readyCases.length, 9, 'missing current ready wp_term_taxonomy graph cases');
-  assert.equal(staleCases.length, 9, 'missing current stale wp_term_taxonomy graph cases');
-  assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 7, 8, 9]);
-  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 6, 7, 8, 9]);
+  assert.equal(readyCases.length, 10, 'missing one ready wp_term_taxonomy graph case per tier');
+  assert.equal(staleCases.length, 10, 'missing one stale wp_term_taxonomy graph case per tier');
+  assert.deepEqual(readyCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  assert.deepEqual(staleCases.map((testCase) => testCase.tier), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
   for (const readyCase of readyCases) {
     const readyShape = assertTermTaxonomyGraphShape(readyCase, { staleTarget: false });
@@ -2104,19 +2095,19 @@ test('RPP-0117 stale remote after dry-run target exposes per-tier ready replay r
 
   assert.ok(coverage, 'missing stale remote after dry-run target coverage');
   assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run');
-  assert.equal(coverage.total, 284);
+  assert.equal(coverage.total, 342);
   assert.deepEqual(coverage.statuses, { ready: coverage.total });
   assert.deepEqual(coverage.perTier, {
-    0: 28,
-    1: 28,
-    2: 28,
-    3: 29,
-    4: 28,
-    5: 29,
-    6: 28,
-    7: 29,
-    8: 28,
-    9: 29,
+    0: 32,
+    1: 34,
+    2: 35,
+    3: 34,
+    4: 35,
+    5: 34,
+    6: 35,
+    7: 34,
+    8: 35,
+    9: 34,
   });
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
@@ -2308,8 +2299,8 @@ test('RPP-0135 plugin-owned custom-table target records ready and non-ready inva
   const coverage = report.summary.targetCoverage.pluginOwnedCustomTableChanges;
 
   assert.ok(coverage, 'missing plugin-owned custom-table target coverage');
-  assert.equal(coverage.family, 'supported-forms-lab-table');
-  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table-change']);
+  assert.equal(coverage.family, 'plugin-owned-custom-table-changes');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-custom-table-target']);
   assert.ok(coverage.statuses.ready > 0, 'target should include ready custom-table cases');
   assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready custom-table cases');
   assert.deepEqual(
@@ -2326,19 +2317,28 @@ test('RPP-0135 plugin-owned custom-table target records ready and non-ready inva
   );
 
   const cases = generatePushHarnessCases();
-  const readyCase = cases.find((testCase) => testCase.family === 'supported-forms-lab-table');
+  const readyCase = cases.find((testCase) =>
+    testCase.family === 'plugin-owned-custom-table-changes'
+    && testCase.tags.has('forms-lab-custom-table-ready'));
+  const staleCase = cases.find((testCase) =>
+    testCase.family === 'plugin-owned-custom-table-changes'
+    && testCase.tags.has('forms-lab-custom-table-stale'));
   const deleteBlockedCase = cases.find((testCase) =>
     testCase.family === 'forms-lab-delete-blocked'
     && validateGeneratedCase(testCase).status === 'blocked');
 
   assert.ok(readyCase, 'missing ready plugin-owned custom-table case');
+  assert.ok(staleCase, 'missing stale plugin-owned custom-table case');
   assert.ok(deleteBlockedCase, 'missing blocked plugin-owned custom-table delete case');
   assert.ok(readyCase.tags.has('plugin-owned-custom-table-change'));
+  assert.ok(staleCase.tags.has('plugin-owned-custom-table-change'));
   assert.ok(deleteBlockedCase.tags.has('plugin-owned-custom-table-change'));
 
   const readyShape = assertFormsLabReadyShape(readyCase);
+  const staleShape = assertFormsLabStaleShape(staleCase);
   const deleteShape = assertFormsLabDeleteBlockedShape(deleteBlockedCase);
   const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
   const deleteBlocked = validateGeneratedCase(deleteBlockedCase);
 
   assert.equal(ready.status, 'ready');
@@ -2347,11 +2347,15 @@ test('RPP-0135 plugin-owned custom-table target records ready and non-ready inva
   assert.equal(ready.staleReplayRejected, true, 'ready custom-table case should reject stale replay');
   assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
   assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale custom-table case must not be ready');
+  assert.equal(stale.applied, false, 'stale custom-table case must not apply mutations');
+  assert.ok(stale.conflicts >= 1 || stale.blockers >= 1, 'stale custom-table case should record a refusal');
   assert.equal(deleteBlocked.status, 'blocked', 'delete custom-table case must be blocked');
   assert.ok(deleteBlocked.blockers >= 1, 'custom-table delete should be blocked by driver policy');
   assert.equal(deleteBlocked.applied, false, 'blocked custom-table delete must not apply mutations');
 
   assertFormsLabReadyPlanEvidence(readyCase, readyShape.resourceKey, readyShape.payloadToken);
+  assertFormsLabStalePlanRefusesMutation(staleCase, staleShape.resourceKey);
   assertFormsLabDeletePlanRefusesMutation(deleteBlockedCase, deleteShape.resourceKey);
 });
 
@@ -2372,14 +2376,45 @@ function assertFormsLabReadyShape(testCase) {
   const [rowId, row] = rows[0];
   const baseRow = testCase.base.db.wp_reprint_push_forms_lab[rowId];
   const remoteRow = testCase.remote.db.wp_reprint_push_forms_lab[rowId];
+  const payloadToken = row.payload.privateToken || row.payload.token;
 
   assert.match(rowId, /^id:\d+$/, `${testCase.id} should use deterministic numeric custom-table ids`);
-  assert.equal(row.payload.token, baseRow.payload.token);
-  assert.equal(remoteRow.payload.token, baseRow.payload.token);
+  assert.equal(row.payload.owner, 'forms');
+  assert.equal(baseRow.payload.owner, 'forms');
+  assert.equal(remoteRow.payload.owner, 'forms');
+  assert.ok(payloadToken, `${testCase.id} should carry a local payload token for redaction checks`);
   return {
     rowId,
     resourceKey: generatedRowResourceKey('wp_reprint_push_forms_lab', rowId),
-    payloadToken: row.payload.token,
+    payloadToken,
+  };
+}
+
+function assertFormsLabStaleShape(testCase) {
+  const rows = Object.entries(testCase.local.db.wp_reprint_push_forms_lab)
+    .filter(([id, row]) => {
+      const baseRow = testCase.base.db.wp_reprint_push_forms_lab[id];
+      const remoteRow = testCase.remote.db.wp_reprint_push_forms_lab[id];
+      return baseRow
+        && remoteRow
+        && row.__pluginOwner === 'forms'
+        && row.payload?.mode === 'local'
+        && baseRow.payload?.mode === 'base'
+        && remoteRow.payload?.mode === 'remote-stale';
+    });
+
+  assert.equal(rows.length, 1, `${testCase.id} should expose one stale plugin-owned custom-table row`);
+  const [rowId, row] = rows[0];
+  const baseRow = testCase.base.db.wp_reprint_push_forms_lab[rowId];
+  const remoteRow = testCase.remote.db.wp_reprint_push_forms_lab[rowId];
+
+  assert.match(rowId, /^id:\d+$/, `${testCase.id} should use deterministic numeric custom-table ids`);
+  assert.notDeepEqual(remoteRow, baseRow, `${testCase.id} stale row should drift remotely`);
+  assert.equal(row.payload.owner, 'forms');
+  assert.equal(remoteRow.payload.owner, 'forms');
+  return {
+    rowId,
+    resourceKey: generatedRowResourceKey('wp_reprint_push_forms_lab', rowId),
   };
 }
 
@@ -2444,6 +2479,27 @@ function assertFormsLabReadyPlanEvidence(testCase, resourceKey, payloadToken) {
   );
 }
 
+function assertFormsLabStalePlanRefusesMutation(testCase, resourceKey) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+
+  assert.notEqual(plan.status, 'ready');
+  assert.equal(
+    plan.mutations.some((mutation) => mutation.resourceKey === resourceKey),
+    false,
+    `${testCase.id} should not plan the stale custom-table mutation`,
+  );
+  assert.ok(
+    plan.conflicts.some((conflict) => conflict.resourceKey === resourceKey)
+      || plan.blockers.some((blocker) => blocker.resourceKey === resourceKey),
+    `${testCase.id} should refuse the stale custom-table change before mutation`,
+  );
+}
+
 function assertFormsLabDeletePlanRefusesMutation(testCase, resourceKey) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -2462,8 +2518,16 @@ function assertFormsLabDeletePlanRefusesMutation(testCase, resourceKey) {
     plan.blockers.some((blocker) =>
       blocker.resourceKey === resourceKey
       && blocker.class === 'unsupported-plugin-owned-resource'
-      && blocker.reason === 'Plugin-owned resource driver does not support delete mutations.'),
-    `${testCase.id} should block custom-table delete before mutation`,
+      && blocker.driver === 'fixture-forms-lab-table'
+      && blocker.change?.localChange === 'delete'
+      && (
+        blocker.reason === 'Plugin-owned resource driver does not support delete mutations.'
+        || (
+          blocker.driverDryRunValidationEvidence?.reasonCode === 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED'
+          && blocker.driverDryRunValidationEvidence?.issueCodes?.includes('PLANNED_ROW_INVALID')
+        )
+      )),
+    `${testCase.id} should block custom-table delete before mutation with driver refusal evidence`,
   );
 }
 
@@ -2715,7 +2779,7 @@ test('RPP-0150 wp_comments and wp_commentmeta graph target exposes ready and non
   const coverage = report.summary.targetCoverage.wpCommentsCommentmetaGraph;
 
   assert.ok(coverage, 'missing wp_comments/wp_commentmeta graph target coverage');
-  assert.equal(coverage.family, 'same-plan-comment-graph');
+  assert.equal(coverage.family, 'wp-comments-commentmeta-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-comments-commentmeta-graph']);
   assert.ok(coverage.statuses.ready > 0, 'target should include ready wp_comments/wp_commentmeta graph cases');
   assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include non-ready stale graph cases');
@@ -2728,12 +2792,12 @@ test('RPP-0150 wp_comments and wp_commentmeta graph target exposes ready and non
     coverage.total,
   );
   assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
-  assert.equal(JSON.stringify(report).includes('private-comment-marker-'), false);
-  assert.equal(JSON.stringify(report).includes('Remote stale graph child comment'), false);
+  assert.equal(JSON.stringify(report).includes('generated commentmeta graph '), false);
+  assert.equal(JSON.stringify(report).includes('Remote stale comment graph target'), false);
 
   const cases = generatePushHarnessCases();
   const targetCases = cases.filter((testCase) => testCase.tags.has('wp-comments-commentmeta-graph'));
-  const readyFamilyCases = cases.filter((testCase) => testCase.family === 'same-plan-comment-graph');
+  const readyFamilyCases = cases.filter((testCase) => testCase.family === 'wp-comments-commentmeta-graph-ready');
   const staleFamilyCases = cases.filter((testCase) => testCase.family === 'wp-comments-commentmeta-graph-stale');
   const plannedCases = targetCases.map((testCase) => ({
     testCase,
@@ -2815,8 +2879,7 @@ function assertCommentsCommentmetaGraphShape(testCase, { staleTarget }) {
   const commentmetaRows = Object.entries(testCase.local.db.wp_commentmeta)
     .filter(([id, row]) =>
       !testCase.base.db.wp_commentmeta[id]
-      && row.meta_key === '_generated_comment_marker'
-      && String(row.meta_value).startsWith('private-comment-marker-'));
+      && row.meta_key.startsWith('_generated_commentmeta_graph_'));
 
   assert.equal(commentmetaRows.length, 1, `${testCase.id} should create one wp_commentmeta row`);
 
@@ -2827,13 +2890,13 @@ function assertCommentsCommentmetaGraphShape(testCase, { staleTarget }) {
   const baseComment = testCase.base.db.wp_comments[commentRowId];
 
   assert.ok(localComment, `${testCase.id} should have a local wp_comments target`);
-  assert.equal(localComment.comment_content, `Generated graph child comment ${commentId}`);
+  assert.equal(localComment.comment_content, `Generated comment graph target ${commentId}`);
 
   if (staleTarget) {
     assert.ok(baseComment, `${testCase.id} stale target should exist in base`);
     assert.ok(remoteComment, `${testCase.id} stale target should exist remotely`);
     assert.notDeepEqual(remoteComment, baseComment, `${testCase.id} stale target should drift remotely`);
-    assert.equal(remoteComment.comment_content, `Remote stale graph child comment ${commentId}`);
+    assert.equal(remoteComment.comment_content, `Remote stale comment graph target ${commentId}`);
     assert.ok(testCase.tags.has('stale-graph'));
     assert.ok(testCase.tags.has('wp-comments-remote-drift'));
   } else {
@@ -2859,10 +2922,6 @@ function createGeneratedPlan(testCase) {
     remote: testCase.remote,
     now: fixedGeneratedHarnessNow,
   });
-}
-
-function rowResourceKey(table, id) {
-  return `row:${JSON.stringify([table, id])}`;
 }
 
 function assertCommentsCommentmetaEvidenceRedacted(testCase, plan, shape) {
@@ -2891,9 +2950,9 @@ function assertCommentsCommentmetaEvidenceRedacted(testCase, plan, shape) {
 
   assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw comment graph evidence`);
   assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only comment values`);
-  assert.equal(serialized.includes('private-comment-marker-'), false, `${testCase.id} leaked raw commentmeta value`);
-  assert.equal(serialized.includes('Generated graph child comment'), false, `${testCase.id} leaked raw comment content`);
-  assert.equal(serialized.includes('Remote stale graph child comment'), false, `${testCase.id} leaked remote comment drift`);
+  assert.equal(serialized.includes('generated commentmeta graph '), false, `${testCase.id} leaked raw commentmeta value`);
+  assert.equal(serialized.includes('Generated comment graph target'), false, `${testCase.id} leaked raw comment content`);
+  assert.equal(serialized.includes('Remote stale comment graph target'), false, `${testCase.id} leaked remote comment drift`);
 }
 
 function nonReadyTargetCount(coverage) {

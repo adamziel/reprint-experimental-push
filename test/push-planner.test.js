@@ -667,7 +667,7 @@ test('applies an independent local row while preserving remote file edits behind
   const forgedBefore = JSON.stringify(forgedRemote);
   const forgedError = captureError(() => applyPlan(forgedRemote, forged));
   assert.ok(forgedError instanceof PushPlanError);
-  assert.equal(forgedError.code, 'PRECONDITION_MISSING');
+  assert.equal(forgedError.code, 'PLAN_INVARIANT_VIOLATION');
   assert.equal(JSON.stringify(forgedRemote), forgedBefore);
 });
 
@@ -1031,11 +1031,11 @@ test('proves plugin uninstall/delete mutations fail closed without an explicit d
   assert.equal(blockedPlan.status, 'blocked');
   assert.equal(blockedPlan.summary.mutations, 0);
   assert.equal(mutationFor(blockedPlan, plugin.key), undefined);
-  assert.equal(blocker.class, 'unsupported-plugin-delete');
+  assert.equal(blocker.class, 'plugin-uninstall-delete-refusal');
   assert.equal(blocker.resource.type, 'plugin');
   assert.equal(blocker.pluginOwner, 'forms');
-  assert.equal(blocker.requiredDriver, 'plugin-delete');
-  assert.match(blocker.reason, /explicit plugin delete driver/);
+  assert.equal(blocker.deleteRefusalEvidence.reasonCode, 'PLUGIN_UNINSTALL_DELETE_REFUSED');
+  assert.match(blocker.reason, /plugin uninstall\/delete\/remove is not supported/);
   assert.equal(blocker.change.localChange, 'delete');
   assert.equal(blocker.change.remoteChange, 'unchanged');
   assert.equal(blockerJson.includes(pluginSecret), false);
@@ -1074,12 +1074,15 @@ test('proves plugin uninstall/delete mutations fail closed without an explicit d
   const error = captureError(() => applyPlan(remote, forgedPlan));
 
   assert.ok(error instanceof PushPlanError);
-  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_DELETE');
+  assert.equal(error.code, 'PLUGIN_UNINSTALL_DELETE_REFUSED');
   assert.deepEqual(error.details, {
     mutationId: 'mutation-forged-plugin-delete',
     resourceKey: plugin.key,
     pluginOwner: 'forms',
-    requiredDriver: 'plugin-delete',
+    reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    operation: 'delete',
+    resourceType: 'plugin',
+    supportsDelete: false,
   });
   assert.equal(JSON.stringify(remote), beforeApply);
 
@@ -1093,7 +1096,7 @@ test('proves plugin uninstall/delete mutations fail closed without an explicit d
       class: blocker.class,
       resourceKey: blocker.resourceKey,
       pluginOwner: blocker.pluginOwner,
-      requiredDriver: blocker.requiredDriver,
+      reasonCode: blocker.deleteRefusalEvidence.reasonCode,
       blockerHash: sha256Evidence(blocker),
     },
     applyRefusal: {
@@ -1152,7 +1155,7 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
   const blockedPlan = planFor(base, local, remote);
   const pluginDeleteBlocker = blockedPlan.blockers.find((entry) => entry.resourceKey === plugin.key);
   const optionDeleteBlocker = blockedPlan.blockers.find((entry) => entry.resourceKey === optionResourceKey);
-  const packageFileMutation = mutationFor(blockedPlan, pluginFileResource.key);
+  const packageFileBlocker = blockedPlan.blockers.find((entry) => entry.resourceKey === pluginFileResource.key);
   const remoteWithPrivateData = cloneJson(remote);
   remoteWithPrivateData.files[pluginFile] = `<?php /* ${privateValues[3]} */`;
   remoteWithPrivateData.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[4];
@@ -1160,8 +1163,8 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
   const blockedError = captureError(() => applyPlan(remoteWithPrivateData, blockedPlan));
 
   assert.equal(blockedPlan.status, 'blocked');
-  assert.equal(pluginDeleteBlocker.class, 'unsupported-plugin-delete');
-  assert.equal(pluginDeleteBlocker.requiredDriver, 'plugin-delete');
+  assert.equal(pluginDeleteBlocker.class, 'plugin-uninstall-delete-refusal');
+  assert.equal(pluginDeleteBlocker.deleteRefusalEvidence.reasonCode, 'PLUGIN_UNINSTALL_DELETE_REFUSED');
   assert.equal(pluginDeleteBlocker.change.localChange, 'delete');
   assert.equal(pluginDeleteBlocker.change.remoteChange, 'unchanged');
   assert.equal(mutationFor(blockedPlan, plugin.key), undefined);
@@ -1169,7 +1172,9 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
   assert.equal(optionDeleteBlocker.driver, 'wp-option');
   assert.equal(optionDeleteBlocker.change.localChange, 'delete');
   assert.equal(optionDeleteBlocker.change.remoteChange, 'unchanged');
-  assert.equal(packageFileMutation.action, 'delete');
+  assert.equal(packageFileBlocker.class, 'plugin-uninstall-delete-refusal');
+  assert.equal(packageFileBlocker.deleteRefusalEvidence.reasonCode, 'PLUGIN_UNINSTALL_DELETE_REFUSED');
+  assert.equal(mutationFor(blockedPlan, pluginFileResource.key), undefined);
   assert.ok(blockedError instanceof PushPlanError);
   assert.equal(blockedError.code, 'PLAN_NOT_READY');
   assert.equal(digest(remoteWithPrivateData), beforeBlockedApplyHash);
@@ -1197,7 +1202,6 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
   const forgedPlan = tamperReadyPlan(blockedPlan, (plan) => {
     plan.mutations = [
       forgedPluginDeleteMutation,
-      packageFileMutation,
     ];
     plan.preconditions = [
       {
@@ -1205,13 +1209,6 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
         resource: plugin,
         resourceKey: plugin.key,
         expectedHash: resourceHash(remote, plugin),
-        checkedAgainst: 'live-remote',
-      },
-      {
-        mutationId: packageFileMutation.id,
-        resource: packageFileMutation.resource,
-        resourceKey: packageFileMutation.resourceKey,
-        expectedHash: resourceHash(remote, packageFileMutation.resource),
         checkedAgainst: 'live-remote',
       },
     ];
@@ -1224,12 +1221,15 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
   const forgedError = captureError(() => applyPlan(forgedRemote, forgedPlan));
 
   assert.ok(forgedError instanceof PushPlanError);
-  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_DELETE');
+  assert.equal(forgedError.code, 'PLUGIN_UNINSTALL_DELETE_REFUSED');
   assert.deepEqual(forgedError.details, {
     mutationId: forgedPluginDeleteMutation.id,
     resourceKey: plugin.key,
     pluginOwner: 'forms',
-    requiredDriver: 'plugin-delete',
+    reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    operation: 'delete',
+    resourceType: 'plugin',
+    supportsDelete: false,
   });
   assert.equal(digest(forgedRemote), beforeForgedApplyHash);
   assert.equal(forgedRemote.files[pluginFile].includes(privateValues[1]), true);
@@ -1249,12 +1249,7 @@ test('RPP-0471 plugin uninstall/delete refusal preserves package and data', () =
       summary: blockedPlan.summary,
       pluginDeleteBlockerHash: sha256Evidence(pluginDeleteBlocker),
       optionDeleteBlockerHash: sha256Evidence(optionDeleteBlocker),
-      packageFileMutationHash: sha256Evidence({
-        resourceKey: packageFileMutation.resourceKey,
-        action: packageFileMutation.action,
-        localHash: packageFileMutation.localHash,
-        remoteBeforeHash: packageFileMutation.remoteBeforeHash,
-      }),
+      packageFileBlockerHash: sha256Evidence(packageFileBlocker),
     },
     applyRefusal: {
       blockedPlanCode: blockedError.code,
@@ -2606,12 +2601,13 @@ test('RPP-0448 serialized option validator accepts valid payloads and fails clos
   assert.equal(blocker.driverPayloadValidationEvidence.rawValuesIncluded, false);
   assert.equal(blockerJson.includes(privateValues[2]), false);
 
-  const forged = tamperReadyPlan(ready, (plan) => {
-    const forgedMutation = mutationFor(plan, resourceKey);
-    forgedMutation.value.value.option_value = malformedSerializedOption(privateValues[2]);
-    forgedMutation.value.value.option_name = 'forms_serialized_state';
-    forgedMutation.pluginOwnedResource.driverPayloadValidationEvidence = null;
-  });
+	  const forged = tamperReadyPlan(ready, (plan) => {
+	    const forgedMutation = mutationFor(plan, resourceKey);
+	    forgedMutation.value.value.option_value = malformedSerializedOption(privateValues[2]);
+	    forgedMutation.value.value.option_name = 'forms_serialized_state';
+	    forgedMutation.localHash = digest(forgedMutation.value.value);
+	    forgedMutation.pluginOwnedResource.driverPayloadValidationEvidence = null;
+	  });
   const forgedRemote = cloneJson(remote);
   const forgedRemoteBefore = JSON.stringify(forgedRemote);
   let forgedHookCalls = 0;
@@ -2845,7 +2841,7 @@ test('RPP-0468 serialized option validator accepts valid payloads and refuses in
   assert.equal(invalidPlan.status, 'blocked');
   assert.equal(invalidPlan.summary.mutations, 0);
   assert.equal(mutationFor(invalidPlan, resourceKey), undefined);
-  assert.equal(invalidBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(invalidBlocker.class, 'invalid-plugin-driver-payload');
   assert.equal(invalidBlocker.pluginOwner, 'forms');
   assert.equal(invalidBlocker.driver, 'wp-option');
   assert.equal(invalidBlocker.serializedOptionValidationEvidence.valid, false);
@@ -2880,7 +2876,7 @@ test('RPP-0468 serialized option validator accepts valid payloads and refuses in
   const applyValidationEvidence = forgedError.details.applyValidationEvidence;
 
   assert.ok(forgedError instanceof PushPlanError);
-  assert.equal(forgedError.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(forgedError.code, 'INVALID_PLUGIN_DRIVER_PAYLOAD');
   assert.equal(hookCalls, 0);
   assert.equal(forgedError.details.resourceKey, resourceKey);
   assert.equal(forgedError.details.pluginOwner, 'forms');
@@ -3119,7 +3115,7 @@ test('RPP-0208 blocks unknown plugin-owned custom table rows without leaking val
         value: { value: { entry_id: 9, __pluginOwner: 'forms' } },
         remoteBeforeHash: blocker.remoteHash,
         baseHash: blocker.baseHash,
-        localHash: blocker.localHash,
+        localHash: digest({ entry_id: 9, __pluginOwner: 'forms' }),
         changeKind: 'update',
         change: blocker.change,
         pluginOwnedResource: { pluginOwner: 'forms', driver: null, policySource: 'forged-test' },

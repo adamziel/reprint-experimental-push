@@ -42,6 +42,7 @@ export function applyPlan(remote, plan, options = {}) {
     );
   }
 
+  validateSupportedPluginContextMutations(plan);
   validateReadyPlanEnvelope(plan);
   validateAtomicGroupDependencyPlan(remote, plan);
   validateNoDirectActivePluginsMutations(plan);
@@ -92,7 +93,6 @@ export function applyPlan(remote, plan, options = {}) {
   }
 
   validatePreconditions(remote, plan);
-  validateSupportedPluginContextMutations(plan);
   validateSupportedPluginOwnedMutations(remote, plan);
   try {
     recordDurablePlanOpened(durableJournal, remote, plan, {
@@ -208,21 +208,36 @@ export function applyPlan(remote, plan, options = {}) {
 function validateSupportedPluginContextMutations(plan) {
   for (const mutation of plan.mutations || []) {
     const plannedValue = deserializeResourceValue(mutation.value);
-    if (mutation.resource?.type !== 'plugin' || plannedValue !== ABSENT) {
+    const pluginDelete = mutation.resource?.type === 'plugin' && plannedValue === ABSENT;
+    const pluginFileDelete = mutation.resource?.type === 'file'
+      && /^file:wp-content\/plugins\//.test(mutation.resourceKey || '')
+      && plannedValue === ABSENT;
+    if (!pluginDelete && !pluginFileDelete) {
       continue;
     }
 
+    const pluginOwner = mutation.resource?.type === 'plugin'
+      ? mutation.resource.name
+      : pluginOwnedOwnerForFileResourceKey(mutation.resourceKey);
     throw new PushPlanError(
-      'UNSUPPORTED_PLUGIN_DELETE',
+      'PLUGIN_UNINSTALL_DELETE_REFUSED',
       `Refusing to apply unsupported plugin uninstall/delete mutation ${mutation.resourceKey}.`,
       {
         mutationId: mutation.id,
         resourceKey: mutation.resourceKey,
-        pluginOwner: mutation.resource.name,
-        requiredDriver: 'plugin-delete',
+        pluginOwner,
+        reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+        operation: 'delete',
+        resourceType: mutation.resource?.type || null,
+        supportsDelete: false,
       },
     );
   }
+}
+
+function pluginOwnedOwnerForFileResourceKey(resourceKey) {
+  const match = String(resourceKey || '').match(/^file:wp-content\/plugins\/([^/]+)/);
+  return match?.[1] || null;
 }
 
 function validateNoDirectActivePluginsMutations(plan) {
@@ -283,6 +298,30 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
         },
       );
     }
+    const driverPayloadSupport = pluginOwnedDriverPayloadSupport({ mutation, plannedValue });
+    if (!driverPayloadSupport.valid) {
+      throw new PushPlanError(
+        'INVALID_PLUGIN_DRIVER_PAYLOAD',
+        `Refusing to apply invalid plugin-owned resource payload ${mutation.resourceKey}.`,
+        {
+          mutationId: mutation.id,
+          resourceKey: mutation.resourceKey,
+          pluginOwner: owner,
+          driver,
+          reasonCode: driverPayloadSupport.reasonCode,
+          applyValidationEvidence: pluginOwnedApplyValidationEvidence({
+            remote,
+            mutation,
+            owner,
+            driver,
+            plannedValue,
+            remoteValue,
+            outcome: 'refused-before-mutation',
+            driverPayloadValidationEvidence: driverPayloadSupport.evidence,
+          }),
+        },
+      );
+    }
     validatePluginOwnedOwnerContext(remote, mutation, owner);
     validatePluginOwnedApplyValidation(mutation, owner, driver);
   }
@@ -325,20 +364,39 @@ function pluginOwnedOwner(value) {
   return value.__pluginOwner || null;
 }
 
+function pluginOwnedDriverPayloadSupport({ mutation, plannedValue }) {
+  if (mutation.pluginOwnedResource?.driver !== 'wp-option') {
+    return { valid: true, evidence: null };
+  }
+  if (!(mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options')) {
+    return { valid: true, evidence: null };
+  }
+  const serializedOptionValidationEvidence = serializedOptionValidationEvidenceForRows({
+    resourceKey: mutation.resourceKey,
+    table: mutation.resource.table,
+    rows: [{ snapshot: 'planned', row: plannedValue }],
+  });
+  if (!serializedOptionValidationEvidence.serialized) {
+    return { valid: true, evidence: null };
+  }
+  const evidence = {
+    ...serializedOptionValidationEvidence,
+    validator: 'php-serialized-option',
+    outcome: serializedOptionValidationEvidence.valid ? 'accepted' : 'refused',
+  };
+  return {
+    valid: serializedOptionValidationEvidence.valid,
+    reasonCode: serializedOptionValidationEvidence.valid ? null : 'INVALID_SERIALIZED_OPTION_PAYLOAD',
+    evidence,
+  };
+}
+
 function isSupportedPluginOwnedMutation(remote, mutation, owner, driver, plannedValue) {
   if (plannedValue === ABSENT && mutation.pluginOwnedResource?.supportsDelete !== true) {
     return false;
   }
   if (driver === 'wp-option') {
-    if (!(mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options')) {
-      return false;
-    }
-    const serializedOptionValidationEvidence = serializedOptionValidationEvidenceForRows({
-      resourceKey: mutation.resourceKey,
-      table: mutation.resource.table,
-      rows: [{ snapshot: 'planned', row: plannedValue }],
-    });
-    return serializedOptionValidationEvidence.valid;
+    return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_options';
   }
   if (driver === 'wp-postmeta' || driver === 'wp-post-meta') {
     return mutation.resource?.type === 'row' && mutation.resource.table === 'wp_postmeta';
@@ -488,6 +546,7 @@ function pluginOwnedApplyValidationEvidence({
   plannedValue,
   remoteValue,
   outcome,
+  driverPayloadValidationEvidence = mutation.pluginOwnedResource?.driverPayloadValidationEvidence || null,
 }) {
   const serializedOptionValidationEvidence = mutation.resource?.type === 'row'
     && mutation.resource.table === 'wp_options'
@@ -523,6 +582,7 @@ function pluginOwnedApplyValidationEvidence({
       hash: resourceHash(remote, mutation.resource),
     },
     driverEvidence: pluginOwnedDriverEvidenceSummary(mutation.pluginOwnedResource?.driverEvidence),
+    ...(driverPayloadValidationEvidence ? { driverPayloadValidationEvidence } : {}),
     ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
   };
 }

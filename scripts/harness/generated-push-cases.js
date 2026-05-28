@@ -13,7 +13,7 @@ import {
 } from '../../src/resources.js';
 
 export const MIN_GENERATED_PUSH_CASES = 300;
-export const DEFAULT_GENERATED_PUSH_CASES = 510;
+export const DEFAULT_GENERATED_PUSH_CASES = 610;
 export const DEFAULT_GENERATED_PUSH_SEED = 0x52706e74;
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
@@ -43,6 +43,7 @@ const scenarioFamilies = Object.freeze([
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
   'stale-comment-parent-graph',
+  'plugin-owned-custom-table-changes',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -79,6 +80,8 @@ const scenarioFamilies = Object.freeze([
   'same-plan-user-meta-graph',
   'comment-user-graph-ready',
   'comment-user-graph-stale',
+  'featured-image-attachment-ready',
+  'featured-image-attachment-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -96,6 +99,7 @@ const readyPreservingFamilies = new Set([
   'same-plan-post-author-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'plugin-owned-custom-table-changes',
   'supported-forms-lab-table',
   'atomic-plugin-stack-ready',
   'plugin-file-update',
@@ -116,10 +120,13 @@ const readyPreservingFamilies = new Set([
   'same-plan-user-meta-graph',
   'comment-user-graph-ready',
   'comment-user-graph-stale',
+  'featured-image-attachment-ready',
+  'featured-image-attachment-stale',
 ]);
 
 const skipSeededComplexityFamilies = new Set([
   'large-ready-plan-tier',
+  'plugin-owned-custom-table-changes',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -208,8 +215,8 @@ const targetCoverageDefinitions = Object.freeze({
     tag: 'plugin-owned-option-change',
   },
   pluginOwnedCustomTableChanges: {
-    family: 'supported-forms-lab-table',
-    tag: 'plugin-owned-custom-table-change',
+    family: 'plugin-owned-custom-table-changes',
+    tag: 'plugin-owned-custom-table-target',
   },
   staleRemoteAfterDryRun: {
     family: 'ready-plan-stale-remote-after-dry-run',
@@ -221,6 +228,10 @@ const targetCoverageDefinitions = Object.freeze({
   commentUserGraph: {
     family: 'comment-user-graph-ready',
     tag: 'comment-user-graph',
+  },
+  featuredImageAttachmentGraph: {
+    family: 'featured-image-attachment-ready',
+    tag: 'featured-image-attachment',
   },
   usermetaDriverSupported: {
     family: 'supported-plugin-usermeta',
@@ -256,6 +267,14 @@ export function generateDriverOwnerIdentityBindingCases() {
     'unsupported-local-owner-drift',
     'unsupported-stale-owner-context',
   ].map((variant, index) => buildDriverOwnerIdentityBindingCase({ variant, index }));
+}
+
+export function generateDriverDeleteSupportFlagCases() {
+  return [
+    'delete-supported-applies',
+    'delete-unsupported-blocked',
+    'forged-delete-support-flag-rejected',
+  ].map((variant, index) => buildDriverDeleteSupportFlagCase({ variant, index }));
 }
 
 export function runGeneratedPushHarness(options = {}) {
@@ -412,6 +431,122 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
   return result;
 }
 
+export function validateDriverDeleteSupportFlagCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      evidenceScope: 'local-generated',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      status: plan.status,
+      mutation: mutation ? driverDeleteSupportMutationSummary(mutation) : null,
+      blocker: blocker ? driverDeleteSupportBlockerSummary(blocker) : null,
+    }),
+  };
+
+  assertDriverDeleteSupportRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied-delete') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.mutations.length, 1);
+    assert.equal(plan.blockers.length, 0);
+    assert.ok(mutation, `${testCase.id} should emit a delete mutation`);
+    assert.equal(mutation.action, 'delete');
+    assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+    assertDriverDeleteSupportAuditEvidence(mutation.pluginOwnedResource.auditEvidence, true);
+    assertDriverDeleteSupportChangeHashEvidence(mutation.change);
+    assertDriverDeleteSupportRedacted(testCase, mutation.pluginOwnedResource.auditEvidence);
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(Object.hasOwn(applied.site.db.wp_options, testCase.dataRowId), false);
+    assert.deepEqual(applied.site.plugins[testCase.plugin], testCase.expected.plugin);
+    result.outcome = 'applied-delete';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'blocked-unsupported-delete') {
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.mutations.length, 0);
+    assert.ok(blocker, `${testCase.id} should expose an unsupported delete-support blocker`);
+    assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+    assert.equal(blocker.driver, 'wp-option');
+    assert.equal(blocker.pluginOwner, testCase.plugin);
+    assert.equal(blocker.reason, 'Plugin-owned resource driver does not support delete mutations.');
+    assert.equal(blocker.change.localChange, 'delete');
+    assert.equal(blocker.change.remoteChange, 'unchanged');
+    assertDriverDeleteSupportChangeHashEvidence(blocker.change);
+    assertDriverDeleteSupportRedacted(testCase, blocker);
+
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const error = captureError(() => applyPlan(remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a blocked unsupported delete`);
+    assert.equal(
+      remote.db.wp_options[testCase.dataRowId].option_value.token,
+      testCase.expected.remoteToken,
+    );
+    assertDriverDeleteSupportRedacted(testCase, error.details);
+    result.outcome = 'blocked-unsupported-delete';
+    result.applied = false;
+    result.remotePreserved = true;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'rejected-forged-unsupported-delete');
+  assert.equal(plan.status, 'ready');
+  assert.ok(mutation, `${testCase.id} should start from a valid delete-support plan`);
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+  const forgedPlan = driverDeleteSupportForgedUnsupportedPlan(plan, mutation.id);
+  const forgedMutation = forgedPlan.mutations.find((entry) => entry.id === mutation.id);
+  assert.equal(forgedMutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(forgedMutation.pluginOwnedResource.auditEvidence.supportsDelete, false);
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, forgedPlan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(error.details.resourceKey, testCase.dataResourceKey);
+  assert.equal(error.details.pluginOwner, testCase.plugin);
+  assert.equal(error.details.driver, 'wp-option');
+  assert.equal(error.details.applyValidationEvidence.action, 'delete');
+  assert.equal(error.details.applyValidationEvidence.supportsDelete, false);
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a forged unsupported delete`);
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.token,
+    testCase.expected.remoteToken,
+  );
+  assertDriverDeleteSupportRedacted(testCase, error.details);
+  result.outcome = 'rejected-forged-unsupported-delete';
+  result.applied = false;
+  result.rejectionCode = error.code;
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -556,6 +691,70 @@ function buildDriverOwnerIdentityBindingCase({ variant, index }) {
     driver: null,
     reasonCode: 'STALE_PLUGIN_METADATA_OWNER_CONTEXT',
   };
+  return testCase;
+}
+
+function buildDriverDeleteSupportFlagCase({ variant, index }) {
+  const base = buildBaseSite(4560 + index, 4);
+  const plugin = 'forms';
+  const optionName = `rpp_0456_driver_delete_support_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const secrets = {
+    pluginVersion: `rpp0456-plugin-version-secret-${index + 1}`,
+    baseOption: `rpp0456-base-delete-token-secret-${index + 1}`,
+  };
+  const supportsDelete = variant !== 'delete-unsupported-blocked';
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base-delete-target', token: secrets.baseOption },
+    __pluginOwner: plugin,
+  };
+
+  base.plugins[plugin] = { version: secrets.pluginVersion, active: true };
+  setRow(base, 'wp_options', dataRowId, baseRow);
+  allowPluginOwned(base, dataResourceKey, plugin, 'wp-option', { supportsDelete });
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  deleteRow(local, 'wp_options', dataRowId);
+  allowPluginOwned(local, dataResourceKey, plugin, 'wp-option', { supportsDelete });
+  allowPluginOwned(remote, dataResourceKey, plugin, 'wp-option', { supportsDelete });
+
+  const testCase = {
+    id: `rpp-0456-driver-delete-support-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'driver-delete-support-flag',
+    tags: new Set(['driver-delete-support-flag', 'plugin-owned-generated']),
+    plugin,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {
+      remoteToken: secrets.baseOption,
+      plugin: base.plugins[plugin],
+    },
+  };
+
+  if (variant === 'delete-supported-applies') {
+    testCase.tags.add('delete-support-true-applies');
+    testCase.expected.outcome = 'applied-delete';
+    return testCase;
+  }
+
+  if (variant === 'forged-delete-support-flag-rejected') {
+    testCase.tags.add('delete-support-forged-fail-closed');
+    testCase.expected.outcome = 'rejected-forged-unsupported-delete';
+    return testCase;
+  }
+
+  assert.equal(variant, 'delete-unsupported-blocked');
+  testCase.tags.add('delete-support-false-blocked');
+  testCase.expected.outcome = 'blocked-unsupported-delete';
   return testCase;
 }
 
@@ -931,19 +1130,32 @@ const scenarioFamilyBuilders = {
     tags.add('comment-parent-graph');
     tags.add('comment-parent-stale');
   },
+  'plugin-owned-custom-table-changes': ({ base, local, remote, allocator, tags, tier }) => {
+    const staleTarget = tier % 2 === 1;
+    addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, {
+      staleTarget,
+      prefix: staleTarget ? 'stale-forms-lab' : 'ready-forms-lab',
+    });
+    if (staleTarget) {
+      tags.add('expected-conflict');
+    } else {
+      tags.add('ready-candidate');
+    }
+  },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();
     const rowId = `id:${id}`;
     const row = {
       id,
-      payload: { mode: 'base', token: `forms-lab-${id}` },
+      form_slug: `generated-forms-lab-${id}`,
+      payload: { owner: 'forms', mode: 'base', token: `forms-lab-${id}` },
       __pluginOwner: 'forms',
     };
     setRow(base, 'wp_reprint_push_forms_lab', rowId, row);
     setRow(remote, 'wp_reprint_push_forms_lab', rowId, row);
     setRow(local, 'wp_reprint_push_forms_lab', rowId, {
       ...row,
-      payload: { mode: 'local', token: `forms-lab-${id}` },
+      payload: { owner: 'forms', mode: 'local', token: `forms-lab-${id}` },
     });
     allowPluginOwned(local, rowKey('wp_reprint_push_forms_lab', rowId), 'forms', 'fixture-forms-lab-table', {
       table: 'wp_reprint_push_forms_lab',
@@ -956,7 +1168,8 @@ const scenarioFamilyBuilders = {
     const rowId = `id:${id}`;
     const row = {
       id,
-      payload: { mode: 'base', token: `delete-blocked-${id}` },
+      form_slug: `generated-delete-blocked-${id}`,
+      payload: { owner: 'forms', mode: 'base', token: `delete-blocked-${id}` },
       __pluginOwner: 'forms',
     };
     setRow(base, 'wp_reprint_push_forms_lab', rowId, row);
@@ -1173,6 +1386,14 @@ const scenarioFamilyBuilders = {
   },
   'comment-user-graph-stale': ({ base, local, remote, allocator, tags }) => {
     addCommentUserGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
+  },
+  'featured-image-attachment-ready': ({ local, allocator, tags }) => {
+    addFeaturedImageAttachmentGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'featured-image-attachment-stale': ({ base, local, remote, allocator, tags }) => {
+    addFeaturedImageAttachmentGraph(base, local, remote, allocator, tags, { staleTarget: true });
     tags.add('expected-blocked');
   },
 };
@@ -1467,6 +1688,81 @@ function assertGeneratedOwnerBindingRedacted(testCase, evidence) {
       false,
       `${testCase.id} leaked generated owner identity token ${token}`,
     );
+  }
+}
+
+function driverDeleteSupportMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+    driver: mutation.pluginOwnedResource?.driver,
+    supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+    auditEvidenceHash: mutation.pluginOwnedResource?.auditEvidence
+      ? digest(mutation.pluginOwnedResource.auditEvidence)
+      : null,
+    change: {
+      localChange: mutation.change.localChange,
+      remoteChange: mutation.change.remoteChange,
+      baseHash: mutation.change.base.hash,
+      localHash: mutation.change.local.hash,
+      remoteHash: mutation.change.remote.hash,
+    },
+  };
+}
+
+function driverDeleteSupportBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    resourceKey: blocker.resourceKey,
+    pluginOwner: blocker.pluginOwner,
+    driver: blocker.driver || null,
+    policySource: blocker.policySource || null,
+    localChange: blocker.change.localChange,
+    remoteChange: blocker.change.remoteChange,
+    baseHash: blocker.change.base.hash,
+    localHash: blocker.change.local.hash,
+    remoteHash: blocker.change.remote.hash,
+  };
+}
+
+function driverDeleteSupportForgedUnsupportedPlan(plan, mutationId) {
+  const forged = deepClone(plan);
+  const mutation = forged.mutations.find((entry) => entry.id === mutationId);
+  mutation.pluginOwnedResource.supportsDelete = false;
+  mutation.pluginOwnedResource.auditEvidence = {
+    ...mutation.pluginOwnedResource.auditEvidence,
+    supportsDelete: false,
+  };
+  return forged;
+}
+
+function assertDriverDeleteSupportAuditEvidence(evidence, supportsDelete) {
+  assert.equal(evidence.schemaVersion, 1);
+  assert.equal(evidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(evidence.format, 'hash-only');
+  assert.equal(evidence.rawValuesIncluded, false);
+  assert.equal(evidence.pluginOwner, 'forms');
+  assert.equal(evidence.driver, 'wp-option');
+  assert.equal(evidence.supportsDelete, supportsDelete);
+  for (const key of ['baseHash', 'localHash', 'remoteHash', 'ownerContextHash']) {
+    assert.match(evidence[key], /^[a-f0-9]{64}$/);
+  }
+}
+
+function assertDriverDeleteSupportChangeHashEvidence(change) {
+  assert.ok(change);
+  for (const side of ['base', 'local', 'remote']) {
+    assert.ok(['present', 'absent'].includes(change[side].state));
+    assert.match(change[side].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[side], 'value'), false);
+  }
+}
+
+function assertDriverDeleteSupportRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
   }
 }
 
@@ -2090,6 +2386,66 @@ function addPluginOwnedOptionChange(base, local, remote, allocator, tags, { conf
   }
 }
 
+function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, { staleTarget, prefix }) {
+  const id = allocator.formsLabId();
+  const rowId = `id:${id}`;
+  const resourceKey = rowKey('wp_reprint_push_forms_lab', rowId);
+  const row = {
+    id,
+    form_slug: `generated-rpp-0135-${id}`,
+    payload: {
+      owner: 'forms',
+      scenario: 'rpp-0135-plugin-owned-custom-table',
+      mode: 'base',
+      privateToken: `rpp0135-private-base-${prefix}-${id}`,
+    },
+    updated_marker: `base-${id}`,
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_reprint_push_forms_lab', rowId, row);
+  setRow(remote, 'wp_reprint_push_forms_lab', rowId, row);
+  setRow(local, 'wp_reprint_push_forms_lab', rowId, {
+    ...row,
+    payload: {
+      ...row.payload,
+      owner: 'forms',
+      mode: 'local',
+      privateToken: `rpp0135-private-local-${prefix}-${allocator.next()}`,
+    },
+    updated_marker: `local-${allocator.next()}`,
+  });
+  allowPluginOwned(local, resourceKey, 'forms', 'fixture-forms-lab-table', {
+    table: 'wp_reprint_push_forms_lab',
+  });
+  remote.files[`wp-content/uploads/${prefix}-custom-table-remote-only-${allocator.next()}.txt`] =
+    `Remote preserved custom table note ${allocator.next()}`;
+
+  if (staleTarget) {
+    setRow(remote, 'wp_reprint_push_forms_lab', rowId, {
+      ...row,
+      payload: {
+        ...row.payload,
+        owner: 'forms',
+        mode: 'remote-stale',
+        privateToken: `rpp0135-private-remote-${prefix}-${allocator.next()}`,
+      },
+      updated_marker: `remote-${allocator.next()}`,
+    });
+    tags.add('forms-lab-custom-table-stale');
+    tags.add('forms-lab-remote-drift');
+  } else {
+    tags.add('forms-lab-custom-table-ready');
+  }
+
+  tags.add('plugin-owned-custom-table-target');
+  tags.add('plugin-owned-custom-table-change');
+  tags.add('forms-lab-custom-table-change');
+  tags.add('forms-lab-supported');
+  tags.add('plugin-owned-supported');
+  tags.add('remote-preserve');
+}
+
 function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
   const commentId = allocator.graphId();
   const metaId = allocator.graphId();
@@ -2133,6 +2489,51 @@ function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTa
   }
 }
 
+function addFeaturedImageAttachmentGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const postId = 1;
+  const attachmentId = allocator.graphId();
+  const attachmentRowId = `ID:${attachmentId}`;
+  const thumbnailRowId = `post_id:${postId}:meta_key:_thumbnail_id`;
+  const attachment = makePost(attachmentId, `Generated featured image attachment ${attachmentId}`, {
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: postId,
+    post_author: 1,
+    post_mime_type: 'image/jpeg',
+    guid: `https://example.test/wp-content/uploads/generated-featured-image-${attachmentId}.jpg`,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_posts', attachmentRowId, attachment);
+    setRow(local, 'wp_posts', attachmentRowId, attachment);
+    setRow(remote, 'wp_posts', attachmentRowId, {
+      ...attachment,
+      post_title: `Remote stale featured image attachment ${attachmentId}`,
+      post_content: `remote stale featured image private payload ${attachmentId}`,
+    });
+  } else {
+    setRow(local, 'wp_posts', attachmentRowId, attachment);
+  }
+
+  setRow(local, 'wp_postmeta', thumbnailRowId, {
+    post_id: postId,
+    meta_key: '_thumbnail_id',
+    meta_value: String(attachmentId),
+  });
+
+  tags.add('featured-image-attachment');
+  tags.add('featured-image-graph');
+  tags.add('postmeta-post');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('featured-image-stale-target');
+  } else {
+    tags.add('featured-image-ready');
+    tags.add('attachment-post-create');
+  }
+}
 
 function addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
   const termId = allocator.graphId();

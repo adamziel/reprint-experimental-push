@@ -247,7 +247,23 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           addPluginOwnedResourceBlocker(plan, {
             resource,
             owner,
-            support: ownerContextSupport,
+            support: {
+              ...ownerContextSupport,
+              driver: support.driver,
+              policySource: support.policySource,
+              supportsDelete: support.supportsDelete,
+              driverAuditEvidence: pluginOwnedDriverDecisionAuditEvidence({
+                resource,
+                owner,
+                support,
+                action: localValue === ABSENT ? 'delete' : 'put',
+                decision: 'blocked',
+                reasonCode: 'PLUGIN_DRIVER_REMOTE_DRIFT_PRESERVED',
+                baseHash,
+                localHash,
+                remoteHash,
+              }),
+            },
             baseValue,
             localValue,
             remoteValue,
@@ -266,6 +282,16 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
               supported: false,
               className: 'unsupported-plugin-owned-resource',
               reason: 'Plugin-owned resource driver does not support delete mutations.',
+              deleteSupportRefusalEvidence: pluginOwnedDriverDeleteSupportRefusalEvidence({
+                resource,
+                owner,
+                support,
+              }),
+              deleteRefusalEvidence: pluginOwnedResourceDeleteRefusalEvidence({
+                resource,
+                owner,
+                support,
+              }),
             },
             baseValue,
             localValue,
@@ -347,7 +373,27 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
             remoteHash,
             ownerContext,
           }),
+          driverAuditEvidence: pluginOwnedDriverDecisionAuditEvidence({
+            resource,
+            owner,
+            support,
+            action: localValue === ABSENT ? 'delete' : 'put',
+            decision: 'supported',
+            reasonCode: 'PLUGIN_DRIVER_DECISION_SUPPORTED',
+            baseHash,
+            localHash,
+            remoteHash,
+          }),
           driverEvidence: support.driverEvidence,
+          ...(support.driverPayloadValidationEvidence
+            ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
+            : {}),
+          ...(support.dryRunValidationEvidence
+            ? { dryRunValidationEvidence: support.dryRunValidationEvidence }
+            : {}),
+          ...(support.applyValidationEvidence
+            ? { applyValidationEvidence: support.applyValidationEvidence }
+            : {}),
         };
       }
       plan.mutations.push(mutation);
@@ -457,6 +503,26 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         (SUPPORTED_PLUGIN_DATA_DRIVERS.has(entry.driver) || (entry.driver && entry.table))
         && pluginOwnedPolicyEntryMatchesResource(entry, resource, owner));
       if (!supported) {
+        if (withDriver.driver === 'fixture-forms-lab-table') {
+          const driverEvidence = fixtureFormsLabTableDriverEvidence({
+            resource,
+            owner,
+            base,
+            local,
+            remote,
+          });
+          return {
+            supported: false,
+            className: 'unsupported-plugin-owned-resource',
+            driver: withDriver.driver,
+            policySource: withDriver.source,
+            reason: driverEvidence.reason,
+            driverEvidence,
+            ...(driverEvidence.dryRunValidationEvidence
+              ? { driverDryRunValidationEvidence: driverEvidence.dryRunValidationEvidence }
+              : {}),
+          };
+        }
         return {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
@@ -477,14 +543,19 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           ],
         })
         : null;
+      const driverPayloadValidationEvidence = serializedOptionValidationEvidence?.serialized
+        ? pluginDriverPayloadValidationEvidence(serializedOptionValidationEvidence)
+        : null;
       if (serializedOptionValidationEvidence && !serializedOptionValidationEvidence.valid) {
         return {
           supported: false,
-          className: 'unsupported-plugin-owned-resource',
+          className: 'invalid-plugin-driver-payload',
+          reasonCode: 'INVALID_SERIALIZED_OPTION_PAYLOAD',
           driver: supported.driver,
           policySource: supported.source,
           reason: `Serialized option validator refused ${resource.key}: ${serializedOptionValidationEvidence.reasonCode}.`,
           serializedOptionValidationEvidence,
+          driverPayloadValidationEvidence,
         };
       }
 
@@ -503,6 +574,10 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
             driver: supported.driver,
             policySource: supported.source,
             reason: driverEvidence.reason,
+            driverEvidence,
+            ...(driverEvidence.dryRunValidationEvidence
+              ? { driverDryRunValidationEvidence: driverEvidence.dryRunValidationEvidence }
+              : {}),
           };
         }
         return {
@@ -514,31 +589,94 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         };
       }
 
+      const driverEvidence = pluginOwnedMetaDriverEvidence({
+        resource,
+        owner,
+        driver: supported.driver,
+        policySource: supported.source,
+        evidenceScope: supported.evidenceScope,
+        row: getResource(local, resource),
+      });
+      if (driverEvidence && !driverEvidence.supported) {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          driver: supported.driver,
+          policySource: supported.source,
+          reason: driverEvidence.reason,
+          driverEvidence,
+        };
+      }
+
+      const dryRunValidationEvidence = pluginDriverHookValidationEvidence({
+        kind: 'dry-run',
+        validation: supported.dryRunValidation,
+        resource,
+        owner,
+        driver: supported.driver,
+        policySource: supported.source,
+      });
+      if (dryRunValidationEvidence?.reasonCode === 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_UNSUPPORTED') {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          driver: supported.driver,
+          policySource: supported.source,
+          reason: 'Plugin-owned resource driver dry-run validation hook is not supported.',
+          dryRunValidationEvidence,
+        };
+      }
+      if (dryRunValidationEvidence?.reasonCode === 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_FAILED') {
+        return {
+          supported: false,
+          className: 'unsupported-plugin-owned-resource',
+          driver: supported.driver,
+          policySource: supported.source,
+          reason: 'Plugin-owned resource driver dry-run validation hook did not pass.',
+          dryRunValidationEvidence,
+        };
+      }
+
+      const applyValidationEvidence = pluginDriverHookValidationEvidence({
+        kind: 'apply',
+        validation: supported.applyValidation,
+        resource,
+        owner,
+        driver: supported.driver,
+        policySource: supported.source,
+      });
+
       return {
         supported: true,
         driver: supported.driver,
         policySource: supported.source,
         supportsDelete: supported.supportsDelete === true,
+        ...(driverEvidence ? { driverEvidence } : {}),
         ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
+        ...(driverPayloadValidationEvidence ? { driverPayloadValidationEvidence } : {}),
+        ...(dryRunValidationEvidence ? { dryRunValidationEvidence } : {}),
+        ...(applyValidationEvidence ? { applyValidationEvidence } : {}),
       };
     },
   };
 }
 
 function pluginOwnedPolicyEntriesFromSnapshot(snapshot, source) {
-  return normalizePluginOwnedPolicy(snapshot?.meta?.pushPolicy, source)
-    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.resourcePolicy, source))
-    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.pluginOwnedResources, source));
+  const evidenceScope = snapshot?.meta?.evidenceScope || null;
+  return normalizePluginOwnedPolicy(snapshot?.meta?.pushPolicy, source, evidenceScope)
+    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.resourcePolicy, source, evidenceScope))
+    .concat(normalizePluginOwnedPolicy(snapshot?.meta?.pluginOwnedResources, source, evidenceScope));
 }
 
 function pluginOwnedPolicyEntriesFromIntent(intent) {
   const source = `push-intent:${intent.id || 'unlabeled'}`;
-  return normalizePluginOwnedPolicy(intent.resourcePolicy, source)
-    .concat(normalizePluginOwnedPolicy(intent.pushPolicy, source))
-    .concat(normalizePluginOwnedPolicy(intent.pluginOwnedResources, source));
+  const evidenceScope = intent.evidenceScope || intent.releaseGateEvidenceScope || null;
+  return normalizePluginOwnedPolicy(intent.resourcePolicy, source, evidenceScope)
+    .concat(normalizePluginOwnedPolicy(intent.pushPolicy, source, evidenceScope))
+    .concat(normalizePluginOwnedPolicy(intent.pluginOwnedResources, source, evidenceScope));
 }
 
-function normalizePluginOwnedPolicy(policy, source) {
+function normalizePluginOwnedPolicy(policy, source, evidenceScope = null) {
   if (!policy || typeof policy !== 'object') {
     return [];
   }
@@ -551,7 +689,7 @@ function normalizePluginOwnedPolicy(policy, source) {
   );
 
   return allowedResources
-    .map((entry) => normalizePluginOwnedPolicyEntry(entry, source))
+    .map((entry) => normalizePluginOwnedPolicyEntry(entry, source, pluginOwnedResources.evidenceScope || evidenceScope))
     .filter((entry) => entry.resourceKey && entry.pluginOwner);
 }
 
@@ -568,12 +706,12 @@ function normalizeAllowedResources(allowedResources) {
   }));
 }
 
-function normalizePluginOwnedPolicyEntry(entry, source) {
+function normalizePluginOwnedPolicyEntry(entry, source, evidenceScope = null) {
   if (typeof entry === 'string') {
-    return { resourceKey: entry, source };
+    return { resourceKey: entry, source, evidenceScope: evidenceScope || 'local-candidate' };
   }
   if (!entry || typeof entry !== 'object') {
-    return { source };
+    return { source, evidenceScope: evidenceScope || 'local-candidate' };
   }
   return {
     resourceKey: entry.resourceKey || entry.key || entry.resource?.key || null,
@@ -581,6 +719,9 @@ function normalizePluginOwnedPolicyEntry(entry, source) {
     driver: entry.driver || entry.supportedDriver || entry.resourceDriver || null,
     table: entry.table || entry.resource?.table || null,
     supportsDelete: entry.supportsDelete === true || entry.delete === true || entry.allowDelete === true,
+    dryRunValidation: entry.dryRunValidation || null,
+    applyValidation: entry.applyValidation || null,
+    evidenceScope: entry.evidenceScope || entry.releaseGateEvidenceScope || evidenceScope || 'local-candidate',
     source,
   };
 }
@@ -613,7 +754,7 @@ function pluginOwnedPolicyEntryMatchesResource(entry, resource, owner) {
   return false;
 }
 
-function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
+function fixtureFormsLabTableDriverEvidence({ resource, owner, base, local, remote }) {
   if (
     resource.type !== 'row'
     || resource.table !== 'wp_reprint_push_forms_lab'
@@ -621,6 +762,21 @@ function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
     || owner !== 'forms'
   ) {
     return { supported: false, reason: 'Fixture forms lab table driver only supports positive id rows owned by forms.' };
+  }
+
+  const dryRunValidationEvidence = fixtureFormsLabTableDryRunValidationEvidence({
+    resource,
+    owner,
+    base,
+    local,
+    remote,
+  });
+  if (dryRunValidationEvidence.outcome !== 'accepted') {
+    return {
+      supported: false,
+      reason: 'Fixture forms lab table driver dry-run validation refused the planned row payload.',
+      dryRunValidationEvidence,
+    };
   }
 
   const plugin = 'reprint-push-forms-fixture';
@@ -643,12 +799,83 @@ function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
       resourceKey: pluginResource.key,
       baseHash,
       remoteHash,
+      dryRunValidationEvidence,
     };
   }
 
   return {
     supported: false,
     reason: 'Fixture forms lab table driver requires unchanged active reprint-push-forms-fixture evidence.',
+    dryRunValidationEvidence,
+  };
+}
+
+function fixtureFormsLabTableDryRunValidationEvidence({ resource, owner, base, local, remote }) {
+  const plannedValue = getResource(local, resource);
+  const issueCodes = fixtureFormsLabTableDryRunValidationIssueCodes(resource, owner, plannedValue);
+  const accepted = issueCodes.length === 0;
+  return {
+    schemaVersion: 1,
+    reasonCode: accepted
+      ? 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_ACCEPTED'
+      : 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_REFUSED',
+    operation: 'driver-dry-run-validation',
+    outcome: accepted ? 'accepted' : 'refused-before-mutation',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: 'fixture-forms-lab-table',
+    resource: pluginDriverResourceEvidence(resource),
+    rawValuesIncluded: false,
+    issueCodes,
+    planned: {
+      state: plannedValue === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(local, resource),
+    },
+    base: {
+      state: getResource(base, resource) === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(base, resource),
+    },
+    remote: {
+      state: getResource(remote, resource) === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(remote, resource),
+    },
+  };
+}
+
+function fixtureFormsLabTableDryRunValidationIssueCodes(resource, owner, plannedValue) {
+  const issues = [];
+  const idMatch = /^id:([1-9]\d*)$/.exec(resource.id || '');
+  if (plannedValue === ABSENT || !plannedValue || typeof plannedValue !== 'object' || Array.isArray(plannedValue)) {
+    issues.push('PLANNED_ROW_INVALID');
+    return issues;
+  }
+  if (plannedValue.__pluginOwner !== owner) {
+    issues.push('PLUGIN_OWNER_MISMATCH');
+  }
+  if (idMatch && plannedValue.id !== Number.parseInt(idMatch[1], 10)) {
+    issues.push('ROW_ID_MISMATCH');
+  }
+  if (typeof plannedValue.form_slug !== 'string' || plannedValue.form_slug.length === 0) {
+    issues.push('FORM_SLUG_INVALID');
+  }
+  if (!plannedValue.payload || typeof plannedValue.payload !== 'object' || Array.isArray(plannedValue.payload)) {
+    issues.push('PAYLOAD_INVALID');
+  } else if (plannedValue.payload.owner !== owner) {
+    issues.push('PAYLOAD_OWNER_MISMATCH');
+  }
+  return issues;
+}
+
+function pluginDriverResourceEvidence(resource) {
+  if (!resource || typeof resource !== 'object') {
+    return null;
+  }
+  return {
+    type: resource.type || null,
+    key: resource.key || null,
+    table: resource.table || null,
+    id: resource.id || null,
+    name: resource.name || null,
   };
 }
 
@@ -679,7 +906,215 @@ function pluginOwnedDriverAuditEvidence({
     ...(support.serializedOptionValidationEvidence
       ? { serializedOptionValidationHash: digest(support.serializedOptionValidationEvidence) }
       : {}),
+    ...(support.driverPayloadValidationEvidence
+      ? { driverPayloadValidationHash: digest(support.driverPayloadValidationEvidence) }
+      : {}),
   };
+}
+
+function pluginOwnedDriverDecisionAuditEvidence({
+  resource,
+  owner,
+  support,
+  action,
+  decision,
+  reasonCode,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  return {
+    reasonCode,
+    operation: 'plugin-driver-audit',
+    decision,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    policySource: support.policySource || null,
+    action,
+    redaction: 'hash-only',
+    rawValuesIncluded: false,
+    hashes: {
+      baseHash,
+      localHash,
+      remoteHash,
+    },
+  };
+}
+
+function pluginDriverPayloadValidationEvidence(serializedOptionValidationEvidence) {
+  return {
+    ...serializedOptionValidationEvidence,
+    validator: 'php-serialized-option',
+    outcome: serializedOptionValidationEvidence.valid ? 'accepted' : 'refused',
+  };
+}
+
+function pluginDriverHookValidationEvidence({
+  kind,
+  validation,
+  resource,
+  owner,
+  driver,
+  policySource,
+}) {
+  if (!validation) {
+    return null;
+  }
+  const hook = validation.hook || null;
+  const status = validation.status || null;
+  const supportedHook = kind === 'dry-run'
+    ? hook === 'wp-option:validate-row'
+    : hook === 'wp-option:validate-apply';
+  const passed = supportedHook && status === 'passed';
+  const failed = supportedHook && status !== 'passed';
+  const reasonCode = kind === 'dry-run'
+    ? passed
+      ? 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_PASSED'
+      : failed
+        ? 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_FAILED'
+        : 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_UNSUPPORTED'
+    : passed
+      ? 'PLUGIN_DRIVER_APPLY_VALIDATION_PASSED'
+      : failed
+        ? 'PLUGIN_DRIVER_APPLY_VALIDATION_FAILED'
+        : 'PLUGIN_DRIVER_APPLY_VALIDATION_UNSUPPORTED';
+  return {
+    reasonCode,
+    operation: kind === 'dry-run' && !passed ? 'refuse-before-mutation' : `${kind}-validation`,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver,
+    policySource,
+    hook,
+    supportedHook,
+    status,
+  };
+}
+
+function pluginOwnedMetaDriverEvidence({
+  resource,
+  owner,
+  driver,
+  policySource,
+  evidenceScope,
+  row,
+}) {
+  if (driver === 'wp-postmeta' || driver === 'wp-post-meta') {
+    return pluginOwnedPostmetaDriverEvidence({
+      resource,
+      owner,
+      driver,
+      policySource,
+      evidenceScope,
+      row,
+    });
+  }
+  if (driver === 'wp-termmeta' || driver === 'wp-term-meta') {
+    return pluginOwnedTermmetaDriverEvidence({
+      resource,
+      owner,
+      driver,
+      policySource,
+      evidenceScope,
+      row,
+    });
+  }
+  return null;
+}
+
+function pluginOwnedPostmetaDriverEvidence({ resource, owner, driver, policySource, evidenceScope, row }) {
+  const scope = evidenceScope || 'local-candidate';
+  const evidence = {
+    supported: true,
+    driver,
+    table: resource.table,
+    resourceKey: resource.key,
+    rowId: resource.id,
+    pluginOwner: owner,
+    policySource,
+    evidenceScope: scope,
+    releaseGateEvidenceScope: scope,
+  };
+  const postMetaKeyMatch = /^post_id:([1-9]\d*):meta_key:(.+)$/.exec(resource.id || '');
+  if (postMetaKeyMatch) {
+    evidence.rowIdKind = 'post_id_meta_key';
+    evidence.postId = Number.parseInt(postMetaKeyMatch[1], 10);
+    evidence.metaKey = postMetaKeyMatch[2];
+    if (!row || row === ABSENT || typeof row !== 'object') {
+      return evidence;
+    }
+    if (Number(row.post_id) !== evidence.postId || row.meta_key !== evidence.metaKey) {
+      return {
+        ...evidence,
+        supported: false,
+        reason: 'wp_postmeta driver requires row post_id and meta_key to match the resource id.',
+      };
+    }
+    return evidence;
+  }
+
+  const metaIdMatch = /^meta_id:([1-9]\d*)$/.exec(resource.id || '');
+  if (!metaIdMatch) {
+    return {
+      ...evidence,
+      rowIdKind: null,
+      supported: false,
+      reason: 'wp_postmeta driver requires row id post_id:<positive-int>:meta_key:<key> or meta_id:<positive-int>.',
+    };
+  }
+  evidence.rowIdKind = 'meta_id';
+  const metaId = Number.parseInt(metaIdMatch[1], 10);
+  if (!row || row === ABSENT || typeof row !== 'object') {
+    return evidence;
+  }
+  evidence.postId = row.post_id ?? null;
+  evidence.metaKey = row.meta_key ?? null;
+  if (Number(row.meta_id) !== metaId) {
+    return {
+      ...evidence,
+      supported: false,
+      reason: 'wp_postmeta driver requires row meta_id to match the resource id.',
+    };
+  }
+  return evidence;
+}
+
+function pluginOwnedTermmetaDriverEvidence({ resource, owner, driver, policySource, evidenceScope, row }) {
+  const scope = evidenceScope || 'local-candidate';
+  const evidence = {
+    supported: true,
+    driver,
+    table: resource.table,
+    resourceKey: resource.key,
+    rowId: resource.id,
+    rowIdKind: 'meta_id',
+    pluginOwner: owner,
+    policySource,
+    evidenceScope: scope,
+    releaseGateEvidenceScope: scope,
+  };
+  const match = /^meta_id:([1-9]\d*)$/.exec(resource.id || '');
+  if (!match) {
+    return {
+      ...evidence,
+      supported: false,
+      reason: 'wp_termmeta driver requires row id meta_id:<positive-int>.',
+    };
+  }
+  const metaId = Number.parseInt(match[1], 10);
+  if (row && row !== ABSENT && typeof row === 'object') {
+    evidence.termId = row.term_id ?? null;
+    evidence.metaKey = row.meta_key ?? null;
+    if (Number(row.meta_id) !== metaId) {
+      return {
+        ...evidence,
+        supported: false,
+        reason: 'wp_termmeta driver requires row meta_id to match the resource id.',
+      };
+    }
+  }
+  return evidence;
 }
 
 function buildAtomicGroup(intent, plan, base, remote) {
@@ -907,12 +1342,23 @@ function evaluatePluginDependency({
   }
 
   if (!hasPlugin(remote, plugin)) {
+    const baseHash = resourceHash(base, pluginResource);
+    const remoteHash = resourceHash(remote, pluginResource);
     blockers.push(pluginDependencyBlocker({
       intent,
       dependency,
       dependencyIndex,
       className: 'missing-plugin-dependency',
       reason: `Atomic push intent ${intent.id} requires plugin ${plugin}, but it is absent from the live remote.`,
+      extra: {
+        remotePluginRemovalRefusalEvidence: remotePluginRemovalDependencyRefusalEvidence({
+          intent,
+          plugin,
+          pluginResource,
+          baseHash,
+          remoteHash,
+        }),
+      },
     }));
     return blockers;
   }
@@ -1039,6 +1485,38 @@ function pluginDependencyBlocker({
     dependency: pluginDependencyAuditEvidence(dependency),
     reason,
     ...extra,
+  };
+}
+
+function remotePluginRemovalDependencyRefusalEvidence({
+  intent,
+  plugin,
+  pluginResource,
+  baseHash,
+  remoteHash,
+}) {
+  return {
+    reasonCode: 'REMOTE_PLUGIN_REMOVAL_REFUSAL',
+    operation: 'refuse-before-mutation',
+    groupId: intent.id,
+    plugin,
+    resourceKey: pluginResource.key,
+    dependencySource: 'atomic-push-intent',
+    local: {
+      label: 'local-snapshot-or-plan',
+      source: 'planner-decision',
+      state: 'present',
+      change: 'unchanged',
+      hash: baseHash,
+    },
+    production: {
+      label: 'live-production-remote',
+      source: 'live-remote',
+      state: 'absent',
+      change: 'delete',
+      hash: remoteHash,
+    },
+    baseHash,
   };
 }
 
@@ -2396,9 +2874,20 @@ function pluginContextMutationSupport({
   if (resource.type === 'plugin' && localValue === ABSENT) {
     return {
       supported: false,
-      className: 'unsupported-plugin-delete',
-      requiredDriver: 'plugin-delete',
-      reason: `Plugin uninstall/delete mutation ${resource.key} requires an explicit plugin delete driver for ${owner}.`,
+      className: 'plugin-uninstall-delete-refusal',
+      reason: `Plugin context resource ${resource.key} cannot be deleted by push; plugin uninstall/delete/remove is not supported for plugin-owned resources.`,
+      resolutionPolicy: 'preserve-remote-plugin-context-and-stop',
+      deleteRefusalEvidence: pluginContextDeleteRefusalEvidence({ resource, owner }),
+    };
+  }
+
+  if (resource.type === 'file' && localValue === ABSENT) {
+    return {
+      supported: false,
+      className: 'plugin-uninstall-delete-refusal',
+      reason: `Plugin context resource ${resource.key} cannot be deleted by push; plugin uninstall/delete/remove is not supported for plugin-owned resources.`,
+      resolutionPolicy: 'preserve-remote-plugin-context-and-stop',
+      deleteRefusalEvidence: pluginContextDeleteRefusalEvidence({ resource, owner }),
     };
   }
 
@@ -2423,12 +2912,22 @@ function pluginContextMutationSupport({
     className: 'stale-plugin-owner-context',
     reason: `Plugin context resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
+    remotePluginRemovalRefusalEvidence: remotePluginRemovalOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
     ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
       resource,
       owner,
       staleContext,
     }),
     ownerFileRefusalEvidence: stalePluginFileOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
+    ownerContextRefusalEvidence: stalePluginOwnerContextRefusalEvidence({
       resource,
       owner,
       staleContext,
@@ -2476,12 +2975,22 @@ function pluginOwnedOwnerContextSupport({
     className: 'stale-plugin-owner-context',
     reason: `Plugin-owned resource ${resource.key} cannot be applied because live remote plugin context for ${owner} changed since the pull base.`,
     ownerContext: staleContext,
+    remotePluginRemovalRefusalEvidence: remotePluginRemovalOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
     ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
       resource,
       owner,
       staleContext,
     }),
     ownerFileRefusalEvidence: stalePluginFileOwnerContextRefusalEvidence({
+      resource,
+      owner,
+      staleContext,
+    }),
+    ownerContextRefusalEvidence: stalePluginOwnerContextRefusalEvidence({
       resource,
       owner,
       staleContext,
@@ -2580,6 +3089,76 @@ function stalePluginFileOwnerContextRefusalEvidence({ resource, owner, staleCont
   };
 }
 
+function stalePluginOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
+  return remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, staleContext })
+    || stalePluginFileOwnerContextRefusalEvidence({ resource, owner, staleContext })
+    || stalePluginMetadataOwnerContextRefusalEvidence({ resource, owner, staleContext });
+}
+
+function remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
+  const removedPluginContexts = staleContext.filter((context) =>
+    context.type === 'plugin' && context.change.remoteChange === 'delete');
+  if (removedPluginContexts.length === 0) {
+    return null;
+  }
+  return {
+    reasonCode: 'REMOTE_PLUGIN_REMOVAL_OWNER_CONTEXT',
+    operation: 'refuse-before-mutation',
+    proofScope: 'local-focused',
+    productionBacked: false,
+    releaseGateNote: 'Local proof only; production-backed release gate evidence is still required.',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    removedPluginResourceKeys: removedPluginContexts.map((context) => context.resourceKey).sort(),
+    context: removedPluginContexts
+      .map((context) => ({
+        resourceKey: context.resourceKey,
+        baseHash: context.baseHash,
+        localHash: context.localHash,
+        remoteHash: context.remoteHash,
+        localChange: context.change.localChange,
+        remoteChange: context.change.remoteChange,
+      }))
+      .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey)),
+  };
+}
+
+function pluginOwnedDriverDeleteSupportRefusalEvidence({ resource, owner, support }) {
+  return {
+    reasonCode: 'PLUGIN_DRIVER_DELETE_UNSUPPORTED',
+    operation: 'refuse-before-mutation',
+    attemptedAction: 'delete',
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    supportsDelete: false,
+  };
+}
+
+function pluginOwnedResourceDeleteRefusalEvidence({ resource, owner, support }) {
+  return {
+    reasonCode: 'PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED',
+    operation: 'delete',
+    resourceType: resource.type,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: support.driver || null,
+    policySource: support.policySource || null,
+    supportsDelete: false,
+  };
+}
+
+function pluginContextDeleteRefusalEvidence({ resource, owner }) {
+  return {
+    reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    operation: 'delete',
+    resourceType: resource.type,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    supportsDelete: false,
+  };
+}
+
 function intentDeclaresPluginDependency(intent, plugin) {
   if (!intent) {
     return false;
@@ -2615,10 +3194,28 @@ function addPluginOwnedResourceBlocker(plan, {
     ...(support.supportsDelete !== undefined ? { supportsDelete: support.supportsDelete === true } : {}),
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerFileRefusalEvidence ? { ownerFileRefusalEvidence: support.ownerFileRefusalEvidence } : {}),
+    ...(support.ownerContextRefusalEvidence ? { ownerContextRefusalEvidence: support.ownerContextRefusalEvidence } : {}),
+    ...(support.remotePluginRemovalRefusalEvidence
+      ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence }
+      : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
     ...(support.serializedOptionValidationEvidence
       ? { serializedOptionValidationEvidence: support.serializedOptionValidationEvidence }
       : {}),
+    ...(support.driverPayloadValidationEvidence
+      ? { driverPayloadValidationEvidence: support.driverPayloadValidationEvidence }
+      : {}),
+    ...(support.driverAuditEvidence ? { driverAuditEvidence: support.driverAuditEvidence } : {}),
+    ...(support.driverEvidence ? { driverEvidence: support.driverEvidence } : {}),
+    ...(support.dryRunValidationEvidence ? { dryRunValidationEvidence: support.dryRunValidationEvidence } : {}),
+    ...(support.driverDryRunValidationEvidence
+      ? { driverDryRunValidationEvidence: support.driverDryRunValidationEvidence }
+      : {}),
+    ...(support.deleteSupportRefusalEvidence
+      ? { deleteSupportRefusalEvidence: support.deleteSupportRefusalEvidence }
+      : {}),
+    ...(support.deleteRefusalEvidence ? { deleteRefusalEvidence: support.deleteRefusalEvidence } : {}),
+    ...(support.reasonCode ? { reasonCode: support.reasonCode } : {}),
     reason,
     baseHash,
     localHash,
@@ -2689,6 +3286,12 @@ function addPluginContextBlocker(plan, {
     ...(support.requiredDriver ? { requiredDriver: support.requiredDriver } : {}),
     ...(support.ownerMetadataRefusalEvidence ? { ownerMetadataRefusalEvidence: support.ownerMetadataRefusalEvidence } : {}),
     ...(support.ownerFileRefusalEvidence ? { ownerFileRefusalEvidence: support.ownerFileRefusalEvidence } : {}),
+    ...(support.ownerContextRefusalEvidence ? { ownerContextRefusalEvidence: support.ownerContextRefusalEvidence } : {}),
+    ...(support.remotePluginRemovalRefusalEvidence
+      ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence }
+      : {}),
+    ...(support.deleteRefusalEvidence ? { deleteRefusalEvidence: support.deleteRefusalEvidence } : {}),
+    ...(support.resolutionPolicy ? { resolutionPolicy: support.resolutionPolicy } : {}),
     reason: support.reason || `Plugin context resource ${resource.key} cannot be applied with stale live remote plugin context.`,
     baseHash,
     localHash,
