@@ -240,6 +240,16 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateDriverOwnerIdentityBindingCases() {
+  return [
+    'supported-exact-owner-policy',
+    'unsupported-wrong-policy-owner',
+    'unsupported-missing-owner-policy',
+    'unsupported-local-owner-drift',
+    'unsupported-stale-owner-context',
+  ].map((variant, index) => buildDriverOwnerIdentityBindingCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -293,6 +303,107 @@ export function runGeneratedPushHarness(options = {}) {
   };
 }
 
+export function validateDriverOwnerIdentityBindingCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    proofHash: digest({
+      id: testCase.id,
+      status: plan.status,
+      mutations: plan.mutations.map((mutation) => ({
+        resourceKey: mutation.resourceKey,
+        pluginOwnedResource: mutation.pluginOwnedResource,
+      })),
+      blockers: plan.blockers.map((blocker) => ({
+        class: blocker.class,
+        resourceKey: blocker.resourceKey,
+        pluginOwner: blocker.pluginOwner,
+        driver: blocker.driver,
+        reason: blocker.reason,
+        ownerMetadataRefusalEvidence: blocker.ownerMetadataRefusalEvidence || null,
+        change: blocker.change,
+      })),
+    }),
+  };
+
+  assertGeneratedOwnerBindingRedacted(testCase, result);
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.resourceKey);
+
+  if (testCase.expected.outcome === 'ready') {
+    assert.equal(plan.status, 'ready', `${testCase.id} should be ready`);
+    assert.equal(plan.blockers.length, 0, `${testCase.id} should not produce blockers`);
+    assert.ok(mutation, `${testCase.id} should plan the plugin-owned mutation`);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.expected.owner);
+    assert.equal(mutation.pluginOwnedResource.driver, testCase.expected.driver);
+    assert.equal(mutation.pluginOwnedResource.ownerContextRequired, true);
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.mode,
+      testCase.expected.appliedMode,
+    );
+    assertGeneratedOwnerBindingRedacted(testCase, applied.journal);
+    result.applied = true;
+    result.outcome = 'ready';
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'planner-blocked') {
+    assert.equal(plan.status, 'blocked', `${testCase.id} should be blocked`);
+    assert.equal(mutation, undefined, `${testCase.id} should not plan a mutation`);
+    assert.ok(blocker, `${testCase.id} should expose a blocker`);
+    assert.equal(blocker.class, testCase.expected.blockerClass);
+    assert.equal(blocker.pluginOwner, testCase.expected.owner);
+    assert.equal(blocker.driver || null, testCase.expected.driver || null);
+    if (testCase.expected.reasonCode) {
+      assert.equal(blocker.ownerMetadataRefusalEvidence.reasonCode, testCase.expected.reasonCode);
+      assert.equal(blocker.ownerMetadataRefusalEvidence.pluginOwner, testCase.expected.owner);
+      assert.deepEqual(blocker.ownerMetadataRefusalEvidence.stalePluginMetadataResourceKeys, [
+        `plugin:${testCase.expected.owner}`,
+      ]);
+    }
+    const remoteBefore = digest(testCase.remote);
+    const error = captureError(() => applyPlan(testCase.remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(testCase.remote), remoteBefore, `${testCase.id} mutated a blocked remote`);
+    assertGeneratedOwnerBindingRedacted(testCase, blocker);
+    assertGeneratedOwnerBindingRedacted(testCase, error.details);
+    result.applied = false;
+    result.outcome = 'planner-blocked';
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'apply-refused');
+  assert.equal(plan.status, 'ready', `${testCase.id} should reach apply validation`);
+  assert.ok(mutation, `${testCase.id} should plan a mutation before apply refuses it`);
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.expected.plannedOwner);
+  assert.equal(mutation.pluginOwnedResource.driver, testCase.expected.driver);
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+  assert.equal(error.details.resourceKey, testCase.resourceKey);
+  assert.equal(error.details.pluginOwner, testCase.expected.applyOwner);
+  assert.equal(error.details.driver, testCase.expected.driver);
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a refused remote`);
+  assertGeneratedOwnerBindingRedacted(testCase, error.details);
+  result.applied = false;
+  result.outcome = 'apply-refused';
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -336,6 +447,108 @@ export function validateGeneratedCase(testCase) {
   result.nonReadyRemoteUnchanged = true;
   result.applied = false;
   return result;
+}
+
+function buildDriverOwnerIdentityBindingCase({ variant, index }) {
+  const base = buildBaseSite(4400 + index, 4);
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const optionName = `rpp_owner_identity_${index + 1}`;
+  const rowId = `option_name:${optionName}`;
+  const resourceKey = rowKey('wp_options', rowId);
+  const secretTokens = {
+    base: `rpp0442-base-secret-${index + 1}`,
+    local: `rpp0442-local-secret-${index + 1}`,
+    remote: `rpp0442-remote-secret-${index + 1}`,
+  };
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base', token: secretTokens.base },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(remote, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: { mode: `local-${variant}`, token: secretTokens.local },
+  });
+
+  const testCase = {
+    id: `rpp-0442-driver-owner-identity-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'driver-owner-identity-binding',
+    tags: new Set(['driver-owner-identity-binding', 'plugin-owned-generated']),
+    resourceKey,
+    rowId,
+    secretTokens: Object.values(secretTokens),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'supported-exact-owner-policy') {
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    testCase.tags.add('driver-owner-identity-supported');
+    testCase.expected = {
+      outcome: 'ready',
+      owner: 'forms',
+      driver: 'wp-option',
+      appliedMode: `local-${variant}`,
+    };
+    return testCase;
+  }
+
+  if (variant === 'unsupported-wrong-policy-owner') {
+    allowPluginOwned(local, resourceKey, 'forms-impostor', 'wp-option');
+    testCase.tags.add('driver-owner-identity-unsupported');
+    testCase.expected = {
+      outcome: 'planner-blocked',
+      blockerClass: 'unsupported-plugin-owned-resource',
+      owner: 'forms',
+      driver: null,
+    };
+    return testCase;
+  }
+
+  if (variant === 'unsupported-missing-owner-policy') {
+    testCase.tags.add('driver-owner-identity-unsupported');
+    testCase.expected = {
+      outcome: 'planner-blocked',
+      blockerClass: 'unsupported-plugin-owned-resource',
+      owner: 'forms',
+      driver: null,
+    };
+    return testCase;
+  }
+
+  if (variant === 'unsupported-local-owner-drift') {
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    local.db.wp_options[rowId].__pluginOwner = 'forms-impostor';
+    testCase.tags.add('driver-owner-identity-unsupported');
+    testCase.expected = {
+      outcome: 'apply-refused',
+      plannedOwner: 'forms',
+      applyOwner: 'forms-impostor',
+      driver: 'wp-option',
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'unsupported-stale-owner-context');
+  allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+  remote.plugins.forms = { version: '9.9.9', active: false };
+  testCase.tags.add('driver-owner-identity-unsupported');
+  testCase.expected = {
+    outcome: 'planner-blocked',
+    blockerClass: 'stale-plugin-owner-context',
+    owner: 'forms',
+    driver: null,
+    reasonCode: 'STALE_PLUGIN_METADATA_OWNER_CONTEXT',
+  };
+  return testCase;
 }
 
 function buildGeneratedCase({ index, tier, rng }) {
@@ -1236,6 +1449,17 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function assertGeneratedOwnerBindingRedacted(testCase, evidence) {
+  const serialized = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(
+      serialized.includes(token),
+      false,
+      `${testCase.id} leaked generated owner identity token ${token}`,
+    );
+  }
 }
 
 function assertPlanContract(testCase, plan) {
