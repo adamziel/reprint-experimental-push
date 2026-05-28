@@ -1,9 +1,56 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 03:02 CEST
+Last updated: 2026-05-28 03:22 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 03:22 CEST - Supervision Handoff Refreshed; Release Still Held
+
+- Going well: integration now includes release-gate failure coverage,
+  recovery-journal retry hardening, guarded chunk-transfer benchmark gates,
+  plugin-driver boundary hardening, independent/critic audit evidence,
+  WordPress graph identity-map rewrites, and read-only executor auth inspect evidence, and refreshed supervision handoff through `25c667cd4`.
+- Verification passed in this progress lane:
+  `node --test test/release-gates.test.js`,
+  `node --test test/recovery-journal.test.js`,
+  `npm run test:recovery:file-journal`, and
+  `node --test test/guarded-executor-benchmark.test.js`,
+  `node --test test/graph-mapping-inventory.test.js test/generated-push-harness.test.js`,
+  `node --test test/push-planner.test.js`, targeted authenticated read-only inspect checks,
+  `node --check src/authenticated-http-push-client.js`, and protocol fixture JSON parsing.
+- Active roster: developer lanes `rpp-10` through `rpp-14` are working on
+  Docker/local production, rollback repair, release CI gates, evidence
+  redaction, and protocol compatibility. `rpp-15` is the critic continuation,
+  `rpp-16` is the progress reporter, `rpp-17` through `rpp-21` are active
+  integration/route/operator-proof workers, and `rpp-orchestrator` remains
+  visible.
+- Visible but not yet counted: `rpp-9` prior progress output and `rpp-18`
+  evidence coverage manifest `56a1e533b` remain branch-local. The release-gate,
+  recovery, graph, plugin-driver, executor-auth, chunking, independent-audit,
+  and critic-audit branch evidence is now represented by integrated commits.
+- Not yet done: Docker/external WordPress runtime, production credential
+  lifecycle, final-release evidence for the 20 modeled gates, broad graph and
+  plugin-driver surfaces, rollback/repair completion, production chunk storage
+  receipts/executors/atomic commits, evidence redaction, protocol
+  compatibility, repo-local required CI gates, broader production auth lifecycle
+  fixes, and critic-observed red-suite fixes remain missing.
+- Progress change: no final release movement. The integrated audits explicitly
+  support the **NO-GO** posture until production-backed evidence and required
+  gates exist.
+- Next nudge: integrate only one tested worker slice at a time; keep branch
+  claims out of readiness reporting until they land on the integration branch.
+
+| Lane | Nudge |
+| --- | --- |
+| Docker/local production | Produce external or Docker WordPress proof on the same release-verifier/auth/journal path, or keep the gate held. |
+| Rollback repair | Prove repair finalization without mutating already-updated targets and without hiding drift. |
+| Release CI gates | Make missing production evidence fail closed with machine-readable JSON and a nonzero exit. |
+| Evidence redaction | Prove journals/reports preserve hashes while excluding raw site values, secrets, and private content. |
+| Protocol compatibility | Fail closed on unknown/downgraded versions and required capability gaps. |
+| Executor auth/leases | Read-only inspect evidence landed, but broader production auth lifecycle and critic-noted precedence risks remain blockers. |
+| Critic | Re-audit current `25c667cd4` after active slices integrate; preserve the no-go decision unless production proof exists. |
+| Progress reporter | Continue reporting only integrated commits plus explicitly labeled visible branch output. |
 
 ## 2026-05-28 03:02 CEST - Release Gate Evaluator Integrated
 
