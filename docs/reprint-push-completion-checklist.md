@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 103.
-- Remaining open: 897.
+- Verified complete: 104.
+- Remaining open: 896.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -445,7 +445,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0411 (Mid / plugin-driver) Implement plugin uninstall/delete refusal, variant 1. Success: focused test proves exact driver behavior.
 - [x] RPP-0412 (Mid / plugin-driver) Implement direct active_plugins mutation refusal, variant 1. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0413 (Mid / plugin-driver) Implement owner context stale plugin file refusal, variant 1. Success: local production proof carries one real mutation through apply.
-- [ ] RPP-0414 (Mid / plugin-driver) Implement owner context stale metadata refusal, variant 1. Success: remote drift preserves plugin-owned remote data.
+- [x] RPP-0414 (Mid / plugin-driver) Implement owner context stale metadata refusal, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0415 (Mid / plugin-driver) Implement remote plugin removal refusal, variant 1. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0416 (Mid / plugin-driver) Implement driver delete support flag, variant 1. Success: focused test proves exact driver behavior.
 - [ ] RPP-0417 (Mid / plugin-driver) Implement driver dry-run validation hook, variant 1. Success: generated harness covers supported and unsupported variants.
