@@ -56,6 +56,7 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'wp-users-usermeta-graph-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -93,6 +94,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  wpUsersUsermetaGraph: {
+    family: 'same-plan-user-meta-graph',
+    tag: 'wp-users-usermeta-graph',
   },
 });
 
@@ -583,18 +588,13 @@ const scenarioFamilyBuilders = {
     addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget: true, base });
     tags.add('expected-blocked');
   },
-  'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
-    const userId = allocator.graphId();
-    const metaId = allocator.graphId();
-    setRow(local, 'wp_users', `ID:${userId}`, makeUser(userId));
-    setRow(local, 'wp_usermeta', `umeta_id:${metaId}`, {
-      umeta_id: metaId,
-      user_id: userId,
-      meta_key: '_generated_user_marker',
-      meta_value: `user-marker-${metaId}`,
-    });
-    tags.add('same-plan-graph');
-    tags.add('user-meta-graph');
+  'same-plan-user-meta-graph': ({ base, local, remote, allocator, tags }) => {
+    addWpUsersUsermetaGraph(base, local, remote, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-users-usermeta-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpUsersUsermetaGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1264,6 +1264,47 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   }
 }
 
+function addWpUsersUsermetaGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const userId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const userRowId = `ID:${userId}`;
+  const userMetaRowId = `umeta_id:${metaId}`;
+  const user = makeUser(userId, {
+    display_name: `Generated graph user target ${userId}`,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_users', userRowId, user);
+    setRow(local, 'wp_users', userRowId, user);
+    setRow(remote, 'wp_users', userRowId, {
+      ...user,
+      display_name: `Remote stale graph user target ${userId}`,
+      user_email: `remote-stale-generated-user-${userId}@example.test`,
+    });
+  } else {
+    setRow(local, 'wp_users', userRowId, user);
+  }
+
+  setRow(local, 'wp_usermeta', userMetaRowId, {
+    umeta_id: metaId,
+    user_id: userId,
+    meta_key: '_generated_user_marker',
+    meta_value: `private-user-marker-${metaId}`,
+  });
+
+  tags.add('same-plan-graph');
+  tags.add('user-meta-graph');
+  tags.add('wp-users-usermeta-graph');
+  tags.add('wp-usermeta-create');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wp-users-remote-drift');
+  } else {
+    tags.add('wp-users-create');
+  }
+}
+
 function addCommentGraph(local, allocator) {
   const parentId = allocator.graphId();
   const childId = allocator.graphId();
@@ -1338,12 +1379,13 @@ function makePost(id, title, extra = {}) {
   };
 }
 
-function makeUser(id) {
+function makeUser(id, extra = {}) {
   return {
     ID: id,
     user_login: `generated-user-${id}`,
     user_email: `generated-user-${id}@example.test`,
     display_name: `Generated User ${id}`,
+    ...extra,
   };
 }
 

@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 36 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -55,8 +55,8 @@ The default generated run covers:
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
   delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  same-plan post-parent, taxonomy, comment, and usermeta graph closures, stale
+  usermeta-to-user references, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -71,15 +71,22 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `wpUsersUsermetaGraph` target coverage records per-tier counts for generated
+`wp_users` rows and their `wp_usermeta` relationships. Ready cases create the
+user and usermeta row in one plan and reject stale replay before mutation.
+Stale cases keep the user in the base, drift that user remotely, and require
+the new usermeta reference to refuse before mutation with redacted/hash-only
+evidence.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "blocked": 28,
+    "conflict": 146,
+    "ready": 186
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
@@ -117,8 +124,8 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "conflict": 10,
-        "ready": 10
+        "conflict": 12,
+        "ready": 8
       }
     },
     "wpTermTaxonomyGraph": {
@@ -137,9 +144,30 @@ At the time this note was added, the summary command reported:
         "9": 2
       },
       "statuses": {
-        "blocked": 3,
-        "conflict": 8,
-        "ready": 9
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 10
+      }
+    },
+    "wpUsersUsermetaGraph": {
+      "family": "same-plan-user-meta-graph",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 4,
+        "conflict": 6,
+        "ready": 10
       }
     }
   },
@@ -158,12 +186,18 @@ At the time this note was added, the summary command reported:
     "wp-term-taxonomy-graph-stale": 10,
     "wp-term-taxonomy-create": 20,
     "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "wp-terms-remote-drift": 10,
+    "wp-users-usermeta-graph": 20,
+    "same-plan-user-meta-graph": 10,
+    "wp-users-usermeta-graph-stale": 10,
+    "wp-usermeta-create": 20,
+    "wp-users-create": 10,
+    "wp-users-remote-drift": 10
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 70,
+  "maxMutationCount": 45,
+  "maxReadyResourceCount": 70,
+  "maxReadyMutationCount": 45
 }
 ```
 
