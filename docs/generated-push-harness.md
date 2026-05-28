@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 31 scenario families, then add seeded variation so
+span 10 complexity tiers and 32 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -53,7 +53,8 @@ The default generated run covers:
   plugin-owned data, plugin owner-context drift, supported forms-lab custom-table
   rows, forms-lab delete refusal, atomic plugin install ready and
   missing-dependency paths, same-plan post-parent, taxonomy, comment, and usermeta
-  graph closures, and stale graph references.
+  graph closures, ready and stale commentmeta-to-comment graph cases, and stale
+  graph references.
 
 At the time this note was added, the summary command reported:
 
@@ -61,14 +62,14 @@ At the time this note was added, the summary command reported:
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 20,
-    "conflict": 148,
-    "ready": 192
+    "blocked": 26,
+    "conflict": 144,
+    "ready": 190
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
-      "total": 12,
+      "total": 11,
       "perTier": {
         "0": 1,
         "1": 1,
@@ -78,15 +79,19 @@ At the time this note was added, the summary command reported:
         "5": 1,
         "6": 1,
         "7": 1,
-        "8": 2,
+        "8": 1,
         "9": 1
       },
       "statuses": {
-        "conflict": 12
+        "conflict": 11
       }
     }
   },
   "featureFamilies": {
+    "commentmeta-comment-graph": 22,
+    "commentmeta-comment-ready": 11,
+    "commentmeta-comment-stale": 11,
+    "stale-commentmeta-comment-graph": 11,
     "file-type-swap": 22,
     "file-type-swap-ready": 11,
     "file-type-swap-conflict": 11,
@@ -94,10 +99,10 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix-ready": 11,
     "row-create-update-delete-mix-conflict": 11
   },
-  "maxResourceCount": 67,
-  "maxMutationCount": 42,
-  "maxReadyResourceCount": 67,
-  "maxReadyMutationCount": 42
+  "maxResourceCount": 71,
+  "maxMutationCount": 46,
+  "maxReadyResourceCount": 66,
+  "maxReadyMutationCount": 43
 }
 ```
 

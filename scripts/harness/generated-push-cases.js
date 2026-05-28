@@ -36,6 +36,7 @@ const scenarioFamilies = Object.freeze([
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'stale-commentmeta-comment-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -414,6 +415,35 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('comment-graph');
+    tags.add('commentmeta-comment-graph');
+    tags.add('commentmeta-comment-ready');
+  },
+  'stale-commentmeta-comment-graph': ({ base, local, remote, allocator, tags }) => {
+    const commentId = allocator.graphId();
+    const metaId = allocator.graphId();
+    const commentRowId = `comment_ID:${commentId}`;
+    const comment = makeComment(commentId, {
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 1,
+      comment_content: `Generated commentmeta target ${commentId}`,
+    });
+    setRow(base, 'wp_comments', commentRowId, comment);
+    setRow(local, 'wp_comments', commentRowId, comment);
+    setRow(remote, 'wp_comments', commentRowId, {
+      ...comment,
+      comment_content: `Remote edited commentmeta target ${commentId}`,
+    });
+    setRow(local, 'wp_commentmeta', `meta_id:${metaId}`, {
+      meta_id: metaId,
+      comment_id: commentId,
+      meta_key: '_generated_stale_commentmeta_marker',
+      meta_value: `stale-commentmeta-${metaId}`,
+    });
+    tags.add('stale-graph');
+    tags.add('comment-graph');
+    tags.add('commentmeta-comment-graph');
+    tags.add('commentmeta-comment-stale');
   },
   'supported-forms-lab-table': ({ base, local, remote, allocator, tags }) => {
     const id = allocator.formsLabId();

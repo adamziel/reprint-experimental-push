@@ -1739,6 +1739,71 @@ test('blocks comment graph references when the remote post target is missing', (
   assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
 });
 
+test('blocks commentmeta comment references with hash-only evidence when the comment target diverged', () => {
+  const commentmetaResourceKey = 'row:["wp_commentmeta","meta_id:52"]';
+  const targetCommentResourceKey = 'row:["wp_comments","comment_ID:22"]';
+  const hashPattern = /^[0-9a-f]{64}$/;
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:22': {
+      comment_ID: 22,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      comment_content: 'base-private-commentmeta-target',
+    },
+  };
+  base.db.wp_commentmeta = {};
+  const local = JSON.parse(JSON.stringify(base));
+  const remote = JSON.parse(JSON.stringify(base));
+
+  local.db.wp_commentmeta['meta_id:52'] = {
+    meta_id: 52,
+    comment_id: 22,
+    meta_key: '_local_commentmeta_flag',
+    meta_value: 'local-private-commentmeta-value',
+  };
+  remote.db.wp_comments['comment_ID:22'] = {
+    ...remote.db.wp_comments['comment_ID:22'],
+    comment_content: 'remote-private-edited-commentmeta-target',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === commentmetaResourceKey);
+  const commentmetaReference = blocker?.references.find((reference) =>
+    reference.relationshipType === 'commentmeta-comment');
+  const blockerJson = JSON.stringify(blocker);
+
+  assert.equal(plan.status, 'blocked');
+  assert.ok(blocker, 'missing commentmeta graph blocker');
+  assert.equal(mutationFor(plan, commentmetaResourceKey), undefined);
+  assert.equal(decisionFor(plan, targetCommentResourceKey).decision, 'keep-remote');
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(commentmetaReference, 'missing commentmeta comment reference evidence');
+  assert.equal(commentmetaReference.relationshipKey, 'wp_commentmeta.comment_id');
+  assert.equal(commentmetaReference.targetResourceKey, targetCommentResourceKey);
+  assert.equal(commentmetaReference.targetChange.remoteChange, 'update');
+  for (const hash of [
+    blocker.baseHash,
+    blocker.localHash,
+    blocker.remoteHash,
+    blocker.change.base.hash,
+    blocker.change.local.hash,
+    blocker.change.remote.hash,
+    commentmetaReference.targetBaseHash,
+    commentmetaReference.targetLocalHash,
+    commentmetaReference.targetRemoteHash,
+    commentmetaReference.targetChange.base.hash,
+    commentmetaReference.targetChange.local.hash,
+    commentmetaReference.targetChange.remote.hash,
+  ]) {
+    assert.match(hash, hashPattern);
+  }
+  assert.equal(blockerJson.includes('local-private-commentmeta-value'), false);
+  assert.equal(blockerJson.includes('base-private-commentmeta-target'), false);
+  assert.equal(blockerJson.includes('remote-private-edited-commentmeta-target'), false);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
 test('blocks core user, link, and multisite graph references when targets diverged remotely', () => {
   const sourceResourceKeys = [
     'row:["wp_comments","comment_ID:20"]',

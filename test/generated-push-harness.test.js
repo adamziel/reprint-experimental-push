@@ -25,6 +25,7 @@ const requiredFamilies = [
   'stale-graph-reference',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
+  'stale-commentmeta-comment-graph',
   'supported-forms-lab-table',
   'forms-lab-delete-blocked',
   'atomic-plugin-stack-ready',
@@ -50,6 +51,9 @@ const requiredFamilies = [
   'row-delete',
   'same-plan-user-meta-graph',
   'same-plan-graph',
+  'commentmeta-comment-graph',
+  'commentmeta-comment-ready',
+  'commentmeta-comment-stale',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
   'file-topology',
@@ -203,3 +207,25 @@ function assertRowMixShape(testCase) {
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
 }
+
+test('RPP-0308 generated harness emits ready and stale commentmeta comment graph cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) =>
+    testCase.family === 'same-plan-comment-graph' && testCase.tags.has('commentmeta-comment-ready'));
+  const staleCase = cases.find((testCase) => testCase.family === 'stale-commentmeta-comment-graph');
+
+  assert.ok(readyCase, 'missing ready same-plan commentmeta comment graph case');
+  assert.ok(staleCase, 'missing stale commentmeta comment graph case');
+  assert.ok(readyCase.tags.has('commentmeta-comment-graph'));
+  assert.ok(staleCase.tags.has('commentmeta-comment-graph'));
+  assert.ok(staleCase.tags.has('commentmeta-comment-stale'));
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 3, 'ready comment graph should create comments and commentmeta');
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale commentmeta graph should expose a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale commentmeta graph must not apply mutations');
+});
