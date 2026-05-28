@@ -6,28 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 19:46 CEST.
+- Last update: 2026-05-28 19:55 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   `e3f6830a0` (session evidence integration repair).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 172
-  items complete and leaves 828 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 175
+  items complete and leaves 825 open.
 - Checked slices: 44 release-gate foundation items, 19 graph identity items,
   28 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 33 generated
-  harness items, and 17 merge-invariant items. No release-ops items are checked
+  harness items, and 20 merge-invariant items. No release-ops items are checked
   yet.
-- Evidence movement: `e3f6830a0` repaired the integrated generated-harness and
-  plugin-driver surfaces, raising the generated run to 610 deterministic cases.
-  Checklist movement is limited to current executable proof: `RPP-0150`,
-  `RPP-0342`, `RPP-0443`, `RPP-0456`, `RPP-0457`, `RPP-0469`, `RPP-0470`,
-  and `RPP-0471`. Validation passed with the plugin/planner focused suite
-  (164/164), `npm run test:generated-push-harness` (32/32), release-gate
-  tests (90/90), docs/progress tests (24/24), checklist lint, artifact
-  redaction scan, `git diff --check`, and the expected held release-gate
-  command (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, 3/20 gates).
+- Evidence movement: the local `session/rpp-*` cleanup integrated executable
+  branch-local proof for `RPP-0221`, `RPP-0222`, and `RPP-0223`. The generated
+  run now covers 620 deterministic cases, including independent local-file /
+  remote-row, independent local-row / remote-file, and local-delete /
+  remote-edit targets across all 10 tiers. Previous movement also checked
+  `RPP-0150`, `RPP-0342`, `RPP-0443`, `RPP-0456`, `RPP-0457`, `RPP-0469`,
+  `RPP-0470`, and `RPP-0471`.
+- Validation: focused `RPP-0221` through `RPP-0223` planner tests passed 3/3,
+  `npm run test:generated-push-harness` passed 35/35, and the plugin/planner
+  focused suite passed 167/167.
 - Public progress publishing is now explicit: GitHub Pages serves
   `progress.html` from the existing `main` branch, so AO must run
   `npm run publish:progress-page` after validated lane pushes that change

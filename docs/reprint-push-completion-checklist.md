@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 172.
-- Remaining open: 828.
+- Verified complete: 175.
+- Remaining open: 825.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -242,9 +242,9 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0218 (Near-Mid / merge-invariants) Implement forged ready plan defense, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0219 (Near-Mid / merge-invariants) Implement redacted raw value evidence, variant 1. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0220 (Near-Mid / merge-invariants) Implement atomic group blocker propagation, variant 1. Success: progress log records the command and caveat.
-- [ ] RPP-0221 (Near-Mid / merge-invariants) Prove independent local file plus remote row edit, variant 2. Success: node test proves the invariant over generated and focused fixtures.
-- [ ] RPP-0222 (Near-Mid / merge-invariants) Prove independent local row plus remote file edit, variant 2. Success: executor rejects forged or stale mutation attempts.
-- [ ] RPP-0223 (Near-Mid / merge-invariants) Prove local delete versus remote edit, variant 2. Success: no raw private value appears in serialized plan evidence.
+- [x] RPP-0221 (Near-Mid / merge-invariants) Prove independent local file plus remote row edit, variant 2. Success: node test proves the invariant over generated and focused fixtures.
+- [x] RPP-0222 (Near-Mid / merge-invariants) Prove independent local row plus remote file edit, variant 2. Success: executor rejects forged or stale mutation attempts.
+- [x] RPP-0223 (Near-Mid / merge-invariants) Prove local delete versus remote edit, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0224 (Near-Mid / merge-invariants) Prove local directory delete versus remote descendant create, variant 2. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0225 (Near-Mid / merge-invariants) Prove local file type swap versus remote descendant, variant 2. Success: progress log records the command and caveat.
 - [ ] RPP-0226 (Near-Mid / merge-invariants) Prove remote-only plugin metadata preservation, variant 2. Success: node test proves the invariant over generated and focused fixtures.

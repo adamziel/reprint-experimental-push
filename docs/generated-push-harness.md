@@ -15,8 +15,8 @@ node scripts/harness/generated-push-cases.js
 ## Purpose
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
-fixtures. The current default is 610 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 61 scenario families, then add seeded variation so
+fixtures. The current default is 620 cases, with a hard minimum of 300. Cases
+span 10 complexity tiers and 62 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -40,11 +40,12 @@ invariants:
 
 The default generated run covers:
 
-- 610 total cases;
-- 10 tiers, 61 cases per tier;
+- 620 total cases;
+- 10 tiers, 62 cases per tier;
 - ready, conflict, and blocked outcomes;
 - tier-9 ready/apply cases;
 - local edits, remote-only edits, independent merge, same independent content,
+  independent local-file/remote-row and local-row/remote-file targets,
   large ready plan tiers with one ready case per tier, deletes, delete/edit
   conflicts, file topology conflicts, file create/update/
   delete mixes with ready and conflicting outcomes plus per-tier target counts,
@@ -131,6 +132,24 @@ and remote edits that independently converge on the same content. Its ready
 cases produce no mutation for the already-synchronized row, still apply through
 the harness, and preserve every unplanned remote resource.
 
+The `independentLocalFileRemoteRow` target coverage records per-tier counts for
+ready plans where a local file edit and remote row edit coexist. RPP-0221 proves
+the file mutation carries a live-remote precondition, the remote row remains a
+`keep-remote` decision with no mutation/precondition, apply preserves the row,
+and generated evidence stays hash-only.
+
+The `independentLocalRowRemoteFile` target coverage records per-tier counts for
+the opposite ready merge shape: a local row edit plus remote file edit. RPP-0222
+proves the row mutation carries the only live-remote precondition, the remote
+file remains unplanned and preserved, stale row replay fails before mutation,
+and generated evidence stays hash-only.
+
+The `localDeleteRemoteEdit` target coverage records per-tier counts for local
+row deletes when the same row has changed remotely. RPP-0223 proves every
+generated delete/edit case stays `conflict`, emits no mutation or precondition
+for the deleted row, refuses apply before mutation, and keeps remote row values
+out of serialized evidence.
+
 The `wpPostmetaCreateUpdateDelete` target coverage records per-tier counts for
 the `wp_postmeta` create/update/delete surface. Its invariant is that ready
 cases apply only the planned postmeta create, update, and delete while
@@ -154,7 +173,7 @@ The `wpTermsTermmetaGraph` target coverage records per-tier counts for generated
 the term and termmeta row in one plan, preserve unplanned remote resources, and
 reject stale replays before mutation; stale cases keep the term in the base,
 drift that term remotely, and require the new termmeta reference to fail closed
-instead of overwriting the drifted remote. RPP-0131 now runs in the 610-case
+instead of overwriting the drifted remote. RPP-0131 now runs in the 620-case
 roster and proves one ready and one stale terms/termmeta graph case in every
 tier.
 
@@ -178,7 +197,7 @@ create the term and taxonomy row in one plan, preserve unplanned remote
 resources, and reject a stale replay before mutation; stale cases keep the term
 in the base, drift that term remotely, and require the new taxonomy reference to
 fail closed instead of overwriting the drifted remote. RPP-0132 now runs in the
-610-case roster and proves 20 term-taxonomy graph cases across all 10 tiers,
+620-case roster and proves 20 term-taxonomy graph cases across all 10 tiers,
 including 10 ready cases, 10 stale non-ready cases, and hash-only redacted
 evidence for generated taxonomy descriptions and stale term drift values.
 
@@ -188,7 +207,7 @@ Ready cases create the term, taxonomy, and relationship in one plan, preserve
 unplanned remote resources, and reject stale replay before mutation; stale
 cases keep the term and taxonomy in the base, drift the taxonomy remotely, and
 require the new relationship row to fail closed instead of applying partial
-graph mutations. RPP-0133 now runs in the 610-case roster and proves one
+graph mutations. RPP-0133 now runs in the 620-case roster and proves one
 relationship target in every tier: five ready cases, five stale blocked cases,
 and hash-only redacted evidence for generated relationship target values.
 
@@ -231,7 +250,7 @@ attachment in the base, drift that attachment remotely, and require the
 thumbnail reference to fail closed with hash-only target evidence. RPP-0342
 proves 10 ready and 10 stale featured-image graph cases across every tier.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 610 total cases with 345 ready, 211 conflict, and 54 blocked outcomes. The target coverage includes 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 10 `pluginOwnedCustomTableChanges` cases, and 342 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 10 `pluginOwnedCustomTableChanges` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

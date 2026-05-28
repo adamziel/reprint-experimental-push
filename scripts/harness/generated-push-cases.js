@@ -13,7 +13,7 @@ import {
 } from '../../src/resources.js';
 
 export const MIN_GENERATED_PUSH_CASES = 300;
-export const DEFAULT_GENERATED_PUSH_CASES = 610;
+export const DEFAULT_GENERATED_PUSH_CASES = 620;
 export const DEFAULT_GENERATED_PUSH_SEED = 0x52706e74;
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
@@ -26,6 +26,7 @@ const scenarioFamilies = Object.freeze([
   'remote-only-post-update',
   'remote-only-plugin-metadata',
   'independent-local-and-remote',
+  'independent-local-row-remote-file',
   'direct-row-conflict',
   'local-delete',
   'same-independent-content',
@@ -90,6 +91,7 @@ const readyPreservingFamilies = new Set([
   'remote-only-post-update',
   'remote-only-plugin-metadata',
   'independent-local-and-remote',
+  'independent-local-row-remote-file',
   'local-delete',
   'same-independent-content',
   'supported-plugin-option',
@@ -132,7 +134,15 @@ const skipSeededComplexityFamilies = new Set([
 const targetCoverageDefinitions = Object.freeze({
   independentLocalFileRemoteRow: {
     family: 'independent-local-and-remote',
-    tag: 'independent-merge',
+    tag: 'independent-file-remote-row',
+  },
+  independentLocalRowRemoteFile: {
+    family: 'independent-local-row-remote-file',
+    tag: 'independent-row-remote-file',
+  },
+  localDeleteRemoteEdit: {
+    family: 'delete-edit-conflict',
+    tag: 'delete-edit',
   },
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
@@ -871,6 +881,20 @@ const scenarioFamilyBuilders = {
     ensurePostExists(remote, remotePostId);
     remote.db.wp_posts[`ID:${remotePostId}`].post_title = `Independent remote ${allocator.next()}`;
     tags.add('independent-merge');
+    tags.add('independent-file-remote-row');
+  },
+  'independent-local-row-remote-file': ({ base, local, remote, allocator, tags }) => {
+    const localPostId = allocator.graphId();
+    const rowId = `ID:${localPostId}`;
+    const remotePath = allocator.existingUploadPath();
+    const baseRow = makePost(localPostId, `Base independent local row ${localPostId}`);
+    setRow(base, 'wp_posts', rowId, baseRow);
+    setRow(local, 'wp_posts', rowId, baseRow);
+    setRow(remote, 'wp_posts', rowId, baseRow);
+    local.db.wp_posts[rowId].post_title = `Independent local row ${allocator.next()}`;
+    remote.files[remotePath] = `independent remote file ${allocator.next()}`;
+    tags.add('independent-merge');
+    tags.add('independent-row-remote-file');
   },
   'direct-row-conflict': ({ local, remote, allocator, tags }) => {
     const postId = allocator.postId();
@@ -1227,10 +1251,14 @@ const scenarioFamilyBuilders = {
     local.files[allocator.filePath('create')] = `created ${allocator.next()}`;
     tags.add('local-create');
   },
-  'delete-edit-conflict': ({ local, remote, allocator, tags }) => {
-    const rowId = `ID:${allocator.postId()}`;
+  'delete-edit-conflict': ({ base, local, remote, allocator, tags }) => {
+    const postId = allocator.graphId();
+    const rowId = `ID:${postId}`;
+    const row = makePost(postId, `Base delete/edit ${postId}`);
+    setRow(base, 'wp_posts', rowId, row);
+    setRow(local, 'wp_posts', rowId, row);
+    setRow(remote, 'wp_posts', rowId, row);
     deleteRow(local, 'wp_posts', rowId);
-    ensurePostExists(remote, Number(rowId.slice(3)));
     remote.db.wp_posts[rowId].post_title = `Remote edit while local deletes ${allocator.next()}`;
     tags.add('expected-conflict');
     tags.add('delete-edit');

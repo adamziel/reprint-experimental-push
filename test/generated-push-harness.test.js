@@ -46,6 +46,7 @@ const requiredFamilies = [
   'local-file-update',
   'remote-only-post-update',
   'independent-local-and-remote',
+  'independent-local-row-remote-file',
   'direct-row-conflict',
   'local-delete',
   'same-independent-content',
@@ -168,6 +169,8 @@ const requiredFamilies = [
   'wp-users-remote-drift',
   'expected-blocked',
   'same-plan-user-meta-graph',
+  'independent-file-remote-row',
+  'independent-row-remote-file',
   'featured-image-attachment-ready',
   'featured-image-attachment-stale',
   'featured-image-attachment',
@@ -237,6 +240,163 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalDecisions > 0);
 });
 
+test('RPP-0221 generated harness preserves independent local files and remote rows', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.independentLocalFileRemoteRow;
+
+  assert.ok(coverage, 'missing independent local file plus remote row target coverage');
+  assert.equal(coverage.family, 'independent-local-and-remote');
+  assert.equal(coverage.total, report.summary.featureFamilies['independent-local-and-remote']);
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'independent-local-and-remote')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated independent local/remote case');
+  assert.ok(generatedCase.tags.has('independent-merge'));
+
+  const { filePath, fileValue, rowId, rowTitle } = generatedIndependentLocalRemoteTargets(generatedCase);
+  const fileKey = `file:${filePath}`;
+  const rowKey = `row:["wp_posts","${rowId}"]`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const fileMutation = plan.mutations.find((mutation) => mutation.resourceKey === fileKey);
+  const rowDecision = plan.decisions.find((decision) => decision.resourceKey === rowKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === fileKey);
+  const evidence = JSON.stringify(hashOnlyGeneratedPlanEvidence(plan));
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(validation.status, 'ready');
+  assert.equal(validation.applied, true);
+  assert.equal(validation.unplannedRemotePreserved, true);
+  assert.ok(fileMutation, `${generatedCase.id} missing local file mutation`);
+  assert.equal(fileMutation.action, 'put');
+  assert.equal(rowDecision?.decision, 'keep-remote');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === rowKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === rowKey), false);
+  assert.equal(precondition?.expectedHash, fileMutation.remoteBeforeHash);
+  assert.equal(evidence.includes(fileValue), false, 'hash-only generated evidence leaked local file value');
+  assert.equal(evidence.includes(rowTitle), false, 'hash-only generated evidence leaked remote row value');
+
+  const result = applyPlan(cloneJson(generatedCase.remote), plan);
+  assert.equal(result.site.files[filePath], fileValue);
+  assert.equal(result.site.db.wp_posts[rowId].post_title, rowTitle);
+});
+
+test('RPP-0222 generated harness preserves independent local rows and remote files', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.independentLocalRowRemoteFile;
+
+  assert.ok(coverage, 'missing independent local row plus remote file target coverage');
+  assert.equal(coverage.family, 'independent-local-row-remote-file');
+  assert.equal(coverage.total, report.summary.featureFamilies['independent-local-row-remote-file']);
+  assert.deepEqual(coverage.statuses, { ready: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'independent-local-row-remote-file')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated independent row/file case');
+  assert.ok(generatedCase.tags.has('independent-merge'));
+  assert.ok(generatedCase.tags.has('independent-row-remote-file'));
+
+  const { rowId, rowTitle, filePath, fileValue } = generatedIndependentRowRemoteFileTargets(generatedCase);
+  const rowKey = `row:["wp_posts","${rowId}"]`;
+  const fileKey = `file:${filePath}`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const rowMutation = plan.mutations.find((mutation) => mutation.resourceKey === rowKey);
+  const fileDecision = plan.decisions.find((decision) => decision.resourceKey === fileKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === rowKey);
+  const evidence = JSON.stringify(hashOnlyGeneratedPlanEvidence(plan));
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(validation.status, 'ready');
+  assert.equal(validation.applied, true);
+  assert.equal(validation.unplannedRemotePreserved, true);
+  assert.ok(rowMutation, `${generatedCase.id} missing local row mutation`);
+  assert.equal(rowMutation.action, 'put');
+  assert.equal(fileDecision?.decision, 'keep-remote');
+  assert.equal(fileDecision.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === fileKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === fileKey), false);
+  assert.equal(precondition?.expectedHash, rowMutation.remoteBeforeHash);
+  assert.equal(evidence.includes(rowTitle), false, 'hash-only generated evidence leaked local row value');
+  assert.equal(evidence.includes(fileValue), false, 'hash-only generated evidence leaked remote file value');
+
+  const result = applyPlan(cloneJson(generatedCase.remote), plan);
+  assert.equal(result.site.db.wp_posts[rowId].post_title, rowTitle);
+  assert.equal(result.site.files[filePath], fileValue);
+});
+
+test('RPP-0223 generated harness refuses local delete versus remote edit cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.localDeleteRemoteEdit;
+
+  assert.ok(coverage, 'missing local delete versus remote edit target coverage');
+  assert.equal(coverage.family, 'delete-edit-conflict');
+  assert.equal(coverage.total, report.summary.featureFamilies['delete-edit-conflict']);
+  assert.deepEqual(coverage.statuses, { conflict: coverage.total });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'delete-edit-conflict')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated delete/edit case');
+  assert.ok(generatedCase.tags.has('delete-edit'));
+  assert.ok(generatedCase.tags.has('expected-conflict'));
+
+  const { rowId, remoteTitle } = generatedDeleteEditTargets(generatedCase);
+  const rowKey = `row:["wp_posts","${rowId}"]`;
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === rowKey);
+  const evidence = JSON.stringify(hashOnlyGeneratedPlanEvidence(plan));
+  const remoteReplay = cloneJson(generatedCase.remote);
+  const beforeReplay = JSON.stringify(remoteReplay);
+  const error = captureError(() => applyPlan(remoteReplay, plan));
+
+  assert.equal(plan.status, 'conflict');
+  assert.equal(validation.status, 'conflict');
+  assert.equal(validation.applied, false);
+  assert.ok(conflict, `${generatedCase.id} missing row delete/edit conflict`);
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === rowKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === rowKey), false);
+  assert.equal(JSON.stringify(conflict).includes(remoteTitle), false);
+  assert.equal(evidence.includes(remoteTitle), false, 'hash-only generated evidence leaked remote row value');
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remoteReplay), beforeReplay, 'conflict apply mutated generated remote');
+});
 
 test('RPP-0118 same independent content target applies without unplanned remote overwrite', () => {
   const report = runGeneratedPushHarness();
@@ -1750,7 +1910,7 @@ test('RPP-0112/RPP-0132 wp_term_taxonomy graph target exposes redacted per-tier 
   assert.equal(coverage.family, 'wp-term-taxonomy-graph-ready');
   assert.equal(coverage.total, report.summary.featureFamilies['wp-term-taxonomy-graph']);
   assert.equal(coverage.total, 20, 'target should include ready and stale term-taxonomy graph cases per tier');
-  assert.deepEqual(coverage.statuses, { blocked: 3, conflict: 7, ready: 10 });
+  assert.deepEqual(coverage.statuses, { blocked: 4, conflict: 6, ready: 10 });
   assert.equal(nonReadyTargetCount(coverage), 10, 'target should include one stale term-taxonomy graph case per tier');
   assert.deepEqual(
     coverage.perTier,
@@ -2095,19 +2255,19 @@ test('RPP-0117 stale remote after dry-run target exposes per-tier ready replay r
 
   assert.ok(coverage, 'missing stale remote after dry-run target coverage');
   assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run');
-  assert.equal(coverage.total, 342);
+  assert.equal(coverage.total, 354);
   assert.deepEqual(coverage.statuses, { ready: coverage.total });
   assert.deepEqual(coverage.perTier, {
-    0: 32,
-    1: 34,
-    2: 35,
-    3: 34,
-    4: 35,
-    5: 34,
-    6: 35,
-    7: 34,
-    8: 35,
-    9: 34,
+    0: 35,
+    1: 35,
+    2: 36,
+    3: 35,
+    4: 36,
+    5: 35,
+    6: 36,
+    7: 35,
+    8: 36,
+    9: 35,
   });
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
@@ -2961,6 +3121,97 @@ function nonReadyTargetCount(coverage) {
     .reduce((sum, [, count]) => sum + count, 0);
 }
 
+function generatedIndependentLocalRemoteTargets(testCase) {
+  const fileEntry = Object.entries(testCase.local.files)
+    .find(([, value]) => typeof value === 'string' && value.startsWith('independent local '));
+  const rowEntry = Object.entries(testCase.remote.db.wp_posts)
+    .find(([, row]) => row.post_title?.startsWith('Independent remote '));
+
+  assert.ok(fileEntry, `${testCase.id} missing generated independent local file`);
+  assert.ok(rowEntry, `${testCase.id} missing generated independent remote row`);
+
+  return {
+    filePath: fileEntry[0],
+    fileValue: fileEntry[1],
+    rowId: rowEntry[0],
+    rowTitle: rowEntry[1].post_title,
+  };
+}
+
+function generatedIndependentRowRemoteFileTargets(testCase) {
+  const rowEntry = Object.entries(testCase.local.db.wp_posts)
+    .find(([, row]) => row.post_title?.startsWith('Independent local row '));
+  const fileEntry = Object.entries(testCase.remote.files)
+    .find(([, value]) => typeof value === 'string' && value.startsWith('independent remote file '));
+
+  assert.ok(rowEntry, `${testCase.id} missing generated independent local row`);
+  assert.ok(fileEntry, `${testCase.id} missing generated independent remote file`);
+
+  return {
+    rowId: rowEntry[0],
+    rowTitle: rowEntry[1].post_title,
+    filePath: fileEntry[0],
+    fileValue: fileEntry[1],
+  };
+}
+
+function generatedDeleteEditTargets(testCase) {
+  const rowEntry = Object.entries(testCase.remote.db.wp_posts)
+    .find(([id, row]) =>
+      testCase.base.db.wp_posts[id]
+      && !testCase.local.db.wp_posts[id]
+      && row.post_title?.startsWith('Remote edit while local deletes '));
+
+  assert.ok(rowEntry, `${testCase.id} missing generated delete/edit row`);
+
+  return {
+    rowId: rowEntry[0],
+    remoteTitle: rowEntry[1].post_title,
+  };
+}
+
+function hashOnlyGeneratedPlanEvidence(plan) {
+  return {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations.map((mutation) => ({
+      id: mutation.id,
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      changeKind: mutation.changeKind,
+    })),
+    preconditions: plan.preconditions.map((precondition) => ({
+      mutationId: precondition.mutationId,
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+    })),
+    decisions: plan.decisions.map((decision) => ({
+      id: decision.id,
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      baseHash: decision.baseHash,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      change: decision.change,
+    })),
+    conflicts: plan.conflicts.map((conflict) => ({
+      id: conflict.id,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      resolutionPolicy: conflict.resolutionPolicy || null,
+      change: conflict.change,
+    })),
+    blockers: plan.blockers.map((blocker) => ({
+      id: blocker.id,
+      resourceKey: blocker.resourceKey || null,
+      class: blocker.class,
+    })),
+  };
+}
 
 function assertFileTypeSwapShape(testCase, { conflict }) {
   const swapEntries = Object.entries(testCase.base.files)
