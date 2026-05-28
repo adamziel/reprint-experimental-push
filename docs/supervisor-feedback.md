@@ -1,9 +1,28 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:10 CEST
+Last updated: 2026-05-28 06:14 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:14 CEST - RPP-0217 Lane Refresh
+
+- Going well: `origin/lane/evidence-integration-20260527` advanced to
+  `3d4a985dd`; the underlying `RPP-0217` conflict plan apply refusal proof is
+  integrated at `6d92f9517`. `RPP-0421` remains integrated.
+- Checklist movement: 111 verified items checked and 889 open. `RPP-0217` is
+  no longer queued/session-only; release remains `NO-GO`.
+- Still not counted: queued/session-only `RPP-0041`, `RPP-0042`, `RPP-0043`,
+  `RPP-0044`, `RPP-0218`, `RPP-0219`, `RPP-0322`, `RPP-0323`, and
+  `RPP-0425`; active `RPP-0045`, `RPP-0117`, `RPP-0116`, `RPP-0220`,
+  `RPP-0326`, `RPP-0426`, and `RPP-0427`.
+- Verification: `node --test test/push-planner.test.js` passes 92/92,
+  focused progress HTML/release-gate tests pass 30/30, checklist completion
+  lint reports 111 checked / 889 open with 0 risky claims, artifact redaction
+  scan rejects 0 files, progress.html local href sanity checks 50 links, and
+  `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from `3d4a985dd`, refetch
+  before push, and keep branch-local work out of readiness scoring.
 
 ## 2026-05-28 06:10 CEST - RPP-0217 Integrated
 

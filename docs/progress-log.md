@@ -4,6 +4,26 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Progress Refresh From 3d4a985dd
+
+- Last update: 2026-05-28 06:14 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` through
+  `3d4a985dd` (`docs: refresh progress for conflict plan refusal`), with
+  underlying `RPP-0217` proof at `6d92f9517`.
+- Checklist status: 111 checked / 889 open. New movement since `67d50f384`:
+  `RPP-0217` is integrated; `RPP-0421` remains integrated from `78323671d`.
+- Remaining queued/session-only, not counted: `RPP-0041`, `RPP-0042`,
+  `RPP-0043`, `RPP-0044`, `RPP-0218`, `RPP-0219`, `RPP-0322`, `RPP-0323`,
+  and `RPP-0425`.
+- Active in-flight work, not counted: `RPP-0045`, `RPP-0117`, `RPP-0116`,
+  `RPP-0220`, `RPP-0326`, `RPP-0426`, and `RPP-0427`.
+- Verification for this refresh: `node --test test/push-planner.test.js`
+  passes 92/92, focused progress HTML/release-gate tests pass 30/30, checklist
+  completion lint reports 111 checked / 889 open with 0 risky claims, artifact
+  redaction scan rejects 0 files, progress.html local href sanity checks 50
+  links, and `git diff --check` is clean.
+- Release posture: final release remains **NO-GO**.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 06:10 CEST.
