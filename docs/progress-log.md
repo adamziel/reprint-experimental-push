@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 13:55 CEST.
+- Last update: 2026-05-28 13:59 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `52af69f9` (normal ancestry merge of
-  `origin/session/rpp-31-critic-live-roster-11` audit evidence).
+  `b70479be` (normal ancestry merge of
+  `origin/session/rpp-31-critic-live-roster-12` audit evidence).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -145,6 +145,18 @@ linked implementation artifacts.
   `audits/ao-critic-live-roster-11-20260528.md` and
   `docs/evidence/ao-critic-live-roster-11.md`. The audit records historical
   live-roster and merge-risk observations from the older `3081bfab1` lane and
+  remains support-only critic evidence. Current validation passed with the
+  docs/progress suite
+  `node --test test/checklist-completion-lint.test.js test/artifact-redaction-scan.test.js test/progress-html-release-timestamp.test.js`
+  (24/24), a current fail-closed release-gate status check
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`,
+  3/20 gates), checklist lint, artifact redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
+- Audit backlog reduction: `b70479be` normal-merged
+  `origin/session/rpp-31-critic-live-roster-12`, adding
+  `audits/ao-critic-live-roster-12-20260528.md` and
+  `docs/evidence/ao-critic-live-roster-12.md`. The audit records historical
+  live-roster and merge-risk observations from the older `3bd9dc676` lane and
   remains support-only critic evidence. Current validation passed with the
   docs/progress suite
   `node --test test/checklist-completion-lint.test.js test/artifact-redaction-scan.test.js test/progress-html-release-timestamp.test.js`

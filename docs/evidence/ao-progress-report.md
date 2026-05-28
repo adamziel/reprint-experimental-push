@@ -1,11 +1,11 @@
-# AO Progress Report - 2026-05-28 13:55 CEST
+# AO Progress Report - 2026-05-28 13:59 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`52af69f9` (normal ancestry merge of
-`origin/session/rpp-31-critic-live-roster-11` audit evidence). It separates
+`b70479be` (normal ancestry merge of
+`origin/session/rpp-31-critic-live-roster-12` audit evidence). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -85,6 +85,15 @@ progress.
   adding `audits/ao-critic-live-roster-11-20260528.md` and
   `docs/evidence/ao-critic-live-roster-11.md`. The audit documents historical
   live-roster and merge-risk findings from the older `3081bfab1` lane and is
+  counted only as support-only critic evidence. Current validation passed with
+  the docs/progress suite (24/24), current release-gate held status
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, 3/20 gates), checklist lint, artifact
+  redaction scan, and
+  `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
+- `b70479be` integrates `origin/session/rpp-31-critic-live-roster-12` by
+  adding `audits/ao-critic-live-roster-12-20260528.md` and
+  `docs/evidence/ao-critic-live-roster-12.md`. The audit documents historical
+  live-roster and merge-risk findings from the older `3bd9dc676` lane and is
   counted only as support-only critic evidence. Current validation passed with
   the docs/progress suite (24/24), current release-gate held status
   (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, 3/20 gates), checklist lint, artifact
@@ -825,6 +834,7 @@ branch.
 | `rpp-31-critic-live-roster-8` | pushed audit branch | Live-roster-8 critic evidence is represented in the integration branch by `8e5834b4`; it remains support-only historical audit evidence and does not move final release readiness. |
 | `rpp-31-critic-live-roster-9` | pushed audit branch | Live-roster-9 critic evidence is represented in the integration branch by `f7785848`; it remains support-only historical audit evidence and does not move final release readiness. |
 | `rpp-31-critic-live-roster-11` | pushed audit branch | Live-roster-11 critic evidence is represented in the integration branch by `52af69f9`; it remains support-only historical audit evidence and does not move final release readiness. |
+| `rpp-31-critic-live-roster-12` | pushed audit branch | Live-roster-12 critic evidence is represented in the integration branch by `b70479be`; it remains support-only historical audit evidence and does not move final release readiness. |
 | `rpp-1` | pushed branch `b885aa8b9` | Release-gate extended coverage is represented in the integration branch by `ab0340786`; do not count additional branch-local state. |
 | `rpp-2` | pushed branch `5dc081ea9` | Recovery work is represented in the integration branch by `1362ccb6c`, with branch ancestry now preserved by `c1edc85a`; do not count additional branch-local state. |
 | `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`, with branch ancestry now preserved by `5773b093`; do not count additional branch-local state. |
