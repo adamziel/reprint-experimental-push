@@ -1,12 +1,13 @@
-# AO Progress Report - 2026-05-28 03:27 CEST
+# AO Progress Report - 2026-05-28 03:33 CEST
 
-Status: **NO-GO for final release**.
+Status: **NO-GO for final release**. Release remains **NO-GO unless production-backed evidence lands**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`bb6864a07` (`feat: add evidence coverage manifest`), plus this checklist
-status update. It separates committed proof from visible AO worker output that
-is still branch-local or in progress.
+`a19deaf9e` (`feat: add operator proof status marker`), including the
+post-handoff direct lane integration and this branch/tmux refresh. It separates
+committed proof from visible AO worker output that is still branch-local or in
+progress.
 
 ## Integrated Evidence
 
@@ -82,6 +83,16 @@ is still branch-local or in progress.
 - `bb6864a07` integrates the evidence coverage manifest from `rpp-18`; it is a
   local, deterministic audit surface for scanned RPP evidence references, not
   a final release readiness claim.
+- `a7062da32` marks only the 81 checklist items backed by integrated evidence
+  and leaves 919 open. This reporting pass does not mark any additional
+  checklist item complete.
+- `c4482d775` integrates recovery repair boundaries from `rpp-11`.
+- `11659db83` integrates release-gate CLI/CI fail-closed checks from `rpp-12`.
+- `a3c303404` integrates protocol compatibility negotiation from `rpp-14`.
+- `a29e448f7` integrates evidence and journal redaction support from `rpp-13`.
+- `3318a8cb8` aligns protocol fixture assertions after the direct integration.
+- `303866a5d` integrates the route proof matrix from `rpp-20`.
+- `a19deaf9e` integrates the operator proof status marker from `rpp-21`.
 
 ## 1000-Item Checklist Status
 
@@ -137,11 +148,28 @@ Checked IDs in this report are:
 - `node --check scripts/release/evidence-coverage-manifest.mjs`
 - `node --test test/evidence-coverage-manifest.test.js`
 - `node --test test/production-complex-site-harness.test.js test/evidence-coverage-manifest.test.js` — passed in the `rpp-22` integration lane.
+- `rpp-28` direct-lane integration validation: `node --check` on 19 changed JS/MJS files; focused `node --test` suite reported 125 passing across production complex site harness, evidence coverage manifest, recovery repair, release-gate CLI, protocol compatibility, evidence redaction, route proof matrix, operator proof status, protocol fixtures, recovery journal, and release gates; `git diff --check` passed.
 
 `git diff --check` is run again after this report update before commit. The
 latest graph/plugin/audit/auth commits are also covered by their integrated
 evidence documents; branch-local claims outside those commits are not counted
 here.
+
+
+## Pushed Session Branches Not Yet Integrated
+
+After the `a19deaf9e` lane update, `rpp-11` through `rpp-14`, `rpp-19`,
+`rpp-20`, and `rpp-21` are represented on the integration branch. The pushed
+branches below remain branch-local and must not be counted as integrated
+evidence until safely reconciled.
+
+| Branch | Tip | Worker-reported evidence | Current handling |
+| --- | --- | --- | --- |
+| `origin/session/rpp-17` | `2849d0398` | Auth/recovery reconciliation fix; worker reported `test/authenticated-http-push-client.test.js` 127/127 and a focused graph/plugin/chunk/release/recovery set 133/133. | Pushed after current integrated checklist state; not counted until safely integrated. |
+| `origin/session/rpp-23` | `36eccd381` | Critic continuation 2: release gates 11/11 passed, `verify:release` failed closed, auth client file was red at 117/127. | Pushed only; not integrated. |
+| `origin/session/rpp-24` | `0134fc053` | Release evidence provenance validator; worker reported 6 passing tests. | Pushed only; not integrated. |
+| `origin/session/rpp-25` | `4549c1119` | Checklist completion linter; worker reported 10/10 tests plus a self-scan with `ok: true` and 0 risky claims. | Pushed only; not integrated. |
+| `origin/session/rpp-27` | `f8d1659f9` | Safe replay of prior progress-reporting branch with diff/link checks. | Superseded by newer integrated checklist/reporting state unless manually reconciled. |
 
 ## Active AO Roster From tmux and Branch Inspection
 
@@ -153,32 +181,26 @@ branch.
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
 | `rpp-10` | developer: Docker/local-production runtime | Integrated by `764aead1c`; fail-closed Docker prerequisite evidence only. |
-| `rpp-11` | developer: rollback-repair | Pushed `origin/session/rpp-11`; still branch-local until a safe integration pass lands it. |
-| `rpp-12` | developer: release CI gates | Pushed `origin/session/rpp-12`; still branch-local until a safe integration pass lands it. |
-| `rpp-13` | developer: evidence redaction | Pushed `origin/session/rpp-13`; still branch-local until a safe integration pass lands it. |
-| `rpp-14` | developer: protocol compatibility | Pushed `origin/session/rpp-14`; still branch-local until a safe integration pass lands it. |
+| `rpp-11`-`rpp-14` | completed developer branches | Represented on the integration branch by `c4482d775`, `11659db83`, `a29e448f7`, and `a3c303404`; no extra branch-local state counted. |
 | `rpp-15` | critic continuation | Integrated by `9a7bfa599`; no checklist item was marked complete from this critic pass alone. |
-| `rpp-16` | progress reporter continuation | Integrated by `57791e17`; superseded here by the 81/1000 checklist status update. |
-| `rpp-17` | developer/integrator | Still live in tmux; branch-local unless pushed and integrated later. |
+| `rpp-16` | progress reporter continuation | Integrated by `57791e17`; superseded by the current checklist status update. |
+| `rpp-17` | completed developer/integrator branch | Pushed `origin/session/rpp-17`; still branch-local. |
 | `rpp-18` | evidence coverage manifest | Integrated by `bb6864a07`; local audit surface, not readiness movement. |
-| `rpp-19` | protocol fixture/recovery/release reconciliation | Pushed `origin/session/rpp-19`; `rpp-22` skipped it because package/release/recovery changes need a dedicated reconciliation pass. |
-| `rpp-20` | route proof matrix | Live tmux developer lane; branch-local until pushed and integrated. |
-| `rpp-21` | operator proof status | Live tmux developer lane; branch-local until pushed and integrated. |
-| `rpp-22` | post-handoff integrator | Integrated `rpp-15`, `rpp-10`, and `rpp-18` into this branch. |
-| `rpp-23` | critic continuation 2 | Live critic lane. |
-| `rpp-24` | release evidence provenance | Live developer lane. |
-| `rpp-25` | checklist completion lint | Live developer lane. |
-| `rpp-26` | progress reporter continuation | AO-spawned replacement progress reporter. |
-| `rpp-27` | progress evidence integration | AO-spawned integration lane. |
-| `rpp-1` | pushed branch `b885aa8b9` | Release-gate extended coverage is represented in the integration branch by `ab0340786`; do not count additional branch-local state. |
-| `rpp-2` | pushed branch `5dc081ea9` | Recovery work is represented in the integration branch by `1362ccb6c`; do not count additional branch-local state. |
-| `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`; do not count additional branch-local state. |
-| `rpp-4` | pushed branch `e8bcabc33` | Plugin-driver work is represented in the integration branch by `b348c56b8`; do not count additional branch-local state. |
-| `rpp-5` | pushed branch `573d58069` | Executor auth/lease read-only inspect work is represented in the integration branch by `bb40db8c1`; do not count additional branch-local state. |
-| `rpp-6` | pushed branch `9440daf3e` | Chunk benchmark gate work is represented in the integration branch by `4d5c96d78`; do not count additional branch-local state. |
-| `rpp-7` / `rpp-8` | pushed audit branches | Independent and critic audit evidence is represented in the integration branch by `05050392b`; do not count additional branch-local state. |
-| `rpp-9` | pushed branch `dcc23dc2a` | Prior progress evidence visible; branch-local until integrated. |
-| `rpp-orchestrator` | supervisor | tmux-visible supervisor pane. |
+| `rpp-19` | completed composite integration branch | Represented on the integration branch by `c4482d775` through `3318a8cb8`; no extra branch-local state counted. |
+| `rpp-20` | completed route proof matrix branch | Integrated by `303866a5d`. |
+| `rpp-21` | completed operator proof status branch | Integrated by `a19deaf9e`. |
+| `rpp-22` | post-handoff integrator | Its selected outputs are represented by `9a7bfa599`, `764aead1c`, and `bb6864a07`. |
+| `rpp-23` | completed critic continuation 2 | Pushed `origin/session/rpp-23`; still branch-local. No active replacement critic was observed at final capture. |
+| `rpp-24` | completed release evidence provenance branch | Pushed `origin/session/rpp-24`; still branch-local. |
+| `rpp-25` | completed checklist completion lint branch | Pushed `origin/session/rpp-25`; still branch-local. |
+| `rpp-26` | active progress reporter | This reporting refresh. |
+| `rpp-27` | completed progress evidence integration branch | Pushed and superseded by newer integrated checklist/reporting state unless reconciled. |
+| `rpp-28` | completed developer/integrator | Directly pushed `rpp-19`, `rpp-20`, and `rpp-21` into the integration branch at `a19deaf9e`; now stale/completed. |
+| `rpp-29` | active developer | Release artifact redaction scanner implementation in progress. |
+| `rpp-30` | active developer | Required release checks contract implementation in progress. |
+| `rpp-31` | active critic | Full `npm test` exited 1; critic is inspecting red-suite failures and stale progress docs. |
+| `rpp-orchestrator` | supervisor | tmux-visible supervisor pane; spawned replacement developer lanes. |
+| `rpp-1`-`rpp-9` | stale completed/pushed early lanes | Selected work is represented by integrated commits where noted; do not count additional branch-local state. |
 
 Untracked AO scratch directories observed in some worker trees remain excluded
 from evidence and must not be committed.
@@ -216,6 +238,6 @@ Final release remains held for the following missing production-backed gates:
 11. Red-suite/auth/plugin/snapshot failures called out by the critic must be
     resolved before any final release movement.
 
-Decision: **NO-GO** for final release on 2026-05-28 03:27 CEST.
-
-No readiness percentage moves in this report.
+Decision: **NO-GO** for final release on 2026-05-28 03:33 CEST. No final
+readiness percentage moves in this report; release stays held unless
+production-backed evidence lands.

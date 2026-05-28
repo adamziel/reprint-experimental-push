@@ -4,6 +4,30 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Direct Lane Integration Catch-Up
+
+- Last update: 2026-05-28 03:33 CEST.
+- Integrated evidence branch: `origin/lane/evidence-integration-20260527` at
+  `a19deaf9e` (`feat: add operator proof status marker`).
+- Release posture: **NO-GO**. Release remains **NO-GO unless
+  production-backed evidence lands**.
+- Newly integrated after the 81-item checklist update: recovery repair
+  boundaries, release-gate CLI/CI fail-closed checks, protocol compatibility,
+  evidence/journal redaction support, protocol fixture alignment, route proof
+  matrix, and operator proof status marker.
+- `rpp-28` reported validation for the direct integration: JS/MJS syntax checks
+  on 19 changed files, focused tests with 125 passing assertions across the
+  integrated slices, and `git diff --check`. This is focused evidence only, not
+  a full-suite or final-release claim.
+- Pushed but not integrated by final capture: `origin/session/rpp-17`,
+  `rpp-23`, `rpp-24`, `rpp-25`, and `rpp-27`.
+- Active roster at final capture: developer lanes `rpp-29` and `rpp-30`;
+  critic lane `rpp-31`; progress reporter `rpp-26`; supervisor
+  `rpp-orchestrator`. Completed pushed panes include `rpp-17`, `rpp-23`,
+  `rpp-24`, `rpp-25`, `rpp-27`, and `rpp-28`.
+- Checklist state remains 81 checked and 919 open; this report does not mark
+  any additional item complete.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 03:27 CEST.

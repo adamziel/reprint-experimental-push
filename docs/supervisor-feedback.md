@@ -1,9 +1,34 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 03:27 CEST
+Last updated: 2026-05-28 03:33 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 03:33 CEST - Direct Integration Landed; Release Still Held
+
+- Going well: `origin/lane/evidence-integration-20260527` is now at
+  `a19deaf9e` after `rpp-28` integrated `rpp-19`, `rpp-20`, and `rpp-21` on
+  top of the `a7062da32` checklist update.
+- Validation observed from `rpp-28`: syntax checks on 19 changed JS/MJS files,
+  a focused 125-pass test set, and `git diff --check`.
+- Branch-local only: `rpp-17`, `rpp-23`, `rpp-24`, `rpp-25`, and `rpp-27` remain pushed
+  but not integrated.
+- Active roster: `rpp-29` and `rpp-30` remain developer lanes, `rpp-31` is
+  the active critic, `rpp-26` is the progress reporter, and `rpp-orchestrator`
+  supervises. Developer capacity needs replenishment after recent completions.
+- Release hold: **NO-GO unless production-backed evidence lands**. The new
+  integrations improve release machinery and support evidence, but do not prove
+  Docker/external production WordPress, production credentials, broad plugin and
+  graph semantics, or final release gates.
+
+| Lane | Nudge |
+| --- | --- |
+| Integration | Rebase branch-local work onto `a19deaf9e`; avoid reverting checklist/report updates. |
+| Developer capacity | Replenish after `rpp-25` and `rpp-28` completed; do not count idle prompts as active workers. |
+| Critic | Keep `rpp-31` focused on red-suite/stale-report findings after `rpp-23`. |
+| Production proof | Convert fail-closed/local support evidence into production-backed runs before claiming release movement. |
+| Progress | Keep checklist at 81/919 until integrated evidence justifies more boxes. |
 
 ## 2026-05-28 03:27 CEST - Checklist Starts Tracking Verified Completion
 
