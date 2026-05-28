@@ -941,6 +941,96 @@ test('refuses direct conflicts and preserves the remote snapshot', () => {
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote title');
 });
 
+test('RPP-0217 conflict plans refuse apply before mutation with stable evidence', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const conflictResourceKey = 'row:["wp_posts","ID:1"]';
+  const privateConflictValues = [
+    'local-private-rpp0217-title',
+    'remote-private-rpp0217-title',
+  ];
+  local.files['index.php'] = '<?php echo "rpp0217 safe local edit";';
+  local.db.wp_posts['ID:1'].post_title = privateConflictValues[0];
+  remote.db.wp_posts['ID:1'].post_title = privateConflictValues[1];
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const firstJournal = [];
+  const secondJournal = [];
+  const trapJournal = (events) => ({
+    appendEvent(type, payload) {
+      events.push({ type, payload });
+      return { sequence: events.length, type, ...payload };
+    },
+  });
+  const errorEnvelope = (error) => ({
+    name: error.name,
+    code: error.code,
+    message: error.message,
+    details: error.details,
+  });
+  const beforeRemote = JSON.stringify(remote);
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0217 conflict apply refusal');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plannerSummaryEvidenceEnvelope(firstPlan),
+    plannerSummaryEvidenceEnvelope(secondPlan),
+    'conflict apply refusal evidence should be stable across deterministic planning runs',
+  );
+  assert.deepEqual(firstPlan.conflicts, secondPlan.conflicts);
+  assert.equal(mutationFor(firstPlan, 'file:index.php').action, 'put');
+  assert.equal(mutationFor(firstPlan, conflictResourceKey), undefined);
+  assert.equal(
+    firstPlan.preconditions.some((precondition) => precondition.resourceKey === conflictResourceKey),
+    false,
+    'conflict resource emitted a precondition',
+  );
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  assert.equal(firstPlan.conflicts[0].class, 'row-conflict');
+  assert.equal(firstPlan.conflicts[0].resourceKey, conflictResourceKey);
+  assert.equal(firstPlan.conflicts[0].resolutionPolicy, 'preserve-remote-and-stop');
+  const conflictEvidence = JSON.stringify({
+    conflicts: firstPlan.conflicts,
+    envelope: plannerSummaryEvidenceEnvelope(firstPlan),
+  });
+  for (const privateValue of privateConflictValues) {
+    assert.equal(conflictEvidence.includes(privateValue), false, `conflict evidence leaked ${privateValue}`);
+  }
+
+  const firstError = captureError(() => applyPlan(remote, firstPlan, {
+    durableJournal: trapJournal(firstJournal),
+  }));
+  const secondError = captureError(() => applyPlan(cloneJson(remote), secondPlan, {
+    durableJournal: trapJournal(secondJournal),
+  }));
+
+  assert.ok(firstError instanceof PushPlanError);
+  assert.deepEqual(errorEnvelope(firstError), {
+    name: 'PushPlanError',
+    code: 'PLAN_NOT_READY',
+    message: 'Refusing to apply a conflict plan.',
+    details: { status: 'conflict' },
+  });
+  assert.deepEqual(errorEnvelope(firstError), errorEnvelope(secondError));
+  for (const privateValue of privateConflictValues) {
+    assert.equal(JSON.stringify(errorEnvelope(firstError)).includes(privateValue), false);
+  }
+  assert.deepEqual(firstJournal, [], 'conflict apply should refuse before durable journal evidence');
+  assert.deepEqual(secondJournal, [], 'conflict apply replay should refuse before durable journal evidence');
+  assert.equal(JSON.stringify(remote), beforeRemote);
+  assert.equal(remote.files['index.php'], base.files['index.php']);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, privateConflictValues[1]);
+});
+
 test('classifies plugin-owned data conflicts separately from generic rows', () => {
   const base = baseSite();
   const local = baseSite();
