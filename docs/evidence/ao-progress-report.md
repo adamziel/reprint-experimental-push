@@ -1,18 +1,23 @@
-# AO Progress Report - 2026-05-28 23:12 CEST
+# AO Progress Report - 2026-05-28 23:29 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0116 atomic plugin install stack
-generated harness refresh. It separates
+`lane/evidence-integration-20260527` through the current RPP-0201 independent local-file plus remote-row
+merge-invariant refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 226 are
-  checked from integrated evidence and 774 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 227 are
+  checked from integrated evidence and 773 remain open.
+- Focused merge-invariant evidence now checks `RPP-0201`. `node --test
+  --test-name-pattern='RPP-0201|RPP-0221' test/push-planner.test.js
+  test/generated-push-harness.test.js` passed 3/3, proving focused and
+  generated independent local-file plus remote-row cases remain hash-only and
+  preserve unplanned remote row edits while final release remains **NO-GO**.
 - The manage_options variant-2 scenario-matrix refresh now checks `RPP-0029`.
   `node --test test/release-gate-manage-options-capability-regression.test.js`
   passed 3/3, proving both subscriber-denied and admin-approved
@@ -1213,6 +1218,7 @@ Checked IDs in this report are:
 - `node --test test/release-gate-manage-options-capability-regression.test.js` — 3 pass / 0 fail for the RPP-0029 manage_options variant-2 scenario matrix plus RPP-0069 regression coverage.
 - `node --test test/release-gate-route-recovery-focused-regression.test.js` — 4 pass / 0 fail for the RPP-0073 through RPP-0076 focused route, recovery, and releaseMovement regression evidence.
 - `node --test test/release-gate-preflight-route-identity-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 33 pass / 0 fail for the RPP-0071 preflight route identity and RPP-0072 dry-run route eligibility focused regression evidence-count refresh.
+- `node --test --test-name-pattern='RPP-0201|RPP-0221' test/push-planner.test.js test/generated-push-harness.test.js` — 3 pass / 0 fail for RPP-0201 focused/generated independent local-file plus remote-row merge invariant evidence and existing RPP-0221 regression coverage.
 - `node --test --test-name-pattern 'RPP-0115' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 37 full generated-harness passes / 0 fail for RPP-0115 plugin-owned custom-table variant-1 generated/model evidence.
 - `node --test --test-name-pattern 'RPP-0116' test/generated-push-harness.test.js`; `npm run test:generated-push-harness` — 1 focused pass / 0 fail and 38 full generated-harness passes / 0 fail for RPP-0116 atomic plugin install stack variant-1 generated/model evidence.
 - `node --test test/generated-push-harness.test.js` — 38 pass / 0 fail after RPP-0116, including the full generated harness, atomic plugin install stack variant-1, plugin-owned custom-table variant-1, and prior atomic plugin install stack target coverage.
