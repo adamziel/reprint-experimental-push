@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 35 scenario families, then add seeded variation so
+span 10 complexity tiers and 37 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -55,8 +55,8 @@ The default generated run covers:
   ready/stale non-ready outcomes, supported and unsupported plugin-owned data,
   plugin owner-context drift, supported forms-lab custom-table rows, forms-lab
   delete refusal, atomic plugin install ready and missing-dependency paths,
-  same-plan post-parent, taxonomy, comment, and usermeta graph closures, and
-  stale graph references.
+  same-plan post-parent, taxonomy, comment, comment `comment_post_ID`, and
+  usermeta graph closures, and stale graph references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -71,17 +71,44 @@ mutation; stale cases keep the term in the base, drift that term remotely, and
 require the new taxonomy reference to fail closed instead of overwriting the
 drifted remote.
 
+The `commentPostGraph` target coverage records per-tier counts for generated
+`wp_comments.comment_post_ID` rows and their `wp_posts` graph targets. Ready
+cases create the target post and comment row in one plan, then apply through
+the harness; stale cases keep the target post in the base, drift that post
+remotely, and require the comment reference to fail closed with hash-only
+graph evidence instead of leaking post or comment payloads.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 24,
-    "conflict": 144,
-    "ready": 192
+    "blocked": 33,
+    "conflict": 137,
+    "ready": 190
   },
   "targetCoverage": {
+    "commentPostGraph": {
+      "family": "comment-post-graph-ready",
+      "total": 18,
+      "perTier": {
+        "0": 1,
+        "1": 1,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 9,
+        "ready": 9
+      }
+    },
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
       "total": 10,
@@ -103,33 +130,33 @@ At the time this note was added, the summary command reported:
     },
     "wpPostsCreateUpdateDelete": {
       "family": "wp-posts-create-update-delete-ready",
-      "total": 20,
+      "total": 18,
       "perTier": {
         "0": 2,
         "1": 2,
         "2": 2,
         "3": 2,
         "4": 2,
-        "5": 2,
-        "6": 2,
+        "5": 1,
+        "6": 1,
         "7": 2,
         "8": 2,
         "9": 2
       },
       "statuses": {
         "conflict": 10,
-        "ready": 10
+        "ready": 8
       }
     },
     "wpTermTaxonomyGraph": {
       "family": "wp-term-taxonomy-graph-ready",
-      "total": 20,
+      "total": 18,
       "perTier": {
         "0": 2,
         "1": 2,
         "2": 2,
-        "3": 2,
-        "4": 2,
+        "3": 1,
+        "4": 1,
         "5": 2,
         "6": 2,
         "7": 2,
@@ -138,32 +165,41 @@ At the time this note was added, the summary command reported:
       },
       "statuses": {
         "blocked": 3,
-        "conflict": 8,
-        "ready": 9
+        "conflict": 7,
+        "ready": 8
       }
     }
   },
   "featureFamilies": {
-    "file-type-swap": 20,
+    "file-type-swap": 19,
     "file-type-swap-ready": 10,
-    "file-type-swap-conflict": 10,
-    "row-create-update-delete-mix": 20,
-    "row-create-update-delete-mix-ready": 10,
-    "row-create-update-delete-mix-conflict": 10,
-    "wp-posts-create-update-delete": 20,
-    "wp-posts-create-update-delete-ready": 10,
-    "wp-posts-create-update-delete-conflict": 10,
-    "wp-term-taxonomy-graph": 20,
-    "wp-term-taxonomy-graph-ready": 10,
-    "wp-term-taxonomy-graph-stale": 10,
-    "wp-term-taxonomy-create": 20,
-    "wp-terms-create": 20,
-    "wp-terms-remote-drift": 10
+    "file-type-swap-conflict": 9,
+    "row-create-update-delete-mix": 18,
+    "row-create-update-delete-mix-ready": 9,
+    "row-create-update-delete-mix-conflict": 9,
+    "wp-posts-create-update-delete": 18,
+    "wp-posts-create-update-delete-ready": 9,
+    "wp-posts-create-update-delete-conflict": 9,
+    "wp-term-taxonomy-graph": 18,
+    "wp-term-taxonomy-graph-ready": 9,
+    "wp-term-taxonomy-graph-stale": 9,
+    "comment-post-graph": 18,
+    "comment-post-graph-ready": 9,
+    "comment-post-graph-stale": 9,
+    "comment-post": 18,
+    "comment-post-ready": 9,
+    "comment-post-stale-target": 9,
+    "wp-comments-create": 9,
+    "wp-posts-create": 27,
+    "wp-posts-remote-drift": 9,
+    "wp-term-taxonomy-create": 18,
+    "wp-terms-create": 18,
+    "wp-terms-remote-drift": 9
   },
-  "maxResourceCount": 68,
-  "maxMutationCount": 43,
-  "maxReadyResourceCount": 68,
-  "maxReadyMutationCount": 43
+  "maxResourceCount": 69,
+  "maxMutationCount": 44,
+  "maxReadyResourceCount": 69,
+  "maxReadyMutationCount": 44
 }
 ```
 

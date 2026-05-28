@@ -16,6 +16,7 @@ export const complexSiteFixtureShape = Object.freeze({
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
   postParentGraph: false,
+  commentPostGraph: false,
   commentGraph: false,
 });
 
@@ -90,6 +91,16 @@ const commentGraphResourceKeys = Object.freeze([
   commentGraphChildResourceKey,
   commentGraphMetaResourceKey,
 ]);
+const commentPostGraphPostId = 71711;
+const commentPostGraphCommentId = 72711;
+const commentPostGraphPostSlug = 'reprint-push-comment-post-graph';
+const commentPostGraphAgent = 'reprint-push-comment-post-graph';
+const commentPostGraphPostResourceKey = `row:["wp_posts","ID:${commentPostGraphPostId}"]`;
+const commentPostGraphCommentResourceKey = `row:["wp_comments","comment_ID:${commentPostGraphCommentId}"]`;
+const commentPostGraphResourceKeys = Object.freeze([
+  commentPostGraphPostResourceKey,
+  commentPostGraphCommentResourceKey,
+]);
 const importerExporterSourcePostId = 76401;
 const importerExporterChildPostId = 76402;
 const importerExporterTargetPostId = 77401;
@@ -122,6 +133,7 @@ export function complexSiteFixtureShapeFromEnv(env = process.env) {
     taxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF === '1',
     postTagTaxonomyGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF === '1',
     postParentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF === '1',
+    commentPostGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_POST_PROOF === '1',
     commentGraph: env.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF === '1',
   });
 }
@@ -142,6 +154,7 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     `$complex_taxonomy_graph = ${shape.taxonomyGraph ? 'true' : 'false'};`,
     `$complex_post_tag_taxonomy_graph = ${shape.postTagTaxonomyGraph ? 'true' : 'false'};`,
     `$complex_post_parent_graph = ${shape.postParentGraph ? 'true' : 'false'};`,
+    `$complex_comment_post_graph = ${shape.commentPostGraph ? 'true' : 'false'};`,
     `$complex_comment_graph = ${shape.commentGraph ? 'true' : 'false'};`,
     "for ($i = 1; $i <= $complex_post_count; $i++) {",
     "  $stable_id = 71000 + $i;",
@@ -204,6 +217,16 @@ export function buildComplexSiteSeedPhp(variant, shape = complexSiteFixtureShape
     "  $wpdb->replace($wpdb->term_taxonomy, array('term_taxonomy_id'=>$post_tag_term_taxonomy_id,'term_id'=>$post_tag_term_id,'taxonomy'=>'post_tag','description'=>'Local post_tag taxonomy graph fixture.','parent'=>0,'count'=>1), array('%d','%d','%s','%s','%d','%d'));",
     "  $wpdb->replace($wpdb->term_relationships, array('object_id'=>$post_tag_post_id,'term_taxonomy_id'=>$post_tag_term_taxonomy_id,'term_order'=>0), array('%d','%d','%d'));",
     "  clean_term_cache(array($post_tag_term_id), 'post_tag');",
+    "}",
+    "if ($complex_comment_post_graph && $complex_is_local) {",
+    `  $comment_post_graph_post_id = ${commentPostGraphPostId};`,
+    `  $comment_post_graph_comment_id = ${commentPostGraphCommentId};`,
+    `  $comment_post_graph_agent = ${phpString(commentPostGraphAgent)};`,
+    `  $comment_post_graph_result = wp_insert_post(array('import_id'=>$comment_post_graph_post_id,'post_title'=>'Reprint Push Comment Post Graph Target','post_name'=>${phpString(commentPostGraphPostSlug)},'post_content'=>'Local post target used for comment_post_ID graph proof.','post_status'=>'publish','post_type'=>'post','post_parent'=>0,'post_author'=>0));`,
+    "  if (is_wp_error($comment_post_graph_result)) { throw new RuntimeException($comment_post_graph_result->get_error_message()); }",
+    "  add_post_meta((int) $comment_post_graph_result, 'reprint_push_fixture', 'complex-comment-post-graph', true);",
+    `  $wpdb->replace($wpdb->comments, array('comment_ID'=>$comment_post_graph_comment_id,'comment_post_ID'=>$comment_post_graph_post_id,'comment_author'=>'Reprint Comment Post Reference','comment_author_email'=>'comment-post@example.test','comment_author_url'=>'','comment_author_IP'=>'127.0.0.1','comment_date'=>'2026-05-27 21:47:00','comment_date_gmt'=>'2026-05-27 21:47:00','comment_content'=>'Local comment whose comment_post_ID points at the same-plan post.','comment_karma'=>0,'comment_approved'=>'1','comment_agent'=>$comment_post_graph_agent,'comment_type'=>'comment','comment_parent'=>0,'user_id'=>0), array('%d','%d','%s','%s','%s','%s','%s','%s','%s','%d','%s','%s','%s','%d','%d'));`,
+    "  clean_comment_cache(array($comment_post_graph_comment_id));",
     "}",
     "if ($complex_comment_graph && $complex_is_local) {",
     `  $comment_post_id = ${commentGraphPostId};`,
@@ -273,6 +296,7 @@ export function buildComplexSitePlannerProof({
     + (shape.postParentGraph ? postParentGraphResourceKeys.length : 0)
     + (shape.taxonomyGraph ? taxonomyGraphResourceKeys.length : 0)
     + (shape.postTagTaxonomyGraph ? postTagTaxonomyGraphResourceKeys.length : 0)
+    + (shape.commentPostGraph ? commentPostGraphResourceKeys.length : 0)
     + (shape.commentGraph ? commentGraphResourceKeys.length : 0);
   const expectedMinimumConflicts =
     positiveInt(shape.remoteDriftPosts)
@@ -377,6 +401,21 @@ export function buildComplexSitePlannerProof({
           && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
     postTagTaxonomyGraphNoStaleBlocker: !shape.postTagTaxonomyGraph
       || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
+    commentPostGraphCountsPresent: !shape.commentPostGraph
+      || (summarizeComplexSnapshot(localEditedSnapshot).commentPostGraphPosts >= 1
+        && summarizeComplexSnapshot(localEditedSnapshot).commentPostGraphComments >= 1),
+    commentPostGraphPlanned: !shape.commentPostGraph
+      || commentPostGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+    commentPostGraphHasLivePreconditions: !shape.commentPostGraph
+      || commentPostGraphResourceKeys.every((resourceKey) =>
+        readyPlan.preconditions?.some((precondition) =>
+          precondition.resourceKey === resourceKey
+          && precondition.checkedAgainst === 'live-remote'
+          && typeof precondition.expectedHash === 'string'
+          && /^[a-f0-9]{64}$/.test(precondition.expectedHash))),
+    commentPostGraphNoStaleBlocker: !shape.commentPostGraph
+      || readyPlan.blockers.every((blocker) => blocker.class !== 'stale-wordpress-graph-identity'),
     commentGraphCountsPresent: !shape.commentGraph
       || (summarizeComplexSnapshot(localEditedSnapshot).commentGraphParents >= 1
         && summarizeComplexSnapshot(localEditedSnapshot).commentGraphChildren >= 1
@@ -471,6 +510,18 @@ export function buildComplexSitePlannerProof({
       termTaxonomyIsPostTag: String(
         localEditedSnapshot?.db?.wp_term_taxonomy?.[`term_taxonomy_id:${postTagTaxonomyGraphTermTaxonomyId}`]?.taxonomy || '',
       ) === 'post_tag',
+      staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
+        blocker.class === 'stale-wordpress-graph-identity').length,
+    } : null,
+    commentPostGraphEvidence: shape.commentPostGraph ? {
+      type: 'comment-post-reference',
+      postResourceKey: commentPostGraphPostResourceKey,
+      commentResourceKey: commentPostGraphCommentResourceKey,
+      allResourcesPlanned: commentPostGraphResourceKeys.every((resourceKey) =>
+        readyMutations.some((mutation) => mutation.resourceKey === resourceKey)),
+      commentReferencesPost: Number(
+        localEditedSnapshot?.db?.wp_comments?.[`comment_ID:${commentPostGraphCommentId}`]?.comment_post_ID,
+      ) === commentPostGraphPostId,
       staleGraphBlockers: readyPlan.blockers.filter((blocker) =>
         blocker.class === 'stale-wordpress-graph-identity').length,
     } : null,
@@ -1137,6 +1188,13 @@ export function summarizeComplexSnapshot(snapshot) {
     postTagTaxonomyGraphRelationships: Object.values(termRelationships).filter((row) =>
       Number(row?.object_id) === postTagTaxonomyGraphPostId
       && Number(row?.term_taxonomy_id) === postTagTaxonomyGraphTermTaxonomyId).length,
+    commentPostGraphPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === commentPostGraphPostId
+      && String(row?.post_name || '') === commentPostGraphPostSlug).length,
+    commentPostGraphComments: Object.values(comments).filter((row) =>
+      Number(row?.comment_ID) === commentPostGraphCommentId
+      && Number(row?.comment_post_ID) === commentPostGraphPostId
+      && String(row?.comment_agent || '') === commentPostGraphAgent).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId

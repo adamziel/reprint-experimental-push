@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'comment-post-graph-ready',
+  'comment-post-graph-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,8 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'comment-post-graph-ready',
+  'comment-post-graph-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  commentPostGraph: {
+    family: 'comment-post-graph-ready',
+    tag: 'comment-post-graph',
   },
 });
 
@@ -595,6 +603,14 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
+  },
+  'comment-post-graph-ready': ({ local, allocator, tags }) => {
+    addCommentPostGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'comment-post-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addCommentPostGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1215,6 +1231,51 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addCommentPostGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const postId = allocator.graphId();
+  const commentId = allocator.graphId();
+  const postRowId = `ID:${postId}`;
+  const commentRowId = `comment_ID:${commentId}`;
+  const post = makePost(postId, `Generated comment post target ${postId}`, {
+    post_content: `generated comment post target content ${postId}`,
+    post_type: 'post',
+    post_status: 'draft',
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_posts', postRowId, post);
+    setRow(local, 'wp_posts', postRowId, post);
+    setRow(remote, 'wp_posts', postRowId, {
+      ...post,
+      post_title: `Remote stale comment post target ${postId}`,
+      post_content: `remote stale comment post private payload ${postId}`,
+    });
+  } else {
+    setRow(local, 'wp_posts', postRowId, post);
+  }
+
+  setRow(local, 'wp_comments', commentRowId, makeComment(commentId, {
+    comment_post_ID: postId,
+    comment_parent: 0,
+    user_id: 0,
+    comment_content: `comment-post-reference-${commentId}`,
+  }));
+
+  tags.add('comment-post-graph');
+  tags.add('comment-post');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('comment-post-stale-target');
+    tags.add('wp-posts-remote-drift');
+  } else {
+    tags.add('comment-post-ready');
+    tags.add('wp-posts-create');
+    tags.add('wp-comments-create');
   }
 }
 

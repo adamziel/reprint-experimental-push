@@ -22,6 +22,7 @@ const smallShape = Object.freeze({
   taxonomyGraph: false,
   postTagTaxonomyGraph: false,
   postParentGraph: false,
+  commentPostGraph: false,
   commentGraph: false,
 });
 
@@ -85,6 +86,18 @@ test('complex-site seed PHP can add a post parent graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_parent_graph = false/);
 });
 
+test('complex-site seed PHP can add a comment post graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    commentPostGraph: true,
+  });
+
+  assert.match(php, /reprint-push-comment-post-graph/);
+  assert.match(php, /comment_post_ID'=>\$comment_post_graph_post_id/);
+  assert.match(php, /if \(\$complex_comment_post_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_comment_post_graph = false/);
+});
+
 test('complex-site seed PHP can add a comment graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -105,6 +118,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_POST_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
 
@@ -115,6 +129,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.taxonomyGraph, true);
   assert.equal(shape.postTagTaxonomyGraph, true);
   assert.equal(shape.postParentGraph, true);
+  assert.equal(shape.commentPostGraph, true);
   assert.equal(shape.commentGraph, true);
 });
 
@@ -258,6 +273,31 @@ test('complex-site planner proof covers real post parent graph closure', () => {
   assert.equal(proof.invariants.postParentGraphCountsPresent, true);
   assert.equal(proof.invariants.postParentGraphPlanned, true);
   assert.equal(proof.invariants.postParentGraphHasLivePreconditions, true);
+});
+
+test('complex-site planner proof covers real comment post graph closure', () => {
+  const graphShape = { ...smallShape, commentPostGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.commentPostGraphPosts, 0);
+  assert.equal(proof.counts.source.commentPostGraphComments, 0);
+  assert.equal(proof.counts.localEdited.commentPostGraphPosts, 1);
+  assert.equal(proof.counts.localEdited.commentPostGraphComments, 1);
+  assert.equal(proof.commentPostGraphEvidence.type, 'comment-post-reference');
+  assert.equal(proof.commentPostGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.commentPostGraphEvidence.commentReferencesPost, true);
+  assert.equal(proof.commentPostGraphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.commentPostGraphCountsPresent, true);
+  assert.equal(proof.invariants.commentPostGraphPlanned, true);
+  assert.equal(proof.invariants.commentPostGraphHasLivePreconditions, true);
+  assert.equal(proof.invariants.commentPostGraphNoStaleBlocker, true);
 });
 
 test('complex-site planner proof covers real comment parent and commentmeta graph closure', () => {
@@ -608,6 +648,36 @@ function syntheticComplexSnapshot(variant, shape) {
       object_id: 71002,
       term_taxonomy_id: 72941,
       term_order: 0,
+    };
+  }
+
+  if (shape.commentPostGraph && local) {
+    snapshot.db.wp_posts['ID:71711'] = {
+      ID: 71711,
+      post_title: 'Reprint Push Comment Post Graph Target',
+      post_name: 'reprint-push-comment-post-graph',
+      post_content: 'Local post target used for comment_post_ID graph proof.',
+      post_status: 'publish',
+      post_type: 'post',
+      post_parent: 0,
+      post_author: 0,
+    };
+    snapshot.db.wp_comments['comment_ID:72711'] = {
+      comment_ID: 72711,
+      comment_post_ID: 71711,
+      comment_author: 'Reprint Comment Post Reference',
+      comment_author_email: 'comment-post@example.test',
+      comment_author_url: '',
+      comment_author_IP: '127.0.0.1',
+      comment_date: '2026-05-27 21:47:00',
+      comment_date_gmt: '2026-05-27 21:47:00',
+      comment_content: 'Local comment whose comment_post_ID points at the same-plan post.',
+      comment_karma: 0,
+      comment_approved: '1',
+      comment_agent: 'reprint-push-comment-post-graph',
+      comment_type: 'comment',
+      comment_parent: 0,
+      user_id: 0,
     };
   }
 

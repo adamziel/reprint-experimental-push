@@ -93,6 +93,14 @@ const requiredFamilies = [
   'term-taxonomy-term-graph',
   'expected-blocked',
   'same-plan-user-meta-graph',
+  'comment-post-graph-ready',
+  'comment-post-graph-stale',
+  'comment-post-graph',
+  'comment-post',
+  'comment-post-ready',
+  'comment-post-stale-target',
+  'wp-comments-create',
+  'wp-posts-remote-drift',
   'same-plan-graph',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
@@ -510,6 +518,123 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0345 generated harness emits comment post ready and stale graph cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.commentPostGraph;
+
+  assert.ok(coverage, 'missing comment post graph target coverage');
+  assert.equal(coverage.family, 'comment-post-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['comment-post-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready comment post graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready comment post graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'comment-post-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'comment-post-graph-stale');
+
+  assert.ok(readyCase, 'missing ready comment post graph case');
+  assert.ok(staleCase, 'missing stale comment post graph case');
+  const readyShape = assertCommentPostGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertCommentPostGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const postMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.postResourceKey);
+  const commentMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.commentResourceKey);
+  const plannedComment = deserializeResourceValue(commentMutation.value);
+  const staleBlocker = stalePlan.blockers.find((blocker) =>
+    blocker.resourceKey === staleShape.commentResourceKey);
+  const stalePlanJson = JSON.stringify(stalePlan);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true, 'ready comment post graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready comment post graph should reject stale replay');
+  assert.ok(postMutation, 'ready graph should plan the target post row');
+  assert.ok(commentMutation, 'ready graph should plan the comment row');
+  assert.equal(plannedComment.comment_post_ID, readyShape.postId);
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale comment post graph must not apply mutations');
+  assert.ok(staleBlocker, 'stale graph should block the comment row');
+  assert.equal(staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleBlocker.references[0].relationshipKey, 'wp_comments.comment_post_ID');
+  assert.equal(staleBlocker.references[0].relationshipType, 'comment-post');
+  assert.equal(staleBlocker.references[0].targetResourceKey, staleShape.postResourceKey);
+  assert.equal(staleBlocker.references[0].targetChange.remoteChange, 'update');
+  assert.match(staleBlocker.references[0].targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.equal(stalePlanJson.includes('Generated comment post target'), false);
+  assert.equal(stalePlanJson.includes('Remote stale comment post target'), false);
+  assert.equal(stalePlanJson.includes('remote stale comment post private payload'), false);
+  assert.equal(stalePlanJson.includes('comment-post-reference'), false);
+});
+
+function assertCommentPostGraphShape(testCase, { staleTarget }) {
+  const commentRows = Object.entries(testCase.local.db.wp_comments)
+    .filter(([, row]) => String(row.comment_content || '').startsWith('comment-post-reference-'));
+
+  assert.equal(commentRows.length, 1, `${testCase.id} should create one comment post reference row`);
+
+  const [commentRowId, commentRow] = commentRows[0];
+  const postId = Number(commentRow.comment_post_ID);
+  const postRowId = `ID:${postId}`;
+  const post = testCase.local.db.wp_posts[postRowId];
+
+  assert.ok(Number.isSafeInteger(postId), `${testCase.id} comment_post_ID should be a numeric post ID`);
+  assert.equal(commentRowId, `comment_ID:${commentRow.comment_ID}`);
+  assert.ok(post, `${testCase.id} missing local post target ${postRowId}`);
+  assert.equal(post.ID, postId);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_posts[postRowId], `${testCase.id} stale post target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_posts[postRowId],
+      testCase.base.db.wp_posts[postRowId],
+      `${testCase.id} stale post target should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_posts[postRowId], undefined);
+    assert.equal(testCase.remote.db.wp_posts[postRowId], undefined);
+  }
+
+  return {
+    postId,
+    postResourceKey: generatedRowResourceKey('wp_posts', postRowId),
+    commentResourceKey: generatedRowResourceKey('wp_comments', commentRowId),
+  };
+}
+
+function generatedRowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
 }
 
 function nonReadyTargetCount(coverage) {
