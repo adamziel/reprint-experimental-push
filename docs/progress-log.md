@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 16:00 CEST.
+- Last update: 2026-05-28 16:06 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `ec0e41d49` (normal merge of
-  `origin/session/rpp-24-rpp-0110-wp-comments-commentmeta-graph`).
+  `7dcc06bc` (normal merge of
+  `origin/session/rpp-24-rpp-0111-wp-terms-termmeta-graph`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 143
-  items complete and leaves 857 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 144
+  items complete and leaves 856 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 11 generated
+  7 chunking/performance items, 2 production-topology items, 12 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -912,6 +912,11 @@ linked implementation artifacts.
   harness now exposes 20 comments/commentmeta graph target cases across all 10
   tiers, with ready cases creating the comment and commentmeta row together and
   stale cases refusing drifted remote comments before mutation.
+- Generated terms/termmeta continuation: `7dcc06bc` integrated `RPP-0111`
+  `wp_terms`/`wp_termmeta` graph coverage. The generated harness now exposes
+  20 terms/termmeta graph target cases across all 10 tiers, with ready cases
+  creating the term and termmeta row together and stale cases refusing drifted
+  remote terms before mutation.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
   same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for
