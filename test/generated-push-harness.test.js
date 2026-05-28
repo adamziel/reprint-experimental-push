@@ -10,6 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
@@ -383,6 +384,81 @@ test('RPP-0107 wp_posts create/update/delete target exposes per-tier ready and c
   assert.equal(conflict.applied, false, 'conflicting wp_posts case must not apply mutations');
 });
 
+test('RPP-0147 wp_posts create/update/delete target exposes deterministic safe-apply evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpPostsCreateUpdateDelete;
+
+  assert.ok(coverage, 'missing wp_posts create/update/delete target coverage');
+  assert.equal(coverage.family, 'wp-posts-create-update-delete-ready');
+  assert.equal(coverage.total, 20);
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-posts-create-update-delete']);
+  assert.equal(report.summary.featureFamilies['wp-posts-create-update-delete-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-posts-create-update-delete-conflict'], 10);
+  assert.equal(report.summary.featureFamilies['wp-posts-create'], 20);
+  assert.equal(report.summary.featureFamilies['wp-posts-update'], 20);
+  assert.equal(report.summary.featureFamilies['wp-posts-delete'], 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'wp-posts-create-update-delete-ready');
+  const conflictCases = cases.filter((testCase) => testCase.family === 'wp-posts-create-update-delete-conflict');
+
+  assert.equal(readyCases.length, 10, 'expected one ready wp_posts CUD case per tier');
+  assert.equal(conflictCases.length, 10, 'expected one conflict wp_posts CUD case per tier');
+
+  for (const readyCase of readyCases) {
+    const shape = assertWpPostsCreateUpdateDeleteShape(readyCase);
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assert.equal(plan.status, 'ready');
+    assertWpPostsCudMutations(plan, shape, { conflict: false });
+    assertWpPostsCreateUpdateDeleteEvidenceRedacted(readyCase, shape, plan);
+
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.ok(ready.mutations >= 3, 'ready wp_posts CUD should plan create, update, and delete mutations');
+    assert.equal(ready.applied, true, 'ready wp_posts CUD should apply through the harness');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready wp_posts CUD must preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready wp_posts CUD should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const conflictCase of conflictCases) {
+    const shape = assertWpPostsCreateUpdateDeleteShape(conflictCase);
+    const plan = createPushPlan({
+      base: conflictCase.base,
+      local: conflictCase.local,
+      remote: conflictCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assert.equal(plan.status, 'conflict');
+    assertWpPostsCudMutations(plan, shape, { conflict: true });
+    assert.ok(
+      plan.conflicts.some((conflict) => conflict.resourceKey === shape.updateResourceKey),
+      `${conflictCase.id} should conflict on the updated wp_posts row`,
+    );
+    assertWpPostsCreateUpdateDeleteEvidenceRedacted(conflictCase, shape, plan);
+
+    const remote = cloneJson(conflictCase.remote);
+    const before = digest(remote);
+    const error = captureError(() => applyPlan(remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remote), before, 'conflict wp_posts CUD must refuse before mutation');
+  }
+});
+
 function assertWpPostsCreateUpdateDeleteShape(testCase) {
   const createRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, row]) => !testCase.base.db.wp_posts[id]
@@ -398,6 +474,105 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+
+  const [createRowId, createRow] = createRows[0];
+  const [updateRowId, updateLocalRow] = updateRows[0];
+  const [deleteRowId, deleteBaseRow] = deleteRows[0];
+  return {
+    createRowId,
+    updateRowId,
+    deleteRowId,
+    createRow,
+    updateBaseRow: testCase.base.db.wp_posts[updateRowId],
+    updateLocalRow,
+    updateRemoteRow: testCase.remote.db.wp_posts[updateRowId],
+    deleteBaseRow,
+    deleteRemoteRow: testCase.remote.db.wp_posts[deleteRowId],
+    createResourceKey: rowResourceKey('wp_posts', createRowId),
+    updateResourceKey: rowResourceKey('wp_posts', updateRowId),
+    deleteResourceKey: rowResourceKey('wp_posts', deleteRowId),
+  };
+}
+
+function assertWpPostsCudMutations(plan, shape, { conflict }) {
+  const mutationsByResource = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+
+  assert.equal(
+    mutationsByResource.get(shape.createResourceKey)?.action,
+    'put',
+    'wp_posts CUD should create the target row',
+  );
+  assert.equal(
+    mutationsByResource.get(shape.deleteResourceKey)?.action,
+    'delete',
+    'wp_posts CUD should delete the target row',
+  );
+
+  if (conflict) {
+    assert.equal(
+      mutationsByResource.has(shape.updateResourceKey),
+      false,
+      'conflicting wp_posts update must not carry a mutation for the conflicted row',
+    );
+  } else {
+    assert.equal(
+      mutationsByResource.get(shape.updateResourceKey)?.action,
+      'put',
+      'ready wp_posts CUD should update the target row',
+    );
+  }
+}
+
+function assertWpPostsCreateUpdateDeleteEvidenceRedacted(testCase, shape, plan) {
+  const redactedEvidence = redactEvidence({
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    rawWpPostsProbe: {
+      value: shape.createRow,
+      beforeValue: shape.updateBaseRow,
+      afterValue: shape.updateLocalRow,
+      remoteValue: shape.updateRemoteRow,
+      deleteValue: shape.deleteBaseRow,
+    },
+  });
+  const redactedJson = JSON.stringify(redactedEvidence);
+
+  assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} evidence should include redaction marker`);
+  assert.match(redactedJson, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash metadata`);
+  for (const row of [
+    shape.createRow,
+    shape.updateBaseRow,
+    shape.updateLocalRow,
+    shape.updateRemoteRow,
+    shape.deleteBaseRow,
+    shape.deleteRemoteRow,
+  ]) {
+    assertWpPostsRowEvidenceRedacted(testCase, row, redactedJson);
+  }
+}
+
+function assertWpPostsRowEvidenceRedacted(testCase, row, redactedJson) {
+  if (!row) {
+    return;
+  }
+  for (const field of ['post_title', 'post_content']) {
+    if (typeof row[field] !== 'string') {
+      continue;
+    }
+    assert.equal(
+      redactedJson.includes(row[field]),
+      false,
+      `${testCase.id} redacted evidence leaked ${field}`,
+    );
+  }
+}
+
+function rowResourceKey(table, rowId) {
+  return `row:${JSON.stringify([table, rowId])}`;
 }
 
 test('RPP-0112 wp_term_taxonomy graph target exposes per-tier ready and stale coverage', () => {

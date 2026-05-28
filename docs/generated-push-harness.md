@@ -60,9 +60,11 @@ The default generated run covers:
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
-only the planned post create, update, and delete while preserving every
-unplanned remote resource; concurrent remote edits to the updated post remain
-`conflict` and refuse apply.
+the planned post create, update, and delete while preserving every unplanned
+remote resource, reject stale replay before mutation, and keep post title/content
+evidence redacted to hash metadata. Concurrent remote edits to the updated post
+remain `conflict`, omit a mutation for the conflicted row, and refuse apply
+before mutation.
 
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
