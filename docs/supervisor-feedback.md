@@ -1,9 +1,27 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:27 CEST
+Last updated: 2026-05-28 10:39 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 10:39 CEST - RPP-0070 Integrated
+
+- Going well: integration is now at `678255f0e`, adding `RPP-0070` same source
+  URL identity proof variant 4. The focused release-gate proof supplies every
+  other final-release gate while drifting the recovery-inspect source URL, then
+  fails closed with exact `SAME_SOURCE_IDENTITY_REQUIRED` evidence, a final
+  held marker, redacted credential output, and `mutationAttempted: false`.
+- Checklist movement: 131 verified items checked and 869 open. New check since
+  the prior feedback entry: `RPP-0070`.
+- Verification: focused RPP-0070 release-gate validation passes 30/30, the
+  broader release-gate suite passes 43/43, checklist lint reports 131 checked /
+  869 open with 0 risky claims, artifact redaction scans evidence and reporting
+  surfaces with 0 rejected files, release remains `NO-GO`, and `git diff
+  --check` is clean.
+- Current nudge: continue one already-pushed candidate at a time from the
+  latest lane head; under the integration-only freeze, push only the lane after
+  validation and do not push session branches.
 
 ## 2026-05-28 10:27 CEST - RPP-0240 Integrated
 

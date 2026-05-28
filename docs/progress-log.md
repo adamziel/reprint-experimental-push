@@ -6,15 +6,15 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:27 CEST.
+- Last update: 2026-05-28 10:39 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `4b1d16b6c` (`test: prove atomic blocker propagation`).
+  `678255f0e` (`test: add same source identity regression`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 130
-  items complete and leaves 870 open.
-- Checked slices: 43 release-gate foundation items, 17 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 131
+  items complete and leaves 869 open.
+- Checked slices: 44 release-gate foundation items, 17 graph identity items,
   20 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 13 merge-invariant items. No release-ops items are checked
@@ -138,6 +138,17 @@ linked implementation artifacts.
   production secret, asserts exact `REPRINT_PUSH_SECRET_REQUIRED` evidence,
   keeps credential output redacted, records `mutationAttempted: false`, and
   leaves final release `NO-GO`.
+- Same-source regression continuation: `678255f0e` integrated `RPP-0070`
+  same source URL identity proof variant 4. Focused command:
+  `node --test test/release-gate-same-source-identity-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  (30 passing release-gate tests). The broader release-gate suite with the new
+  same-source regression, missing production secret, missing local URL,
+  generated progress timestamp, generated preflight, generated same-source,
+  status-row, verify-release, CLI, and core gate coverage passes 43/43. The
+  fixture supplies every other final-release gate while drifting the
+  recovery-inspect source URL, asserts exact `SAME_SOURCE_IDENTITY_REQUIRED`
+  evidence, keeps credential output redacted, records `mutationAttempted:
+  false`, and leaves final release `NO-GO`.
 - Graph importer/exporter continuation: `165031908` integrated `RPP-0340`
   production importer/exporter identity-map proof. Focused command:
   `node --test test/local-production-complex-site-proof.test.js`
