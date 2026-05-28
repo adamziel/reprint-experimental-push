@@ -161,6 +161,13 @@ const requiredFamilies = [
   'wp-users-remote-drift',
   'expected-blocked',
   'same-plan-user-meta-graph',
+  'featured-image-attachment-ready',
+  'featured-image-attachment-stale',
+  'featured-image-attachment',
+  'featured-image-graph',
+  'featured-image-ready',
+  'featured-image-stale-target',
+  'attachment-post-create',
   'same-plan-graph',
   'post-author-graph',
   'post-author-ready',
@@ -2537,6 +2544,124 @@ function assertCommentUserGraphShape(testCase, { staleTarget }) {
 }
 
 function generatedRowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
+}
+
+test('RPP-0342 generated harness emits featured image attachment ready and stale graph cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.featuredImageAttachmentGraph;
+
+  assert.ok(coverage, 'missing featured image attachment graph target coverage');
+  assert.equal(coverage.family, 'featured-image-attachment-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['featured-image-attachment']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready featured image graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready featured image graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'featured-image-attachment-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'featured-image-attachment-stale');
+
+  assert.ok(readyCase, 'missing ready featured image attachment graph case');
+  assert.ok(staleCase, 'missing stale featured image attachment graph case');
+  const readyShape = assertFeaturedImageAttachmentGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertFeaturedImageAttachmentGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const thumbnailMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.thumbnailResourceKey);
+  const attachmentMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === readyShape.attachmentResourceKey);
+  const thumbnailValue = deserializeResourceValue(thumbnailMutation.value);
+  const staleBlocker = stalePlan.blockers.find((blocker) =>
+    blocker.resourceKey === staleShape.thumbnailResourceKey);
+  const stalePlanJson = JSON.stringify(stalePlan);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true, 'ready featured image graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready featured image graph should reject stale replay');
+  assert.ok(thumbnailMutation, 'ready graph should plan the thumbnail postmeta row');
+  assert.ok(attachmentMutation, 'ready graph should plan the attachment target row');
+  assert.equal(thumbnailValue.meta_key, '_thumbnail_id');
+  assert.equal(thumbnailValue.meta_value, String(readyShape.attachmentId));
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale featured image graph must not apply mutations');
+  assert.ok(staleBlocker, 'stale graph should block the thumbnail postmeta row');
+  assert.equal(staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(staleBlocker.references[0].relationshipType, 'featured-image-attachment');
+  assert.equal(staleBlocker.references[0].targetResourceKey, staleShape.attachmentResourceKey);
+  assert.match(staleBlocker.references[0].targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(staleBlocker.references[0].targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.equal(stalePlanJson.includes('Generated featured image attachment'), false);
+  assert.equal(stalePlanJson.includes('Remote stale featured image attachment'), false);
+  assert.equal(stalePlanJson.includes('remote stale featured image private payload'), false);
+});
+
+function assertFeaturedImageAttachmentGraphShape(testCase, { staleTarget }) {
+  const thumbnailRows = Object.entries(testCase.local.db.wp_postmeta)
+    .filter(([, row]) => row.meta_key === '_thumbnail_id');
+
+  assert.equal(thumbnailRows.length, 1, `${testCase.id} should create one featured image postmeta row`);
+
+  const [thumbnailRowId, thumbnailRow] = thumbnailRows[0];
+  const attachmentId = Number(thumbnailRow.meta_value);
+  const attachmentRowId = `ID:${attachmentId}`;
+  const attachment = testCase.local.db.wp_posts[attachmentRowId];
+
+  assert.equal(thumbnailRowId, `post_id:${thumbnailRow.post_id}:meta_key:_thumbnail_id`);
+  assert.equal(thumbnailRow.post_id, 1, `${testCase.id} thumbnail should point at the base post`);
+  assert.ok(Number.isSafeInteger(attachmentId), `${testCase.id} thumbnail meta_value should be a numeric attachment ID`);
+  assert.ok(attachment, `${testCase.id} missing local attachment target ${attachmentRowId}`);
+  assert.equal(attachment.post_type, 'attachment');
+  assert.equal(attachment.post_status, 'inherit');
+  assert.equal(attachment.post_parent, 1);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_posts[attachmentRowId], `${testCase.id} stale target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_posts[attachmentRowId],
+      testCase.base.db.wp_posts[attachmentRowId],
+      `${testCase.id} stale attachment target should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_posts[attachmentRowId], undefined);
+    assert.equal(testCase.remote.db.wp_posts[attachmentRowId], undefined);
+  }
+
+  return {
+    attachmentId,
+    attachmentResourceKey: rowResourceKey('wp_posts', attachmentRowId),
+    thumbnailResourceKey: rowResourceKey('wp_postmeta', thumbnailRowId),
+  };
+}
+
+function rowResourceKey(table, id) {
   return `row:${JSON.stringify([table, id])}`;
 }
 
