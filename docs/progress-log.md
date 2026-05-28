@@ -6,9 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 12:37 CEST.
+- Last update: 2026-05-28 12:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `5773b093` (tree-unchanged ancestry merge of `origin/session/rpp-3`).
+  `ebf3710b` (tree-unchanged ancestry merge of `origin/session/rpp-4`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -244,6 +244,11 @@ linked implementation artifacts.
   `git log --right-only --cherry-pick` confirmed no unrepresented commits. The
   tree is unchanged from the first parent, graph inventory plus planner tests
   pass 110/110, and `npm run bench:graph-mapping-inventory` runs cleanly.
+- Plugin-driver ancestry reduction: `ebf3710b` merged
+  `origin/session/rpp-4` with the `ours` strategy after
+  `git log --right-only --cherry-pick` confirmed no unrepresented commits. The
+  tree is unchanged from the first parent, plugin scenario tests pass 7/7, and
+  the plugin-driver verifier guard smoke passes.
 - Planner-summary continuation: `137ae0102` integrated `RPP-0210` planner
   summary count consistency. The focused local Node proof checks ready,
   conflict, blocked, and atomic fixtures, verifies `plan.summary` against the
