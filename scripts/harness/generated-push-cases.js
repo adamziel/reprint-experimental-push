@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'featured-image-attachment-ready',
+  'featured-image-attachment-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,8 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'featured-image-attachment-ready',
+  'featured-image-attachment-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  featuredImageAttachmentGraph: {
+    family: 'featured-image-attachment-ready',
+    tag: 'featured-image-attachment',
   },
 });
 
@@ -595,6 +603,14 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
+  },
+  'featured-image-attachment-ready': ({ local, allocator, tags }) => {
+    addFeaturedImageAttachmentGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'featured-image-attachment-stale': ({ base, local, remote, allocator, tags }) => {
+    addFeaturedImageAttachmentGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1215,6 +1231,52 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addFeaturedImageAttachmentGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const postId = 1;
+  const attachmentId = allocator.graphId();
+  const attachmentRowId = `ID:${attachmentId}`;
+  const thumbnailRowId = `post_id:${postId}:meta_key:_thumbnail_id`;
+  const attachment = makePost(attachmentId, `Generated featured image attachment ${attachmentId}`, {
+    post_status: 'inherit',
+    post_type: 'attachment',
+    post_parent: postId,
+    post_author: 1,
+    post_mime_type: 'image/jpeg',
+    guid: `https://example.test/wp-content/uploads/generated-featured-image-${attachmentId}.jpg`,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_posts', attachmentRowId, attachment);
+    setRow(local, 'wp_posts', attachmentRowId, attachment);
+    setRow(remote, 'wp_posts', attachmentRowId, {
+      ...attachment,
+      post_title: `Remote stale featured image attachment ${attachmentId}`,
+      post_content: `remote stale featured image private payload ${attachmentId}`,
+    });
+  } else {
+    setRow(local, 'wp_posts', attachmentRowId, attachment);
+  }
+
+  setRow(local, 'wp_postmeta', thumbnailRowId, {
+    post_id: postId,
+    meta_key: '_thumbnail_id',
+    meta_value: String(attachmentId),
+  });
+
+  tags.add('featured-image-attachment');
+  tags.add('featured-image-graph');
+  tags.add('postmeta-post');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('featured-image-stale-target');
+  } else {
+    tags.add('featured-image-ready');
+    tags.add('attachment-post-create');
   }
 }
 
