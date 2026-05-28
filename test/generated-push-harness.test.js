@@ -9,6 +9,7 @@ import {
   runGeneratedPushHarness,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
@@ -324,7 +325,121 @@ test('RPP-0104 generated harness emits row create/update/delete mix with stale r
   assert.equal(nonReady.applied, false, 'non-ready row mix must not apply mutations');
 });
 
-function assertRowMixShape(testCase) {
+test('RPP-0144 row create/update/delete mix target exposes deterministic ready and non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.rowCreateUpdateDeleteMix;
+
+  assert.ok(coverage, 'missing row create/update/delete mix target coverage');
+  assert.equal(coverage.family, 'row-create-update-delete-mix-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['row-create-update-delete-mix']);
+  assert.deepEqual(coverage.statuses, { conflict: 11, ready: 9 });
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.match(`sha256:${digest(coverage)}`, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(JSON.stringify(report).includes('Generated row mix'), false);
+  assert.equal(JSON.stringify(report).includes('Remote-only row mix preserve'), false);
+
+  const cases = generatePushHarnessCases();
+  const targetCases = cases.filter((testCase) => testCase.tags.has('row-create-update-delete-mix'));
+  const readyFamilyCases = cases.filter((testCase) => testCase.family === 'row-create-update-delete-mix-ready');
+  const conflictFamilyCases = cases.filter((testCase) => testCase.family === 'row-create-update-delete-mix-conflict');
+  const plannedCases = targetCases.map((testCase) => ({
+    testCase,
+    plan: createRowMixGeneratedPlan(testCase),
+    shape: assertRowMixShape(testCase, { conflict: testCase.family === 'row-create-update-delete-mix-conflict' }),
+  }));
+  const readyCases = plannedCases.filter(({ plan }) => plan.status === 'ready');
+  const nonReadyCases = plannedCases.filter(({ plan }) => plan.status !== 'ready');
+
+  assert.equal(readyFamilyCases.length, 10, 'expected one row CUD ready-family case per tier');
+  assert.equal(conflictFamilyCases.length, 10, 'expected one row CUD conflict-family case per tier');
+  assert.equal(readyCases.length, coverage.statuses.ready, 'ready row CUD case count should match summary');
+  assert.equal(nonReadyCases.length, nonReadyTargetCount(coverage), 'non-ready row CUD count should match summary');
+
+  for (const { testCase: readyCase, plan, shape } of readyCases) {
+    const result = validateGeneratedCase(readyCase);
+    const mutationKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+    const remoteOnlyResourceKey = rowResourceKey('wp_posts', shape.remoteOnlyRowId);
+    const keepRemoteDecision = plan.decisions.find((decision) =>
+      decision.resourceKey === remoteOnlyResourceKey && decision.decision === 'keep-remote');
+
+    assert.equal(plan.status, 'ready');
+    assert.equal(result.status, 'ready');
+    assert.ok(result.mutations >= 3, `${readyCase.id} should create, update, and delete rows`);
+    assert.equal(result.applied, true, `${readyCase.id} should apply planned row CUD work`);
+    assert.equal(result.unplannedRemotePreserved, true, `${readyCase.id} should preserve unplanned remote rows`);
+    assert.equal(result.staleReplayRejected, true, `${readyCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${readyCase.id} stale replay must fail before mutation`);
+    assert.ok(mutationKeys.has(rowResourceKey('wp_posts', shape.createRowId)), `${readyCase.id} should plan row create`);
+    assert.ok(mutationKeys.has(rowResourceKey('wp_posts', shape.updateRowId)), `${readyCase.id} should plan row update`);
+    assert.ok(mutationKeys.has(rowResourceKey('wp_posts', shape.deleteRowId)), `${readyCase.id} should plan row delete`);
+    assert.equal(
+      mutationKeys.has(remoteOnlyResourceKey),
+      false,
+      `${readyCase.id} must not mutate the remote-only row`,
+    );
+    assert.ok(keepRemoteDecision, `${readyCase.id} should keep remote-only row with hash-only evidence`);
+    assert.match(keepRemoteDecision.remoteHash, /^[a-f0-9]{64}$/);
+    assert.equal(
+      JSON.stringify(keepRemoteDecision).includes(shape.remoteOnlyRow.post_title),
+      false,
+      `${readyCase.id} keep-remote evidence should not include raw row title`,
+    );
+
+    const applied = applyPlan(cloneJson(readyCase.remote), plan);
+    assert.deepEqual(applied.site.db.wp_posts[shape.createRowId], readyCase.local.db.wp_posts[shape.createRowId]);
+    assert.deepEqual(applied.site.db.wp_posts[shape.updateRowId], readyCase.local.db.wp_posts[shape.updateRowId]);
+    assert.equal(Object.hasOwn(applied.site.db.wp_posts, shape.deleteRowId), false);
+    assert.deepEqual(
+      applied.site.db.wp_posts[shape.remoteOnlyRowId],
+      readyCase.remote.db.wp_posts[shape.remoteOnlyRowId],
+      `${readyCase.id} apply must preserve the remote-only row exactly`,
+    );
+    assertRowMixEvidenceRedacted(readyCase, plan, shape);
+  }
+
+  for (const { testCase: conflictCase, plan, shape } of nonReadyCases) {
+    const result = validateGeneratedCase(conflictCase);
+    const updateResourceKey = rowResourceKey('wp_posts', shape.updateRowId);
+    const remoteBefore = cloneJson(conflictCase.remote);
+    const beforeHash = digest(remoteBefore);
+    const error = captureError(() => applyPlan(remoteBefore, plan));
+
+    assert.equal(plan.status, 'conflict');
+    assert.equal(result.status, 'conflict');
+    assert.ok(result.conflicts >= 1, `${conflictCase.id} should expose a row conflict`);
+    assert.equal(result.applied, false, `${conflictCase.id} non-ready row CUD case must not apply`);
+    assert.ok(error instanceof PushPlanError, `${conflictCase.id} non-ready plan should refuse`);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remoteBefore), beforeHash, `${conflictCase.id} refusal must happen before mutation`);
+    if (conflictCase.family === 'row-create-update-delete-mix-conflict') {
+      assert.equal(
+        plan.mutations.some((mutation) => mutation.resourceKey === updateResourceKey),
+        false,
+        `${conflictCase.id} must not plan a mutation for the conflicted row`,
+      );
+      assert.ok(
+        plan.conflicts.some((conflict) => conflict.resourceKey === updateResourceKey),
+        `${conflictCase.id} should report the concurrent row update as a conflict`,
+      );
+      assert.equal(
+        JSON.stringify(plan.conflicts).includes(shape.conflictRemoteRow.post_title),
+        false,
+        `${conflictCase.id} conflict evidence should stay hash-only`,
+      );
+    }
+    assertRowMixEvidenceRedacted(conflictCase, plan, shape);
+  }
+});
+
+function assertRowMixShape(testCase, { conflict = testCase.family === 'row-create-update-delete-mix-conflict' } = {}) {
   const createRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, row]) => !testCase.base.db.wp_posts[id] && row.post_title.startsWith('Generated row mix create '));
   const updateRows = Object.entries(testCase.local.db.wp_posts)
@@ -334,10 +449,86 @@ function assertRowMixShape(testCase) {
     .filter(([id, row]) => row.post_title.startsWith('Base row mix delete ')
       && !testCase.local.db.wp_posts[id]
       && testCase.remote.db.wp_posts[id]);
+  const remoteOnlyRows = Object.entries(testCase.remote.db.wp_posts)
+    .filter(([id, row]) => !testCase.base.db.wp_posts[id]
+      && !testCase.local.db.wp_posts[id]
+      && row.post_title.startsWith('Remote-only row mix preserve '));
 
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+  assert.equal(remoteOnlyRows.length, 1, `${testCase.id} should carry one remote-only row`);
+
+  const updateRowId = updateRows[0][0];
+  const conflictRemoteRow = testCase.remote.db.wp_posts[updateRowId];
+  if (conflict) {
+    assert.match(conflictRemoteRow.post_title, /^Remote concurrent row mix update /);
+  } else {
+    assert.deepEqual(conflictRemoteRow, testCase.base.db.wp_posts[updateRowId]);
+  }
+
+  return {
+    createRowId: createRows[0][0],
+    createRow: createRows[0][1],
+    updateRowId,
+    updateRow: updateRows[0][1],
+    deleteRowId: deleteRows[0][0],
+    deleteRow: deleteRows[0][1],
+    remoteOnlyRowId: remoteOnlyRows[0][0],
+    remoteOnlyRow: remoteOnlyRows[0][1],
+    conflictRemoteRow,
+  };
+}
+
+function createRowMixGeneratedPlan(testCase) {
+  return createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+}
+
+function rowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
+}
+
+function assertRowMixEvidenceRedacted(testCase, plan, shape) {
+  const redacted = redactEvidence({
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    tags: [...testCase.tags].sort(),
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    decisions: plan.decisions,
+    rawRowEvidenceProbe: {
+      value: {
+        create: shape.createRow,
+        update: shape.updateRow,
+        delete: shape.deleteRow,
+        remoteOnly: shape.remoteOnlyRow,
+        conflictRemote: shape.conflictRemoteRow,
+      },
+    },
+  });
+  const serialized = JSON.stringify(redacted);
+
+  assert.ok(serialized.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} should redact raw row evidence`);
+  assert.match(serialized, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash-only row values`);
+  for (const raw of [
+    shape.createRow.post_title,
+    shape.updateRow.post_title,
+    shape.deleteRow.post_title,
+    shape.remoteOnlyRow.post_title,
+    shape.conflictRemoteRow.post_title,
+  ]) {
+    assert.equal(serialized.includes(raw), false, `${testCase.id} leaked raw row title ${raw}`);
+  }
 }
 
 test('RPP-0107 wp_posts create/update/delete target exposes per-tier ready and conflict coverage', () => {
