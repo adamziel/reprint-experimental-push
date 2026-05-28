@@ -6,20 +6,21 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 04:53 CEST.
+- Last update: 2026-05-28 05:05 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` at
-  `543a4376a` (`docs: refresh progress for dry run route proof`). The latest
-  integrated proof commit behind that docs head is `35d8d4601` (`test: prove
-  dry run route eligibility gate`).
+  `d8e2a567c` (`docs: refresh progress for wp posts generated coverage`), with
+  latest integrated proof commit `c11c03a4b` (`feat: add wp posts generated
+  coverage`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 94
-  items complete and leaves 906 open.
-- Checked slices: 30 release-gate foundation items, 15 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 98
+  items complete and leaves 902 open.
+- Checked slices: 32 release-gate foundation items, 15 graph identity items,
   14 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, and 4 generated
-  harness items. No release-ops items are checked yet.
+  7 chunking/performance items, 2 production-topology items, 5 generated
+  harness items, and 1 merge-invariant item. No release-ops items are checked
+  yet.
 - New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
   evidence coverage manifest. The Docker harness is fail-closed in this sandbox
@@ -55,19 +56,29 @@ linked implementation artifacts.
   same source URL identity proof with a final bracketed status marker and
   mutation-free CLI failure path.
 - Preflight and dry-run route continuation: `c382b091f`/`d400b1fe1` integrated
-  `RPP-0031` preflight route identity drift proof, and `35d8d4601`/`543a4376a`
-  integrated and documented `RPP-0032` dry-run route eligibility proof. Both run
+  `RPP-0031` preflight route identity drift proof, and `35d8d4601` integrated
+  `RPP-0032` dry-run route eligibility proof. Both run
   `check-release-gates` from fixture evidence, exit nonzero with the named
   route failure code, and record `mutationAttempted: false`.
-- Pushed-only candidates observed after `543a4376a`: `RPP-0033` apply route
-  pre-mutation proof at `806fadd230`, `RPP-0106` wp_options serialized generated
-  coverage at `39a10a5378`, `RPP-0207` plugin-data stale owner coverage at
-  `aa35083702`, `RPP-0309` category term taxonomy reference coverage at
-  `0e2e31b881`, and `RPP-0407` wp_usermeta driver semantics at `5d4e67b191`.
-  Newer pane-observed outputs (`RPP-0107` `7e26f4e843`, `RPP-0034`
-  `329552c0a5`, `RPP-0208` `7688d324bd`, and `RPP-0411` `89ecee8610`) are also
-  branch-local. None of these branch-local claims changes checklist counts or
-  final release status until an integrator lands exact evidence.
+- Apply-route continuation: `2b75f7fb6` integrated `RPP-0033` apply route
+  pre-mutation proof with exact `APPLY_ROUTE_PRE_MUTATION_REQUIRED` evidence
+  and no mutation attempt.
+- Journal-route continuation: `6763451a0` integrated `RPP-0034` journal route
+  read-only proof with exact `JOURNAL_ROUTE_READ_ONLY_REQUIRED` evidence and
+  no mutation attempt.
+- Merge-invariant continuation: `687b3954e` integrated `RPP-0207` stale plugin
+  owner context rejection in the planner/apply path.
+- Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
+  `wp_posts` create/update/delete coverage. The generated harness now exposes
+  20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
+  conflict cases, with ready plans preserving unplanned remote data.
+- Queued/session-only after `d8e2a567c`: `RPP-0035` (`0bc752f9d1`),
+  `RPP-0108` (`28209dbd5f`), `RPP-0208` (`7688d324bd`), `RPP-0209`
+  (`a8bc03eb78`), `RPP-0309` (`0e2e31b881`), `RPP-0411` (`89ecee8610`), and
+  `RPP-0413` (`0573ca5d28`) are not integrated. Active pane/session work also
+  includes `RPP-0036` (`9362f4e124`), `RPP-0210` (`a5be0b1d55` plus local
+  follow-up), `RPP-0310` (`150200eff1`), and `RPP-0414` (`8c2fb6d48b`). These
+  do not change the 98/902 checklist count or release status.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
   `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
   progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
@@ -76,10 +87,11 @@ linked implementation artifacts.
   web child wedged and was restarted in tmux.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
-  with 23 passing
+  with 25 passing
   release-gate tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
-  `node --test test/generated-push-harness.test.js`, evidence manifest
+  `node --test test/generated-push-harness.test.js` with 6 passing tests,
+  evidence manifest
   generation, artifact redaction scan over evidence/report paths, and
   `git diff --check`.
 - Release posture: final release remains **NO-GO**. This update makes tracking

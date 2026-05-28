@@ -1,25 +1,29 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 04:53 CEST
+Last updated: 2026-05-28 05:05 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
 
-## 2026-05-28 04:53 CEST - 543a Lane Head Reconciled
+## 2026-05-28 05:05 CEST - d8 Lane Head Confirmed With RPP-0107 Integrated
 
-- Going well: the integration lane is reconciled at `543a4376a`, which keeps
-  `RPP-0032` integrated and documented after the dry-run route proof. Checklist
-  status remains 94 verified items checked and 906 open.
-- Pushed-only, not integrated: `RPP-0033` (`806fadd230`), `RPP-0106`
-  (`39a10a5378`), `RPP-0207` (`aa35083702`), and `RPP-0407` (`5d4e67b191`) are
-  visible candidate branches. `RPP-0309` (`0e2e31b881`) and newer pane-observed
-  `RPP-0107`/`RPP-0034`/`RPP-0208`/`RPP-0411` outputs are also branch-local.
-- AO shape: developers `rpp-24`, `rpp-25`, `rpp-29`, `rpp-30`, and `rpp-32`,
-  integrator `rpp-28`, critic `rpp-31`, progress reporter `rpp-26`, supervisor
-  `rpp-orchestrator`, and AO lifecycle/web panes are all visible in tmux.
-- Current nudge: integrate one candidate at a time after focused tests,
-  checklist lint, redaction scan, and `git diff --check`; keep release
-  **NO-GO** until production-backed gates land.
+- Going well: integration is now at `c11c03a4b`, with `RPP-0033` apply route
+  pre-mutation proof, `RPP-0034` journal route read-only proof, `RPP-0207`
+  stale plugin-owner-context rejection, and `RPP-0107` `wp_posts`
+  create/update/delete generated coverage.
+- Checklist movement: 98 verified items checked and 902 open. New checks since
+  the prior feedback entry: `RPP-0033`, `RPP-0034`, `RPP-0207`, and
+  `RPP-0107`.
+- Verification: release-gate focused tests pass 25/25, generated-harness tests
+  pass 6/6, checklist lint reports 98 checked / 902 open with 0 risky claims,
+  artifact redaction scans 34 files with 0 rejected files, and `git diff
+  --check` is clean.
+- Queued/session-only: `RPP-0035`, `RPP-0108`, `RPP-0208`, `RPP-0209`,
+  `RPP-0309`, `RPP-0411`, and `RPP-0413`; active pane work includes
+  `RPP-0036`, `RPP-0210`, `RPP-0310`, and `RPP-0414`. Keep all of that out of
+  integrated readiness until a lane commit changes the checklist.
+- Current nudge: direct lane pushes are held for handback; session branch pushes
+  are okay. Release remains **NO-GO**.
 
 ## 2026-05-28 04:48 CEST - RPP-0031 and RPP-0032 Integrated
 
