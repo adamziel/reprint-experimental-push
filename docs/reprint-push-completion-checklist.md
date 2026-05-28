@@ -452,7 +452,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [ ] RPP-0418 (Mid / plugin-driver) Implement driver apply validation hook, variant 1. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0419 (Mid / plugin-driver) Implement driver audit evidence redaction, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0420 (Mid / plugin-driver) Implement arbitrary plugin fixture package, variant 1. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0421 (Mid / plugin-driver) Prove driver registration API, variant 2. Success: focused test proves exact driver behavior.
+- [x] RPP-0421 (Mid / plugin-driver) Prove driver registration API, variant 2. Success: focused test proves exact driver behavior.
 - [x] RPP-0422 (Mid / plugin-driver) Prove driver owner identity binding, variant 2. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0423 (Mid / plugin-driver) Prove custom table allowlist exact match, variant 2. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0424 (Mid / plugin-driver) Prove wp_options driver semantics, variant 2. Success: remote drift preserves plugin-owned remote data.

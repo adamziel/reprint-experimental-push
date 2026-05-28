@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 05:58 CEST.
+- Last update: 2026-05-28 06:04 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `87f53b06f` (`test: prove verify release failure reason`).
+  `78323671d` (`test: prove plugin driver registration api`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 109
-  items complete and leaves 891 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 110
+  items complete and leaves 890 open.
 - Checked slices: 38 release-gate foundation items, 16 graph identity items,
-  15 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  16 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 3 merge-invariant items. No release-ops items are checked
   yet.
@@ -111,6 +111,14 @@ linked implementation artifacts.
   tests reject stale plugin-owned row and plugin file mutations before mutation
   with stable redacted evidence, while preserving a ready plugin-driver row
   when owner metadata independently matches remote.
+- Plugin-driver registration continuation: `78323671d` integrated `RPP-0421`
+  driver registration API proof. Focused command:
+  `node --test test/playground-snapshot-lib.test.js` (4 passing
+  snapshot/plugin-driver tests). The PHP probe proves the default
+  `reprint-push-release-state` row driver, filter-registered extension driver,
+  lookup by name/table, and fail-closed malformed registration cases while
+  hashing error-message evidence. Caveat: this is focused local
+  snapshot-library proof, not arbitrary plugin-driver production readiness.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
@@ -141,7 +149,8 @@ linked implementation artifacts.
   with 29 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   with 30 passing tests,
   `node --test test/verify-release-failure-reason.test.js test/release-gates.test.js test/release-gate-cli.test.js`
-  with 29 passing tests, the `rpp-28`
+  with 29 passing tests, `node --test test/playground-snapshot-lib.test.js`
+  with 4 passing tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js` with 7 passing tests,
   evidence manifest
