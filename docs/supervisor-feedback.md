@@ -1,9 +1,32 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 10:59 CEST
+Last updated: 2026-05-28 11:14 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 11:14 CEST - RPP-0415 Integrated
+
+- Going well: integration is now at `a18426a31`, preserving ancestry for
+  `origin/session/rpp-32-rpp-0415-plugin-activation-hook-effects` and adding
+  `RPP-0415` activation hook side-effect boundary evidence. The focused proof
+  blocks unproven activation-hook side effects and quarantines driver-proofed
+  activation-hook effects as support-only/non-release evidence.
+- Checklist movement: 134 verified items checked and 866 open. New check since
+  the prior feedback entry: `RPP-0415`.
+- Verification: focused RPP-0415 production-shaped plugin-driver validation
+  passes 3/3, scenario parser validation passes 7/7, the targeted
+  driver-guard-only smoke scenario passes, checklist lint reports 134 checked /
+  866 open with 0 risky claims, artifact redaction scans evidence and reporting
+  surfaces with 0 rejected files, release remains `NO-GO`, and `git diff
+  --check` is clean. The broader touched command
+  `node --test test/production-shaped-proof.test.js test/production-plugin-package-scenarios.test.js`
+  remains red, but the same 15 normalized failure names and first-line errors
+  reproduce on clean `origin/lane/evidence-integration-20260527`, so they are
+  recorded as pre-existing lane failures rather than RPP-0415 regressions.
+- Current nudge: continue integrating already-pushed branches only; under the
+  integration-only freeze, push only the lane after validation and do not push
+  session branches.
 
 ## 2026-05-28 10:59 CEST - RPP-0468 Integrated
 

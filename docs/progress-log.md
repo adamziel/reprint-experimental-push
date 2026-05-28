@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 10:59 CEST.
+- Last update: 2026-05-28 11:14 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `d31d927fe` (`test: prove serialized option validator`).
+  `a18426a31` (no-ff merge of `RPP-0415` activation hook effects evidence).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 133
-  items complete and leaves 867 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 134
+  items complete and leaves 866 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
-  21 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 13 merge-invariant items. No release-ops items are checked
   yet.
@@ -343,6 +343,24 @@ linked implementation artifacts.
   audit, journal, and refusal evidence, and leaves final release `NO-GO`.
   Caveat: this is focused local plugin-driver boundary evidence, not broad
   production plugin-driver readiness.
+- Activation-hook effects continuation: `a18426a31` merged the existing
+  `origin/session/rpp-32-rpp-0415-plugin-activation-hook-effects` branch
+  (`cbf5a1a85`) with ancestry preserved. Focused commands:
+  `node --check scripts/playground/production-plugin-package-scenarios.js scripts/playground/production-plugin-package-smoke.mjs scripts/playground/production-shaped-release-verify.mjs test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js`,
+  `node --test --test-name-pattern 'activation hook|production plugin-driver boundary proof accepts one owned row' test/production-shaped-proof.test.js`
+  (3 passing production-shaped plugin-driver tests),
+  `node --test test/production-plugin-package-scenarios.test.js` (7 passing
+  scenario parser tests), and
+  `REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only REPRINT_PUSH_PACKAGE_SMOKE_SCENARIO=driver-activation-hook-effects-guards node scripts/playground/production-plugin-package-smoke.mjs`
+  (driver activation-hook effects boundary reports blocked unproven effects and
+  quarantined driver-proofed effects as support-only). The broader touched
+  command
+  `node --test test/production-shaped-proof.test.js test/production-plugin-package-scenarios.test.js`
+  still has 15 pre-existing failures: the RPP-0415 merge produced the same 15
+  normalized failure names and first-line error summaries as clean
+  `origin/lane/evidence-integration-20260527`, while adding only passing
+  activation-hook tests. Caveat: this is focused local plugin-driver support
+  evidence, not broad production plugin-driver readiness or a broad-suite pass.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
