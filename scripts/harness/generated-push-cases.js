@@ -53,6 +53,8 @@ const scenarioFamilies = Object.freeze([
   'row-create-update-delete-mix-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
+  'wp-comments-commentmeta-graph-ready',
+  'wp-comments-commentmeta-graph-stale',
   'same-plan-user-meta-graph',
 ]);
 
@@ -75,6 +77,7 @@ const readyPreservingFamilies = new Set([
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
   'wp-posts-create-update-delete-ready',
+  'wp-comments-commentmeta-graph-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -86,6 +89,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
+  },
+  wpCommentsCommentmetaGraph: {
+    family: 'wp-comments-commentmeta-graph-ready',
+    tag: 'wp-comments-commentmeta-graph',
   },
 });
 
@@ -567,6 +574,14 @@ const scenarioFamilyBuilders = {
       prefix: 'conflict-wp-posts',
     });
     tags.add('expected-conflict');
+  },
+  'wp-comments-commentmeta-graph-ready': ({ local, allocator, tags }) => {
+    addWpCommentsCommentmetaGraph(local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'wp-comments-commentmeta-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget: true, base });
+    tags.add('expected-blocked');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
     const userId = allocator.graphId();
@@ -1186,6 +1201,49 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
     remote.db.wp_posts[updateRowId].post_content = `remote concurrent wp_posts content ${allocator.next()}`;
+  }
+}
+
+function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTarget, base = null }) {
+  const commentId = allocator.graphId();
+  const metaId = allocator.graphId();
+  const commentRowId = `comment_ID:${commentId}`;
+  const commentmetaRowId = `meta_id:${metaId}`;
+  const comment = makeComment(commentId, {
+    comment_post_ID: 1,
+    comment_parent: 0,
+    comment_content: `Generated comment graph target ${commentId}`,
+    user_id: 1,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_comments', commentRowId, comment);
+    setRow(local, 'wp_comments', commentRowId, comment);
+    setRow(remote, 'wp_comments', commentRowId, {
+      ...comment,
+      comment_content: `Remote stale comment graph target ${commentId}`,
+    });
+  } else {
+    setRow(local, 'wp_comments', commentRowId, comment);
+  }
+
+  setRow(local, 'wp_commentmeta', commentmetaRowId, {
+    meta_id: metaId,
+    comment_id: commentId,
+    meta_key: `_generated_commentmeta_graph_${metaId}`,
+    meta_value: `generated commentmeta graph ${metaId}`,
+  });
+
+  tags.add('wp-comments-commentmeta-graph');
+  tags.add('wp-comments-create');
+  tags.add('wp-commentmeta-create');
+  tags.add('commentmeta-comment-graph');
+  tags.add('comment-graph');
+  tags.add('same-plan-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('wp-comments-remote-drift');
   }
 }
 
