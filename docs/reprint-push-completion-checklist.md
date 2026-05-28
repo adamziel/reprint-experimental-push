@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 141.
-- Remaining open: 859.
+- Verified complete: 142.
+- Remaining open: 858.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -125,7 +125,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0106 (Near / generated-harness) Implement wp_options serialized option changes, variant 1. Success: generator emits at least one ready case and one non-ready case for this target.
 - [x] RPP-0107 (Near / generated-harness) Implement wp_posts create/update/delete changes, variant 1. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0108 (Near / generated-harness) Implement wp_postmeta create/update/delete changes, variant 1. Success: ready cases apply with no unplanned remote overwrite.
-- [ ] RPP-0109 (Near / generated-harness) Implement wp_users and wp_usermeta graph changes, variant 1. Success: stale remote replay fails before mutation.
+- [x] RPP-0109 (Near / generated-harness) Implement wp_users and wp_usermeta graph changes, variant 1. Success: stale remote replay fails before mutation.
 - [ ] RPP-0110 (Near / generated-harness) Implement wp_comments and wp_commentmeta graph changes, variant 1. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0111 (Near / generated-harness) Implement wp_terms and wp_termmeta graph changes, variant 1. Success: generator emits at least one ready case and one non-ready case for this target.
 - [x] RPP-0112 (Near / generated-harness) Implement wp_term_taxonomy graph changes, variant 1. Success: summary exposes per-tier counts for this target.

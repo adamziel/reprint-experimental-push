@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 15:45 CEST.
+- Last update: 2026-05-28 15:55 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `00987b359` (normal merge of
-  `origin/session/rpp-24-rpp-0108-wp-postmeta-create-update-delete`).
+  `400d9072b` (normal merge of
+  `origin/session/rpp-24-rpp-0109-wp-users-usermeta-graph`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 141
-  items complete and leaves 859 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 142
+  items complete and leaves 858 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 9 generated
+  7 chunking/performance items, 2 production-topology items, 10 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -350,6 +350,18 @@ linked implementation artifacts.
   ready and conflict families from `28209dbd5`, raising the default run to 430
   deterministic cases with 232 ready, 164 conflict, and 34 blocked outcomes.
   Validation succeeded with `npm run test:generated-push-harness` (15/15),
+  checklist lint, artifact redaction scan, `git diff --check`, and a current
+  fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, 3/20 gates).
+- Generated harness conflict resolution: `400d9072b` normal-merged
+  `origin/session/rpp-24-rpp-0109-wp-users-usermeta-graph` after confirming
+  the candidate changed only `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. The lane resolution preserved the
+  current generated harness targets and added `wp_users`/`wp_usermeta` ready
+  and stale graph families from `0e99a80a7`, raising the default run to 450
+  deterministic cases with 243 ready, 175 conflict, and 32 blocked outcomes.
+  Validation succeeded with `npm run test:generated-push-harness` (16/16),
   checklist lint, artifact redaction scan, `git diff --check`, and a current
   fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
   `releaseMovement.allowed: false`, 3/20 gates).
@@ -890,6 +902,11 @@ linked implementation artifacts.
   exposes 20 `wp_postmeta` target cases across all 10 tiers, split into 10
   ready and 10 conflict cases, with ready plans preserving unplanned remote data
   and rejecting stale replays before mutation.
+- Generated users/usermeta continuation: `400d9072b` integrated `RPP-0109`
+  `wp_users`/`wp_usermeta` graph coverage. The generated harness now exposes
+  20 users/usermeta graph target cases across all 10 tiers, with ready cases
+  creating the user and usermeta row together and stale cases refusing drifted
+  remote users before mutation.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
   same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` rows for
