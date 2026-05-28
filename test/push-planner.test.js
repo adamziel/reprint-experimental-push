@@ -5567,6 +5567,158 @@ test('redacts raw plugin dependency metadata from blocker evidence', () => {
   assert.equal(planJson.includes('dependency-envelope-secret'), false);
 });
 
+test('RPP-0469 plugin activation dependency validator is explicit and redacted', () => {
+  const dependencyResourceKey = `plugin:${atomicDependencyPlugin}`;
+  const dependentResourceKey = `plugin:${atomicDependentPlugin}`;
+  const privateValues = [
+    'rpp0469-private-dependency-envelope',
+    'rpp0469-private-dependency-token',
+  ];
+  const base = baseSite();
+  base.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: false };
+  base.plugins[atomicDependentPlugin] = {
+    version: '1.0.0',
+    active: false,
+    requires: [atomicDependencyPlugin],
+  };
+  const remote = cloneJson(base);
+  const local = cloneJson(base);
+  local.plugins[atomicDependencyPlugin] = { version: '2.1.0', active: true };
+  local.plugins[atomicDependentPlugin] = {
+    version: '1.0.0',
+    active: true,
+    requires: [atomicDependencyPlugin],
+  };
+  const dependencyHash = resourceHash(local, pluginResource(atomicDependencyPlugin));
+  local.pushIntents = [
+    {
+      id: 'rpp-0469-activate-dependent-with-dependency',
+      kind: 'plugin-activation',
+      requireAtomic: true,
+      resources: [dependencyResourceKey, dependentResourceKey],
+      dependencies: {
+        plugins: [
+          {
+            name: atomicDependencyPlugin,
+            expectedVersion: '2.1.0',
+            expectedHash: dependencyHash,
+            active: true,
+            privateEnvelope: privateValues[0],
+            credentials: { token: privateValues[1] },
+          },
+        ],
+      },
+    },
+  ];
+
+  const readyPlan = planFor(base, local, remote);
+  const readyGroup = readyPlan.atomicGroups[0];
+  const readyRequirement = readyGroup.dependencyRequirements[0];
+  const readyResult = applyPlan(cloneJson(remote), readyPlan);
+
+  assert.equal(readyPlan.status, 'ready');
+  assert.equal(readyGroup.status, 'ready');
+  assert.deepEqual(readyGroup.dependencies, { plugins: [atomicDependencyPlugin] });
+  assert.equal(readyRequirement.plugin, atomicDependencyPlugin);
+  assert.equal(readyRequirement.source, 'same-atomic-group');
+  assert.equal(readyRequirement.expectedVersion, '2.1.0');
+  assert.equal(readyRequirement.expectedHash, dependencyHash);
+  assert.equal(readyRequirement.plannedHash, dependencyHash);
+  assert.equal(readyRequirement.active, true);
+  assert.equal(readyResult.site.plugins[atomicDependencyPlugin].active, true);
+  assert.equal(readyResult.site.plugins[atomicDependentPlugin].active, true);
+
+  const blockedLocal = cloneJson(local);
+  blockedLocal.pushIntents[0].dependencies.plugins[0].active = false;
+  const blockedPlan = planFor(base, blockedLocal, cloneJson(remote));
+  const blockedRemote = cloneJson(remote);
+  const beforeBlockedRemote = digest(blockedRemote);
+  const blockedError = captureError(() => applyPlan(blockedRemote, blockedPlan));
+  const blockedRequirement = blockedPlan.atomicGroups[0].dependencyRequirements[0];
+  const activationBlocker = blockedPlan.blockers.find((blocker) =>
+    blocker.class === 'incompatible-plugin-dependency-activation');
+
+  assert.equal(blockedPlan.status, 'blocked');
+  assert.equal(blockedPlan.atomicGroups[0].status, 'blocked');
+  assert.equal(blockedRequirement.source, 'same-atomic-group');
+  assert.equal(blockedRequirement.active, false);
+  assert.equal(activationBlocker.plugin, atomicDependencyPlugin);
+  assert.equal(activationBlocker.expectedActive, false);
+  assert.equal(activationBlocker.actualActive, true);
+  assert.ok(blockedError instanceof PushPlanError);
+  assert.equal(blockedError.code, 'PLAN_NOT_READY');
+  assert.equal(digest(blockedRemote), beforeBlockedRemote);
+
+  const forgedPlan = tamperReadyPlan(readyPlan, (plan) => {
+    delete plan.atomicGroups[0].dependencies;
+    delete plan.atomicGroups[0].dependencyRequirements;
+  });
+  const forgedRemote = cloneJson(remote);
+  const beforeForgedRemote = digest(forgedRemote);
+  const forgedError = captureError(() => applyPlan(forgedRemote, forgedPlan));
+
+  assert.ok(forgedError instanceof PushPlanError);
+  assert.equal(forgedError.code, 'ATOMIC_GROUP_DEPENDENCY_UNDECLARED');
+  assert.equal(digest(forgedRemote), beforeForgedRemote);
+
+  const evidenceEnvelope = {
+    rpp: 'RPP-0469',
+    evidenceSource: 'local-focused-node-test',
+    productionBacked: false,
+    releaseState: 'NO-GO',
+    ready: {
+      status: readyPlan.status,
+      groupStatus: readyGroup.status,
+      dependencyRequirements: readyGroup.dependencyRequirements.map((requirement) => ({
+        plugin: requirement.plugin,
+        source: requirement.source,
+        active: requirement.active,
+        expectedVersion: requirement.expectedVersion,
+        expectedHash: requirement.expectedHash,
+        plannedHash: requirement.plannedHash,
+        requirementHash: sha256Evidence(requirement),
+      })),
+      mutationEvidence: readyPlan.mutations.map((mutation) => ({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+        valueHash: digest(deserializeMutationValue(mutation)),
+      })),
+      appliedSiteHash: sha256Evidence(readyResult.site),
+    },
+    refused: {
+      status: blockedPlan.status,
+      groupStatus: blockedPlan.atomicGroups[0].status,
+      blockerClass: activationBlocker.class,
+      blockerHash: sha256Evidence(activationBlocker),
+      refusal: {
+        code: blockedError.code,
+        detailsHash: sha256Evidence(blockedError.details),
+      },
+      remotePreservedHash: sha256Evidence(blockedRemote),
+    },
+    forged: {
+      code: forgedError.code,
+      detailsHash: sha256Evidence(forgedError.details),
+      remotePreservedHash: sha256Evidence(forgedRemote),
+    },
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(evidenceEnvelope.ready.mutationEvidence.length, 2);
+  for (const mutation of evidenceEnvelope.ready.mutationEvidence) {
+    assert.match(mutation.localHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.remoteBeforeHash, /^[a-f0-9]{64}$/);
+    assert.match(mutation.valueHash, /^[a-f0-9]{64}$/);
+  }
+  for (const privateValue of privateValues) {
+    assert.equal(JSON.stringify(readyPlan).includes(privateValue), false);
+    assert.equal(JSON.stringify(blockedPlan).includes(privateValue), false);
+    assert.equal(evidenceText.includes(privateValue), false);
+  }
+});
+
 test('applies an atomic plugin install when dependencies are included in the same plan', () => {
   const base = baseSite();
   const local = baseSite();
