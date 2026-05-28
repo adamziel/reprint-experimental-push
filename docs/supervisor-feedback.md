@@ -1,9 +1,22 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 12:33 CEST
+Last updated: 2026-05-28 12:37 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 12:37 CEST - RPP-3 Ancestry Integrated
+
+- Going well: integration is now at `5773b093`, preserving ancestry for
+  `origin/session/rpp-3` with a tree-unchanged `ours` merge after confirming
+  the branch is already represented by the lane.
+- Checklist movement: still 138 verified items checked and 862 open. This was
+  ancestry reduction only.
+- Verification: graph inventory plus planner tests pass 110/110, the graph
+  inventory script runs cleanly, checklist lint is clean, artifact redaction
+  scan is clean, and `git diff --check` is clean.
+- Current nudge: continue with the remaining already-represented pushed branches
+  before attempting candidates that require normal conflict resolution.
 
 ## 2026-05-28 12:33 CEST - RPP-2 Ancestry Integrated
 
