@@ -1,0 +1,252 @@
+{
+  "contract_id": "push-release-evidence-provenance-contract-v1",
+  "schemaVersion": 1,
+  "validator": "reprint-push-release-evidence-provenance",
+  "purpose": "machine-readable provenance cases for distinguishing operator-supplied production release evidence from stale, local-only, generated, URL, or secret-looking placeholders",
+  "referenceNow": "2026-05-28T12:00:00.000Z",
+  "maxEvidenceAgeHours": 24,
+  "requiredFields": [
+    "evidenceId",
+    "rppId",
+    "sourceKind",
+    "artifactPath",
+    "observedAt",
+    "command",
+    "status",
+    "subjectHash",
+    "operatorScope",
+    "productionRequired"
+  ],
+  "acceptedCommandStatuses": [
+    "checked-passed",
+    "checked-failed",
+    "checked-succeeded",
+    "checked-nonzero",
+    "verified"
+  ],
+  "reasonCodes": [
+    "OBSERVED_AT_REQUIRED",
+    "OBSERVED_AT_STALE",
+    "PRODUCTION_SOURCE_REQUIRED",
+    "SUBJECT_HASH_REQUIRED",
+    "ARTIFACT_PATH_RAW_URL",
+    "ARTIFACT_PATH_SECRET_LIKE",
+    "COMMAND_STATUS_UNCHECKED"
+  ],
+  "evidenceRows": [
+    {
+      "evidenceId": "RPP-0019:agents-row-raw-url-artifact",
+      "rppId": "RPP-0019",
+      "sourceKind": "operator-production",
+      "artifactPath": "https://ci.example.test/artifacts/release-gates.json",
+      "observedAt": "2026-05-28T11:25:00.000Z",
+      "command": "cat .agents/RELEASE_GATES.md",
+      "status": "checked-passed",
+      "subjectHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "reject raw URL artifact reference"
+    },
+    {
+      "evidenceId": "RPP-0017:tmux-status-marker",
+      "rppId": "RPP-0017",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/tmux-status-marker.ndjson",
+      "observedAt": "2026-05-28T10:30:00.000Z",
+      "command": "tmux capture-pane -pt release-gates",
+      "status": "checked-passed",
+      "subjectHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "accept fresh operator production marker evidence"
+    },
+    {
+      "evidenceId": "RPP-0018:progress-timestamp-stale",
+      "rppId": "RPP-0018",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/progress-timestamp-stale.json",
+      "observedAt": "2026-05-26T11:59:59.000Z",
+      "command": "node scripts/release/read-progress-timestamp.mjs",
+      "status": "checked-passed",
+      "subjectHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "reject stale timestamp"
+    },
+    {
+      "evidenceId": "RPP-0018:local-progress-timestamp-candidate",
+      "rppId": "RPP-0018",
+      "sourceKind": "local-playground",
+      "artifactPath": "docs/evidence/local/progress-timestamp-candidate.json",
+      "observedAt": "2026-05-28T11:15:00.000Z",
+      "command": "node scripts/playground/local-production-release-verify.mjs",
+      "status": "checked-passed",
+      "subjectHash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "operatorScope": "local-candidate",
+      "productionRequired": false,
+      "case": "accept local candidate only when production is not required"
+    },
+    {
+      "evidenceId": "RPP-0020:verify-release-missing-hash",
+      "rppId": "RPP-0020",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/verify-release-missing-hash.json",
+      "observedAt": "2026-05-28T11:45:00.000Z",
+      "command": "npm run verify:release",
+      "status": "checked-failed",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "reject missing subject hash"
+    },
+    {
+      "evidenceId": "RPP-0017:tmux-status-marker-unchecked",
+      "rppId": "RPP-0017",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/tmux-status-marker-unchecked.ndjson",
+      "observedAt": "2026-05-28T11:20:00.000Z",
+      "command": "tmux capture-pane -pt release-gates",
+      "status": "generated",
+      "subjectHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "reject generated or unchecked command status"
+    },
+    {
+      "evidenceId": "RPP-0019:agents-row-local-placeholder",
+      "rppId": "RPP-0019",
+      "sourceKind": "generated-placeholder",
+      "artifactPath": "docs/evidence/local/agents-release-gates-row.json",
+      "observedAt": "2026-05-28T11:35:00.000Z",
+      "command": "cat .agents/RELEASE_GATES.md",
+      "status": "checked-passed",
+      "subjectHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "operatorScope": "local-candidate",
+      "productionRequired": true,
+      "case": "reject local-only source kind for production-required evidence"
+    },
+    {
+      "evidenceId": "RPP-0019:agents-row-secret-artifact",
+      "rppId": "RPP-0019",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/agents-row.json?token=redacted-placeholder",
+      "observedAt": "2026-05-28T11:40:00.000Z",
+      "command": "cat .agents/RELEASE_GATES.md",
+      "status": "checked-passed",
+      "subjectHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "operatorScope": "final-release",
+      "productionRequired": false,
+      "case": "reject secret-looking artifact reference even when optional"
+    },
+    {
+      "evidenceId": "RPP-0020:verify-release-failure-reason",
+      "rppId": "RPP-0020",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/verify-release-failure-reason.json",
+      "observedAt": "2026-05-28T11:30:00.000Z",
+      "command": "npm run verify:release",
+      "status": "checked-failed",
+      "subjectHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "accept checked nonzero release verifier proof with subject hash"
+    },
+    {
+      "evidenceId": "RPP-0018:progress-timestamp-missing-observed-at",
+      "rppId": "RPP-0018",
+      "sourceKind": "operator-production",
+      "artifactPath": "docs/evidence/release/progress-timestamp-missing-observed-at.json",
+      "command": "node scripts/release/read-progress-timestamp.mjs",
+      "status": "checked-passed",
+      "subjectHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "operatorScope": "final-release",
+      "productionRequired": true,
+      "case": "reject missing observedAt"
+    }
+  ],
+  "expectedSummary": {
+    "schemaVersion": 1,
+    "validator": "reprint-push-release-evidence-provenance",
+    "generatedAt": "2026-05-28T12:00:00.000Z",
+    "maxEvidenceAgeHours": 24,
+    "ok": false,
+    "releaseReady": false,
+    "acceptedEvidenceIds": [
+      "RPP-0017:tmux-status-marker",
+      "RPP-0018:local-progress-timestamp-candidate",
+      "RPP-0020:verify-release-failure-reason"
+    ],
+    "rejectedEvidence": [
+      {
+        "evidenceId": "RPP-0017:tmux-status-marker-unchecked",
+        "rppId": "RPP-0017",
+        "productionRequired": true,
+        "reasonCodes": [
+          "COMMAND_STATUS_UNCHECKED"
+        ]
+      },
+      {
+        "evidenceId": "RPP-0018:progress-timestamp-missing-observed-at",
+        "rppId": "RPP-0018",
+        "productionRequired": true,
+        "reasonCodes": [
+          "OBSERVED_AT_REQUIRED"
+        ]
+      },
+      {
+        "evidenceId": "RPP-0018:progress-timestamp-stale",
+        "rppId": "RPP-0018",
+        "productionRequired": true,
+        "reasonCodes": [
+          "OBSERVED_AT_STALE"
+        ]
+      },
+      {
+        "evidenceId": "RPP-0019:agents-row-local-placeholder",
+        "rppId": "RPP-0019",
+        "productionRequired": true,
+        "reasonCodes": [
+          "PRODUCTION_SOURCE_REQUIRED"
+        ]
+      },
+      {
+        "evidenceId": "RPP-0019:agents-row-raw-url-artifact",
+        "rppId": "RPP-0019",
+        "productionRequired": true,
+        "reasonCodes": [
+          "ARTIFACT_PATH_RAW_URL"
+        ]
+      },
+      {
+        "evidenceId": "RPP-0019:agents-row-secret-artifact",
+        "rppId": "RPP-0019",
+        "productionRequired": false,
+        "reasonCodes": [
+          "ARTIFACT_PATH_SECRET_LIKE"
+        ]
+      },
+      {
+        "evidenceId": "RPP-0020:verify-release-missing-hash",
+        "rppId": "RPP-0020",
+        "productionRequired": true,
+        "reasonCodes": [
+          "SUBJECT_HASH_REQUIRED"
+        ]
+      }
+    ],
+    "productionRequired": {
+      "total": 8,
+      "accepted": 2,
+      "rejected": 6
+    },
+    "counts": {
+      "total": 10,
+      "accepted": 3,
+      "rejected": 7,
+      "productionRequired": {
+        "total": 8,
+        "accepted": 2,
+        "rejected": 6
+      }
+    }
+  }
+}
