@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:21 CEST
+Last updated: 2026-05-28 05:24 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:24 CEST - RPP-0310 Integrated
+
+- Going well: integration is now at `1df596398`, adding `RPP-0310` post_tag
+  taxonomy graph evidence. The planner and local-production proofs cover
+  same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships`, live
+  preconditions, apply-time revalidation, and fail-closed unsupported taxonomy
+  surfaces.
+- Checklist movement: 103 verified items checked and 897 open. New check since
+  the prior feedback entry: `RPP-0310`.
+- Verification: local-production complex-site tests pass 17/17, push-planner
+  tests pass 90/90, supporting graph/generated tests pass 8/8, checklist lint
+  reports 103 checked / 897 open with 0 risky claims, artifact redaction scans
+  the touched docs with 0 rejected files, release gates still fail closed as
+  `NO-GO`, and `git diff --check` is clean.
+- Current nudge: continue with `RPP-0414` next if clean, then newer completed
+  branches one at a time from the latest lane head.
 
 ## 2026-05-28 05:21 CEST - RPP-0037 Integrated
 
