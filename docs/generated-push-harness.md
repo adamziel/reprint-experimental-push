@@ -16,7 +16,7 @@ node scripts/harness/generated-push-cases.js
 
 This harness generates deterministic Reprint push cases instead of exact-shaped
 fixtures. The current default is 360 cases, with a hard minimum of 300. Cases
-span 10 complexity tiers and 33 scenario families, then add seeded variation so
+span 10 complexity tiers and 35 scenario families, then add seeded variation so
 the planner and executor see mixed file, row, plugin-owned, graph, atomic,
 delete, conflict, and remote-preservation surfaces.
 
@@ -51,10 +51,12 @@ The default generated run covers:
   conflicting outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
-  outcomes, supported and unsupported plugin-owned data, plugin owner-context
-  drift, supported forms-lab custom-table rows, forms-lab delete refusal, atomic
-  plugin install ready and missing-dependency paths, same-plan post-parent,
-  taxonomy, comment, and usermeta graph closures, and stale graph references.
+  outcomes, `wp_users` + `wp_usermeta` graph cases with ready and
+  stale/non-ready outcomes, supported and unsupported plugin-owned data, plugin
+  owner-context drift, supported forms-lab custom-table rows, forms-lab delete
+  refusal, atomic plugin install ready and missing-dependency paths, same-plan
+  post-parent, taxonomy, comment, and usermeta graph closures, and stale graph
+  references.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -62,25 +64,31 @@ only the planned post create, update, and delete while preserving every
 unplanned remote resource; concurrent remote edits to the updated post remain
 `conflict` and refuse apply.
 
+The `wpUsersUsermetaGraph` target coverage records per-tier counts for generated
+`wp_users` rows and their `wp_usermeta` graph relationships. Ready cases create
+the user and usermeta row in one plan and reject a stale replay before mutation;
+stale cases keep the user in the base, drift that user remotely, and require the
+new usermeta reference to fail closed instead of overwriting the drifted remote.
+
 At the time this note was added, the summary command reported:
 
 ```json
 {
   "totalCases": 360,
   "statuses": {
-    "blocked": 19,
-    "conflict": 149,
+    "blocked": 24,
+    "conflict": 144,
     "ready": 192
   },
   "targetCoverage": {
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
-      "total": 11,
+      "total": 10,
       "perTier": {
         "0": 1,
         "1": 1,
         "2": 1,
-        "3": 2,
+        "3": 1,
         "4": 1,
         "5": 1,
         "6": 1,
@@ -89,7 +97,7 @@ At the time this note was added, the summary command reported:
         "9": 1
       },
       "statuses": {
-        "conflict": 11
+        "conflict": 10
       }
     },
     "wpPostsCreateUpdateDelete": {
@@ -111,6 +119,27 @@ At the time this note was added, the summary command reported:
         "conflict": 10,
         "ready": 10
       }
+    },
+    "wpUsersUsermetaGraph": {
+      "family": "wp-users-usermeta-graph-ready",
+      "total": 20,
+      "perTier": {
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
+      },
+      "statuses": {
+        "blocked": 3,
+        "conflict": 8,
+        "ready": 9
+      }
     }
   },
   "featureFamilies": {
@@ -122,12 +151,18 @@ At the time this note was added, the summary command reported:
     "row-create-update-delete-mix-conflict": 11,
     "wp-posts-create-update-delete": 20,
     "wp-posts-create-update-delete-ready": 10,
-    "wp-posts-create-update-delete-conflict": 10
+    "wp-posts-create-update-delete-conflict": 10,
+    "wp-users-usermeta-graph": 20,
+    "wp-users-usermeta-graph-ready": 10,
+    "wp-users-usermeta-graph-stale": 10,
+    "wp-users-create": 20,
+    "wp-usermeta-create": 20,
+    "wp-users-remote-drift": 10
   },
-  "maxResourceCount": 67,
-  "maxMutationCount": 45,
-  "maxReadyResourceCount": 67,
-  "maxReadyMutationCount": 45
+  "maxResourceCount": 68,
+  "maxMutationCount": 43,
+  "maxReadyResourceCount": 68,
+  "maxReadyMutationCount": 43
 }
 ```
 

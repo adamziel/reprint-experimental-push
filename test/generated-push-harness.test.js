@@ -54,6 +54,13 @@ const requiredFamilies = [
   'wp-posts-create',
   'wp-posts-update',
   'wp-posts-delete',
+  'wp-users-usermeta-graph-ready',
+  'wp-users-usermeta-graph-stale',
+  'wp-users-usermeta-graph',
+  'wp-users-create',
+  'wp-usermeta-create',
+  'wp-users-remote-drift',
+  'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -268,4 +275,82 @@ function assertWpPostsCreateUpdateDeleteShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one wp_posts row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one wp_posts row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one wp_posts row`);
+}
+
+test('RPP-0109 wp_users/wp_usermeta graph target exposes ready and stale coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpUsersUsermetaGraph;
+
+  assert.ok(coverage, 'missing wp_users/wp_usermeta graph target coverage');
+  assert.equal(coverage.family, 'wp-users-usermeta-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-users-usermeta-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready user/usermeta graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-users-usermeta-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'wp-users-usermeta-graph-stale');
+
+  assert.ok(readyCase, 'missing ready wp_users/wp_usermeta graph case');
+  assert.ok(staleCase, 'missing stale wp_users/wp_usermeta graph case');
+  assertUserUsermetaGraphShape(readyCase, { staleTarget: false });
+  assertUserUsermetaGraphShape(staleCase, { staleTarget: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 2, 'ready graph should create user and usermeta rows');
+  assert.equal(ready.applied, true, 'ready user/usermeta graph should apply through the harness');
+  assert.equal(ready.staleReplayRejected, true, 'ready user/usermeta graph should reject stale replay');
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  assert.notEqual(stale.status, 'ready', 'stale graph should not be ready');
+  assert.ok(stale.blockers >= 1, 'stale graph should record a graph identity blocker');
+  assert.equal(stale.applied, false, 'stale graph must not apply mutations');
+});
+
+function assertUserUsermetaGraphShape(testCase, { staleTarget }) {
+  const userRows = Object.entries(testCase.local.db.wp_users)
+    .filter(([id, row]) => !testCase.base.db.wp_users[id]
+      && row.display_name.startsWith('Generated graph user '));
+  const usermetaRows = Object.entries(testCase.local.db.wp_usermeta)
+    .filter(([id, row]) => !testCase.base.db.wp_usermeta[id]
+      && row.meta_key.startsWith('_generated_usermeta_graph_'));
+
+  assert.equal(userRows.length, staleTarget ? 0 : 1, `${testCase.id} ready graph should create one user`);
+  assert.equal(usermetaRows.length, 1, `${testCase.id} should create one usermeta row`);
+
+  const userId = staleTarget
+    ? usermetaRows[0][1].user_id
+    : userRows[0][1].ID;
+  assert.equal(usermetaRows[0][1].user_id, userId);
+
+  if (staleTarget) {
+    const userRowId = `ID:${userId}`;
+    assert.ok(testCase.base.db.wp_users[userRowId], `${testCase.id} stale target should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_users[userRowId],
+      testCase.base.db.wp_users[userRowId],
+      `${testCase.id} stale target should drift remotely`,
+    );
+  }
+}
+
+function nonReadyTargetCount(coverage) {
+  return Object.entries(coverage.statuses)
+    .filter(([status]) => status !== 'ready')
+    .reduce((sum, [, count]) => sum + count, 0);
 }
