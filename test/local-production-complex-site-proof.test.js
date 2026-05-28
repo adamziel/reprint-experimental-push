@@ -19,6 +19,7 @@ const smallShape = Object.freeze({
   remoteDriftFiles: 1,
   featuredImageGraph: false,
   taxonomyGraph: false,
+  postTagTaxonomyGraph: false,
   postParentGraph: false,
   commentGraph: false,
 });
@@ -57,6 +58,19 @@ test('complex-site seed PHP can add a taxonomy graph fixture', () => {
   assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_taxonomy_graph = false/);
 });
 
+test('complex-site seed PHP can add a post_tag taxonomy graph fixture', () => {
+  const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
+    ...smallShape,
+    postTagTaxonomyGraph: true,
+  });
+
+  assert.match(php, /reprint-push-post-tag-taxonomy-graph/);
+  assert.match(php, /taxonomy'=>'post_tag'/);
+  assert.match(php, /term_relationships/);
+  assert.match(php, /if \(\$complex_post_tag_taxonomy_graph && \$complex_is_local\)/);
+  assert.match(buildComplexSiteSeedPhp({ key: 'local-edited' }, smallShape), /\$complex_post_tag_taxonomy_graph = false/);
+});
+
 test('complex-site seed PHP can add a post parent graph fixture', () => {
   const php = buildComplexSiteSeedPhp({ key: 'local-edited' }, {
     ...smallShape,
@@ -88,6 +102,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT: '25',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_TAXONOMY_GRAPH_PROOF: '1',
+    REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_TAG_TAXONOMY_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_PARENT_GRAPH_PROOF: '1',
     REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF: '1',
   });
@@ -97,6 +112,7 @@ test('complex-site fixture shape can be expanded for journal-window evidence', (
   assert.equal(shape.fileCount, 3);
   assert.equal(shape.featuredImageGraph, true);
   assert.equal(shape.taxonomyGraph, true);
+  assert.equal(shape.postTagTaxonomyGraph, true);
   assert.equal(shape.postParentGraph, true);
   assert.equal(shape.commentGraph, true);
 });
@@ -193,6 +209,32 @@ test('complex-site planner proof covers real taxonomy graph closure', () => {
   assert.equal(proof.invariants.taxonomyGraphHasLivePreconditions, true);
 });
 
+test('complex-site planner proof covers real post_tag taxonomy graph closure', () => {
+  const graphShape = { ...smallShape, postTagTaxonomyGraph: true };
+  const proof = buildComplexSitePlannerProof({
+    sourceSnapshot: syntheticComplexSnapshot('source', graphShape),
+    localEditedSnapshot: syntheticComplexSnapshot('local-edited', graphShape),
+    remoteChangedSnapshot: syntheticComplexSnapshot('remote-changed', graphShape),
+    brewcommerceBlueprintDir: '/tmp/wp-blueprints-brewcommerce/blueprints/brewcommerce',
+    shape: graphShape,
+  });
+
+  assert.equal(proof.ok, true);
+  assert.equal(proof.counts.source.postTagTaxonomyGraphTerms, 0);
+  assert.equal(proof.counts.localEdited.postTagTaxonomyGraphTerms, 1);
+  assert.equal(proof.counts.localEdited.postTagTaxonomyGraphTaxonomies, 1);
+  assert.equal(proof.counts.localEdited.postTagTaxonomyGraphRelationships, 1);
+  assert.equal(proof.postTagTaxonomyGraphEvidence.type, 'post-tag-term-relationship');
+  assert.equal(proof.postTagTaxonomyGraphEvidence.taxonomy, 'post_tag');
+  assert.equal(proof.postTagTaxonomyGraphEvidence.allResourcesPlanned, true);
+  assert.equal(proof.postTagTaxonomyGraphEvidence.termTaxonomyIsPostTag, true);
+  assert.equal(proof.postTagTaxonomyGraphEvidence.staleGraphBlockers, 0);
+  assert.equal(proof.invariants.postTagTaxonomyGraphCountsPresent, true);
+  assert.equal(proof.invariants.postTagTaxonomyGraphPlanned, true);
+  assert.equal(proof.invariants.postTagTaxonomyGraphHasLivePreconditions, true);
+  assert.equal(proof.invariants.postTagTaxonomyGraphNoStaleBlocker, true);
+});
+
 test('complex-site planner proof covers real post parent graph closure', () => {
   const graphShape = { ...smallShape, postParentGraph: true };
   const proof = buildComplexSitePlannerProof({
@@ -278,6 +320,53 @@ test('complex-site release evidence extracts release verifier receipts and gates
   assert.equal(evidence.invariants.pluginDriverApplyRevalidated, true);
   assert.equal(evidence.invariants.authSessionGateOk, true);
   assert.equal(evidence.invariants.durableJournalGateOk, true);
+});
+
+test('complex-site release evidence proves post_tag taxonomy carries through apply', () => {
+  const plannerProof = { ok: true, shape: { ...smallShape, postTagTaxonomyGraph: true } };
+  const releaseSummary = syntheticReleaseSummary(9, { postTagTaxonomyGraph: true });
+  const output = JSON.stringify(releaseSummary, null, 2);
+
+  const evidence = buildComplexSiteReleaseEvidence({
+    plannerProof,
+    verifyOutput: output,
+    verifyStatus: 0,
+    verifySignal: null,
+  });
+
+  assert.equal(evidence.ok, true);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.required, true);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.taxonomyMutationPlanned, true);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.taxonomyMutationIsPostTag, true);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.termTaxonomyId, 72941);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.termId, 72931);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.taxonomy, 'post_tag');
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.preconditionLive, true);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.applyRevalidated, true);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.finalMatchesLocal, true);
+  assert.equal(evidence.invariants.postTagTaxonomyGraphCarriedInReleasePlan, true);
+  assert.equal(evidence.invariants.postTagTaxonomyGraphHasReleasePrecondition, true);
+  assert.equal(evidence.invariants.postTagTaxonomyGraphApplyRevalidated, true);
+  assert.equal(evidence.invariants.postTagTaxonomyGraphFinalMatchesLocal, true);
+});
+
+test('complex-site release evidence fails closed when post_tag taxonomy is changed', () => {
+  const plannerProof = { ok: true, shape: { ...smallShape, postTagTaxonomyGraph: true } };
+  const releaseSummary = syntheticReleaseSummary(9, { postTagTaxonomyGraph: true });
+  const taxonomyMutation = releaseSummary.releaseProof.planObject.mutations.find((mutation) =>
+    mutation.resourceKey === 'row:["wp_term_taxonomy","term_taxonomy_id:72941"]');
+  taxonomyMutation.value.value.taxonomy = 'product_cat';
+
+  const evidence = buildComplexSiteReleaseEvidence({
+    plannerProof,
+    verifyOutput: JSON.stringify(releaseSummary),
+    verifyStatus: 0,
+    verifySignal: null,
+  });
+
+  assert.equal(evidence.ok, false);
+  assert.equal(evidence.verifier.postTagTaxonomyGraph.taxonomyMutationIsPostTag, false);
+  assert.equal(evidence.invariants.postTagTaxonomyGraphCarriedInReleasePlan, false);
 });
 
 test('complex-site release evidence fails closed without a dry-run receipt', () => {
@@ -438,7 +527,30 @@ function syntheticComplexSnapshot(variant, shape) {
     };
   }
 
+  if (shape.postTagTaxonomyGraph && local) {
+    snapshot.db.wp_terms['term_id:72931'] = {
+      term_id: 72931,
+      name: 'Reprint Push Post Tag Taxonomy Graph',
+      slug: 'reprint-push-post-tag-taxonomy-graph',
+      term_group: 0,
+    };
+    snapshot.db.wp_term_taxonomy['term_taxonomy_id:72941'] = {
+      term_taxonomy_id: 72941,
+      term_id: 72931,
+      taxonomy: 'post_tag',
+      description: 'Local post_tag taxonomy graph fixture.',
+      parent: 0,
+      count: 1,
+    };
+    snapshot.db.wp_term_relationships['object_id:71002|term_taxonomy_id:72941'] = {
+      object_id: 71002,
+      term_taxonomy_id: 72941,
+      term_order: 0,
+    };
+  }
+
   if (shape.commentGraph && local) {
+
     snapshot.db.wp_comments['comment_ID:72801'] = {
       comment_ID: 72801,
       comment_post_ID: 71001,
@@ -523,7 +635,33 @@ function syntheticComplexSnapshot(variant, shape) {
   return snapshot;
 }
 
-function syntheticReleaseSummary(mutations) {
+function syntheticReleaseSummary(mutations, options = {}) {
+  const postTagTaxonomyGraphMutations = options.postTagTaxonomyGraph ? [
+    {
+      id: 'mutation-post-tag-taxonomy-graph-taxonomy',
+      resourceKey: 'row:["wp_term_taxonomy","term_taxonomy_id:72941"]',
+      action: 'put',
+      resource: {
+        type: 'row',
+        table: 'wp_term_taxonomy',
+        id: 'term_taxonomy_id:72941',
+        key: 'row:["wp_term_taxonomy","term_taxonomy_id:72941"]',
+      },
+      value: {
+        value: {
+          term_taxonomy_id: 72941,
+          term_id: 72931,
+          taxonomy: 'post_tag',
+          description: 'Local post_tag taxonomy graph fixture.',
+          parent: 0,
+          count: 1,
+        },
+      },
+      baseHash: 'e'.repeat(64),
+      remoteBeforeHash: 'e'.repeat(64),
+      localHash: 'f'.repeat(64),
+    },
+  ] : [];
   const mutationList = [
     {
       id: 'mutation-release-state',
@@ -545,7 +683,8 @@ function syntheticReleaseSummary(mutations) {
       remoteBeforeHash: 'b'.repeat(64),
       localHash: 'c'.repeat(64),
     },
-    ...Array.from({ length: Math.max(0, mutations - 1) }, (_, index) => ({
+    ...postTagTaxonomyGraphMutations,
+    ...Array.from({ length: Math.max(0, mutations - 1 - postTagTaxonomyGraphMutations.length) }, (_, index) => ({
       id: `mutation-${index + 1}`,
       resourceKey: `row:["wp_posts","ID:${71001 + index}"]`,
     })),
@@ -585,6 +724,10 @@ function syntheticReleaseSummary(mutations) {
           checkedAgainst: 'live-remote',
           verifiedResourceKeys: mutationList.map((mutation) => mutation.resourceKey),
         },
+      },
+      after: {
+        status: 200,
+        finalMatchesLocal: true,
       },
       planObject: {
         mutations: mutationList,
