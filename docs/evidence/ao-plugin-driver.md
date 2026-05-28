@@ -36,3 +36,27 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+
+## RPP-0439 driver audit evidence redaction
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0439|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0439 proof adds hash-only driver audit evidence to plugin-owned
+mutations. The planner records the resource key, owner, driver, policy source,
+delete-support flag, base/local/remote hashes, owner-context hash, and optional
+driver-evidence hash under `mutation.pluginOwnedResource.auditEvidence`. It does
+not include raw row values.
+
+The focused proof plans a plugin-owned `wp_options` update and then applies the
+dry-run plan to a remote whose same plugin-owned row drifted after planning.
+Apply fails before mutation with `PRECONDITION_FAILED`, and the test asserts the
+remote plugin-owned row hash and full remote hash are identical before and after
+the failed apply. The proof evidence stores only `sha256:` hashes for the audit
+envelope, stale-apply details, row preservation, remote preservation, and the
+combined proof hash; it asserts base, local, and drifted remote private values
+do not appear in either audit JSON or proof JSON. This is local focused
+evidence, not production-backed evidence.
