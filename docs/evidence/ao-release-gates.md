@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, and RPP-0039
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, RPP-0038, RPP-0039, and RPP-0042
 
 ## What changed
 
@@ -49,14 +49,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0037 | Evidence toward variant-2 tmux stdout proof status marker now runs `check-release-gates` with a final bracketed marker, asserts the marker is emitted on stdout, preserves exact tmux proof evidence, and records `mutationAttempted: false`. |
 | RPP-0038 | Evidence toward variant-2 progress.html release timestamp now links the progress page, focused proof command, observed status, exact timestamp evidence, and `NO-GO` release status without moving release readiness. |
 | RPP-0039 | Evidence toward variant-2 `.agents/RELEASE_GATES.md` status row now parses the generated status row and runs negative/positive `check-release-gates` scenarios: dishonest `release_verdict: 4/4` evidence fails, while the generated `0/4` row remains honest `NO-GO`. |
+| RPP-0042 | Evidence toward variant-3 missing `REPRINT_PUSH_LOCAL_URL` coverage now generates a final-release fixture with every other gate supplied, runs `check-release-gates`, and asserts exit `1`, `REPRINT_PUSH_LOCAL_URL_REQUIRED`, exact missing-local evidence, and `mutationAttempted: false`. |
 
 ## Focused verification
 
 ```sh
-node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gate-local-url-generated.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 30 tests.
+Observed status: pass, 31 tests.
 
 Progress HTML release timestamp proof:
 
@@ -69,6 +70,12 @@ Agents release-gates status row proof:
 - Command: `node --test test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
 - Observed status: `pass`; generated status row verdict: `0/4`; release status: `NO-GO`.
 - Evidence link: `.agents/RELEASE_GATES.md` remains honest fail-closed row evidence and dishonest `4/4` rows fail with `AGENTS_RELEASE_GATES_ROW_REQUIRED`.
+
+Generated missing local URL proof:
+
+- Command: `node --test test/release-gate-local-url-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+- Observed status: `pass`; generated fixture omits only `REPRINT_PUSH_LOCAL_URL` while all other final-release evidence is supplied.
+- Evidence link: `check-release-gates` exits `1` with `REPRINT_PUSH_LOCAL_URL_REQUIRED`, `finalGates: "19/20"`, exact `local-url` missing evidence, and `mutationAttempted: false`.
 
 Key assertions:
 
@@ -87,6 +94,7 @@ Key assertions:
 - Tmux stdout proof status marker has command-level variant-2 coverage: the fixture-backed `check-release-gates` run emits `[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]` on stdout, preserves exact marker evidence for `tmux-status-marker`, exits `NO-GO` without provenance, and records `mutationAttempted: false`.
 - Progress.html release timestamp proof ties `progress.html#release-proof-timestamp` to exact `progressReleaseTimestamp` gate evidence; the focused command observes status `pass`, the page reports `NO-GO`, and the release-gate CLI records `mutationAttempted: false`.
 - `.agents/RELEASE_GATES.md` status row coverage now records a scenario matrix: the negative case rejects a dishonest `release_verdict: 4/4` row with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and the positive case accepts the generated `release_verdict: 0/4` row while the CLI remains `NO-GO` without provenance and records `mutationAttempted: false`.
+- Generated missing-local coverage now proves a final-release fixture with every other gate supplied still fails closed at `local-url` only, with `REPRINT_PUSH_LOCAL_URL_REQUIRED`, a `[release-gates-ci:held final=19/20 candidate=19/20 reason=REPRINT_PUSH_LOCAL_URL_REQUIRED]` marker, and `mutationAttempted: false`.
 - Complete local candidate evidence yields `candidateMovement.allowed: true`, `releaseMovement.allowed: false`, and `releaseMovement.gates: "candidate-for-review"`.
 - Complete final evidence yields `releaseMovement.allowed: true` and `releaseMovement.gates: "20/20"`.
 
