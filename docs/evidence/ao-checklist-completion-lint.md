@@ -1,7 +1,7 @@
 # AO checklist completion lint evidence
 
 Date: 2026-05-28
-Lane: checklist-completion-lint
+Lane: checklist-linter-current-tree
 Scope: evidence toward RPP-0912 and RPP-0913. Release remains held, and
 these checklist items remain unchecked until the release process wires the guard
 into the required checks.
@@ -19,7 +19,9 @@ into the required checks.
   without implying final checklist closure.
 - Added fixture-based tests in `test/checklist-completion-lint.test.js` for
   risky terms, cautious terms, RPP ranges, duplicate IDs, missing checklist
-  failure, target file discovery, and CLI JSON shape.
+  failure, target file discovery, CLI JSON shape, and the current real
+  `progress.html`, `docs/progress-log.md`, `docs/supervisor-feedback.md`,
+  `docs/evidence/*.md`, and `audits/*.md` surfaces.
 
 ## Verification
 
@@ -39,8 +41,8 @@ Observed local repository lint summary from the standalone linter:
   "ok": true,
   "riskyClaims": 0,
   "scannedFiles": 29,
-  "checkedIds": 81,
-  "uncheckedIds": 919,
+  "checkedIds": 85,
+  "uncheckedIds": 915,
   "reasonCodes": []
 }
 ```
