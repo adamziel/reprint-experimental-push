@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 15:14 CEST.
+- Last update: 2026-05-28 15:23 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `2c6b4852` (ours ancestry merge of
-  `origin/session/rpp-25-rpp-0030-same-source`).
+  `3582471e9` (normal merge of
+  `origin/session/rpp-24-rpp-0105-wp-options-scalar`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 138
-  items complete and leaves 862 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 139
+  items complete and leaves 861 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 6 generated
+  7 chunking/performance items, 2 production-topology items, 7 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -316,6 +316,18 @@ linked implementation artifacts.
   redaction scan (67 files), a current fail-closed release-gate status check
   (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
   gates), and `git diff --check` for the worktree and merge diff.
+- Generated harness conflict resolution: `3582471e9` normal-merged
+  `origin/session/rpp-24-rpp-0105-wp-options-scalar` after confirming the
+  candidate changed only `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. The lane resolution preserved the
+  current generated harness targets and added the non-plugin-owned `wp_options`
+  scalar ready/conflict families from `ce443fef7`, raising the default run to
+  390 deterministic cases so every target family keeps per-tier coverage.
+  Validation succeeded with `npm run test:generated-push-harness` (13/13),
+  checklist lint, artifact redaction scan, `git diff --check`, and a current
+  fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, 3/20 gates).
 - Ancestry backlog reduction: `8851a742` used
   `git merge -s ours --no-ff
   origin/session/rpp-24-rpp-0112-wp-term-taxonomy-graph` after verifying
