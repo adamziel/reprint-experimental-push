@@ -4,6 +4,24 @@ This log records evidence present in this repository. Percentages must remain
 conservative until they are backed by executable tests, integration runs, or
 linked implementation artifacts.
 
+## 2026-05-28 - Progress Reporter Refresh From 3081bfab1
+
+- Last update: 2026-05-28 05:57 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` through
+  `3081bfab1` (`docs: refresh progress for keep-remote proof`). The
+  integrated proof behind this refresh is `c371eb8d2e` (`test: prove
+  keep-remote decision counts`).
+- Checklist status remains 108 checked and 892 open. `RPP-0215` is now
+  integrated lane truth; branch-local worker output after `3081bfab1` is not
+  counted.
+- This refresh changes only progress/report surfaces and carries no
+  implementation or test diffs.
+- Verification: checklist completion lint reports 108 checked IDs, 892
+  unchecked IDs, and 0 risky claims; artifact redaction reports 0 rejected
+  files; the progress.html timestamp/status-row focused Node check passes
+  30/30; `git diff --check` is clean.
+- Release posture: final release remains **NO-GO**.
+
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
 - Last update: 2026-05-28 05:50 CEST.

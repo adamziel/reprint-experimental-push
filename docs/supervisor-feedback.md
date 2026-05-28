@@ -1,9 +1,24 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 05:50 CEST
+Last updated: 2026-05-28 05:57 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 05:57 CEST - Progress Refresh From 3081bfab1
+
+- Going well: lane truth is now `3081bfab1` on
+  `lane/evidence-integration-20260527`; `RPP-0215` is integrated, checklist
+  status is 108 checked and 892 open, and final release remains **NO-GO**.
+- Scope: this is a progress/report refresh from the new lane head only. Newer
+  worker output remains branch-local until reviewed and integrated.
+- Verification: checklist completion lint reports 108 checked IDs, 892
+  unchecked IDs, and 0 risky claims; artifact redaction reports 0 rejected
+  files; the progress.html timestamp/status-row focused Node check passes
+  30/30; `git diff --check` is clean.
+- Current nudge: continue one candidate at a time from `3081bfab1`, and
+  re-fetch lane before any push because the lane moved during the last progress
+  pass.
 
 ## 2026-05-28 05:50 CEST - RPP-0215 Integrated
 
