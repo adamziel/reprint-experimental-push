@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 17:48 CEST.
+- Last update: 2026-05-28 18:01 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `92430ed12` (normal merge of
-  `origin/session/rpp-33-rpp-0127-wp-posts-cud-changes-v2`).
+  `0eda594cf` (normal merge of
+  `origin/session/rpp-33-rpp-0128-wp-postmeta-cud-changes-v2`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 155
-  items complete and leaves 845 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 156
+  items complete and leaves 844 open.
 - Checked slices: 44 release-gate foundation items, 18 graph identity items,
   22 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 23 generated
+  7 chunking/performance items, 2 production-topology items, 24 generated
   harness items, and 17 merge-invariant items. No release-ops items are checked
   yet.
 - Public progress publishing is now explicit: GitHub Pages serves
@@ -981,6 +981,13 @@ linked implementation artifacts.
   create/update/delete target cases across all 10 tiers, with every ready case
   applying create/update/delete mutations, preserving unplanned remote data, and
   rejecting stale replay before mutation while remote post drift remains a
+  conflict that refuses apply.
+- Generated wp_postmeta continuation: `0eda594cf` integrated `RPP-0128`
+  `wp_postmeta` create/update/delete target proof. The generated harness keeps
+  the 510-case run and now proves 10 ready and 10 conflict `wp_postmeta`
+  create/update/delete target cases across all 10 tiers, with every ready case
+  applying create/update/delete mutations, preserving unplanned remote data, and
+  rejecting stale replay before mutation while remote postmeta drift remains a
   conflict that refuses apply.
 - Graph-identity continuation: `1df596398` integrated `RPP-0310` `post_tag`
   taxonomy evidence. Focused planner and local-production proof tests now carry
