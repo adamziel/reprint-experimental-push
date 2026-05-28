@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 14:49 CEST.
+- Last update: 2026-05-28 14:51 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `5753933a` (ours ancestry merge of
-  `origin/session/rpp-24-rpp-0103-file-type-swap-conflict`).
+  `5729dd05` (ours ancestry merge of
+  `origin/session/rpp-24-rpp-0104-row-create-update-delete-mix`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -298,6 +298,19 @@ linked implementation artifacts.
   This preserves the already-represented `RPP-0103` generated file type-swap
   branch ancestry (`866767ef3`) without moving checklist counts or tree
   content. Validation succeeded with `node --check
+  scripts/harness/generated-push-cases.js`, `node --test
+  test/generated-push-harness.test.js` (12/12), checklist lint, artifact
+  redaction scan (67 files), a current fail-closed release-gate status check
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
+  gates), and `git diff --check` for the worktree and merge diff.
+- Ancestry backlog reduction: `5729dd05` used
+  `git merge -s ours --no-ff
+  origin/session/rpp-24-rpp-0104-row-create-update-delete-mix` after verifying
+  `git log --right-only --cherry-pick
+  HEAD...origin/session/rpp-24-rpp-0104-row-create-update-delete-mix` was
+  empty. This preserves the already-represented `RPP-0104` generated row
+  create/update/delete mix branch ancestry (`c6e2de4eb`) without moving
+  checklist counts or tree content. Validation succeeded with `node --check
   scripts/harness/generated-push-cases.js`, `node --test
   test/generated-push-harness.test.js` (12/12), checklist lint, artifact
   redaction scan (67 files), a current fail-closed release-gate status check
