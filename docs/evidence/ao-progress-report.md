@@ -1,11 +1,11 @@
-# AO Progress Report - 2026-05-28 14:22 CEST
+# AO Progress Report - 2026-05-28 14:30 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`1b3e8ad1` (ours ancestry merge of
-`origin/session/rpp-21` operator proof status branch ancestry). It separates
+`61706f905` (normal merge of `origin/session/rpp-22` combined evidence
+ancestry). It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
@@ -631,6 +631,15 @@ progress.
   pushed `rpp-20` route proof matrix branch ancestry is preserved by
   `9b197a01`; the pushed `rpp-21` operator proof status branch ancestry is
   now preserved by `1b3e8ad1` after cherry-empty verification.
+- `61706f905` normal-merges `origin/session/rpp-22` and preserves the
+  combined `rpp-15` critic-continuation, `rpp-10` Docker local-production, and
+  `rpp-18` evidence coverage manifest ancestry that was already represented in
+  the current lane tree. The merge has no first-parent tree delta. Validation
+  succeeded with relevant syntax checks, the Docker harness and evidence
+  coverage manifest unit tests (15/15), evidence coverage manifest generation,
+  a Docker prerequisite probe that fails closed with `DOCKER_CLI_MISSING`,
+  checklist lint, artifact redaction scan, `git diff --check`, and a
+  fail-closed release-gate check showing `releaseMovement.allowed: false`.
 - `fdb02ab6a` integrates the checklist completion linter from `rpp-25`.
   `scripts/release/checklist-completion-lint.mjs` scans the checklist,
   `docs/evidence/*.md`, `audits/*.md`, `docs/progress-log.md`,
@@ -789,7 +798,7 @@ Checked IDs in this report are:
 - `node --test test/checklist-completion-lint.test.js` — 13 pass / 0 fail after current-tree hardening.
 - `node scripts/release/checklist-completion-lint.mjs` — `ok: true`, 0 risky claims, 138 checked IDs, 862 unchecked IDs.
 - `node --test test/artifact-redaction-scan.test.js` — 10 pass / 0 fail.
-- `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits progress.html` — `ok: true`, 43 scanned files, 0 rejected files.
+- `node scripts/release/artifact-redaction-scan.mjs docs/evidence audits docs/progress-log.md docs/supervisor-feedback.md progress.html` — `ok: true`, 67 scanned files, 0 rejected files.
 - `node --test test/required-release-checks.test.js` — passed when integrated
   by `rpp-28-required-checks-integration`.
 - `node scripts/release/required-release-checks-report.mjs --fixture fixtures/protocol/push-required-release-checks-contract.json` — fixture mode reports all required checks present.
@@ -847,8 +856,9 @@ branch.
 | `rpp-34` | completed candidate | `RPP-0421` driver registration API proof, `RPP-0431` plugin uninstall/delete refusal, `RPP-0461` driver registration focused regression, and `RPP-0468` serialized option validator regression are integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
-| `rpp-10` through `rpp-17`, `rpp-19`, `rpp-22`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-10` through `rpp-17`, `rpp-19`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
 | `rpp-21` | pushed branch `286a9b18e` | Operator proof status is represented by `a19deaf9e`, with branch ancestry now preserved by `1b3e8ad1`; do not count additional branch-local state. |
+| `rpp-22` | pushed branch `5cf8479ac` | Combined critic-continuation, Docker local-production, and evidence coverage manifest ancestry is now preserved by `61706f905`; no extra tree delta or release-readiness movement is counted. |
 | `rpp-20` | pushed branch `8f2770fec` | Route proof matrix is represented by `a19deaf9e`, with branch ancestry now preserved by `9b197a01`; do not count additional branch-local state. |
 | `rpp-18` | pushed branch `56a1e533b` | Evidence coverage manifest is represented by `bb6864a07`, with branch ancestry now preserved by `86875367`; do not count additional branch-local state. |
 | `rpp-23` | pushed audit branch | Critic-continuation-2 audit evidence is represented in the integration branch by `e6b5b6f7`; it remains support-only historical audit evidence and does not move final release readiness. |

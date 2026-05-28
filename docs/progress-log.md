@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 14:22 CEST.
+- Last update: 2026-05-28 14:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `1b3e8ad1` (ours ancestry merge of
-  `origin/session/rpp-21` operator proof status branch ancestry).
+  `61706f905` (normal merge of `origin/session/rpp-22` combined evidence
+  ancestry).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -222,10 +222,23 @@ linked implementation artifacts.
   release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
   `releaseMovement.allowed: false`, 3/20 gates), and
   `git diff --check origin/lane/evidence-integration-20260527..HEAD`.
-- New integrated AO output: `rpp-22` safely integrated `rpp-15` critic
+- Ancestry backlog reduction: `61706f905` normal-merged
+  `origin/session/rpp-22`, preserving the combined `rpp-15` critic
   continuation, `rpp-10` Docker local-production harness, and `rpp-18`
-  evidence coverage manifest. The Docker harness is fail-closed in this sandbox
-  because Docker is missing; it is not a Docker production pass.
+  evidence coverage manifest ancestry without a tree delta relative to the
+  first parent. Validation succeeded with `node --check
+  scripts/docker/production-complex-site-harness.mjs` and `node --check
+  scripts/release/evidence-coverage-manifest.mjs`, `node --test
+  test/production-complex-site-harness.test.js
+  test/evidence-coverage-manifest.test.js` (15/15), `node
+  scripts/release/evidence-coverage-manifest.mjs` (`ok: true`), `node
+  scripts/docker/production-complex-site-harness.mjs --probe` fail-closed with
+  `DOCKER_CLI_MISSING`, checklist lint, artifact redaction scan (67 files), a
+  current fail-closed release-gate status check
+  (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `releaseMovement.allowed: false`, 3/20
+  gates), and `git diff --check
+  origin/lane/evidence-integration-20260527..HEAD` plus a worktree
+  `git diff --check`.
 - `rpp-28` then landed recovery repair, release-gate CI checks, evidence
   redaction, protocol compatibility, route proof matrix, and operator proof
   status on the integration branch. The checklist only moved for exact matches:
