@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:04 CEST.
+- Last update: 2026-05-28 06:09 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `78323671d` (`test: prove plugin driver registration api`).
+  `67d50f384` (`docs: refresh progress for driver registration proof`). The newest
+  behavioral proof on the lane is `78323671d` (`test: prove plugin driver
+  registration api`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -135,11 +137,17 @@ linked implementation artifacts.
   stale/non-ready graph cases, with stale remote term drift held before
   mutation.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
-  `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
-  progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,
-  `rpp-ao-lifecycle` lightweight registry watchdog PID `2142025`, and
-  `rpp-ao-web` serving the AO dashboard on local port 8080 after the previous
-  web child wedged and was restarted in tmux.
+  `rpp-29`, `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`, integrator `rpp-28`,
+  critics `rpp-31` and `rpp-37`, progress reporter `rpp-36`, integration-prep
+  `rpp-35`, visible supervisor `rpp-orchestrator`, `rpp-ao-lifecycle`
+  lightweight registry watchdog PID `2142025`, and `rpp-ao-web` serving the AO
+  dashboard on local port 8080.
+- Heartbeat queue from lane truth: origin/lane moved to `67d50f384` and now
+  counts `RPP-0421`, with 110 checked and 890 open. Visible session refs for
+  `RPP-0041`-`RPP-0045`, `RPP-0113`-`RPP-0116`, `RPP-0216`-`RPP-0219`,
+  `RPP-0315`, `RPP-0322`, `RPP-0323`, `RPP-0415`, `RPP-0425`, and
+  `RPP-0426` are not counted. Active local branches for `RPP-0118`,
+  `RPP-0221`, `RPP-0326`, `RPP-0427`, and `RPP-0431` are also not counted.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing

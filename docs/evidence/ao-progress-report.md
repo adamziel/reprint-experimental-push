@@ -1,12 +1,14 @@
-# AO Progress Report - 2026-05-28 06:04 CEST
+# AO Progress Report - 2026-05-28 06:09 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through
-`78323671d` (`test: prove plugin driver registration api`). It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`67d50f384` (`docs: refresh progress for driver registration proof`). The
+newest behavioral proof on the lane is `78323671d` (`test: prove plugin driver
+registration api`); `67d50f384` is the lane documentation refresh that records
+that integration. This heartbeat separates committed proof from visible AO
+worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
@@ -280,6 +282,8 @@ Checked IDs in this report are:
 - `node --test test/graph-mapping-inventory.test.js test/generated-push-harness.test.js` — 8 pass / 0 fail.
 - `node --test test/push-planner.test.js` — 91 pass / 0 fail.
 - `node --test test/playground-snapshot-lib.test.js` — 4 pass / 0 fail for RPP-0421 driver registration API proof and existing snapshot apply gates.
+- `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js` — 2 pass / 0 fail for the progress heartbeat sanity check.
+- `python` local-link sanity parser for `progress.html` — 49 local links checked, 0 missing.
 - `node --test test/plugin-owner-context-metadata-refusal.test.js` — 3 pass / 0 fail for RPP-0414 stale plugin metadata owner refusal and ready-path preservation.
 - `node --test test/local-production-complex-site-proof.test.js` — 17 pass / 0 fail for RPP-0310 post_tag release-evidence carry-through and fail-closed mutation checks.
 - `node --test --test-name-pattern '^authenticated push (client (signs recovery inspect as a read-only|rejects mutating|signs journal inspect reads without|canonicalizes signed query|retries read-only)|executor can run recovery and journal inspect as idempotency-free)' test/authenticated-http-push-client.test.js` — targeted auth/inspect checks pass.
@@ -343,18 +347,21 @@ branch.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | `RPP-0101` through `RPP-0104`, `RPP-0107`, and `RPP-0112` are integrated; current visible work is continuing generated graph targets. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, and `RPP-0040` are integrated; current visible work is the next release-gate proof candidate. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `78323671d`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0107`, `RPP-0112`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, `RPP-0032`, `RPP-0033`, `RPP-0034`, `RPP-0035`, `RPP-0036`, `RPP-0037`, `RPP-0038`, `RPP-0039`, `RPP-0040`, `RPP-0207`, `RPP-0210`, `RPP-0215`, `RPP-0310`, `RPP-0414`, and `RPP-0421`; now evaluating the next completed branch one at a time. |
-| `rpp-29` | developer | `RPP-0205`, `RPP-0206`, `RPP-0207`, `RPP-0210`, and `RPP-0215` are represented by pushed or integrated evidence; current visible work is `RPP-0211` mutation/precondition mapping. |
-| `rpp-30` | developer | `RPP-0310` post_tag taxonomy graph evidence is integrated; newer graph candidates remain branch-local until tested and integrated. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `78323671d`. |
-| `rpp-32` | developer | Docker/local-production release-gate artifact work and `RPP-0414` stale plugin metadata owner evidence are integrated; newer plugin-driver candidates remain branch-local until tested and integrated. |
-| `rpp-34` | completed candidate | `RPP-0421` driver registration API proof is integrated; any newer branch-local plugin-driver work is not counted until tested and integrated. |
+| `rpp-24` | developer | Integrated harness items stop at `RPP-0112`; `RPP-0113` has a session ref and `RPP-0118` is active local work, both branch-local. |
+| `rpp-25` | developer | Integrated release-gate items stop at `RPP-0040`; `RPP-0041` through `RPP-0045` have session refs and remain branch-local. |
+| `rpp-36` | progress reporter | Heartbeat after lane head `67d50f384`; no branch-local claims counted. |
+| `rpp-28` | integrator | `RPP-0421` is now integrated on origin/lane; counts are 110 checked / 890 open while release remains `NO-GO`. |
+| `rpp-29` | developer | Integrated merge-invariant items stop at `RPP-0215`; `RPP-0216` through `RPP-0219` have session refs and `RPP-0221` is active local work. |
+| `rpp-30` | developer | Integrated graph evidence includes `RPP-0310`; `RPP-0315`, `RPP-0322`, `RPP-0323`, and active `RPP-0326` remain branch-local. |
+| `rpp-31` | critic | Critic lane checks queued/session refs after `67d50f384`. |
+| `rpp-32` | developer | Integrated plugin-driver evidence includes `RPP-0421`; `RPP-0415` has session refs and `RPP-0427` is active local work. |
+| `rpp-34` | developer | `RPP-0421` is integrated; `RPP-0425`, `RPP-0426`, and active `RPP-0431` remain branch-local. |
+| `rpp-33` | developer | `RPP-0115` and `RPP-0116` have session refs; newer local work is not lane-counted. |
+| `rpp-35` | integration-prep | Present but not a counted evidence source. |
+| `rpp-37` | critic | Independent queue/roster critic branch is visible. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
-| `rpp-10` through `rpp-23`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
+| `rpp-10` through `rpp-23`, `rpp-26`, `rpp-27` | stale/prior | Old or superseded interactive panes are counted only where their output is integrated above. |
 | `rpp-1` | pushed branch `b885aa8b9` | Release-gate extended coverage is represented in the integration branch by `ab0340786`; do not count additional branch-local state. |
 | `rpp-2` | pushed branch `5dc081ea9` | Recovery work is represented in the integration branch by `1362ccb6c`; do not count additional branch-local state. |
 | `rpp-3` | pushed branch `de51768a5` | Graph identity work is represented in the integration branch by `577c74282`; do not count additional branch-local state. |
@@ -363,10 +370,28 @@ branch.
 | `rpp-6` | pushed branch `9440daf3e` | Chunk benchmark gate work is represented in the integration branch by `4d5c96d78`; do not count additional branch-local state. |
 | `rpp-7` / `rpp-8` | pushed audit branches | Independent and critic audit evidence is represented in the integration branch by `05050392b`; do not count additional branch-local state. |
 | `rpp-9` | pushed branch `dcc23dc2a` | Prior progress evidence visible; branch-local until integrated. |
-| `rpp-orchestrator` | supervisor | tmux-visible supervisor pane. |
 
 Untracked AO scratch directories observed in some worker trees remain excluded
 from evidence and must not be committed.
+
+## Queued / Session-Only Branches Not Counted
+
+Origin/lane moved to include `RPP-0421`; lane truth is now `67d50f384`, 110
+checked, 890 open, release **NO-GO**. The table below is queue/roster tracking
+only and does not change those counts.
+
+| Slice | Visible ref / session | Heartbeat posture |
+| --- | --- | --- |
+| `RPP-0041`-`RPP-0045` | `746390195`, `50a4f74b1`, `bd7eddedb`, `872148a91`, `8d077a1fd` | release-gate session refs, not lane-counted |
+| `RPP-0113`-`RPP-0116` | `783955083`, `a1d96509b`, `8e26f0cd9`, `7e7257d3f` | generated-harness session refs, not lane-counted |
+| `RPP-0118` | `rpp-24` local branch | active local branch, not lane-counted |
+| `RPP-0216`-`RPP-0219` | `311d3b553`, `0353945a9`, `50b86455c`, `5edc2c34f` | merge-invariant session refs, not lane-counted |
+| `RPP-0221` | `rpp-29` local branch | active local branch, not lane-counted |
+| `RPP-0315`, `RPP-0322`, `RPP-0323` | `aaa3328b3`, `6c54eea48`, `d59514ff6` | graph session refs, not lane-counted |
+| `RPP-0326` | `rpp-30` local branch | active local branch, not lane-counted |
+| `RPP-0415` | `92c3ea862` / `cbf5a1a85` | plugin-driver session refs, not lane-counted |
+| `RPP-0425` / `RPP-0426` | `1b010a83f`, `034f7936d` | plugin-driver session refs, not lane-counted |
+| `RPP-0427` / `RPP-0431` | `rpp-32` / `rpp-34` local branches | active local branches, not lane-counted |
 
 ## Current Missing Gates
 

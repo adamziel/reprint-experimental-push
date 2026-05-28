@@ -1,9 +1,26 @@
 # Supervisor Feedback
 
-Last updated: 2026-05-28 06:04 CEST
+Last updated: 2026-05-28 06:09 CEST
 
 This is the short feedback loop for the supervisor. Keep it focused on what
 changed, what is helping, what is not helping, and the next nudge.
+
+## 2026-05-28 06:09 CEST - Queue and Roster Heartbeat
+
+- Going well: origin/lane is now `67d50f384`, so `RPP-0421` is counted from
+  lane truth. Counts are 110 verified items checked and 890 open, and release
+  status remains `NO-GO`.
+- Queue separation: session refs exist for `RPP-0041`-`RPP-0045`,
+  `RPP-0113`-`RPP-0116`, `RPP-0216`-`RPP-0219`, `RPP-0315`, `RPP-0322`,
+  `RPP-0323`, `RPP-0415`, `RPP-0425`, and `RPP-0426`; active local work
+  includes `RPP-0118`, `RPP-0221`, `RPP-0326`, `RPP-0427`, and `RPP-0431`.
+  None of those move the lane counts in this heartbeat.
+- Live roster: tmux still shows developer work in `rpp-24`, `rpp-25`,
+  `rpp-29`, `rpp-30`, `rpp-32`, `rpp-33`, and `rpp-34`, critic lanes
+  `rpp-31` and `rpp-37`, progress reporter `rpp-36`, integrator `rpp-28`,
+  integration-prep `rpp-35`, and the local AO lifecycle/web/supervisor panes.
+- Current nudge: keep watching for the next origin/lane move; refresh counts
+  only after the lane actually changes.
 
 ## 2026-05-28 06:04 CEST - RPP-0421 Integrated
 
