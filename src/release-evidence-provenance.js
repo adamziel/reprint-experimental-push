@@ -5,6 +5,7 @@ const FUTURE_CLOCK_SKEW_MS = 60_000;
 export const RELEASE_EVIDENCE_PROVENANCE_REASON_CODES = deepFreeze({
   evidenceIdRequired: 'EVIDENCE_ID_REQUIRED',
   rppIdRequired: 'RPP_ID_REQUIRED',
+  productionEvidenceRequired: 'PRODUCTION_EVIDENCE_REQUIRED',
   observedAtRequired: 'OBSERVED_AT_REQUIRED',
   observedAtInvalid: 'OBSERVED_AT_INVALID',
   observedAtInFuture: 'OBSERVED_AT_IN_FUTURE',
@@ -69,6 +70,7 @@ export const RELEASE_EVIDENCE_PROVENANCE_CONTRACT = deepFreeze({
 const REASON_CODE_ORDER = Object.freeze([
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.evidenceIdRequired,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.rppIdRequired,
+  RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.productionEvidenceRequired,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.observedAtRequired,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.observedAtInvalid,
   RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.observedAtInFuture,
@@ -89,6 +91,7 @@ const CHECKED_COMMAND_STATUSES = new Set(RELEASE_EVIDENCE_PROVENANCE_COMMAND_STA
 
 export function validateReleaseEvidenceProvenance(input = {}, options = {}) {
   const rows = evidenceRows(input);
+  const requiredProductionEvidence = productionEvidenceRequirements(input, options);
   const now = normalizeNow(firstDefined(options.now, input?.referenceNow, input?.now));
   const maxEvidenceAgeHours = normalizePositiveNumber(
     firstDefined(options.maxEvidenceAgeHours, input?.maxEvidenceAgeHours),
@@ -99,11 +102,21 @@ export function validateReleaseEvidenceProvenance(input = {}, options = {}) {
     nowIso: now.iso,
     maxEvidenceAgeHours,
     maxEvidenceAgeMs: maxEvidenceAgeHours * 60 * 60 * 1000,
-    productionRequiredEvidenceIds: stringSet(firstDefined(options.productionRequiredEvidenceIds, input?.productionRequiredEvidenceIds)),
-    productionRequiredRppIds: stringSet(firstDefined(options.productionRequiredRppIds, input?.productionRequiredRppIds)),
+    requiredProductionEvidence,
+    productionRequiredEvidenceIds: stringSet([
+      ...requiredProductionEvidence.map((requirement) => requirement.evidenceId),
+      ...arrayValue(firstDefined(options.productionRequiredEvidenceIds, input?.productionRequiredEvidenceIds)),
+    ]),
+    productionRequiredRppIds: stringSet([
+      ...requiredProductionEvidence.map((requirement) => requirement.rppId),
+      ...arrayValue(firstDefined(options.productionRequiredRppIds, input?.productionRequiredRppIds)),
+    ]),
   };
 
-  const rowResults = rows.map((row, index) => validateProvenanceRow(row, index, context));
+  const rowResults = [
+    ...rows.map((row, index) => validateProvenanceRow(row, index, context)),
+    ...missingRequiredProductionEvidenceResults(context.requiredProductionEvidence, rows),
+  ];
   const acceptedRows = rowResults
     .filter((result) => result.reasonCodes.length === 0)
     .sort(compareEvidenceResults);
@@ -134,6 +147,7 @@ export function validateReleaseEvidenceProvenance(input = {}, options = {}) {
       accepted: productionRequiredAccepted,
       rejected: productionRequiredRejected,
     },
+    requiredProductionEvidenceIds: context.requiredProductionEvidence.map((requirement) => requirement.evidenceId),
     counts: {
       total: rowResults.length,
       accepted: acceptedRows.length,
@@ -145,6 +159,23 @@ export function validateReleaseEvidenceProvenance(input = {}, options = {}) {
       },
     },
   });
+}
+
+export function releaseGateProvenanceRequirements(evaluationOrGates, options = {}) {
+  const gates = Array.isArray(evaluationOrGates)
+    ? evaluationOrGates
+    : (Array.isArray(evaluationOrGates?.gates) ? evaluationOrGates.gates : []);
+  const category = normalizeString(options.category || 'operator-proof');
+  return deepFreeze(gates
+    .filter((gate) => gate && normalizeString(gate.category) === category)
+    .map((gate) => ({
+      evidenceId: `release-gate:${gate.id}`,
+      rppId: normalizeString(gate.rpp),
+      gateId: normalizeString(gate.id),
+      title: normalizeString(gate.title),
+      productionRequired: true,
+    }))
+    .sort((left, right) => compareStrings(left.rppId, right.rppId) || compareStrings(left.evidenceId, right.evidenceId)));
 }
 
 function validateProvenanceRow(row, index, context) {
@@ -187,6 +218,39 @@ function validateProvenanceRow(row, index, context) {
     productionRequired,
     reasonCodes: orderReasonCodes(reasonCodes),
   };
+}
+
+function missingRequiredProductionEvidenceResults(requiredProductionEvidence, rows) {
+  if (requiredProductionEvidence.length === 0) {
+    return [];
+  }
+
+  const presentEvidenceIds = new Set();
+  const presentRppIds = new Set();
+  for (let index = 0; index < rows.length; index += 1) {
+    const normalized = normalizeRow(rows[index], index);
+    if (normalized.evidenceId) {
+      presentEvidenceIds.add(normalized.evidenceId);
+    }
+    if (normalized.rppId) {
+      presentRppIds.add(normalized.rppId);
+    }
+  }
+
+  return requiredProductionEvidence
+    .filter((requirement) => {
+      if (requirement.evidenceId) {
+        return !presentEvidenceIds.has(requirement.evidenceId);
+      }
+      return requirement.rppId && !presentRppIds.has(requirement.rppId);
+    })
+    .map((requirement) => ({
+      evidenceId: requirement.evidenceId || `${requirement.rppId}:production-evidence`,
+      rppId: requirement.rppId || 'unknown-rpp',
+      artifactSortKey: '',
+      productionRequired: true,
+      reasonCodes: [RELEASE_EVIDENCE_PROVENANCE_REASON_CODES.productionEvidenceRequired],
+    }));
 }
 
 function normalizeRow(row, index) {
@@ -265,6 +329,71 @@ function evidenceRows(input) {
     }
   }
   return [];
+}
+
+function productionEvidenceRequirements(input, options) {
+  const requirements = [];
+  appendProductionEvidenceRequirements(
+    requirements,
+    firstDefined(options.requiredProductionEvidence, input?.requiredProductionEvidence),
+  );
+
+  for (const evidenceId of arrayValue(firstDefined(options.productionRequiredEvidenceIds, input?.productionRequiredEvidenceIds))) {
+    appendProductionEvidenceRequirements(requirements, { evidenceId });
+  }
+
+  for (const rppId of arrayValue(firstDefined(options.productionRequiredRppIds, input?.productionRequiredRppIds))) {
+    appendProductionEvidenceRequirements(requirements, { rppId });
+  }
+
+  const byKey = new Map();
+  for (const requirement of requirements) {
+    const key = requirement.evidenceId || `rpp:${requirement.rppId}`;
+    if (!byKey.has(key)) {
+      byKey.set(key, requirement);
+    }
+  }
+  return [...byKey.values()].sort(
+    (left, right) => compareStrings(left.rppId, right.rppId) || compareStrings(left.evidenceId, right.evidenceId),
+  );
+}
+
+function appendProductionEvidenceRequirements(requirements, value) {
+  if (value === undefined || value === null || value === false) {
+    return;
+  }
+  if (typeof value === 'string') {
+    const evidenceId = normalizeString(value);
+    if (!evidenceId) {
+      return;
+    }
+    requirements.push({
+      evidenceId,
+      rppId: rppIdFromEvidenceId(evidenceId),
+      productionRequired: true,
+    });
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      appendProductionEvidenceRequirements(requirements, entry);
+    }
+    return;
+  }
+  if (isObject(value)) {
+    const evidenceId = normalizeString(firstDefined(value.evidenceId, value.id));
+    const rppId = normalizeString(firstDefined(value.rppId, value.rpp, value.rpp_id, rppIdFromEvidenceId(evidenceId)));
+    if (!evidenceId && !rppId) {
+      return;
+    }
+    requirements.push({
+      evidenceId: evidenceId || `${rppId}:production-evidence`,
+      rppId,
+      gateId: normalizeString(value.gateId),
+      title: normalizeString(value.title),
+      productionRequired: true,
+    });
+  }
 }
 
 function artifactValuesForRow(row) {
@@ -361,10 +490,7 @@ function normalizePositiveNumber(value, fallback) {
 }
 
 function stringSet(value) {
-  if (!Array.isArray(value)) {
-    return new Set();
-  }
-  return new Set(value.map(normalizeString).filter(Boolean));
+  return new Set(arrayValue(value).map(normalizeString).filter(Boolean));
 }
 
 function normalizeString(value) {
@@ -403,6 +529,21 @@ function firstDefined(...values) {
     }
   }
   return undefined;
+}
+
+function arrayValue(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value === undefined || value === null) {
+    return [];
+  }
+  return [value];
+}
+
+function rppIdFromEvidenceId(evidenceId) {
+  const match = normalizeString(evidenceId).match(/RPP-\d{4}/);
+  return match ? match[0] : '';
 }
 
 function deepFreeze(value) {

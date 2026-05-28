@@ -1,16 +1,19 @@
 # AO release evidence provenance
 
 Date: 2026-05-28
-Lane: release-evidence-provenance
+Lane: provenance-release-gate-wiring
 Primary checklist evidence IDs: RPP-0017, RPP-0018, RPP-0019, RPP-0020
 
 ## What changed
 
 - Added `src/release-evidence-provenance.js`, a standalone deterministic validator for release evidence rows and artifacts.
+- Added `releaseGateProvenanceRequirements()`, a deterministic adapter that maps release-gate operator-proof gates to required production evidence IDs.
 - Added `fixtures/protocol/push-release-evidence-provenance-contract.json`, a machine-readable contract with accepted and rejected cases.
 - Added `test/release-evidence-provenance.test.js` to pin fixture behavior, stable ordering, production-required counts, and reason-code ordering.
+- Wired `scripts/release/check-release-gates.mjs` to run the provenance validator before returning a release `GO`.
+- Added focused CLI coverage proving synthetic final-release JSON without provenance, stale provenance, and local-only production-required provenance remain release `NO-GO`.
 
-This is intentionally **not wired into `src/release-gates.js` yet**. The new validator is a contract and library surface that release gates can consume later after an integration test proves the handoff.
+This is intentionally **not wired into `src/release-gates.js` internals yet**. The central CLI now enforces provenance for the operator-proof release gates when `evaluateReleaseGates()` would otherwise allow release movement. That keeps the core gate evaluator stable while preventing the release CLI from treating synthetic final-release JSON as production-ready.
 
 ## Contract fields
 
@@ -34,6 +37,7 @@ Each evidence row is expected to carry:
 The validator rejects rows with deterministic reason codes for the release-critical cases:
 
 - `OBSERVED_AT_REQUIRED` — no observation timestamp was supplied.
+- `PRODUCTION_EVIDENCE_REQUIRED` — a required production evidence row is absent.
 - `OBSERVED_AT_STALE` — the timestamp is older than the configured evidence age window.
 - `PRODUCTION_SOURCE_REQUIRED` — a production-required row used local/generated source provenance or non-production operator scope.
 - `SUBJECT_HASH_REQUIRED` — no subject digest binds the row to the checked subject.
@@ -42,6 +46,21 @@ The validator rejects rows with deterministic reason codes for the release-criti
 - `COMMAND_STATUS_UNCHECKED` — the command/status pair is missing or not a checked terminal status.
 
 Additional malformed-field codes exist for invalid IDs, timestamps, hashes, or missing artifact paths, but the fixture focuses on the release gate provenance failures above.
+
+## Release-gate CLI handoff
+
+`scripts/release/check-release-gates.mjs` now imports the provenance validator. When the release gate evaluator reports `releaseMovement.allowed: true`, the CLI requires production provenance for these operator-proof gates:
+
+| Gate | Required provenance ID |
+| --- | --- |
+| `tmux-status-marker` | `release-gate:tmux-status-marker` |
+| `progress-release-timestamp` | `release-gate:progress-release-timestamp` |
+| `agents-release-gates-row` | `release-gate:agents-release-gates-row` |
+| `verify-release-failure-reason` | `release-gate:verify-release-failure-reason` |
+
+The release-gate evidence file may supply rows under `releaseEvidenceProvenance.evidenceRows`. If those rows are missing, stale, local-only, missing subject hashes, raw URLs, secret-looking artifact references, or unchecked command statuses, the CLI exits nonzero with `releaseStatus: "NO-GO"` and a `provenance` bucket in `missingProductionEvidenceBuckets`.
+
+This path is deliberately narrower than a full `src/release-gates.js` merge: it covers operator-supplied artifact evidence first and does not claim production readiness for topology, auth, route, or recovery gates beyond the existing release-gate evaluator.
 
 ## Summary shape
 
@@ -83,8 +102,10 @@ Additional malformed-field codes exist for invalid IDs, timestamps, hashes, or m
 
 ```sh
 node --check src/release-evidence-provenance.js
+node --check scripts/release/check-release-gates.mjs
 node --test test/release-evidence-provenance.test.js
+node --test test/release-gate-cli.test.js
 git diff --check
 ```
 
-The fixture contract is intentionally small and deterministic. It does not claim live production evidence exists; it defines how such evidence must be identified before release gates can accept it.
+The fixture contract is intentionally small and deterministic. It does not claim live production evidence exists; it defines how such evidence must be identified before the release-gate CLI can return `GO`.
