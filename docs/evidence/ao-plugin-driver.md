@@ -101,12 +101,35 @@ table names are asserted absent from the focused evidence. This is local focused
 plugin-driver evidence only, not production-backed evidence, and the release gate
 remains NO-GO.
 
+## RPP-0469 activation dependency validator
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0469|redacts raw plugin dependency metadata|executor rejects forged ready atomic plugin plans before mutation' test/push-planner.test.js
+```
+
+RPP-0469 adds a local-only plugin activation dependency proof. The accepted
+case activates the dependent fixture plugin only when the required dependency
+plugin is carried in the same atomic group with explicit version, active-state,
+and hash evidence. A mismatched active-state requirement blocks the plan before
+apply, and a forged ready plan with dependency evidence removed fails closed
+before mutation.
+
+The proof envelope is hash-only and redacted: dependency requirement hashes,
+mutation hashes, refusal-detail hashes, and remote-preservation hashes are
+recorded, while raw dependency envelopes and credentials are asserted absent.
+This is not production-backed evidence, and the release state remains NO-GO.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
 - RPP-0403 / RPP-0423 — custom table allowlist exact match: accepted production table is singular; extra arbitrary custom table mutations block the proof.
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
+- RPP-0469 — activation dependency validator: local-only atomic plugin activation
+  proof carries a valid dependency through apply and refuses mismatched or
+  forged dependency evidence before mutation with hash-only evidence.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
 - RPP-0438 — driver apply validation hook: accepted fixture driver evidence
   carries one real mutation through apply, and forged driver evidence fails
