@@ -6,9 +6,11 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 04:48 CEST.
-- Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `35d8d4601` (`test: prove dry run route eligibility gate`).
+- Last update: 2026-05-28 04:53 CEST.
+- Integrated evidence branch: `lane/evidence-integration-20260527` at
+  `543a4376a` (`docs: refresh progress for dry run route proof`). The latest
+  integrated proof commit behind that docs head is `35d8d4601` (`test: prove
+  dry run route eligibility gate`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -53,10 +55,19 @@ linked implementation artifacts.
   same source URL identity proof with a final bracketed status marker and
   mutation-free CLI failure path.
 - Preflight and dry-run route continuation: `c382b091f`/`d400b1fe1` integrated
-  `RPP-0031` preflight route identity drift proof, and `35d8d4601` integrated
-  `RPP-0032` dry-run route eligibility proof. Both run
+  `RPP-0031` preflight route identity drift proof, and `35d8d4601`/`543a4376a`
+  integrated and documented `RPP-0032` dry-run route eligibility proof. Both run
   `check-release-gates` from fixture evidence, exit nonzero with the named
   route failure code, and record `mutationAttempted: false`.
+- Pushed-only candidates observed after `543a4376a`: `RPP-0033` apply route
+  pre-mutation proof at `806fadd230`, `RPP-0106` wp_options serialized generated
+  coverage at `39a10a5378`, `RPP-0207` plugin-data stale owner coverage at
+  `aa35083702`, `RPP-0309` category term taxonomy reference coverage at
+  `0e2e31b881`, and `RPP-0407` wp_usermeta driver semantics at `5d4e67b191`.
+  Newer pane-observed outputs (`RPP-0107` `7e26f4e843`, `RPP-0034`
+  `329552c0a5`, `RPP-0208` `7688d324bd`, and `RPP-0411` `89ecee8610`) are also
+  branch-local. None of these branch-local claims changes checklist counts or
+  final release status until an integrator lands exact evidence.
 - Current AO team from tmux includes active developers `rpp-24`, `rpp-25`,
   `rpp-29`, `rpp-30`, and `rpp-32`, integrator `rpp-28`, critic `rpp-31`,
   progress reporter `rpp-26`, visible supervisor `rpp-orchestrator`,

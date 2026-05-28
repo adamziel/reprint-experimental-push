@@ -1,12 +1,13 @@
-# AO Progress Report - 2026-05-28 04:48 CEST
+# AO Progress Report - 2026-05-28 04:53 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through
-`35d8d4601` (`test: prove dry run route eligibility gate`). It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`lane/evidence-integration-20260527` at `543a4376a`
+(`docs: refresh progress for dry run route proof`). The latest integrated proof
+commit behind that docs head is `35d8d4601` (`test: prove dry run route
+eligibility gate`). This report separates committed proof from visible AO worker
+output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
@@ -236,18 +237,23 @@ here.
 Integrated evidence is counted only from `lane/evidence-integration-20260527`.
 The following worker outputs are visible but are **not** counted as final release
 readiness until reviewed, tested, integrated, and pushed to the integration
-branch.
+branch. At this inspection point, official pushed-only candidates include
+`RPP-0033` at `806fadd230`, `RPP-0106` at `39a10a5378`, `RPP-0207` at
+`aa35083702`, and `RPP-0407` at `5d4e67b191`; `RPP-0309` at `0e2e31b881` is
+also visible as branch-local graph evidence. Newer pane/remote observations
+(`RPP-0107` `7e26f4e843`, `RPP-0034` `329552c0a5`, `RPP-0208` `7688d324bd`,
+and `RPP-0411` `89ecee8610`) are likewise branch-local and not counted.
 
 | Lane | Role / state | Visible evidence posture |
 | --- | --- | --- |
-| `rpp-24` | developer | `RPP-0101` through `RPP-0104` are integrated; `RPP-0106` wp_options serialized generated coverage is pushed branch-local and not counted yet. |
-| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, and `RPP-0032` are integrated; current visible work is `RPP-0033` apply route pre-mutation proof. |
-| `rpp-26` | progress reporter | Monitoring after the lane advanced through `35d8d4601`. |
-| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, and `RPP-0032`; now evaluating the next completed branch one at a time. |
-| `rpp-29` | developer | `RPP-0205` and `RPP-0206` are pushed branch-local; current visible work is `RPP-0207` plugin-data stale owner coverage. |
-| `rpp-30` | developer | `RPP-0307` and `RPP-0308` are pushed branch-local; current visible work is `RPP-0309` category term taxonomy reference coverage. |
-| `rpp-31` | critic | Auditing candidate branch merge risks after `35d8d4601`. |
-| `rpp-32` | developer | Docker/local-production release-gate artifact work is integrated; `RPP-0405` and `RPP-0406` are pushed branch-local and current visible work is `RPP-0407` wp_usermeta driver semantics. |
+| `rpp-24` | developer | `RPP-0101` through `RPP-0104` are integrated; `RPP-0106` wp_options serialized generated coverage is pushed branch-local at `39a10a5378` and not counted yet. The pane also reports newer `RPP-0107` work at `7e26f4e843`, also branch-local. |
+| `rpp-25` | developer | `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, and `RPP-0032` are integrated; `RPP-0033` apply route pre-mutation proof is pushed branch-local at `806fadd230`. The pane also reports newer `RPP-0034` journal route read-only work at `329552c0a5`, not counted. |
+| `rpp-26` | progress reporter | Monitoring after the lane advanced to `543a4376a`, keeping `RPP-0032` integrated and later candidates branch-local until integration. |
+| `rpp-28` | integrator | Integrated checklist linter, provenance wiring, required checks, `RPP-0101` through `RPP-0104`, `RPP-0026`, `RPP-0028`, `RPP-0030`, `RPP-0031`, and `RPP-0032`; now evaluating queued candidates one at a time, with `RPP-0033` visible in the pane during this inspection. |
+| `rpp-29` | developer | `RPP-0205` and `RPP-0206` are pushed branch-local; `RPP-0207` plugin-data stale owner coverage is pushed branch-local at `aa35083702`. The pane also reports newer `RPP-0208` unknown plugin resource refusal at `7688d324bd`, not counted. |
+| `rpp-30` | developer | `RPP-0307` and `RPP-0308` are pushed branch-local; `RPP-0309` category term taxonomy reference coverage is pushed branch-local at `0e2e31b881` and not counted. |
+| `rpp-31` | critic | Auditing candidate branch merge risks after lane head `543a4376a`. |
+| `rpp-32` | developer | Docker/local-production release-gate artifact work is integrated; `RPP-0405` and `RPP-0406` are pushed branch-local, and `RPP-0407` wp_usermeta driver semantics is pushed branch-local at `5d4e67b191`. The pane also reports newer `RPP-0411` plugin uninstall-delete refusal at `89ecee8610`, not counted. |
 | `rpp-ao-lifecycle` / `rpp-ao-web` | AO lifecycle | Visible tmux sessions run lightweight AO registry watchdog PID `2142025` and the restarted local AO web process; dashboard and tmux sessions respond locally on port 8080. |
 | `rpp-orchestrator` | supervisor | tmux-visible supervisor pane keeping workers assigned and branch-local claims out of readiness. |
 | `rpp-10` through `rpp-23`, `rpp-27` | stale/completed | Old interactive panes were killed/archived; their pushed evidence is counted only where integrated above. |
