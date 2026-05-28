@@ -1893,6 +1893,201 @@ test('RPP-0439 driver audit evidence is hash-only and stale apply preserves plug
   }
 });
 
+test('RPP-0464 wp-options driver semantics update safely and preserve drifted remote data', () => {
+  const resourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const resource = {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:forms_settings',
+    key: resourceKey,
+  };
+  const privateValues = [
+    'rpp0464-base-private-option-mode',
+    'rpp0464-local-private-option-mode',
+    'rpp0464-remote-drift-private-option-mode',
+  ];
+  const base = baseSite();
+  base.db.wp_options['option_name:forms_settings'].option_value = {
+    mode: privateValues[0],
+    semantics: 'base',
+  };
+  const local = cloneJson(base);
+  local.db.wp_options['option_name:forms_settings'].option_value = {
+    mode: privateValues[1],
+    semantics: 'local',
+  };
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-option'),
+    ),
+  };
+  const remote = cloneJson(base);
+
+  const plan = planFor(base, local, remote);
+  const mutation = mutationFor(plan, resourceKey);
+  const auditEvidence = mutation.pluginOwnedResource.auditEvidence;
+  const appliedRemote = cloneJson(remote);
+  const applied = applyPlan(appliedRemote, plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.resource.table, 'wp_options');
+  assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, false);
+  assert.equal(auditEvidence.evidenceSource, 'planner-plugin-driver-audit');
+  assert.equal(auditEvidence.format, 'hash-only');
+  assert.equal(auditEvidence.rawValuesIncluded, false);
+  assert.equal(auditEvidence.resourceKey, resourceKey);
+  assert.equal(auditEvidence.pluginOwner, 'forms');
+  assert.equal(auditEvidence.driver, 'wp-option');
+  assert.equal(auditEvidence.baseHash, mutation.baseHash);
+  assert.equal(auditEvidence.localHash, mutation.localHash);
+  assert.equal(auditEvidence.remoteHash, mutation.remoteBeforeHash);
+  assert.match(auditEvidence.ownerContextHash, /^[a-f0-9]{64}$/);
+  assert.equal(applied.appliedMutations, 1);
+  assert.deepEqual(
+    applied.site.db.wp_options['option_name:forms_settings'].option_value,
+    local.db.wp_options['option_name:forms_settings'].option_value,
+  );
+
+  const driftedRemote = cloneJson(remote);
+  driftedRemote.db.wp_options['option_name:forms_settings'].option_value = {
+    mode: privateValues[2],
+    semantics: 'remote-drift',
+  };
+  const driftedRowBeforeHash = `sha256:${resourceHash(driftedRemote, resource)}`;
+  const driftedRemoteBeforeHash = sha256Evidence(driftedRemote);
+  const driftedError = captureError(() => applyPlan(driftedRemote, plan));
+
+  assert.ok(driftedError instanceof PushPlanError);
+  assert.equal(driftedError.code, 'PRECONDITION_FAILED');
+  assert.deepEqual(driftedError.details, {
+    resourceKey,
+    expectedHash: mutation.remoteBeforeHash,
+    actualHash: driftedRowBeforeHash.slice('sha256:'.length),
+  });
+  assert.deepEqual(
+    driftedRemote.db.wp_options['option_name:forms_settings'].option_value,
+    { mode: privateValues[2], semantics: 'remote-drift' },
+  );
+  assert.equal(`sha256:${resourceHash(driftedRemote, resource)}`, driftedRowBeforeHash);
+  assert.equal(sha256Evidence(driftedRemote), driftedRemoteBeforeHash);
+
+  const wrongDriverLocal = cloneJson(base);
+  wrongDriverLocal.db.wp_options['option_name:forms_settings'].option_value = {
+    mode: privateValues[1],
+    semantics: 'wrong-driver-local',
+  };
+  wrongDriverLocal.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(resourceKey, 'forms', 'wp-postmeta'),
+    ),
+  };
+  const wrongDriverRemote = cloneJson(base);
+  const wrongDriverBeforeHash = sha256Evidence(wrongDriverRemote);
+  const wrongDriverPlan = planFor(base, wrongDriverLocal, wrongDriverRemote);
+  const wrongDriverBlocker = wrongDriverPlan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const wrongDriverError = captureError(() => applyPlan(wrongDriverRemote, wrongDriverPlan));
+
+  assert.equal(wrongDriverPlan.status, 'blocked');
+  assert.equal(wrongDriverPlan.summary.mutations, 0);
+  assert.equal(mutationFor(wrongDriverPlan, resourceKey), undefined);
+  assert.equal(wrongDriverBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(wrongDriverBlocker.pluginOwner, 'forms');
+  assert.equal(wrongDriverBlocker.driver, 'wp-postmeta');
+  assert.equal(wrongDriverBlocker.resourceKey, resourceKey);
+  assert.match(wrongDriverBlocker.reason, /driver does not match/);
+  assert.ok(wrongDriverError instanceof PushPlanError);
+  assert.equal(wrongDriverError.code, 'PLAN_NOT_READY');
+  assert.equal(wrongDriverError.details.status, 'blocked');
+  assert.equal(sha256Evidence(wrongDriverRemote), wrongDriverBeforeHash);
+  assert.deepEqual(
+    wrongDriverRemote.db.wp_options['option_name:forms_settings'].option_value,
+    base.db.wp_options['option_name:forms_settings'].option_value,
+  );
+
+  const evidence = {
+    rpp: 'RPP-0464',
+    evidenceSource: 'local-focused-plugin-driver-test',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    rawValuesIncluded: false,
+    acceptedWpOptionsUpdate: {
+      planHash: sha256Evidence({ status: plan.status, summary: plan.summary }),
+      mutationHash: sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        table: mutation.resource.table,
+        pluginOwner: mutation.pluginOwnedResource.pluginOwner,
+        driver: mutation.pluginOwnedResource.driver,
+        supportsDelete: mutation.pluginOwnedResource.supportsDelete,
+      }),
+      auditEvidenceHash: sha256Evidence(auditEvidence),
+      journalHash: sha256Evidence(applied.journal),
+    },
+    driftPreservation: {
+      code: driftedError.code,
+      detailsHash: sha256Evidence(driftedError.details),
+      rowHashBefore: driftedRowBeforeHash,
+      rowHashAfter: `sha256:${resourceHash(driftedRemote, resource)}`,
+      remoteHashBefore: driftedRemoteBeforeHash,
+      remoteHashAfter: sha256Evidence(driftedRemote),
+    },
+    wrongDriverRefusal: {
+      code: wrongDriverError.code,
+      blockerHash: sha256Evidence(wrongDriverBlocker),
+      detailsHash: sha256Evidence(wrongDriverError.details),
+      remoteHashBefore: wrongDriverBeforeHash,
+      remoteHashAfter: sha256Evidence(wrongDriverRemote),
+    },
+  };
+  evidence.proofHash = sha256Evidence({
+    acceptedWpOptionsUpdate: evidence.acceptedWpOptionsUpdate,
+    driftPreservation: evidence.driftPreservation,
+    wrongDriverRefusal: evidence.wrongDriverRefusal,
+  });
+
+  for (const value of [
+    evidence.acceptedWpOptionsUpdate.planHash,
+    evidence.acceptedWpOptionsUpdate.mutationHash,
+    evidence.acceptedWpOptionsUpdate.auditEvidenceHash,
+    evidence.acceptedWpOptionsUpdate.journalHash,
+    evidence.driftPreservation.detailsHash,
+    evidence.driftPreservation.rowHashBefore,
+    evidence.driftPreservation.rowHashAfter,
+    evidence.driftPreservation.remoteHashBefore,
+    evidence.driftPreservation.remoteHashAfter,
+    evidence.wrongDriverRefusal.blockerHash,
+    evidence.wrongDriverRefusal.detailsHash,
+    evidence.wrongDriverRefusal.remoteHashBefore,
+    evidence.wrongDriverRefusal.remoteHashAfter,
+    evidence.proofHash,
+  ]) {
+    assert.match(value, /^sha256:[a-f0-9]{64}$/);
+  }
+  assert.equal(evidence.driftPreservation.rowHashAfter, evidence.driftPreservation.rowHashBefore);
+  assert.equal(evidence.driftPreservation.remoteHashAfter, evidence.driftPreservation.remoteHashBefore);
+  assert.equal(evidence.wrongDriverRefusal.remoteHashAfter, evidence.wrongDriverRefusal.remoteHashBefore);
+
+  const serializedEvidence = JSON.stringify(evidence);
+  const serializedAudit = JSON.stringify(auditEvidence);
+  const serializedJournal = JSON.stringify(applied.journal);
+  const serializedRefusals = JSON.stringify({ wrongDriverBlocker, driftedDetails: driftedError.details });
+  for (const rawValue of privateValues) {
+    assert.equal(serializedEvidence.includes(rawValue), false, `RPP-0464 evidence leaked ${rawValue}`);
+    assert.equal(serializedAudit.includes(rawValue), false, `RPP-0464 audit leaked ${rawValue}`);
+    assert.equal(serializedJournal.includes(rawValue), false, `RPP-0464 journal leaked ${rawValue}`);
+    assert.equal(serializedRefusals.includes(rawValue), false, `RPP-0464 refusal leaked ${rawValue}`);
+  }
+});
+
 test('blocks plugin-owned resources when the declared driver does not match the table', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:7"]';
   const base = baseSite();

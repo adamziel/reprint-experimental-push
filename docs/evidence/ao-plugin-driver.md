@@ -76,6 +76,32 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0464 wp_options driver semantics focused regression
+
+Focused local verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0464|RPP-0439|plugin-owned option rows|plugin-owned data' test/push-planner.test.js
+```
+
+The RPP-0464 focused proof exercises the `wp-option` plugin-data driver against
+a plugin-owned `wp_options` row. The accepted path requires owner `forms`, table
+`wp_options`, driver `wp-option`, and `supportsDelete: false`; it applies one
+option-row update and records only hash/redacted plan, mutation, audit, and
+journal evidence.
+
+Fail-closed coverage proves the driver semantics in two negative cases. If the
+same resource is declared with driver `wp-postmeta`, the planner emits an
+`unsupported-plugin-owned-resource` blocker and no mutation. If the remote
+`wp_options` row drifts after the dry-run plan, apply refuses with
+`PRECONDITION_FAILED` before mutation and the remote row/full-remote hashes are
+unchanged. The proof asserts raw plugin-owned option values are absent from the
+audit, journal, blocker/refusal, and combined proof evidence.
+
+This is local focused plugin-driver evidence, not production-backed evidence.
+It preserves the release NO-GO caveat and does not widen accepted production
+plugin-driver resources.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +115,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0464 — wp_options driver semantics: `wp-option` applies exactly one
+  plugin-owned option-row update with hash-only evidence, wrong drivers block,
+  and drifted remote option data is preserved before mutation.
