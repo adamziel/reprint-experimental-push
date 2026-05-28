@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 15:05 CEST.
+- Last update: 2026-05-28 15:08 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `873fee36` (ours ancestry merge of
-  `origin/session/rpp-25-checklist-lint-current-v2`).
+  `cc29719c` (ours ancestry merge of
+  `origin/session/rpp-25-rpp-0026-auth-readback`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -362,6 +362,18 @@ linked implementation artifacts.
   scripts/release/checklist-completion-lint.mjs`, `node --test
   test/checklist-completion-lint.test.js test/progress-html-release-timestamp.test.js`
   (14/14), checklist lint, artifact redaction scan (67 files), a current
+  fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+  `releaseMovement.allowed: false`, 3/20 gates), and `git diff --check` for the
+  worktree and merge diff.
+- Ancestry backlog reduction: `cc29719c` used
+  `git merge -s ours --no-ff origin/session/rpp-25-rpp-0026-auth-readback`
+  after verifying `git log --right-only --cherry-pick
+  HEAD...origin/session/rpp-25-rpp-0026-auth-readback` was empty. This preserves
+  the already-represented `RPP-0026` auth source readback drift gate branch
+  ancestry (`cca48431d`) without moving checklist counts or tree content.
+  Validation succeeded with `node --test test/release-gates.test.js
+  test/release-gate-cli.test.js test/checklist-completion-lint.test.js`
+  (41/41), checklist lint, artifact redaction scan (67 files), a current
   fail-closed release-gate status check (`REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
   `releaseMovement.allowed: false`, 3/20 gates), and `git diff --check` for the
   worktree and merge diff.
