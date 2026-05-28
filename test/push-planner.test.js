@@ -17,8 +17,13 @@ import {
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { deserializeResourceValue, resourceHash, serializeResourceValue } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
+import {
+  generatePushHarnessCases,
+  validateGeneratedCase,
+} from '../scripts/harness/generated-push-cases.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
 
 function tempRecoveryJournalPath() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-push-apply-journal-'));
@@ -156,6 +161,23 @@ function deserializeMutationValue(mutation) {
 
 function decisionFor(plan, resourceKey) {
   return plan.decisions.find((decision) => decision.resourceKey === resourceKey);
+}
+
+function generatedIndependentLocalFileRemoteRowTargets(testCase) {
+  const fileEntry = Object.entries(testCase.local.files)
+    .find(([, value]) => typeof value === 'string' && value.startsWith('independent local '));
+  const rowEntry = Object.entries(testCase.remote.db.wp_posts)
+    .find(([, row]) => row.post_title?.startsWith('Independent remote '));
+
+  assert.ok(fileEntry, `${testCase.id} missing generated independent local file`);
+  assert.ok(rowEntry, `${testCase.id} missing generated independent remote row`);
+
+  return {
+    filePath: fileEntry[0],
+    fileValue: fileEntry[1],
+    rowId: rowEntry[0],
+    rowTitle: rowEntry[1].post_title,
+  };
 }
 
 function pluginResource(name) {
@@ -448,6 +470,77 @@ function pluginOwnerContextHashEvidenceEnvelope(plan) {
   };
 }
 
+function assertIndependentLocalFileRemoteRowInvariant({
+  label,
+  base,
+  local,
+  remote,
+  now = fixedNow,
+  filePath,
+  rowId,
+  expectedFileValue,
+  expectedRowTitle,
+  expectedSummary,
+}) {
+  const fileKey = `file:${filePath}`;
+  const rowKey = `row:["wp_posts","${rowId}"]`;
+  const firstPlan = createPushPlan({ base, local, remote, now });
+  const secondPlan = createPushPlan({
+    base: cloneJson(base),
+    local: cloneJson(local),
+    remote: cloneJson(remote),
+    now,
+  });
+  const fileMutation = mutationFor(firstPlan, fileKey);
+  const rowDecision = decisionFor(firstPlan, rowKey);
+  const filePrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === fileKey);
+  const rowPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === rowKey);
+  const planEvidence = mergeInvariantHashOnlyPlanEvidence(firstPlan);
+  const durableJournal = failingDurableJournal();
+  const result = applyPlan(cloneJson(remote), firstPlan, { durableJournal });
+
+  assert.equal(firstPlan.status, 'ready', `${label} status`);
+  assertPlannerSummaryMatchesEvidence(firstPlan, label);
+  if (expectedSummary) {
+    assert.deepEqual(firstPlan.summary, expectedSummary, `${label} summary`);
+  }
+  assert.deepEqual(
+    planEvidence,
+    mergeInvariantHashOnlyPlanEvidence(secondPlan),
+    `${label} hash-only evidence changed between deterministic planning runs`,
+  );
+  assert.ok(fileMutation, `${label} missing local file mutation`);
+  assert.equal(fileMutation.action, 'put', `${label} file mutation action`);
+  assert.equal(fileMutation.resourceKey, fileKey, `${label} file mutation resource`);
+  assert.ok(rowDecision, `${label} missing remote row decision`);
+  assert.equal(rowDecision.decision, 'keep-remote', `${label} row decision`);
+  assert.equal(rowDecision.change.localChange, 'unchanged', `${label} row local change`);
+  assert.equal(rowDecision.change.remoteChange, 'update', `${label} row remote change`);
+  assert.match(rowDecision.remoteHash, /^[a-f0-9]{64}$/, `${label} row remote hash`);
+  assert.equal(rowDecision.change.remote.hash, rowDecision.remoteHash, `${label} row decision hash mismatch`);
+  assertHashOnlyEvidenceRedacted(rowDecision, [expectedRowTitle]);
+  assert.equal(rowPrecondition, undefined, `${label} row precondition should not be emitted`);
+  assert.equal(
+    firstPlan.mutations.some((mutation) => mutation.resourceKey === rowKey),
+    false,
+    `${label} row mutation should not be emitted`,
+  );
+  assert.equal(filePrecondition?.mutationId, fileMutation.id, `${label} file precondition mutation id`);
+  assert.equal(filePrecondition.expectedHash, fileMutation.remoteBeforeHash, `${label} file precondition hash`);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  assertHashOnlyEvidenceRedacted(planEvidence, [expectedFileValue, expectedRowTitle]);
+  assertHashOnlyEvidenceRedacted(durableJournal.events, [expectedFileValue, expectedRowTitle]);
+  assert.equal(
+    durableJournal.events.some((event) => event.resourceKey === rowKey),
+    false,
+    `${label} row should not appear in planned or observed mutation journal events`,
+  );
+  assert.equal(result.site.files[filePath], expectedFileValue, `${label} file apply result`);
+  assert.equal(result.site.db.wp_posts[rowId].post_title, expectedRowTitle, `${label} remote row preserved`);
+
+  return { plan: firstPlan, result, durableJournal };
+}
+
 function assertPlannerSummaryMatchesEvidence(plan, label) {
   assert.deepEqual(plan.summary, plannerSummaryCounts(plan), `${label} summary totals mismatch`);
   assert.equal(
@@ -649,6 +742,83 @@ test('combines non-overlapping local and remote changes', () => {
   assert.equal(plan.status, 'ready');
   assert.equal(result.site.files['wp-content/themes/theme/style.css'], 'body { color: black; }');
   assert.equal(result.site.db.wp_posts['ID:1'].post_title, 'Remote title');
+});
+
+test('RPP-0201 independent local file plus remote row edit stays hash-only across focused and generated fixtures', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'base-style-rpp0201';
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateLocalFile = 'local-private-rpp0201-file-payload';
+  const privateRemoteTitle = 'remote-private-rpp0201-row-title';
+  local.files['wp-content/themes/theme/style.css'] = privateLocalFile;
+  remote.db.wp_posts['ID:1'].post_title = privateRemoteTitle;
+
+  const focusedEvidence = assertIndependentLocalFileRemoteRowInvariant({
+    label: 'RPP-0201 focused file/row invariant',
+    base,
+    local,
+    remote,
+    filePath: 'wp-content/themes/theme/style.css',
+    rowId: 'ID:1',
+    expectedFileValue: privateLocalFile,
+    expectedRowTitle: privateRemoteTitle,
+    expectedSummary: {
+      mutations: 1,
+      decisions: 1,
+      conflicts: 0,
+      blockers: 0,
+      atomicGroups: 0,
+    },
+  });
+
+  assert.deepEqual(
+    focusedEvidence.durableJournal.events
+      .filter((event) => ['target-planned', 'mutation-observed'].includes(event.type))
+      .map((event) => [event.type, event.resourceKey]),
+    [
+      ['target-planned', 'file:wp-content/themes/theme/style.css'],
+      ['mutation-observed', 'file:wp-content/themes/theme/style.css'],
+    ],
+  );
+
+  const generatedCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'independent-local-and-remote');
+  assert.deepEqual(
+    [...new Set(generatedCases.map((testCase) => testCase.tier))],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'generated independent local file/remote row fixtures must cover every tier',
+  );
+
+  for (const generatedCase of generatedCases) {
+    assert.ok(generatedCase.tags.has('independent-merge'), `${generatedCase.id} missing independent merge tag`);
+    assert.ok(
+      generatedCase.tags.has('independent-file-remote-row'),
+      `${generatedCase.id} missing independent file/remote row tag`,
+    );
+    const validation = validateGeneratedCase(generatedCase);
+    assert.equal(validation.status, 'ready', `${generatedCase.id} generated validation status`);
+    assert.equal(validation.applied, true, `${generatedCase.id} generated validation apply result`);
+    assert.equal(
+      validation.unplannedRemotePreserved,
+      true,
+      `${generatedCase.id} generated validation must preserve unplanned remote rows`,
+    );
+
+    const { filePath, fileValue, rowId, rowTitle } =
+      generatedIndependentLocalFileRemoteRowTargets(generatedCase);
+    assertIndependentLocalFileRemoteRowInvariant({
+      label: `RPP-0201 generated ${generatedCase.id}`,
+      base: generatedCase.base,
+      local: generatedCase.local,
+      remote: generatedCase.remote,
+      now: fixedGeneratedHarnessNow,
+      filePath,
+      rowId,
+      expectedFileValue: fileValue,
+      expectedRowTitle: rowTitle,
+    });
+  }
 });
 
 test('RPP-0221 independent local file plus remote row edit stays hash-only and unplanned-safe', () => {
