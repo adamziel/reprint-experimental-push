@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Lane: release-gates
-Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, and RPP-0037
+Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP-0031, RPP-0032, RPP-0033, RPP-0034, RPP-0035, RPP-0036, RPP-0037, and RPP-0039
 
 ## What changed
 
@@ -47,14 +47,15 @@ Primary checklist range: RPP-0001 through RPP-0026, plus RPP-0028, RPP-0030, RPP
 | RPP-0035 | Evidence toward variant-2 recovery inspect read-only proof now records negative and positive `check-release-gates` scenarios with final bracketed status markers: write-observed evidence fails with `RECOVERY_INSPECT_READ_ONLY_REQUIRED`, while read-only evidence preserves recovery row counts and cannot mutate release state. |
 | RPP-0036 | Evidence toward variant-2 releaseMovement summary now runs `check-release-gates` against denied and allowed final-release fixtures, asserting named exit codes, no mutation attempt, exact `releaseMovement` summaries, and exact summary-gate evidence. |
 | RPP-0037 | Evidence toward variant-2 tmux stdout proof status marker now runs `check-release-gates` with a final bracketed marker, asserts the marker is emitted on stdout, preserves exact tmux proof evidence, and records `mutationAttempted: false`. |
+| RPP-0039 | Evidence toward variant-2 `.agents/RELEASE_GATES.md` status row now parses the generated status row and runs negative/positive `check-release-gates` scenarios: dishonest `release_verdict: 4/4` evidence fails, while the generated `0/4` row remains honest `NO-GO`. |
 
 ## Focused verification
 
 ```sh
-node --test test/release-gates.test.js test/release-gate-cli.test.js
+node --test test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js
 ```
 
-Observed status: pass, 28 tests.
+Observed status: pass, 29 tests.
 
 Key assertions:
 
@@ -71,6 +72,7 @@ Key assertions:
 - Recovery inspect read-only proof has tmux-visible variant-2 matrix coverage: the negative case emits `[release-gates-ci:held ... reason=RECOVERY_INSPECT_READ_ONLY_REQUIRED]`, while the positive case emits a final release-ready marker with exact read-only evidence, stable recovery row counts, no release-state mutation, and `mutationAttempted: false`.
 - ReleaseMovement summary coverage now records a denied source-identity drift (`SAME_SOURCE_IDENTITY_REQUIRED`, `releaseMovement.allowed: false`, `finalGates: "19/20"`) and an allowed final-evidence summary (`releaseMovement.allowed: true`, `finalGates: "20/20"`) that still exits `NO-GO` with `PRODUCTION_EVIDENCE_REQUIRED` until provenance is supplied; both command results record `mutationAttempted: false` and exact summary-gate evidence.
 - Tmux stdout proof status marker has command-level variant-2 coverage: the fixture-backed `check-release-gates` run emits `[release-gates-ci:release-ready final=20/20 candidate=20/20 reason=all-release-gates-are-backed-by-final-release-evidence]` on stdout, preserves exact marker evidence for `tmux-status-marker`, exits `NO-GO` without provenance, and records `mutationAttempted: false`.
+- `.agents/RELEASE_GATES.md` status row coverage now records a scenario matrix: the negative case rejects a dishonest `release_verdict: 4/4` row with `AGENTS_RELEASE_GATES_ROW_REQUIRED`, and the positive case accepts the generated `release_verdict: 0/4` row while the CLI remains `NO-GO` without provenance and records `mutationAttempted: false`.
 - Complete local candidate evidence yields `candidateMovement.allowed: true`, `releaseMovement.allowed: false`, and `releaseMovement.gates: "candidate-for-review"`.
 - Complete final evidence yields `releaseMovement.allowed: true` and `releaseMovement.gates: "20/20"`.
 
