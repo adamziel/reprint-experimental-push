@@ -5,8 +5,10 @@ import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
   generatePushHarnessCases,
+  generateWpOptionsDriverSemanticsCases,
   runGeneratedPushHarness,
   validateGeneratedCase,
+  validateWpOptionsDriverSemanticsCase,
 } from '../scripts/harness/generated-push-cases.js';
 
 const requiredFamilies = [
@@ -102,6 +104,43 @@ test('generated push harness covers 300+ general cases from trivial to highly co
   assert.ok(summary.totalConflicts > 0);
   assert.ok(summary.totalBlockers > 0);
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0444 generated wp_options driver semantics preserve remote drift and redact evidence', () => {
+  const cases = generateWpOptionsDriverSemanticsCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'supported-local-update',
+    'remote-drift-preserved',
+    'divergent-conflict-redacted',
+    'missing-policy-blocked',
+    'wrong-driver-blocked',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('wp-options-driver-semantics')), true);
+  assert.equal(cases.every((testCase) => testCase.resourceKey.startsWith('row:["wp_options"')), true);
+
+  const results = cases.map(validateWpOptionsDriverSemanticsCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'supported-local-update': 'applied-local',
+    'remote-drift-preserved': 'preserved-remote',
+    'divergent-conflict-redacted': 'conflict',
+    'missing-policy-blocked': 'blocked',
+    'wrong-driver-blocked': 'blocked',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['supported-local-update'].status, 'ready');
+  assert.equal(byVariant['supported-local-update'].mutations, 1);
+  assert.equal(byVariant['remote-drift-preserved'].status, 'ready');
+  assert.equal(byVariant['remote-drift-preserved'].mutations, 0);
+  assert.equal(byVariant['remote-drift-preserved'].decisions, 1);
+  assert.equal(byVariant['divergent-conflict-redacted'].status, 'conflict');
+  assert.equal(byVariant['missing-policy-blocked'].status, 'blocked');
+  assert.equal(byVariant['wrong-driver-blocked'].status, 'blocked');
+  for (const result of results) {
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0101 generated harness emits ready and non-ready file create/update/delete mix cases', () => {

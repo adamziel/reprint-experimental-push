@@ -76,6 +76,28 @@ combined proof hash; it asserts base, local, and drifted remote private values
 do not appear in either audit JSON or proof JSON. This is local focused
 evidence, not production-backed evidence.
 
+## RPP-0444 generated wp_options driver semantics
+
+RPP-0444 adds a deterministic generated support-only matrix for plugin-owned
+`wp_options` rows. The matrix proves exact `wp-option` driver behavior for a
+valid local update, remote-only drift preservation, divergent local/remote
+conflict refusal, missing policy refusal, and wrong-driver refusal.
+
+The remote-drift variant keeps plugin-owned remote option data when local is
+unchanged: the plan remains ready, records a `keep-remote` decision, emits zero
+mutations, and `applyPlan()` leaves the remote option value unchanged. All
+decision, conflict, blocker, error, and journal evidence is hash-only; generated
+base/local/remote tokens are asserted absent from the evidence payloads.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0444' test/generated-push-harness.test.js
+```
+
+This is generated support-only evidence and does not broaden production
+plugin-driver acceptance.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -89,3 +111,6 @@ evidence, not production-backed evidence.
 - RPP-0439 — driver audit evidence redaction: plugin-owned mutations now carry
   hash-only driver audit evidence, and stale apply preserves drifted remote
   plugin-owned data before mutation.
+- RPP-0444 — generated `wp_options` driver semantics: remote-only plugin-owned
+  option drift is preserved with hash-only evidence, while missing/wrong driver
+  variants fail closed.

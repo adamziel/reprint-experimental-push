@@ -112,6 +112,16 @@ export function generatePushHarnessCases({
   });
 }
 
+export function generateWpOptionsDriverSemanticsCases() {
+  return [
+    'supported-local-update',
+    'remote-drift-preserved',
+    'divergent-conflict-redacted',
+    'missing-policy-blocked',
+    'wrong-driver-blocked',
+  ].map((variant, index) => buildWpOptionsDriverSemanticsCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -164,6 +174,131 @@ export function runGeneratedPushHarness(options = {}) {
   };
 }
 
+export function validateWpOptionsDriverSemanticsCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const decision = plan.decisions.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.resourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    decisions: plan.decisions.length,
+    conflicts: plan.conflicts.length,
+    blockers: plan.blockers.length,
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      status: plan.status,
+      mutation: mutation ? wpOptionsDriverMutationSummary(mutation) : null,
+      decision: decision ? wpOptionsDriverDecisionSummary(decision) : null,
+      conflict: conflict ? wpOptionsDriverBlockSummary(conflict) : null,
+      blocker: blocker ? wpOptionsDriverBlockSummary(blocker) : null,
+    }),
+  };
+
+  assertWpOptionsDriverSemanticsRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied-local') {
+    assert.equal(plan.status, 'ready');
+    assert.ok(mutation, `${testCase.id} should plan a wp_options mutation`);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, 'forms');
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assert.equal(mutation.resource.table, 'wp_options');
+    assert.equal(mutation.resource.id, testCase.rowId);
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.mode,
+      testCase.expected.localMode,
+    );
+    assert.equal(applied.journal.entries.length, 1);
+    assert.equal(applied.journal.entries[0].beforeValue.redacted, true);
+    assert.equal(applied.journal.entries[0].afterValue.redacted, true);
+    assertWpOptionsDriverSemanticsRedacted(testCase, applied.journal);
+    result.outcome = 'applied-local';
+    result.applied = true;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'preserved-remote') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.mutations.length, 0);
+    assert.ok(decision, `${testCase.id} should keep remote wp_options data`);
+    assert.equal(decision.decision, 'keep-remote');
+    assert.equal(decision.change.localChange, 'unchanged');
+    assert.equal(decision.change.remoteChange, 'update');
+    assertWpOptionsChangeHashEvidence(decision.change);
+    assertWpOptionsDriverSemanticsRedacted(testCase, decision);
+    const remote = deepClone(testCase.remote);
+    const remoteBefore = digest(remote);
+    const applied = applyPlan(remote, plan);
+    assert.equal(applied.appliedMutations, 0);
+    assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated remote-only drift`);
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.mode,
+      testCase.expected.remoteMode,
+    );
+    assert.equal(
+      applied.site.db.wp_options[testCase.rowId].option_value.token,
+      testCase.expected.remoteToken,
+    );
+    assertWpOptionsDriverSemanticsRedacted(testCase, applied.journal);
+    result.outcome = 'preserved-remote';
+    result.applied = false;
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'conflict') {
+    assert.equal(plan.status, 'conflict');
+    assert.equal(mutation, undefined);
+    assert.ok(conflict, `${testCase.id} should expose a plugin data conflict`);
+    assert.equal(conflict.class, 'plugin-data-conflict');
+    assert.equal(conflict.pluginOwner, 'forms');
+    assert.equal(conflict.change.localChange, 'update');
+    assert.equal(conflict.change.remoteChange, 'update');
+    assertWpOptionsChangeHashEvidence(conflict.change);
+    assertWpOptionsDriverSemanticsRedacted(testCase, conflict);
+    const remoteBefore = digest(testCase.remote);
+    const error = captureError(() => applyPlan(testCase.remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(testCase.remote), remoteBefore, `${testCase.id} mutated conflict remote`);
+    assertWpOptionsDriverSemanticsRedacted(testCase, error.details);
+    result.outcome = 'conflict';
+    result.applied = false;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'blocked');
+  assert.equal(plan.status, 'blocked');
+  assert.equal(mutation, undefined);
+  assert.ok(blocker, `${testCase.id} should expose a blocker`);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.driver || null, testCase.expected.driver);
+  assert.equal(blocker.change.localChange, 'update');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assertWpOptionsChangeHashEvidence(blocker.change);
+  assertWpOptionsDriverSemanticsRedacted(testCase, blocker);
+  const remoteBefore = digest(testCase.remote);
+  const error = captureError(() => applyPlan(testCase.remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(testCase.remote), remoteBefore, `${testCase.id} mutated blocked remote`);
+  assertWpOptionsDriverSemanticsRedacted(testCase, error.details);
+  result.outcome = 'blocked';
+  result.applied = false;
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -206,6 +341,111 @@ export function validateGeneratedCase(testCase) {
   assert.equal(digest(testCase.remote), before, `${testCase.id} mutated a non-ready remote`);
   result.applied = false;
   return result;
+}
+
+function buildWpOptionsDriverSemanticsCase({ variant, index }) {
+  const base = buildBaseSite(4440 + index, 4);
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const optionName = `rpp_wp_options_semantics_${index + 1}`;
+  const rowId = `option_name:${optionName}`;
+  const resourceKey = rowKey('wp_options', rowId);
+  const secrets = {
+    base: `rpp0444-base-secret-${index + 1}`,
+    local: `rpp0444-local-secret-${index + 1}`,
+    remote: `rpp0444-remote-secret-${index + 1}`,
+  };
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base', token: secrets.base },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, baseRow);
+  setRow(remote, 'wp_options', rowId, baseRow);
+
+  const testCase = {
+    id: `rpp-0444-wp-options-driver-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'wp-options-driver-semantics',
+    tags: new Set(['wp-options-driver-semantics', 'plugin-owned-generated']),
+    resourceKey,
+    rowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: null,
+  };
+
+  if (variant === 'supported-local-update') {
+    local.db.wp_options[rowId].option_value = {
+      mode: 'local-wp-options-update',
+      token: secrets.local,
+    };
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    testCase.tags.add('wp-options-driver-supported');
+    testCase.expected = {
+      outcome: 'applied-local',
+      localMode: 'local-wp-options-update',
+    };
+    return testCase;
+  }
+
+  if (variant === 'remote-drift-preserved') {
+    remote.db.wp_options[rowId].option_value = {
+      mode: 'remote-wp-options-drift',
+      token: secrets.remote,
+    };
+    allowPluginOwned(base, resourceKey, 'forms', 'wp-option');
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    allowPluginOwned(remote, resourceKey, 'forms', 'wp-option');
+    testCase.tags.add('wp-options-driver-remote-preserved');
+    testCase.expected = {
+      outcome: 'preserved-remote',
+      remoteMode: 'remote-wp-options-drift',
+      remoteToken: secrets.remote,
+    };
+    return testCase;
+  }
+
+  if (variant === 'divergent-conflict-redacted') {
+    local.db.wp_options[rowId].option_value = {
+      mode: 'local-wp-options-conflict',
+      token: secrets.local,
+    };
+    remote.db.wp_options[rowId].option_value = {
+      mode: 'remote-wp-options-conflict',
+      token: secrets.remote,
+    };
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+    testCase.tags.add('wp-options-driver-conflict');
+    testCase.expected = { outcome: 'conflict' };
+    return testCase;
+  }
+
+  local.db.wp_options[rowId].option_value = {
+    mode: `local-${variant}`,
+    token: secrets.local,
+  };
+  testCase.tags.add('wp-options-driver-blocked');
+  if (variant === 'wrong-driver-blocked') {
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-postmeta');
+    testCase.expected = {
+      outcome: 'blocked',
+      driver: 'wp-postmeta',
+    };
+    return testCase;
+  }
+
+  assert.equal(variant, 'missing-policy-blocked');
+  testCase.expected = {
+    outcome: 'blocked',
+    driver: null,
+  };
+  return testCase;
 }
 
 function buildGeneratedCase({ index, tier, rng }) {
@@ -868,6 +1108,60 @@ function addReadyPreservingComplexityOperation({
   local.db.wp_posts[`ID:${postId}`].post_title = title;
   remote.db.wp_posts[`ID:${postId}`].post_title = title;
   tags.add('already-in-sync');
+}
+
+function wpOptionsDriverMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    baseHash: mutation.baseHash,
+    localHash: mutation.localHash,
+  };
+}
+
+function wpOptionsDriverDecisionSummary(decision) {
+  return {
+    resourceKey: decision.resourceKey,
+    decision: decision.decision,
+    baseHash: decision.baseHash,
+    remoteHash: decision.remoteHash,
+    change: decision.change,
+  };
+}
+
+function wpOptionsDriverBlockSummary(entry) {
+  return {
+    class: entry.class,
+    resourceKey: entry.resourceKey,
+    pluginOwner: entry.pluginOwner || null,
+    driver: entry.driver || null,
+    baseHash: entry.baseHash,
+    localHash: entry.localHash,
+    remoteHash: entry.remoteHash,
+    change: entry.change,
+  };
+}
+
+function assertWpOptionsChangeHashEvidence(change) {
+  for (const state of ['base', 'local', 'remote']) {
+    assert.ok(change[state], `missing ${state} hash evidence`);
+    assert.equal(Object.hasOwn(change[state], 'hash'), true, `missing ${state} hash`);
+    assert.match(change[state].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[state], 'value'), false, `${state} evidence leaked a value`);
+  }
+}
+
+function assertWpOptionsDriverSemanticsRedacted(testCase, evidence) {
+  const serialized = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(
+      serialized.includes(token),
+      false,
+      `${testCase.id} leaked generated wp_options token ${token}`,
+    );
+  }
 }
 
 function assertPlanContract(testCase, plan) {
