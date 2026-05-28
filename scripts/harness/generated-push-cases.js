@@ -56,6 +56,8 @@ const scenarioFamilies = Object.freeze([
   'wp-term-taxonomy-graph-ready',
   'wp-term-taxonomy-graph-stale',
   'same-plan-user-meta-graph',
+  'comment-parent-graph-ready',
+  'comment-parent-graph-stale',
 ]);
 
 const readyPreservingFamilies = new Set([
@@ -79,6 +81,8 @@ const readyPreservingFamilies = new Set([
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+  'comment-parent-graph-ready',
+  'comment-parent-graph-stale',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
@@ -93,6 +97,10 @@ const targetCoverageDefinitions = Object.freeze({
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
+  },
+  commentParentGraph: {
+    family: 'comment-parent-graph-ready',
+    tag: 'comment-parent-graph',
   },
 });
 
@@ -595,6 +603,14 @@ const scenarioFamilyBuilders = {
     });
     tags.add('same-plan-graph');
     tags.add('user-meta-graph');
+  },
+  'comment-parent-graph-ready': ({ local, allocator, tags }) => {
+    addCommentParentGraph(null, local, null, allocator, tags, { staleTarget: false });
+    tags.add('ready-candidate');
+  },
+  'comment-parent-graph-stale': ({ base, local, remote, allocator, tags }) => {
+    addCommentParentGraph(base, local, remote, allocator, tags, { staleTarget: true });
+    tags.add('expected-blocked');
   },
 };
 
@@ -1277,6 +1293,51 @@ function addCommentGraph(local, allocator) {
     comment_parent: parentId,
     user_id: 1,
   }));
+}
+
+function addCommentParentGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const parentId = allocator.graphId();
+  const childId = allocator.graphId();
+  const parentRowId = `comment_ID:${parentId}`;
+  const childRowId = `comment_ID:${childId}`;
+  const parent = makeComment(parentId, {
+    comment_post_ID: 1,
+    comment_parent: 0,
+    user_id: 0,
+    comment_content: `generated comment parent target content ${parentId}`,
+  });
+
+  if (staleTarget) {
+    setRow(base, 'wp_comments', parentRowId, parent);
+    setRow(local, 'wp_comments', parentRowId, parent);
+    setRow(remote, 'wp_comments', parentRowId, {
+      ...parent,
+      comment_author: `Remote stale comment parent ${parentId}`,
+      comment_content: `remote stale comment parent private payload ${parentId}`,
+    });
+  } else {
+    setRow(local, 'wp_comments', parentRowId, parent);
+  }
+
+  setRow(local, 'wp_comments', childRowId, makeComment(childId, {
+    comment_post_ID: 1,
+    comment_parent: parentId,
+    user_id: 0,
+    comment_content: `comment-parent-reference-${childId}`,
+  }));
+
+  tags.add('comment-parent-graph');
+  tags.add('comment-parent');
+  tags.add('same-plan-graph');
+  tags.add('wp-comments-create');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('comment-parent-stale-target');
+    tags.add('wp-comments-remote-drift');
+  } else {
+    tags.add('comment-parent-ready');
+  }
 }
 
 function addTaxonomyGraph(local, allocator) {

@@ -91,6 +91,14 @@ const requiredFamilies = [
   'wp-term-taxonomy-create',
   'wp-terms-remote-drift',
   'term-taxonomy-term-graph',
+  'comment-parent-graph-ready',
+  'comment-parent-graph-stale',
+  'comment-parent-graph',
+  'comment-parent',
+  'comment-parent-ready',
+  'comment-parent-stale-target',
+  'wp-comments-create',
+  'wp-comments-remote-drift',
   'expected-blocked',
   'same-plan-user-meta-graph',
   'same-plan-graph',
@@ -510,6 +518,132 @@ function assertTermTaxonomyGraphShape(testCase, { staleTarget }) {
       `${testCase.id} stale target should drift remotely`,
     );
   }
+}
+
+test('RPP-0346 generated harness emits comment parent ready and stale graph cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.commentParentGraph;
+
+  assert.ok(coverage, 'missing comment parent graph target coverage');
+  assert.equal(coverage.family, 'comment-parent-graph-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['comment-parent-graph']);
+  assert.ok(coverage.statuses.ready > 0, 'target should include ready comment parent graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'target should include stale/non-ready comment parent graph cases');
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    Object.values(coverage.perTier).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+  assert.equal(
+    Object.values(coverage.statuses).reduce((sum, count) => sum + count, 0),
+    coverage.total,
+  );
+
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'comment-parent-graph-ready');
+  const staleCase = cases.find((testCase) => testCase.family === 'comment-parent-graph-stale');
+
+  assert.ok(readyCase, 'missing ready comment parent graph case');
+  assert.ok(staleCase, 'missing stale comment parent graph case');
+
+  const readyShape = assertCommentParentGraphShape(readyCase, { staleTarget: false });
+  const staleShape = assertCommentParentGraphShape(staleCase, { staleTarget: true });
+  const ready = validateGeneratedCase(readyCase);
+  const stale = validateGeneratedCase(staleCase);
+  const readyPlan = createPushPlan({
+    base: readyCase.base,
+    local: readyCase.local,
+    remote: readyCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const stalePlan = createPushPlan({
+    base: staleCase.base,
+    local: staleCase.local,
+    remote: staleCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const parentMutation = readyPlan.mutations.find(
+    (mutation) => mutation.resourceKey === readyShape.parentResourceKey,
+  );
+  const childMutation = readyPlan.mutations.find(
+    (mutation) => mutation.resourceKey === readyShape.childResourceKey,
+  );
+  const plannedChild = deserializeResourceValue(childMutation.value);
+  const staleBlocker = stalePlan.blockers.find(
+    (blocker) => blocker.resourceKey === staleShape.childResourceKey,
+  );
+  const staleReference = staleBlocker?.references?.find(
+    (reference) => reference.relationshipType === 'comment-parent',
+  );
+  const stalePlanJson = JSON.stringify(stalePlan);
+
+  assert.equal(ready.status, 'ready');
+  assert.equal(ready.applied, true);
+  assert.equal(ready.staleReplayRejected, true);
+  assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.ok(parentMutation, 'ready plan should create the parent comment target');
+  assert.ok(childMutation, 'ready plan should create the child comment reference');
+  assert.equal(plannedChild.comment_parent, readyShape.parentId);
+
+  assert.equal(stale.status, 'blocked');
+  assert.ok(stale.blockers >= 1, 'stale comment parent graph should record a graph blocker');
+  assert.equal(stale.applied, false, 'stale comment parent graph must not apply mutations');
+  assert.ok(staleBlocker, 'stale plan should block the child comment reference');
+  assert.equal(staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(staleReference, 'stale blocker should include the comment_parent reference');
+  assert.equal(staleReference.relationshipKey, 'wp_comments.comment_parent');
+  assert.equal(staleReference.targetResourceKey, staleShape.parentResourceKey);
+  assert.equal(staleReference.targetChange.remoteChange, 'update');
+  assert.match(staleReference.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.match(staleReference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(staleReference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.equal(stalePlanJson.includes('generated comment parent target content'), false);
+  assert.equal(stalePlanJson.includes('Remote stale comment parent'), false);
+  assert.equal(stalePlanJson.includes('remote stale comment parent private payload'), false);
+  assert.equal(stalePlanJson.includes('comment-parent-reference'), false);
+});
+
+function assertCommentParentGraphShape(testCase, { staleTarget }) {
+  const childRows = Object.entries(testCase.local.db.wp_comments)
+    .filter(([, row]) => String(row.comment_content || '').startsWith('comment-parent-reference-'));
+
+  assert.equal(childRows.length, 1, `${testCase.id} should create one child comment reference row`);
+
+  const [childRowId, childRow] = childRows[0];
+  const parentId = Number(childRow.comment_parent);
+  const parentRowId = `comment_ID:${parentId}`;
+  const parent = testCase.local.db.wp_comments[parentRowId];
+
+  assert.ok(Number.isSafeInteger(parentId), `${testCase.id} comment_parent should be numeric`);
+  assert.equal(childRowId, `comment_ID:${childRow.comment_ID}`);
+  assert.ok(parent, `${testCase.id} missing local parent target ${parentRowId}`);
+  assert.equal(parent.comment_ID, parentId);
+  assert.equal(parent.comment_parent, 0);
+
+  if (staleTarget) {
+    assert.ok(testCase.base.db.wp_comments[parentRowId], `${testCase.id} stale parent should exist in base`);
+    assert.notDeepEqual(
+      testCase.remote.db.wp_comments[parentRowId],
+      testCase.base.db.wp_comments[parentRowId],
+      `${testCase.id} stale parent should drift remotely`,
+    );
+  } else {
+    assert.equal(testCase.base.db.wp_comments[parentRowId], undefined);
+    assert.equal(testCase.remote.db.wp_comments[parentRowId], undefined);
+  }
+
+  return {
+    parentId,
+    parentResourceKey: generatedRowResourceKey('wp_comments', parentRowId),
+    childResourceKey: generatedRowResourceKey('wp_comments', childRowId),
+  };
+}
+
+function generatedRowResourceKey(table, id) {
+  return `row:${JSON.stringify([table, id])}`;
 }
 
 function nonReadyTargetCount(coverage) {
