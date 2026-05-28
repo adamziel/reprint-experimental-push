@@ -51,6 +51,8 @@ const scenarioFamilies = Object.freeze([
   'file-type-swap-conflict',
   'row-create-update-delete-mix-ready',
   'row-create-update-delete-mix-conflict',
+  'wp-options-serialized-ready',
+  'wp-options-serialized-conflict',
   'same-plan-user-meta-graph',
 ]);
 
@@ -72,6 +74,7 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
+  'wp-options-serialized-ready',
   'same-plan-user-meta-graph',
 ]);
 
@@ -544,6 +547,14 @@ const scenarioFamilyBuilders = {
       conflict: true,
       prefix: 'conflict-row-mix',
     });
+    tags.add('expected-conflict');
+  },
+  'wp-options-serialized-ready': ({ tier, base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict: false, tier });
+    tags.add('ready-candidate');
+  },
+  'wp-options-serialized-conflict': ({ tier, base, local, remote, allocator, tags }) => {
+    addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict: true, tier });
     tags.add('expected-conflict');
   },
   'same-plan-user-meta-graph': ({ local, allocator, tags }) => {
@@ -1121,6 +1132,51 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
   }
+}
+
+function addWpOptionsSerializedChange(base, local, remote, allocator, tags, { conflict, tier }) {
+  const ordinal = allocator.next();
+  const optionName = `serialized_generated_${ordinal}`;
+  const rowId = `option_name:${optionName}`;
+  const valueKind = tier % 2 === 0 ? 'object' : 'array';
+  const baseValue = serializedOptionValue(valueKind, 'base', ordinal);
+  const localValue = serializedOptionValue(valueKind, 'local', ordinal);
+  const remoteValue = serializedOptionValue(valueKind, 'remote', ordinal);
+  const row = {
+    option_name: optionName,
+    option_value: baseValue,
+    autoload: 'no',
+  };
+
+  setRow(base, 'wp_options', rowId, row);
+  setRow(local, 'wp_options', rowId, { ...row, option_value: localValue });
+  setRow(remote, 'wp_options', rowId, row);
+
+  tags.add('wp-options-serialized');
+  tags.add('serialized-option-update');
+  tags.add(`serialized-option-${valueKind}`);
+
+  if (conflict) {
+    setRow(remote, 'wp_options', rowId, { ...row, option_value: remoteValue });
+  }
+}
+
+function serializedOptionValue(kind, source, ordinal) {
+  if (kind === 'array') {
+    return [
+      `${source}-serialized-option-${ordinal}`,
+      ordinal,
+      { enabled: source !== 'base', marker: `${source}-marker-${ordinal}` },
+    ];
+  }
+  return {
+    mode: source,
+    flags: { enabled: source !== 'base', ordinal },
+    items: [
+      `${source}-item-${ordinal}`,
+      { key: `${source}-nested-${ordinal}`, priority: ordinal % 5 },
+    ],
+  };
 }
 
 function addCommentGraph(local, allocator) {

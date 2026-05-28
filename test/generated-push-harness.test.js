@@ -48,6 +48,12 @@ const requiredFamilies = [
   'row-create',
   'row-update',
   'row-delete',
+  'wp-options-serialized-ready',
+  'wp-options-serialized-conflict',
+  'wp-options-serialized',
+  'serialized-option-update',
+  'serialized-option-object',
+  'serialized-option-array',
   'same-plan-user-meta-graph',
   'same-plan-graph',
   'plugin-owned-supported',
@@ -202,4 +208,57 @@ function assertRowMixShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
+
+test('RPP-0106 generated harness emits wp_options serialized option ready and conflict cases', () => {
+  const cases = generatePushHarnessCases();
+  const readyCase = cases.find((testCase) => testCase.family === 'wp-options-serialized-ready');
+  const conflictCase = cases.find((testCase) => testCase.family === 'wp-options-serialized-conflict');
+
+  assert.ok(readyCase, 'missing ready wp_options serialized option case');
+  assert.ok(conflictCase, 'missing conflicting wp_options serialized option case');
+  assert.ok(readyCase.tags.has('wp-options-serialized'));
+  assert.ok(conflictCase.tags.has('wp-options-serialized'));
+  assert.ok(readyCase.tags.has('serialized-option-update'));
+  assert.ok(conflictCase.tags.has('serialized-option-update'));
+  assertWpOptionsSerializedShape(readyCase, { conflict: false });
+  assertWpOptionsSerializedShape(conflictCase, { conflict: true });
+
+  const ready = validateGeneratedCase(readyCase);
+  const conflict = validateGeneratedCase(conflictCase);
+
+  assert.equal(ready.status, 'ready');
+  assert.ok(ready.mutations >= 1, 'ready serialized option should plan an option mutation');
+  assert.equal(ready.applied, true, 'ready serialized option should apply through the harness');
+  assert.equal(conflict.status, 'conflict');
+  assert.ok(conflict.conflicts >= 1, 'remote serialized option drift should be a conflict');
+  assert.equal(conflict.applied, false, 'conflicting serialized option must not apply mutations');
+});
+
+function assertWpOptionsSerializedShape(testCase, { conflict }) {
+  const serializedRows = Object.entries(testCase.base.db.wp_options)
+    .filter(([id, row]) => id.startsWith('option_name:serialized_generated_')
+      && isSerializedOptionValue(row.option_value));
+
+  assert.equal(serializedRows.length, 1, `${testCase.id} should seed one serialized option row`);
+  const [rowId, baseRow] = serializedRows[0];
+  const localRow = testCase.local.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(localRow, `${testCase.id} missing local serialized option row`);
+  assert.ok(remoteRow, `${testCase.id} missing remote serialized option row`);
+  assert.equal(localRow.__pluginOwner, undefined, `${testCase.id} serialized option should not be plugin-owned`);
+  assert.equal(remoteRow.__pluginOwner, undefined, `${testCase.id} serialized option should not be plugin-owned`);
+  assert.ok(isSerializedOptionValue(localRow.option_value), `${testCase.id} local option_value must stay serialized`);
+  assert.notDeepEqual(localRow.option_value, baseRow.option_value);
+  if (conflict) {
+    assert.notDeepEqual(remoteRow.option_value, baseRow.option_value);
+    assert.notDeepEqual(remoteRow.option_value, localRow.option_value);
+  } else {
+    assert.deepEqual(remoteRow.option_value, baseRow.option_value);
+  }
+}
+
+function isSerializedOptionValue(value) {
+  return value !== null && typeof value === 'object';
 }
