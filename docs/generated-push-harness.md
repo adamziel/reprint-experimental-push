@@ -48,8 +48,9 @@ The default generated run covers:
   large ready plan tiers with one ready case per tier, deletes, delete/edit
   conflicts, file topology conflicts, file create/update/
   delete mixes with ready and conflicting outcomes plus per-tier target counts,
-  directory descendant conflicts with per-tier target counts, file type-swap cases with ready and
-  conflicting outcomes, row create/update/delete mixes with ready and conflicting
+  directory descendant deletes with ready and conflicting outcomes plus
+  per-tier target counts, file type-swap cases with ready and conflicting
+  outcomes, row create/update/delete mixes with ready and conflicting
   outcomes plus stale replay rejection before mutation, non-plugin-owned
   `wp_options` scalar and serialized option updates with ready and
   concurrent remote-drift outcomes, `wp_posts`
@@ -84,6 +85,13 @@ The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,
 and delete one file, then reject stale replay before mutation; conflict cases
 drift the updated file remotely and refuse apply.
+
+The `directoryDescendantConflict` target coverage records per-tier counts for
+local directory deletes where the remote either still only has the directory or
+has added a descendant beneath it. Ready cases delete the unchanged remote
+directory, preserve unplanned remote data, and reject stale replay before
+mutation; conflicting cases refuse apply so a local directory delete cannot
+hide or overwrite a live remote descendant.
 
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
@@ -193,21 +201,22 @@ At the time this note was added, the summary command reported:
     },
     "directoryDescendantConflict": {
       "family": "directory-descendant-conflict",
-      "total": 10,
+      "total": 20,
       "perTier": {
-        "0": 1,
-        "1": 1,
-        "2": 1,
-        "3": 1,
-        "4": 1,
-        "5": 1,
-        "6": 1,
-        "7": 1,
-        "8": 1,
-        "9": 1
+        "0": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 2,
+        "9": 2
       },
       "statuses": {
-        "conflict": 10
+        "conflict": 11,
+        "ready": 9
       }
     },
     "fileCreateUpdateDeleteMix": {
@@ -453,9 +462,11 @@ At the time this note was added, the summary command reported:
     "delete-edit": 10,
     "delete-edit-conflict": 10,
     "direct-row-conflict": 10,
+    "directory-delete-no-remote-descendant": 10,
     "directory-delete-with-remote-descendant": 10,
-    "directory-descendant": 10,
+    "directory-descendant": 20,
     "directory-descendant-conflict": 10,
+    "directory-descendant-ready": 10,
     "expected-blocked": 46,
     "expected-conflict": 170,
     "file-create": 30,
@@ -463,7 +474,7 @@ At the time this note was added, the summary command reported:
     "file-create-update-delete-mix-conflict": 10,
     "file-create-update-delete-mix-ready": 10,
     "file-delete": 30,
-    "file-topology": 114,
+    "file-topology": 124,
     "file-topology-conflict": 10,
     "file-type-swap": 20,
     "file-type-swap-conflict": 10,
@@ -582,7 +593,7 @@ At the time this note was added, the summary command reported:
   "maxMutationCount": 46,
   "maxReadyResourceCount": 73,
   "maxReadyMutationCount": 46,
-  "totalMutations": 7204,
+  "totalMutations": 7214,
   "totalConflicts": 527,
   "totalBlockers": 513
 }

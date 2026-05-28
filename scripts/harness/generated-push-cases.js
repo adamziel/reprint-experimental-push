@@ -115,7 +115,7 @@ const skipSeededComplexityFamilies = new Set([
 const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
-    tag: 'directory-delete-with-remote-descendant',
+    tag: 'directory-descendant',
   },
   fileCreateUpdateDeleteMix: {
     family: 'file-create-update-delete-mix-ready',
@@ -363,10 +363,21 @@ const scenarioFamilyBuilders = {
     remote.db.wp_posts[`ID:${postId}`].post_title = `Remote conflict ${allocator.next()}`;
     tags.add('expected-conflict');
   },
-  'local-delete': ({ local, allocator, tags }) => {
+  'local-delete': ({ base, local, remote, allocator, tags }) => {
     const path = allocator.existingUploadPath();
     delete local.files[path];
+
+    const directory = `wp-content/uploads/descendant-ready-${allocator.next()}`;
+    base.files[directory] = { type: 'directory' };
+    local.files[directory] = { type: 'directory' };
+    remote.files[directory] = { type: 'directory' };
+    delete local.files[directory];
+
     tags.add('delete');
+    tags.add('file-topology');
+    tags.add('directory-descendant');
+    tags.add('directory-descendant-ready');
+    tags.add('directory-delete-no-remote-descendant');
   },
   'same-independent-content': ({ local, remote, allocator, tags }) => {
     const postId = allocator.postId();
