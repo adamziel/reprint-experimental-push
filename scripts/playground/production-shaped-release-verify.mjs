@@ -359,6 +359,13 @@ export const productionPluginDriverBoundary = Object.freeze({
   }),
 });
 
+const coreWordPressDriverBoundaryTables = new Set([
+  'wp_options',
+  'wp_postmeta',
+  'wp_termmeta',
+  'wp_usermeta',
+]);
+
 export function summarizeProductionPluginDriverBoundaryProof({
   proof,
   remoteBaseSnapshot,
@@ -432,12 +439,43 @@ export function summarizeProductionPluginDriverBoundaryProof({
     ? proof.planObject.mutations
     : [];
   const pluginDriverMutations = plannedMutations.filter((entry) => entry?.resourceKey === boundary.resourceKey);
+  const activePluginsDirectMutations = plannedMutations.filter((entry) =>
+    entry?.resource?.type === 'row'
+      && entry.resource.table === 'wp_options'
+      && entry.resource.id === 'option_name:active_plugins');
+  const wpOptionMutations = plannedMutations.filter((entry) =>
+    entry?.resource?.type === 'row'
+      && entry.resource.table === 'wp_options');
+  const serializedPluginOwnedOptionMutations = wpOptionMutations.filter((entry) =>
+    entry.resource.id !== 'option_name:active_plugins');
+  const directPluginActivationOrUpdateMutations = plannedMutations.filter((entry) =>
+    entry?.resource?.type === 'plugin'
+      && entry.resource.name === boundary.owner);
+  const nonProductionCustomTableMutations = plannedMutations.filter((entry) =>
+    entry?.resource?.type === 'row'
+      && entry.resource.table !== boundary.table
+      && !coreWordPressDriverBoundaryTables.has(entry.resource.table));
+  const exactAllowlistOwnerDriver = allowlistEntry?.resourceKey === boundary.resourceKey
+    && allowlistEntry?.pluginOwner === boundary.owner
+    && allowlistEntry?.driver === boundary.driver
+    && allowlistEntry?.table === boundary.table
+    && allowlistEntry?.supportsDelete === false;
+  const exactMutationOwnerDriver = pluginDriverMutations.length === 1
+    && pluginDriverMutations.every((entry) =>
+      entry?.resource?.type === 'row'
+        && entry.resource.table === boundary.table
+        && entry.resource.id === boundary.rowId
+        && entry?.pluginOwnedResource?.driver === boundary.driver
+        && entry?.pluginOwnedResource?.pluginOwner === boundary.owner
+        && entry?.pluginOwnedResource?.supportsDelete === false);
   const noActivePluginsDirectMutation = plannedMutations.every((entry) =>
     !(entry?.resource?.type === 'row'
       && entry.resource.table === 'wp_options'
       && entry.resource.id === 'option_name:active_plugins'));
   const noUnownedSerializedOptionMutation = plannedMutations.every((entry) =>
     !(entry?.resource?.type === 'row' && entry.resource.table === 'wp_options'));
+  const noSerializedPluginOwnedOptionMutation = serializedPluginOwnedOptionMutations.length === 0;
+  const noDirectPluginActivationOrUpdate = directPluginActivationOrUpdateMutations.length === 0;
   const noArbitraryCustomTableMutation = plannedMutations.length === 1
     && plannedMutations.every((entry) =>
       entry?.resource?.type === 'row'
@@ -451,13 +489,13 @@ export function summarizeProductionPluginDriverBoundaryProof({
     && mutation?.baseHash === sourceState.hash
     && mutation?.remoteBeforeHash === sourceState.hash
     && mutation?.localHash === localState.hash
-    && allowlistEntry?.driver === boundary.driver
-    && allowlistEntry?.pluginOwner === boundary.owner
-    && allowlistEntry?.table === boundary.table
-    && allowlistEntry?.supportsDelete === false
+    && exactAllowlistOwnerDriver
+    && exactMutationOwnerDriver
     && verifiedBeforeFirstMutation
     && noActivePluginsDirectMutation
     && noUnownedSerializedOptionMutation
+    && noSerializedPluginOwnedOptionMutation
+    && noDirectPluginActivationOrUpdate
     && noArbitraryCustomTableMutation
     && rejectedRemoteEvidence.failureClosed === true
     && failureClosedUnknownPluginData.failureClosed === true;
@@ -519,9 +557,21 @@ export function summarizeProductionPluginDriverBoundaryProof({
     } : {
       verifiedBeforeFirstMutation: false,
     },
+    ownershipBoundary: {
+      exactAllowlistOwnerDriver,
+      exactMutationOwnerDriver,
+      allowedCustomTable: boundary.table,
+      allowedResourceKey: boundary.resourceKey,
+      activePluginsDirectResourceKeys: activePluginsDirectMutations.map((entry) => entry.resourceKey),
+      serializedPluginOwnedOptionResourceKeys: serializedPluginOwnedOptionMutations.map((entry) => entry.resourceKey),
+      directPluginActivationOrUpdateResourceKeys: directPluginActivationOrUpdateMutations.map((entry) => entry.resourceKey),
+      nonProductionCustomTableResourceKeys: nonProductionCustomTableMutations.map((entry) => entry.resourceKey),
+    },
     noArbitraryCustomTableMutation,
     noActivePluginsDirectMutation,
     noUnownedSerializedOptionMutation,
+    noSerializedPluginOwnedOptionMutation,
+    noDirectPluginActivationOrUpdate,
     failureClosedUnknownPluginData,
     auditEvidence: {
       dryRunStatus: proof.dryRun?.status ?? null,

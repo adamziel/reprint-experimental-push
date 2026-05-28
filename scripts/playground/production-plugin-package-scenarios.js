@@ -10,6 +10,18 @@ const scenarioGroups = {
     'driver-duplicate-name-guard',
     'driver-duplicate-table-guard',
   ],
+  'driver-production-boundary-guards': [
+    'driver-receipt-guards',
+    'driver-missing-plugin-owner-guard',
+    'driver-missing-table-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
+  'driver-owner-driver-allowlist-guards': [
+    'driver-missing-plugin-owner-guard',
+    'driver-duplicate-name-guard',
+    'driver-duplicate-table-guard',
+  ],
   'driver-registration-guards': [
     'driver-missing-export-guard',
     'driver-missing-apply-guard',
