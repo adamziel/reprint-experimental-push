@@ -600,9 +600,9 @@ function fixtureFormsLabTableDriverEvidence({ resource, owner, base, remote }) {
 
 function buildAtomicGroup(intent, plan, base, remote) {
   const groupResourceKeys = new Set(intent.resources || []);
-  const mutationIds = plan.mutations
-    .filter((mutation) => mutation.atomicGroupId === intent.id)
-    .map((mutation) => mutation.id);
+  const groupMutations = plan.mutations
+    .filter((mutation) => mutation.atomicGroupId === intent.id);
+  const mutationIds = groupMutations.map((mutation) => mutation.id);
   const conflicts = plan.conflicts
     .filter((conflict) => (intent.resources || []).includes(conflict.resourceKey))
     .map((conflict) => conflict.id);
@@ -630,6 +630,8 @@ function buildAtomicGroup(intent, plan, base, remote) {
     });
   }
 
+  blockers.push(...propagateAtomicGroupBlockers(intent, groupMutations, blockers));
+
   return {
     id: intent.id,
     kind: intent.kind || 'change-set',
@@ -650,6 +652,31 @@ function buildAtomicGroup(intent, plan, base, remote) {
     status: conflicts.length > 0 ? 'conflict' : blockers.length > 0 ? 'blocked' : 'ready',
     blockers,
   };
+}
+
+function propagateAtomicGroupBlockers(intent, groupMutations, sourceBlockers) {
+  if (intent.requireAtomic === false || sourceBlockers.length === 0) {
+    return [];
+  }
+
+  const directlyBlockedResourceKeys = new Set(
+    sourceBlockers
+      .map((blocker) => blocker.resourceKey)
+      .filter(Boolean),
+  );
+  const sourceBlockerIds = sourceBlockers.map((blocker) => blocker.id).filter(Boolean);
+
+  return groupMutations
+    .filter((mutation) => !directlyBlockedResourceKeys.has(mutation.resourceKey))
+    .map((mutation) => ({
+      id: `blocker-${intent.id}-${mutation.id}-atomic-group-propagation`,
+      class: 'atomic-group-blocker-propagation',
+      groupId: intent.id,
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      sourceBlockerIds,
+      reason: `Atomic push intent ${intent.id} is blocked; mutation ${mutation.id} cannot be applied independently of the group.`,
+    }));
 }
 
 function pluginDependencyEvidence(dependency, intent, plan, base, remote) {
