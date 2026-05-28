@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 06:56 CEST.
+- Last update: 2026-05-28 07:01 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  `bb6b422e7` (`test: add preflight route identity coverage`).
+  `9570a6110` (`test: prove driver apply validation hook`).
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 117
-  items complete and leaves 883 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 118
+  items complete and leaves 882 open.
 - Checked slices: 40 release-gate foundation items, 16 graph identity items,
-  17 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  18 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 6 generated
   harness items, and 7 merge-invariant items. No release-ops items are checked
   yet.
@@ -179,6 +179,16 @@ linked implementation artifacts.
   before durable journal events or target mutation. Caveat: this is focused
   local planner/apply plugin-driver boundary evidence, not production plugin
   lifecycle readiness.
+- Driver-apply validation continuation: `9570a6110` integrated `RPP-0438`
+  driver apply validation hook evidence. Focused command:
+  `node --test --test-name-pattern 'RPP-0438|fixture forms lab table journal redacts raw payload values' test/push-planner.test.js`
+  (3 passing focused proofs), plus `node --test test/push-planner.test.js`
+  (98 passing planner/apply tests). The proof carries one valid fixture driver
+  row mutation through the apply `beforeMutation` hook with hash-only
+  `PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED` evidence, and forged driver evidence
+  fails closed before hook execution, durable journal events, or target mutation
+  with `PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED`. Caveat: this is focused local
+  plugin-driver boundary evidence, not broad production plugin-driver readiness.
 - Generated wp_posts continuation: `b01b009a9` integrated `RPP-0107`
   `wp_posts` create/update/delete coverage. The generated harness now exposes
   20 `wp_posts` target cases across all 10 tiers, split into 10 ready and 10
@@ -203,7 +213,7 @@ linked implementation artifacts.
 - Verification for this entry: checklist counts, focused Docker/evidence
   manifest tests, `node --test test/release-gates.test.js test/release-gate-cli.test.js`
   with 28 passing
-  release-gate tests, `node --test test/push-planner.test.js` with 96 passing
+  release-gate tests, `node --test test/push-planner.test.js` with 98 passing
   planner tests, `node --test test/plugin-owner-context-metadata-refusal.test.js`
   with 3 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   with 29 passing tests, `node --test test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
@@ -212,7 +222,9 @@ linked implementation artifacts.
   with 29 passing tests, `node --test test/playground-snapshot-lib.test.js`
   with 4 passing tests,
   `node --test test/release-gate-preflight-route-identity-generated.test.js test/release-gate-same-source-generated.test.js test/verify-release-failure-reason.test.js test/progress-html-release-timestamp.test.js test/release-gates-status-row.test.js test/release-gates.test.js test/release-gate-cli.test.js`
-  with 35 passing tests, the `rpp-28`
+  with 35 passing tests,
+  `node --test --test-name-pattern 'RPP-0438|fixture forms lab table journal redacts raw payload values' test/push-planner.test.js`
+  with 3 passing focused tests, the `rpp-28`
   integrated focused test set, provenance/linter/artifact focused tests,
   `node --test test/generated-push-harness.test.js` with 7 passing tests,
   evidence manifest

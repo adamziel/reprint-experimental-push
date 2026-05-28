@@ -29,6 +29,29 @@ The support-only package smoke alias proved fail-closed registration guards for 
 
 Non-claim: an over-broad full run of `node --test test/production-plugin-package-scenarios.test.js test/production-shaped-proof.test.js` was stopped/failed after live Playground readiness timeouts in unrelated apply-revalidation smoke tests. It is not used as passing evidence for this lane.
 
+## Driver Apply Validation Hook
+
+RPP-0438 adds focused support-only evidence for the apply-time plugin-driver
+validation hook. A valid fixture driver mutation reaches the apply
+`beforeMutation` hook with `driverApplyValidation` evidence marked
+`PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED`, then commits exactly one row
+mutation. A forged ready plan with invalid fixture driver evidence fails before
+the hook and before mutation with `PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED`.
+
+The validation evidence is hash-only: resource key, owner, driver, row identity,
+planned/remote hashes, and driver proof hashes. Raw fixture payload values are
+redacted from both successful journals and refusal details.
+
+Focused verification:
+
+```sh
+node --test --test-name-pattern 'RPP-0438|fixture forms lab table journal redacts raw payload values' test/push-planner.test.js
+```
+
+This evidence does not broaden accepted plugin-owned resources. The fixture
+driver still requires exact owner, table, positive id row, active unchanged
+driver plugin evidence, and no delete mutation.
+
 ## RPP items with new evidence
 
 - RPP-0402 / RPP-0422 — owner identity binding: exact owner/driver fields are exposed and wrong owner/driver proofs fail closed.
@@ -36,3 +59,6 @@ Non-claim: an over-broad full run of `node --test test/production-plugin-package
 - RPP-0404 / RPP-0424 and RPP-0408 / RPP-0428 — option/serialized option semantics: serialized plugin-owned option mutations are detected and fail closed on the production boundary.
 - RPP-0409 / RPP-0429 and RPP-0410 / RPP-0430 — activation/update dependency validators: direct production plugin activation/update mutations are detected and fail closed.
 - RPP-0412 / RPP-0432 — direct `active_plugins` mutation refusal: direct option-row activation mutations remain detected and blocked.
+- RPP-0438 — driver apply validation hook: accepted fixture driver evidence
+  carries one real mutation through apply, and forged driver evidence fails
+  closed before mutation.

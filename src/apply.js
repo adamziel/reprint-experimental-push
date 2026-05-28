@@ -244,6 +244,15 @@ function validateSupportedPluginOwnedMutations(remote, plan) {
           resourceKey: mutation.resourceKey,
           pluginOwner: owner,
           driver,
+          applyValidationEvidence: pluginOwnedApplyValidationEvidence({
+            remote,
+            mutation,
+            owner,
+            driver,
+            plannedValue,
+            remoteValue,
+            outcome: 'refused-before-mutation',
+          }),
         },
       );
     }
@@ -383,6 +392,66 @@ function validFixtureFormsLabTableEvidence(evidence, remote) {
       && resourceHash(remote, pluginResource) === evidence.remoteHash;
   }
   return false;
+}
+
+function pluginOwnedApplyValidationEvidence({
+  remote,
+  mutation,
+  owner,
+  driver,
+  plannedValue,
+  remoteValue,
+  outcome,
+}) {
+  return {
+    reasonCode: outcome === 'accepted'
+      ? 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED'
+      : 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED',
+    operation: 'driver-apply-validation',
+    outcome,
+    mutationId: mutation.id,
+    resourceKey: mutation.resourceKey,
+    pluginOwner: owner,
+    driver,
+    action: mutation.action,
+    resource: pluginOwnedApplyValidationResourceEvidence(mutation.resource),
+    planned: {
+      state: plannedValue === ABSENT ? 'absent' : 'present',
+      hash: digest(plannedValue),
+    },
+    remote: {
+      state: remoteValue === ABSENT ? 'absent' : 'present',
+      hash: resourceHash(remote, mutation.resource),
+    },
+    driverEvidence: pluginOwnedDriverEvidenceSummary(mutation.pluginOwnedResource?.driverEvidence),
+  };
+}
+
+function pluginOwnedApplyValidationResourceEvidence(resource) {
+  if (!resource || typeof resource !== 'object') {
+    return null;
+  }
+  return {
+    type: resource.type || null,
+    key: resource.key || null,
+    table: resource.table || null,
+    id: resource.id || null,
+    name: resource.name || null,
+  };
+}
+
+function pluginOwnedDriverEvidenceSummary(evidence) {
+  if (!evidence || typeof evidence !== 'object') {
+    return { state: 'absent' };
+  }
+  return {
+    state: 'present',
+    source: evidence.source || null,
+    plugin: evidence.plugin || null,
+    resourceKey: evidence.resourceKey || null,
+    baseHash: evidence.baseHash || null,
+    remoteHash: evidence.remoteHash || null,
+  };
 }
 
 function prepareJournal(remote, plan, previousJournal) {
@@ -895,8 +964,29 @@ function recoveryClaimStaleBlocked(error, remote, plan, journal, boundary) {
 
 function runBeforeMutationHook(options, context) {
   if (typeof options.beforeMutation === 'function') {
-    options.beforeMutation(context);
+    options.beforeMutation({
+      ...context,
+      driverApplyValidation: driverApplyValidationHookEvidence(context.remote, context.mutation),
+    });
   }
+}
+
+function driverApplyValidationHookEvidence(remote, mutation) {
+  const plannedValue = deserializeResourceValue(mutation.value);
+  const remoteValue = getResource(remote, mutation.resource);
+  const owner = pluginOwnedOwner(plannedValue) || pluginOwnedOwner(remoteValue);
+  if (!owner) {
+    return null;
+  }
+  return pluginOwnedApplyValidationEvidence({
+    remote,
+    mutation,
+    owner,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    plannedValue,
+    remoteValue,
+    outcome: 'accepted',
+  });
 }
 
 function claimFenceFailure(error, remote, plan, journal, mutation) {
