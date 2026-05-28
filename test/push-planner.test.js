@@ -1984,6 +1984,63 @@ test('allows same-plan comment and user graph closure when author and comment ta
   assert.equal(result.site.db.wp_commentmeta['meta_id:51'].comment_id, 12);
 });
 
+test('RPP-0323 rewrites post author identity maps to proven remote users', () => {
+  const sourceUserResourceKey = 'row:["wp_users","ID:701"]';
+  const targetUserResourceKey = 'row:["wp_users","ID:801"]';
+  const authoredPostResourceKey = 'row:["wp_posts","ID:702"]';
+  const base = baseSite();
+  base.db.wp_users = {};
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.meta = {
+    wordpressGraphIdentityMap: {
+      rows: [{ table: 'wp_users', localId: 'ID:701', remoteId: 'ID:801' }],
+    },
+  };
+  local.db.wp_users['ID:701'] = {
+    ID: 701,
+    user_login: 'mapped-author',
+    user_email: 'mapped-author@example.test',
+    display_name: 'Mapped Author',
+  };
+  remote.db.wp_users['ID:801'] = {
+    ID: 801,
+    user_login: 'mapped-author',
+    user_email: 'mapped-author@example.test',
+    display_name: 'Mapped Author',
+  };
+  local.db.wp_posts['ID:702'] = {
+    ID: 702,
+    post_title: 'Mapped author post',
+    post_status: 'draft',
+    post_type: 'post',
+    post_author: 701,
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const postMutation = mutationFor(plan, authoredPostResourceKey);
+  const postValue = deserializeMutationValue(postMutation);
+  const authorRewrite = postMutation.wordpressGraphIdentity.rewrites.find((rewrite) =>
+    rewrite.relationshipType === 'post-author');
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutationFor(plan, sourceUserResourceKey), undefined);
+  assert.equal(decisionFor(plan, sourceUserResourceKey).decision, 'map-local-identity-to-remote');
+  assert.equal(decisionFor(plan, targetUserResourceKey).decision, 'keep-remote');
+  assert.equal(postMutation.changeKind, 'create');
+  assert.equal(postValue.post_author, 801);
+  assert.equal(authorRewrite.sourceTargetResourceKey, sourceUserResourceKey);
+  assert.equal(authorRewrite.targetResourceKey, targetUserResourceKey);
+  assert.match(authorRewrite.sourceTargetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(authorRewrite.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_users['ID:701'], undefined);
+  assert.equal(result.site.db.wp_users['ID:801'].user_login, 'mapped-author');
+  assert.equal(result.site.db.wp_posts['ID:702'].post_author, 801);
+});
+
 test('blocks post author and usermeta references when the remote user target diverged', () => {
   const postResourceKey = 'row:["wp_posts","ID:2"]';
   const usermetaResourceKey = 'row:["wp_usermeta","meta_id:61"]';
@@ -2028,9 +2085,20 @@ test('blocks post author and usermeta references when the remote user target div
   assert.equal(mutationFor(plan, postResourceKey), undefined);
   assert.equal(mutationFor(plan, usermetaResourceKey), undefined);
   assert.equal(decisionFor(plan, targetUserResourceKey).decision, 'keep-remote');
+  assert.equal(postBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(postBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(postBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(postBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(postBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(postBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(postBlocker.change.local, 'value'), false);
   assert.equal(postBlocker.references[0].relationshipType, 'post-author');
   assert.equal(postBlocker.references[0].targetResourceKey, targetUserResourceKey);
   assert.equal(postBlocker.references[0].targetChange.remoteChange, 'update');
+  assert.equal(usermetaBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(usermetaBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(usermetaBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(usermetaBlocker.change.local, 'value'), false);
   assert.equal(usermetaBlocker.references[0].relationshipType, 'usermeta-user');
   assert.equal(usermetaBlocker.references[0].targetResourceKey, targetUserResourceKey);
   assert.equal(planJson.includes('local-private-usermeta'), false);
