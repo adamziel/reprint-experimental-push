@@ -10,6 +10,7 @@ import {
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { createPushPlan } from '../src/planner.js';
+import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
 import { deserializeResourceValue, resourceHash } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 
@@ -67,6 +68,12 @@ const requiredFamilies = [
   'row-create',
   'row-update',
   'row-delete',
+  'wp-options-scalar-ready',
+  'wp-options-scalar-conflict',
+  'wp-options-scalar-change',
+  'wp-options-scalar',
+  'wp-options-update',
+  'scalar-option',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
   'wp-posts-create-update-delete',
@@ -338,6 +345,141 @@ function assertRowMixShape(testCase) {
   assert.equal(createRows.length, 1, `${testCase.id} should create one row`);
   assert.equal(updateRows.length, 1, `${testCase.id} should update one row`);
   assert.equal(deleteRows.length, 1, `${testCase.id} should delete one row`);
+}
+
+test('RPP-0145 wp_options scalar option target exposes deterministic ready and conflict coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsScalarChanges;
+
+  assert.ok(coverage, 'missing wp_options scalar option target coverage');
+  assert.equal(coverage.family, 'wp-options-scalar-ready');
+  assert.equal(coverage.total, 18);
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-scalar-change']);
+  assert.equal(report.summary.featureFamilies['wp-options-scalar-ready'], 9);
+  assert.equal(report.summary.featureFamilies['wp-options-scalar-conflict'], 9);
+  assert.deepEqual(coverage.statuses, { conflict: 9, ready: 9 });
+  assert.deepEqual(coverage.perTier, {
+    0: 2,
+    1: 2,
+    2: 2,
+    3: 2,
+    4: 2,
+    5: 1,
+    6: 1,
+    7: 2,
+    8: 2,
+    9: 2,
+  });
+
+  const cases = generatePushHarnessCases();
+  const readyCases = cases.filter((testCase) => testCase.family === 'wp-options-scalar-ready');
+  const conflictCases = cases.filter((testCase) => testCase.family === 'wp-options-scalar-conflict');
+
+  assert.equal(readyCases.length, 9, 'expected deterministic ready scalar option cases');
+  assert.equal(conflictCases.length, 9, 'expected deterministic conflict scalar option cases');
+
+  for (const readyCase of readyCases) {
+    const shape = assertWpOptionsScalarShape(readyCase, { conflict: false });
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    assert.equal(plan.status, 'ready');
+    assertWpOptionsScalarEvidenceRedacted(readyCase, shape, plan);
+
+    const ready = validateGeneratedCase(readyCase);
+    assert.equal(ready.status, 'ready');
+    assert.equal(ready.mutations, 1, 'ready scalar option should plan exactly one row mutation');
+    assert.equal(ready.applied, true, 'ready scalar option should apply through the harness');
+    assert.equal(ready.unplannedRemotePreserved, true, 'ready scalar option must preserve unplanned remote data');
+    assert.equal(ready.staleReplayRejected, true, 'ready scalar option should reject stale replay');
+    assert.equal(ready.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(ready.staleReplayRemoteUnchanged, true, 'stale replay must fail before mutation');
+  }
+
+  for (const conflictCase of conflictCases) {
+    const shape = assertWpOptionsScalarShape(conflictCase, { conflict: true });
+    const plan = createPushPlan({
+      base: conflictCase.base,
+      local: conflictCase.local,
+      remote: conflictCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    assert.equal(plan.status, 'conflict');
+    assert.equal(plan.mutations.length, 0, 'conflict scalar option must not carry mutations');
+    assert.ok(plan.conflicts.length >= 1, 'conflict scalar option should expose row conflict evidence');
+    assertWpOptionsScalarEvidenceRedacted(conflictCase, shape, plan);
+
+    const remote = cloneJson(conflictCase.remote);
+    const before = digest(remote);
+    const error = captureError(() => applyPlan(remote, plan));
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(digest(remote), before, 'conflict scalar option must refuse before mutation');
+  }
+});
+
+function assertWpOptionsScalarShape(testCase, { conflict }) {
+  const scalarRows = Object.entries(testCase.local.db.wp_options)
+    .filter(([id, row]) => id.startsWith('option_name:generated_scalar_')
+      && typeof row.option_value === 'string'
+      && row.option_value.startsWith('local scalar option '));
+
+  assert.equal(scalarRows.length, 1, `${testCase.id} should update one scalar wp_options row`);
+
+  const [rowId, localRow] = scalarRows[0];
+  const baseRow = testCase.base.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(baseRow, `${testCase.id} scalar option should exist in base`);
+  assert.ok(remoteRow, `${testCase.id} scalar option should exist in remote`);
+  assert.equal(localRow.option_name, baseRow.option_name);
+  assert.equal(remoteRow.option_name, baseRow.option_name);
+  assert.equal(typeof baseRow.option_value, 'string');
+  assert.equal(typeof localRow.option_value, 'string');
+  assert.equal(typeof remoteRow.option_value, 'string');
+  assert.match(baseRow.option_value, /^base scalar option /);
+  assert.match(localRow.option_value, /^local scalar option /);
+  assert.notEqual(localRow.option_value, baseRow.option_value, `${testCase.id} local option should change`);
+
+  if (conflict) {
+    assert.match(remoteRow.option_value, /^remote scalar option /);
+    assert.notEqual(remoteRow.option_value, baseRow.option_value, `${testCase.id} remote option should drift`);
+    assert.notEqual(remoteRow.option_value, localRow.option_value, `${testCase.id} remote drift should differ from local`);
+  } else {
+    assert.equal(remoteRow.option_value, baseRow.option_value, `${testCase.id} remote option should stay at base`);
+  }
+
+  return { rowId, baseRow, localRow, remoteRow };
+}
+
+function assertWpOptionsScalarEvidenceRedacted(testCase, shape, plan) {
+  const redactedEvidence = redactEvidence({
+    status: plan.status,
+    summary: plan.summary,
+    preconditions: plan.preconditions,
+    mutations: plan.mutations,
+    conflicts: plan.conflicts,
+    blockers: plan.blockers,
+    rawScalarOptionProbe: {
+      beforeValue: shape.baseRow.option_value,
+      value: shape.localRow.option_value,
+      afterValue: shape.remoteRow.option_value,
+    },
+  });
+  const redactedJson = JSON.stringify(redactedEvidence);
+
+  assert.ok(redactedJson.includes(EVIDENCE_REDACTION_MARKER), `${testCase.id} evidence should include redaction marker`);
+  assert.match(redactedJson, /"sha256":"[a-f0-9]{64}"/, `${testCase.id} evidence should keep hash metadata`);
+  for (const row of [shape.baseRow, shape.localRow, shape.remoteRow]) {
+    assert.equal(
+      redactedJson.includes(row.option_value),
+      false,
+      `${testCase.id} redacted evidence leaked scalar option value`,
+    );
+  }
 }
 
 test('RPP-0107 wp_posts create/update/delete target exposes per-tier ready and conflict coverage', () => {

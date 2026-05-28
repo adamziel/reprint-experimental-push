@@ -51,6 +51,8 @@ const scenarioFamilies = Object.freeze([
   'file-type-swap-conflict',
   'row-create-update-delete-mix-ready',
   'row-create-update-delete-mix-conflict',
+  'wp-options-scalar-ready',
+  'wp-options-scalar-conflict',
   'wp-posts-create-update-delete-ready',
   'wp-posts-create-update-delete-conflict',
   'wp-term-taxonomy-graph-ready',
@@ -76,15 +78,25 @@ const readyPreservingFamilies = new Set([
   'file-create-update-delete-mix-ready',
   'file-type-swap-ready',
   'row-create-update-delete-mix-ready',
+  'wp-options-scalar-ready',
   'wp-posts-create-update-delete-ready',
   'wp-term-taxonomy-graph-ready',
   'same-plan-user-meta-graph',
+]);
+
+const skipSeededComplexityFamilies = new Set([
+  'wp-options-scalar-ready',
+  'wp-options-scalar-conflict',
 ]);
 
 const targetCoverageDefinitions = Object.freeze({
   directoryDescendantConflict: {
     family: 'directory-descendant-conflict',
     tag: 'directory-delete-with-remote-descendant',
+  },
+  wpOptionsScalarChanges: {
+    family: 'wp-options-scalar-ready',
+    tag: 'wp-options-scalar-change',
   },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
@@ -561,6 +573,20 @@ const scenarioFamilyBuilders = {
     });
     tags.add('expected-conflict');
   },
+  'wp-options-scalar-ready': ({ base, local, remote, allocator, tags }) => {
+    addWpOptionsScalarChange(base, local, remote, allocator, tags, {
+      conflict: false,
+      prefix: 'ready-wp-options-scalar',
+    });
+    tags.add('ready-candidate');
+  },
+  'wp-options-scalar-conflict': ({ base, local, remote, allocator, tags }) => {
+    addWpOptionsScalarChange(base, local, remote, allocator, tags, {
+      conflict: true,
+      prefix: 'conflict-wp-options-scalar',
+    });
+    tags.add('expected-conflict');
+  },
   'wp-posts-create-update-delete-ready': ({ base, local, remote, allocator, tags }) => {
     addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, {
       conflict: false,
@@ -668,6 +694,10 @@ function addGeneratedComplexity({
   allocator,
   tags,
 }) {
+  if (skipSeededComplexityFamilies.has(family)) {
+    return;
+  }
+
   const operationCount = Math.max(0, tier * 2 + randomInt(rng, 0, tier + 2));
   const preserveReady = readyPreservingFamilies.has(family);
   for (let i = 0; i < operationCount; i++) {
@@ -1172,6 +1202,32 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
   }
+}
+
+function addWpOptionsScalarChange(base, local, remote, allocator, tags, { conflict, prefix }) {
+  const optionName = `generated_scalar_${prefix}_${allocator.next()}`;
+  const rowId = `option_name:${optionName}`;
+  const baseRow = {
+    option_name: optionName,
+    option_value: `base scalar option ${allocator.next()}`,
+  };
+
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: `local scalar option ${allocator.next()}`,
+  });
+  setRow(remote, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: conflict
+      ? `remote scalar option ${allocator.next()}`
+      : baseRow.option_value,
+  });
+
+  tags.add('wp-options-scalar');
+  tags.add('wp-options-scalar-change');
+  tags.add('wp-options-update');
+  tags.add('scalar-option');
 }
 
 function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { conflict, prefix }) {
