@@ -141,7 +141,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0122 (Near / generated-harness) Prove directory descendant conflict, variant 2. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0123 (Near / generated-harness) Prove file type-swap conflict, variant 2. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0124 (Near / generated-harness) Prove row create/update/delete mix, variant 2. Success: stale remote replay fails before mutation.
-- [ ] RPP-0125 (Near / generated-harness) Prove wp_options scalar option changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0125 (Near / generated-harness) Prove wp_options scalar option changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0126 (Near / generated-harness) Prove wp_options serialized option changes, variant 2. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0127 (Near / generated-harness) Prove wp_posts create/update/delete changes, variant 2. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0128 (Near / generated-harness) Prove wp_postmeta create/update/delete changes, variant 2. Success: ready cases apply with no unplanned remote overwrite.
