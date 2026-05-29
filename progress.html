@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T05:56:00+02:00">Last updated: May 29, 2026, 05:56 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T16:57:00+02:00">Last updated: May 29, 2026, 16:57 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>253</strong>
+        <strong>300</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>747</strong>
+        <strong>700</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>43/43 generated harness tests pass across 620 deterministic three-way push cases, including post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack variant-1 and variant-2 coverage.</span>
+            <span><strong>Generated push harness</strong>56/56 generated harness tests pass across 620 deterministic three-way push cases, including wp_postmeta variant-3, post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote classification, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option proof, wp_postmeta, wp_termmeta, and wp_usermeta row semantics with local/production-backed release-gate scope, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option proof, wp_postmeta, wp_termmeta, and wp_usermeta row semantics with local/production-backed release-gate scope, arbitrary plugin fixture package support-only evidence, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -389,7 +389,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Broad plugin semantics not checked">
-            <span><strong>Broader plugin semantics</strong>WooCommerce/HPOS, cron/cache effects, generated files, activation/update side effects, and arbitrary plugin data remain out of scope.</span>
+            <span><strong>Broader plugin semantics</strong>WooCommerce/HPOS, cron/cache effects, generated files, and activation/update side effects remain out of scope.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0407 usermeta</span>
+        <span>RPP-0148, RPP-0226, RPP-0420, RPP-0610</span>
       </div>
-      <p>The latest refresh integrates RPP-0407 wp_usermeta plugin-driver evidence: focused usermeta tests and generated harness checks prove exact umeta_id row semantics, wp-user-meta alias handling, production-backed scope carry-through, and fail-closed redacted blockers for mismatched or unsupported row ids. Counts are now 253/747; final release remains NO-GO.</p>
+      <p>The latest refresh integrates the restored live-team evidence: RPP-0148 generated wp_postmeta create/update/delete coverage, RPP-0226 remote-only plugin metadata preservation, RPP-0420 arbitrary plugin fixture package support-only release-gate scope, and RPP-0610 old-remote recovery classification on the same release proof path. Counts are now 300/700; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0148 harness: 56/56</span>
+        <span class="tag">RPP-0226 focused: 3/3</span>
+        <span class="tag">RPP-0420 package: 9/9</span>
+        <span class="tag">RPP-0610 relevant suite: 279/290</span>
+        <span class="tag">RPP-0610 recovery smoke: exit 0</span>
         <span class="tag">RPP-0407 usermeta: 5/5 focused</span>
         <span class="tag">RPP-0407 harness: 2/2 focused</span>
         <span class="tag">RPP-0602 recovery journal: 24/24</span>
@@ -457,8 +462,8 @@
         <span class="tag">tmux marker regression: 1/1</span>
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
-        <span class="tag">generated harness: 43/43</span>
-        <span class="tag">checked goals: 253/1000</span>
+        <span class="tag">generated harness: 56/56</span>
+        <span class="tag">checked goals: 300/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

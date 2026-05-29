@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 09:25 CEST.
+- Last update: 2026-05-29 16:57 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the current RPP-0225 merge-invariant file type-swap refresh.
+  the restored live-team refresh ending at `32904c7dd`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 254
-  items checked and leaves 746 open.
-- Checked slices: 100 release-gate foundation items, 21 graph identity items,
-  32 plugin-driver boundary items, 12 executor/auth items, 14 recovery items,
-  7 chunking/performance items, 2 production-topology items, 40 generated
-  harness items, and 26 merge-invariant items. No release-ops items are checked
+  goals, but it is no longer a static all-unchecked inventory. It now marks 300
+  items checked and leaves 700 open.
+- Checked slices: 100 release-gate foundation items, 28 graph identity items,
+  39 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  11 storage/performance items, 3 production-topology items, 50 generated
+  harness items, and 33 merge-invariant items. No release-ops items are checked
   yet.
+- Restored live-team refresh: `RPP-0148`, `RPP-0226`, `RPP-0420`, and
+  `RPP-0610` are now checked on
+  `lane/evidence-integration-20260527`. The integrated evidence adds
+  generated `wp_postmeta` create/update/delete variant-3 coverage, proves
+  remote-only plugin metadata preservation v2, records arbitrary plugin fixture
+  package release-gate scope as support-only/local evidence, and carries
+  old-remote recovery classification through the same release proof path.
+  Validation included `npm run test:generated-push-harness` passing 56/56,
+  `node --test test/authenticated-http-push-client.test.js test/recovery-journal.test.js test/production-shaped-proof.test.js`
+  passing 279/290 with 11 skips, `npm run test:recovery:file-journal`, focused
+  RPP commands, checklist lint, artifact redaction scans, and `git diff
+  --check`. Counts are now 300/700; final release remains `NO-GO`.
 - Focused local file type swap versus remote descendant refresh: the current
   lane now contains `RPP-0225` evidence in
   `docs/evidence/rpp-0225-local-file-type-swap-remote-descendant-v2.md`,

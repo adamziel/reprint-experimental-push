@@ -1,18 +1,28 @@
-# AO Progress Report - 2026-05-29 02:33 CEST
+# AO Progress Report - 2026-05-29 16:57 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0093 release-verifier apply route carry-through
-refresh. It separates
+`lane/evidence-integration-20260527` through the current restored live-team
+refresh ending at `32904c7dd`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 230 are
-  checked from integrated evidence and 770 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 300 are
+  checked from integrated evidence and 700 remain open.
+- Restored live-team integrations now check `RPP-0148`, `RPP-0226`,
+  `RPP-0420`, and `RPP-0610`. The lane integrates generated `wp_postmeta`
+  variant-3 coverage, remote-only plugin metadata preservation v2, arbitrary
+  plugin fixture package support-only release-gate evidence, and old-remote
+  recovery classification carry-through on the same release proof path. Key
+  validation included `npm run test:generated-push-harness` passing 56/56,
+  `node --test test/authenticated-http-push-client.test.js test/recovery-journal.test.js test/production-shaped-proof.test.js`
+  passing 279/290 with 11 skips, `npm run test:recovery:file-journal`, focused
+  RPP-0226/RPP-0316/RPP-0420/RPP-0610 commands, checklist lint, artifact
+  redaction scans, and `git diff --check`.
 - Release verifier apply route pre-mutation carry-through now checks `RPP-0093`.
   `umask 0022 && node --test test/release-verifier-apply-route-carry-through-focused-regression.test.js`
   passed 3/3, proving verifier-shaped apply-route evidence is carried into

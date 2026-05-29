@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 230.
-- Remaining open: 770.
+- Verified complete: 300.
+- Remaining open: 700.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -164,7 +164,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0145 (Near / generated-harness) Add generated coverage for wp_options scalar option changes, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0146 (Near / generated-harness) Add generated coverage for wp_options serialized option changes, variant 3. Success: generator emits at least one ready case and one non-ready case for this target.
 - [x] RPP-0147 (Near / generated-harness) Add generated coverage for wp_posts create/update/delete changes, variant 3. Success: summary exposes per-tier counts for this target.
-- [ ] RPP-0148 (Near / generated-harness) Add generated coverage for wp_postmeta create/update/delete changes, variant 3. Success: ready cases apply with no unplanned remote overwrite.
+- [x] RPP-0148 (Near / generated-harness) Add generated coverage for wp_postmeta create/update/delete changes, variant 3. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0149 (Near / generated-harness) Add generated coverage for wp_users and wp_usermeta graph changes, variant 3. Success: stale remote replay fails before mutation.
 - [x] RPP-0150 (Near / generated-harness) Add generated coverage for wp_comments and wp_commentmeta graph changes, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0151 (Near / generated-harness) Add generated coverage for wp_terms and wp_termmeta graph changes, variant 3. Success: generator emits at least one ready case and one non-ready case for this target.
@@ -247,7 +247,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0223 (Near-Mid / merge-invariants) Prove local delete versus remote edit, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0224 (Near-Mid / merge-invariants) Prove local directory delete versus remote descendant create, variant 2. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0225 (Near-Mid / merge-invariants) Prove local file type swap versus remote descendant, variant 2. Success: progress log records the command and caveat.
-- [ ] RPP-0226 (Near-Mid / merge-invariants) Prove remote-only plugin metadata preservation, variant 2. Success: node test proves the invariant over generated and focused fixtures.
+- [x] RPP-0226 (Near-Mid / merge-invariants) Prove remote-only plugin metadata preservation, variant 2. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0227 (Near-Mid / merge-invariants) Prove local plugin data with stale owner context, variant 2. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0228 (Near-Mid / merge-invariants) Prove unknown plugin-owned resource refusal, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0229 (Near-Mid / merge-invariants) Prove conflict evidence hash redaction, variant 2. Success: scenario matrix row names the behavior and command.
@@ -451,7 +451,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0417 (Mid / plugin-driver) Implement driver dry-run validation hook, variant 1. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0418 (Mid / plugin-driver) Implement driver apply validation hook, variant 1. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0419 (Mid / plugin-driver) Implement driver audit evidence redaction, variant 1. Success: remote drift preserves plugin-owned remote data.
-- [ ] RPP-0420 (Mid / plugin-driver) Implement arbitrary plugin fixture package, variant 1. Success: release gate notes whether evidence is local or production-backed.
+- [x] RPP-0420 (Mid / plugin-driver) Implement arbitrary plugin fixture package, variant 1. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0421 (Mid / plugin-driver) Prove driver registration API, variant 2. Success: focused test proves exact driver behavior.
 - [x] RPP-0422 (Mid / plugin-driver) Prove driver owner identity binding, variant 2. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0423 (Mid / plugin-driver) Prove custom table allowlist exact match, variant 2. Success: local production proof carries one real mutation through apply.
@@ -651,7 +651,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0607 (Far / recovery) Implement restart-readable open state, variant 1. Success: journal rows are durable after process restart.
 - [x] RPP-0608 (Far / recovery) Implement restart-readable staged state, variant 1. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0609 (Far / recovery) Implement restart-readable committed state, variant 1. Success: lease owner identity is visible in audit evidence.
-- [ ] RPP-0610 (Far / recovery) Implement old remote recovery classification, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
+- [x] RPP-0610 (Far / recovery) Implement old remote recovery classification, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0611 (Far / recovery) Implement new remote recovery classification, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0612 (Far / recovery) Implement blocked recovery classification, variant 1. Success: journal rows are durable after process restart.
 - [x] RPP-0613 (Far / recovery) Implement unknown drift classification, variant 1. Success: retry does not overwrite preserved remote changes.
