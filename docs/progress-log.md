@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 04:50 CEST.
+- Last update: 2026-05-29 05:07 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 244
-  items checked and leaves 756 open.
-- Checked slices: 100 release-gate foundation items, 19 graph identity items,
-  30 plugin-driver boundary items, 11 executor/auth items, 13 recovery items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 247
+  items checked and leaves 753 open.
+- Checked slices: 100 release-gate foundation items, 20 graph identity items,
+  31 plugin-driver boundary items, 11 executor/auth items, 13 recovery items,
   7 chunking/performance items, 2 production-topology items, 39 generated
-  harness items, and 23 merge-invariant items. No release-ops items are checked
+  harness items, and 24 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_termmeta plugin-driver semantics refresh: the current lane now
+  contains `RPP-0406` evidence in
+  `docs/evidence/rpp-0406-wp-termmeta-driver-semantics.md` and
+  `test/plugin-driver-termmeta-semantics.test.js`. `node --test
+  test/plugin-driver-termmeta-semantics.test.js` and `node --test
+  --test-name-pattern 'RPP-0406|wp_termmeta driver'
+  test/plugin-driver-termmeta-semantics.test.js` both passed 5/5, proving
+  canonical `wp-termmeta` and `wp-term-meta` alias row semantics, exact
+  `meta_id` matching, local-candidate versus production-backed
+  `releaseGateEvidenceScope` carry-through, fail-closed mismatched and
+  unsupported row identifiers, and redacted evidence without raw `meta_value`
+  payloads. Counts are now 247/753; final release remains `NO-GO`.
 - Generated harness stale replay variant-2 refresh: the current lane now
   contains `RPP-0137` evidence in
   `docs/evidence/rpp-0137-stale-remote-after-dry-run.md`,
