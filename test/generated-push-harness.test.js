@@ -209,6 +209,9 @@ const requiredFamilies = [
   'plugin-owned-custom-table-update',
   'file-topology',
   'directory-descendant',
+  'directory-descendant-v3',
+  'directory-descendant-v3-ready',
+  'directory-descendant-v3-non-ready',
   'directory-delete-with-remote-descendant',
   'directory-delete-no-remote-descendant',
   'type-change',
@@ -2149,6 +2152,83 @@ test('RPP-0102/RPP-0122 directory descendant target exposes per-tier ready and c
   assert.equal(conflict.applied, false, 'directory descendant conflict must not apply mutations');
 });
 
+test('RPP-0142 directory descendant conflict variant 3 exposes per-tier generated coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.directoryDescendantConflictVariant3;
+
+  assert.ok(coverage, 'missing directory descendant conflict variant 3 target coverage');
+  assert.equal(coverage.family, 'directory-descendant-conflict-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['directory-descendant-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 3 target should include ready directory deletes');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 3 target should include descendant conflicts');
+  assert.equal(report.summary.featureFamilies['directory-descendant-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['directory-descendant-v3-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedDirectoryDescendantConflictVariant3Evidence(coverage);
+  const replayEvidence = generatedDirectoryDescendantConflictVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0142 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 directory descendant evidence changed between runs');
+  assert.equal(firstEvidence.target, 'directoryDescendantConflictVariant3');
+  assert.equal(firstEvidence.family, 'directory-descendant-conflict-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.surface.remoteDescendant, null);
+  assert.equal(readyCase.directoryDelete.action, 'delete');
+  assert.equal(readyCase.directoryDelete.changeKind, 'delete');
+  assert.equal(readyCase.directoryDelete.appliedHash, readyCase.directoryDelete.localHash);
+  assert.equal(readyCase.directoryDelete.resourceKey, readyCase.surface.directory.resourceKey);
+  assert.match(readyCase.directoryDelete.mutationHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.surface.remoteDescendant.resourceKey, nonReadyCase.conflict.relatedResourceKey);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.directory.resourceKey);
+  assert.equal(nonReadyCase.conflict.class, 'file-topology-conflict');
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.equal(nonReadyCase.remoteDescendant.decision, 'keep-remote');
+  assert.equal(nonReadyCase.remoteDescendant.plannedMutation, false);
+  assert.equal(nonReadyCase.remoteDescendant.plannedPrecondition, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('remote descendant '), false, 'variant 3 evidence leaked remote descendant payload');
+});
+
 function assertDirectoryDescendantShape(testCase, { conflict }) {
   const marker = conflict ? '/descendant-' : '/descendant-ready-';
   const directories = Object.entries(testCase.base.files)
@@ -2173,6 +2253,268 @@ function assertDirectoryDescendantShape(testCase, { conflict }) {
     assert.equal(Object.hasOwn(testCase.base.files, path), false, `${testCase.id} remote descendant should not exist in base`);
     assert.equal(Object.hasOwn(testCase.local.files, path), false, `${testCase.id} remote descendant should be remote-only`);
   }
+
+  const remoteDescendantResource = remoteDescendants.length > 0
+    ? { type: 'file', path: remoteDescendants[0] }
+    : null;
+
+  return {
+    directory,
+    directoryResource: { type: 'file', path: directory },
+    directoryResourceKey: `file:${directory}`,
+    remoteDescendants,
+    remoteDescendantResource,
+    remoteDescendantResourceKey: remoteDescendantResource ? `file:${remoteDescendantResource.path}` : null,
+  };
+}
+
+function generatedDirectoryDescendantConflictVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('directory-descendant-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedDirectoryDescendantConflictVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready directory delete case');
+  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one descendant conflict case');
+
+  return {
+    target: 'directoryDescendantConflictVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('non-ready'),
+    ],
+  };
+}
+
+function generatedDirectoryDescendantConflictVariant3CaseEvidence(testCase, result) {
+  const conflict = testCase.family === 'directory-descendant-conflict';
+  const shape = assertDirectoryDescendantShape(testCase, { conflict });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = directoryDescendantVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const directoryDelete = directoryDescendantVariant3ReadyDeleteEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(conflict, false, `${testCase.id} ready evidence should come from ready directory target`);
+    assert.equal(testCase.tags.has('directory-descendant-v3-ready'), true);
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      directoryDelete,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        directoryDelete,
+      })}`,
+    };
+  }
+
+  assert.equal(conflict, true, `${testCase.id} non-ready evidence should come from descendant conflict family`);
+  assert.equal(testCase.tags.has('directory-descendant-v3-non-ready'), true);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const conflictEvidence = directoryDescendantVariant3ConflictEvidence({ testCase, plan, shape });
+  const remoteDescendant = directoryDescendantVariant3RemoteDescendantEvidence({ testCase, plan, shape });
+  const refusal = directoryDescendantVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    conflict: conflictEvidence,
+    remoteDescendant,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      conflict: conflictEvidence,
+      remoteDescendant,
+      refusal,
+    })}`,
+  };
+}
+
+function directoryDescendantVariant3SurfaceEvidence(testCase, shape) {
+  const directory = {
+    resourceKey: shape.directoryResourceKey,
+    baseHash: resourceHash(testCase.base, shape.directoryResource),
+    localHash: resourceHash(testCase.local, shape.directoryResource),
+    remoteHash: resourceHash(testCase.remote, shape.directoryResource),
+  };
+  const remoteDescendant = shape.remoteDescendantResource
+    ? {
+        resourceKey: shape.remoteDescendantResourceKey,
+        baseHash: resourceHash(testCase.base, shape.remoteDescendantResource),
+        localHash: resourceHash(testCase.local, shape.remoteDescendantResource),
+        remoteHash: resourceHash(testCase.remote, shape.remoteDescendantResource),
+      }
+    : null;
+
+  return {
+    directory,
+    remoteDescendant,
+  };
+}
+
+function directoryDescendantVariant3ReadyDeleteEvidence({ testCase, plan, applied, shape }) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.directoryResourceKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === shape.directoryResourceKey);
+
+  assert.ok(mutation, `${testCase.id} should plan the directory delete mutation`);
+  assert.ok(precondition, `${testCase.id} should precondition the directory delete`);
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.changeKind, 'delete');
+  assert.equal(precondition.mutationId, mutation.id);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(Object.hasOwn(applied.site.files, shape.directory), false, `${testCase.id} apply should delete the directory`);
+
+  const baseHash = resourceHash(testCase.base, shape.directoryResource);
+  const localHash = resourceHash(testCase.local, shape.directoryResource);
+  const remoteHash = resourceHash(testCase.remote, shape.directoryResource);
+  const appliedHash = resourceHash(applied.site, shape.directoryResource);
+
+  assert.equal(appliedHash, localHash, `${testCase.id} applied directory hash should match local deletion`);
+  assert.equal(remoteHash, mutation.remoteBeforeHash, `${testCase.id} remote hash should match mutation preimage`);
+
+  return {
+    resourceKey: shape.directoryResourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    baseHash,
+    localHash,
+    remoteHash,
+    appliedHash,
+    mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+    preconditionExpectedHash: precondition.expectedHash,
+    mutationHash: `sha256:${digest(mutation)}`,
+    preconditionHash: `sha256:${digest(precondition)}`,
+  };
+}
+
+function directoryDescendantVariant3ConflictEvidence({ testCase, plan, shape }) {
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === shape.directoryResourceKey);
+  const plannedMutation = plan.mutations.some((entry) => entry.resourceKey === shape.directoryResourceKey);
+
+  assert.ok(conflict, `${testCase.id} should report a conflict for ${shape.directoryResourceKey}`);
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.relatedResourceKey, shape.remoteDescendantResourceKey);
+  assert.equal(plannedMutation, false, `${testCase.id} should not plan the conflicted directory delete`);
+
+  return {
+    resourceKey: conflict.resourceKey,
+    class: conflict.class,
+    relatedResourceKey: conflict.relatedResourceKey,
+    plannedMutation,
+    conflictHash: `sha256:${digest(conflict)}`,
+  };
+}
+
+function directoryDescendantVariant3RemoteDescendantEvidence({ testCase, plan, shape }) {
+  assert.ok(shape.remoteDescendantResource, `${testCase.id} should include one remote descendant`);
+
+  const decision = plan.decisions.find((entry) => entry.resourceKey === shape.remoteDescendantResourceKey);
+  const plannedMutation = plan.mutations.some((entry) => entry.resourceKey === shape.remoteDescendantResourceKey);
+  const plannedPrecondition = plan.preconditions.some((entry) => entry.resourceKey === shape.remoteDescendantResourceKey);
+
+  assert.ok(decision, `${testCase.id} should record a keep-remote decision for the descendant`);
+  assert.equal(decision.decision, 'keep-remote');
+  assert.equal(plannedMutation, false);
+  assert.equal(plannedPrecondition, false);
+
+  return {
+    resourceKey: shape.remoteDescendantResourceKey,
+    decision: decision.decision,
+    baseHash: resourceHash(testCase.base, shape.remoteDescendantResource),
+    localHash: resourceHash(testCase.local, shape.remoteDescendantResource),
+    remoteHash: resourceHash(testCase.remote, shape.remoteDescendantResource),
+    plannedMutation,
+    plannedPrecondition,
+    decisionHash: `sha256:${digest(decision)}`,
+  };
+}
+
+function directoryDescendantVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
 }
 
 test('RPP-0103 generated harness emits ready and non-ready file type-swap cases', () => {
