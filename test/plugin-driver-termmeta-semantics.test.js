@@ -64,7 +64,7 @@ function mutationFor(plan, key) {
   return plan.mutations.find((mutation) => mutation.resourceKey === key);
 }
 
-test('wp_termmeta driver accepts an exact meta_id row and emits redacted driver evidence', () => {
+test('RPP-0406 wp_termmeta driver accepts an exact meta_id row and emits redacted driver evidence', () => {
   const base = baseSite();
   const local = cloneJson(base);
   local.db.wp_termmeta[rowId].meta_value = { state: 'local-private-termmeta' };
@@ -97,13 +97,40 @@ test('wp_termmeta driver accepts an exact meta_id row and emits redacted driver 
   assert.equal(evidence.metaKey, '_forms_term_payload');
   assert.equal(evidence.pluginOwner, 'forms');
   assert.equal(evidence.policySource, 'push-intent:update-forms-termmeta');
+  assert.equal(evidence.evidenceScope, 'local-candidate');
+  assert.equal(evidence.releaseGateEvidenceScope, 'local-candidate');
   assert.equal(evidenceJson.includes('base-secret'), false);
   assert.equal(evidenceJson.includes('local-private-termmeta'), false);
   assert.equal(Object.hasOwn(evidence, 'meta_value'), false);
   assert.equal(Object.hasOwn(evidence, 'metaValue'), false);
 });
 
-test('wp_termmeta driver alias preserves exact meta_id row semantics', () => {
+test('RPP-0406 wp_termmeta driver carries production-backed release evidence from explicit remote policy metadata', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  local.db.wp_termmeta[rowId].meta_value = { state: 'local-production-shaped-termmeta' };
+  const remote = cloneJson(base);
+  remote.meta = {
+    evidenceScope: 'production-backed',
+    pluginOwnedResources: {
+      allowedResources: [allowedTermmetaResource()],
+    },
+  };
+
+  const plan = planFor(base, local, remote);
+  const evidence = mutationFor(plan, resourceKey).pluginOwnedResource.driverEvidence;
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(evidence.policySource, 'remote-snapshot');
+  assert.equal(evidence.evidenceScope, 'production-backed');
+  assert.equal(evidence.releaseGateEvidenceScope, 'production-backed');
+  assert.equal(evidence.rowIdKind, 'meta_id');
+  assert.equal(evidence.termId, 10);
+  assert.equal(evidence.metaKey, '_forms_term_payload');
+  assert.equal(JSON.stringify(evidence).includes('local-production-shaped-termmeta'), false);
+});
+
+test('RPP-0406 wp_termmeta driver alias preserves exact meta_id row semantics', () => {
   const base = baseSite();
   const local = cloneJson(base);
   local.db.wp_termmeta[rowId].meta_value = { state: 'local-alias-private' };
@@ -126,10 +153,12 @@ test('wp_termmeta driver alias preserves exact meta_id row semantics', () => {
   assert.equal(evidence.rowIdKind, 'meta_id');
   assert.equal(evidence.termId, 10);
   assert.equal(evidence.metaKey, '_forms_term_payload');
+  assert.equal(evidence.evidenceScope, 'local-candidate');
+  assert.equal(evidence.releaseGateEvidenceScope, 'local-candidate');
   assert.equal(JSON.stringify(evidence).includes('local-alias-private'), false);
 });
 
-test('wp_termmeta driver fails closed when row meta_id does not match the resource id', () => {
+test('RPP-0406 wp_termmeta driver fails closed when row meta_id does not match the resource id', () => {
   const base = baseSite();
   const local = cloneJson(base);
   local.db.wp_termmeta[rowId] = termmetaRow({ state: 'local-private-mismatch' }, { meta_id: 8 });
@@ -157,13 +186,15 @@ test('wp_termmeta driver fails closed when row meta_id does not match the resour
   assert.equal(blocker.driverEvidence.driver, 'wp-termmeta');
   assert.equal(blocker.driverEvidence.rowId, rowId);
   assert.equal(blocker.driverEvidence.rowIdKind, 'meta_id');
+  assert.equal(blocker.driverEvidence.evidenceScope, 'local-candidate');
+  assert.equal(blocker.driverEvidence.releaseGateEvidenceScope, 'local-candidate');
   assert.match(blocker.reason, /meta_id to match the resource id/);
   assert.equal(blockerJson.includes('base-secret'), false);
   assert.equal(blockerJson.includes('local-private-mismatch'), false);
   assert.equal(blockerJson.includes('meta_value'), false);
 });
 
-test('wp_termmeta driver rejects non-meta_id row identifiers before mutation', () => {
+test('RPP-0406 wp_termmeta driver rejects non-meta_id row identifiers before mutation', () => {
   const unsupportedRowId = 'term_id:10:meta_key:_forms_term_payload';
   const unsupportedResourceKey = 'row:["wp_termmeta","term_id:10:meta_key:_forms_term_payload"]';
   const base = baseSite();
@@ -195,6 +226,9 @@ test('wp_termmeta driver rejects non-meta_id row identifiers before mutation', (
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
   assert.equal(blocker.resourceKey, unsupportedResourceKey);
   assert.equal(blocker.driverEvidence.supported, false);
+  assert.equal(blocker.driverEvidence.driver, 'wp-termmeta');
+  assert.equal(blocker.driverEvidence.evidenceScope, 'local-candidate');
+  assert.equal(blocker.driverEvidence.releaseGateEvidenceScope, 'local-candidate');
   assert.match(blocker.reason, /row id meta_id:<positive-int>/);
   assert.equal(blockerJson.includes('base-unsupported-row-id-secret'), false);
   assert.equal(blockerJson.includes('local-unsupported-row-id-private'), false);
