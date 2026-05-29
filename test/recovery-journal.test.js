@@ -30,7 +30,7 @@ import {
   replayRecoveryRepair,
 } from '../src/recovery-repair.js';
 import { createPushPlan } from '../src/planner.js';
-import { deserializeResourceValue, setResource } from '../src/resources.js';
+import { deserializeResourceValue, resourceHash, setResource } from '../src/resources.js';
 import { digest } from '../src/stable-json.js';
 import { buildDurableRecoveryJournalReleaseProof } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 
@@ -445,6 +445,127 @@ test('file-backed journal staged state survives restart and retry preserves remo
     fs.readFileSync(filePath, 'utf8').includes(preservedAfterCrash),
     false,
   );
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+});
+
+test('file-backed journal committed state survives restart and exposes lease owner identity', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = clone(base);
+  const remote = clone(base);
+  const claimId = 'rpp-0609-committed-state-writer';
+  local.files['file-1.txt'] = 'local-private-content-rpp-0609-committed-one';
+  local.files['file-2.txt'] = 'local-private-content-rpp-0609-committed-two';
+  const plan = planFor(base, local, remote);
+  const expectedCommitted = clone(remote);
+  applyFirstMutations(expectedCommitted, plan, 1);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const childScript = `
+    import { openRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0609_JOURNAL_PATH;
+    const base = JSON.parse(process.env.RPP0609_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0609_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0609_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const durableJournal = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: ${JSON.stringify(claimId)},
+    });
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        failDuringCommitAtMutation: 1,
+        mutateRemote: true,
+      });
+      console.error('expected injected commit failure');
+      process.exit(3);
+    } catch (error) {
+      if (error?.code !== 'INJECTED_FAILURE_DURING_COMMIT') {
+        console.error(error?.stack || String(error));
+        process.exit(2);
+      }
+      process.exit(0);
+    }
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0609_JOURNAL_PATH: filePath,
+      RPP0609_BASE_SITE: JSON.stringify(base),
+      RPP0609_LOCAL_SITE: JSON.stringify(local),
+      RPP0609_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const restarted = readRecoveryJournal(filePath);
+  const mutationRecord = restarted.records.find((record) => record.type === 'mutation-observed');
+  assert.ok(mutationRecord);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.committedState.status, 'committed');
+  assert.equal(restarted.committedState.phase, 'applied');
+  assert.equal(restarted.committedState.restartReadable, true);
+  assert.equal(restarted.committedState.records, restarted.records.length);
+  assert.equal(restarted.committedState.durableRows, restarted.records.length);
+  assert.equal(restarted.committedState.committedRows, 1);
+  assert.equal(restarted.committedState.mutationRows, 1);
+  assert.equal(restarted.committedState.completedRows, 0);
+  assert.equal(restarted.committedState.targetRows, plan.mutations.length);
+  assert.equal(restarted.committedState.committedTargetRows, 1);
+  assert.equal(restarted.committedState.latestCommittedType, 'mutation-observed');
+  assert.equal(restarted.committedState.latestCommittedSequence, mutationRecord.sequence);
+  assert.equal(restarted.committedState.latestMutationSequence, mutationRecord.sequence);
+  assert.equal(restarted.committedState.latestCompletedSequence, null);
+  assert.equal(restarted.committedState.planId, plan.id);
+  assert.equal(restarted.committedState.state, 'applied');
+  assert.equal(restarted.committedState.observedHash, mutationRecord.observedHash);
+  assert.equal(restarted.committedState.latestMutation.mutationId, plan.mutations[0].id);
+  assert.equal(restarted.committedState.latestMutation.resourceKey, plan.mutations[0].resourceKey);
+  assert.equal(restarted.committedState.latestMutation.afterHash, resourceHash(expectedCommitted, plan.mutations[0].resource));
+  assert.equal(restarted.committedState.latestMutation.observedHash, restarted.committedState.latestMutation.afterHash);
+  assert.deepEqual(restarted.committedState.targetEnvelope, {
+    plannedTargets: plan.mutations.length,
+    committedTargets: 1,
+    allCommittedTargetsHaveHashes: true,
+    allTargetsCommitted: false,
+  });
+  assert.deepEqual(restarted.committedState.leaseOwner, {
+    visible: true,
+    claimId,
+    claimHash: recoveryClaimHash(claimId),
+    claimKeyHash: recoveryClaimHash(claimId),
+    sequence: mutationRecord.sequence,
+    eventType: 'mutation-observed',
+  });
+  assert.deepEqual(restarted.committedState.fsync, {
+    requested: true,
+    strategy: 'after-append',
+  });
+
+  const restartInspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: expectedCommitted,
+  });
+  assert.equal(restartInspection.status, 'blocked-recovery');
+  assert.match(restartInspection.reason, /partially updated/);
+  assert.equal(restartInspection.counts.new, 1);
+  assert.equal(restartInspection.counts.old, plan.mutations.length - 1);
+  assert.equal(restartInspection.journal.committedState.leaseOwner.claimId, claimId);
+  assert.equal(restartInspection.journal.committedState.leaseOwner.claimKeyHash, recoveryClaimHash(claimId));
   assert.ok(restarted.records.every((record) => record.fsync.requested === true));
 });
 
