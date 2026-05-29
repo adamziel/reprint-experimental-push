@@ -62,6 +62,14 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.evidence.guardedTransfer.resume.duplicateMutationWork, 0);
   assert.equal(report.evidence.guardedTransfer.resume.missingReceiptBlocksSkip, true);
   assert.equal(report.evidence.guardedTransfer.resume.mismatchedReceiptBlocksSkip, true);
+  assert.equal(report.evidence.transactionBoundaryPolicy.status, 'passed');
+  assert.equal(report.evidence.transactionBoundaryPolicy.transfer.complete, true);
+  assert.equal(report.evidence.transactionBoundaryPolicy.resume.duplicateMutationWork, 0);
+  assert.equal(report.evidence.transactionBoundaryPolicy.apply.noDuplicateMutationWork, true);
+  assert.equal(
+    report.evidence.transactionBoundaryPolicy.apply.applyOpenedAfterTransferFinalize,
+    true,
+  );
   assert.equal(report.evidence.guardedTransfer.visibility.livePathChangesOnlyAfterFinalize, true);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
@@ -132,6 +140,54 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
 });
 
+test('RPP-0703 transaction boundary policy resumes chunk transfer without duplicate mutation work', { concurrency: false }, () => {
+  const report = smallBenchmark({
+    fileBytes: 1024 * 1024,
+    chunkSizeBytes: 256 * 1024,
+    rowCount: 8,
+    rowPayloadBytes: 64,
+  });
+  const policy = report.evidence.transactionBoundaryPolicy;
+
+  assert.equal(policy.policyId, 'rpp-0703-transaction-boundary-policy');
+  assert.equal(policy.variant, 1);
+  assert.equal(policy.status, 'passed');
+  assert.deepEqual(policy.boundaryOrder, [
+    'chunk-transfer-transaction',
+    'file-staging-finalize-boundary',
+    'apply-mutation-transaction',
+  ]);
+  assert.equal(policy.transfer.complete, true);
+  assert.equal(policy.transfer.chunkCount, report.shape.chunkCount);
+  assert.equal(policy.transfer.exactReceiptMatches, report.shape.chunkCount);
+  assert.equal(policy.transfer.duplicateReceiptKeys, 0);
+  assert.equal(policy.transfer.canonicalVisibleDuringTransfer, false);
+  assert.equal(policy.resume.receiptOnlyResumeSafe, true);
+  assert.equal(policy.resume.chunksSkippedByReceipt, report.shape.chunkCount);
+  assert.equal(policy.resume.chunksToUpload, 0);
+  assert.equal(policy.resume.bytesToUpload, 0);
+  assert.equal(policy.resume.duplicateChunkBytes, 0);
+  assert.equal(policy.resume.duplicateMutationWork, 0);
+  assert.equal(policy.resume.missingReceiptBlocksSkip, true);
+  assert.equal(policy.resume.mismatchedReceiptBlocksSkip, true);
+  assert.equal(policy.apply.applyOpenedAfterTransferFinalize, true);
+  assert.ok(
+    policy.transfer.transferFinalizeSequence < policy.apply.firstApplyBoundarySequence,
+    'apply transaction must open only after file staging finalizes',
+  );
+  assert.equal(policy.apply.mutationWorkAllowedDuringTransferResume, false);
+  assert.equal(policy.apply.mutationWorkReplayedBeforeTransferFinalize, 0);
+  assert.equal(policy.apply.freshMutationWorkDuringTransferResume, 0);
+  assert.equal(policy.apply.duplicateMutationWork, 0);
+  assert.equal(policy.apply.noDuplicateMutationWork, true);
+  assert.match(policy.evidenceHash, /^[a-f0-9]{64}$/);
+  assert.equal(
+    report.evidence.guardedTransfer.transactionBoundaryPolicy.evidenceHash,
+    policy.evidenceHash,
+  );
+  assert.doesNotMatch(JSON.stringify(policy), /row-payload|commerce_bench|catalog identity/);
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', { concurrency: false }, () => {
   const report = smallBenchmark();
 
@@ -183,6 +239,12 @@ test('production claim gate fails closed if benchmark evidence is tampered', { c
   missingResumeEvidence.evidence.guardedTransfer.resume.receiptOnlyResumeSafe = false;
   assert.ok(
     productionThroughputBlockers(missingResumeEvidence).includes('missing-receipt-only-resume-evidence'),
+  );
+
+  const missingTransactionBoundary = clone(report);
+  missingTransactionBoundary.evidence.transactionBoundaryPolicy.apply.noDuplicateMutationWork = false;
+  assert.ok(
+    productionThroughputBlockers(missingTransactionBoundary).includes('missing-transaction-boundary-policy'),
   );
 
   const missingPrecondition = clone(report);
@@ -303,6 +365,7 @@ function deterministicTransferProjection(report) {
       receipts: report.evidence.guardedTransfer.receipts,
       hashVerification: report.evidence.guardedTransfer.hashVerification,
       resume: report.evidence.guardedTransfer.resume,
+      transactionBoundaryPolicy: report.evidence.guardedTransfer.transactionBoundaryPolicy,
       visibility: report.evidence.guardedTransfer.visibility,
     },
     productionThroughputBlockers: report.claims.productionThroughput.blockers,

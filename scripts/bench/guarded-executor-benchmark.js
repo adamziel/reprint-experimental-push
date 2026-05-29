@@ -16,6 +16,7 @@ import {
 import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
 import { resourceHash } from '../../src/resources.js';
 import { digest as stableDigest } from '../../src/stable-json.js';
+import { buildChunkTransferTransactionBoundaryPolicy } from '../../src/transaction-boundary-policy.js';
 import { DEFAULT_LIMITS, MIB } from './performance-model.js';
 
 const FIXED_NOW = new Date('2026-05-24T00:00:00.000Z');
@@ -277,6 +278,12 @@ export function productionThroughputBlockers(report) {
   }
   if (!report.evidence.guardedTransfer?.resume?.receiptOnlyResumeSafe) {
     blockers.push('missing-receipt-only-resume-evidence');
+  }
+  if (
+    report.evidence.transactionBoundaryPolicy?.status !== 'passed'
+    || report.evidence.transactionBoundaryPolicy?.apply?.noDuplicateMutationWork !== true
+  ) {
+    blockers.push('missing-transaction-boundary-policy');
   }
   if (report.evidence.chunkReceipts.recorded !== report.evidence.chunkReceipts.expected) {
     blockers.push('missing-durable-chunk-receipts');
@@ -832,6 +839,16 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
   const hashVerification = verifyChunkManifest(stagedFile);
   const resume = buildReceiptResumeProbe({ stagedFile, chunkReceiptRecords });
   const byteRangeCoverage = manifestByteRangeCoverage(stagedFile.manifestEntries, stagedFile.fileBytes);
+  const transactionBoundaryPolicy = buildChunkTransferTransactionBoundaryPolicy({
+    planId: stagedFile.planId,
+    resourceKey: stagedFile.resourceKey,
+    manifestDigest: stagedFile.manifestDigest,
+    assembledHash: stagedFile.assembledHash,
+    manifestEntries: stagedFile.manifestEntries,
+    chunkReceiptRecords,
+    journalRecords: successPersisted.records,
+    resumeRecords: [],
+  });
 
   return {
     manifest: {
@@ -864,6 +881,7 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
     },
     hashVerification,
     resume,
+    transactionBoundaryPolicy,
     visibility: {
       finalizedRecordPresent: Boolean(finalizedRecord),
       canonicalVisibleBeforePublish: chunkReceiptRecords.some((record) => record.canonicalVisible === true),
@@ -1221,6 +1239,7 @@ function buildReport({
   };
   const evidence = {
     guardedTransfer,
+    transactionBoundaryPolicy: guardedTransfer.transactionBoundaryPolicy,
     chunkReceipts: {
       expected: stagedFile.chunkCount,
       recorded: chunkReceiptRecords.length,
