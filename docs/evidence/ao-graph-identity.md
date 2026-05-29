@@ -1,6 +1,6 @@
 # AO graph identity evidence
 
-Date: 2026-05-28
+Date: 2026-05-29
 Lane: graph-identity
 
 ## Implemented evidence
@@ -15,6 +15,7 @@ Lane: graph-identity
 - Adds a local-production proof for importer/exporter `pushIdentityMap` metadata carried by the immutable base package: exported local source rows map to imported remote targets, dependent child post and postmeta rows rewrite to the remote target, stale imported targets fail closed, and evidence records only map/provenance hashes, resource keys, and rewrite hashes.
 - Adds generated-harness target coverage for `wp_posts.post_author` references: same-plan user/post creates remain ready with stale replay rejection, while posts that reference a remotely drifted user fail closed as `stale-wordpress-graph-identity` with hash-only target evidence.
 - Adds generated-harness evidence for `wp_comments.user_id` author references: same-plan user/comment creates remain ready with stale replay rejection, while a comment that points at a remotely drifted user fails closed as `stale-wordpress-graph-identity` with hash-only target evidence.
+- Adds RPP-0306 focused planner evidence for `wp_comments.comment_parent` thread references: stable parent comment targets remain ready without identity rewriting, explicit comment identity-map targets rewrite child replies to the proven remote parent ID, and drifted remote parent comments fail closed with hash-only target evidence.
 
 ## Verification commands
 
@@ -38,6 +39,11 @@ RPP-0303 focused worker verification command:
 
 - `node --test --test-name-pattern=RPP-0303 test/generated-push-harness.test.js` — 1 subtest, 0 failures. The focused generated harness evidence covers 20 `postAuthorGraph` cases across all 10 tiers: 10 ready same-plan user/post creates and 10 stale-user blockers with hash-only `wp_posts.post_author` target evidence.
 
+RPP-0306 focused worker verification commands:
+
+- `node --test --test-name-pattern=RPP-0306 test/push-planner.test.js` — 1 subtest, 0 failures. The focused planner proof plans a child `wp_comments` row whose `comment_parent` points at a parent comment that still matches the pull base on the remote, keeps the row under live-remote precondition, and needs no identity rewrite.
+- `node --test --test-name-pattern 'same-plan comment|comment parent|comment_parent|comment-parent|RPP-0306' test/push-planner.test.js` — 4 subtests, 0 failures. The broader focused run covers stable parent proof, explicit identity-map parent rewrite, same-plan parent/child closure, and fail-closed stale remote parent evidence.
+
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 
 ## Remaining unmapped or fail-closed WordPress surfaces
@@ -55,6 +61,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 - RPP-0322: featured image attachment references in `_thumbnail_id` postmeta are rewritten from mapped local post/attachment IDs to proven remote post/attachment IDs; stale remote attachment targets keep release movement blocked with hash-only evidence.
 - RPP-0304 / RPP-0324: postmeta `post_id` references and `post_id:<id>:meta_key:<key>` row IDs are rewritten to the mapped remote post ID.
 - RPP-0305 / RPP-0325: comment `comment_post_ID` references are rewritten to mapped remote post identities.
+- RPP-0306: comment `comment_parent` thread references prove stable parent comment targets or rewrite through explicit comment identity maps to proven remote parent comment IDs; stale parent targets remain blocked with hash-only evidence.
 - RPP-0310: core `post_tag` taxonomy rows are now covered by local-production planner/release evidence, while unsupported taxonomy surfaces remain documented as fail-closed with hash-only evidence.
 - RPP-0312 / RPP-0332: termmeta `term_id` references are rewritten to mapped remote term identities.
 - RPP-0313 / RPP-0333 and RPP-0314 / RPP-0334: term relationship `object_id` and `term_taxonomy_id` references, including compound row IDs, are rewritten to mapped remote post/taxonomy identities.

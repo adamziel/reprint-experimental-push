@@ -5513,6 +5513,47 @@ test('rewrites comment parent thread references through explicit WordPress graph
   assert.equal(result.site.db.wp_comments['comment_ID:802'].comment_parent, 901);
 });
 
+test('RPP-0306 proves stable comment parent thread targets before planning child replies', () => {
+  const parentCommentResourceKey = 'row:["wp_comments","comment_ID:31"]';
+  const childCommentResourceKey = 'row:["wp_comments","comment_ID:32"]';
+  const base = baseSite();
+  base.db.wp_comments = {
+    'comment_ID:31': {
+      comment_ID: 31,
+      comment_post_ID: 1,
+      comment_parent: 0,
+      user_id: 0,
+      comment_content: 'Stable parent comment',
+    },
+  };
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_comments['comment_ID:32'] = {
+    comment_ID: 32,
+    comment_post_ID: 1,
+    comment_parent: 31,
+    user_id: 0,
+    comment_content: 'Local child reply',
+  };
+
+  const plan = planFor(base, local, remote);
+  const result = applyPlan(remote, plan);
+  const childMutation = mutationFor(plan, childCommentResourceKey);
+  const childValue = deserializeMutationValue(childMutation);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(plan.summary.blockers, 0);
+  assert.equal(plan.summary.mutations, 1);
+  assert.equal(decisionFor(plan, parentCommentResourceKey), undefined);
+  assert.equal(childMutation.changeKind, 'create');
+  assert.equal(childMutation.wordpressGraphIdentity?.rewrites?.length || 0, 0);
+  assert.equal(childValue.comment_parent, 31);
+  assertEveryMutationHasLiveRemotePrecondition(plan);
+  assert.equal(result.site.db.wp_comments['comment_ID:31'].comment_content, 'Stable parent comment');
+  assert.equal(result.site.db.wp_comments['comment_ID:32'].comment_parent, 31);
+});
+
 test('blocks explicit WordPress graph identity maps when the remote target is not equivalent', () => {
   const sourcePostResourceKey = 'row:["wp_posts","ID:2001"]';
   const targetPostResourceKey = 'row:["wp_posts","ID:3001"]';
