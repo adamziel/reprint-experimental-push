@@ -1934,6 +1934,98 @@ test('RPP-0205 stops local file type swaps that would hide remote descendants wi
   assert.equal(remote.files['wp-content/uploads/gallery/remote-only.jpg'], 'remote private descendant bytes');
 });
 
+test('RPP-0225 local file type swap versus remote descendant refuses before mutation with hash-only evidence', () => {
+  const base = baseSite();
+  const swapPath = 'wp-content/uploads/gallery-rpp0225-v2';
+  const descendantPath = `${swapPath}/remote-created-private.txt`;
+  const independentPath = 'index.php';
+  const swapKey = `file:${swapPath}`;
+  const descendantKey = `file:${descendantPath}`;
+  const independentKey = `file:${independentPath}`;
+  const privateLocalReplacement = 'local-private-rpp0225-v2-replacement-file';
+  const privateLocalIndependent = '<?php echo "local-private-rpp0225-v2-independent";';
+  const privateRemoteDescendant = 'remote-private-rpp0225-v2-descendant-bytes';
+  const privateValues = [privateLocalReplacement, privateLocalIndependent, privateRemoteDescendant];
+  base.files[swapPath] = { type: 'directory' };
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  local.files[swapPath] = privateLocalReplacement;
+  local.files[independentPath] = privateLocalIndependent;
+  remote.files[descendantPath] = privateRemoteDescendant;
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const conflict = firstPlan.conflicts.find((entry) => entry.resourceKey === swapKey);
+  const descendantDecision = decisionFor(firstPlan, descendantKey);
+  const independentMutation = mutationFor(firstPlan, independentKey);
+  const independentPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === independentKey);
+  const planEvidence = mergeInvariantHashOnlyPlanEvidence(firstPlan);
+  const durableJournal = failingDurableJournal();
+  const remoteBefore = JSON.stringify(remote);
+  const error = captureError(() => applyPlan(remote, firstPlan, { durableJournal }));
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0225 local file type swap remote descendant invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 1,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    planEvidence,
+    mergeInvariantHashOnlyPlanEvidence(secondPlan),
+    'RPP-0225 hash-only proof evidence changed between deterministic planning runs',
+  );
+  assert.equal(mutationFor(firstPlan, swapKey), undefined, 'unsafe type swap should not emit mutation');
+  assert.equal(
+    firstPlan.preconditions.some((precondition) => precondition.resourceKey === swapKey),
+    false,
+    'unsafe type swap should not emit precondition',
+  );
+  assert.ok(conflict, 'missing file type swap versus remote descendant conflict');
+  assert.equal(conflict.class, 'file-topology-conflict');
+  assert.equal(conflict.reason, 'Local file deletion or type change would hide or remove a live remote descendant.');
+  assert.equal(conflict.resourceKey, swapKey);
+  assert.equal(conflict.relatedResourceKey, descendantKey);
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-file-topology-and-stop');
+  assert.equal(conflict.change.localChange, 'type-change');
+  assert.equal(conflict.change.remoteChange, 'unchanged');
+  assert.equal(conflict.relatedChange.remoteChange, 'create');
+  assert.match(conflict.localHash, /^[a-f0-9]{64}$/);
+  assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(conflict.relatedChange.remote.hash, /^[a-f0-9]{64}$/);
+  assert.ok(descendantDecision, 'missing keep-remote decision for remote descendant');
+  assert.equal(descendantDecision.decision, 'keep-remote');
+  assert.equal(descendantDecision.change.localChange, 'unchanged');
+  assert.equal(descendantDecision.change.remoteChange, 'create');
+  assert.equal(mutationFor(firstPlan, descendantKey), undefined, 'remote descendant should not emit mutation');
+  assert.equal(
+    firstPlan.preconditions.some((precondition) => precondition.resourceKey === descendantKey),
+    false,
+    'remote descendant should not emit precondition',
+  );
+  assert.equal(independentMutation?.action, 'put');
+  assert.equal(independentMutation.resourceKey, independentKey);
+  assert.equal(independentPrecondition?.mutationId, independentMutation.id);
+  assert.equal(independentPrecondition.expectedHash, independentMutation.remoteBeforeHash);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(JSON.stringify(remote), remoteBefore, 'apply refusal should leave the remote snapshot unchanged');
+  assert.deepEqual(durableJournal.events, []);
+  assert.deepEqual(remote.files[swapPath], { type: 'directory' });
+  assert.equal(remote.files[descendantPath], privateRemoteDescendant);
+  assert.equal(remote.files[independentPath], base.files[independentPath]);
+  assertHashOnlyEvidenceRedacted(planEvidence, privateValues);
+  assertHashOnlyEvidenceRedacted(conflict, privateValues);
+  assertHashOnlyEvidenceRedacted(descendantDecision, privateValues);
+  assertHashOnlyEvidenceRedacted(error.details, privateValues);
+  assertHashOnlyEvidenceRedacted(durableJournal.events, privateValues);
+});
+
 test('keeps independent mutation evidence while suppressing unsafe topology mutations', () => {
   const base = baseSite();
   base.files['wp-content/uploads/gallery'] = { type: 'directory' };
