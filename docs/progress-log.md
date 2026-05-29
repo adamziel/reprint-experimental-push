@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 04:17 CEST.
+- Last update: 2026-05-29 04:25 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 241
-  items checked and leaves 759 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 242
+  items checked and leaves 758 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
-  30 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  30 plugin-driver boundary items, 11 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 38 generated
   harness items, and 23 merge-invariant items. No release-ops items are checked
   yet.
@@ -229,6 +229,21 @@ linked implementation artifacts.
   `releaseGateEvidenceScope` carry-through, fail-closed unsupported row
   identifiers, and redacted evidence without raw `meta_value` payloads. Counts
   are now 241/759; final release remains `NO-GO`.
+- Production snapshot-hashes route refresh: the current lane now contains
+  `RPP-0502` evidence in
+  `docs/evidence/rpp-0502-production-snapshot-hashes-route.md`, the
+  production-shaped `snapshot-hashes` REST route in
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/production-snapshot-hashes-route.test.js`. `php -l
+  scripts/playground/push-remote-rest-plugin.php`, `node --test
+  test/production-snapshot-hashes-route.test.js`, and `node --test
+  test/authenticated-http-push-client.test.js
+  test/production-snapshot-hashes-route.test.js
+  test/route-proof-matrix.test.js` passed, covering 4/4 focused route
+  subtests and 139/139 combined auth/route matrix subtests. The route uses
+  the authenticated permission callback and signed-request check before JSON
+  parsing, remains planning-only with no mutation helpers, and emits hash-only
+  receipt metadata. Counts are now 242/758; final release remains `NO-GO`.
 - Generated harness atomic plugin install stack variant-1 refresh: the current
   lane now contains RPP-0116 coverage in `scripts/harness/generated-push-cases.js`,
   `test/generated-push-harness.test.js`, `docs/generated-push-harness.md`, and
