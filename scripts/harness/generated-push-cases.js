@@ -330,6 +330,13 @@ export function generateDriverDeleteSupportFlagCases() {
   ].map((variant, index) => buildDriverDeleteSupportFlagCase({ variant, index }));
 }
 
+export function generateDriverDryRunValidationHookCases() {
+  return [
+    'supported-dry-run-hook-applies',
+    'unsupported-dry-run-hook-blocked',
+  ].map((variant, index) => buildDriverDryRunValidationHookCase({ variant, index }));
+}
+
 export function runGeneratedPushHarness(options = {}) {
   const cases = generatePushHarnessCases(options);
   const summary = emptySummary();
@@ -481,6 +488,115 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
   assertGeneratedOwnerBindingRedacted(testCase, error.details);
   result.applied = false;
   result.outcome = 'apply-refused';
+  return result;
+}
+
+export function validateDriverDryRunValidationHookCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === testCase.dataResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    proofHash: digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      evidenceScope: 'local-generated',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
+      status: plan.status,
+      mutation: mutation ? driverDryRunValidationMutationSummary(mutation) : null,
+      blocker: blocker ? driverDryRunValidationBlockerSummary(blocker) : null,
+    }),
+  };
+
+  assertDriverDryRunValidationRedacted(testCase, result);
+
+  if (testCase.expected.outcome === 'applied-supported-hook') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.mutations.length, 1);
+    assert.equal(plan.blockers.length, 0);
+    assert.ok(mutation, `${testCase.id} should emit a supported dry-run validation mutation`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(mutation.pluginOwnedResource.driver, 'wp-option');
+    assert.deepEqual(mutation.pluginOwnedResource.dryRunValidationEvidence, {
+      reasonCode: 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_PASSED',
+      operation: 'dry-run-validation',
+      resourceKey: testCase.dataResourceKey,
+      pluginOwner: testCase.plugin,
+      driver: 'wp-option',
+      policySource: 'local-snapshot',
+      hook: 'wp-option:validate-row',
+      supportedHook: true,
+      status: 'passed',
+    });
+    assertDriverDryRunValidationChangeHashEvidence(mutation.change);
+    assertDriverDryRunValidationRedacted(testCase, mutation.pluginOwnedResource.dryRunValidationEvidence);
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_options[testCase.dataRowId].option_value.mode,
+      testCase.expected.appliedMode,
+    );
+    assert.deepEqual(applied.site.plugins[testCase.plugin], testCase.expected.plugin);
+    result.outcome = 'applied-supported-hook';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'blocked-unsupported-hook');
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.mutations.length, 0);
+  assert.ok(blocker, `${testCase.id} should expose an unsupported dry-run validation hook blocker`);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.driver, 'wp-option');
+  assert.equal(blocker.pluginOwner, testCase.plugin);
+  assert.equal(blocker.reason, 'Plugin-owned resource driver dry-run validation hook is not supported.');
+  assert.deepEqual(blocker.dryRunValidationEvidence, {
+    reasonCode: 'PLUGIN_DRIVER_DRY_RUN_VALIDATION_UNSUPPORTED',
+    operation: 'refuse-before-mutation',
+    resourceKey: testCase.dataResourceKey,
+    pluginOwner: testCase.plugin,
+    driver: 'wp-option',
+    policySource: 'local-snapshot',
+    hook: 'wp-option:unsupported-dry-run',
+    supportedHook: false,
+    status: 'passed',
+  });
+  assert.equal(blocker.change.localChange, 'update');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assertDriverDryRunValidationChangeHashEvidence(blocker.change);
+  assertDriverDryRunValidationRedacted(testCase, blocker);
+
+  const remote = deepClone(testCase.remote);
+  const remoteBefore = digest(remote);
+  const error = captureError(() => applyPlan(remote, plan));
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a blocked unsupported dry-run hook`);
+  assert.equal(
+    remote.db.wp_options[testCase.dataRowId].option_value.token,
+    testCase.expected.remoteToken,
+  );
+  assertDriverDryRunValidationRedacted(testCase, error.details);
+  result.outcome = 'blocked-unsupported-hook';
+  result.applied = false;
+  result.remotePreserved = true;
   return result;
 }
 
@@ -744,6 +860,70 @@ function buildDriverOwnerIdentityBindingCase({ variant, index }) {
     driver: null,
     reasonCode: 'STALE_PLUGIN_METADATA_OWNER_CONTEXT',
   };
+  return testCase;
+}
+
+function buildDriverDryRunValidationHookCase({ variant, index }) {
+  const base = buildBaseSite(4170 + index, 4);
+  const plugin = 'forms';
+  const optionName = `rpp_0417_driver_dry_run_validation_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const secrets = {
+    pluginVersion: `rpp0417-plugin-version-secret-${index + 1}`,
+    baseOption: `rpp0417-base-dry-run-token-secret-${index + 1}`,
+    localOption: `rpp0417-local-dry-run-token-secret-${index + 1}`,
+  };
+  const supportedHook = variant === 'supported-dry-run-hook-applies';
+  const dryRunValidation = supportedHook
+    ? { hook: 'wp-option:validate-row', status: 'passed' }
+    : { hook: 'wp-option:unsupported-dry-run', status: 'passed' };
+  const baseRow = {
+    option_name: optionName,
+    option_value: { mode: 'base-dry-run-validation-target', token: secrets.baseOption },
+    __pluginOwner: plugin,
+  };
+
+  base.plugins[plugin] = { version: secrets.pluginVersion, active: true };
+  setRow(base, 'wp_options', dataRowId, baseRow);
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  setRow(local, 'wp_options', dataRowId, {
+    ...baseRow,
+    option_value: { mode: `local-${variant}`, token: secrets.localOption },
+  });
+  allowPluginOwned(local, dataResourceKey, plugin, 'wp-option', { dryRunValidation });
+
+  const testCase = {
+    id: `rpp-0417-driver-dry-run-validation-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'driver-dry-run-validation-hook',
+    tags: new Set(['driver-dry-run-validation-hook', 'plugin-owned-generated']),
+    plugin,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {
+      remoteToken: secrets.baseOption,
+      plugin: base.plugins[plugin],
+    },
+  };
+
+  if (supportedHook) {
+    testCase.tags.add('driver-dry-run-validation-supported');
+    testCase.expected.outcome = 'applied-supported-hook';
+    testCase.expected.appliedMode = `local-${variant}`;
+    return testCase;
+  }
+
+  assert.equal(variant, 'unsupported-dry-run-hook-blocked');
+  testCase.tags.add('driver-dry-run-validation-unsupported');
+  testCase.expected.outcome = 'blocked-unsupported-hook';
   return testCase;
 }
 
@@ -1828,6 +2008,55 @@ function assertGeneratedOwnerBindingRedacted(testCase, evidence) {
       false,
       `${testCase.id} leaked generated owner identity token ${token}`,
     );
+  }
+}
+
+function driverDryRunValidationMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner,
+    driver: mutation.pluginOwnedResource?.driver,
+    dryRunValidationEvidence: mutation.pluginOwnedResource?.dryRunValidationEvidence || null,
+    change: {
+      localChange: mutation.change.localChange,
+      remoteChange: mutation.change.remoteChange,
+      baseHash: mutation.change.base.hash,
+      localHash: mutation.change.local.hash,
+      remoteHash: mutation.change.remote.hash,
+    },
+  };
+}
+
+function driverDryRunValidationBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    resourceKey: blocker.resourceKey,
+    pluginOwner: blocker.pluginOwner,
+    driver: blocker.driver || null,
+    policySource: blocker.policySource || null,
+    dryRunValidationEvidence: blocker.dryRunValidationEvidence || null,
+    localChange: blocker.change.localChange,
+    remoteChange: blocker.change.remoteChange,
+    baseHash: blocker.change.base.hash,
+    localHash: blocker.change.local.hash,
+    remoteHash: blocker.change.remote.hash,
+  };
+}
+
+function assertDriverDryRunValidationChangeHashEvidence(change) {
+  assert.ok(change);
+  for (const side of ['base', 'local', 'remote']) {
+    assert.ok(['present', 'absent'].includes(change[side].state));
+    assert.match(change[side].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[side], 'value'), false);
+  }
+}
+
+function assertDriverDryRunValidationRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
   }
 }
 

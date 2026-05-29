@@ -6,9 +6,11 @@ import {
   DEFAULT_GENERATED_PUSH_CASES,
   MIN_GENERATED_PUSH_CASES,
   generateDriverDeleteSupportFlagCases,
+  generateDriverDryRunValidationHookCases,
   generatePushHarnessCases,
   runGeneratedPushHarness,
   validateDriverDeleteSupportFlagCase,
+  validateDriverDryRunValidationHookCase,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
 import { EVIDENCE_REDACTION_MARKER, redactEvidence } from '../src/evidence-redaction.js';
@@ -1503,6 +1505,37 @@ test('RPP-0230 generated planner summary counts match emitted evidence determini
   assert.equal(aggregate.totalPreconditions, aggregate.totalMutations);
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(JSON.stringify(evidenceEnvelope).includes('confidential'), false);
+});
+
+test('RPP-0417 generated driver dry-run validation hook covers supported and unsupported variants', () => {
+  const cases = generateDriverDryRunValidationHookCases();
+
+  assert.deepEqual(cases.map((testCase) => testCase.variant), [
+    'supported-dry-run-hook-applies',
+    'unsupported-dry-run-hook-blocked',
+  ]);
+  assert.equal(cases.every((testCase) => testCase.tags.has('driver-dry-run-validation-hook')), true);
+  assert.equal(cases.every((testCase) => testCase.dataResourceKey.startsWith('row:["wp_options"')), true);
+
+  const results = cases.map(validateDriverDryRunValidationHookCase);
+  const outcomes = Object.fromEntries(results.map((result) => [result.variant, result.outcome]));
+  assert.deepEqual(outcomes, {
+    'supported-dry-run-hook-applies': 'applied-supported-hook',
+    'unsupported-dry-run-hook-blocked': 'blocked-unsupported-hook',
+  });
+
+  const byVariant = Object.fromEntries(results.map((result) => [result.variant, result]));
+  assert.equal(byVariant['supported-dry-run-hook-applies'].status, 'ready');
+  assert.equal(byVariant['supported-dry-run-hook-applies'].appliedMutations, 1);
+  assert.equal(byVariant['unsupported-dry-run-hook-blocked'].status, 'blocked');
+  assert.equal(byVariant['unsupported-dry-run-hook-blocked'].mutations, 0);
+  assert.equal(byVariant['unsupported-dry-run-hook-blocked'].remotePreserved, true);
+  for (const result of results) {
+    assert.equal(result.evidenceScope, 'local-generated');
+    assert.equal(result.productionBacked, false);
+    assert.equal(result.releaseGate, 'NO-GO');
+    assert.match(result.proofHash, /^[a-f0-9]{64}$/);
+  }
 });
 
 test('RPP-0456 generated driver delete support flag coverage is redacted', () => {
