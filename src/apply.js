@@ -1525,9 +1525,11 @@ function validateReadyPlanEnvelope(plan) {
   const issues = [];
   const mutations = Array.isArray(plan.mutations) ? plan.mutations : [];
   const preconditions = Array.isArray(plan.preconditions) ? plan.preconditions : [];
+  const decisions = Array.isArray(plan.decisions) ? plan.decisions : [];
   const conflicts = Array.isArray(plan.conflicts) ? plan.conflicts : [];
   const blockers = Array.isArray(plan.blockers) ? plan.blockers : [];
   const mutationsById = new Map();
+  const mutationsByResourceKey = new Map();
   const preconditionsByMutationId = new Map();
 
   if (conflicts.length > 0) {
@@ -1560,6 +1562,19 @@ function validateReadyPlanEnvelope(plan) {
       continue;
     }
     mutationsById.set(mutation.id, mutation);
+    if (typeof mutation.resourceKey === 'string' && mutation.resourceKey.length > 0) {
+      const existingMutation = mutationsByResourceKey.get(mutation.resourceKey);
+      if (existingMutation) {
+        issues.push({
+          code: 'DUPLICATE_MUTATION_RESOURCE',
+          resourceKey: mutation.resourceKey,
+          firstMutationId: existingMutation.id,
+          duplicateMutationId: mutation.id,
+        });
+      } else {
+        mutationsByResourceKey.set(mutation.resourceKey, mutation);
+      }
+    }
     if (mutation.resource?.key && mutation.resource.key !== mutation.resourceKey) {
       issues.push({
         code: 'MUTATION_RESOURCE_KEY_MISMATCH',
@@ -1666,6 +1681,23 @@ function validateReadyPlanEnvelope(plan) {
         checkedAgainst: precondition.checkedAgainst || null,
       });
     }
+  }
+
+  for (const decision of decisions) {
+    const resourceKey = decision?.resourceKey || null;
+    if (!resourceKey) {
+      continue;
+    }
+    const overlappingMutation = mutationsByResourceKey.get(resourceKey);
+    if (!overlappingMutation) {
+      continue;
+    }
+    issues.push({
+      code: 'MUTATION_DECISION_RESOURCE_OVERLAP',
+      mutationId: overlappingMutation.id,
+      decisionId: decision.id || null,
+      resourceKey,
+    });
   }
 
   for (const mutation of mutations) {
