@@ -109,6 +109,14 @@ file create/update/delete surface. Ready cases create one file, update one file,
 and delete one file, then reject stale replay before mutation; conflict cases
 drift the updated file remotely and refuse apply.
 
+RPP-0141 adds `fileCreateUpdateDeleteMixVariant3` coverage for the same file
+mix surface with an explicit variant-3 target tag. The deterministic roster
+emits 20 variant-3 target cases: 10 ready cases and 10 non-ready conflict cases,
+with two cases in every tier. The focused proof selects one ready case and one
+non-ready case, records only resource keys and hashes, verifies the ready case
+applies the planned create/update/delete while preserving the remote-only file,
+and verifies the conflicting updated file refuses apply before mutation.
+
 The `directoryDescendantConflict` target coverage records per-tier counts for
 local directory deletes where the remote either still only has the directory or
 has added a descendant beneath it. Ready cases delete the unchanged remote
