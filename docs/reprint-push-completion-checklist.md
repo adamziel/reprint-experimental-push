@@ -748,7 +748,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 Focus: make large safe pushes practical and measurable.
 
 - [ ] RPP-0701 (Far / storage-performance) Implement MySQL compare-and-swap write guard, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
-- [ ] RPP-0702 (Far / storage-performance) Implement SQLite compare-and-swap write guard, variant 1. Success: guarded writes reject stale storage state.
+- [x] RPP-0702 (Far / storage-performance) Implement SQLite compare-and-swap write guard, variant 1. Success: guarded writes reject stale storage state.
 - [ ] RPP-0703 (Far / storage-performance) Implement transaction boundary policy, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0704 (Far / storage-performance) Implement filesystem compare-and-rename write, variant 1. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0705 (Far / storage-performance) Implement filesystem fsync evidence, variant 1. Success: fast-path lane updates only after correctness gates hold.

@@ -56,6 +56,7 @@
     "test:recovery:file-journal": "node ./scripts/recovery/file-journal-restart-smoke.mjs",
     "bench:graph-mapping-inventory": "node ./scripts/bench/graph-mapping-inventory.js",
     "bench:mysql-cas-write-guard": "node ./scripts/bench/mysql-cas-write-guard.js",
+    "bench:sqlite-cas-write-guard": "node ./scripts/bench/sqlite-cas-write-guard.js",
     "plan": "node ./bin/reprint-push-lab.js plan",
     "apply": "node ./bin/reprint-push-lab.js apply",
     "verify:release:docker-local-production": "node ./scripts/docker/production-complex-site-harness.mjs",
