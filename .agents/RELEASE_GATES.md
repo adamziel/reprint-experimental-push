@@ -52,6 +52,19 @@ Local candidate evidence, 2026-05-28:
   `release_verdict` because the release objective still requires a
   production-owned, non-lab-backed source boundary.
 
+Final audit evidence, 2026-05-29:
+
+- RPP-0901 audit file: `docs/evidence/rpp-0901-release-gate-1-final-audit.md`.
+- Audited head: `93c391cd9913af4019fcf962b60e871982b347ef`.
+- Focused executor/auth and route-boundary checks exited `0` with `tests 195`,
+  `pass 195`, `fail 0`.
+- Final-scope release-gate evaluator exited `1` with
+  `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`, `final=3/20`, and
+  `mutationAttempted: false`.
+- `timeout 300s npm run verify:release` exited `1` with
+  `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`
+  and `gates: 0/4`. GATE-1 stays `support_only`; release movement stays held.
+
 Required negative checks now covered by the verifier/test suite:
 
 - Missing source URL: fails closed with `REPRINT_PUSH_LIVE_SOURCE_REQUIRED`.
