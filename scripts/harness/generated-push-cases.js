@@ -227,6 +227,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
   },
+  wpPostsCreateUpdateDeleteVariant3: {
+    family: 'wp-posts-create-update-delete-variant3',
+    tag: 'wp-posts-create-update-delete-v3',
+  },
   wpPostmetaCreateUpdateDelete: {
     family: 'wp-postmeta-create-update-delete-ready',
     tag: 'wp-postmeta-create-update-delete',
@@ -2685,6 +2689,8 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   tags.add('wp-posts-create');
   tags.add('wp-posts-update');
   tags.add('wp-posts-delete');
+  tags.add('wp-posts-create-update-delete-v3');
+  tags.add(conflict ? 'wp-posts-create-update-delete-v3-non-ready' : 'wp-posts-create-update-delete-v3-ready');
 
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;
