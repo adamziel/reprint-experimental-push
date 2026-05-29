@@ -113,3 +113,48 @@ test('plugin-owned deletes are allowed when the matched driver explicitly suppor
   );
   assert.equal(result.site.plugins.forms.active, true);
 });
+
+test('forged plugin-owned deletes are rejected when delete support is missing at apply time', () => {
+  const base = baseSite();
+  const local = cloneJson(base);
+  delete local.db.wp_options['option_name:forms_settings'];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(formsOptionResourceKey, 'forms', 'wp-option', {
+        supportsDelete: true,
+      }),
+    ),
+  };
+
+  const plan = planFor(base, local, cloneJson(base));
+  const mutation = mutationFor(plan, formsOptionResourceKey);
+  assert.equal(plan.status, 'ready');
+  assert.equal(mutation.action, 'delete');
+  assert.equal(mutation.pluginOwnedResource.supportsDelete, true);
+
+  for (const supportsDelete of [false, undefined]) {
+    const forgedPlan = cloneJson(plan);
+    const forgedMutation = mutationFor(forgedPlan, formsOptionResourceKey);
+    if (supportsDelete === undefined) {
+      delete forgedMutation.pluginOwnedResource.supportsDelete;
+    } else {
+      forgedMutation.pluginOwnedResource.supportsDelete = supportsDelete;
+    }
+    const remote = cloneJson(base);
+    const remoteBefore = JSON.stringify(remote);
+
+    let error;
+    try {
+      applyPlan(remote, forgedPlan);
+    } catch (caught) {
+      error = caught;
+    }
+
+    assert.match(error?.message, /Refusing to apply unsupported plugin-owned resource/);
+    assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
+    assert.equal(error.details.resourceKey, formsOptionResourceKey);
+    assert.equal(error.details.pluginOwner, 'forms');
+    assert.equal(error.details.driver, 'wp-option');
+    assert.equal(JSON.stringify(remote), remoteBefore);
+  }
+});
