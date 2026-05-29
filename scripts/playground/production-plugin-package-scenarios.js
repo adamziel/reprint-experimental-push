@@ -7,6 +7,9 @@ const arbitraryPluginFixturePackageBoundary = Object.freeze({
   scenario: 'driver-receipt-guards',
 });
 
+const localArbitraryPluginFixturePackageEvidenceScope = 'local-playground';
+const productionBackedEvidenceScope = 'production-backed';
+
 const scenarioGroups = {
   'arbitrary-plugin-fixture-package': [
     'driver-receipt-guards',
@@ -83,6 +86,9 @@ const knownScenarioNames = new Set([
 ]);
 
 export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
+  const fixtureProof = summary.arbitraryPluginFixturePackageProof
+    || summary.arbitraryPluginFixturePackage
+    || {};
   const guard = summary.driverReceiptRevokedCredentialGuard
     || summary.packagedRevokedCredentialGuard
     || {};
@@ -93,7 +99,18 @@ export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
   const applyRejectedCode = typeof guard.applyRejectedCode === 'string' && guard.applyRejectedCode
     ? guard.applyRejectedCode
     : null;
-  const checked = remoteDataPreserved && Boolean(applyRejectedCode);
+  const evidenceScope = resolveArbitraryPluginFixturePackageEvidenceScope(fixtureProof, summary);
+  const productionBacked = arbitraryPluginFixturePackageEvidenceIsProductionBacked(fixtureProof, evidenceScope);
+  const checked = remoteDataPreserved
+    && Boolean(applyRejectedCode)
+    && fixtureProof.planReady !== false
+    && fixtureProof.allowlistExact !== false
+    && fixtureProof.noMutationAfterRevokedCredential !== false;
+  const releaseGate = buildArbitraryPluginFixturePackageReleaseGate({
+    checked,
+    evidenceScope,
+    productionBacked,
+  });
 
   return {
     plugin: arbitraryPluginFixturePackageBoundary.plugin,
@@ -103,16 +120,22 @@ export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
     resourceKey: arbitraryPluginFixturePackageBoundary.resourceKey,
     scenario: arbitraryPluginFixturePackageBoundary.scenario,
     proofKind: 'arbitrary-plugin-fixture-package',
-    sourceKind: 'local-playground',
-    productionBacked: false,
-    supportOnly: true,
+    sourceKind: productionBacked
+      ? productionBackedEvidenceScope
+      : (fixtureProof.sourceKind || localArbitraryPluginFixturePackageEvidenceScope),
+    evidenceScope,
+    releaseGateEvidenceScope: evidenceScope,
+    productionBacked,
+    supportOnly: !productionBacked,
     checked,
     remoteDataPreserved,
-    acceptedForReleaseGate: false,
-    releaseGate: {
-      status: 'NO-GO',
-      verdict: 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
-      note: 'arbitrary plugin fixture package proof is local/support-only; production-backed release gate evidence is still required',
+    acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
+    releaseGate,
+    packageProof: {
+      allowlistExact: fixtureProof.allowlistExact === true,
+      planReady: fixtureProof.planReady === true,
+      mutationCount: Number.isFinite(fixtureProof.mutationCount) ? fixtureProof.mutationCount : null,
+      noMutationAfterRevokedCredential: fixtureProof.noMutationAfterRevokedCredential === true,
     },
     revokedCredentialGuard: {
       resourceKey: typeof guard.resourceKey === 'string' ? guard.resourceKey : arbitraryPluginFixturePackageBoundary.resourceKey,
@@ -121,6 +144,61 @@ export function summarizeArbitraryPluginFixturePackageEvidence(summary = {}) {
       updatedMarkerAfterReject: guard.updatedMarkerAfterReject || null,
       payloadModeAfterReject: guard.payloadModeAfterReject || null,
     },
+  };
+}
+
+function resolveArbitraryPluginFixturePackageEvidenceScope(proof = {}, summary = {}) {
+  return normalizeArbitraryPluginFixturePackageEvidenceScope(
+    proof.releaseGateEvidenceScope
+      || proof.evidenceScope
+      || proof.releaseGate?.evidenceScope
+      || summary.releaseGateEvidenceScope
+      || summary.evidenceScope
+      || (proof.productionBacked === true || proof.sourceKind === productionBackedEvidenceScope
+        ? productionBackedEvidenceScope
+        : localArbitraryPluginFixturePackageEvidenceScope),
+  );
+}
+
+function arbitraryPluginFixturePackageEvidenceIsProductionBacked(proof = {}, evidenceScope = '') {
+  return proof.productionBacked === true
+    || proof.sourceKind === productionBackedEvidenceScope
+    || proof.releaseGate?.productionBacked === true
+    || evidenceScope === productionBackedEvidenceScope;
+}
+
+function normalizeArbitraryPluginFixturePackageEvidenceScope(value) {
+  if (value === productionBackedEvidenceScope) {
+    return productionBackedEvidenceScope;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  return localArbitraryPluginFixturePackageEvidenceScope;
+}
+
+export function buildArbitraryPluginFixturePackageReleaseGate({
+  checked = false,
+  evidenceScope = localArbitraryPluginFixturePackageEvidenceScope,
+  productionBacked = false,
+} = {}) {
+  const normalizedScope = normalizeArbitraryPluginFixturePackageEvidenceScope(evidenceScope);
+  const productionScoped = productionBacked === true || normalizedScope === productionBackedEvidenceScope;
+  const acceptedForReleaseGate = checked === true && productionScoped;
+
+  return {
+    status: acceptedForReleaseGate ? 'GO' : 'NO-GO',
+    verdict: acceptedForReleaseGate
+      ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_PRODUCTION_BACKED'
+      : productionScoped
+        ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_INCOMPLETE'
+        : 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED',
+    evidenceScope: normalizedScope,
+    productionBacked: productionScoped,
+    acceptedForReleaseGate,
+    note: productionScoped
+      ? 'arbitrary plugin fixture package proof is production-backed; release gate can count it only when the package checks are complete'
+      : `arbitrary plugin fixture package proof is local/support-only; evidenceScope=${normalizedScope}; production-backed release gate evidence is still required`,
   };
 }
 

@@ -15,7 +15,10 @@ import {
   resolveAuthSessionSourceCredentials,
 } from './auth-session-source.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
-import { parseProductionPluginPackageSelectedScenarios } from './production-plugin-package-scenarios.js';
+import {
+  parseProductionPluginPackageSelectedScenarios,
+  summarizeArbitraryPluginFixturePackageEvidence,
+} from './production-plugin-package-scenarios.js';
 import {
   productionPluginDriverBoundary,
   summarizeProductionPluginDriverBoundaryProof,
@@ -298,6 +301,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     cli: {},
     driverReceiptRevokedCredentialGuard: {},
     arbitraryPluginFixturePackageProof: {},
+    arbitraryPluginFixturePackage: {},
     final: {},
   };
 
@@ -580,6 +584,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
         afterRevokedCredentialReject,
         driverFixtureTableKey,
       });
+      summary.arbitraryPluginFixturePackage = summarizeArbitraryPluginFixturePackageEvidence(summary);
         },
       );
     });
@@ -843,11 +848,19 @@ function buildArbitraryPluginFixturePackageProof({
   driverFixtureTableKey,
 }) {
   const retainedRow = afterRevokedCredentialReject.body?.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'] || null;
+  const releaseGateEvidenceScope = allowedEntry?.releaseGateEvidenceScope
+    || allowedEntry?.evidenceScope
+    || 'local-playground';
   return {
     driver: driverFixture.driver,
     pluginOwner: driverFixture.pluginOwner,
     table: driverFixture.table,
     resourceKey,
+    proofKind: 'arbitrary-plugin-fixture-package',
+    sourceKind: releaseGateEvidenceScope === 'production-backed' ? 'production-backed' : 'local-playground',
+    evidenceScope: releaseGateEvidenceScope,
+    releaseGateEvidenceScope,
+    productionBacked: releaseGateEvidenceScope === 'production-backed',
     allowlistExact: allowedEntry?.driver === driverFixture.driver
       && allowedEntry?.table === driverFixture.table
       && allowedEntry?.pluginOwner === driverFixture.pluginOwner,

@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  arbitraryPluginFixturePackageBoundary,
   parseProductionPluginPackageSelectedScenarios,
   scenarioGroups,
   scenarioNames,
+  summarizeArbitraryPluginFixturePackageEvidence,
 } from '../scripts/playground/production-plugin-package-scenarios.js';
 
 test('scenario parser expands malformed driver aliases into concrete checks', () => {
@@ -94,4 +96,72 @@ test('scenario parser rejects unknown plugin-driver smoke scenarios', () => {
     ),
     /Unknown production plugin package smoke scenario: typo-guard/,
   );
+});
+
+test('RPP-0420 arbitrary plugin fixture package summary labels local evidence as support-only', () => {
+  const summary = summarizeArbitraryPluginFixturePackageEvidence({
+    driverReceiptRevokedCredentialGuard: {
+      resourceKey: arbitraryPluginFixturePackageBoundary.resourceKey,
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'base',
+      payloadModeAfterReject: 'base',
+    },
+    arbitraryPluginFixturePackageProof: {
+      evidenceScope: 'local-playground',
+      releaseGateEvidenceScope: 'local-playground',
+      allowlistExact: true,
+      planReady: true,
+      mutationCount: 1,
+      noMutationAfterRevokedCredential: true,
+    },
+  });
+
+  assert.equal(summary.checked, true);
+  assert.equal(summary.evidenceScope, 'local-playground');
+  assert.equal(summary.releaseGateEvidenceScope, 'local-playground');
+  assert.equal(summary.productionBacked, false);
+  assert.equal(summary.supportOnly, true);
+  assert.equal(summary.acceptedForReleaseGate, false);
+  assert.equal(summary.releaseGate.status, 'NO-GO');
+  assert.equal(summary.releaseGate.evidenceScope, 'local-playground');
+  assert.equal(summary.releaseGate.productionBacked, false);
+  assert.match(summary.releaseGate.note, /local\/support-only/);
+  assert.match(summary.releaseGate.note, /evidenceScope=local-playground/);
+  assert.match(summary.releaseGate.note, /production-backed release gate evidence is still required/);
+  assert.equal(summary.packageProof.allowlistExact, true);
+  assert.equal(summary.packageProof.planReady, true);
+  assert.equal(summary.packageProof.mutationCount, 1);
+});
+
+test('RPP-0420 arbitrary plugin fixture package summary labels production-backed evidence for the release gate', () => {
+  const summary = summarizeArbitraryPluginFixturePackageEvidence({
+    driverReceiptRevokedCredentialGuard: {
+      resourceKey: arbitraryPluginFixturePackageBoundary.resourceKey,
+      applyRejectedCode: 'reprint_push_lab_auth_required',
+      rowRetainedAfterReject: true,
+      updatedMarkerAfterReject: 'base',
+      payloadModeAfterReject: 'base',
+    },
+    arbitraryPluginFixturePackageProof: {
+      evidenceScope: 'production-backed',
+      releaseGateEvidenceScope: 'production-backed',
+      productionBacked: true,
+      allowlistExact: true,
+      planReady: true,
+      mutationCount: 1,
+      noMutationAfterRevokedCredential: true,
+    },
+  });
+
+  assert.equal(summary.checked, true);
+  assert.equal(summary.evidenceScope, 'production-backed');
+  assert.equal(summary.releaseGateEvidenceScope, 'production-backed');
+  assert.equal(summary.productionBacked, true);
+  assert.equal(summary.supportOnly, false);
+  assert.equal(summary.acceptedForReleaseGate, true);
+  assert.equal(summary.releaseGate.status, 'GO');
+  assert.equal(summary.releaseGate.evidenceScope, 'production-backed');
+  assert.equal(summary.releaseGate.productionBacked, true);
+  assert.match(summary.releaseGate.note, /production-backed/);
 });

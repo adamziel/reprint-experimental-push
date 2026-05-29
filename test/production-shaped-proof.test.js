@@ -1986,7 +1986,10 @@ test('production plugin package smoke includes the revoked packaged driver crede
 
   assert.match(smokeSource, /driverReceiptRevokedCredentialGuard/);
   assert.match(smokeSource, /arbitraryPluginFixturePackageProof/);
+  assert.match(smokeSource, /arbitraryPluginFixturePackage: \{\}/);
+  assert.match(smokeSource, /summary\.arbitraryPluginFixturePackage = summarizeArbitraryPluginFixturePackageEvidence\(summary\)/);
   assert.match(smokeSource, /buildArbitraryPluginFixturePackageProof/);
+  assert.match(smokeSource, /releaseGateEvidenceScope/);
   assert.match(smokeSource, /revoke-application-password/);
   assert.match(smokeSource, /applyRejectedCode: revokedCredentialApply\.body\?\.code/);
   assert.match(smokeSource, /payloadModeAfterReject/);
