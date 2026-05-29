@@ -74,8 +74,9 @@ The default generated run covers:
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
   supported and unsupported plugin-owned data, plugin owner-context drift,
-  supported forms-lab custom-table rows, plugin-owned custom-table update
-  variant-1 cases, and delete refusal with per-tier target
+  explicit plugin-owned resource refusal variant-3 ready/changed/stale
+  targets, supported forms-lab custom-table rows, plugin-owned custom-table
+  update variant-1 cases, and delete refusal with per-tier target
   counts, atomic plugin install ready and missing-dependency paths with
   per-tier target counts, same-plan post-parent, taxonomy, comment, and
   usermeta graph closures, and stale graph references.
@@ -264,6 +265,16 @@ mutation with owner, driver, delete-policy, owner-context, and hash-only audit
 evidence, preserve unplanned remote files, and reject stale replay before any
 mutation. Stale variant-1 cases drift the same row remotely, record refusal
 evidence, and carry no planned mutation for that custom-table row.
+
+RPP-0143 adds `pluginOwnedResourceRefusalVariant3` coverage for plugin-owned
+`wp_options` rows owned by `forms`. The deterministic roster emits 30 target
+cases: one ready, one changed/blocked, and one stale/conflict case in every
+tier. Ready cases include an explicit `wp-option` driver policy and apply with
+owner/driver evidence, then reject stale replay before mutation. Changed cases
+omit the driver policy and fail closed as `UNKNOWN_PLUGIN_OWNED_RESOURCE` with
+hash-only refusal evidence. Stale cases drift the same plugin-owned target
+remotely, stay `conflict`, carry no mutation or precondition for that target,
+and refuse apply without exposing private option tokens.
 
 The `largeReadyPlanTier` target coverage records one large ready plan per tier.
 Each case combines post-row creates, updates, deletes, file creates, updates,

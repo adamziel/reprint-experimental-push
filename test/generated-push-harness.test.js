@@ -207,6 +207,10 @@ const requiredFamilies = [
   'plugin-owned-custom-table-change',
   'plugin-owned-custom-table-variant1',
   'plugin-owned-custom-table-update',
+  'plugin-owned-resource-refusal-v3',
+  'plugin-owned-resource-refusal-v3-ready',
+  'plugin-owned-resource-refusal-v3-changed',
+  'plugin-owned-resource-refusal-v3-stale',
   'file-topology',
   'directory-descendant',
   'directory-descendant-v3',
@@ -2229,6 +2233,97 @@ test('RPP-0142 directory descendant conflict variant 3 exposes per-tier generate
   assert.equal(evidenceText.includes('remote descendant '), false, 'variant 3 evidence leaked remote descendant payload');
 });
 
+test('RPP-0143 plugin-owned resource refusal variant 3 exposes ready changed and stale generated coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.pluginOwnedResourceRefusalVariant3;
+
+  assert.ok(coverage, 'missing plugin-owned resource refusal variant 3 target coverage');
+  assert.equal(coverage.family, 'plugin-owned-resource-refusal-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['plugin-owned-resource-refusal-v3']);
+  assert.equal(coverage.total, 30);
+  assert.deepEqual(coverage.statuses, { blocked: 10, conflict: 10, ready: 10 });
+  assert.equal(report.summary.featureFamilies['plugin-owned-resource-refusal-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['plugin-owned-resource-refusal-v3-changed'], 10);
+  assert.equal(report.summary.featureFamilies['plugin-owned-resource-refusal-v3-stale'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 3])),
+  );
+
+  const firstEvidence = generatedPluginOwnedResourceRefusalVariant3Evidence(coverage);
+  const replayEvidence = generatedPluginOwnedResourceRefusalVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0143 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 plugin-owned refusal evidence changed between runs');
+  assert.equal(firstEvidence.target, 'pluginOwnedResourceRefusalVariant3');
+  assert.equal(firstEvidence.family, 'plugin-owned-resource-refusal-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.changedCases, report.summary.featureFamilies['plugin-owned-resource-refusal-v3-changed']);
+  assert.equal(firstEvidence.staleCases, report.summary.featureFamilies['plugin-owned-resource-refusal-v3-stale']);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'changed', 'stale'],
+  );
+
+  const [readyCase, changedCase, staleCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.readyMutation.pluginOwner, 'forms');
+  assert.equal(readyCase.readyMutation.driver, 'wp-option');
+  assert.equal(readyCase.readyMutation.action, 'put');
+  assert.equal(readyCase.readyMutation.changeKind, 'update');
+  assert.equal(readyCase.readyMutation.appliedHash, readyCase.surface.localHash);
+  assert.equal(readyCase.staleReplay.code, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplay.remoteBeforeHash, readyCase.staleReplay.remoteAfterHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(changedCase.status, 'blocked');
+  assert.equal(changedCase.applied, false);
+  assert.equal(changedCase.changedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(changedCase.changedBlocker.reasonCode, 'UNKNOWN_PLUGIN_OWNED_RESOURCE');
+  assert.equal(changedCase.changedBlocker.pluginOwner, 'forms');
+  assert.equal(changedCase.changedBlocker.plannedMutation, false);
+  assert.equal(changedCase.changedBlocker.plannedPrecondition, false);
+  assert.equal(changedCase.changedBlocker.refusalEvidence.format, 'hash-only');
+  assert.equal(changedCase.changedBlocker.refusalEvidence.rawValuesIncluded, false);
+  assert.equal(changedCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(changedCase.refusal.remoteBeforeHash, changedCase.refusal.remoteAfterHash);
+  assert.match(changedCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(staleCase.status, 'conflict');
+  assert.equal(staleCase.applied, false);
+  assert.equal(staleCase.staleConflict.class, 'plugin-data-conflict');
+  assert.equal(staleCase.staleConflict.pluginOwner, 'forms');
+  assert.equal(staleCase.staleConflict.plannedMutation, false);
+  assert.equal(staleCase.staleConflict.plannedPrecondition, false);
+  assert.equal(staleCase.staleConflict.change.localChange, 'update');
+  assert.equal(staleCase.staleConflict.change.remoteChange, 'update');
+  assert.equal(staleCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(staleCase.refusal.remoteBeforeHash, staleCase.refusal.remoteAfterHash);
+  assert.match(staleCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('rpp0143-ready-base-private-token'), false, 'variant 3 evidence leaked ready base token');
+  assert.equal(evidenceText.includes('rpp0143-ready-local-private-token'), false, 'variant 3 evidence leaked ready local token');
+  assert.equal(evidenceText.includes('rpp0143-changed-base-private-token'), false, 'variant 3 evidence leaked changed base token');
+  assert.equal(evidenceText.includes('rpp0143-changed-local-private-token'), false, 'variant 3 evidence leaked changed local token');
+  assert.equal(evidenceText.includes('rpp0143-stale-base-private-token'), false, 'variant 3 evidence leaked stale base token');
+  assert.equal(evidenceText.includes('rpp0143-stale-local-private-token'), false, 'variant 3 evidence leaked stale local token');
+  assert.equal(evidenceText.includes('rpp0143-stale-remote-private-token'), false, 'variant 3 evidence leaked stale remote token');
+});
+
 function assertDirectoryDescendantShape(testCase, { conflict }) {
   const marker = conflict ? '/descendant-' : '/descendant-ready-';
   const directories = Object.entries(testCase.base.files)
@@ -2508,6 +2603,396 @@ function directoryDescendantVariant3RefusalEvidence(testCase, plan) {
   assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
   assert.equal(error.code, 'PLAN_NOT_READY');
   assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+const pluginOwnedResourceRefusalVariant3Prefix = 'rpp0143_plugin_owned_refusal_v3_';
+
+function generatedPluginOwnedResourceRefusalVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const variants = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('plugin-owned-resource-refusal-v3')) {
+      continue;
+    }
+
+    const variant = pluginOwnedResourceRefusalVariant3Variant(testCase);
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedPluginOwnedResourceRefusalVariant3CaseEvidence(testCase, result, variant);
+
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    incrementCount(variants, variant);
+    if (!selectedCases.has(variant)) {
+      selectedCases.set(variant, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const sortedVariants = sortStringObject(variants);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
+  assert.deepEqual(sortedVariants, { changed: 10, ready: 10, stale: 10 });
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready plugin-owned case');
+  assert.ok(selectedCases.has('changed'), 'variant 3 target should select one changed plugin-owned refusal');
+  assert.ok(selectedCases.has('stale'), 'variant 3 target should select one stale plugin-owned refusal');
+
+  return {
+    target: 'pluginOwnedResourceRefusalVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedVariants.ready || 0,
+    changedCases: sortedVariants.changed || 0,
+    staleCases: sortedVariants.stale || 0,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    variants: sortedVariants,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('changed'),
+      selectedCases.get('stale'),
+    ],
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3Variant(testCase) {
+  const variants = ['ready', 'changed', 'stale']
+    .filter((variant) => testCase.tags.has(`plugin-owned-resource-refusal-v3-${variant}`));
+
+  assert.equal(variants.length, 1, `${testCase.id} should expose exactly one RPP-0143 variant tag`);
+  return variants[0];
+}
+
+function generatedPluginOwnedResourceRefusalVariant3CaseEvidence(testCase, result, variant) {
+  const shape = assertPluginOwnedResourceRefusalVariant3Shape(testCase, variant);
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = pluginOwnedResourceRefusalVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant,
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (variant === 'ready') {
+    assert.equal(plan.status, 'ready', `${testCase.id} ready target should plan as ready`);
+    assert.equal(result.status, 'ready', `${testCase.id} ready target should validate as ready`);
+    assert.equal(result.applied, true, `${testCase.id} ready target should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} ready target should preserve remote data`);
+
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const readyMutation = pluginOwnedResourceRefusalVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const staleReplay = pluginOwnedResourceRefusalVariant3ReadyStaleReplayEvidence({
+      testCase,
+      plan,
+      shape,
+    });
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      readyMutation,
+      staleReplay,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        readyMutation,
+        staleReplay,
+      })}`,
+    };
+  }
+
+  if (variant === 'changed') {
+    assert.equal(plan.status, 'blocked', `${testCase.id} changed target should plan as blocked`);
+    assert.equal(result.status, 'blocked', `${testCase.id} changed target should validate as blocked`);
+    assert.equal(result.applied, false, `${testCase.id} changed target must not apply`);
+
+    const changedBlocker = pluginOwnedResourceRefusalVariant3ChangedBlockerEvidence({ testCase, plan, shape });
+    const refusal = pluginOwnedResourceRefusalVariant3ApplyRefusalEvidence(testCase, plan);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      changedBlocker,
+      refusal,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        changedBlocker,
+        refusal,
+      })}`,
+    };
+  }
+
+  assert.equal(variant, 'stale');
+  assert.equal(plan.status, 'conflict', `${testCase.id} stale target should plan as conflict`);
+  assert.equal(result.status, 'conflict', `${testCase.id} stale target should validate as conflict`);
+  assert.equal(result.applied, false, `${testCase.id} stale target must not apply`);
+
+  const staleConflict = pluginOwnedResourceRefusalVariant3StaleConflictEvidence({ testCase, plan, shape });
+  const refusal = pluginOwnedResourceRefusalVariant3ApplyRefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    staleConflict,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      staleConflict,
+      refusal,
+    })}`,
+  };
+}
+
+function assertPluginOwnedResourceRefusalVariant3Shape(testCase, variant) {
+  const optionPrefix = `${pluginOwnedResourceRefusalVariant3Prefix}${variant}_`;
+  const matches = Object.entries(testCase.local.db.wp_options)
+    .filter(([, row]) => row?.option_name?.startsWith(optionPrefix));
+
+  assert.equal(matches.length, 1, `${testCase.id} should carry one ${variant} RPP-0143 option target`);
+
+  const [rowId, localRow] = matches[0];
+  const baseRow = testCase.base.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+  const resource = { type: 'row', table: 'wp_options', id: rowId };
+  const resourceKey = generatedRowResourceKey('wp_options', rowId);
+  const policyEntries = [
+    ...(testCase.base.meta?.pluginOwnedResources?.allowedResources || []),
+    ...(testCase.local.meta?.pluginOwnedResources?.allowedResources || []),
+    ...(testCase.remote.meta?.pluginOwnedResources?.allowedResources || []),
+  ].filter((entry) =>
+    entry.resourceKey === resourceKey && entry.pluginOwner === 'forms' && entry.driver === 'wp-option');
+
+  assert.ok(baseRow, `${testCase.id} should seed a base row for ${resourceKey}`);
+  assert.ok(remoteRow, `${testCase.id} should seed a remote row for ${resourceKey}`);
+  assert.equal(baseRow.__pluginOwner, 'forms');
+  assert.equal(localRow.__pluginOwner, 'forms');
+  assert.equal(remoteRow.__pluginOwner, 'forms');
+  assert.notDeepEqual(localRow, baseRow, `${testCase.id} local row should change the RPP-0143 target`);
+
+  if (variant === 'ready') {
+    assert.deepEqual(remoteRow, baseRow, `${testCase.id} ready target should have unchanged remote`);
+    assert.ok(policyEntries.length > 0, `${testCase.id} ready target should include an explicit driver policy`);
+  } else {
+    assert.equal(policyEntries.length, 0, `${testCase.id} ${variant} target should not include a driver policy`);
+  }
+
+  if (variant === 'changed') {
+    assert.deepEqual(remoteRow, baseRow, `${testCase.id} changed target should keep remote at base`);
+  }
+
+  if (variant === 'stale') {
+    assert.notDeepEqual(remoteRow, baseRow, `${testCase.id} stale target should drift remote from base`);
+    assert.notDeepEqual(remoteRow, localRow, `${testCase.id} stale target should keep local and remote different`);
+  }
+
+  return {
+    variant,
+    rowId,
+    resource,
+    resourceKey,
+    baseRow,
+    localRow,
+    remoteRow,
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3SurfaceEvidence(testCase, shape) {
+  const baseHash = resourceHash(testCase.base, shape.resource);
+  const localHash = resourceHash(testCase.local, shape.resource);
+  const remoteHash = resourceHash(testCase.remote, shape.resource);
+
+  return {
+    resourceKey: shape.resourceKey,
+    pluginOwner: 'forms',
+    baseHash,
+    localHash,
+    remoteHash,
+    localChanged: localHash !== baseHash,
+    remoteChanged: remoteHash !== baseHash,
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === shape.resourceKey);
+
+  assert.ok(mutation, `${testCase.id} should plan the supported plugin-owned target mutation`);
+  assert.ok(precondition, `${testCase.id} should precondition the supported plugin-owned target`);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'update');
+  assert.equal(mutation.pluginOwnedResource?.pluginOwner, 'forms');
+  assert.equal(mutation.pluginOwnedResource?.driver, 'wp-option');
+  assert.equal(mutation.pluginOwnedResource?.ownerContextRequired, true);
+  assert.equal(precondition.mutationId, mutation.id);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+
+  const appliedHash = resourceHash(applied.site, shape.resource);
+  assert.equal(appliedHash, resourceHash(testCase.local, shape.resource), `${testCase.id} should apply local target value`);
+
+  return {
+    resourceKey: shape.resourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    pluginOwner: mutation.pluginOwnedResource.pluginOwner,
+    driver: mutation.pluginOwnedResource.driver,
+    ownerContextRequired: mutation.pluginOwnedResource.ownerContextRequired,
+    baseHash: mutation.baseHash,
+    localHash: mutation.localHash,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    preconditionExpectedHash: precondition.expectedHash,
+    appliedHash,
+    auditEvidenceHash: `sha256:${digest(mutation.pluginOwnedResource.auditEvidence)}`,
+    mutationHash: `sha256:${digest(mutation)}`,
+    preconditionHash: `sha256:${digest(precondition)}`,
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3ReadyStaleReplayEvidence({ testCase, plan, shape }) {
+  const driftedRemote = cloneJson(testCase.remote);
+  setResource(driftedRemote, shape.resource, {
+    ...shape.remoteRow,
+    option_value: {
+      mode: 'remote-ready-stale-replay',
+      privateToken: `rpp0143-ready-replay-private-token-${testCase.tier}`,
+    },
+  });
+  const remoteBeforeHash = digest(driftedRemote);
+  const error = captureError(() => applyPlan(driftedRemote, plan));
+  const remoteAfterHash = digest(driftedRemote);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} stale ready replay should refuse`);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} stale ready replay mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3ChangedBlockerEvidence({ testCase, plan, shape }) {
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === shape.resourceKey);
+  const plannedMutation = plan.mutations.some((entry) => entry.resourceKey === shape.resourceKey);
+  const plannedPrecondition = plan.preconditions.some((entry) => entry.resourceKey === shape.resourceKey);
+
+  assert.ok(blocker, `${testCase.id} should block the unknown plugin-owned target`);
+  assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.reasonCode, 'UNKNOWN_PLUGIN_OWNED_RESOURCE');
+  assert.equal(blocker.pluginOwner, 'forms');
+  assert.equal(blocker.driver, null);
+  assert.equal(plannedMutation, false);
+  assert.equal(plannedPrecondition, false);
+  assert.equal(blocker.unknownPluginOwnedResourceRefusalEvidence?.format, 'hash-only');
+  assert.equal(blocker.unknownPluginOwnedResourceRefusalEvidence?.rawValuesIncluded, false);
+  assert.deepEqual(blocker.unknownPluginOwnedResourceRefusalEvidence?.hashes, {
+    baseHash: blocker.baseHash,
+    localHash: blocker.localHash,
+    remoteHash: blocker.remoteHash,
+  });
+
+  return {
+    resourceKey: shape.resourceKey,
+    class: blocker.class,
+    reasonCode: blocker.reasonCode,
+    pluginOwner: blocker.pluginOwner,
+    driver: blocker.driver,
+    change: blocker.change,
+    baseHash: blocker.baseHash,
+    localHash: blocker.localHash,
+    remoteHash: blocker.remoteHash,
+    plannedMutation,
+    plannedPrecondition,
+    refusalEvidence: {
+      reasonCode: blocker.unknownPluginOwnedResourceRefusalEvidence.reasonCode,
+      operation: blocker.unknownPluginOwnedResourceRefusalEvidence.operation,
+      outcome: blocker.unknownPluginOwnedResourceRefusalEvidence.outcome,
+      format: blocker.unknownPluginOwnedResourceRefusalEvidence.format,
+      rawValuesIncluded: blocker.unknownPluginOwnedResourceRefusalEvidence.rawValuesIncluded,
+      hashes: blocker.unknownPluginOwnedResourceRefusalEvidence.hashes,
+      evidenceHash: `sha256:${digest(blocker.unknownPluginOwnedResourceRefusalEvidence)}`,
+    },
+    blockerHash: `sha256:${digest(blocker)}`,
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3StaleConflictEvidence({ testCase, plan, shape }) {
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === shape.resourceKey);
+  const plannedMutation = plan.mutations.some((entry) => entry.resourceKey === shape.resourceKey);
+  const plannedPrecondition = plan.preconditions.some((entry) => entry.resourceKey === shape.resourceKey);
+
+  assert.ok(conflict, `${testCase.id} should conflict the stale plugin-owned target`);
+  assert.equal(conflict.class, 'plugin-data-conflict');
+  assert.equal(conflict.pluginOwner, 'forms');
+  assert.equal(conflict.change.localChange, 'update');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(plannedMutation, false);
+  assert.equal(plannedPrecondition, false);
+
+  return {
+    resourceKey: shape.resourceKey,
+    class: conflict.class,
+    pluginOwner: conflict.pluginOwner,
+    change: conflict.change,
+    baseHash: conflict.baseHash,
+    localHash: conflict.localHash,
+    remoteHash: conflict.remoteHash,
+    plannedMutation,
+    plannedPrecondition,
+    conflictHash: `sha256:${digest(conflict)}`,
+  };
+}
+
+function pluginOwnedResourceRefusalVariant3ApplyRefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plugin-owned target should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready plugin-owned refusal mutated remote`);
 
   return {
     code: error.code,
