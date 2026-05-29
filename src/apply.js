@@ -1584,6 +1584,23 @@ function validateReadyPlanEnvelope(plan) {
       });
     }
 
+    const remoteBeforeHashState = hashEvidenceState(mutation.remoteBeforeHash);
+    if (remoteBeforeHashState === 'missing') {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_MISSING',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        remoteBeforeHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
+      });
+    } else if (remoteBeforeHashState === 'invalid') {
+      issues.push({
+        code: 'REMOTE_BEFORE_HASH_INVALID',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        remoteBeforeHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
+      });
+    }
+
     const localHashState = hashEvidenceState(mutation.localHash);
     if (localHashState === 'missing') {
       issues.push({
@@ -1669,8 +1686,8 @@ function validateReadyPlanEnvelope(plan) {
         code: 'PRECONDITION_HASH_MISMATCH',
         mutationId,
         resourceKey: mutation.resourceKey || precondition.resourceKey || null,
-        expectedHash: mutation.remoteBeforeHash || null,
-        actualHash: precondition.expectedHash || null,
+        expectedHash: hashEvidenceForDetails(mutation.remoteBeforeHash),
+        actualHash: hashEvidenceForDetails(precondition.expectedHash),
       });
     }
     if (precondition.checkedAgainst !== 'live-remote') {
