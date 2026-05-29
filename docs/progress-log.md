@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 05:35 CEST.
+- Last update: 2026-05-29 05:45 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 251
-  items checked and leaves 749 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 252
+  items checked and leaves 748 open.
 - Checked slices: 100 release-gate foundation items, 21 graph identity items,
-  31 plugin-driver boundary items, 12 executor/auth items, 13 recovery items,
+  31 plugin-driver boundary items, 12 executor/auth items, 14 recovery items,
   7 chunking/performance items, 2 production-topology items, 40 generated
   harness items, and 25 merge-invariant items. No release-ops items are checked
   yet.
+- Focused recovery journal ownership refresh: the current lane now contains
+  `RPP-0602` evidence in
+  `docs/evidence/rpp-0602-journal-ownership-record.md`,
+  `src/recovery-journal.js`, and `test/recovery-journal.test.js`. `umask
+  0022 && node --test test/recovery-journal.test.js` passed 24/24, proving
+  the production recovery journal persists a restart-readable
+  `journal-ownership-recorded` row with hash-only identity, claim fencing,
+  fsync evidence, and same-claim restart reuse without duplicating the row.
+  Checklist lint, artifact redaction scan, and `git diff --check` also
+  passed. Counts are now 252/748; final release remains `NO-GO`.
 - Focused post-author graph identity refresh: the current lane now contains
   `RPP-0303` evidence in
   `docs/evidence/rpp-0303-post-author-reference.md`,

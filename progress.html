@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T05:35:00+02:00">Last updated: May 29, 2026, 05:35 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T05:45:00+02:00">Last updated: May 29, 2026, 05:45 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>251</strong>
+        <strong>252</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>749</strong>
+        <strong>748</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,11 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0303 graph-identity</span>
+        <span>RPP-0602 recovery</span>
       </div>
-      <p>The latest refresh integrates RPP-0303 post-author graph evidence: the focused generated harness proves ready same-plan user/post creates and stale remote-user blockers with hash-only wp_posts.post_author target evidence. Counts are now 251/749; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0602 recovery journal ownership evidence: the focused recovery journal test proves a durable hash-only journal-ownership-recorded row is restart-readable, exposed through inspection, and reused on same-claim restart without duplication. Counts are now 252/748; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0602 recovery journal: 24/24</span>
         <span class="tag">RPP-0303 graph: 1/1 focused</span>
         <span class="tag">RPP-0206 invariant: 1/1 focused</span>
         <span class="tag">RPP-0406 termmeta: 5/5 focused</span>
@@ -455,7 +456,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 43/43</span>
-        <span class="tag">checked goals: 251/1000</span>
+        <span class="tag">checked goals: 252/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
