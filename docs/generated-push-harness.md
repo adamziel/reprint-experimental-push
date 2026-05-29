@@ -244,7 +244,10 @@ preserve the remote-only drift, and reject stale replay before mutation.
 The `staleRemoteAfterDryRun` target coverage records per-tier counts for ready
 plans whose live-remote preconditions reject a stale remote replay before any
 mutation. Zero-mutation ready plans are excluded because there is no planned
-target to drift after dry-run.
+target to drift after dry-run. RPP-0137 adds a variant-2 proof that independently
+recounts the target cases from the generated roster, cross-checks the summary
+per-tier counts, and records one hash-only `PRECONDITION_FAILED` replay refusal
+for every tier without serializing local, remote, or stale payload values.
 
 The `commentUserGraph` target coverage records per-tier counts for generated
 `wp_comments.user_id` author references. Ready cases create the user and comment

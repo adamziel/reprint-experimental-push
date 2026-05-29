@@ -153,7 +153,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0134 (Near / generated-harness) Prove plugin-owned option changes, variant 2. Success: stale remote replay fails before mutation.
 - [x] RPP-0135 (Near / generated-harness) Prove plugin-owned custom-table changes, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0136 (Near / generated-harness) Prove atomic plugin install stack, variant 2. Success: generator emits at least one ready case and one non-ready case for this target.
-- [ ] RPP-0137 (Near / generated-harness) Prove stale remote after dry-run, variant 2. Success: summary exposes per-tier counts for this target.
+- [x] RPP-0137 (Near / generated-harness) Prove stale remote after dry-run, variant 2. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0138 (Near / generated-harness) Prove same independent content, variant 2. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0139 (Near / generated-harness) Prove remote-only preservation, variant 2. Success: stale remote replay fails before mutation.
 - [ ] RPP-0140 (Near / generated-harness) Prove large ready plan tier, variant 2. Success: docs/generated-push-harness.md records the surface and invariant.
