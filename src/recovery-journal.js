@@ -998,6 +998,310 @@ export function migrateRecoveryJournalSchema(filePath, options = {}) {
   };
 }
 
+export function readSqliteRecoveryJournalTable(database, options = {}) {
+  assertAllowedOptionKeys(
+    options,
+    new Set(['tableName', 'allowMissingSchemaVersion', 'allowMissingTableSchemaVersion']),
+    'readSqliteRecoveryJournalTable()',
+  );
+  const tableName = normalizeSqliteIdentifier(options.tableName ?? 'recovery_journal', 'SQLite recovery journal table name');
+  const table = sqliteRecoveryJournalTableSchema(database, tableName);
+
+  if (!table.exists) {
+    return {
+      storage: 'sqlite',
+      tableName,
+      exists: false,
+      records: [],
+      rows: [],
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      tableSchemaVersion: null,
+      tableSchemaVersions: [],
+      recordSchemaVersions: [],
+      schemaVersionColumnPresent: false,
+      integrity: {
+        status: 'missing',
+        reason: `SQLite recovery journal table ${tableName} is missing.`,
+        errors: [{
+          line: null,
+          code: 'JOURNAL_TABLE_MISSING',
+          message: `SQLite recovery journal table ${tableName} is missing.`,
+        }],
+      },
+    };
+  }
+
+  const allowMissingSchemaVersion = options.allowMissingSchemaVersion === true;
+  const allowMissingTableSchemaVersion = options.allowMissingTableSchemaVersion === true;
+  const missingColumns = ['sequence', 'record_json']
+    .filter((column) => !table.columns.has(column));
+  const schemaVersionColumnPresent = table.columns.has('schema_version');
+  const errors = missingColumns.map((column) => ({
+    line: null,
+    code: 'JOURNAL_TABLE_SCHEMA_MISSING_COLUMN',
+    message: `SQLite recovery journal table ${tableName} is missing required column ${column}.`,
+  }));
+
+  if (!schemaVersionColumnPresent && !allowMissingTableSchemaVersion) {
+    errors.push({
+      line: null,
+      code: 'JOURNAL_TABLE_SCHEMA_VERSION_MISSING',
+      message: `SQLite recovery journal table ${tableName} does not record schema_version.`,
+    });
+  }
+
+  const rawRows = missingColumns.length === 0
+    ? sqliteRecoveryJournalRows(database, tableName, { schemaVersionColumnPresent })
+    : [];
+  const records = [];
+  const rows = [];
+
+  for (const rawRow of rawRows) {
+    const sequence = normalizeSqliteInteger(rawRow.sequence);
+    const tableSchemaVersion = schemaVersionColumnPresent
+      ? normalizeSqliteInteger(rawRow.schema_version)
+      : null;
+    const rowLine = Number.isInteger(sequence) ? sequence : null;
+
+    if (!Number.isInteger(sequence)) {
+      errors.push({
+        line: rowLine,
+        code: 'JOURNAL_TABLE_SEQUENCE_INVALID',
+        message: 'SQLite recovery journal row sequence must be an integer.',
+      });
+    }
+    if (schemaVersionColumnPresent) {
+      if (tableSchemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION) {
+        // Supported table row schema.
+      } else if (allowMissingTableSchemaVersion && tableSchemaVersion === null) {
+        // Legacy table row that will be migrated.
+      } else {
+        errors.push({
+          line: rowLine,
+          code: 'JOURNAL_TABLE_SCHEMA_UNSUPPORTED',
+          message: `Unsupported SQLite recovery journal table schema ${rawRow.schema_version}.`,
+        });
+      }
+    }
+    if (typeof rawRow.record_json !== 'string') {
+      errors.push({
+        line: rowLine,
+        code: 'JOURNAL_TABLE_RECORD_INVALID',
+        message: 'SQLite recovery journal record_json must be a string.',
+      });
+      continue;
+    }
+
+    try {
+      const record = JSON.parse(rawRow.record_json);
+      assertJournalRecordHasNoRawValues(record);
+      records.push(record);
+      rows.push({
+        sequence,
+        tableSchemaVersion,
+      });
+      if (Number.isInteger(sequence) && Number.isInteger(record.sequence) && record.sequence !== sequence) {
+        errors.push({
+          line: rowLine,
+          code: 'JOURNAL_TABLE_SEQUENCE_MISMATCH',
+          message: `SQLite recovery journal row ${sequence} stores record sequence ${record.sequence}.`,
+        });
+      }
+    } catch (error) {
+      errors.push({
+        line: rowLine,
+        code: error.code || 'JOURNAL_TABLE_RECORD_INVALID',
+        message: error.message,
+      });
+    }
+  }
+
+  let expectedSequence = 1;
+  for (const record of records) {
+    if (!Number.isInteger(record.sequence) || record.sequence !== expectedSequence) {
+      errors.push({
+        line: null,
+        code: 'JOURNAL_SEQUENCE_INVALID',
+        message: `Expected journal sequence ${expectedSequence}.`,
+      });
+      break;
+    }
+    expectedSequence++;
+  }
+
+  for (const record of records) {
+    if (record.schemaVersion === RECOVERY_JOURNAL_SCHEMA_VERSION) {
+      continue;
+    }
+    if (allowMissingSchemaVersion && !Object.hasOwn(record, 'schemaVersion')) {
+      continue;
+    }
+    errors.push({
+      line: null,
+      code: 'JOURNAL_SCHEMA_UNSUPPORTED',
+      message: `Unsupported recovery journal schema ${record.schemaVersion}.`,
+    });
+    break;
+  }
+
+  const tableSchemaVersions = recordTableSchemaVersions(rows);
+
+  return {
+    storage: 'sqlite',
+    tableName,
+    exists: true,
+    records,
+    rows,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    tableSchemaVersion: tableSchemaVersions.length === 1 ? tableSchemaVersions[0] : null,
+    tableSchemaVersions,
+    recordSchemaVersions: recordSchemaVersions(records),
+    schemaVersionColumnPresent,
+    integrity: errors.length === 0
+      ? { status: 'ok', reason: null, errors: [] }
+      : { status: 'blocked', reason: 'SQLite recovery journal table is corrupt or uses an unsupported schema.', errors },
+  };
+}
+
+export function migrateSqliteRecoveryJournalTableSchema(database, options = {}) {
+  assertAllowedOptionKeys(
+    options,
+    new Set(['tableName']),
+    'migrateSqliteRecoveryJournalTableSchema()',
+  );
+  const tableName = normalizeSqliteIdentifier(options.tableName ?? 'recovery_journal', 'SQLite recovery journal table name');
+  const legacyRead = readSqliteRecoveryJournalTable(database, {
+    tableName,
+    allowMissingSchemaVersion: true,
+    allowMissingTableSchemaVersion: true,
+  });
+
+  if (!legacyRead.exists) {
+    return {
+      storage: 'sqlite',
+      tableName,
+      exists: false,
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      tableSchemaVersion: null,
+      migrated: false,
+      records: 0,
+      migratedRecords: 0,
+      updatedTableRows: 0,
+      schemaVersionColumnAdded: false,
+      preservedRows: true,
+      restartReadable: false,
+      recordSchemaVersions: [],
+      tableSchemaVersions: [],
+      integrity: legacyRead.integrity,
+      journal: legacyRead,
+    };
+  }
+
+  if (legacyRead.integrity.status !== 'ok') {
+    return {
+      storage: 'sqlite',
+      tableName,
+      exists: true,
+      schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+      tableSchemaVersion: legacyRead.tableSchemaVersion,
+      migrated: false,
+      records: legacyRead.records.length,
+      migratedRecords: 0,
+      updatedTableRows: 0,
+      schemaVersionColumnAdded: false,
+      preservedRows: false,
+      restartReadable: false,
+      recordSchemaVersions: legacyRead.recordSchemaVersions,
+      tableSchemaVersions: legacyRead.tableSchemaVersions,
+      integrity: legacyRead.integrity,
+      journal: legacyRead,
+    };
+  }
+
+  const quotedTableName = quoteSqliteIdentifier(tableName);
+  const schemaVersionColumnAdded = legacyRead.schemaVersionColumnPresent !== true;
+  const rowUpdates = legacyRead.records
+    .map((record, index) => {
+      const row = legacyRead.rows[index] || {};
+      const recordMissingSchemaVersion = !Object.hasOwn(record, 'schemaVersion');
+      const tableMissingSchemaVersion = row.tableSchemaVersion !== RECOVERY_JOURNAL_SCHEMA_VERSION;
+      if (!recordMissingSchemaVersion && !tableMissingSchemaVersion) {
+        return null;
+      }
+      return {
+        sequence: record.sequence,
+        record: recordMissingSchemaVersion
+          ? { schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION, ...record }
+          : { ...record },
+      };
+    })
+    .filter(Boolean);
+
+  if (schemaVersionColumnAdded || rowUpdates.length > 0) {
+    let transactionStarted = false;
+    try {
+      sqliteExec(database, 'BEGIN IMMEDIATE');
+      transactionStarted = true;
+      if (schemaVersionColumnAdded) {
+        sqliteExec(
+          database,
+          `ALTER TABLE ${quotedTableName} ADD COLUMN ${quoteSqliteIdentifier('schema_version')} INTEGER NOT NULL DEFAULT ${RECOVERY_JOURNAL_SCHEMA_VERSION}`,
+        );
+      }
+      const update = sqlitePrepare(
+        database,
+        `UPDATE ${quotedTableName} SET ${quoteSqliteIdentifier('record_json')} = ?, ${quoteSqliteIdentifier('schema_version')} = ? WHERE ${quoteSqliteIdentifier('sequence')} = ?`,
+      );
+      for (const row of rowUpdates) {
+        sqliteRunStatement(
+          update,
+          [
+            JSON.stringify(row.record),
+            RECOVERY_JOURNAL_SCHEMA_VERSION,
+            row.sequence,
+          ],
+        );
+      }
+      sqliteExec(database, 'COMMIT');
+      transactionStarted = false;
+    } catch (error) {
+      if (transactionStarted) {
+        try {
+          sqliteExec(database, 'ROLLBACK');
+        } catch {
+          // Preserve the original migration failure.
+        }
+      }
+      throw error;
+    }
+  }
+
+  const restarted = readSqliteRecoveryJournalTable(database, { tableName });
+  const preservedRows = recoveryJournalRowsMatchIgnoringSchemaVersion(
+    legacyRead.records,
+    restarted.records,
+  );
+
+  return {
+    storage: 'sqlite',
+    tableName,
+    exists: true,
+    schemaVersion: RECOVERY_JOURNAL_SCHEMA_VERSION,
+    tableSchemaVersion: restarted.tableSchemaVersion,
+    migrated: schemaVersionColumnAdded || rowUpdates.length > 0,
+    records: restarted.records.length,
+    migratedRecords: legacyRead.records.filter((record) => !Object.hasOwn(record, 'schemaVersion')).length,
+    updatedTableRows: rowUpdates.length,
+    schemaVersionColumnAdded,
+    preservedRows,
+    restartReadable: restarted.integrity.status === 'ok',
+    recordSchemaVersions: restarted.recordSchemaVersions,
+    tableSchemaVersions: restarted.tableSchemaVersions,
+    integrity: restarted.integrity,
+    journal: restarted,
+  };
+}
+
 function readRecoveryJournalFile(filePath, options = {}) {
   const allowMissingSchemaVersion = options.allowMissingSchemaVersion === true;
   let text;
@@ -1442,6 +1746,105 @@ function recordSchemaVersions(records) {
       .map((record) => record.schemaVersion)
       .filter((schemaVersion) => schemaVersion !== undefined),
   )].sort((left, right) => left - right);
+}
+
+function recordTableSchemaVersions(rows) {
+  return [...new Set(
+    (Array.isArray(rows) ? rows : [])
+      .map((row) => row.tableSchemaVersion)
+      .filter((schemaVersion) => schemaVersion !== undefined && schemaVersion !== null),
+  )].sort((left, right) => left - right);
+}
+
+function sqliteRecoveryJournalTableSchema(database, tableName) {
+  const exists = Boolean(sqliteGet(
+    database,
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+    [tableName],
+  ));
+  if (!exists) {
+    return { exists: false, columns: new Set() };
+  }
+
+  return {
+    exists: true,
+    columns: new Set(
+      sqliteAll(database, `PRAGMA table_info(${quoteSqliteIdentifier(tableName)})`)
+        .map((column) => column.name),
+    ),
+  };
+}
+
+function sqliteRecoveryJournalRows(database, tableName, { schemaVersionColumnPresent }) {
+  const selectedColumns = [
+    quoteSqliteIdentifier('sequence'),
+    quoteSqliteIdentifier('record_json'),
+    ...(schemaVersionColumnPresent ? [quoteSqliteIdentifier('schema_version')] : []),
+  ];
+  return sqliteAll(
+    database,
+    `SELECT ${selectedColumns.join(', ')} FROM ${quoteSqliteIdentifier(tableName)} ORDER BY ${quoteSqliteIdentifier('sequence')} ASC`,
+  );
+}
+
+function sqlitePrepare(database, sql) {
+  if (!database || typeof database.prepare !== 'function') {
+    throw new Error('SQLite recovery journal migration requires a database object with prepare(sql).');
+  }
+  return database.prepare(sql);
+}
+
+function sqliteAll(database, sql, params = []) {
+  const statement = sqlitePrepare(database, sql);
+  if (!statement || typeof statement.all !== 'function') {
+    throw new Error('SQLite recovery journal migration requires prepared statements with all(...params).');
+  }
+  return statement.all(...params);
+}
+
+function sqliteGet(database, sql, params = []) {
+  const statement = sqlitePrepare(database, sql);
+  if (!statement || typeof statement.get !== 'function') {
+    throw new Error('SQLite recovery journal migration requires prepared statements with get(...params).');
+  }
+  return statement.get(...params);
+}
+
+function sqliteRunStatement(statement, params = []) {
+  if (!statement || typeof statement.run !== 'function') {
+    throw new Error('SQLite recovery journal migration requires prepared statements with run(...params).');
+  }
+  return statement.run(...params);
+}
+
+function sqliteExec(database, sql) {
+  if (!database || typeof database.exec !== 'function') {
+    throw new Error('SQLite recovery journal migration requires a database object with exec(sql).');
+  }
+  return database.exec(sql);
+}
+
+function normalizeSqliteIdentifier(identifier, label) {
+  if (typeof identifier !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new Error(`${label} must contain only ASCII letters, numbers, and underscores, and must not start with a number.`);
+  }
+  return identifier;
+}
+
+function quoteSqliteIdentifier(identifier) {
+  return `"${normalizeSqliteIdentifier(identifier, 'SQLite identifier')}"`;
+}
+
+function normalizeSqliteInteger(value) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  if (typeof value === 'bigint') {
+    const asNumber = Number(value);
+    return Number.isSafeInteger(asNumber) ? asNumber : value;
+  }
+  const asNumber = Number(value);
+  return Number.isInteger(asNumber) ? asNumber : value;
 }
 
 function normalizeOptionalNonNegativeInteger(value) {

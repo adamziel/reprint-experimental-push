@@ -14,22 +14,36 @@ import {
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
   migrateRecoveryJournalSchema,
+  migrateSqliteRecoveryJournalTableSchema,
   openProductionRecoveryJournal,
   openPlanRecoveryJournal,
   openRecoveryJournal,
   readRecoveryJournal,
   readRecoveryJournalPage,
   readRecoveryJournalPaged,
+  readSqliteRecoveryJournalTable,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, setResource } from '../src/resources.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+let DatabaseSync = null;
+
+try {
+  ({ DatabaseSync } = await import('node:sqlite'));
+} catch {
+  DatabaseSync = null;
+}
 
 function tempJournalPath() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-recovery-journal-'));
   return path.join(dir, 'recovery.jsonl');
+}
+
+function tempSqlitePath() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reprint-recovery-journal-sqlite-'));
+  return path.join(dir, 'recovery.sqlite');
 }
 
 function baseSite() {
@@ -73,6 +87,19 @@ function writeLegacyJournalWithoutSchemaVersion(filePath, records) {
     filePath,
     `${legacyRecords.map((record) => JSON.stringify(record)).join('\n')}\n`,
   );
+  return legacyRecords;
+}
+
+function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_journal') {
+  database.exec(`CREATE TABLE ${tableName} (
+    sequence INTEGER PRIMARY KEY,
+    record_json TEXT NOT NULL
+  )`);
+  const insert = database.prepare(`INSERT INTO ${tableName} (sequence, record_json) VALUES (?, ?)`);
+  const legacyRecords = records.map(withoutSchemaVersion);
+  for (const record of legacyRecords) {
+    insert.run(record.sequence, JSON.stringify(record));
+  }
   return legacyRecords;
 }
 
@@ -137,6 +164,94 @@ test('file-backed journal schema migration preserves rows and remains restart-re
   });
   assert.equal(inspection.status, 'old-remote');
   assert.deepEqual(inspection.counts, { old: 8, new: 0, blockedUnknown: 0 });
+});
+
+test('SQLite-backed journal table schema migration preserves rows and remains restart-readable', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const seedFilePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const seedJournal = openPlanRecoveryJournal({
+    filePath: seedFilePath,
+    plan,
+    current: remote,
+    now: fixedNow,
+  });
+  seedJournal.close();
+
+  const currentRows = readRecoveryJournal(seedFilePath).records;
+  let database = new DatabaseSync(sqlitePath);
+  const legacyRows = writeLegacySqliteJournalTable(database, currentRows);
+  const legacyRead = readSqliteRecoveryJournalTable(database);
+
+  assert.equal(legacyRead.integrity.status, 'blocked');
+  assert.equal(legacyRead.schemaVersionColumnPresent, false);
+  assert.equal(
+    legacyRead.integrity.errors.some((error) => error.code === 'JOURNAL_TABLE_SCHEMA_VERSION_MISSING'),
+    true,
+  );
+  assert.equal(
+    legacyRead.integrity.errors.some((error) => error.code === 'JOURNAL_SCHEMA_UNSUPPORTED'),
+    true,
+  );
+
+  const migration = migrateSqliteRecoveryJournalTableSchema(database);
+
+  assert.equal(migration.storage, 'sqlite');
+  assert.equal(migration.tableName, 'recovery_journal');
+  assert.equal(migration.schemaVersion, 1);
+  assert.equal(migration.tableSchemaVersion, 1);
+  assert.deepEqual(migration.tableSchemaVersions, [1]);
+  assert.deepEqual(migration.recordSchemaVersions, [1]);
+  assert.equal(migration.migrated, true);
+  assert.equal(migration.schemaVersionColumnAdded, true);
+  assert.equal(migration.records, legacyRows.length);
+  assert.equal(migration.migratedRecords, legacyRows.length);
+  assert.equal(migration.updatedTableRows, legacyRows.length);
+  assert.equal(migration.preservedRows, true);
+  assert.equal(migration.restartReadable, true);
+  assert.equal(migration.integrity.status, 'ok');
+
+  database.close();
+  database = new DatabaseSync(sqlitePath);
+  const restarted = readSqliteRecoveryJournalTable(database);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.schemaVersionColumnPresent, true);
+  assert.deepEqual(restarted.tableSchemaVersions, [1]);
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: legacyRows.length }, (_, index) => index + 1),
+  );
+  assert.ok(restarted.records.every((record) => record.schemaVersion === 1));
+  assert.deepEqual(restarted.records.map(withoutSchemaVersion), legacyRows);
+
+  const tableRows = database
+    .prepare('SELECT sequence, schema_version, record_json FROM recovery_journal ORDER BY sequence ASC')
+    .all();
+  assert.equal(tableRows.length, legacyRows.length);
+  assert.ok(tableRows.every((row) => row.schema_version === 1));
+  assert.ok(tableRows.every((row) => JSON.parse(row.record_json).schemaVersion === 1));
+
+  const inspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: remote,
+  });
+  assert.equal(inspection.status, 'old-remote');
+  assert.deepEqual(inspection.counts, { old: 8, new: 0, blockedUnknown: 0 });
+
+  database
+    .prepare('UPDATE recovery_journal SET schema_version = ? WHERE sequence = ?')
+    .run(2, 1);
+  const unsupported = readSqliteRecoveryJournalTable(database);
+  assert.equal(unsupported.integrity.status, 'blocked');
+  assert.equal(
+    unsupported.integrity.errors.some((error) => error.code === 'JOURNAL_TABLE_SCHEMA_UNSUPPORTED'),
+    true,
+  );
+  database.close();
 });
 
 test('file-backed journal appends monotonic sequences and reads after restart', () => {

@@ -1,50 +1,51 @@
-# RPP-0601 file-backed journal schema migration evidence
+# RPP-0601 journal table schema migration evidence
 
-Date: 2026-05-28
+Date: 2026-05-29
 Issue: RPP-0601
 Lane: journal-recovery
 
-## Integrator scope note
-
-This is auxiliary file-backed migration evidence toward `RPP-0601`. The
-`RPP-0601` checklist item remains unchecked because the checklist success
-wording requires a MySQL or SQLite-backed journal table migration test.
-
 ## Proof added
 
-- Added `migrateRecoveryJournalSchema(filePath)` for the file-backed recovery
-  journal surface.
-- The migration accepts legacy append-only journal rows that are otherwise valid
-  but lack `schemaVersion`, rewrites them atomically through a fsynced temporary
-  file and rename, and records `schemaVersion: 1` on every row.
-- The migration summary reports total rows, migrated row count, distinct recorded
-  schema versions, row-preservation status, and restart-readability.
-- Unsupported explicit schema versions still fail closed; un-migrated legacy rows
-  remain blocked by `readRecoveryJournal()` until the migration runs.
+- Added a SQLite-backed recovery journal table migration surface:
+  `migrateSqliteRecoveryJournalTableSchema(database, { tableName })` and
+  `readSqliteRecoveryJournalTable(database, { tableName })`.
+- The migration accepts a legacy append-only SQLite table with `sequence` and
+  `record_json` rows, adds a durable `schema_version` column, and rewrites each
+  legacy JSON record to include `schemaVersion: 1`.
+- The migration summary reports the SQLite table name, recorded table and record
+  schema versions, migrated row counts, row-preservation status, and strict
+  restart-readability.
+- Unsupported explicit schema versions still fail closed through the strict table
+  reader; un-migrated legacy table rows remain blocked until the migration runs.
+- The previous file-backed JSONL migration proof remains covered as auxiliary
+  evidence for the same restart-readable recovery journal state.
 
 ## Focused regression
 
 `test/recovery-journal.test.js` now includes
-`file-backed journal schema migration preserves rows and remains restart-readable`:
+`SQLite-backed journal table schema migration preserves rows and remains restart-readable`:
 
-1. Creates a normal plan recovery journal.
-2. Rewrites it into a legacy fixture by removing only `schemaVersion` from each
-   JSONL row.
-3. Confirms the legacy fixture is blocked as `JOURNAL_SCHEMA_UNSUPPORTED` before
-   migration.
-4. Runs `migrateRecoveryJournalSchema()` and asserts row count, sequence order,
-   non-schema row data, and `schemaVersion: 1` are preserved.
-5. Reopens the migrated journal through restart inspection and verifies the
-   recovery state remains `old-remote` with 8 old / 0 new / 0 blocked-unknown
-   targets.
+1. Creates a normal plan recovery journal and copies its rows into a legacy
+   SQLite journal table after removing only `schemaVersion` from each JSON row.
+2. Confirms the strict SQLite table reader blocks the legacy table because the
+   `schema_version` column and per-record schema versions are missing.
+3. Runs `migrateSqliteRecoveryJournalTableSchema()` and asserts the migration
+   adds `schema_version`, preserves row order and non-schema row data, records
+   `schemaVersion: 1`, and reports restart-readable integrity.
+4. Closes and reopens the SQLite database file, reads the table again, and
+   verifies every persisted row still records table and record schema version 1.
+5. Feeds the restarted SQLite table journal into recovery inspection and verifies
+   the recovery state remains `old-remote` with 8 old / 0 new / 0
+   blocked-unknown targets.
+
+The existing file-backed regression continues to verify the auxiliary JSONL
+migration path.
 
 ## Validation run
 
 ```bash
-node --test test/recovery-journal.test.js
-npm run test:recovery:file-journal
+umask 0022 && node --test test/recovery-journal.test.js
 ```
 
-Integrator validation on the lane observed `node --test test/recovery-journal.test.js`
-at 22 pass / 0 fail and `npm run test:recovery:file-journal` exit 0 after the
-migration patch.
+Observed result: 23 pass / 0 fail, including the SQLite-backed journal table
+schema migration and existing recovery journal coverage.
