@@ -253,6 +253,12 @@ Each case combines post-row creates, updates, deletes, file creates, updates,
 deletes, same-plan taxonomy/comment graph rows, and remote-only row/file drift.
 The invariant is that all 10 cases stay `ready`, apply only planned resources,
 preserve the remote-only drift, and reject stale replay before mutation.
+RPP-0140 adds a variant-2 proof that independently recounts every tier, records
+exact surface counts for the row/file/taxonomy/comment graph mix, verifies that
+the planned mutation and precondition key sets match that generated surface,
+checks the row/file `keep-remote` decisions, and drifts a non-initial planned
+resource after dry-run to prove `PRECONDITION_FAILED` occurs before mutation
+without serializing generated row titles, file payloads, or stale replay data.
 
 The `postAuthorGraph` target coverage records per-tier counts for generated
 `wp_posts.post_author` references to `wp_users` rows. Ready cases create the
