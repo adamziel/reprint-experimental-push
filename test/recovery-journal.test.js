@@ -25,8 +25,13 @@ import {
   readSqliteRecoveryJournalTable,
 } from '../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
+import {
+  inspectRecoveryRepair,
+  replayRecoveryRepair,
+} from '../src/recovery-repair.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, setResource } from '../src/resources.js';
+import { digest } from '../src/stable-json.js';
 import { buildDurableRecoveryJournalReleaseProof } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
@@ -310,6 +315,137 @@ test('file-backed journal open state survives process restart readback', () => {
   });
   assert.equal(inspection.status, 'old-remote');
   assert.equal(inspection.journal.openState.restartReadable, true);
+});
+
+test('file-backed journal staged state survives restart and retry preserves remote-only changes', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = clone(base);
+  const remote = clone(base);
+  const plannedLocalContent = 'local-private-content-rpp-0608';
+  const preservedBeforePlan = 'remote-preserved-private-content-rpp-0608-before-plan';
+  const preservedAfterCrash = 'remote-preserved-private-content-rpp-0608-after-crash';
+  local.files['file-1.txt'] = plannedLocalContent;
+  remote.files['file-8.txt'] = preservedBeforePlan;
+  const plan = planFor(base, local, remote);
+  const expectedStaged = clone(remote);
+  applyFirstMutations(expectedStaged, plan, plan.mutations.length);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const childScript = `
+    import { openRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0608_JOURNAL_PATH;
+    const base = JSON.parse(process.env.RPP0608_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0608_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0608_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const durableJournal = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'rpp-0608-staged-state-first-writer',
+    });
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        failAfterStaging: true,
+        mutateRemote: true,
+      });
+      console.error('expected injected staging failure');
+      process.exit(3);
+    } catch (error) {
+      if (error?.code !== 'INJECTED_FAILURE_AFTER_STAGING') {
+        console.error(error?.stack || String(error));
+        process.exit(2);
+      }
+      process.exit(0);
+    }
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0608_JOURNAL_PATH: filePath,
+      RPP0608_BASE_SITE: JSON.stringify(base),
+      RPP0608_LOCAL_SITE: JSON.stringify(local),
+      RPP0608_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.stagedState.status, 'staged');
+  assert.equal(restarted.stagedState.phase, 'staged');
+  assert.equal(restarted.stagedState.restartReadable, true);
+  assert.equal(restarted.stagedState.records, restarted.records.length);
+  assert.equal(restarted.stagedState.durableRows, restarted.records.length);
+  assert.equal(restarted.stagedState.stagedRows, 1);
+  assert.equal(restarted.stagedState.targetRows, plan.mutations.length);
+  assert.equal(restarted.stagedState.targetEnvelope.plannedTargets, plan.mutations.length);
+  assert.equal(restarted.stagedState.targetEnvelope.allTargetsHaveHashes, true);
+  assert.equal(restarted.stagedState.latestStagedType, 'apply-staged');
+  assert.equal(restarted.stagedState.planId, plan.id);
+  assert.equal(restarted.stagedState.state, 'staged');
+  assert.equal(restarted.stagedState.observedHash, digest(remote));
+  assert.equal(restarted.stagedState.stagedHash, digest(expectedStaged));
+  assert.deepEqual(restarted.stagedState.fsync, {
+    requested: true,
+    strategy: 'after-append',
+  });
+  assert.deepEqual(
+    restarted.records.map((record) => record.type),
+    [
+      'recovery-claim-opened',
+      'journal-opened',
+      'target-planned',
+      'apply-staged',
+      'recovery-state',
+    ],
+  );
+
+  const retryRemote = clone(remote);
+  retryRemote.files['file-7.txt'] = preservedAfterCrash;
+  const restartInspection = inspectRecoveryJournal({ journal: restarted, plan, current: retryRemote });
+  const repairInspection = inspectRecoveryRepair({ journalPath: filePath, plan, current: retryRemote });
+  const retry = replayRecoveryRepair({
+    journalPath: filePath,
+    plan,
+    current: retryRemote,
+    mutateCurrent: true,
+  });
+
+  assert.equal(restartInspection.status, 'old-remote');
+  assert.equal(restartInspection.journal.stagedState.restartReadable, true);
+  assert.equal(repairInspection.status, 'old-remote-replayable');
+  assert.equal(repairInspection.journal.stagedState.restartReadable, true);
+  assert.equal(retry.status, 'replayed');
+  assert.equal(retry.appliedMutations, plan.mutations.length);
+  assert.equal(retryRemote.files['file-1.txt'], plannedLocalContent);
+  assert.equal(retryRemote.files['file-8.txt'], preservedBeforePlan);
+  assert.equal(retryRemote.files['file-7.txt'], preservedAfterCrash);
+  assert.equal(
+    fs.readFileSync(filePath, 'utf8').includes(plannedLocalContent),
+    false,
+  );
+  assert.equal(
+    fs.readFileSync(filePath, 'utf8').includes(preservedBeforePlan),
+    false,
+  );
+  assert.equal(
+    fs.readFileSync(filePath, 'utf8').includes(preservedAfterCrash),
+    false,
+  );
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
 });
 
 test('file-backed journal schema migration preserves rows and remains restart-readable', () => {
