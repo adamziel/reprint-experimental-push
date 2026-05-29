@@ -29,6 +29,10 @@ const RECOVERY_JOURNAL_STAGED_EVENT_TYPES = new Set([
   'apply-staged',
   'dependencies-validated',
 ]);
+const RECOVERY_JOURNAL_COMMITTED_EVENT_TYPES = new Set([
+  'mutation-observed',
+  'journal-completed',
+]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 export class RecoveryJournalClaimStaleError extends Error {
@@ -170,6 +174,120 @@ export function summarizeRecoveryJournalStagedState(journalOrRecords, options = 
     fsync: {
       requested: latestStagedFsync?.requested === true,
       strategy: latestStagedFsync?.strategy ?? null,
+    },
+  };
+}
+
+export function summarizeRecoveryJournalCommittedState(journalOrRecords, options = {}) {
+  const records = Array.isArray(journalOrRecords)
+    ? journalOrRecords
+    : Array.isArray(journalOrRecords?.records)
+      ? journalOrRecords.records
+      : [];
+  const integrityStatus = options.integrityStatus
+    || options.integrity?.status
+    || journalOrRecords?.integrity?.status
+    || 'unknown';
+  const committedRecords = records.filter((record) => RECOVERY_JOURNAL_COMMITTED_EVENT_TYPES.has(record.type));
+  const mutationRecords = committedRecords.filter((record) => record.type === 'mutation-observed');
+  const completedRecords = committedRecords.filter((record) => record.type === 'journal-completed');
+  const firstCommittedRecord = committedRecords[0] || null;
+  const latestCommittedRecord = committedRecords.at(-1) || null;
+  const latestMutationRecord = mutationRecords.at(-1) || null;
+  const latestCompletedRecord = completedRecords.at(-1) || null;
+  const latestCommittedFsync = latestCommittedRecord?.fsync && typeof latestCommittedRecord.fsync === 'object'
+    ? latestCommittedRecord.fsync
+    : null;
+  const targetRecords = latestCommittedRecord
+    ? records.filter((record) => (
+      record.type === 'target-planned'
+        && record.planId === latestCommittedRecord.planId
+        && hasNonEmptyString(record.mutationId)
+        && hasNonEmptyString(record.resourceKey)
+        && CLAIM_HASH_PATTERN.test(record.beforeHash || '')
+        && CLAIM_HASH_PATTERN.test(record.afterHash || '')
+    ))
+    : [];
+  const committedTargetRecords = mutationRecords.filter((record) => (
+    record.planId === latestCommittedRecord?.planId
+      && hasNonEmptyString(record.mutationId)
+      && hasNonEmptyString(record.resourceKey)
+      && CLAIM_HASH_PATTERN.test(record.beforeHash || '')
+      && CLAIM_HASH_PATTERN.test(record.afterHash || '')
+      && CLAIM_HASH_PATTERN.test(record.observedHash || '')
+  ));
+  const committedMutationIds = new Set(committedTargetRecords.map((record) => record.mutationId));
+  const latestCommittedStateHasHash = CLAIM_HASH_PATTERN.test(latestCommittedRecord?.observedHash || '');
+  const latestLeaseOwnerRecord = [...committedRecords].reverse().find(
+    (record) => hasNonEmptyString(record.claimId) && CLAIM_HASH_PATTERN.test(record.claimHash || ''),
+  ) || null;
+
+  return {
+    status: latestCompletedRecord
+      ? 'completed'
+      : committedTargetRecords.length > 0
+        ? 'committed'
+        : 'missing',
+    phase: latestCommittedRecord ? latestCommittedRecord.state || 'committed' : 'missing',
+    restartReadable: integrityStatus === 'ok'
+      && latestCommittedRecord !== null
+      && latestCommittedStateHasHash
+      && (
+        latestCompletedRecord !== null
+          || committedTargetRecords.length > 0
+      ),
+    durableRows: integrityStatus === 'ok' ? records.length : 0,
+    records: records.length,
+    committedRows: committedRecords.length,
+    mutationRows: mutationRecords.length,
+    completedRows: completedRecords.length,
+    targetRows: targetRecords.length,
+    committedTargetRows: committedTargetRecords.length,
+    firstCommittedSequence: firstCommittedRecord?.sequence ?? null,
+    latestCommittedSequence: latestCommittedRecord?.sequence ?? null,
+    latestCommittedType: latestCommittedRecord?.type ?? null,
+    latestMutationSequence: latestMutationRecord?.sequence ?? null,
+    latestCompletedSequence: latestCompletedRecord?.sequence ?? null,
+    planId: latestCommittedRecord?.planId ?? null,
+    state: latestCommittedRecord?.state ?? null,
+    observedHash: latestCommittedRecord?.observedHash ?? null,
+    latestMutation: latestMutationRecord
+      ? {
+        mutationId: latestMutationRecord.mutationId ?? null,
+        resourceKey: latestMutationRecord.resourceKey ?? null,
+        beforeHash: latestMutationRecord.beforeHash ?? null,
+        afterHash: latestMutationRecord.afterHash ?? null,
+        observedHash: latestMutationRecord.observedHash ?? null,
+        state: latestMutationRecord.state ?? null,
+        sequence: latestMutationRecord.sequence ?? null,
+      }
+      : null,
+    targetEnvelope: {
+      plannedTargets: targetRecords.length,
+      committedTargets: committedMutationIds.size,
+      allCommittedTargetsHaveHashes: latestCommittedRecord !== null && committedTargetRecords.every((record) => (
+        CLAIM_HASH_PATTERN.test(record.beforeHash || '')
+          && CLAIM_HASH_PATTERN.test(record.afterHash || '')
+          && CLAIM_HASH_PATTERN.test(record.observedHash || '')
+      )),
+      allTargetsCommitted: targetRecords.length > 0
+        && committedMutationIds.size === targetRecords.length
+        && latestCompletedRecord !== null,
+    },
+    leaseOwner: {
+      visible: latestLeaseOwnerRecord !== null,
+      claimId: latestLeaseOwnerRecord?.claimId ?? null,
+      claimHash: latestLeaseOwnerRecord?.claimHash ?? null,
+      claimKeyHash: latestLeaseOwnerRecord?.claimHash ?? null,
+      sequence: latestLeaseOwnerRecord?.sequence ?? null,
+      eventType: latestLeaseOwnerRecord?.type ?? null,
+    },
+    artifactRefs: latestCommittedRecord?.artifactRefs && typeof latestCommittedRecord.artifactRefs === 'object'
+      ? { ...latestCommittedRecord.artifactRefs }
+      : {},
+    fsync: {
+      requested: latestCommittedFsync?.requested === true,
+      strategy: latestCommittedFsync?.strategy ?? null,
     },
   };
 }
@@ -1055,6 +1173,7 @@ export function openProductionRecoveryJournal(options) {
         records: persisted.records.length,
         openState: persisted.openState,
         stagedState: persisted.stagedState,
+        committedState: persisted.committedState,
         staleClaimRejected,
         claim,
         claimExpiry,
@@ -1438,6 +1557,7 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
       },
       openState: summarizeRecoveryJournalOpenState([], { integrityStatus: 'missing' }),
       stagedState: summarizeRecoveryJournalStagedState([], { integrityStatus: 'missing' }),
+      committedState: summarizeRecoveryJournalCommittedState([], { integrityStatus: 'missing' }),
     };
   }
 
@@ -1573,6 +1693,7 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
     integrity,
     openState: summarizeRecoveryJournalOpenState(records, { integrity }),
     stagedState: summarizeRecoveryJournalStagedState(records, { integrity }),
+    committedState: summarizeRecoveryJournalCommittedState(records, { integrity }),
   };
 }
 
@@ -1736,6 +1857,7 @@ function readRecoveryJournalFile(filePath, options = {}) {
       integrity,
       openState: summarizeRecoveryJournalOpenState([], { integrity }),
       stagedState: summarizeRecoveryJournalStagedState([], { integrity }),
+      committedState: summarizeRecoveryJournalCommittedState([], { integrity }),
     };
   }
 
@@ -1808,6 +1930,7 @@ function readRecoveryJournalFile(filePath, options = {}) {
     integrity,
     openState: summarizeRecoveryJournalOpenState(records, { integrity }),
     stagedState: summarizeRecoveryJournalStagedState(records, { integrity }),
+    committedState: summarizeRecoveryJournalCommittedState(records, { integrity }),
   };
 }
 
@@ -2457,5 +2580,6 @@ function emptyRead(filePath, status, reason) {
     },
     openState: summarizeRecoveryJournalOpenState([], { integrityStatus: status }),
     stagedState: summarizeRecoveryJournalStagedState([], { integrityStatus: status }),
+    committedState: summarizeRecoveryJournalCommittedState([], { integrityStatus: status }),
   };
 }

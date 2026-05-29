@@ -650,7 +650,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0606 (Far / recovery) Implement journal pagination, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0607 (Far / recovery) Implement restart-readable open state, variant 1. Success: journal rows are durable after process restart.
 - [x] RPP-0608 (Far / recovery) Implement restart-readable staged state, variant 1. Success: retry does not overwrite preserved remote changes.
-- [ ] RPP-0609 (Far / recovery) Implement restart-readable committed state, variant 1. Success: lease owner identity is visible in audit evidence.
+- [x] RPP-0609 (Far / recovery) Implement restart-readable committed state, variant 1. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0610 (Far / recovery) Implement old remote recovery classification, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0611 (Far / recovery) Implement new remote recovery classification, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0612 (Far / recovery) Implement blocked recovery classification, variant 1. Success: journal rows are durable after process restart.
