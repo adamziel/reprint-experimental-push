@@ -222,6 +222,15 @@ generic row create/update/delete surface. Ready cases create, update, and delete
 rows, preserve unplanned remote resources, and reject stale replay before
 mutation; conflict cases drift the updated row remotely and refuse apply.
 
+RPP-0144 adds `rowCreateUpdateDeleteMixVariant3` coverage for the same generic
+row mix surface with an explicit variant-3 target tag. The deterministic roster
+emits 20 variant-3 target cases: 10 ready cases and 10 non-ready conflict cases,
+with two cases in every tier. The focused proof records only resource keys and
+hashes, verifies the ready case applies the planned create/update/delete rows,
+preserves the remote-only row, and rejects stale replay before mutation, then
+verifies the conflicting updated row refuses apply without mutating the remote
+digest.
+
 The `wpTermTaxonomyGraph` target coverage records per-tier counts for generated
 `wp_term_taxonomy` rows and their `wp_terms` graph relationships. Ready cases
 create the term and taxonomy row in one plan, preserve unplanned remote
