@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 04:35 CEST.
+- Last update: 2026-05-29 04:50 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 243
-  items checked and leaves 757 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 244
+  items checked and leaves 756 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
   30 plugin-driver boundary items, 11 executor/auth items, 13 recovery items,
-  7 chunking/performance items, 2 production-topology items, 38 generated
+  7 chunking/performance items, 2 production-topology items, 39 generated
   harness items, and 23 merge-invariant items. No release-ops items are checked
   yet.
+- Generated harness stale replay variant-2 refresh: the current lane now
+  contains `RPP-0137` evidence in
+  `docs/evidence/rpp-0137-stale-remote-after-dry-run.md`,
+  `docs/generated-push-harness.md`, and `test/generated-push-harness.test.js`.
+  `node --test --test-name-pattern=RPP-0137 test/generated-push-harness.test.js`
+  passed 1/1, and `npm run test:generated-push-harness` passed 41/41
+  across the 620 deterministic generated cases, proving the
+  `staleRemoteAfterDryRun` summary target per-tier counts and one hash-only
+  stale-replay refusal per tier while release remains `NO-GO`. Counts are now
+  244/756.
 - Focused tmux stdout marker refresh: the current lane now contains
   `test/release-gate-tmux-status-marker-focused-regression.test.js` for
   `RPP-0077`. The command
