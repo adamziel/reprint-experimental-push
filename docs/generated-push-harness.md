@@ -59,7 +59,8 @@ The default generated run covers:
   redacted hash-only evidence for private serialized payloads, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
-  counts, ready/conflict outcomes, and stale replay rejection before mutation,
+  counts, ready/conflict outcomes, stale replay rejection before mutation, and
+  explicit variant-3 postmeta coverage,
   `wp_comments` + `wp_commentmeta` graph cases with per-tier target counts and
   ready/stale non-ready outcomes, `wp_terms` + `wp_termmeta` graph cases
   with per-tier target counts and ready/stale non-ready outcomes, `wp_users`
@@ -217,6 +218,16 @@ preserving every unplanned remote resource; every ready case rejects stale
 replay before mutation, and concurrent remote edits to the updated postmeta row
 remain `conflict` and refuse apply so local postmeta plans cannot overwrite
 newer remote rows.
+
+RPP-0148 adds `wpPostmetaCreateUpdateDeleteVariant3` coverage for the same
+`wp_postmeta` create/update/delete surface with an explicit variant-3 target
+tag. The deterministic roster emits 20 variant-3 target cases: 10 ready
+postmeta create/update/delete plans and 10 non-ready remote-drift conflicts,
+with two cases in every tier. The focused proof records only resource keys,
+parent post IDs, meta-key hashes, counts, and hashes, verifies the ready case
+applies the planned postmeta create, update, and delete mutations and rejects
+stale replay before mutation, then verifies the conflicting updated postmeta row
+refuses apply without mutating the remote digest.
 
 The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
 generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
