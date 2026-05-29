@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 05:18 CEST.
+- Last update: 2026-05-29 05:35 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 249
-  items checked and leaves 751 open.
-- Checked slices: 100 release-gate foundation items, 20 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 251
+  items checked and leaves 749 open.
+- Checked slices: 100 release-gate foundation items, 21 graph identity items,
   31 plugin-driver boundary items, 12 executor/auth items, 13 recovery items,
-  7 chunking/performance items, 2 production-topology items, 39 generated
+  7 chunking/performance items, 2 production-topology items, 40 generated
   harness items, and 25 merge-invariant items. No release-ops items are checked
   yet.
+- Focused post-author graph identity refresh: the current lane now contains
+  `RPP-0303` evidence in
+  `docs/evidence/rpp-0303-post-author-reference.md`,
+  `docs/evidence/ao-graph-identity.md`, `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --test
+  --test-name-pattern=RPP-0303 test/generated-push-harness.test.js` passed
+  1/1, and `npm run test:generated-push-harness` passed 43/43 across the
+  620 deterministic generated cases, proving 10 ready same-plan
+  `wp_users`/`wp_posts` creates and 10 stale-user blockers with hash-only
+  `wp_posts.post_author` target evidence. Checklist lint, artifact redaction
+  scan, and `git diff --check` also passed. Counts are now 251/749; final
+  release remains `NO-GO`.
 - Focused remote-only plugin metadata preservation refresh: the current lane now
   contains `RPP-0206` evidence in
   `docs/evidence/rpp-0206-remote-only-plugin-metadata-preservation.md`,

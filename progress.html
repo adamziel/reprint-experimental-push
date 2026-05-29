@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T05:18:00+02:00">Last updated: May 29, 2026, 05:18 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T05:35:00+02:00">Last updated: May 29, 2026, 05:35 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>249</strong>
+        <strong>251</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>751</strong>
+        <strong>749</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>40/40 generated harness tests pass across 620 deterministic three-way push cases, including remote-only preservation, plugin-owned custom-table, and atomic plugin install stack variant-1 and variant-2 coverage.</span>
+            <span><strong>Generated push harness</strong>43/43 generated harness tests pass across 620 deterministic three-way push cases, including post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack variant-1 and variant-2 coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, post_tag taxonomy proof, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, post_tag taxonomy proof, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,11 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0206 merge-invariant</span>
+        <span>RPP-0303 graph-identity</span>
       </div>
-      <p>The latest refresh integrates RPP-0206 remote-only plugin metadata preservation evidence: the focused planner/apply test proves an independent local file mutation proceeds while remote-only plugin metadata stays a hash-only keep-remote decision with no plugin mutation or live remote precondition. Counts are now 249/751; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0303 post-author graph evidence: the focused generated harness proves ready same-plan user/post creates and stale remote-user blockers with hash-only wp_posts.post_author target evidence. Counts are now 251/749; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0303 graph: 1/1 focused</span>
         <span class="tag">RPP-0206 invariant: 1/1 focused</span>
         <span class="tag">RPP-0406 termmeta: 5/5 focused</span>
         <span class="tag">RPP-0601 SQLite journal: 23/23</span>
@@ -453,8 +454,8 @@
         <span class="tag">tmux marker regression: 1/1</span>
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
-        <span class="tag">generated harness: 40/40</span>
-        <span class="tag">checked goals: 249/1000</span>
+        <span class="tag">generated harness: 43/43</span>
+        <span class="tag">checked goals: 251/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
