@@ -83,6 +83,9 @@ const requiredFamilies = [
   'atomic-plugin-install-stack-v1',
   'atomic-plugin-stack-ready-v1',
   'atomic-plugin-stack-missing-dependency-v1',
+  'atomic-plugin-install-stack-v2',
+  'atomic-plugin-stack-ready-v2',
+  'atomic-plugin-stack-missing-dependency-v2',
   'atomic-plugin-install-stack-v3',
   'atomic-plugin-stack-ready-v3',
   'atomic-plugin-stack-missing-dependency-v3',
@@ -943,6 +946,99 @@ test('RPP-0116 atomic plugin install stack variant 1 emits ready and non-ready g
       blocker.class === 'atomic-group-blocker-propagation'
         && blocker.resourceKey === pluginResourceKey(atomicDependentPlugin)),
     'non-ready variant 1 case should propagate the atomic blocker to grouped plugin metadata',
+  );
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('private-atomic-plugin-install-stack-v3'), false);
+  assert.equal(evidenceText.includes('<?php'), false);
+  assert.equal(evidenceText.includes('generated dependency'), false);
+  assert.equal(evidenceText.includes('generated dependent'), false);
+});
+
+test('RPP-0136 atomic plugin install stack variant 2 emits ready and non-ready generated model evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.atomicPluginInstallStackV2;
+  const firstEvidence = generatedAtomicPluginInstallStackV2Evidence();
+  const replayEvidence = generatedAtomicPluginInstallStackV2Evidence();
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0136 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.ok(coverage, 'missing atomic plugin install stack variant 2 target coverage');
+  assert.equal(coverage.family, 'atomic-plugin-stack-ready');
+  assert.equal(coverage.total, report.summary.featureFamilies['atomic-plugin-install-stack-v2']);
+  assert.ok(coverage.statuses.ready > 0, 'variant 2 target should include ready atomic plugin stack cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 2 target should include non-ready atomic plugin stack cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 2 generated model evidence changed between runs');
+  assert.equal(firstEvidence.target, 'atomicPluginInstallStackV2');
+  assert.equal(firstEvidence.totalCases, 2);
+  assert.equal(firstEvidence.readyCases, 1);
+  assert.equal(firstEvidence.nonReadyCases, 1);
+
+  const variantCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.tags.has('atomic-plugin-install-stack-v2'));
+  assert.equal(variantCases.length, coverage.total);
+  assert.ok(
+    variantCases.some((testCase) =>
+      testCase.family === 'atomic-plugin-stack-ready'
+        && testCase.tags.has('atomic-plugin-stack-ready-v2')),
+    'variant 2 tag set should include a ready generated case',
+  );
+  assert.ok(
+    variantCases.some((testCase) =>
+      testCase.family === 'atomic-plugin-missing-dependency'
+        && testCase.tags.has('atomic-plugin-stack-missing-dependency-v2')),
+    'variant 2 tag set should include a non-ready generated case',
+  );
+
+  const readyCase = firstEvidence.cases.find((entry) => entry.status === 'ready');
+  const nonReadyCase = firstEvidence.cases.find((entry) => entry.status !== 'ready');
+
+  assert.ok(readyCase, 'variant 2 evidence must include a ready case');
+  assert.ok(nonReadyCase, 'variant 2 evidence must include a non-ready case');
+  assert.equal(readyCase.atomicGroup.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.atomicGroup.dependencySources[0], 'same-atomic-group');
+  assert.ok(
+    readyCase.atomicGroup.mutationResourceKeys.includes(fileResourceKey(atomicDependencyPluginFile)),
+    'ready variant 2 case should install the dependency plugin file inside the atomic group',
+  );
+  assert.ok(
+    readyCase.atomicGroup.mutationResourceKeys.includes(pluginResourceKey(atomicDependencyPlugin)),
+    'ready variant 2 case should install dependency plugin metadata inside the atomic group',
+  );
+  assert.ok(
+    readyCase.atomicGroup.resources.includes(rowResourceKey('wp_options', atomicFixtureOptionRowId)),
+    'ready variant 2 case should keep plugin-owned option data inside the atomic group',
+  );
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.atomicGroup.status, 'blocked');
+  assert.equal(
+    nonReadyCase.atomicGroup.mutationResourceKeys.includes(pluginResourceKey(atomicDependencyPlugin)),
+    false,
+    'non-ready variant 2 case must not synthesize dependency plugin metadata outside the local intent',
+  );
+  assert.ok(
+    nonReadyCase.atomicGroup.blockers.some((blocker) =>
+      blocker.class === 'missing-plugin-dependency'
+        && blocker.plugin === atomicDependencyPlugin),
+    'non-ready variant 2 case should expose missing dependency evidence',
+  );
+  assert.ok(
+    nonReadyCase.atomicGroup.blockers.some((blocker) =>
+      blocker.class === 'atomic-group-blocker-propagation'
+        && blocker.resourceKey === pluginResourceKey(atomicDependentPlugin)),
+    'non-ready variant 2 case should propagate the atomic blocker to grouped plugin metadata',
   );
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(evidenceText.includes('private-atomic-plugin-install-stack-v3'), false);
@@ -3594,14 +3690,34 @@ function assertCommentsCommentmetaEvidenceRedacted(testCase, plan, shape) {
 
 
 function generatedAtomicPluginInstallStackV1Evidence() {
+  return generatedAtomicPluginInstallStackVariantEvidence({
+    target: 'atomicPluginInstallStackV1',
+    variantNumber: 1,
+    variantTag: 'atomic-plugin-install-stack-v1',
+  });
+}
+
+function generatedAtomicPluginInstallStackV2Evidence() {
+  return generatedAtomicPluginInstallStackVariantEvidence({
+    target: 'atomicPluginInstallStackV2',
+    variantNumber: 2,
+    variantTag: 'atomic-plugin-install-stack-v2',
+  });
+}
+
+function generatedAtomicPluginInstallStackVariantEvidence({ target, variantNumber, variantTag }) {
   const targetCases = generatePushHarnessCases()
-    .filter((testCase) => testCase.tags.has('atomic-plugin-install-stack-v1'));
+    .filter((testCase) => testCase.tags.has(variantTag));
   const selectedCases = [
     targetCases.find((testCase) => testCase.family === 'atomic-plugin-stack-ready'),
     targetCases.find((testCase) => testCase.family === 'atomic-plugin-missing-dependency'),
   ];
 
-  assert.equal(selectedCases.includes(undefined), false, 'variant 1 evidence needs ready and non-ready cases');
+  assert.equal(
+    selectedCases.includes(undefined),
+    false,
+    `variant ${variantNumber} evidence needs ready and non-ready cases`,
+  );
 
   const cases = selectedCases.map((testCase) => {
     const missingDependency = testCase.family === 'atomic-plugin-missing-dependency';
@@ -3615,8 +3731,8 @@ function generatedAtomicPluginInstallStackV1Evidence() {
     const result = validateGeneratedCase(testCase);
     const group = plan.atomicGroups.find((candidate) => candidate.id === shape.intent.id);
 
-    assert.ok(group, `${testCase.id} should emit an atomic group for variant 1 evidence`);
-    assert.equal(testCase.tags.has('atomic-plugin-install-stack-v1'), true);
+    assert.ok(group, `${testCase.id} should emit an atomic group for variant ${variantNumber} evidence`);
+    assert.equal(testCase.tags.has(variantTag), true);
 
     return {
       id: testCase.id,
@@ -3672,7 +3788,7 @@ function generatedAtomicPluginInstallStackV1Evidence() {
   });
 
   return {
-    target: 'atomicPluginInstallStackV1',
+    target,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
     totalCases: cases.length,
