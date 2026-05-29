@@ -5566,7 +5566,66 @@ test('RPP-0322 rewrites featured image identity maps to proven remote attachment
   assert.equal(result.site.db.wp_postmeta['post_id:3001:meta_key:_thumbnail_id'].meta_value, '3002');
 });
 
-test('blocks featured image references when the attachment target uses an unsupported graph surface', () => {
+test('RPP-0302 blocks featured image attachment references when the target is not an attachment row', () => {
+  const resourceKey = 'row:["wp_postmeta","meta_id:46"]';
+  const targetResourceKey = 'row:["wp_posts","ID:4"]';
+  const base = baseSite();
+  base.db.wp_postmeta = {};
+  base.db.wp_posts['ID:4'] = {
+    ID: 4,
+    post_title: 'base-private-featured-page-target',
+    post_content: 'base-private-featured-page-body',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+  };
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+
+  local.db.wp_postmeta['meta_id:46'] = {
+    meta_id: 46,
+    post_id: 1,
+    meta_key: '_thumbnail_id',
+    meta_value: '4',
+    private_payload: 'local-private-featured-page-meta-payload',
+  };
+
+  const plan = planFor(base, local, remote);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === resourceKey);
+  const reference = blocker.references.find((entry) => entry.relationshipType === 'featured-image-attachment');
+
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.summary.mutations, 0);
+  assert.equal(mutationFor(plan, resourceKey), undefined);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resourceKey, resourceKey);
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(blocker.change.local, 'value'), false);
+  assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
+  assert.equal(reference.relationshipType, 'featured-image-attachment');
+  assert.equal(reference.targetResourceKey, targetResourceKey);
+  assert.equal(reference.targetSupport.supported, false);
+  assert.equal(reference.targetSupport.className, 'stale-wordpress-graph-identity');
+  assert.match(reference.targetSupport.reason, /not a supported attachment row/);
+  assert.equal(reference.targetChange.localChange, 'unchanged');
+  assert.equal(reference.targetChange.remoteChange, 'unchanged');
+  assert.match(reference.targetBaseHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetLocalHash, /^[a-f0-9]{64}$/);
+  assert.match(reference.targetRemoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(reference.targetChange.local, 'value'), false);
+  assertHashOnlyEvidenceRedacted({ blocker }, [
+    'base-private-featured-page-target',
+    'base-private-featured-page-body',
+    'local-private-featured-page-meta-payload',
+  ]);
+  assert.throws(() => applyPlan(remote, plan), /Refusing to apply/);
+});
+
+test('RPP-0302 blocks featured image references when the attachment target uses an unsupported graph surface', () => {
   const resourceKey = 'row:["wp_postmeta","meta_id:45"]';
   const targetResourceKey = 'row:["wp_posts","ID:2"]';
   const base = baseSite();
@@ -5602,6 +5661,18 @@ test('blocks featured image references when the attachment target uses an unsupp
   assert.equal(mutationFor(plan, targetResourceKey), undefined);
   assert.equal(blocker.class, 'stale-wordpress-graph-identity');
   assert.equal(targetBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.equal(targetBlocker.resolutionPolicy, 'preserve-remote-wordpress-graph-and-stop');
+  assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(targetBlocker.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(targetBlocker.localHash, /^[a-f0-9]{64}$/);
+  assert.match(targetBlocker.remoteHash, /^[a-f0-9]{64}$/);
+  assert.match(blocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.match(targetBlocker.change.local.hash, /^[a-f0-9]{64}$/);
+  assert.equal(Object.hasOwn(blocker.change.local, 'value'), false);
+  assert.equal(Object.hasOwn(targetBlocker.change.local, 'value'), false);
   assert.equal(reference.relationshipKey, 'wp_postmeta.meta_value');
   assert.equal(reference.relationshipType, 'featured-image-attachment');
   assert.equal(reference.targetResourceKey, targetResourceKey);
@@ -5612,6 +5683,12 @@ test('blocks featured image references when the attachment target uses an unsupp
   assert.equal(reference.targetRemoteHash.length, 64);
   assert.equal(reference.targetChange.localChange, 'create');
   assert.equal(reference.targetChange.remoteChange, 'unchanged');
+  assert.equal(Object.hasOwn(reference.targetChange.local, 'value'), false);
+  assertHashOnlyEvidenceRedacted(plan, [
+    'local-private-menu-target-title',
+    'local-private-menu-target-body',
+    'local-private-thumbnail-meta-payload',
+  ]);
   assert.equal(planJson.includes('local-private-menu-target-title'), false);
   assert.equal(planJson.includes('local-private-menu-target-body'), false);
   assert.equal(planJson.includes('local-private-thumbnail-meta-payload'), false);

@@ -2715,7 +2715,7 @@ function wordpressGraphReferenceEvidence(
   const targetBaseHash = resourceHash(base, target);
   const targetLocalHash = resourceHash(local, target);
   const targetRemoteHash = resourceHash(remote, target);
-  const targetSupport = seen.has(target.key)
+  const graphTargetSupport = seen.has(target.key)
     ? { supported: true }
     : wordpressGraphResourceSupport({
       resource: target,
@@ -2727,6 +2727,13 @@ function wordpressGraphReferenceEvidence(
       identityMap,
       seen: new Set([...seen, target.key]),
     });
+  const targetSupport = graphTargetSupport.supported
+    ? wordpressGraphRelationshipTargetSupport(reference, {
+      baseValue,
+      localValue,
+      remoteValue,
+    })
+    : graphTargetSupport;
 
   return {
     relationshipKey: reference.relationshipKey,
@@ -2769,6 +2776,33 @@ function wordpressGraphReferenceEvidence(
       targetRemoteHash,
     ),
   };
+}
+
+function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localValue, remoteValue }) {
+  if (reference.relationshipType !== 'featured-image-attachment') {
+    return { supported: true };
+  }
+
+  const targetValue = localValue !== ABSENT
+    ? localValue
+    : (remoteValue !== ABSENT ? remoteValue : baseValue);
+  if (targetValue === ABSENT) {
+    return { supported: true };
+  }
+
+  if (
+    !targetValue
+    || typeof targetValue !== 'object'
+    || String(targetValue.post_type || '') !== 'attachment'
+  ) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references a _thumbnail_id target that is not a supported attachment row.`,
+    };
+  }
+
+  return { supported: true };
 }
 
 function wordpressGraphTargetResource({ sourceTable, targetSuffix, id }) {
