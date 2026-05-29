@@ -7,6 +7,9 @@ import test from 'node:test';
 import {
   buildDockerTopologyPlan,
   buildPrerequisiteGateArtifact,
+  dockerReleaseCommand,
+  dockerTopologyVariant,
+  forbiddenPackagedFallbackEnvKeys,
   forbiddenTunnelBinaries,
   probeDockerPrerequisites,
   renderComposeYaml,
@@ -116,6 +119,14 @@ test('Docker topology plan is local-only, private-networked, and release-verifie
   assert.equal(plan.releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL, 'http://wp-apply-revalidation-source');
   assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_POST_COUNT, '25');
   assert.equal(plan.releaseEnv.REPRINT_PUSH_LOCAL_PRODUCTION_COMPLEX_COMMENT_GRAPH_PROOF, '1');
+  assert.equal(plan.runner.topologyVariant, dockerTopologyVariant);
+  assert.deepEqual(plan.runner.releaseCommand, dockerReleaseCommand);
+  assert.equal(plan.runner.packagedFallbackAllowed, false);
+  for (const key of forbiddenPackagedFallbackEnvKeys) {
+    assert.equal(plan.releaseEnv[key], undefined);
+  }
+  assert.equal(plan.validation.checks.releaseCommandIsVerifyRelease, true);
+  assert.equal(plan.validation.checks.packagedFallbackDisabled, true);
   assert.equal(plan.sites.length, 4);
   assert.ok(plan.sites.every((site) => site.url.startsWith('http://wp-')));
 });
@@ -129,11 +140,13 @@ test('Compose rendering exposes only the sandbox 8080 inspection ingress and con
   const compose = renderComposeYaml(plan);
 
   assert.match(compose, /internal: true/);
+  assert.match(compose, /condition: service_healthy/);
+  assert.match(compose, /mysqladmin ping -h 127\.0\.0\.1/);
   assert.match(compose, /"127\.0\.0\.1:8080:80"/);
   assert.doesNotMatch(compose, /0\.0\.0\.0:8080/);
   assert.doesNotMatch(compose, /39000|49152/);
   for (const forbidden of forbiddenTunnelBinaries) {
-    assert.doesNotMatch(compose.toLowerCase(), new RegExp(escapeRegExp(forbidden.toLowerCase())));
+    assert.doesNotMatch(compose.toLowerCase(), forbiddenTunnelPattern(forbidden));
   }
 });
 
@@ -157,6 +170,20 @@ test('Topology validation rejects non-8080 ports, public hosts, and tunnel-shape
   });
   assert.equal(badTunnel.ok, false);
   assert.ok(badTunnel.failures.some((failure) => failure.code === 'FORBIDDEN_TUNNEL_REFERENCE'));
+
+  const badReleaseCommand = validateTopologyPlan({
+    ...plan,
+    runner: { ...plan.runner, releaseCommand: ['npm', 'run', 'verify:release:local-production'] },
+  });
+  assert.equal(badReleaseCommand.ok, false);
+  assert.ok(badReleaseCommand.failures.some((failure) => failure.code === 'DOCKER_RELEASE_COMMAND_NOT_VERIFY_RELEASE'));
+
+  const badPackagedFallback = validateTopologyPlan({
+    ...plan,
+    releaseEnv: { ...plan.releaseEnv, REPRINT_PUSH_PACKAGE_SMOKE_MODE: 'driver-guard-only' },
+  });
+  assert.equal(badPackagedFallback.ok, false);
+  assert.ok(badPackagedFallback.failures.some((failure) => failure.code === 'DOCKER_PACKAGED_FALLBACK_ENV_ENABLED'));
 });
 
 test('Site seed PHP carries complex disposable production content and graph fixtures', () => {
@@ -211,6 +238,11 @@ test('Fail-closed release gate artifact is deterministic enough for audit input'
   assert.equal(artifact.evidence.dockerLocalProductionProof.ok, false);
   assert.equal(artifact.evidence.dockerLocalProductionProof.code, 'DOCKER_CLI_MISSING');
   assert.equal(artifact.evidence.dockerLocalProductionProof.externalAccountsRequired, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.ok, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.command, 'npm run verify:release');
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.packagedFallbackAllowed, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.packagedFallbackObserved, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyVariant, dockerTopologyVariant);
   assert.equal(artifact.evidence.verifyReleaseFailure.exitCode, 2);
   assert.equal(artifact.evidence.verifyReleaseFailure.reason, 'DOCKER_CLI_MISSING');
   assert.equal(artifact.releaseGateEvaluation.ok, false);
@@ -229,6 +261,62 @@ test('Fail-closed release gate artifact is deterministic enough for audit input'
   assert.ok(artifact.rppEvidence.advancedItems.some((item) => item.startsWith('RPP-0801')));
   assert.equal(artifact.rppEvidence.dockerWordPressReleaseReady, false);
   assert.equal(artifact.rppEvidence.dockerWordPressBlockedUntilPrerequisitesPass, true);
+  assert.equal(artifact.rppEvidence.dockerWordPressVerifyReleaseContract.command, 'npm run verify:release');
+});
+
+test('Passed Docker release artifact records verify:release topology without packaged fallback', () => {
+  const plan = buildDockerTopologyPlan({
+    cwd: '/repo/reprint-push',
+    workDir: '/tmp/reprint-docker-local-production-test',
+    evidenceDir: '/tmp/reprint-docker-local-production-evidence-test',
+    env: graphEnv,
+  });
+  const probe = probeDockerPrerequisites({
+    runCommand: (command, args) => {
+      if (command !== 'docker') throw new Error(`Unexpected command: ${command}`);
+      if (args[0] === '--version') return { status: 0, stdout: 'Docker version 26.1.0', stderr: '' };
+      if (args[0] === 'compose') return { status: 0, stdout: '2.27.0', stderr: '' };
+      if (args[0] === 'info') return { status: 0, stdout: '"26.1.0"', stderr: '' };
+      throw new Error(`Unexpected args: ${args.join(' ')}`);
+    },
+  });
+  const releaseEvidence = {
+    ok: true,
+    verifier: {
+      authSessionBoundary: { manageOptions: true },
+      gate2DurableRecoveryJournal: { ok: true },
+      boundary: { verdict: 'LIVE_RELEASE_BOUNDARY_OK' },
+    },
+    invariants: {
+      receiptHashPresent: true,
+      applyRevalidationCoveredEveryMutation: true,
+      durableJournalGateOk: true,
+    },
+  };
+  const artifact = buildPrerequisiteGateArtifact({
+    probe,
+    plan,
+    status: 'passed',
+    releaseEvidence,
+    verify: { status: 0, signal: null },
+    generatedAt: '2026-05-28T00:00:00.000Z',
+  });
+
+  assert.equal(artifact.status, 'passed');
+  assert.equal(artifact.acceptedForReleaseGate, true);
+  assert.equal(artifact.packagedFallback, false);
+  assert.equal(artifact.evidence.packagedFallback.observed, false);
+  assert.equal(artifact.evidence.verifyReleaseFailure, undefined);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.ok, true);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.command, 'npm run verify:release');
+  assert.deepEqual(artifact.evidence.dockerVerifyReleaseTopology.commandArgs, dockerReleaseCommand);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.packagedFallbackAllowed, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.packagedFallbackObserved, false);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.releaseUrlsUseDockerDns, true);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.releaseCommandIsVerifyRelease, true);
+  assert.equal(artifact.evidence.dockerVerifyReleaseTopology.topologyVariant, dockerTopologyVariant);
+  assert.equal(artifact.rppEvidence.dockerWordPressVerifyReleaseContract.packagedFallbackAllowed, false);
+  assert.equal(validateReleaseGateArtifact(artifact).ok, true);
 });
 
 test('Release gate artifact is stable across run-local paths and can be consumed directly by the gate checker', () => {
@@ -315,6 +403,14 @@ test('Runner planner proof script preserves the docker runtime and env-shaped co
   assert.match(script, /docker-local-production-complex-site-planner-proof/);
   assert.match(script, /REPRINT_PUSH_SOURCE_URL/);
 });
+
+function forbiddenTunnelPattern(value) {
+  const escaped = escapeRegExp(value.toLowerCase());
+  if (value === 'lt') {
+    return new RegExp(`(^|[\\s"'/:])${escaped}($|[\\s"'/:])`);
+  }
+  return new RegExp(escaped);
+}
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
