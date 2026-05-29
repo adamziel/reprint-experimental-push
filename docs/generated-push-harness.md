@@ -68,7 +68,8 @@ The default generated run covers:
   graph cases with one target per tier, ready creates, stale taxonomy drift,
   and redacted hash-only evidence, plugin-owned `wp_options` update cases with
   ready/conflict outcomes and stale replay rejection before mutation,
-  `wp_comments.user_id` author cases with
+  `wp_posts.post_author` cases with per-tier ready/stale target counts and
+  hash-only stale-user blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
   featured-image attachment references with ready postmeta/attachment closure
   and stale attachment blockers,
@@ -241,6 +242,14 @@ deletes, same-plan taxonomy/comment graph rows, and remote-only row/file drift.
 The invariant is that all 10 cases stay `ready`, apply only planned resources,
 preserve the remote-only drift, and reject stale replay before mutation.
 
+The `postAuthorGraph` target coverage records per-tier counts for generated
+`wp_posts.post_author` references to `wp_users` rows. Ready cases create the
+user and authored post in one plan, preserve unplanned remote resources, and
+reject stale replay before mutation; stale cases keep the user in the base,
+drift that user remotely, and require the post reference to fail closed with
+hash-only target evidence. RPP-0303 records 10 ready and 10 stale post-author
+graph cases across every tier.
+
 The `staleRemoteAfterDryRun` target coverage records per-tier counts for ready
 plans whose live-remote preconditions reject a stale remote replay before any
 mutation. Zero-mutation ready plans are excluded because there is no planned
@@ -276,7 +285,7 @@ model evidence samples one ready stack and one non-ready missing-dependency
 stack from the real generated harness while retaining hash-only resource and
 blocker summaries.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 208 conflict, and 57 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 355 ready, 201 conflict, and 64 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, and 354 ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

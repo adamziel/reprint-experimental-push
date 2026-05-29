@@ -13,6 +13,7 @@ Lane: graph-identity
 - Extends graph mapping inventory output with machine-readable identity-map capabilities and collision guard surfaces.
 - Adds local-production verifier evidence for the core `post_tag` taxonomy surface: the planner proof records same-plan `wp_terms`, `wp_term_taxonomy`, and `wp_term_relationships` resources for `row:["wp_term_taxonomy","term_taxonomy_id:72941"]`, and the release-evidence parser now fails closed unless that mutation remains `taxonomy: "post_tag"`, has a live precondition, appears in apply-time revalidation, and the post-apply snapshot matches the local target surface.
 - Adds a local-production proof for importer/exporter `pushIdentityMap` metadata carried by the immutable base package: exported local source rows map to imported remote targets, dependent child post and postmeta rows rewrite to the remote target, stale imported targets fail closed, and evidence records only map/provenance hashes, resource keys, and rewrite hashes.
+- Adds generated-harness target coverage for `wp_posts.post_author` references: same-plan user/post creates remain ready with stale replay rejection, while posts that reference a remotely drifted user fail closed as `stale-wordpress-graph-identity` with hash-only target evidence.
 - Adds generated-harness evidence for `wp_comments.user_id` author references: same-plan user/comment creates remain ready with stale replay rejection, while a comment that points at a remotely drifted user fails closed as `stale-wordpress-graph-identity` with hash-only target evidence.
 
 ## Verification commands
@@ -33,6 +34,10 @@ RPP-0302 focused worker verification:
 
 - `node --test --test-name-pattern 'RPP-0302|featured image' test/push-planner.test.js` — passed (4 tests), covering remote attachment drift, identity-map rewriting, non-attachment `_thumbnail_id` target refusal, and unsupported target graph-surface refusal. The focused RPP-0302 blockers serialize only resource keys, target state, and hashes for private target titles, bodies, and postmeta payloads.
 
+RPP-0303 focused worker verification command:
+
+- `node --test --test-name-pattern=RPP-0303 test/generated-push-harness.test.js` — 1 subtest, 0 failures. The focused generated harness evidence covers 20 `postAuthorGraph` cases across all 10 tiers: 10 ready same-plan user/post creates and 10 stale-user blockers with hash-only `wp_posts.post_author` target evidence.
+
 A full `npm test` run was attempted for broader signal, but unrelated existing failures appeared in authenticated HTTP push client and playground snapshot/plugin-driver tests before the run was stopped; the focused graph-identity checks above passed.
 
 ## Remaining unmapped or fail-closed WordPress surfaces
@@ -46,6 +51,7 @@ A full `npm test` run was attempted for broader signal, but unrelated existing f
 
 - RPP-0301 / RPP-0321: post/page `post_parent` references are now rewritten through an explicit identity map to a proven remote parent row.
 - RPP-0302: featured image `_thumbnail_id` postmeta now emits a `featured-image-attachment` graph reference, refuses non-attachment or unsupported target rows, and keeps unsupported target evidence hash-only.
+- RPP-0303: `wp_posts.post_author` references are now represented in generated target coverage with ready same-plan `wp_users`/`wp_posts` creates and stale remote user drift blockers.
 - RPP-0322: featured image attachment references in `_thumbnail_id` postmeta are rewritten from mapped local post/attachment IDs to proven remote post/attachment IDs; stale remote attachment targets keep release movement blocked with hash-only evidence.
 - RPP-0304 / RPP-0324: postmeta `post_id` references and `post_id:<id>:meta_key:<key>` row IDs are rewritten to the mapped remote post ID.
 - RPP-0305 / RPP-0325: comment `comment_post_ID` references are rewritten to mapped remote post identities.
