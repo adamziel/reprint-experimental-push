@@ -5,10 +5,12 @@ import { digest } from './stable-json.js';
 import { deserializeResourceValue, resourceHash } from './resources.js';
 
 export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
+export const RECOVERY_CLAIM_DEFAULT_STALE_THRESHOLD_MS = 5 * 60 * 1000;
 const PRODUCTION_RECOVERY_JOURNAL_KIND = 'production-recovery-journal';
 const PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 const PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER = 'filesystem-compare-rename';
 const PRODUCTION_RECOVERY_JOURNAL_OWNERSHIP_RECORD_TYPE = 'journal-ownership-recorded';
+const RECOVERY_CLAIM_EXPIRY_POLICY = 'bounded-stale-claim-advance';
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
@@ -235,6 +237,7 @@ export function openRecoveryJournal(filePath, options = {}) {
   return new RecoveryJournalWriter(filePath, fd, nextSequence, {
     now: options.now,
     claimId: options.claimId || options.claim?.id || null,
+    claimStaleThresholdMs: options.claimStaleThresholdMs,
   });
 }
 
@@ -541,6 +544,26 @@ function productionRecoveryJournalClaimContractMatches(claim) {
     && CLAIM_STATE_EVENT_TYPES.has(claim?.type);
 }
 
+function productionRecoveryJournalClaimExpiryContractMatches(claimExpiry) {
+  return hasOwnProperties(claimExpiry, [
+    'policy',
+    'staleThresholdMs',
+    'openedAt',
+    'expiresAt',
+    'expired',
+    'activeClaimSequence',
+    'activeClaimEvent',
+  ])
+    && claimExpiry?.policy === RECOVERY_CLAIM_EXPIRY_POLICY
+    && Number.isInteger(claimExpiry?.staleThresholdMs)
+    && claimExpiry.staleThresholdMs >= 0
+    && hasNonEmptyString(claimExpiry?.openedAt)
+    && hasNonEmptyString(claimExpiry?.expiresAt)
+    && typeof claimExpiry?.expired === 'boolean'
+    && isPositiveInteger(claimExpiry?.activeClaimSequence)
+    && CLAIM_STATE_EVENT_TYPES.has(claimExpiry?.activeClaimEvent);
+}
+
 function productionRecoveryJournalClaimsAgree(journalClaim, inspectionClaim) {
   return productionRecoveryJournalClaimContractMatches(journalClaim)
     && productionRecoveryJournalClaimContractMatches(inspectionClaim)
@@ -550,7 +573,8 @@ function productionRecoveryJournalClaimsAgree(journalClaim, inspectionClaim) {
     && journalClaim.previousClaimHash === inspectionClaim.previousClaimHash
     && journalClaim.sequence === inspectionClaim.sequence
     && journalClaim.type === inspectionClaim.type
-    && journalClaim.status === inspectionClaim.status;
+    && journalClaim.status === inspectionClaim.status
+    && JSON.stringify(journalClaim.claimExpiry) === JSON.stringify(inspectionClaim.claimExpiry);
 }
 
 function productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim) {
@@ -698,7 +722,16 @@ function productionRecoveryJournalOwnershipRecordSummary(ownershipRecord, persis
 export function openProductionRecoveryJournal(options) {
   assertAllowedOptionKeys(
     options,
-    new Set(['filePath', 'plan', 'current', 'artifactRefs', 'now', 'truncate', 'claimId']),
+    new Set([
+      'filePath',
+      'plan',
+      'current',
+      'artifactRefs',
+      'now',
+      'truncate',
+      'claimId',
+      'claimStaleThresholdMs',
+    ]),
     'openProductionRecoveryJournal()',
   );
   const {
@@ -709,7 +742,9 @@ export function openProductionRecoveryJournal(options) {
     now,
     truncate = true,
     claimId = null,
+    claimStaleThresholdMs = RECOVERY_CLAIM_DEFAULT_STALE_THRESHOLD_MS,
   } = options;
+  const normalizedClaimStaleThresholdMs = normalizeOptionalNonNegativeInteger(claimStaleThresholdMs);
 
   const existingJournal = !truncate
     ? readRecoveryJournal(filePath)
@@ -747,26 +782,33 @@ export function openProductionRecoveryJournal(options) {
     );
   }
 
+  let advancedExistingClaim = false;
   if (claimId && hasExistingPlanEnvelope && !reusingActiveClaim && existingClaim.status !== 'none') {
     const staleJournal = openRecoveryJournal(filePath, { truncate: false, now });
     try {
-      appendRecoveryClaimOpened(staleJournal, {
+      const staleClaimRecord = appendRecoveryClaimOpened(staleJournal, {
         plan,
         current,
         claimId,
+        staleThresholdMs: normalizedClaimStaleThresholdMs,
         artifactRefs,
         reason: 'Production recovery journal claim opened.',
       });
+      advancedExistingClaim = staleClaimRecord.type === 'stale-claim-advanced';
     } finally {
       staleJournal.close();
     }
   }
 
   let journal;
-  if (reusingActiveClaim) {
-    const persistedArtifactRefs = claimScopedArtifactRefs(existingJournal.records, existingClaim);
-    const persistedPlanId = claimScopedPlanId(existingJournal.records, existingClaim);
-    const targetEnvelope = persistedTargetEnvelopeMatchesPlan(existingJournal.records, plan);
+  if (reusingActiveClaim || advancedExistingClaim) {
+    const persistedClaimJournal = advancedExistingClaim ? readRecoveryJournal(filePath) : existingJournal;
+    const activeClaim = advancedExistingClaim
+      ? classifyRecoveryJournalClaims(persistedClaimJournal.records)
+      : existingClaim;
+    const persistedArtifactRefs = claimScopedArtifactRefs(persistedClaimJournal.records, activeClaim);
+    const persistedPlanId = claimScopedPlanId(persistedClaimJournal.records, activeClaim);
+    const targetEnvelope = persistedTargetEnvelopeMatchesPlan(persistedClaimJournal.records, plan);
 
     if (!artifactRefsEqual(persistedArtifactRefs, artifactRefs)) {
       throw new Error(
@@ -789,15 +831,20 @@ export function openProductionRecoveryJournal(options) {
       throw error;
     }
 
-    journal = openRecoveryJournal(filePath, { truncate: false, now, claimId });
+    journal = openRecoveryJournal(filePath, {
+      truncate: false,
+      now,
+      claimId,
+      claimStaleThresholdMs: normalizedClaimStaleThresholdMs,
+    });
     journal.claimOpened = true;
     journal.appendEvent('journal-retry-opened', {
       planId: plan.id,
-      state: 'retrying-active-claim',
+      state: advancedExistingClaim ? 'retrying-expired-claim' : 'retrying-active-claim',
       observedHash: digest(current),
       artifactRefs,
     });
-    if (!claimScopedOwnershipRecord(existingJournal.records, existingClaim)) {
+    if (!claimScopedOwnershipRecord(persistedClaimJournal.records, activeClaim)) {
       appendProductionRecoveryJournalOwnershipRecord(journal, {
         filePath,
         plan,
@@ -807,7 +854,11 @@ export function openProductionRecoveryJournal(options) {
       });
     }
   } else {
-    journal = openRecoveryJournal(filePath, { truncate, now });
+    journal = openRecoveryJournal(filePath, {
+      truncate,
+      now,
+      claimStaleThresholdMs: normalizedClaimStaleThresholdMs,
+    });
     journal.appendEvent('journal-opened', {
       planId: plan.id,
       state: 'opened',
@@ -831,6 +882,7 @@ export function openProductionRecoveryJournal(options) {
         plan,
         current,
         claimId,
+        staleThresholdMs: normalizedClaimStaleThresholdMs,
         artifactRefs,
         reason: 'Production recovery journal claim opened.',
       });
@@ -853,6 +905,7 @@ export function openProductionRecoveryJournal(options) {
     const ownership = productionRecoveryJournalOwnershipFromRecord(ownershipRecord, persisted);
     const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
     const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
+    const claimExpiry = claim?.claimExpiry || null;
     const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
     const consumed = Boolean(consumedRecord);
     const consumedClaimId = consumed ? consumedRecord.claimId : null;
@@ -865,6 +918,7 @@ export function openProductionRecoveryJournal(options) {
       monotonicSequence: persisted.integrity.status === 'ok',
       restartReadable: persisted.integrity.status === 'ok',
       staleClaimRejected,
+      claimExpiry,
       writerLease,
     };
     return {
@@ -893,6 +947,7 @@ export function openProductionRecoveryJournal(options) {
         records: persisted.records.length,
         staleClaimRejected,
         claim,
+        claimExpiry,
         storageGuard: {
           boundary: 'filesystem-compare-rename',
           operation: 'update',
@@ -991,12 +1046,40 @@ export function appendRecoveryClaimOpened(journal, {
   reason = 'Recovery claim opened.',
 }) {
   const nextClaimHash = recoveryClaimHash(claimId);
+  const claimOpenedAt = timestampFor(journal.now);
+  const normalizedStaleThresholdMs = resolveClaimStaleThresholdMs(
+    staleThresholdMs,
+    journal.claimStaleThresholdMs,
+  );
+  const openedClaimExpiry = recoveryClaimExpiryFields({
+    openedAt: claimOpenedAt,
+    staleThresholdMs: normalizedStaleThresholdMs,
+  });
   const persisted = readRecoveryJournal(journal.filePath);
   if (persisted.integrity.status !== 'ok') {
     throw new Error(`Refusing to append to invalid recovery journal: ${persisted.integrity.reason}`);
   }
   const claim = classifyRecoveryJournalClaims(persisted.records);
   if (claim.status !== 'none' && claim.activeClaimHash !== nextClaimHash) {
+    const claimExpiry = evaluateRecoveryClaimExpiry(claim, {
+      evaluatedAt: claimOpenedAt,
+      staleThresholdMs: normalizedStaleThresholdMs,
+    });
+    if (claimExpiry.expired === true && claim.activeClaimId) {
+      return appendStaleClaimAdvanced(journal, {
+        plan,
+        current,
+        previousClaimId: claim.activeClaimId,
+        claimId,
+        staleThresholdMs: claimExpiry.staleThresholdMs,
+        previousClaimAgeMs: claimExpiry.ageMs,
+        previousClaimOpenedAt: claimExpiry.openedAt,
+        previousClaimExpiresAt: claimExpiry.expiresAt,
+        evaluatedAt: claimOpenedAt,
+        artifactRefs,
+        reason: 'Previous production recovery journal claim expired before this claim opened.',
+      });
+    }
     journal.appendEvent('stale-claim-rejected', {
       planId: plan.id,
       state: 'rejected',
@@ -1005,7 +1088,12 @@ export function appendRecoveryClaimOpened(journal, {
       previousClaimId: claim.activeClaimId || null,
       previousClaimHash: claim.activeClaimHash,
       observedHash: digest(current),
-      staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+      staleThresholdMs: claimExpiry.staleThresholdMs,
+      previousClaimAgeMs: claimExpiry.ageMs,
+      previousClaimOpenedAt: claimExpiry.openedAt,
+      previousClaimExpiresAt: claimExpiry.expiresAt,
+      evaluatedAt: claimOpenedAt,
+      claimExpired: false,
       reason,
       artifactRefs,
     });
@@ -1021,6 +1109,10 @@ export function appendRecoveryClaimOpened(journal, {
         activeClaimSequence: claim.sequence,
         activeClaimType: claim.type,
         reason: claim.reason || null,
+        activeClaimOpenedAt: claimExpiry.openedAt,
+        activeClaimExpiresAt: claimExpiry.expiresAt,
+        activeClaimAgeMs: claimExpiry.ageMs,
+        claimExpired: false,
       },
     );
   }
@@ -1030,7 +1122,7 @@ export function appendRecoveryClaimOpened(journal, {
     claimId,
     claimHash: nextClaimHash,
     observedHash: digest(current),
-    staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+    ...openedClaimExpiry,
     reason,
     artifactRefs,
   });
@@ -1043,9 +1135,17 @@ export function appendStaleClaimAdvanced(journal, {
   claimId,
   staleThresholdMs,
   previousClaimAgeMs,
+  previousClaimOpenedAt,
+  previousClaimExpiresAt,
+  evaluatedAt,
   artifactRefs = {},
   reason = 'Previous recovery claim exceeded the stale threshold.',
 }) {
+  const claimOpenedAt = evaluatedAt || timestampFor(journal.now);
+  const normalizedStaleThresholdMs = resolveClaimStaleThresholdMs(
+    staleThresholdMs,
+    journal.claimStaleThresholdMs,
+  );
   return journal.appendEvent('stale-claim-advanced', {
     planId: plan.id,
     state: 'advanced',
@@ -1054,8 +1154,15 @@ export function appendStaleClaimAdvanced(journal, {
     claimId,
     claimHash: recoveryClaimHash(claimId),
     observedHash: digest(current),
-    staleThresholdMs: normalizeOptionalNonNegativeInteger(staleThresholdMs),
+    ...recoveryClaimExpiryFields({
+      openedAt: claimOpenedAt,
+      staleThresholdMs: normalizedStaleThresholdMs,
+    }),
     previousClaimAgeMs: normalizeOptionalNonNegativeInteger(previousClaimAgeMs),
+    previousClaimOpenedAt: normalizeIsoTimestamp(previousClaimOpenedAt),
+    previousClaimExpiresAt: normalizeIsoTimestamp(previousClaimExpiresAt),
+    evaluatedAt: normalizeIsoTimestamp(evaluatedAt) || claimOpenedAt,
+    claimExpired: true,
     reason,
     artifactRefs,
   });
@@ -1680,6 +1787,7 @@ export function classifyRecoveryJournalClaims(records) {
   }
 
   const latest = claimRecords.at(-1);
+  const claimExpiry = recoveryClaimExpirySummaryForRecord(latest);
   return {
     status: latest.type === 'stale-claim-advanced' ? 'advanced' : 'active',
     activeClaimId: latest.claimId || null,
@@ -1690,6 +1798,13 @@ export function classifyRecoveryJournalClaims(records) {
     type: latest.type,
     staleThresholdMs: latest.staleThresholdMs ?? null,
     previousClaimAgeMs: latest.previousClaimAgeMs ?? null,
+    claimOpenedAt: latest.claimOpenedAt || latest.timestamp || null,
+    claimExpiresAt: latest.claimExpiresAt || null,
+    previousClaimOpenedAt: latest.previousClaimOpenedAt || null,
+    previousClaimExpiresAt: latest.previousClaimExpiresAt || null,
+    evaluatedAt: latest.evaluatedAt || latest.timestamp || null,
+    claimExpired: latest.claimExpired === true,
+    claimExpiry,
     reason: latest.reason || null,
   };
 }
@@ -1703,6 +1818,7 @@ class RecoveryJournalWriter {
     this.claimId = options.claimId || null;
     this.claimHash = options.claimId ? recoveryClaimHash(options.claimId) : null;
     this.claimFenced = Boolean(this.claimHash);
+    this.claimStaleThresholdMs = options.claimStaleThresholdMs;
     this.closed = false;
   }
 
@@ -1777,6 +1893,30 @@ class RecoveryJournalWriter {
         },
       );
     }
+    const claimExpiry = evaluateRecoveryClaimExpiry(claim, {
+      evaluatedAt: timestampFor(this.now),
+      staleThresholdMs: this.claimStaleThresholdMs,
+    });
+    if (claimExpiry.expired === true) {
+      throw new RecoveryJournalClaimStaleError(
+        'Recovery journal claim expired before this fenced writer could append.',
+        {
+          filePath: this.filePath,
+          eventType,
+          staleClaimId: this.claimId,
+          staleClaimHash: this.claimHash,
+          activeClaimId: claim.activeClaimId || null,
+          activeClaimHash: claim.activeClaimHash,
+          activeClaimSequence: claim.sequence,
+          activeClaimType: claim.type,
+          activeClaimOpenedAt: claimExpiry.openedAt,
+          activeClaimExpiresAt: claimExpiry.expiresAt,
+          activeClaimAgeMs: claimExpiry.ageMs,
+          claimExpired: true,
+          reason: 'active recovery claim exceeded the stale threshold',
+        },
+      );
+    }
   }
 
   close() {
@@ -1805,17 +1945,22 @@ function summarizeProductionRecoveryJournalClaim(persisted) {
   if (claimState.status === 'none' || claimState.status === 'blocked') {
     return undefined;
   }
+  const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claimState);
 
   return {
-    status: claimScopedStaleClaimRejectionEvidence(persisted.records, claimState)
-      ? 'advanced'
-      : 'active',
+    status: staleClaimRejected ? 'advanced' : 'active',
     activeClaimId: claimState.activeClaimId || null,
     activeClaimHash: claimState.activeClaimHash || null,
+    activeClaimKeyHash: claimState.activeClaimHash || null,
     previousClaimId: claimState.previousClaimId || null,
     previousClaimHash: claimState.previousClaimHash || null,
+    previousClaimKeyHash: claimState.previousClaimHash || null,
     sequence: claimState.sequence ?? null,
     type: claimState.type || null,
+    staleClaimRejected,
+    staleThresholdMs: claimState.staleThresholdMs ?? null,
+    previousClaimAgeMs: claimState.previousClaimAgeMs ?? null,
+    claimExpiry: claimState.claimExpiry || null,
   };
 }
 
@@ -1824,12 +1969,14 @@ function productionRecoveryJournalWriterLease(persisted, claimSummary) {
     strategy: 'claim-fenced-single-writer',
     claimId: claimSummary?.activeClaimId || null,
     claimHash: claimSummary?.activeClaimHash || null,
+    claimKeyHash: claimSummary?.activeClaimHash || null,
     claimKeyUnique: true,
     fsyncEvidence: true,
     storageGuard: 'filesystem-compare-rename',
     monotonicSequence: persisted.integrity.status === 'ok',
     restartReadable: persisted.integrity.status === 'ok',
     staleClaimRejected: hasStaleClaimRejectionEvidence(persisted.records),
+    claimExpiry: claimSummary?.claimExpiry || null,
   };
 }
 
@@ -1862,6 +2009,104 @@ function timestampFor(now) {
     return value instanceof Date ? value.toISOString() : String(value);
   }
   return new Date().toISOString();
+}
+
+function resolveClaimStaleThresholdMs(value, fallback = null) {
+  if (value !== undefined && value !== null) {
+    return normalizeOptionalNonNegativeInteger(value);
+  }
+  if (fallback !== undefined && fallback !== null) {
+    return normalizeOptionalNonNegativeInteger(fallback);
+  }
+  return null;
+}
+
+function recoveryClaimExpiryFields({ openedAt, staleThresholdMs }) {
+  const normalizedOpenedAt = normalizeIsoTimestamp(openedAt);
+  const normalizedStaleThresholdMs = normalizeOptionalNonNegativeInteger(staleThresholdMs);
+  return {
+    staleThresholdMs: normalizedStaleThresholdMs,
+    claimOpenedAt: normalizedOpenedAt,
+    claimExpiresAt: claimExpiresAt(normalizedOpenedAt, normalizedStaleThresholdMs),
+  };
+}
+
+function recoveryClaimExpirySummaryForRecord(record) {
+  const staleThresholdMs = Number.isInteger(record?.staleThresholdMs) && record.staleThresholdMs >= 0
+    ? record.staleThresholdMs
+    : null;
+  const openedAt = normalizeIsoTimestamp(record?.claimOpenedAt || record?.timestamp);
+  const expiresAt = normalizeIsoTimestamp(record?.claimExpiresAt)
+    || claimExpiresAt(openedAt, staleThresholdMs);
+  const evaluatedAt = normalizeIsoTimestamp(record?.evaluatedAt || record?.timestamp);
+  const previousClaimAgeMs = Number.isInteger(record?.previousClaimAgeMs) && record.previousClaimAgeMs >= 0
+    ? record.previousClaimAgeMs
+    : null;
+  const expired = record?.claimExpired === true || (
+    staleThresholdMs !== null
+      && evaluatedAt !== null
+      && expiresAt !== null
+      && Date.parse(evaluatedAt) >= Date.parse(expiresAt)
+  );
+
+  return {
+    policy: RECOVERY_CLAIM_EXPIRY_POLICY,
+    staleThresholdMs,
+    openedAt,
+    expiresAt,
+    evaluatedAt,
+    expired,
+    previousClaimAgeMs,
+    previousClaimOpenedAt: normalizeIsoTimestamp(record?.previousClaimOpenedAt),
+    previousClaimExpiresAt: normalizeIsoTimestamp(record?.previousClaimExpiresAt),
+    previousClaimExpired: record?.type === 'stale-claim-advanced' && expired === true,
+    activeClaimSequence: Number.isInteger(record?.sequence) ? record.sequence : null,
+    activeClaimEvent: record?.type || null,
+  };
+}
+
+function evaluateRecoveryClaimExpiry(claim, { evaluatedAt, staleThresholdMs } = {}) {
+  const normalizedEvaluatedAt = normalizeIsoTimestamp(evaluatedAt) || timestampFor();
+  const thresholdMs = resolveClaimStaleThresholdMs(claim?.staleThresholdMs, staleThresholdMs);
+  const openedAt = normalizeIsoTimestamp(claim?.claimOpenedAt || claim?.evaluatedAt);
+  const expiresAt = normalizeIsoTimestamp(claim?.claimExpiresAt) || claimExpiresAt(openedAt, thresholdMs);
+  const openedAtMs = openedAt ? Date.parse(openedAt) : NaN;
+  const evaluatedAtMs = normalizedEvaluatedAt ? Date.parse(normalizedEvaluatedAt) : NaN;
+  const ageMs = Number.isFinite(openedAtMs) && Number.isFinite(evaluatedAtMs)
+    ? Math.max(0, evaluatedAtMs - openedAtMs)
+    : null;
+  const expired = thresholdMs !== null
+    && ageMs !== null
+    && ageMs >= thresholdMs;
+
+  return {
+    policy: RECOVERY_CLAIM_EXPIRY_POLICY,
+    staleThresholdMs: thresholdMs,
+    openedAt,
+    expiresAt,
+    evaluatedAt: normalizedEvaluatedAt,
+    ageMs,
+    expired,
+  };
+}
+
+function claimExpiresAt(openedAt, staleThresholdMs) {
+  if (!openedAt || !Number.isInteger(staleThresholdMs)) {
+    return null;
+  }
+  const openedAtMs = Date.parse(openedAt);
+  if (!Number.isFinite(openedAtMs)) {
+    return null;
+  }
+  return new Date(openedAtMs + staleThresholdMs).toISOString();
+}
+
+function normalizeIsoTimestamp(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    return null;
+  }
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
 }
 
 function writeRecoveryJournalRecordsAtomically(filePath, records) {
