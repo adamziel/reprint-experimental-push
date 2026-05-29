@@ -123,6 +123,15 @@ has added a descendant beneath it. Ready cases delete the unchanged remote
 directory, preserve unplanned remote data, and reject stale replay before
 mutation; conflicting cases refuse apply so a local directory delete cannot
 hide or overwrite a live remote descendant.
+
+RPP-0142 adds `directoryDescendantConflictVariant3` coverage for the same
+directory descendant target with an explicit variant-3 tag. The deterministic
+roster emits 20 variant-3 target cases: 10 ready directory deletes and 10
+non-ready descendant conflicts, with two cases in every tier. The focused proof
+records only resource keys and hashes, verifies the ready directory delete
+applies and rejects stale replay, and verifies the remote descendant conflict
+refuses apply without mutating the remote digest.
+
 The `wpPostsCreateUpdateDelete` target coverage records per-tier counts for the
 `wp_posts` create/update/delete surface. Its invariant is that ready cases apply
 only the planned post create, update, and delete while preserving every
