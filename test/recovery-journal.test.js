@@ -110,7 +110,7 @@ function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_
   return legacyRecords;
 }
 
-function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents }) {
+function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
   const latestEvents = [
     { sequence: 1, event: 'idempotency-opened' },
     { sequence: 2, event: 'apply-started' },
@@ -172,9 +172,11 @@ function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents }) {
         latestEvents,
       },
       staleClaimRetry: {
+        ...(oldRemoteRecovery ? { oldRemoteRecovery } : {}),
         abandoned: {
           status: 500,
           code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+          ...(oldRemoteRecovery ? { recovery: oldRemoteRecovery } : {}),
         },
       },
       replayAndRetry: {
@@ -1117,11 +1119,33 @@ test('production recovery journal claim expiry advances stale ownership and rele
   assert.equal(inspection.journal.writerLease.claimKeyHash, recoveryClaimHash(retryClaimId));
   assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
 
+  const oldRemoteInspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: remote,
+  });
+  assert.equal(oldRemoteInspection.status, 'old-remote');
+  assert.deepEqual(oldRemoteInspection.counts, {
+    old: plan.mutations.length,
+    new: 0,
+    blockedUnknown: 0,
+  });
+  const oldRemoteRecovery = {
+    source: 'production recovery journal restart inspection before mutation',
+    status: 200,
+    state: oldRemoteInspection.status,
+    counts: {
+      ...oldRemoteInspection.counts,
+      total: plan.mutations.length,
+    },
+  };
+
   const releaseProof = buildDurableRecoveryJournalReleaseProof({
     releaseSummary: buildRecoveryReleaseSummary({
       inspection,
       plan,
       mutationEvents: plan.mutations.length,
+      oldRemoteRecovery,
     }),
     applyRevalidation: buildBlockedApplyRevalidation(),
   });
@@ -1131,6 +1155,10 @@ test('production recovery journal claim expiry advances stale ownership and rele
   assert.equal(releaseProof.gateStatus, 'proven');
   assert.equal(releaseProof.sameReleaseBoundary, true);
   assert.equal(releaseProof.checks.claimExpiryPolicy, true);
+  assert.equal(releaseProof.checks.oldState, true);
+  assert.equal(releaseProof.partialStates.old.proved, true);
+  assert.equal(releaseProof.partialStates.old.state, 'old-remote');
+  assert.deepEqual(releaseProof.partialStates.old.counts, oldRemoteRecovery.counts);
   assert.equal(releaseProof.claimExpiryPolicy.proved, true);
   assert.equal(releaseProof.claimExpiryPolicy.previousClaimAgeMs, 5_000);
 });

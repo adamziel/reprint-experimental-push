@@ -3591,6 +3591,15 @@ test('production-shaped authenticated push can prove packaged stale-claim retry 
             replayed: false,
             freshMutationWork: false,
           },
+          recovery: {
+            state: 'stale-claim-all-old-simulated',
+            counts: {
+              old: 1,
+              new: 0,
+              blockedUnknown: 0,
+              total: 1,
+            },
+          },
           signedRequest: {
             signed: false,
             schemaVersion: 1,
@@ -3828,6 +3837,14 @@ test('production-shaped authenticated push can prove packaged stale-claim retry 
     assert.equal(summary.ok, true);
     assert.equal(summary.apply.idempotency.staleClaimRetry, true);
     assert.equal(summary.staleClaimRetry.abandoned.code, 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD');
+    assert.equal(summary.staleClaimRetry.oldRemoteRecovery.state, 'old-remote');
+    assert.equal(summary.staleClaimRetry.oldRemoteRecovery.observedState, 'stale-claim-all-old-simulated');
+    assert.deepEqual(summary.staleClaimRetry.oldRemoteRecovery.counts, {
+      old: 1,
+      new: 0,
+      blockedUnknown: 0,
+      total: 1,
+    });
     assert.equal(summary.dbJournal.leaseFence.staleClaimRejected, true);
     assert.equal(summary.dbJournal.ownership.productionAdapter, 'wpdb-single-statement-cas');
     assert.equal(summary.replayEquivalence.equivalent, true);

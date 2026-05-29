@@ -254,9 +254,35 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
         ],
       },
       staleClaimRetry: {
+        oldRemoteRecovery: {
+          source: 'stale-owner retry abandoned before mutation',
+          status: 500,
+          code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+          state: 'old-remote',
+          observedState: 'stale-claim-all-old-simulated',
+          counts: {
+            old: 2,
+            new: 0,
+            blockedUnknown: 0,
+            total: 2,
+          },
+        },
         abandoned: {
           status: 500,
           code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+          recovery: {
+            source: 'stale-owner retry abandoned before mutation',
+            status: 500,
+            code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+            state: 'old-remote',
+            observedState: 'stale-claim-all-old-simulated',
+            counts: {
+              old: 2,
+              new: 0,
+              blockedUnknown: 0,
+              total: 2,
+            },
+          },
         },
       },
       replayAndRetry: {
@@ -302,6 +328,8 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
   assert.equal(proof.sameKeyBodyReplay.proved, true);
   assert.equal(proof.sameKeyDifferentBodyConflict.proved, true);
   assert.equal(proof.partialStates.old.proved, true);
+  assert.equal(proof.partialStates.old.state, 'old-remote');
+  assert.equal(proof.partialStates.old.counts.old, 2);
   assert.equal(proof.partialStates.new.proved, true);
   assert.equal(proof.partialStates.blocked.proved, true);
   assert.equal(proof.preservedRejectedRemoteEvidence.proved, true);
