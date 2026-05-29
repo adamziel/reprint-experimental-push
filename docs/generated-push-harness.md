@@ -130,7 +130,10 @@ under the directory and refuse apply.
 The `sameIndependentContent` target coverage records per-tier counts for local
 and remote edits that independently converge on the same content. Its ready
 cases produce no mutation for the already-synchronized row, still apply through
-the harness, and preserve every unplanned remote resource.
+the harness, and preserve every unplanned remote resource. RPP-0138 adds a
+variant-2 proof that independently recounts all 10 generated cases, checks the
+local/remote/applied hashes for the shared row, and records hash-only evidence
+that the row has no planned mutation or precondition.
 
 The `independentLocalFileRemoteRow` target coverage records per-tier counts for
 ready plans where a local file edit and remote row edit coexist. RPP-0221 proves

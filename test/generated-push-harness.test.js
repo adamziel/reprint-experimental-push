@@ -463,6 +463,62 @@ test('RPP-0118 same independent content target applies without unplanned remote 
   assert.equal(result.unplannedRemotePreserved, true, 'same independent content must preserve unplanned remote data');
 });
 
+test('RPP-0138 same independent content variant 2 proves ready preservation without unplanned overwrite', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.sameIndependentContent;
+
+  assert.ok(coverage, 'missing same independent content target coverage');
+
+  const firstEvidence = generatedSameIndependentContentVariant2Evidence(coverage);
+  const replayEvidence = generatedSameIndependentContentVariant2Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0138 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(coverage.family, 'same-independent-content');
+  assert.equal(coverage.total, report.summary.featureFamilies['same-independent-content']);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { ready: 10 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 2 same independent evidence changed between runs');
+  assert.equal(firstEvidence.target, 'sameIndependentContent');
+  assert.equal(firstEvidence.family, 'same-independent-content');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.cases.map((entry) => entry.tier),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  for (const entry of firstEvidence.cases) {
+    assert.equal(entry.status, 'ready', `${entry.id} should remain ready`);
+    assert.equal(entry.applied, true, `${entry.id} should apply through the harness`);
+    assert.equal(entry.unplannedRemotePreserved, true, `${entry.id} should preserve unplanned remote data`);
+    assert.equal(entry.sameResource.decision, 'already-in-sync');
+    assert.equal(entry.sameResource.localHash, entry.sameResource.remoteHash);
+    assert.equal(entry.sameResource.appliedHash, entry.sameResource.remoteHash);
+    assert.notEqual(entry.sameResource.baseHash, entry.sameResource.localHash);
+    assert.equal(entry.sameResource.plannedMutation, false);
+    assert.equal(entry.sameResource.plannedPrecondition, false);
+    assert.match(entry.sameResource.decisionHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+  }
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Shared independent'), false, 'variant 2 evidence leaked shared row title');
+});
+
 test('RPP-0119 remote-only preservation rejects stale replay before mutation with hash-only evidence', () => {
   const report = runGeneratedPushHarness();
   const coverage = report.summary.targetCoverage.remoteOnlyPreservation;
@@ -583,6 +639,121 @@ function assertSameIndependentContentShape(testCase) {
   return {
     rowId: sharedRows[0][0],
     resourceKey: generatedRowResourceKey('wp_posts', sharedRows[0][0]),
+  };
+}
+
+function generatedSameIndependentContentVariant2Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const cases = [];
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (testCase.family !== 'same-independent-content'
+      || !testCase.tags.has('same-independent-content-target')) {
+      continue;
+    }
+
+    const evidence = generatedSameIndependentContentCaseEvidence(testCase);
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, evidence.status);
+    cases.push(evidence);
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const totalCases = cases.length;
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 2 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 2 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 2 target recount should match summary total');
+
+  return {
+    target: 'sameIndependentContent',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    cases: cases.sort((left, right) => left.tier - right.tier || left.id.localeCompare(right.id)),
+  };
+}
+
+function generatedSameIndependentContentCaseEvidence(testCase) {
+  const shape = assertSameIndependentContentShape(testCase);
+  const resource = {
+    type: 'row',
+    table: 'wp_posts',
+    id: shape.rowId,
+    key: shape.resourceKey,
+  };
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const result = validateGeneratedCase(testCase);
+  const decision = plan.decisions.find((entry) => entry.resourceKey === shape.resourceKey);
+  const applied = applyPlan(cloneJson(testCase.remote), plan);
+  const baseHash = resourceHash(testCase.base, resource);
+  const localHash = resourceHash(testCase.local, resource);
+  const remoteHash = resourceHash(testCase.remote, resource);
+  const appliedHash = resourceHash(applied.site, resource);
+  const plannedMutation = plan.mutations.some((mutation) => mutation.resourceKey === shape.resourceKey);
+  const plannedPrecondition = plan.preconditions.some((precondition) => precondition.resourceKey === shape.resourceKey);
+
+  assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+  assert.equal(result.status, 'ready', `${testCase.id} should validate as ready`);
+  assert.equal(result.applied, true, `${testCase.id} should apply`);
+  assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+  assert.ok(decision, `${testCase.id} should record an already-in-sync decision for ${shape.resourceKey}`);
+  assert.equal(decision.decision, 'already-in-sync');
+  assert.equal(decision.change.localChange, 'update');
+  assert.equal(decision.change.remoteChange, 'update');
+  assert.equal(localHash, remoteHash, `${testCase.id} local and remote same-content hashes should match`);
+  assert.notEqual(baseHash, localHash, `${testCase.id} same-content row should differ from base`);
+  assert.equal(appliedHash, remoteHash, `${testCase.id} apply should not overwrite the same-content remote row`);
+  assert.equal(plannedMutation, false, `${testCase.id} should not mutate the already-synchronized row`);
+  assert.equal(plannedPrecondition, false, `${testCase.id} should not precondition the already-synchronized row`);
+
+  return {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    status: result.status,
+    applied: result.applied,
+    unplannedRemotePreserved: result.unplannedRemotePreserved,
+    tags: [...testCase.tags].sort(),
+    planSummary: {
+      mutations: plan.summary.mutations,
+      decisions: plan.summary.decisions,
+      conflicts: plan.summary.conflicts,
+      blockers: plan.summary.blockers,
+    },
+    sameResource: {
+      resourceKey: shape.resourceKey,
+      baseHash,
+      localHash,
+      remoteHash,
+      appliedHash,
+      decision: decision.decision,
+      decisionHash: `sha256:${digest(decision)}`,
+      plannedMutation,
+      plannedPrecondition,
+    },
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      resourceKey: shape.resourceKey,
+      baseHash,
+      localHash,
+      remoteHash,
+      appliedHash,
+      decision: decision.decision,
+      plannedMutation,
+      plannedPrecondition,
+      planSummary: plan.summary,
+    })}`,
   };
 }
 
