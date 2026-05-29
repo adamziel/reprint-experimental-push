@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 04:12 CEST.
+- Last update: 2026-05-29 04:17 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 240
-  items checked and leaves 760 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 241
+  items checked and leaves 759 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
-  29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
+  30 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 38 generated
   harness items, and 23 merge-invariant items. No release-ops items are checked
   yet.
@@ -217,6 +217,18 @@ linked implementation artifacts.
   model evidence for atomic plugin install stack variant 2 while keeping raw
   plugin file contents and option payload values out of serialized evidence.
   Counts are now 240/760; final release remains `NO-GO`.
+- Focused wp_postmeta plugin-driver semantics refresh: the current lane now
+  contains `RPP-0405` evidence in
+  `docs/evidence/rpp-0405-wp-postmeta-driver-semantics.md` and
+  `test/plugin-driver-postmeta-semantics.test.js`. `node --test
+  test/plugin-driver-postmeta-semantics.test.js` and `node --test
+  --test-name-pattern 'RPP-0405|wp_postmeta driver'
+  test/plugin-driver-postmeta-semantics.test.js` both passed 6/6, proving
+  canonical `wp-postmeta` and `wp-post-meta` alias row semantics, exact
+  `meta_id` matching, local-candidate versus production-backed
+  `releaseGateEvidenceScope` carry-through, fail-closed unsupported row
+  identifiers, and redacted evidence without raw `meta_value` payloads. Counts
+  are now 241/759; final release remains `NO-GO`.
 - Generated harness atomic plugin install stack variant-1 refresh: the current
   lane now contains RPP-0116 coverage in `scripts/harness/generated-push-cases.js`,
   `test/generated-push-harness.test.js`, `docs/generated-push-harness.md`, and
