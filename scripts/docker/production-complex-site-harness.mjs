@@ -24,8 +24,16 @@ import { digest } from '../../src/stable-json.js';
 export const dockerHarnessEvent = 'docker-local-production-complex-site-harness';
 export const dockerHarnessGate = 'GATE-3';
 export const dockerHarnessRuntime = 'docker-local-wordpress';
+export const dockerTopologyVariant = 'RPP-0802-variant-1';
+export const dockerReleaseCommand = Object.freeze(['npm', 'run', 'verify:release']);
 export const dockerReleaseGateInputSchemaVersion = 1;
 export const dockerReleaseGateInputProducer = 'docker-local-production-release-gate-input';
+
+export const forbiddenPackagedFallbackEnvKeys = Object.freeze([
+  'REPRINT_PUSH_PACKAGED_FALLBACK',
+  'REPRINT_PUSH_PACKAGE_FALLBACK',
+  'REPRINT_PUSH_PACKAGE_SMOKE_MODE',
+]);
 
 export const forbiddenTunnelBinaries = Object.freeze([
   'ngrok',
@@ -252,7 +260,10 @@ export function buildDockerTopologyPlan({
     runner: {
       service: 'runner',
       workingDir: '/workspace',
-      releaseCommand: ['npm', 'run', 'verify:release'],
+      topologyVariant: dockerTopologyVariant,
+      releaseCommand: [...dockerReleaseCommand],
+      packagedFallbackAllowed: false,
+      forbiddenPackagedFallbackEnvKeys: [...forbiddenPackagedFallbackEnvKeys],
       plannerProofCommand: ['node', '/workdir/docker-runner-planner-proof.mjs'],
       urls: siteUrls,
     },
@@ -301,6 +312,26 @@ export function validateTopologyPlan(plan) {
       failures.push({ code: 'NON_DOCKER_INTERNAL_RELEASE_URL', key, value });
     }
   }
+  if (JSON.stringify(plan?.runner?.releaseCommand || []) !== JSON.stringify(dockerReleaseCommand)) {
+    failures.push({
+      code: 'DOCKER_RELEASE_COMMAND_NOT_VERIFY_RELEASE',
+      expected: [...dockerReleaseCommand],
+      observed: plan?.runner?.releaseCommand || null,
+    });
+  }
+  if (plan?.runner?.packagedFallbackAllowed !== false) {
+    failures.push({
+      code: 'DOCKER_PACKAGED_FALLBACK_NOT_DISABLED',
+      expected: false,
+      observed: plan?.runner?.packagedFallbackAllowed ?? null,
+    });
+  }
+  for (const key of forbiddenPackagedFallbackEnvKeys) {
+    const value = String(releaseEnv[key] || '').trim();
+    if (/^(1|true|yes|packaged|driver-guard-only)$/i.test(value)) {
+      failures.push({ code: 'DOCKER_PACKAGED_FALLBACK_ENV_ENABLED', key, value });
+    }
+  }
   const commandCorpus = JSON.stringify({
     images: plan?.images || {},
     sites: plan?.sites || [],
@@ -327,6 +358,8 @@ export function validateTopologyPlan(plan) {
       internalNetwork: plan?.network?.internal === true,
       releaseUrlsUseDockerDns: failures.every((failure) => failure.code !== 'NON_DOCKER_INTERNAL_RELEASE_URL'),
       noTunnelCommands: failures.every((failure) => failure.code !== 'FORBIDDEN_TUNNEL_REFERENCE'),
+      releaseCommandIsVerifyRelease: failures.every((failure) => failure.code !== 'DOCKER_RELEASE_COMMAND_NOT_VERIFY_RELEASE'),
+      packagedFallbackDisabled: failures.every((failure) => !failure.code.startsWith('DOCKER_PACKAGED_FALLBACK')),
     },
   };
 }
@@ -380,12 +413,20 @@ export function buildPrerequisiteGateArtifact({
     rppEvidence: {
       advancedItems: [
         'RPP-0801 three-site local production topology exact unavailable capability',
+        'RPP-0802 Docker WordPress topology verify:release/no-packaged-fallback contract',
         'RPP-0819 sandbox 8080 ingress rule proof harness contract',
         'RPP-0820 no tunnel policy proof harness contract',
         'RPP-0903 release gate 3 blocks when a required proof fails',
       ],
       dockerWordPressReleaseReady: status === 'passed',
       dockerWordPressBlockedUntilPrerequisitesPass: status !== 'passed',
+      dockerWordPressVerifyReleaseContract: {
+        topologyVariant: dockerTopologyVariant,
+        command: dockerReleaseCommand.join(' '),
+        packagedFallbackAllowed: false,
+        status,
+        blockerCode: blocker?.code || null,
+      },
     },
   };
   return {
@@ -547,6 +588,12 @@ function buildDockerReleaseGateEvidence({
       externalAccountsRequired: false,
       scope,
     },
+    dockerVerifyReleaseTopology: buildDockerVerifyReleaseTopologyEvidence({
+      plan,
+      status,
+      blocker,
+      scope,
+    }),
   };
 
   const verifyStatus = typeof verify?.status === 'number'
@@ -645,6 +692,39 @@ function buildDockerReleaseGateEvidence({
       observed: recoveryInspectRoute,
       scope,
     },
+  };
+}
+
+function buildDockerVerifyReleaseTopologyEvidence({ plan, status, blocker, scope } = {}) {
+  const validation = plan?.validation || (plan ? validateTopologyPlan(plan) : null);
+  const releaseCommand = plan?.runner?.releaseCommand || dockerReleaseCommand;
+  const releaseEnv = plan?.releaseEnv || {};
+  return {
+    ok: status === 'passed',
+    status,
+    topologyVariant: plan?.runner?.topologyVariant || dockerTopologyVariant,
+    command: releaseCommand.join(' '),
+    commandArgs: releaseCommand,
+    runtime: dockerHarnessRuntime,
+    gate: dockerHarnessGate,
+    packagedFallbackAllowed: false,
+    packagedFallbackObserved: false,
+    sourceUrl: releaseEnv.REPRINT_PUSH_SOURCE_URL || '',
+    remoteUrl: releaseEnv.REPRINT_PUSH_REMOTE_URL || '',
+    remoteChangedUrl: releaseEnv.REPRINT_PUSH_REMOTE_CHANGED_URL || '',
+    localUrl: releaseEnv.REPRINT_PUSH_LOCAL_URL || '',
+    applyRevalidationSourceUrl: releaseEnv.REPRINT_PUSH_APPLY_REVALIDATION_SOURCE_URL || '',
+    releaseUrlsUseDockerDns: validation?.checks?.releaseUrlsUseDockerDns === true,
+    releaseCommandIsVerifyRelease: validation?.checks?.releaseCommandIsVerifyRelease === true,
+    topologyValidationOk: validation?.ok === true,
+    failClosed: status !== 'passed',
+    code: blocker?.code || (status === 'passed'
+      ? 'DOCKER_VERIFY_RELEASE_TOPOLOGY_PASSED'
+      : 'DOCKER_VERIFY_RELEASE_TOPOLOGY_FAILED'),
+    reason: blocker?.reason || (status === 'passed'
+      ? 'Docker WordPress topology ran npm run verify:release with explicit Docker service URLs and no packaged fallback.'
+      : 'Docker WordPress topology could not run npm run verify:release; no packaged fallback was used.'),
+    scope,
   };
 }
 
@@ -913,6 +993,7 @@ export async function runDockerLocalProductionHarness({
 
 function seedDockerSite({ site, plan, compose, stdout }) {
   stdout.write(`${JSON.stringify({ event: 'docker-local-production-seed-site', site: site.key, url: site.url }, null, 2)}\n`);
+  waitForDockerSiteInstallReady({ site, compose, stdout });
   compose([
     'run', '--rm', site.cliService,
     'core', 'install',
@@ -927,6 +1008,39 @@ function seedDockerSite({ site, plan, compose, stdout }) {
   compose(['run', '--rm', site.cliService, 'eval-file', site.seedFile, '--allow-root'], { timeout: 180_000 });
   compose(['run', '--rm', site.cliService, 'rewrite', 'structure', '/%postname%/', '--allow-root'], { timeout: 120_000 });
   compose(['run', '--rm', site.cliService, 'cache', 'flush', '--allow-root'], { timeout: 120_000 });
+}
+
+function waitForDockerSiteInstallReady({ site, compose, stdout }) {
+  stdout.write(`${JSON.stringify({ event: 'docker-local-production-wait-install-ready', site: site.key }, null, 2)}\n`);
+  let last = null;
+  for (let attempt = 1; attempt <= 60; attempt += 1) {
+    const core = compose([
+      'run', '--rm', site.cliService,
+      'core', 'version',
+      '--allow-root',
+    ], { timeout: 60_000, allowNonZero: true });
+    last = core;
+    if (core.status === 0) {
+      const db = compose([
+        'run', '--rm', site.cliService,
+        'db', 'query', 'SELECT 1',
+        '--skip-column-names',
+        '--allow-root',
+      ], { timeout: 60_000, allowNonZero: true });
+      last = db;
+      if (db.status === 0) {
+        stdout.write(`${JSON.stringify({
+          event: 'docker-local-production-install-ready',
+          site: site.key,
+          attempt,
+        })}\n`);
+        return;
+      }
+    }
+    sleepSync(1000);
+  }
+  const output = `${last?.stdout || ''}\n${last?.stderr || ''}`.trim().slice(0, 1000);
+  throw new Error(`Docker site ${site.key} was not ready for WP-CLI install after 60 attempts: ${output}`);
 }
 
 function waitForDockerRoutes({ plan, compose, stdout }) {
@@ -946,6 +1060,11 @@ function renderDbService(site, plan) {
     '      MYSQL_ROOT_PASSWORD: reprint-root',
     '    volumes:',
     `      - ${site.dbVolume}:/var/lib/mysql`,
+    '    healthcheck:',
+    '      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -preprint-root --silent"]',
+    '      interval: 5s',
+    '      timeout: 5s',
+    '      retries: 30',
     '    networks:',
     `      - ${plan.network.name}`,
   ];
@@ -956,7 +1075,8 @@ function renderWordPressService(site, plan) {
     `  ${site.service}:`,
     `    image: ${yamlQuote(plan.images.wordpress)}`,
     '    depends_on:',
-    `      - ${site.dbService}`,
+    `      ${site.dbService}:`,
+    '        condition: service_healthy',
     '    environment:',
     `      WORDPRESS_DB_HOST: ${site.dbService}:3306`,
     '      WORDPRESS_DB_USER: wordpress',
@@ -985,8 +1105,10 @@ function renderCliService(site, plan) {
     `  ${site.cliService}:`,
     `    image: ${yamlQuote(plan.images.wpCli)}`,
     '    depends_on:',
-    `      - ${site.dbService}`,
-    `      - ${site.service}`,
+    `      ${site.dbService}:`,
+    '        condition: service_healthy',
+    `      ${site.service}:`,
+    '        condition: service_started',
     '    environment:',
     `      WORDPRESS_DB_HOST: ${site.dbService}:3306`,
     '      WORDPRESS_DB_USER: wordpress',
@@ -1059,6 +1181,10 @@ function runCommandSync(command, args = [], options = {}) {
     maxBuffer: 1024 * 1024 * 20,
     ...options,
   });
+}
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function checkedDockerCommand([command, ...args], { cwd, env, stdout, stderr, timeout, allowNonZero = false }) {

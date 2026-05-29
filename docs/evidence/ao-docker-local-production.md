@@ -1,6 +1,6 @@
 # Docker local production complex-site harness evidence
 
-Date: 2026-05-28
+Date: 2026-05-29
 Lane: `local-production-proof-artifact-refresh`
 
 ## What changed
@@ -54,7 +54,7 @@ npm run verify:release:docker-local-production
 
 Observed status: `2`
 
-Observed artifact: `/tmp/reprint-docker-local-production-evidence-WWDomk/release-gate-input.json`
+Observed artifact: `/tmp/reprint-docker-local-production-evidence-gHWVOh/release-gate-input.json`
 
 Observed proof markers:
 
@@ -77,8 +77,8 @@ Release-gate consumption check:
 
 ```sh
 node ./scripts/release/check-release-gates.mjs \
-  --evidence-file /tmp/reprint-docker-local-production-evidence-WWDomk/release-gate-input.json \
-  --now 2026-05-28T00:00:00.000Z
+  --evidence-file /tmp/reprint-docker-local-production-evidence-gHWVOh/release-gate-input.json \
+  --now 2026-05-29T03:31:06.310Z
 ```
 
 Observed status: `1`
@@ -96,6 +96,51 @@ Observed summary:
 
 This is not a Docker WordPress release pass. It is concrete unavailable-capability evidence that the release gate blocks rather than silently falling back to a non-Docker proof.
 
+
+## RPP-0802 variant-1 contract refresh in this sandbox
+
+Command run on 2026-05-29:
+
+```sh
+npm run verify:release:docker-local-production
+```
+
+Observed status: `2` because Docker is unavailable in this sandbox. Exact
+capability blocker:
+
+```text
+docker --version -> ENOENT
+Docker code: DOCKER_CLI_MISSING
+```
+
+The emitted deterministic fallback artifact keeps the checklist item unchecked
+and does not use packaged fallback evidence:
+
+```text
+"topologyVariant": "RPP-0802-variant-1"
+"command": "npm run verify:release"
+"packagedFallback": false
+"packagedFallbackAllowed": false
+"packagedFallbackObserved": false
+"releaseUrlsUseDockerDns": true
+"releaseCommandIsVerifyRelease": true
+"topologyValidationOk": true
+"deterministic.canonicalSha256": "11c1b0a55cc60f06ebbce06b9920a3f65dfbb86df7b36480ffce0d275bdc83f2"
+[RPP-DOCKER-LOCAL-PRODUCTION:FAIL-CLOSED]
+```
+
+Release-gate consumption check:
+
+```sh
+node ./scripts/release/check-release-gates.mjs \
+  --evidence-file /tmp/reprint-docker-local-production-evidence-gHWVOh/release-gate-input.json \
+  --now 2026-05-29T03:31:06.310Z
+```
+
+Observed status: `1`; summary stayed `NO-GO` with
+`primaryFailureCode: REPRINT_PUSH_LIVE_SOURCE_REQUIRED`,
+`mutationAttempted: false`, and `releaseMovement.allowed: false`.
+
 ## Focused test evidence
 
 Commands run:
@@ -105,7 +150,7 @@ node --check scripts/docker/production-complex-site-harness.mjs
 npm run test:docker:production-complex-site-harness
 ```
 
-Observed result: 10/10 tests passed.
+Observed result: 11/11 focused assertions completed successfully.
 
 Covered assertions:
 
@@ -119,6 +164,9 @@ Covered assertions:
 - site seed PHP includes complex production fixtures and graph fixtures
 - fail-closed release gate input artifact records blocked Docker readiness
 - release gate input has a stable canonical digest across run-local paths
+- the RPP-0802 variant-1 contract pins the runner to `npm run verify:release`, explicit Docker service DNS URLs, and `packagedFallback: false`
+- validation rejects packaged-fallback environment flags such as `REPRINT_PUSH_PACKAGE_SMOKE_MODE=driver-guard-only` on the topology runner
+- Compose rendering adds MySQL health checks and the seed path waits for WP-CLI/core and database readiness before installing each disposable site
 - `check-release-gates` consumes the emitted artifact directly and stays held
 
 ## RPP coverage advanced
@@ -126,6 +174,7 @@ Covered assertions:
 This lane advances these earliest relevant unchecked checklist items without marking Docker release-ready:
 
 - RPP-0801: three-site/four-role local production topology records exact unavailable capability.
+- RPP-0802 has evidence toward the Docker WordPress topology contract: the generated runner uses `npm run verify:release`, Docker service DNS URLs, readiness waits, and no packaged fallback; the item remains unchecked here because Docker is unavailable.
 - RPP-0819: sandbox `8080` ingress rule is encoded and regression-tested in the generated Docker topology.
 - RPP-0820: no-tunnel policy is encoded and regression-tested against generated commands/images.
 - RPP-0903: release gate input artifact fails closed when the required Docker proof cannot run.
