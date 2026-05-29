@@ -219,6 +219,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-comments-commentmeta-graph-ready',
     tag: 'wp-comments-commentmeta-graph',
   },
+  commentmetaCommentGraph: {
+    family: 'wp-comments-commentmeta-graph-ready',
+    tag: 'commentmeta-comment-graph',
+  },
   wpTermsTermmetaGraph: {
     family: 'wp-terms-termmeta-graph-ready',
     tag: 'wp-terms-termmeta-graph',
