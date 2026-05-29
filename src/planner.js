@@ -2881,6 +2881,10 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
     return wordpressGraphCommentUserTargetSupport(reference, { baseValue, localValue, remoteValue });
   }
 
+  if (reference.relationshipType === 'commentmeta-comment') {
+    return wordpressGraphCommentmetaCommentTargetSupport(reference, { baseValue, localValue, remoteValue });
+  }
+
   if (reference.relationshipType !== 'featured-image-attachment') {
     return { supported: true };
   }
@@ -2899,6 +2903,28 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
       supported: false,
       className: 'stale-wordpress-graph-identity',
       reason: `WordPress graph mutation ${reference.sourceResourceKey} references a _thumbnail_id target that is not a supported attachment row.`,
+    };
+  }
+
+  return { supported: true };
+}
+
+function wordpressGraphCommentmetaCommentTargetSupport(reference, { baseValue, localValue, remoteValue }) {
+  const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
+  if (targetValue === ABSENT) {
+    return { supported: true };
+  }
+
+  const targetCommentId = normalizePositiveInteger(targetValue?.comment_ID);
+  const expectedCommentId = wordpressGraphResourcePrimaryInteger(reference.targetResource);
+  if (
+    expectedCommentId == null
+    || targetCommentId !== expectedCommentId
+  ) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references an unsupported wp_commentmeta.comment_id target that is not a valid wp_comments row.`,
     };
   }
 

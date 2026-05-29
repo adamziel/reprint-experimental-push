@@ -4347,19 +4347,19 @@ test('RPP-0117 stale remote after dry-run target exposes per-tier ready replay r
 
   assert.ok(coverage, 'missing stale remote after dry-run target coverage');
   assert.equal(coverage.family, 'ready-plan-stale-remote-after-dry-run');
-  assert.equal(coverage.total, 354);
+  assert.equal(coverage.total, 344);
   assert.deepEqual(coverage.statuses, { ready: coverage.total });
   assert.deepEqual(coverage.perTier, {
-    0: 35,
-    1: 35,
-    2: 36,
-    3: 35,
-    4: 36,
-    5: 35,
-    6: 36,
-    7: 35,
-    8: 36,
-    9: 35,
+    0: 34,
+    1: 34,
+    2: 35,
+    3: 34,
+    4: 35,
+    5: 34,
+    6: 35,
+    7: 34,
+    8: 35,
+    9: 34,
   });
   assert.deepEqual(
     Object.keys(coverage.perTier).map(Number),
