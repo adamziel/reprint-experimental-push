@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 03:32 CEST.
+- Last update: 2026-05-29 03:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 236
-  items checked and leaves 764 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 237
+  items checked and leaves 763 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 36 generated
+  7 chunking/performance items, 2 production-topology items, 37 generated
   harness items, and 21 merge-invariant items. No release-ops items are checked
   yet.
 - Focused tmux stdout marker refresh: the current lane now contains
@@ -1287,6 +1287,14 @@ linked implementation artifacts.
   now exposes 10 same-independent-content target cases across all 10 tiers, with
   ready cases applying as already-in-sync decisions and preserving unplanned
   remote resources.
+- Generated remote-only preservation continuation: `43fae8829` integrated
+  `RPP-0119` remote-only preservation coverage. `umask 0022 && node --test
+  --test-name-pattern='RPP-0119' test/generated-push-harness.test.js` passed
+  1/1, and `npm run test:generated-push-harness` passed 39/39, proving nine
+  tier-1 through tier-9 ready remote-only preservation target cases reject stale
+  replay with `PRECONDITION_FAILED` before mutation while keeping the remote-only
+  row as a hash-only `keep-remote` decision with no mutation or live-remote
+  precondition.
 - Generated large-ready-plan continuation: `a82afb2d7` integrated `RPP-0120`
   large ready plan tier coverage. The generated harness keeps the 510-case run
   and now exposes 10 large ready plan target cases across all 10 tiers, with
