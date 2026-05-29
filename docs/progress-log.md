@@ -6,17 +6,17 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 04:25 CEST.
+- Last update: 2026-05-29 04:35 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 242
-  items checked and leaves 758 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 243
+  items checked and leaves 757 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
-  30 plugin-driver boundary items, 11 executor/auth items, 12 recovery items,
+  30 plugin-driver boundary items, 11 executor/auth items, 13 recovery items,
   7 chunking/performance items, 2 production-topology items, 38 generated
   harness items, and 23 merge-invariant items. No release-ops items are checked
   yet.
@@ -159,15 +159,14 @@ linked implementation artifacts.
   the 620 deterministic generated cases, proving ready plus non-ready model
   evidence for plugin-owned custom-table changes with redacted custom-table
   payload metadata and a documented invariant/surface.
-- Auxiliary file-backed journal schema migration refresh: the current lane now
-  contains file-backed migration support and evidence toward `RPP-0601` in
+- Auxiliary file-backed journal schema migration refresh: an earlier lane step
+  added file-backed migration support and evidence toward `RPP-0601` in
   `src/recovery-journal.js`, `test/recovery-journal.test.js`, and
   `docs/evidence/rpp-0601-journal-table-schema-migration.md`. Validation
   observed `node --test test/recovery-journal.test.js` at 22 pass / 0 fail,
-  `npm run test:recovery:file-journal` exit 0, and source/test syntax checks.
-  `RPP-0601` remains unchecked because the checklist success text requires
-  MySQL or SQLite-backed journal table migration proof. Counts stay 228/772;
-  final release remains `NO-GO`.
+  `npm run test:recovery:file-journal` exit 0, and source/test syntax checks;
+  the later SQLite-backed table migration refresh supplies the table-backed
+  proof for the checklist item. Final release remains `NO-GO`.
 - Focused plugin-driver registration API refresh: the current lane now contains
   `RPP-0401` evidence in `docs/evidence/rpp-0401-driver-registration-api.md`
   and `test/plugin-driver-registration-api.test.js`. The command `node
@@ -244,6 +243,16 @@ linked implementation artifacts.
   the authenticated permission callback and signed-request check before JSON
   parsing, remains planning-only with no mutation helpers, and emits hash-only
   receipt metadata. Counts are now 242/758; final release remains `NO-GO`.
+- SQLite-backed journal table schema migration refresh: the current lane now
+  contains `RPP-0601` evidence in
+  `docs/evidence/rpp-0601-journal-table-schema-migration.md`,
+  `src/recovery-journal.js`, and `test/recovery-journal.test.js`. `umask 0022
+  && node --test test/recovery-journal.test.js` passed 23/23, and `npm run
+  test:recovery:file-journal` exited 0 as the nearest recovery smoke check,
+  proving the SQLite-backed migration adds `schema_version`, rewrites legacy
+  row records to `schemaVersion: 1`, preserves row order, fails closed before
+  migration, and remains restart-readable after reopening the database. Counts
+  are now 243/757; final release remains `NO-GO`.
 - Generated harness atomic plugin install stack variant-1 refresh: the current
   lane now contains RPP-0116 coverage in `scripts/harness/generated-push-cases.js`,
   `test/generated-push-harness.test.js`, `docs/generated-push-harness.md`, and
