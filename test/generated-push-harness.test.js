@@ -97,6 +97,9 @@ const requiredFamilies = [
   'file-create-update-delete-mix-ready',
   'file-create-update-delete-mix-conflict',
   'file-create-update-delete-mix',
+  'file-create-update-delete-mix-v3',
+  'file-create-update-delete-mix-v3-ready',
+  'file-create-update-delete-mix-v3-non-ready',
   'file-type-swap-ready',
   'file-type-swap-conflict',
   'file-type-swap',
@@ -2021,6 +2024,77 @@ test('RPP-0121 file create/update/delete mix target emits ready and non-ready va
   assert.equal(nonReady.status, 'conflict');
   assert.ok(nonReady.conflicts >= 1, 'non-ready file mix should expose a file conflict');
   assert.equal(nonReady.applied, false, 'non-ready file mix must not apply mutations');
+});
+
+test('RPP-0141 file create/update/delete mix variant 3 emits ready and non-ready generated coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileCreateUpdateDeleteMixVariant3;
+
+  assert.ok(coverage, 'missing file create/update/delete mix variant 3 target coverage');
+  assert.equal(coverage.family, 'file-create-update-delete-mix-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-create-update-delete-mix-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 3 target should include ready file mix cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 3 target should include non-ready file mix cases');
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedFileCreateUpdateDeleteMixVariant3Evidence(coverage);
+  const replayEvidence = generatedFileCreateUpdateDeleteMixVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0141 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 file mix evidence changed between runs');
+  assert.equal(firstEvidence.target, 'fileCreateUpdateDeleteMixVariant3');
+  assert.equal(firstEvidence.family, 'file-create-update-delete-mix-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 1, delete: 1, update: 1 });
+  assert.equal(readyCase.remoteOnly.decision, 'keep-remote');
+  assert.equal(readyCase.remoteOnly.plannedMutation, false);
+  assert.equal(readyCase.remoteOnly.appliedHash, readyCase.remoteOnly.remoteHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.update.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('generated file mix create '), false, 'variant 3 evidence leaked created file payload');
+  assert.equal(evidenceText.includes('generated file mix update '), false, 'variant 3 evidence leaked updated file payload');
+  assert.equal(evidenceText.includes('remote-only file mix preserve '), false, 'variant 3 evidence leaked remote-only file payload');
+  assert.equal(evidenceText.includes('remote concurrent file mix update '), false, 'variant 3 evidence leaked conflict payload');
 });
 
 test('RPP-0102/RPP-0122 directory descendant target exposes per-tier ready and conflict counts', () => {
@@ -5321,21 +5395,313 @@ function assertFileTypeSwapShape(testCase, { conflict }) {
   assert.equal(remoteDescendants.length, conflict ? 1 : 0, `${testCase.id} remote descendant shape mismatch`);
 }
 
-function assertFileCreateUpdateDeleteMixShape(testCase) {
+function assertFileCreateUpdateDeleteMixShape(testCase, { conflict } = {}) {
   const createFiles = Object.entries(testCase.local.files)
-    .filter(([path, value]) => !testCase.base.files[path]
+    .filter(([path, value]) => !hasGeneratedFile(testCase.base, path)
       && String(value).startsWith('generated file mix create '));
   const updateFiles = Object.entries(testCase.local.files)
-    .filter(([path, value]) => testCase.base.files[path]
+    .filter(([path, value]) => hasGeneratedFile(testCase.base, path)
       && String(value).startsWith('generated file mix update '));
   const deleteFiles = Object.keys(testCase.base.files)
     .filter((path) => String(testCase.base.files[path]).startsWith('base shared ')
-      && !testCase.local.files[path]
-      && testCase.remote.files[path]);
+      && !hasGeneratedFile(testCase.local, path)
+      && hasGeneratedFile(testCase.remote, path));
+  const remoteOnlyFiles = Object.entries(testCase.remote.files)
+    .filter(([path, value]) => !hasGeneratedFile(testCase.base, path)
+      && !hasGeneratedFile(testCase.local, path)
+      && String(value).startsWith('remote-only file mix preserve '));
 
   assert.equal(createFiles.length, 1, `${testCase.id} should create one file`);
   assert.equal(updateFiles.length, 1, `${testCase.id} should update one file`);
   assert.equal(deleteFiles.length, 1, `${testCase.id} should delete one file`);
+  assert.equal(remoteOnlyFiles.length, 1, `${testCase.id} should include one remote-only preservation file`);
+
+  const [createPath] = createFiles[0];
+  const [updatePath] = updateFiles[0];
+  const deletePath = deleteFiles[0];
+  const [remoteOnlyPath] = remoteOnlyFiles[0];
+
+  if (conflict === true) {
+    assert.notEqual(
+      testCase.remote.files[updatePath],
+      testCase.base.files[updatePath],
+      `${testCase.id} conflict case should drift the updated file remotely`,
+    );
+    assert.match(String(testCase.remote.files[updatePath]), /^remote concurrent file mix update /);
+  } else if (conflict === false) {
+    assert.equal(
+      testCase.remote.files[updatePath],
+      testCase.base.files[updatePath],
+      `${testCase.id} ready case should leave the updated file unchanged remotely`,
+    );
+  }
+
+  return {
+    createPath,
+    updatePath,
+    deletePath,
+    remoteOnlyPath,
+    createResource: { type: 'file', path: createPath },
+    updateResource: { type: 'file', path: updatePath },
+    deleteResource: { type: 'file', path: deletePath },
+    remoteOnlyResource: { type: 'file', path: remoteOnlyPath },
+    createResourceKey: `file:${createPath}`,
+    updateResourceKey: `file:${updatePath}`,
+    deleteResourceKey: `file:${deletePath}`,
+    remoteOnlyResourceKey: `file:${remoteOnlyPath}`,
+  };
+}
+
+function hasGeneratedFile(site, path) {
+  return Object.prototype.hasOwnProperty.call(site.files, path);
+}
+
+function generatedFileCreateUpdateDeleteMixVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('file-create-update-delete-mix-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedFileCreateUpdateDeleteMixVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready file mix case');
+  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready file mix case');
+
+  return {
+    target: 'fileCreateUpdateDeleteMixVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('non-ready'),
+    ],
+  };
+}
+
+function generatedFileCreateUpdateDeleteMixVariant3CaseEvidence(testCase, result) {
+  const conflict = testCase.family === 'file-create-update-delete-mix-conflict';
+  const shape = assertFileCreateUpdateDeleteMixShape(testCase, { conflict });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = fileMixVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const plannedChangeKinds = fileMixVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const remoteOnly = fileMixVariant3RemoteOnlyEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      plannedChangeKinds,
+      remoteOnly,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        plannedChangeKinds,
+        remoteOnly,
+      })}`,
+    };
+  }
+
+  assert.equal(conflict, true, `${testCase.id} non-ready file mix evidence should come from conflict family`);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.notEqual(result.status, 'ready', `${testCase.id} should validate as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const conflictEvidence = fileMixVariant3ConflictEvidence({ testCase, plan, shape });
+  const refusal = fileMixVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    conflict: conflictEvidence,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      conflict: conflictEvidence,
+      refusal,
+    })}`,
+  };
+}
+
+function fileMixVariant3SurfaceEvidence(testCase, shape) {
+  return Object.fromEntries([
+    ['create', shape.createResource],
+    ['update', shape.updateResource],
+    ['delete', shape.deleteResource],
+    ['remoteOnly', shape.remoteOnlyResource],
+  ].map(([label, resource]) => [
+    label,
+    {
+      resourceKey: `file:${resource.path}`,
+      baseHash: resourceHash(testCase.base, resource),
+      localHash: resourceHash(testCase.local, resource),
+      remoteHash: resourceHash(testCase.remote, resource),
+    },
+  ]));
+}
+
+function fileMixVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const expected = [
+    { resource: shape.createResource, resourceKey: shape.createResourceKey, changeKind: 'create' },
+    { resource: shape.updateResource, resourceKey: shape.updateResourceKey, changeKind: 'update' },
+    { resource: shape.deleteResource, resourceKey: shape.deleteResourceKey, changeKind: 'delete' },
+  ];
+  const mutations = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const preconditions = new Map(plan.preconditions.map((precondition) => [precondition.resourceKey, precondition]));
+  const plannedChangeKinds = {};
+
+  for (const { resource, resourceKey, changeKind } of expected) {
+    const mutation = mutations.get(resourceKey);
+    const precondition = preconditions.get(resourceKey);
+    assert.ok(mutation, `${testCase.id} should plan ${changeKind} mutation for ${resourceKey}`);
+    assert.ok(precondition, `${testCase.id} should precondition ${resourceKey}`);
+    assert.equal(mutation.changeKind, changeKind);
+    assert.equal(precondition.mutationId, mutation.id);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(
+      resourceHash(applied.site, resource),
+      resourceHash(testCase.local, resource),
+      `${testCase.id} did not apply local file mix value for ${resourceKey}`,
+    );
+    incrementCount(plannedChangeKinds, changeKind);
+  }
+
+  return sortStringObject(plannedChangeKinds);
+}
+
+function fileMixVariant3RemoteOnlyEvidence({ testCase, plan, applied, shape }) {
+  const mutationResourceKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const preconditionResourceKeys = new Set(plan.preconditions.map((precondition) => precondition.resourceKey));
+  const decision = plan.decisions.find((entry) => entry.resourceKey === shape.remoteOnlyResourceKey);
+
+  assert.ok(decision, `${testCase.id} should record a keep-remote decision for ${shape.remoteOnlyResourceKey}`);
+  assert.equal(decision.decision, 'keep-remote');
+  assert.equal(mutationResourceKeys.has(shape.remoteOnlyResourceKey), false);
+  assert.equal(preconditionResourceKeys.has(shape.remoteOnlyResourceKey), false);
+
+  const baseHash = resourceHash(testCase.base, shape.remoteOnlyResource);
+  const localHash = resourceHash(testCase.local, shape.remoteOnlyResource);
+  const remoteHash = resourceHash(testCase.remote, shape.remoteOnlyResource);
+  const appliedHash = resourceHash(applied.site, shape.remoteOnlyResource);
+
+  assert.equal(localHash, baseHash, `${testCase.id} local should not create the remote-only file`);
+  assert.notEqual(remoteHash, baseHash, `${testCase.id} remote should create the remote-only file`);
+  assert.equal(appliedHash, remoteHash, `${testCase.id} apply should preserve the remote-only file`);
+
+  return {
+    resourceKey: shape.remoteOnlyResourceKey,
+    decision: decision.decision,
+    change: decision.change,
+    baseHash,
+    localHash,
+    remoteHash,
+    appliedHash,
+    plannedMutation: false,
+    plannedPrecondition: false,
+    decisionHash: `sha256:${digest(decision)}`,
+  };
+}
+
+function fileMixVariant3ConflictEvidence({ testCase, plan, shape }) {
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === shape.updateResourceKey);
+  const plannedMutation = plan.mutations.some((mutation) => mutation.resourceKey === shape.updateResourceKey);
+
+  assert.ok(conflict, `${testCase.id} should report a conflict for ${shape.updateResourceKey}`);
+  assert.equal(plannedMutation, false, `${testCase.id} should not plan the conflicted update file mutation`);
+
+  return {
+    resourceKey: conflict.resourceKey,
+    class: conflict.class,
+    change: conflict.change,
+    plannedMutation,
+    conflictHash: `sha256:${digest(conflict)}`,
+  };
+}
+
+function fileMixVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
 }
 
 function generatedPlannerSummaryEvidence() {
