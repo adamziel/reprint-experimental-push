@@ -544,7 +544,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0505 (Mid-Far / executor-auth) Implement production journal route, variant 1. Success: verify:release includes the route evidence in one summary.
 - [x] RPP-0506 (Mid-Far / executor-auth) Implement production recovery inspect route, variant 1. Success: real endpoint test runs against a live URL.
 - [x] RPP-0507 (Mid-Far / executor-auth) Implement production recovery mutate route, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0508 (Mid-Far / executor-auth) Implement short-lived push session issue, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0508 (Mid-Far / executor-auth) Implement short-lived push session issue, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0509 (Mid-Far / executor-auth) Implement session source URL binding, variant 1. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0510 (Mid-Far / executor-auth) Implement session user identity binding, variant 1. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0511 (Mid-Far / executor-auth) Implement Application Password integration, variant 1. Success: real endpoint test runs against a live URL.

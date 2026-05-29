@@ -3342,13 +3342,24 @@ function reprint_push_lab_rest_signature_context(WP_REST_Request $request): arra
 function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request): array
 {
     $signature = reprint_push_lab_rest_signature_context($request);
+    $session = isset($signature['session']) && is_array($signature['session'])
+        ? $signature['session']
+        : [];
     return [
         'schemaVersion' => 1,
         'contentHash' => (string) ($signature['contentHash'] ?? ''),
         'timestamp' => (string) ($signature['timestamp'] ?? ''),
         'nonceHash' => (string) ($signature['nonceHash'] ?? ''),
-        'sessionHash' => (string) ($signature['session']['sessionHash'] ?? ''),
+        'sessionHash' => (string) ($session['sessionHash'] ?? ''),
         'signingKeyHash' => (string) ($signature['signingKeyHash'] ?? ''),
+        'session' => [
+            'schemaVersion' => 1,
+            'type' => 'short-lived-push-session',
+            'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+            'issuedAt' => (string) ($session['issuedAt'] ?? ''),
+            'expiresAt' => (string) ($session['expiresAt'] ?? ''),
+            'ttlSeconds' => REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
+        ],
         'cleanup' => isset($signature['cleanup']) && is_array($signature['cleanup'])
             ? $signature['cleanup']
             : [],
@@ -3902,6 +3913,11 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
         'pushSession' => [
             'sessionHash' => $signed_request['sessionHash'],
             'signingKeyHash' => $signed_request['signingKeyHash'],
+            'issue' => reprint_push_lab_rest_authenticated_push_session_issue_binding(
+                $auth,
+                $profile,
+                $signed_request
+            ),
             'dryRunNonceHash' => $signed_request['nonceHash'],
             'dryRunContentHash' => $signed_request['contentHash'],
             'dryRunCanonicalHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
@@ -3936,6 +3952,31 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
     $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
 
     return $receipt;
+}
+
+function reprint_push_lab_rest_authenticated_push_session_issue_binding(
+    array $auth,
+    array $profile,
+    array $signed_request
+): array {
+    $identity = isset($auth['identity']) && is_array($auth['identity']) ? $auth['identity'] : [];
+    $session = isset($signed_request['session']) && is_array($signed_request['session'])
+        ? $signed_request['session']
+        : [];
+    $issue = [
+        'schemaVersion' => 1,
+        'type' => 'short-lived-push-session',
+        'sessionHash' => (string) ($session['sessionHash'] ?? $signed_request['sessionHash'] ?? ''),
+        'signingKeyHash' => (string) ($signed_request['signingKeyHash'] ?? ''),
+        'scopeHash' => hash('sha256', (string) ($profile['authScope'] ?? '')),
+        'identityHash' => hash('sha256', reprint_push_stable_json($identity)),
+        'issuedAt' => (string) ($session['issuedAt'] ?? ''),
+        'expiresAt' => (string) ($session['expiresAt'] ?? ''),
+        'ttlSeconds' => REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
+    ];
+    $issue['issueHash'] = hash('sha256', reprint_push_stable_json($issue));
+
+    return $issue;
 }
 
 function reprint_push_lab_rest_authenticated_receipt_subject_binding(
@@ -4136,6 +4177,20 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         || (string) ($push_session['signingKeyHash'] ?? '') !== (string) ($signed_request['signingKeyHash'] ?? '')
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt signed session binding does not match the current request.', $receipt);
+    }
+
+    $issue_binding = isset($push_session['issue']) && is_array($push_session['issue'])
+        ? $push_session['issue']
+        : [];
+    $expected_issue_binding = reprint_push_lab_rest_authenticated_push_session_issue_binding(
+        $current,
+        $profile,
+        $signed_request
+    );
+    foreach ($expected_issue_binding as $field => $expected_value) {
+        if ((string) ($issue_binding[$field] ?? '') !== (string) $expected_value) {
+            reprint_push_lab_rest_auth_receipt_mismatch('Receipt short-lived push session issue binding does not match the current request.', $receipt);
+        }
     }
 
     if ((string) ($push_session['dryRunContentHash'] ?? '') === ''
