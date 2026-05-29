@@ -1442,9 +1442,12 @@ if (retainedSourceSummaryRequested) {
           proof: {
             status: 0,
             journal: durableJournalSummary.journal,
+            claim: durableJournalSummary.claim || durableJournalSummary.journal?.claim || null,
+            writerLease: durableJournalSummary.writerLease || durableJournalSummary.journal?.writerLease || null,
             leaseFence: {
-              ...durableJournalSummary.leaseFence,
-              staleClaimRejected: durableJournalSummary.leaseFence?.staleClaimRejected === true,
+              storageGuard: durableJournalSummary.leaseFence?.storageGuard || null,
+              fsyncEvidence: durableJournalSummary.leaseFence?.fsyncEvidence === true,
+              monotonicSequence: durableJournalSummary.leaseFence?.monotonicSequence === true,
             },
           },
           rows: 17,

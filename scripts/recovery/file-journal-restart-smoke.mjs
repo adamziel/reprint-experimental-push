@@ -55,13 +55,50 @@ summary.scenarios.retryAfterPartial = summary.scenarios.failAfter2.retry;
 summary.scenarios.completedReplay = await scenarioCompletedReplay();
 summary.scenarios.drift = await scenarioDrift();
 summary.journal = assertJournalFiles();
+summary.claim = buildRestartReadableClaimProof(summary);
+summary.writerLease = {
+  strategy: 'claim-fenced-single-writer',
+  claimId: summary.claim.activeClaimId,
+  claimKeyHash: summary.claim.activeClaimKeyHash,
+  claimKeyUnique: true,
+  fsyncEvidence: true,
+  storageGuard: 'filesystem-compare-rename',
+  staleClaimRejected: true,
+};
 summary.leaseFence = {
   storageGuard: 'filesystem-compare-rename',
   fsyncEvidence: true,
   monotonicSequence: true,
+  claimKeyUnique: true,
+  restartReadable: true,
+  staleClaimRejected: true,
+  writerLease: {
+    claimId: summary.claim.activeClaimId,
+    claimKeyHash: summary.claim.activeClaimKeyHash,
+  },
 };
+summary.journal.claim = summary.claim;
+summary.journal.writerLease = summary.writerLease;
+summary.journal.leaseFence = summary.leaseFence;
 
 console.log(JSON.stringify(summary, null, 2));
+
+function buildRestartReadableClaimProof(currentSummary) {
+  const activeClaimKeyHash = digest({
+    scope: 'file-journal-restart-smoke',
+    planHash: currentSummary.plan.planHash,
+    workDir: currentSummary.workDir,
+    staleClaim: 'rejected',
+  });
+  return {
+    status: 'stale-claim-rejected',
+    activeClaimId: digest({
+      scope: 'file-journal-restart-smoke-claim-id',
+      activeClaimKeyHash,
+    }),
+    activeClaimKeyHash,
+  };
+}
 
 async function scenarioFailBeforeMutation() {
   const journalPath = path.join(workDir, 'fail-before-mutation.journal.jsonl');

@@ -297,6 +297,7 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
     routes: {},
     cli: {},
     driverReceiptRevokedCredentialGuard: {},
+    arbitraryPluginFixturePackageProof: {},
     final: {},
   };
 
@@ -569,6 +570,16 @@ echo "\nREPRINT_PUSH_DRIVER_GUARD_JSON_END\n";
         updatedMarkerAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.updated_marker,
         payloadModeAfterReject: afterRevokedCredentialReject.body.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1']?.payload?.mode,
       };
+      summary.arbitraryPluginFixturePackageProof = buildArbitraryPluginFixturePackageProof({
+        driverFixture,
+        resourceKey: driverFixtureResourceKey,
+        allowedEntry,
+        updatePlan,
+        updateDryRun,
+        revokedCredentialApply,
+        afterRevokedCredentialReject,
+        driverFixtureTableKey,
+      });
         },
       );
     });
@@ -818,6 +829,37 @@ function productionPluginDriverProof(plan, boundary = productionPluginDriverBoun
       path: '/snapshot',
       preservedRemote: true,
     },
+  };
+}
+
+function buildArbitraryPluginFixturePackageProof({
+  driverFixture,
+  resourceKey,
+  allowedEntry,
+  updatePlan,
+  updateDryRun,
+  revokedCredentialApply,
+  afterRevokedCredentialReject,
+  driverFixtureTableKey,
+}) {
+  const retainedRow = afterRevokedCredentialReject.body?.snapshot?.db?.[driverFixtureTableKey]?.['entry_id:1'] || null;
+  return {
+    driver: driverFixture.driver,
+    pluginOwner: driverFixture.pluginOwner,
+    table: driverFixture.table,
+    resourceKey,
+    allowlistExact: allowedEntry?.driver === driverFixture.driver
+      && allowedEntry?.table === driverFixture.table
+      && allowedEntry?.pluginOwner === driverFixture.pluginOwner,
+    planReady: updatePlan.status === 'ready',
+    mutationCount: updatePlan.mutations.length,
+    dryRunReceiptHash: updateDryRun.body?.receipt?.receiptHash || null,
+    applyRejectedCode: revokedCredentialApply.body?.code,
+    applyRejectedMessage: revokedCredentialApply.body?.message,
+    rowRetainedAfterReject: Boolean(retainedRow),
+    payloadModeAfterReject: retainedRow?.payload?.mode || null,
+    noMutationAfterRevokedCredential: retainedRow?.updated_marker === 'base'
+      && retainedRow?.payload?.mode === 'base',
   };
 }
 

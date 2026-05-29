@@ -101,6 +101,18 @@ const postmetaPostGraphResourceKeys = Object.freeze([
   postmetaPostGraphPostResourceKey,
   postmetaPostGraphMetaResourceKey,
 ]);
+const postAuthorIdentitySourceUserId = 71701;
+const postAuthorIdentityTargetUserId = 72701;
+const postAuthorIdentityPostId = 71711;
+const postAuthorIdentityUserLogin = 'reprint-push-post-author-identity';
+const postAuthorIdentityUserEmail = 'post-author-identity@example.test';
+const postAuthorIdentityPostSlug = 'reprint-push-post-author-identity-post';
+const postAuthorIdentityPostTitle = 'Reprint Push Post Author Identity Post';
+const postAuthorIdentityRemoteDriftName = 'Remote Private Post Author Drift';
+const postAuthorIdentityRemoteDriftEmail = 'remote-private-post-author@example.test';
+const postAuthorIdentitySourceUserResourceKey = `row:["wp_users","ID:${postAuthorIdentitySourceUserId}"]`;
+const postAuthorIdentityTargetUserResourceKey = `row:["wp_users","ID:${postAuthorIdentityTargetUserId}"]`;
+const postAuthorIdentityPostResourceKey = `row:["wp_posts","ID:${postAuthorIdentityPostId}"]`;
 const commentGraphPostId = 71001;
 const commentGraphParentId = 72801;
 const commentGraphChildId = 72802;
@@ -730,6 +742,137 @@ export function buildFeaturedImageIdentityMapProof({
   };
 }
 
+export function buildPostAuthorIdentityMapProof({
+  sourceSnapshot,
+  localEditedSnapshot,
+  remoteChangedSnapshot,
+} = {}) {
+  assert.ok(sourceSnapshot, 'sourceSnapshot is required');
+  assert.ok(localEditedSnapshot, 'localEditedSnapshot is required');
+  assert.ok(remoteChangedSnapshot, 'remoteChangedSnapshot is required');
+
+  const readyRemoteSnapshot = postAuthorIdentityMapReadyRemoteSnapshot(
+    sourceSnapshot,
+    remoteChangedSnapshot,
+  );
+  const staleRemoteSnapshot = cloneJson(readyRemoteSnapshot);
+  if (staleRemoteSnapshot?.db?.wp_users?.[`ID:${postAuthorIdentityTargetUserId}`]) {
+    staleRemoteSnapshot.db.wp_users[`ID:${postAuthorIdentityTargetUserId}`].display_name =
+      postAuthorIdentityRemoteDriftName;
+    staleRemoteSnapshot.db.wp_users[`ID:${postAuthorIdentityTargetUserId}`].user_email =
+      postAuthorIdentityRemoteDriftEmail;
+  }
+
+  const readyPlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: readyRemoteSnapshot,
+    now: proofNow,
+  });
+  const stalePlan = createPushPlan({
+    base: sourceSnapshot,
+    local: localEditedSnapshot,
+    remote: staleRemoteSnapshot,
+    now: proofNow,
+  });
+  const readyMutations = readyPlan.mutations || [];
+  const authoredPostMutation = readyMutations.find((mutation) =>
+    mutation?.resourceKey === postAuthorIdentityPostResourceKey) || null;
+  const authoredPostValue = authoredPostMutation
+    ? deserializeResourceValue(authoredPostMutation.value)
+    : null;
+  const postAuthorRewrite = (authoredPostMutation?.wordpressGraphIdentity?.rewrites || [])
+    .find((rewrite) => rewrite.relationshipType === 'post-author') || null;
+  const staleBlocker = stalePlan.blockers.find((blocker) =>
+    blocker?.resourceKey === postAuthorIdentitySourceUserResourceKey)
+    || stalePlan.blockers.find((blocker) =>
+      blocker?.resourceKey === postAuthorIdentityPostResourceKey)
+    || stalePlan.blockers.find((blocker) =>
+      blocker?.class === 'stale-wordpress-graph-identity')
+    || null;
+  const staleBlockerEvidence = staleBlocker
+    ? hashOnlyWordPressGraphBlockerEvidence(staleBlocker)
+    : null;
+  const staleBlockerJson = JSON.stringify(staleBlockerEvidence);
+  const counts = {
+    source: summarizeComplexSnapshot(sourceSnapshot),
+    localEdited: summarizeComplexSnapshot(localEditedSnapshot),
+    remoteChanged: summarizeComplexSnapshot(remoteChangedSnapshot),
+  };
+  const invariants = {
+    identityMapRowsPresent: counts.source.postAuthorIdentitySourceUsers === 0
+      && counts.localEdited.postAuthorIdentitySourceUsers >= 1
+      && counts.localEdited.postAuthorIdentityPosts >= 1
+      && counts.remoteChanged.postAuthorIdentityTargetUsers >= 1,
+    readyMapsDeterministically: readyPlan.status === 'ready'
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === postAuthorIdentitySourceUserResourceKey
+        && decision.decision === 'map-local-identity-to-remote'
+        && decision.targetResourceKey === postAuthorIdentityTargetUserResourceKey)
+      && readyPlan.decisions?.some((decision) =>
+        decision.resourceKey === postAuthorIdentityTargetUserResourceKey
+        && decision.decision === 'keep-remote'),
+    postAuthorRewritten: authoredPostMutation?.changeKind === 'create'
+      && authoredPostValue?.ID === postAuthorIdentityPostId
+      && authoredPostValue?.post_author === postAuthorIdentityTargetUserId
+      && postAuthorRewrite?.relationshipType === 'post-author'
+      && postAuthorRewrite?.sourceTargetResourceKey === postAuthorIdentitySourceUserResourceKey
+      && postAuthorRewrite?.targetResourceKey === postAuthorIdentityTargetUserResourceKey,
+    sourceUserNotMutated: !readyMutations.some((mutation) =>
+      mutation.resourceKey === postAuthorIdentitySourceUserResourceKey),
+    authoredPostHasLivePrecondition: readyPlan.preconditions?.some((precondition) =>
+      precondition.resourceKey === postAuthorIdentityPostResourceKey
+      && precondition.checkedAgainst === 'live-remote'
+      && isSha256Hex(precondition.expectedHash)
+      && precondition.expectedHash === authoredPostMutation?.baseHash
+      && precondition.expectedHash === authoredPostMutation?.remoteBeforeHash),
+    staleTargetFailsClosed: stalePlan.status === 'blocked'
+      && staleBlocker?.class === 'stale-wordpress-graph-identity',
+    staleTargetPreventsReleaseMovement: stalePlan.status !== 'ready',
+    staleTargetNoAuthoredPostMutation: !((stalePlan.mutations || []).some((mutation) =>
+      mutation.resourceKey === postAuthorIdentityPostResourceKey)),
+    staleBlockerEvidenceIsHashOnly: Boolean(staleBlockerEvidence)
+      && [staleBlockerEvidence.baseHash, staleBlockerEvidence.localHash, staleBlockerEvidence.remoteHash]
+        .every(isSha256Hex)
+      && ['base', 'local', 'remote'].every((slot) =>
+        isSha256Hex(staleBlockerEvidence.change?.[slot]?.hash)),
+    staleBlockerRedactsRawValues: ![
+      postAuthorIdentityUserLogin,
+      postAuthorIdentityUserEmail,
+      postAuthorIdentityPostTitle,
+      postAuthorIdentityPostSlug,
+      postAuthorIdentityRemoteDriftName,
+      postAuthorIdentityRemoteDriftEmail,
+    ].some((privateValue) => staleBlockerJson.includes(privateValue)),
+  };
+
+  return {
+    type: 'post-author-identity-map-reference',
+    releaseReady: false,
+    resourceKeys: {
+      sourceUser: postAuthorIdentitySourceUserResourceKey,
+      targetUser: postAuthorIdentityTargetUserResourceKey,
+      authoredPost: postAuthorIdentityPostResourceKey,
+    },
+    counts,
+    readyPlan: summarizePlan(readyPlan),
+    stalePlan: summarizePlan(stalePlan),
+    mutationFamilies: countMutationFamilies(readyMutations),
+    authoredPost: authoredPostMutation
+      ? {
+        resourceKey: authoredPostMutation.resourceKey,
+        postAuthor: authoredPostValue?.post_author,
+        rewriteType: postAuthorRewrite?.relationshipType || null,
+        sourceTargetResourceKey: postAuthorRewrite?.sourceTargetResourceKey || null,
+        targetResourceKey: postAuthorRewrite?.targetResourceKey || null,
+      }
+      : null,
+    staleBlocker: staleBlockerEvidence,
+    invariants,
+    ok: Object.values(invariants).every(Boolean),
+  };
+}
+
 export function buildComplexSiteReleaseEvidence({
   plannerProof,
   verifyOutput = '',
@@ -1243,6 +1386,17 @@ function featuredImageIdentityMapReadyRemoteSnapshot(sourceSnapshot, remoteChang
   return snapshot;
 }
 
+function postAuthorIdentityMapReadyRemoteSnapshot(sourceSnapshot, remoteChangedSnapshot) {
+  const snapshot = cloneJson(sourceSnapshot);
+  snapshot.db = snapshot.db || {};
+  snapshot.db.wp_users = snapshot.db.wp_users || {};
+  const row = remoteChangedSnapshot?.db?.wp_users?.[`ID:${postAuthorIdentityTargetUserId}`];
+  if (row) {
+    snapshot.db.wp_users[`ID:${postAuthorIdentityTargetUserId}`] = cloneJson(row);
+  }
+  return snapshot;
+}
+
 function hashOnlyWordPressGraphBlockerEvidence(blocker) {
   return {
     id: blocker.id || null,
@@ -1452,6 +1606,7 @@ export function summarizeComplexSnapshot(snapshot) {
   const db = snapshot?.db || {};
   const posts = db.wp_posts || {};
   const postmeta = db.wp_postmeta || {};
+  const users = db.wp_users || {};
   const terms = db.wp_terms || {};
   const termTaxonomy = db.wp_term_taxonomy || {};
   const termRelationships = db.wp_term_relationships || {};
@@ -1526,6 +1681,16 @@ export function summarizeComplexSnapshot(snapshot) {
     postmetaPostGraphMeta: Object.values(postmeta).filter((row) =>
       Number(row?.post_id) === postmetaPostGraphPostId
       && String(row?.meta_key || '') === postmetaPostGraphMetaKey).length,
+    postAuthorIdentitySourceUsers: Object.values(users).filter((row) =>
+      Number(row?.ID) === postAuthorIdentitySourceUserId
+      && String(row?.user_login || '') === postAuthorIdentityUserLogin).length,
+    postAuthorIdentityTargetUsers: Object.values(users).filter((row) =>
+      Number(row?.ID) === postAuthorIdentityTargetUserId
+      && String(row?.user_login || '') === postAuthorIdentityUserLogin).length,
+    postAuthorIdentityPosts: Object.values(posts).filter((row) =>
+      Number(row?.ID) === postAuthorIdentityPostId
+      && String(row?.post_name || '') === postAuthorIdentityPostSlug
+      && Number(row?.post_author) === postAuthorIdentitySourceUserId).length,
     commentGraphParents: Object.values(comments).filter((row) =>
       Number(row?.comment_ID) === commentGraphParentId
       && Number(row?.comment_post_ID) === commentGraphPostId

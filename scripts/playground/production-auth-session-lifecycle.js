@@ -69,12 +69,13 @@ export function evaluateProductionAuthSessionLifecycle(session, now = Date.now()
   }
 
   if (expired) {
+    const expiredField = normalizeAuthSessionObservationField(session?.expiredField);
+    const statusExpired = session?.status === 'expired';
     return {
       ok: false,
-      field: normalizeAuthSessionObservationField(session?.expiredField)
-        || (session?.status === 'expired' ? 'auth.session.status' : 'auth.session.expired'),
+      ...(expiredField || statusExpired ? { field: expiredField || 'auth.session.status' } : {}),
       required: 'unexpired',
-      observed: session?.status === 'expired' ? 'expired' : 'expired',
+      observed: expiredField || statusExpired ? 'expired' : (session?.expiresAt || 'expired'),
     };
   }
   if (observedStatus !== 'active') {
@@ -864,16 +865,24 @@ function resolveMismatchedSummaryReadObservation(readObservation, observations) 
     return null;
   }
 
-  const lastObservedRead = [...observations]
+  if (!readObservation.step) {
+    return null;
+  }
+
+  const observedRead = [...observations]
     .reverse()
-    .find((observation) => observation && typeof observation === 'object' && isAuthSessionReadStep(observation.step));
-  if (!lastObservedRead) {
+    .find((observation) =>
+      observation
+      && typeof observation === 'object'
+      && isAuthSessionReadStep(observation.step)
+      && observation.step === readObservation.step);
+  if (!observedRead) {
     return null;
   }
 
   const readSessionId = normalizeAuthSessionObservationId(readObservation.id);
-  const lastObservedReadSessionId = normalizeAuthSessionObservationId(lastObservedRead.id);
-  if (readSessionId && lastObservedReadSessionId && readSessionId !== lastObservedReadSessionId) {
+  const observedReadSessionId = normalizeAuthSessionObservationId(observedRead.id);
+  if (readSessionId && observedReadSessionId && readSessionId !== observedReadSessionId) {
     return {
       ok: false,
       required: 'preserved read',
@@ -881,15 +890,7 @@ function resolveMismatchedSummaryReadObservation(readObservation, observations) 
     };
   }
 
-  if (readObservation.step !== lastObservedRead.step) {
-    return {
-      ok: false,
-      required: 'preserved read',
-      observed: normalizeAuthSessionObservationStep(lastObservedRead.step),
-    };
-  }
-
-  if (!authSessionObservationEquals(readObservation, lastObservedRead)) {
+  if (!authSessionObservationEquals(readObservation, observedRead)) {
     return {
       ok: false,
       required: 'preserved read',
@@ -981,10 +982,14 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   }
 
   if (observation.expired === true) {
+    const expiredField = normalizeAuthSessionObservationField(observation.expiredField);
     return {
       ok: false,
+      ...(expiredField ? { field: expiredField } : {}),
       required: 'unexpired',
-      observed: 'expired',
+      observed: expiredField
+        ? 'expired'
+        : (observation.status === 'expired' ? 'expired' : (observation.expiresAt || 'expired')),
     };
   }
 
@@ -1007,6 +1012,7 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
   if (observation.rotated === true) {
     return {
       ok: false,
+      ...(observation.status === 'rotated' ? { field: 'auth.session.status' } : {}),
       required,
       observed: 'rotated',
     };
@@ -1016,11 +1022,15 @@ function resolveInvalidReadLifecycleOutcome(observation, required) {
 }
 
 function authSessionObservationEquals(left, right) {
+  const leftStep = normalizeAuthSessionObservationStep(left?.step);
+  const rightStep = normalizeAuthSessionObservationStep(right?.step);
+  const stepMatches = leftStep === 'missing' || rightStep === 'missing' || leftStep === rightStep;
+
   return normalizeAuthSessionObservationId(left?.id) === normalizeAuthSessionObservationId(right?.id)
     && normalizeAuthSessionObservationField(left?.type) === normalizeAuthSessionObservationField(right?.type)
     && normalizeAuthSessionObservationField(left?.status) === normalizeAuthSessionObservationField(right?.status)
     && normalizeAuthSessionObservationField(left?.expiresAt) === normalizeAuthSessionObservationField(right?.expiresAt)
-    && normalizeAuthSessionObservationStep(left?.step) === normalizeAuthSessionObservationStep(right?.step)
+    && stepMatches
     && normalizeLifecycleBoolean(left?.expired) === normalizeLifecycleBoolean(right?.expired)
     && normalizeLifecycleBoolean(left?.revoked) === normalizeLifecycleBoolean(right?.revoked)
     && normalizeLifecycleBoolean(left?.rotated) === normalizeLifecycleBoolean(right?.rotated)
