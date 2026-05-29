@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T05:07:00+02:00">Last updated: May 29, 2026, 05:07 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T05:18:00+02:00">Last updated: May 29, 2026, 05:18 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>247</strong>
+        <strong>249</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>753</strong>
+        <strong>751</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, same-content, large plans, independent row/file preservation, and local delete/remote edit refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,11 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0406 plugin-driver</span>
+        <span>RPP-0206 merge-invariant</span>
       </div>
-      <p>The latest refresh integrates RPP-0406 wp_termmeta plugin-driver evidence: focused tests prove canonical termmeta and alias row semantics, exact meta_id matching, local-candidate versus production-backed release-gate scope carry-through, mismatched and unsupported row identifiers failing closed before mutation, and redacted evidence without raw meta_value payloads. Counts are now 247/753; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0206 remote-only plugin metadata preservation evidence: the focused planner/apply test proves an independent local file mutation proceeds while remote-only plugin metadata stays a hash-only keep-remote decision with no plugin mutation or live remote precondition. Counts are now 249/751; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0206 invariant: 1/1 focused</span>
         <span class="tag">RPP-0406 termmeta: 5/5 focused</span>
         <span class="tag">RPP-0601 SQLite journal: 23/23</span>
         <span class="tag">RPP-0601 recovery smoke: exit 0</span>
@@ -453,7 +454,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 40/40</span>
-        <span class="tag">checked goals: 247/1000</span>
+        <span class="tag">checked goals: 249/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
