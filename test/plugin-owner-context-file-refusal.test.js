@@ -1,12 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyPlan } from '../src/apply.js';
+import { applyPlan, PushPlanError } from '../src/apply.js';
 import { createPushPlan } from '../src/planner.js';
 
 const fixedNow = new Date('2026-05-28T00:00:00.000Z');
 const formsOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
 const formsPluginResourceKey = 'plugin:forms';
 const formsPluginFileResourceKey = 'file:wp-content/plugins/forms/forms.php';
+const productionOwnerPlugin = 'rpp-owner-context';
+const productionPostmetaRowId = 'meta_id:9413';
+const productionPostmetaResourceKey = `row:["wp_postmeta","${productionPostmetaRowId}"]`;
+const productionPluginFilePath = `wp-content/plugins/${productionOwnerPlugin}/${productionOwnerPlugin}.php`;
+const productionPluginFileResourceKey = `file:${productionPluginFilePath}`;
 
 function cloneJson(value) {
   return JSON.parse(JSON.stringify(value));
@@ -50,6 +55,66 @@ function planFor(base, local, remote) {
 
 function mutationFor(plan, resourceKey) {
   return plan.mutations.find((mutation) => mutation.resourceKey === resourceKey);
+}
+
+function productionOwnerContextSite({ rowMode = 'base', pluginFileMode = 'base' } = {}) {
+  return {
+    meta: {
+      evidenceScope: 'production-backed',
+      pluginOwnedResources: {
+        evidenceScope: 'production-backed',
+        allowedResources: [
+          {
+            resourceKey: productionPostmetaResourceKey,
+            pluginOwner: productionOwnerPlugin,
+            driver: 'wp-postmeta',
+            evidenceScope: 'production-backed',
+          },
+        ],
+      },
+    },
+    files: {
+      [productionPluginFilePath]: `<?php /* RPP-0413 owner context ${pluginFileMode} */`,
+    },
+    plugins: {
+      [productionOwnerPlugin]: { version: '1.0.0', active: true },
+    },
+    db: {
+      wp_posts: {
+        'ID:413': {
+          ID: 413,
+          post_title: 'RPP-0413 owner context fixture',
+          post_name: 'rpp-0413-owner-context-fixture',
+          post_content: 'Stable post row for plugin-owned postmeta proof.',
+          post_status: 'publish',
+          post_type: 'post',
+          post_parent: 0,
+          post_author: 0,
+        },
+      },
+      wp_postmeta: {
+        [productionPostmetaRowId]: {
+          meta_id: 9413,
+          post_id: 413,
+          meta_key: '_rpp_0413_owner_context',
+          meta_value: {
+            mode: rowMode,
+            proof: 'local-production-owner-context',
+          },
+          __pluginOwner: productionOwnerPlugin,
+        },
+      },
+    },
+  };
+}
+
+function captureError(fn) {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  assert.fail('Expected function to throw');
 }
 
 test('stale plugin file owner context refuses plugin-owned row before mutation with stable evidence', () => {
@@ -135,4 +200,84 @@ test('allowed plugin driver row update remains ready when owner plugin file cont
   assert.equal(plan.blockers.length, 0);
   assert.equal(result.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'local-allowed-option');
   assert.equal(result.site.files['wp-content/plugins/forms/forms.php'], '<?php /* forms shared updated code */');
+});
+
+test('local production owner-context proof carries one real mutation through apply and refuses stale plugin file', () => {
+  const source = productionOwnerContextSite();
+  const local = productionOwnerContextSite({ rowMode: 'local-apply' });
+  const readyRemote = productionOwnerContextSite();
+  const staleRemote = productionOwnerContextSite({ pluginFileMode: 'stale-remote' });
+  const staleRemoteBefore = JSON.stringify(staleRemote);
+
+  const readyPlan = planFor(source, local, readyRemote);
+  const readyMutation = mutationFor(readyPlan, productionPostmetaResourceKey);
+  const readyOwnerContextKeys = readyMutation.pluginOwnedResource.ownerContext.map((context) => context.resourceKey);
+  const applied = applyPlan(readyRemote, readyPlan);
+  const appliedRow = applied.site.db.wp_postmeta[productionPostmetaRowId];
+
+  const stalePlan = planFor(source, local, staleRemote);
+  const staleBlocker = stalePlan.blockers.find((entry) => entry.resourceKey === productionPostmetaResourceKey);
+  const staleEvidence = staleBlocker.ownerFileRefusalEvidence;
+  const staleApplyError = captureError(() => applyPlan(staleRemote, readyPlan));
+  const proofEnvelope = JSON.stringify({
+    ready: {
+      status: readyPlan.status,
+      mutations: readyPlan.mutations.length,
+      preconditions: readyPlan.preconditions.length,
+      mutation: {
+        resourceKey: readyMutation.resourceKey,
+        action: readyMutation.action,
+        localHash: readyMutation.localHash,
+        remoteBeforeHash: readyMutation.remoteBeforeHash,
+        pluginOwnedResource: {
+          pluginOwner: readyMutation.pluginOwnedResource.pluginOwner,
+          driver: readyMutation.pluginOwnedResource.driver,
+          releaseGateEvidenceScope: readyMutation.pluginOwnedResource.driverEvidence.releaseGateEvidenceScope,
+          ownerContextResourceKeys: readyOwnerContextKeys,
+        },
+      },
+    },
+    apply: {
+      appliedMutations: applied.appliedMutations,
+      appliedResourceKey: productionPostmetaResourceKey,
+    },
+    stale: {
+      status: stalePlan.status,
+      blockerClass: staleBlocker.class,
+      evidence: staleEvidence,
+      applyError: staleApplyError.details,
+    },
+  });
+
+  assert.equal(readyPlan.status, 'ready');
+  assert.equal(readyPlan.mutations.length, 1);
+  assert.equal(readyPlan.preconditions.length, 1);
+  assert.equal(readyMutation.resourceKey, productionPostmetaResourceKey);
+  assert.equal(readyMutation.action, 'put');
+  assert.equal(readyMutation.pluginOwnedResource.pluginOwner, productionOwnerPlugin);
+  assert.equal(readyMutation.pluginOwnedResource.driver, 'wp-postmeta');
+  assert.equal(readyMutation.pluginOwnedResource.driverEvidence.releaseGateEvidenceScope, 'production-backed');
+  assert.equal(readyMutation.pluginOwnedResource.ownerContextRequired, true);
+  assert.equal(readyOwnerContextKeys.includes(productionPluginFileResourceKey), true);
+  assert.equal(applied.appliedMutations, 1);
+  assert.equal(appliedRow.meta_value.mode, 'local-apply');
+  assert.equal(applied.site.files[productionPluginFilePath], source.files[productionPluginFilePath]);
+
+  assert.equal(stalePlan.status, 'blocked');
+  assert.equal(stalePlan.summary.mutations, 0);
+  assert.equal(mutationFor(stalePlan, productionPostmetaResourceKey), undefined);
+  assert.equal(staleBlocker.class, 'stale-plugin-owner-context');
+  assert.equal(staleEvidence.reasonCode, 'STALE_PLUGIN_FILE_OWNER_CONTEXT');
+  assert.equal(staleEvidence.operation, 'refuse-before-mutation');
+  assert.deepEqual(staleEvidence.stalePluginFileResourceKeys, [productionPluginFileResourceKey]);
+  assert.equal(staleEvidence.context[0].resourceKey, productionPluginFileResourceKey);
+  assert.equal(staleEvidence.context[0].remoteChange, 'update');
+  assert.ok(staleApplyError instanceof PushPlanError);
+  assert.equal(staleApplyError.code, 'STALE_PLUGIN_OWNER_CONTEXT');
+  assert.equal(staleApplyError.details.resourceKey, productionPostmetaResourceKey);
+  assert.equal(staleApplyError.details.pluginOwner, productionOwnerPlugin);
+  assert.equal(staleApplyError.details.contextResourceKey, productionPluginFileResourceKey);
+  assert.equal(JSON.stringify(staleRemote), staleRemoteBefore);
+  assert.equal(proofEnvelope.includes('local-apply'), false);
+  assert.equal(proofEnvelope.includes('stale-remote'), false);
 });
