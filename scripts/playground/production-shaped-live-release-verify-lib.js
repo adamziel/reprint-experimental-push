@@ -65,6 +65,10 @@ export function buildDurableRecoveryJournalReleaseProof({
     : [];
   const recovery = releaseProof?.recoveryInspect?.recovery || {};
   const recoveryCounts = recovery?.counts || {};
+  const oldRemoteRecoveryClassification = selectOldRemoteRecoveryClassification({
+    releaseProof,
+    planMutationCount,
+  });
   const applyRevalidationRecovery = applyRevalidation?.recoveryInspect?.recovery || {};
   const applyRevalidationCounts = applyRevalidationRecovery?.counts || {};
   const replay = releaseProof?.replay?.idempotency || {};
@@ -173,10 +177,13 @@ export function buildDurableRecoveryJournalReleaseProof({
   };
   const partialStates = {
     old: {
-      proved: releaseProof?.staleClaimRetry?.abandoned?.code === 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
-      source: 'stale-owner retry abandoned before mutation',
-      status: releaseProof?.staleClaimRetry?.abandoned?.status ?? null,
-      code: releaseProof?.staleClaimRetry?.abandoned?.code || null,
+      proved: oldRemoteRecoveryClassification.proved === true,
+      source: oldRemoteRecoveryClassification.source,
+      status: oldRemoteRecoveryClassification.status,
+      code: oldRemoteRecoveryClassification.code,
+      state: oldRemoteRecoveryClassification.state,
+      observedState: oldRemoteRecoveryClassification.observedState,
+      counts: oldRemoteRecoveryClassification.counts,
     },
     new: {
       proved: Boolean(
@@ -268,6 +275,94 @@ export function buildDurableRecoveryJournalReleaseProof({
   };
 }
 
+function selectOldRemoteRecoveryClassification({ releaseProof, planMutationCount }) {
+  const staleClaimRetry = releaseProof?.staleClaimRetry || {};
+  const candidates = [
+    releaseProof?.oldRemoteRecovery,
+    releaseProof?.recoveryClassifications?.oldRemote,
+    staleClaimRetry?.oldRemoteRecovery,
+    staleClaimRetry?.abandoned?.recovery,
+    staleClaimRetry?.abandoned?.oldRemoteRecovery,
+    staleClaimRetry?.retry?.oldRemoteRecovery,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeOldRemoteRecoveryClassification(candidate, { planMutationCount });
+    if (normalized.proved) {
+      return normalized;
+    }
+  }
+
+  const legacyAbandoned = staleClaimRetry?.abandoned || null;
+  return {
+    proved: false,
+    source: 'old remote recovery classification',
+    status: legacyAbandoned?.status ?? null,
+    code: legacyAbandoned?.code || null,
+    state: null,
+    observedState: null,
+    counts: null,
+  };
+}
+
+function normalizeOldRemoteRecoveryClassification(candidate, { planMutationCount } = {}) {
+  if (!candidate || typeof candidate !== 'object') {
+    return { proved: false };
+  }
+
+  const counts = normalizeRecoveryCounts(candidate.counts || candidate.recoveryCounts, { planMutationCount });
+  const state = candidate.state || candidate.recoveryState || (
+    typeof candidate.status === 'string' ? candidate.status : null
+  );
+  const observedState = candidate.observedState || candidate.observedRecoveryState || null;
+  const effectiveState = state === 'old-remote'
+    ? state
+    : observedState === 'old-remote'
+      ? observedState
+      : null;
+  const allOld = recoveryCountsAreAllOld(counts, { planMutationCount });
+
+  return {
+    proved: effectiveState === 'old-remote' && allOld,
+    source: candidate.source || 'old remote recovery classification',
+    status: candidate.statusCode ?? candidate.httpStatus ?? (
+      Number.isInteger(candidate.status) ? candidate.status : null
+    ),
+    code: candidate.code || null,
+    state: effectiveState || state,
+    observedState,
+    counts,
+  };
+}
+
+function normalizeRecoveryCounts(counts, { planMutationCount } = {}) {
+  if (!counts || typeof counts !== 'object') {
+    return null;
+  }
+  const normalized = {
+    old: integerOrNull(counts.old),
+    new: integerOrNull(counts.new),
+    blockedUnknown: integerOrNull(counts.blockedUnknown ?? counts.blocked_unknown),
+    total: integerOrNull(counts.total),
+  };
+  if (normalized.total === null && positiveInteger(planMutationCount)) {
+    normalized.total = planMutationCount;
+  }
+  return normalized;
+}
+
+function recoveryCountsAreAllOld(counts, { planMutationCount } = {}) {
+  if (!counts) {
+    return false;
+  }
+  const expectedTotal = positiveInteger(planMutationCount) ? planMutationCount : counts.total;
+  return positiveInteger(expectedTotal)
+    && counts.total === expectedTotal
+    && counts.old === expectedTotal
+    && counts.new === 0
+    && counts.blockedUnknown === 0;
+}
+
 function selectDurableRecoveryJournalCandidate(candidates) {
   let selected = null;
   let selectedScore = -1;
@@ -336,6 +431,10 @@ function nonEmptyString(value) {
 
 function positiveInteger(value) {
   return Number.isInteger(value) && value > 0;
+}
+
+function integerOrNull(value) {
+  return Number.isInteger(value) ? value : null;
 }
 
 export function shouldRequestCheckedLivePackagedBoundary({

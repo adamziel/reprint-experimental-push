@@ -628,6 +628,11 @@ export async function runAuthenticatedHttpPush({
     summary.staleClaimRetry = {
       abandoned: summarizeResponse(staleClaimAttempt),
     };
+    const oldRemoteRecovery = summarizeOldRemoteRecoveryClassification(staleClaimAttempt, plan);
+    if (oldRemoteRecovery) {
+      summary.staleClaimRetry.oldRemoteRecovery = oldRemoteRecovery;
+      summary.staleClaimRetry.abandoned.recovery = oldRemoteRecovery;
+    }
     updateRetryAttempts(summary, summary.staleClaimRetry.abandoned);
     if (staleClaimAttempt.status !== 500 || staleClaimAttempt.body?.code !== 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD') {
       summary.apply = summarizeResponse(staleClaimAttempt);
@@ -2075,6 +2080,62 @@ function summarizeResponse(response) {
       retryable: response.request.retryable === true,
     } : undefined,
   };
+}
+
+function summarizeOldRemoteRecoveryClassification(response, plan) {
+  const body = response?.body || {};
+  const expectedTotal = Array.isArray(plan?.mutations) ? plan.mutations.length : null;
+  const recovery = body.recovery && typeof body.recovery === 'object' ? body.recovery : {};
+  const counts = normalizeOldRemoteRecoveryCounts(recovery.counts, expectedTotal);
+  const observedState = recovery.state || null;
+  const hookProvedNoMutation =
+    response?.status === 500
+    && body.code === 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD'
+    && body.idempotency?.freshMutationWork !== true;
+  const classifiedOldRemote = (
+    observedState === 'old-remote'
+    || (observedState === 'stale-claim-all-old-simulated' && hookProvedNoMutation)
+  ) && countsAreAllOld(counts, expectedTotal);
+
+  if (!classifiedOldRemote) {
+    return null;
+  }
+
+  return {
+    source: 'stale-owner retry abandoned before mutation',
+    status: response.status,
+    code: body.code || null,
+    state: 'old-remote',
+    observedState,
+    counts,
+  };
+}
+
+function normalizeOldRemoteRecoveryCounts(counts, expectedTotal) {
+  if (!counts || typeof counts !== 'object') {
+    return null;
+  }
+
+  return {
+    old: integerOrNull(counts.old),
+    new: integerOrNull(counts.new),
+    blockedUnknown: integerOrNull(counts.blockedUnknown ?? counts.blocked_unknown),
+    total: integerOrNull(counts.total) ?? (Number.isInteger(expectedTotal) ? expectedTotal : null),
+  };
+}
+
+function countsAreAllOld(counts, expectedTotal) {
+  if (!counts || !Number.isInteger(expectedTotal) || expectedTotal <= 0) {
+    return false;
+  }
+  return counts.old === expectedTotal
+    && counts.new === 0
+    && counts.blockedUnknown === 0
+    && counts.total === expectedTotal;
+}
+
+function integerOrNull(value) {
+  return Number.isInteger(value) ? value : null;
 }
 
 function summarizeApplyRevalidation(body) {
