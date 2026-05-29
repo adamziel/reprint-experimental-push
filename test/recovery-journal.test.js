@@ -588,6 +588,91 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
   );
 });
 
+test('production recovery journal ownership record is durable after restart', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'production-ownership-claim-01';
+  const artifactRefs = {
+    releaseProof: 'artifact://release-proof-ownership',
+  };
+  const expectedOwnership = {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
+  };
+
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId,
+  });
+  const initialInspection = journal.inspect();
+  journal.close();
+
+  assert.deepEqual(initialInspection.journal.ownership, expectedOwnership);
+  assert.equal(initialInspection.journal.ownershipRecord.sequence, 2);
+  assert.equal(initialInspection.journal.ownershipRecord.restartReadable, true);
+  assert.deepEqual(initialInspection.journal.ownershipRecord.ownership, expectedOwnership);
+
+  const restarted = readRecoveryJournal(filePath);
+  const ownershipRecords = restarted.records.filter(
+    (record) => record.type === 'journal-ownership-recorded',
+  );
+
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(ownershipRecords.length, 1);
+  assert.equal(ownershipRecords[0].sequence, 2);
+  assert.equal(ownershipRecords[0].planId, plan.id);
+  assert.equal(ownershipRecords[0].state, 'owned');
+  assert.match(ownershipRecords[0].journalIdentityHash, /^[a-f0-9]{64}$/);
+  assert.equal(ownershipRecords[0].claimId, claimId);
+  assert.equal(ownershipRecords[0].claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(ownershipRecords[0].artifactRefs, artifactRefs);
+  assert.deepEqual(ownershipRecords[0].ownership, expectedOwnership);
+  assert.deepEqual(ownershipRecords[0].storageGuard, {
+    boundary: 'filesystem-compare-rename',
+    operation: 'append',
+    outcome: 'ownership-recorded',
+  });
+  assert.equal(ownershipRecords[0].fsync.requested, true);
+  assert.equal(ownershipRecords[0].fsync.strategy, 'after-append');
+  assert.equal(JSON.stringify(ownershipRecords[0]).includes(filePath), false);
+  assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(ownershipRecords[0]));
+
+  const retry = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    truncate: false,
+    claimId,
+  });
+  const retryInspection = retry.inspect();
+  retry.close();
+
+  assert.equal(retryInspection.journal.ownershipRecord.sequence, 2);
+  assert.deepEqual(retryInspection.journal.ownershipRecord.ownership, expectedOwnership);
+  assert.equal(retryInspection.journal.ownershipRecord.claimId, claimId);
+  assert.equal(
+    retryInspection.journal.ownershipRecord.claimHash,
+    recoveryClaimHash(claimId),
+  );
+
+  const afterRetry = readRecoveryJournal(filePath);
+  assert.equal(afterRetry.integrity.status, 'ok');
+  assert.equal(
+    afterRetry.records.filter((record) => record.type === 'journal-ownership-recorded').length,
+    1,
+  );
+  assert.ok(afterRetry.records.some((record) => record.type === 'journal-retry-opened'));
+});
+
 test('production recovery journal same-claim retry is append-only and preserves target envelope', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
