@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 05:56 CEST.
+- Last update: 2026-05-29 09:25 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the current RPP-0407 plugin-driver usermeta refresh.
+  the current RPP-0225 merge-invariant file type-swap refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 253
-  items checked and leaves 747 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 254
+  items checked and leaves 746 open.
 - Checked slices: 100 release-gate foundation items, 21 graph identity items,
   32 plugin-driver boundary items, 12 executor/auth items, 14 recovery items,
   7 chunking/performance items, 2 production-topology items, 40 generated
-  harness items, and 25 merge-invariant items. No release-ops items are checked
+  harness items, and 26 merge-invariant items. No release-ops items are checked
   yet.
+- Focused local file type swap versus remote descendant refresh: the current
+  lane now contains `RPP-0225` evidence in
+  `docs/evidence/rpp-0225-local-file-type-swap-remote-descendant-v2.md`,
+  `docs/scenario-matrix.md`, and `test/push-planner.test.js`. `node --test
+  --test-name-pattern=RPP-0225 test/push-planner.test.js` passed 1/1,
+  proving a local directory-to-file type swap against a live remote descendant
+  create is refused as a `file-topology-conflict`, emits no mutation or
+  precondition for the unsafe type-swap path, preserves the remote descendant as
+  `keep-remote`, keeps the independent local mutation live-remote
+  preconditioned for audit, and rejects `applyPlan()` before durable journal or
+  target mutation while serialized evidence stays hash-only. Caveat: this is
+  local Node planner/executor evidence only; it does not edit `progress.html`,
+  does not publish progress, and does not change the release verdict. Counts are
+  now 254/746; final release remains `NO-GO`.
 - Focused wp_usermeta plugin-driver semantics refresh: the current lane now
   contains `RPP-0407` evidence in
   `docs/evidence/rpp-0407-wp-usermeta-driver-semantics.md`,

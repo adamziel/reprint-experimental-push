@@ -246,7 +246,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0222 (Near-Mid / merge-invariants) Prove independent local row plus remote file edit, variant 2. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0223 (Near-Mid / merge-invariants) Prove local delete versus remote edit, variant 2. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0224 (Near-Mid / merge-invariants) Prove local directory delete versus remote descendant create, variant 2. Success: scenario matrix row names the behavior and command.
-- [ ] RPP-0225 (Near-Mid / merge-invariants) Prove local file type swap versus remote descendant, variant 2. Success: progress log records the command and caveat.
+- [x] RPP-0225 (Near-Mid / merge-invariants) Prove local file type swap versus remote descendant, variant 2. Success: progress log records the command and caveat.
 - [ ] RPP-0226 (Near-Mid / merge-invariants) Prove remote-only plugin metadata preservation, variant 2. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0227 (Near-Mid / merge-invariants) Prove local plugin data with stale owner context, variant 2. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0228 (Near-Mid / merge-invariants) Prove unknown plugin-owned resource refusal, variant 2. Success: no raw private value appears in serialized plan evidence.
