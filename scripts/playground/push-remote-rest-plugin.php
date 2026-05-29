@@ -3654,11 +3654,21 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
 ): array {
     $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
     $profile = reprint_push_lab_rest_route_profile($request);
+    $auth = reprint_push_lab_rest_auth_evidence($request);
+    $plan_payload_hash = hash('sha256', reprint_push_stable_json($plan));
+    $plan_hash = (string) ($receipt['planHash'] ?? $plan_payload_hash);
     $receipt['authBinding'] = [
         'schemaVersion' => 1,
         'scope' => (string) $profile['authScope'],
-        'identity' => reprint_push_lab_rest_auth_evidence($request)['identity'],
-        'session' => reprint_push_lab_rest_auth_evidence($request)['session'],
+        'planHash' => $plan_hash,
+        'binding' => reprint_push_lab_rest_authenticated_receipt_subject_binding(
+            $auth,
+            $profile,
+            $signed_request,
+            $plan_hash
+        ),
+        'identity' => $auth['identity'],
+        'session' => $auth['session'],
         'pushSession' => [
             'sessionHash' => $signed_request['sessionHash'],
             'signingKeyHash' => $signed_request['signingKeyHash'],
@@ -3673,9 +3683,15 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'dryRunRoute' => (string) $profile['dryRunRoute'],
             'routeProfile' => (string) $profile['profile'],
             'labBacked' => (bool) ($profile['labBacked'] ?? false),
-            'planPayloadHash' => hash('sha256', reprint_push_stable_json($plan)),
+            'planHash' => $plan_hash,
+            'planPayloadHash' => $plan_payload_hash,
             'dryRunBodyHash' => hash('sha256', reprint_push_stable_json($payload)),
             'dryRunRawBodyHash' => (string) $signed_request['contentHash'],
+        ],
+        'plan' => [
+            'schemaVersion' => 1,
+            'planHash' => $plan_hash,
+            'planPayloadHash' => $plan_payload_hash,
         ],
         'preconditions' => [
             'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
@@ -3690,6 +3706,27 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
     $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
 
     return $receipt;
+}
+
+function reprint_push_lab_rest_authenticated_receipt_subject_binding(
+    array $auth,
+    array $profile,
+    array $signed_request,
+    string $plan_hash
+): array {
+    $identity = isset($auth['identity']) && is_array($auth['identity']) ? $auth['identity'] : [];
+    $session = isset($auth['session']) && is_array($auth['session']) ? $auth['session'] : [];
+    $binding = [
+        'schemaVersion' => 1,
+        'scopeHash' => hash('sha256', (string) ($profile['authScope'] ?? '')),
+        'identityHash' => hash('sha256', reprint_push_stable_json($identity)),
+        'authSessionHash' => hash('sha256', reprint_push_stable_json($session)),
+        'pushSessionHash' => (string) ($signed_request['sessionHash'] ?? ''),
+        'planHash' => $plan_hash,
+    ];
+    $binding['bindingHash'] = hash('sha256', reprint_push_stable_json($binding));
+
+    return $binding;
 }
 
 function reprint_push_lab_rest_authenticated_receipt_snapshot_hash_binding(
@@ -3765,6 +3802,13 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt auth scope does not match authenticated push scope.', $receipt);
     }
 
+    $expected_plan_hash = hash('sha256', reprint_push_stable_json($plan));
+    if ((string) ($receipt['planHash'] ?? '') !== $expected_plan_hash
+        || (string) ($binding['planHash'] ?? '') !== $expected_plan_hash
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt plan hash binding does not match the supplied plan.', $receipt);
+    }
+
     $expires_at = strtotime((string) ($binding['expiresAt'] ?? ''));
     if (!$expires_at || $expires_at < time()) {
         reprint_push_lab_rest_auth_receipt_mismatch('Authenticated dry-run receipt has expired.', $receipt, 'AUTH_RECEIPT_EXPIRED');
@@ -3792,9 +3836,18 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
     $request_binding = isset($binding['request']) && is_array($binding['request']) ? $binding['request'] : [];
     if ((string) ($request_binding['restNamespace'] ?? '') !== (string) $profile['restNamespace']
         || (string) ($request_binding['dryRunRoute'] ?? '') !== (string) $profile['dryRunRoute']
-        || (string) ($request_binding['planPayloadHash'] ?? '') !== hash('sha256', reprint_push_stable_json($plan))
+        || (string) ($request_binding['planHash'] ?? '') !== $expected_plan_hash
+        || (string) ($request_binding['planPayloadHash'] ?? '') !== $expected_plan_hash
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt request binding does not match the supplied apply plan.', $receipt);
+    }
+
+    $plan_binding = isset($binding['plan']) && is_array($binding['plan']) ? $binding['plan'] : [];
+    if ((int) ($plan_binding['schemaVersion'] ?? 0) !== 1
+        || (string) ($plan_binding['planHash'] ?? '') !== $expected_plan_hash
+        || (string) ($plan_binding['planPayloadHash'] ?? '') !== $expected_plan_hash
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt plan binding does not match the supplied plan hash.', $receipt);
     }
 
     $source_binding = isset($binding['source']) && is_array($binding['source']) ? $binding['source'] : [];
@@ -3832,6 +3885,19 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
     }
 
     $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
+    $subject_binding = isset($binding['binding']) && is_array($binding['binding']) ? $binding['binding'] : [];
+    $expected_subject_binding = reprint_push_lab_rest_authenticated_receipt_subject_binding(
+        $current,
+        $profile,
+        $signed_request,
+        $expected_plan_hash
+    );
+    foreach ($expected_subject_binding as $field => $expected_value) {
+        if ((string) ($subject_binding[$field] ?? '') !== (string) $expected_value) {
+            reprint_push_lab_rest_auth_receipt_mismatch('Receipt subject binding does not match the current session, identity, scope, and plan hash.', $receipt);
+        }
+    }
+
     $push_session = isset($binding['pushSession']) && is_array($binding['pushSession'])
         ? $binding['pushSession']
         : [];
