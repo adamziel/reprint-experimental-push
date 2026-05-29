@@ -448,7 +448,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0414 (Mid / plugin-driver) Implement owner context stale metadata refusal, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0415 (Mid / plugin-driver) Implement remote plugin removal refusal, variant 1. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0416 (Mid / plugin-driver) Implement driver delete support flag, variant 1. Success: focused test proves exact driver behavior.
-- [ ] RPP-0417 (Mid / plugin-driver) Implement driver dry-run validation hook, variant 1. Success: generated harness covers supported and unsupported variants.
+- [x] RPP-0417 (Mid / plugin-driver) Implement driver dry-run validation hook, variant 1. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0418 (Mid / plugin-driver) Implement driver apply validation hook, variant 1. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0419 (Mid / plugin-driver) Implement driver audit evidence redaction, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0420 (Mid / plugin-driver) Implement arbitrary plugin fixture package, variant 1. Success: release gate notes whether evidence is local or production-backed.
