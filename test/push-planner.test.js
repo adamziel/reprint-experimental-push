@@ -2832,6 +2832,209 @@ test('refuses direct conflicts and preserves the remote snapshot', () => {
   assert.equal(remote.db.wp_posts['ID:1'].post_title, 'Remote title');
 });
 
+test('RPP-0209 serializes conflict evidence as hash-only redacted metadata', () => {
+  const conflictFixtures = [
+    {
+      label: 'direct file conflict',
+      resourceKey: 'file:index.php',
+      expectedClass: 'file-conflict',
+      fileEvidence: true,
+      build() {
+        const base = cloneJson(baseSite());
+        const local = cloneJson(base);
+        const remote = cloneJson(base);
+        const privateValues = [
+          '<?php echo "rpp0209-base-private-file";',
+          '<?php echo "rpp0209-local-private-file";',
+          '<?php echo "rpp0209-remote-private-file";',
+        ];
+        base.files['index.php'] = privateValues[0];
+        local.files['index.php'] = privateValues[1];
+        remote.files['index.php'] = privateValues[2];
+        return { base, local, remote, privateValues };
+      },
+    },
+    {
+      label: 'direct row conflict',
+      resourceKey: 'row:["wp_posts","ID:1"]',
+      expectedClass: 'row-conflict',
+      build() {
+        const base = cloneJson(baseSite());
+        const local = cloneJson(base);
+        const remote = cloneJson(base);
+        const privateValues = [
+          'rpp0209-base-private-row-title',
+          'rpp0209-local-private-row-title',
+          'rpp0209-remote-private-row-title',
+        ];
+        base.db.wp_posts['ID:1'].post_title = privateValues[0];
+        local.db.wp_posts['ID:1'].post_title = privateValues[1];
+        remote.db.wp_posts['ID:1'].post_title = privateValues[2];
+        return { base, local, remote, privateValues };
+      },
+    },
+    {
+      label: 'plugin data conflict',
+      resourceKey: 'row:["wp_options","option_name:forms_settings"]',
+      expectedClass: 'plugin-data-conflict',
+      expectedPluginOwner: 'forms',
+      build() {
+        const base = cloneJson(baseSite());
+        const local = cloneJson(base);
+        const remote = cloneJson(base);
+        const privateValues = [
+          'rpp0209-base-private-plugin-mode',
+          'rpp0209-local-private-plugin-mode',
+          'rpp0209-remote-private-plugin-mode',
+        ];
+        base.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[0];
+        local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[1];
+        remote.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+        return { base, local, remote, privateValues };
+      },
+    },
+  ];
+
+  const conflictEvidence = [];
+  const allPrivateValues = [];
+
+  for (const fixture of conflictFixtures) {
+    const {
+      base,
+      local,
+      remote,
+      privateValues,
+    } = fixture.build();
+    const firstPlan = planFor(base, local, remote);
+    const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+    const conflict = firstPlan.conflicts.find((entry) => entry.resourceKey === fixture.resourceKey);
+    const durableJournal = failingDurableJournal();
+    const remoteBefore = JSON.stringify(remote);
+    const error = captureError(() => applyPlan(remote, firstPlan, { durableJournal }));
+    const redactedConflicts = redactEvidence({ conflicts: firstPlan.conflicts });
+
+    allPrivateValues.push(...privateValues);
+
+    assert.equal(firstPlan.status, 'conflict', `${fixture.label} status`);
+    assertPlannerSummaryMatchesEvidence(firstPlan, `RPP-0209 ${fixture.label}`);
+    assert.deepEqual(firstPlan.summary, {
+      mutations: 0,
+      decisions: 0,
+      conflicts: 1,
+      blockers: 0,
+      atomicGroups: 0,
+    }, `${fixture.label} summary`);
+    assert.deepEqual(
+      mergeInvariantHashOnlyPlanEvidence(firstPlan),
+      mergeInvariantHashOnlyPlanEvidence(secondPlan),
+      `${fixture.label} hash-only evidence should be deterministic`,
+    );
+    assert.ok(conflict, `${fixture.label} conflict missing`);
+    assert.equal(conflict.class, fixture.expectedClass, `${fixture.label} class`);
+    assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop', `${fixture.label} policy`);
+    assert.equal(conflict.pluginOwner || null, fixture.expectedPluginOwner || null, `${fixture.label} owner`);
+    assert.equal(conflict.change.localChange, 'update', `${fixture.label} local change`);
+    assert.equal(conflict.change.remoteChange, 'update', `${fixture.label} remote change`);
+    assert.equal(conflict.change.base.state, 'present', `${fixture.label} base state`);
+    assert.equal(conflict.change.local.state, 'present', `${fixture.label} local state`);
+    assert.equal(conflict.change.remote.state, 'present', `${fixture.label} remote state`);
+    assert.equal(conflict.change.base.hash, conflict.baseHash, `${fixture.label} base hash`);
+    assert.equal(conflict.change.local.hash, conflict.localHash, `${fixture.label} local hash`);
+    assert.equal(conflict.change.remote.hash, conflict.remoteHash, `${fixture.label} remote hash`);
+    assert.match(conflict.baseHash, /^[a-f0-9]{64}$/, `${fixture.label} base hash format`);
+    assert.match(conflict.localHash, /^[a-f0-9]{64}$/, `${fixture.label} local hash format`);
+    assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/, `${fixture.label} remote hash format`);
+    assert.deepEqual(
+      Object.keys(conflict.change.base).sort(),
+      fixture.fileEvidence ? ['fileType', 'hash', 'state'] : ['hash', 'state'],
+      `${fixture.label} base evidence keys`,
+    );
+    assert.deepEqual(
+      Object.keys(conflict.change.local).sort(),
+      fixture.fileEvidence ? ['fileType', 'hash', 'state'] : ['hash', 'state'],
+      `${fixture.label} local evidence keys`,
+    );
+    assert.deepEqual(
+      Object.keys(conflict.change.remote).sort(),
+      fixture.fileEvidence ? ['fileType', 'hash', 'state'] : ['hash', 'state'],
+      `${fixture.label} remote evidence keys`,
+    );
+    if (fixture.fileEvidence) {
+      assert.equal(conflict.change.base.fileType, 'file', `${fixture.label} base file type`);
+      assert.equal(conflict.change.local.fileType, 'file', `${fixture.label} local file type`);
+      assert.equal(conflict.change.remote.fileType, 'file', `${fixture.label} remote file type`);
+    }
+    assert.equal(mutationFor(firstPlan, fixture.resourceKey), undefined, `${fixture.label} mutation`);
+    assert.equal(
+      firstPlan.preconditions.some((precondition) => precondition.resourceKey === fixture.resourceKey),
+      false,
+      `${fixture.label} precondition`,
+    );
+    assert.deepEqual(findEvidenceRedactionIssues({ conflicts: firstPlan.conflicts }), [], `${fixture.label} raw issues`);
+    assert.deepEqual(findEvidenceRedactionIssues(redactedConflicts), [], `${fixture.label} redacted issues`);
+    assert.deepEqual(redactedConflicts, { conflicts: firstPlan.conflicts }, `${fixture.label} redaction changed hash-only conflict evidence`);
+
+    assert.ok(error instanceof PushPlanError, `${fixture.label} error type`);
+    assert.equal(error.code, 'PLAN_NOT_READY', `${fixture.label} apply code`);
+    assert.deepEqual(error.details, { status: 'conflict' }, `${fixture.label} apply details`);
+    assert.equal(JSON.stringify(remote), remoteBefore, `${fixture.label} remote unchanged`);
+    assert.deepEqual(durableJournal.events, [], `${fixture.label} durable journal untouched`);
+
+    conflictEvidence.push({
+      scenario: fixture.label,
+      resourceKey: conflict.resourceKey,
+      class: conflict.class,
+      pluginOwner: conflict.pluginOwner || null,
+      resolutionPolicy: conflict.resolutionPolicy,
+      change: {
+        localChange: conflict.change.localChange,
+        remoteChange: conflict.change.remoteChange,
+        base: conflict.change.base,
+        local: conflict.change.local,
+        remote: conflict.change.remote,
+      },
+      hashes: {
+        baseHash: conflict.baseHash,
+        localHash: conflict.localHash,
+        remoteHash: conflict.remoteHash,
+      },
+      refusal: {
+        code: error.code,
+        status: error.details.status,
+        detailsHash: sha256Evidence(error.details),
+      },
+      conflictHash: sha256Evidence({
+        resourceKey: conflict.resourceKey,
+        class: conflict.class,
+        pluginOwner: conflict.pluginOwner || null,
+        resolutionPolicy: conflict.resolutionPolicy,
+        baseHash: conflict.baseHash,
+        localHash: conflict.localHash,
+        remoteHash: conflict.remoteHash,
+      }),
+    });
+  }
+
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0209 test/push-planner.test.js',
+    behavior: 'Direct file, row, and plugin-data conflicts serialize change evidence as state/hash metadata only.',
+    conflicts: conflictEvidence,
+  };
+  const serializedEvidence = JSON.stringify({
+    ...evidenceEnvelope,
+    evidenceHash: sha256Evidence(evidenceEnvelope),
+  });
+
+  assert.match(JSON.parse(serializedEvidence).evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  for (const conflict of JSON.parse(serializedEvidence).conflicts) {
+    assert.match(conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(conflict.refusal.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  }
+  for (const privateValue of allPrivateValues) {
+    assert.equal(serializedEvidence.includes(privateValue), false, `RPP-0209 evidence leaked ${privateValue}`);
+  }
+});
+
 test('RPP-0217 conflict plans refuse apply before mutation with stable evidence', () => {
   const base = baseSite();
   const local = cloneJson(base);
