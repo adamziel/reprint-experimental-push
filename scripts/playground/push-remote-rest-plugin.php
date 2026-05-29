@@ -1542,11 +1542,15 @@ function reprint_push_lab_rest_apply_revalidation_evidence(
         $verified_preconditions
     ));
 
+    $live_revalidation = isset($accepted['liveSourceRevalidation']) && is_array($accepted['liveSourceRevalidation'])
+        ? $accepted['liveSourceRevalidation']
+        : [];
+
     return [
         'schemaVersion' => 1,
         'required' => 'fresh-live-hashes-before-first-mutation',
-        'phase' => 'before-first-mutation',
-        'checkedAgainst' => 'live-remote',
+        'phase' => (string) ($live_revalidation['phase'] ?? 'before-first-mutation'),
+        'checkedAgainst' => (string) ($live_revalidation['checkedAgainst'] ?? 'live-remote'),
         'planHash' => (string) ($accepted['planEvidence']['planHash'] ?? ''),
         'receiptHash' => (string) ($accepted['receipt']['receiptHash'] ?? ''),
         'preconditionSetHash' => (string) ($accepted['planEvidence']['preconditionSetHash'] ?? ''),
@@ -1554,6 +1558,10 @@ function reprint_push_lab_rest_apply_revalidation_evidence(
         'mutationCount' => count($mutations),
         'verifiedCount' => count($verified_preconditions),
         'verifiedResourceKeys' => $verified_resource_keys,
+        'liveSource' => [
+            'snapshotHash' => (string) ($live_revalidation['snapshotHash'] ?? ''),
+            'dbJournalCursor' => (string) ($live_revalidation['dbJournalCursor'] ?? ''),
+        ],
         'receiptBinding' => reprint_push_lab_rest_apply_receipt_binding_evidence($accepted),
         'claim' => [
             'activeClaimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($claim_entry['claimKeyHash'] ?? null),
@@ -1594,6 +1602,57 @@ function reprint_push_lab_rest_apply_receipt_binding_evidence(array $accepted): 
         'dryRunBodyHash' => (string) ($request['dryRunBodyHash'] ?? ''),
         'dryRunContentHash' => (string) ($push_session['dryRunContentHash'] ?? ''),
     ];
+}
+
+function reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
+    array $plan,
+    array $accepted,
+    array $context,
+    array $started_entry
+): array {
+    $mutations = isset($accepted['mutations']) && is_array($accepted['mutations'])
+        ? $accepted['mutations']
+        : [];
+    $precondition_entries = isset($accepted['preconditions']) && is_array($accepted['preconditions'])
+        ? $accepted['preconditions']
+        : [];
+    $plan_evidence = isset($accepted['planEvidence']) && is_array($accepted['planEvidence'])
+        ? $accepted['planEvidence']
+        : [];
+    $receipt = isset($accepted['receipt']) && is_array($accepted['receipt'])
+        ? $accepted['receipt']
+        : [];
+    $db_journal_cursor = 'db-journal:' . (int) ($started_entry['sequence'] ?? 0);
+    $live_context = $context + $plan_evidence + [
+        'receiptHash' => (string) ($receipt['receiptHash'] ?? ''),
+        'dbJournalCursor' => $db_journal_cursor,
+        'applyRevalidationPhase' => 'before-first-mutation',
+        'checkedAgainst' => 'live-remote',
+    ];
+
+    $current = reprint_push_export_snapshot();
+    reprint_push_protocol_validate_fixture_atomic_dependencies($plan, $current, $mutations, $live_context);
+    $verified_preconditions = reprint_push_protocol_verify_preconditions(
+        $current,
+        $precondition_entries,
+        $live_context
+    );
+
+    $accepted['verifiedPreconditions'] = $verified_preconditions;
+    $accepted['liveSourceRevalidation'] = [
+        'schemaVersion' => 1,
+        'phase' => 'before-first-mutation',
+        'checkedAgainst' => 'live-remote',
+        'snapshotHash' => hash('sha256', reprint_push_stable_json($current)),
+        'verifiedCount' => count($verified_preconditions),
+        'verifiedResourceKeys' => array_values(array_map(
+            static fn (array $entry): string => (string) ($entry['resourceKey'] ?? ''),
+            $verified_preconditions
+        )),
+        'dbJournalCursor' => $db_journal_cursor,
+    ];
+
+    return $accepted;
 }
 
 function reprint_push_lab_rest_run_db_journal_apply(
@@ -1713,6 +1772,13 @@ function reprint_push_lab_rest_run_db_journal_apply(
             'dbJournal' => reprint_push_lab_rest_db_journal_evidence($started_entry),
         ];
     }
+
+    $accepted = reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
+        $plan,
+        $accepted,
+        $context,
+        $started_entry
+    );
 
     $options = reprint_push_lab_rest_lab_options($payload);
     $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
