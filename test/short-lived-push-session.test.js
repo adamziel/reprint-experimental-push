@@ -47,7 +47,7 @@ test('short-lived push sessions are minted by preflight with a bounded TTL and n
   assert.match(routeSource, /const REPRINT_PUSH_LAB_SIGNED_SESSION_TTL = 300;/);
   assertBefore(
     verifySignedRequest,
-    '$session = reprint_push_lab_rest_mint_signed_session($auth, $signing_key_hash);',
+    '$session = reprint_push_lab_rest_mint_signed_session($auth, $signing_key_hash, $current_source);',
     "'id' => $session_id",
   );
   assert.match(mintSession, /random_bytes\(32\)/);

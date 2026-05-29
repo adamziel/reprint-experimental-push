@@ -460,6 +460,8 @@ function reprint_push_lab_rest_authenticated_preflight(WP_REST_Request $request)
             'type' => $session_type,
             'id' => $signature['session']['id'] ?? null,
             'sessionHash' => $signature['session']['sessionHash'] ?? null,
+            'sourceHash' => $signature['session']['sourceHash'] ?? null,
+            'sourceUrlHash' => $signature['session']['sourceUrlHash'] ?? null,
             'applicationPasswordUuid' => $auth['session']['applicationPasswordUuid'] ?? null,
             'credentialHash' => $auth['session']['credentialHash'] ?? null,
             'signingKeyHash' => $signature['signingKeyHash'] ?? null,
@@ -1505,6 +1507,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
                 $receipt = reprint_push_lab_rest_receipt_payload($payload);
                 $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
                 $result = reprint_push_lab_rest_run_db_journal_apply(
+                    $request,
                     $payload,
                     $context,
                     $claim_entry,
@@ -1556,7 +1559,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
             $receipt = reprint_push_lab_rest_receipt_payload($payload);
             $accepted = reprint_push_lab_rest_validate_apply_for_db_journal($plan, $receipt, $context);
         }
-        $result = reprint_push_lab_rest_run_db_journal_apply($payload, $context, $opened_entry, $plan, $receipt, $accepted);
+        $result = reprint_push_lab_rest_run_db_journal_apply($request, $payload, $context, $opened_entry, $plan, $receipt, $accepted);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
         if (is_array($accepted)) {
@@ -1723,6 +1726,11 @@ function reprint_push_lab_rest_apply_revalidation_evidence(
         'verifiedResourceKeys' => $verified_resource_keys,
         'liveSource' => [
             'snapshotHash' => (string) ($live_revalidation['snapshotHash'] ?? ''),
+            'sourceHash' => (string) ($live_revalidation['sourceHash'] ?? ''),
+            'sourceUrlHash' => (string) ($live_revalidation['sourceUrlHash'] ?? ''),
+            'receiptSourceHash' => (string) ($live_revalidation['receiptSourceHash'] ?? ''),
+            'receiptSourceUrlHash' => (string) ($live_revalidation['receiptSourceUrlHash'] ?? ''),
+            'sourceBindingHash' => (string) ($live_revalidation['sourceBindingHash'] ?? ''),
             'dbJournalCursor' => (string) ($live_revalidation['dbJournalCursor'] ?? ''),
         ],
         'receiptBinding' => reprint_push_lab_rest_apply_receipt_binding_evidence($accepted),
@@ -1760,6 +1768,7 @@ function reprint_push_lab_rest_apply_receipt_binding_evidence(array $accepted): 
         'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
         'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
         'sourceHash' => (string) ($source['sourceHash'] ?? ''),
+        'sourceUrlHash' => (string) ($source['sourceUrlHash'] ?? ''),
         'sessionHash' => (string) ($push_session['sessionHash'] ?? ''),
         'dryRunIdempotencyKeyHash' => (string) ($push_session['dryRunIdempotencyKeyHash'] ?? ''),
         'dryRunBodyHash' => (string) ($request['dryRunBodyHash'] ?? ''),
@@ -1767,7 +1776,41 @@ function reprint_push_lab_rest_apply_receipt_binding_evidence(array $accepted): 
     ];
 }
 
+function reprint_push_lab_rest_apply_live_source_binding_evidence(WP_REST_Request $request, array $accepted): array
+{
+    $receipt = isset($accepted['receipt']) && is_array($accepted['receipt'])
+        ? $accepted['receipt']
+        : [];
+    $binding = isset($receipt['authBinding']) && is_array($receipt['authBinding'])
+        ? $receipt['authBinding']
+        : [];
+    $receipt_source = isset($binding['source']) && is_array($binding['source'])
+        ? $binding['source']
+        : [];
+    $current_source = reprint_push_lab_rest_source_identity($request);
+    $ok = reprint_push_lab_rest_source_binding_matches($receipt_source, $current_source);
+
+    return [
+        'schemaVersion' => 1,
+        'ok' => $ok,
+        'phase' => 'before-first-mutation',
+        'checkedAgainst' => 'live-source-url',
+        'sourceHash' => (string) ($current_source['sourceHash'] ?? ''),
+        'sourceUrlHash' => (string) ($current_source['sourceUrlHash'] ?? ''),
+        'receiptSourceHash' => (string) ($receipt_source['sourceHash'] ?? ''),
+        'receiptSourceUrlHash' => (string) ($receipt_source['sourceUrlHash'] ?? ''),
+        'sourceBindingHash' => hash('sha256', reprint_push_stable_json([
+            'receiptSourceHash' => (string) ($receipt_source['sourceHash'] ?? ''),
+            'receiptSourceUrlHash' => (string) ($receipt_source['sourceUrlHash'] ?? ''),
+            'currentSourceHash' => (string) ($current_source['sourceHash'] ?? ''),
+            'currentSourceUrlHash' => (string) ($current_source['sourceUrlHash'] ?? ''),
+            'phase' => 'before-first-mutation',
+        ])),
+    ];
+}
+
 function reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
+    WP_REST_Request $request,
     array $plan,
     array $accepted,
     array $context,
@@ -1793,6 +1836,15 @@ function reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
         'checkedAgainst' => 'live-remote',
     ];
 
+    $current_source = reprint_push_lab_rest_apply_live_source_binding_evidence($request, $accepted);
+    if (($current_source['ok'] ?? false) !== true) {
+        reprint_push_lab_rest_auth_receipt_mismatch(
+            'Receipt source URL binding does not match the current live source before apply mutation.',
+            $receipt,
+            'AUTH_SOURCE_BINDING_MISMATCH'
+        );
+    }
+
     $current = reprint_push_export_snapshot();
     reprint_push_protocol_validate_fixture_atomic_dependencies($plan, $current, $mutations, $live_context);
     $verified_preconditions = reprint_push_protocol_verify_preconditions(
@@ -1807,6 +1859,11 @@ function reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
         'phase' => 'before-first-mutation',
         'checkedAgainst' => 'live-remote',
         'snapshotHash' => hash('sha256', reprint_push_stable_json($current)),
+        'sourceHash' => (string) ($current_source['sourceHash'] ?? ''),
+        'sourceUrlHash' => (string) ($current_source['sourceUrlHash'] ?? ''),
+        'receiptSourceHash' => (string) ($current_source['receiptSourceHash'] ?? ''),
+        'receiptSourceUrlHash' => (string) ($current_source['receiptSourceUrlHash'] ?? ''),
+        'sourceBindingHash' => (string) ($current_source['sourceBindingHash'] ?? ''),
         'verifiedCount' => count($verified_preconditions),
         'verifiedResourceKeys' => array_values(array_map(
             static fn (array $entry): string => (string) ($entry['resourceKey'] ?? ''),
@@ -1819,6 +1876,7 @@ function reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
 }
 
 function reprint_push_lab_rest_run_db_journal_apply(
+    WP_REST_Request $request,
     array $payload,
     array $context,
     array $claim_entry,
@@ -1937,6 +1995,7 @@ function reprint_push_lab_rest_run_db_journal_apply(
     }
 
     $accepted = reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
+        $request,
         $plan,
         $accepted,
         $context,
@@ -2972,6 +3031,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
 
     $signing_key = (string) $auth['signingKey'];
     $signing_key_hash = hash('sha256', $signing_key);
+    $current_source = reprint_push_lab_rest_source_identity($request);
     $auth_string = $nonce . $timestamp . $content_hash;
     $expected_auth_signature = hash_hmac('sha256', $auth_string, $signing_key);
     if (!reprint_push_lab_rest_signature_matches($auth_signature, $expected_auth_signature)) {
@@ -3009,10 +3069,12 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
             || !hash_equals((string) ($session['signingKeyHash'] ?? ''), $signing_key_hash)
             || (int) ($session['userId'] ?? 0) !== (int) ($auth['userId'] ?? 0)
             || (string) ($session['scope'] ?? '') !== REPRINT_PUSH_LAB_AUTH_SCOPE
+            || !hash_equals((string) ($session['sourceHash'] ?? ''), (string) ($current_source['sourceHash'] ?? ''))
+            || !hash_equals((string) ($session['sourceUrlHash'] ?? ''), (string) ($current_source['sourceUrlHash'] ?? ''))
         ) {
             return reprint_push_lab_rest_signature_failure(
                 'SIGNED_SESSION_BINDING_MISMATCH',
-                'X-Reprint-Push-Session is not bound to the current identity and credential.',
+                'X-Reprint-Push-Session is not bound to the current identity, credential, and source URL.',
                 401
             );
         }
@@ -3053,7 +3115,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
     }
 
     if ($mode === 'preflight') {
-        $session = reprint_push_lab_rest_mint_signed_session($auth, $signing_key_hash);
+        $session = reprint_push_lab_rest_mint_signed_session($auth, $signing_key_hash, $current_source);
         $session_id = (string) $session['id'];
     }
 
@@ -3072,6 +3134,8 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
             'session' => [
                 'id' => $session_id,
                 'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+                'sourceHash' => (string) ($session['sourceHash'] ?? ''),
+                'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
                 'issuedAt' => (string) ($session['issuedAt'] ?? ''),
                 'expiresAt' => (string) ($session['expiresAt'] ?? ''),
             ],
@@ -3185,7 +3249,7 @@ function reprint_push_lab_rest_canonical_query(string $query): string
     }, $pairs));
 }
 
-function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_key_hash): array
+function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_key_hash, array $source_identity): array
 {
     $token = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
     $session_hash = hash('sha256', $token);
@@ -3199,6 +3263,8 @@ function reprint_push_lab_rest_mint_signed_session(array $auth, string $signing_
         'userId' => (int) ($auth['userId'] ?? 0),
         'scope' => REPRINT_PUSH_LAB_AUTH_SCOPE,
         'signingKeyHash' => $signing_key_hash,
+        'sourceHash' => (string) ($source_identity['sourceHash'] ?? ''),
+        'sourceUrlHash' => (string) ($source_identity['sourceUrlHash'] ?? ''),
         'issuedAt' => gmdate('Y-m-d\TH:i:s\Z', $now),
         'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', $now + REPRINT_PUSH_LAB_SIGNED_SESSION_TTL),
         'expiresAtUnix' => $now + REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
@@ -3356,6 +3422,8 @@ function reprint_push_lab_rest_signed_request_evidence(WP_REST_Request $request)
             'schemaVersion' => 1,
             'type' => 'short-lived-push-session',
             'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+            'sourceHash' => (string) ($session['sourceHash'] ?? ''),
+            'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
             'issuedAt' => (string) ($session['issuedAt'] ?? ''),
             'expiresAt' => (string) ($session['expiresAt'] ?? ''),
             'ttlSeconds' => REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
@@ -3970,6 +4038,8 @@ function reprint_push_lab_rest_authenticated_push_session_issue_binding(
         'signingKeyHash' => (string) ($signed_request['signingKeyHash'] ?? ''),
         'scopeHash' => hash('sha256', (string) ($profile['authScope'] ?? '')),
         'identityHash' => hash('sha256', reprint_push_stable_json($identity)),
+        'sourceHash' => (string) ($session['sourceHash'] ?? ''),
+        'sourceUrlHash' => (string) ($session['sourceUrlHash'] ?? ''),
         'issuedAt' => (string) ($session['issuedAt'] ?? ''),
         'expiresAt' => (string) ($session['expiresAt'] ?? ''),
         'ttlSeconds' => REPRINT_PUSH_LAB_SIGNED_SESSION_TTL,
@@ -4036,7 +4106,10 @@ function reprint_push_lab_rest_authenticated_receipt_snapshot_hash_binding(
 function reprint_push_lab_rest_source_identity(WP_REST_Request $request): array
 {
     $profile = reprint_push_lab_rest_route_profile($request);
+    $source_url = reprint_push_lab_rest_normalized_source_url((string) get_site_url());
     $identity = [
+        'sourceUrl' => $source_url,
+        'sourceUrlHash' => hash('sha256', $source_url),
         'siteUrl' => get_site_url(),
         'homeUrl' => get_home_url(),
         'restNamespace' => (string) $profile['restNamespace'],
@@ -4045,6 +4118,31 @@ function reprint_push_lab_rest_source_identity(WP_REST_Request $request): array
     ];
     $identity['sourceHash'] = hash('sha256', reprint_push_stable_json($identity));
     return $identity;
+}
+
+function reprint_push_lab_rest_normalized_source_url(string $source_url): string
+{
+    $source_url = trim($source_url);
+    if ($source_url === '') {
+        return '';
+    }
+
+    return rtrim($source_url, '/');
+}
+
+function reprint_push_lab_rest_source_binding_matches(array $source_binding, array $current_source): bool
+{
+    foreach (['sourceHash', 'sourceUrlHash', 'sourceUrl', 'siteUrl', 'homeUrl', 'restNamespace', 'routeProfile'] as $field) {
+        if ((string) ($source_binding[$field] ?? '') !== (string) ($current_source[$field] ?? '')) {
+            return false;
+        }
+    }
+
+    if ((bool) ($source_binding['labBacked'] ?? false) !== (bool) ($current_source['labBacked'] ?? false)) {
+        return false;
+    }
+
+    return true;
 }
 
 function reprint_push_lab_rest_validate_authenticated_receipt(
@@ -4123,13 +4221,7 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
 
     $source_binding = isset($binding['source']) && is_array($binding['source']) ? $binding['source'] : [];
     $current_source = reprint_push_lab_rest_source_identity($request);
-    if ((string) ($source_binding['sourceHash'] ?? '') === ''
-        || (string) ($source_binding['sourceHash'] ?? '') !== (string) $current_source['sourceHash']
-        || (string) ($source_binding['siteUrl'] ?? '') !== (string) $current_source['siteUrl']
-        || (string) ($source_binding['homeUrl'] ?? '') !== (string) $current_source['homeUrl']
-        || (string) ($source_binding['restNamespace'] ?? '') !== (string) $current_source['restNamespace']
-        || (string) ($source_binding['routeProfile'] ?? '') !== (string) $current_source['routeProfile']
-    ) {
+    if (!reprint_push_lab_rest_source_binding_matches($source_binding, $current_source)) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt source binding does not match the current live source.', $receipt);
     }
 
