@@ -230,7 +230,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0206 (Near-Mid / merge-invariants) Implement remote-only plugin metadata preservation, variant 1. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0207 (Near-Mid / merge-invariants) Implement local plugin data with stale owner context, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0208 (Near-Mid / merge-invariants) Implement unknown plugin-owned resource refusal, variant 1. Success: no raw private value appears in serialized plan evidence.
-- [ ] RPP-0209 (Near-Mid / merge-invariants) Implement conflict evidence hash redaction, variant 1. Success: scenario matrix row names the behavior and command.
+- [x] RPP-0209 (Near-Mid / merge-invariants) Implement conflict evidence hash redaction, variant 1. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0210 (Near-Mid / merge-invariants) Implement planner summary count consistency, variant 1. Success: progress log records the command and caveat.
 - [ ] RPP-0211 (Near-Mid / merge-invariants) Implement mutation/precondition one-to-one mapping, variant 1. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0212 (Near-Mid / merge-invariants) Implement remoteBeforeHash correctness, variant 1. Success: executor rejects forged or stale mutation attempts.
