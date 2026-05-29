@@ -115,6 +115,16 @@ rejecting stale replay before mutation; non-ready cases drift the same serialize
 option remotely, fail closed, and keep private serialized payload evidence
 redacted to hashes and metadata.
 
+RPP-0146 adds `wpOptionsSerializedChangesVariant3` coverage for the same regular
+serialized option update surface with an explicit variant-3 target tag. The
+deterministic roster emits 20 variant-3 target cases: 10 ready serialized option
+updates and 10 non-ready remote-drift conflicts, with two cases in every tier.
+The focused proof records only resource keys, serialized shape kinds, counts,
+redaction metadata, and hashes, verifies the ready case applies the planned
+serialized option update and rejects stale replay before mutation, then verifies
+the conflicting serialized option refuses apply without mutating the remote
+digest.
+
 The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,
 and delete one file, then reject stale replay before mutation; conflict cases
