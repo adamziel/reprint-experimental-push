@@ -751,7 +751,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0702 (Far / storage-performance) Implement SQLite compare-and-swap write guard, variant 1. Success: guarded writes reject stale storage state.
 - [x] RPP-0703 (Far / storage-performance) Implement transaction boundary policy, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0704 (Far / storage-performance) Implement filesystem compare-and-rename write, variant 1. Success: large-site run finishes inside documented budgets.
-- [ ] RPP-0705 (Far / storage-performance) Implement filesystem fsync evidence, variant 1. Success: fast-path lane updates only after correctness gates hold.
+- [x] RPP-0705 (Far / storage-performance) Implement filesystem fsync evidence, variant 1. Success: fast-path lane updates only after correctness gates hold.
 - [x] RPP-0706 (Far / storage-performance) Implement large upload chunk manifest, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0707 (Far / storage-performance) Implement chunk hash verification, variant 1. Success: guarded writes reject stale storage state.
 - [x] RPP-0708 (Far / storage-performance) Implement chunk resume after interruption, variant 1. Success: chunk transfer resumes without duplicate mutation work.
