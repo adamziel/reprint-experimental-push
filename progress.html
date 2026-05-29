@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T03:32:00+02:00">Last updated: May 29, 2026, 03:32 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T03:40:00+02:00">Last updated: May 29, 2026, 03:40 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>236</strong>
+        <strong>237</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>764</strong>
+        <strong>763</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>38/38 generated harness tests pass across 620 deterministic three-way push cases, including plugin-owned custom-table and atomic plugin install stack variant-1 coverage.</span>
+            <span><strong>Generated push harness</strong>39/39 generated harness tests pass across 620 deterministic three-way push cases, including remote-only preservation, plugin-owned custom-table, and atomic plugin install stack variant-1 coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,10 +406,11 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0100 release gate</span>
+        <span>RPP-0119 generated harness</span>
       </div>
-      <p>The latest refresh integrates RPP-0100 release-verifier verify:release failure-reason carry-through evidence: focused tests prove the missing-source verifier exits 1 before live verifier startup, prints the final bracketed held marker, carries the nonzero exit, named reason, checked command, marker, and mutationAttempted=false into release gates, fails closed with VERIFY_RELEASE_FAILURE_REASON_REQUIRED when the reason is missing, and keeps credential sentinels out of stdout/stderr. Counts are now 236/764; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0119 generated remote-only preservation evidence: focused tests prove nine tier-1 through tier-9 ready remote-only preservation target cases reject stale replay with PRECONDITION_FAILED before mutation, keep the remote-only row as a hash-only keep-remote decision with no mutation or live-remote precondition, preserve the remote-only row title on apply, and keep private row, file, and stale replay payloads out of serialized evidence. Counts are now 237/763; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">remote-only preservation: 1/1</span>
         <span class="tag">failure reason carry-through: 2/2</span>
         <span class="tag">status row carry-through: 37/37</span>
         <span class="tag">progress timestamp carry-through: 35/35</span>
@@ -443,8 +444,8 @@
         <span class="tag">tmux marker regression: 1/1</span>
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
-        <span class="tag">generated harness: 38/38</span>
-        <span class="tag">checked goals: 236/1000</span>
+        <span class="tag">generated harness: 39/39</span>
+        <span class="tag">checked goals: 237/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
