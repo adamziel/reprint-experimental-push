@@ -487,6 +487,14 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         return {
           supported: false,
           className: 'unsupported-plugin-owned-resource',
+          reasonCode: 'UNKNOWN_PLUGIN_OWNED_RESOURCE',
+          unknownPluginOwnedResourceRefusalEvidence: unknownPluginOwnedResourceRefusalEvidence({
+            resource,
+            owner,
+            base,
+            local,
+            remote,
+          }),
         };
       }
 
@@ -939,6 +947,49 @@ function pluginOwnedDriverDecisionAuditEvidence({
       localHash,
       remoteHash,
     },
+  };
+}
+
+function unknownPluginOwnedResourceRefusalEvidence({
+  resource,
+  owner,
+  base,
+  local,
+  remote,
+}) {
+  const baseValue = getResource(base, resource);
+  const localValue = getResource(local, resource);
+  const remoteValue = getResource(remote, resource);
+  const baseHash = resourceHash(base, resource);
+  const localHash = resourceHash(local, resource);
+  const remoteHash = resourceHash(remote, resource);
+
+  return {
+    schemaVersion: 1,
+    reasonCode: 'UNKNOWN_PLUGIN_OWNED_RESOURCE',
+    operation: 'planner-refusal',
+    outcome: 'blocked-before-mutation',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    resourceKey: resource.key,
+    pluginOwner: owner,
+    driver: null,
+    policySource: null,
+    resource: pluginDriverResourceEvidence(resource),
+    hashes: {
+      baseHash,
+      localHash,
+      remoteHash,
+    },
+    change: changeEvidence(
+      resource,
+      baseValue,
+      localValue,
+      remoteValue,
+      baseHash,
+      localHash,
+      remoteHash,
+    ),
   };
 }
 
@@ -3233,6 +3284,9 @@ function addPluginOwnedResourceBlocker(plan, {
       ? { remotePluginRemovalRefusalEvidence: support.remotePluginRemovalRefusalEvidence }
       : {}),
     ...(support.ownerContext ? { ownerContext: support.ownerContext } : {}),
+    ...(support.unknownPluginOwnedResourceRefusalEvidence
+      ? { unknownPluginOwnedResourceRefusalEvidence: support.unknownPluginOwnedResourceRefusalEvidence }
+      : {}),
     ...(support.serializedOptionValidationEvidence
       ? { serializedOptionValidationEvidence: support.serializedOptionValidationEvidence }
       : {}),

@@ -3921,33 +3921,55 @@ test('allows plugin-owned postmeta-like rows with explicit push intent policy', 
 
 test('RPP-0208 blocks unknown plugin-owned custom table rows without leaking values', () => {
   const resourceKey = 'row:["wp_forms_entries","entry_id:9"]';
+  const privateValues = ['base-private-entry', 'local-private-entry'];
   const base = baseSite();
   base.db.wp_forms_entries = {
-    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+    'entry_id:9': { entry_id: 9, payload: privateValues[0], __pluginOwner: 'forms' },
   };
   const local = baseSite();
   local.db.wp_forms_entries = {
-    'entry_id:9': { entry_id: 9, payload: 'local-private-entry', __pluginOwner: 'forms' },
+    'entry_id:9': { entry_id: 9, payload: privateValues[1], __pluginOwner: 'forms' },
   };
   const remote = baseSite();
   remote.db.wp_forms_entries = {
-    'entry_id:9': { entry_id: 9, payload: 'base-private-entry', __pluginOwner: 'forms' },
+    'entry_id:9': { entry_id: 9, payload: privateValues[0], __pluginOwner: 'forms' },
   };
 
   const plan = planFor(base, local, remote);
   const blocker = plan.blockers[0];
-  const planJson = JSON.stringify(plan);
+  const refusalEvidence = blocker.unknownPluginOwnedResourceRefusalEvidence;
+  const planEvidence = {
+    status: plan.status,
+    summary: plan.summary,
+    mutations: plan.mutations,
+    preconditions: plan.preconditions,
+    blocker,
+  };
+  const planJson = JSON.stringify(planEvidence);
 
   assert.equal(plan.status, 'blocked');
   assert.equal(plan.summary.mutations, 0);
+  assert.equal(plan.preconditions.some((precondition) => precondition.resourceKey === resourceKey), false);
   assert.equal(blocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(blocker.reasonCode, 'UNKNOWN_PLUGIN_OWNED_RESOURCE');
   assert.equal(blocker.pluginOwner, 'forms');
   assert.equal(blocker.resourceKey, resourceKey);
   assert.match(blocker.baseHash, /^[a-f0-9]{64}$/);
   assert.match(blocker.localHash, /^[a-f0-9]{64}$/);
   assert.match(blocker.remoteHash, /^[a-f0-9]{64}$/);
-  assert.equal(planJson.includes('base-private-entry'), false);
-  assert.equal(planJson.includes('local-private-entry'), false);
+  assert.equal(refusalEvidence.reasonCode, 'UNKNOWN_PLUGIN_OWNED_RESOURCE');
+  assert.equal(refusalEvidence.operation, 'planner-refusal');
+  assert.equal(refusalEvidence.outcome, 'blocked-before-mutation');
+  assert.equal(refusalEvidence.format, 'hash-only');
+  assert.equal(refusalEvidence.rawValuesIncluded, false);
+  assert.deepEqual(refusalEvidence.hashes, {
+    baseHash: blocker.baseHash,
+    localHash: blocker.localHash,
+    remoteHash: blocker.remoteHash,
+  });
+  for (const rawValue of privateValues) {
+    assert.equal(planJson.includes(rawValue), false, `RPP-0208 plan evidence leaked ${rawValue}`);
+  }
 
   const forged = tamperReadyPlan(plan, (copy) => {
     const mutationId = 'mutation-forged-unknown-plugin-owned-resource';
@@ -3985,8 +4007,9 @@ test('RPP-0208 blocks unknown plugin-owned custom table rows without leaking val
   assert.equal(error.code, 'UNSUPPORTED_PLUGIN_OWNED_RESOURCE');
   assert.equal(error.details.resourceKey, resourceKey);
   assert.equal(JSON.stringify(remote), before);
-  assert.equal(errorDetails.includes('base-private-entry'), false);
-  assert.equal(errorDetails.includes('local-private-entry'), false);
+  for (const rawValue of privateValues) {
+    assert.equal(errorDetails.includes(rawValue), false, `RPP-0208 apply refusal leaked ${rawValue}`);
+  }
 });
 
 test('RPP-0228 refuses unknown plugin-owned resources before mutation with redacted evidence', () => {
