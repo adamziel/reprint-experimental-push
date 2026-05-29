@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 03:18 CEST.
+- Last update: 2026-05-29 03:26 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 234
-  items checked and leaves 766 open.
-- Checked slices: 98 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 235
+  items checked and leaves 765 open.
+- Checked slices: 99 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 36 generated
   harness items, and 21 merge-invariant items. No release-ops items are checked
@@ -294,6 +294,18 @@ linked implementation artifacts.
   held by production provenance, stale/non-ISO carried timestamps fail closed
   with `PROGRESS_RELEASE_TIMESTAMP_REQUIRED`, and credential sentinels stay out
   of stdout/stderr.
+- Release verifier `.agents/RELEASE_GATES.md` status row carry-through refresh:
+  the current lane now contains
+  `test/release-verifier-agents-status-row-carry-through-focused-regression.test.js`
+  and `docs/evidence/rpp-0099-release-verifier-agents-status-row-carry-through.md`
+  for `RPP-0099`. The command
+  `umask 0022 && node --test test/release-verifier-agents-status-row-carry-through-focused-regression.test.js test/release-gate-agents-status-row-focused-regression.test.js test/release-gates-status-row.test.js test/release-gate-status-row-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 37/37, proving verifier-shaped `.agents/RELEASE_GATES.md` row
+  evidence is parsed and carried into release gates, dishonest
+  `release_verdict: 4/4` evidence fails closed with
+  `AGENTS_RELEASE_GATES_ROW_REQUIRED`, the generated `0/4` row passes the
+  status-row gate while final release remains held by production provenance,
+  and credential sentinels stay out of stdout/stderr.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also
