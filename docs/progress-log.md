@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 03:26 CEST.
+- Last update: 2026-05-29 03:32 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 235
-  items checked and leaves 765 open.
-- Checked slices: 99 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 236
+  items checked and leaves 764 open.
+- Checked slices: 100 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 36 generated
   harness items, and 21 merge-invariant items. No release-ops items are checked
@@ -306,6 +306,21 @@ linked implementation artifacts.
   `AGENTS_RELEASE_GATES_ROW_REQUIRED`, the generated `0/4` row passes the
   status-row gate while final release remains held by production provenance,
   and credential sentinels stay out of stdout/stderr.
+- Release verifier `verify:release` failure reason carry-through refresh:
+  the current lane now contains
+  `test/release-verifier-failure-reason-carry-through-focused-regression.test.js`
+  and `docs/evidence/rpp-0100-release-verifier-failure-reason-carry-through.md`
+  for `RPP-0100`. The command
+  `umask 0022 && node --test test/release-verifier-failure-reason-carry-through-focused-regression.test.js`
+  passed 2/2, proving the missing-source verifier exits `1` before live
+  verifier startup, prints
+  `[verify-release:held exit=1 reason=REPRINT_PUSH_LIVE_SOURCE_REQUIRED mutationAttempted=false]`
+  as the final tmux-visible status marker, carries the nonzero exit, named
+  reason, checked command, marker, and `mutationAttempted: false` into
+  `verifyReleaseFailure` evidence, keeps the final-release path held by
+  production provenance after `20/20` candidate gates, fails closed at `19/20`
+  with `VERIFY_RELEASE_FAILURE_REASON_REQUIRED` when the carried reason is
+  removed, and keeps credential sentinels out of stdout/stderr.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also
