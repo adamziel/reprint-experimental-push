@@ -180,6 +180,41 @@ function generatedIndependentLocalFileRemoteRowTargets(testCase) {
   };
 }
 
+function generatedRemoteOnlyPluginMetadataTargets(testCase) {
+  const pluginName = 'reprint-push-forms-fixture';
+  const baseMetadata = testCase.base.plugins[pluginName];
+  const localMetadata = testCase.local.plugins[pluginName];
+  const remoteMetadata = testCase.remote.plugins[pluginName];
+
+  assert.ok(baseMetadata, `${testCase.id} missing base plugin metadata`);
+  assert.deepEqual(
+    localMetadata,
+    baseMetadata,
+    `${testCase.id} remote-only plugin metadata should be unchanged locally`,
+  );
+  assert.notDeepEqual(
+    remoteMetadata,
+    baseMetadata,
+    `${testCase.id} remote-only plugin metadata should drift remotely`,
+  );
+  assert.equal(
+    typeof remoteMetadata.channel,
+    'string',
+    `${testCase.id} missing remote-only plugin metadata channel`,
+  );
+  assert.ok(
+    remoteMetadata.channel.startsWith('remote-metadata-'),
+    `${testCase.id} remote-only plugin metadata channel should use generated fixture marker`,
+  );
+
+  return {
+    pluginName,
+    resourceKey: `plugin:${pluginName}`,
+    remoteMetadata,
+    privateValues: [remoteMetadata.channel],
+  };
+}
+
 function pluginResource(name) {
   return { type: 'plugin', name, key: `plugin:${name}` };
 }
@@ -537,6 +572,100 @@ function assertIndependentLocalFileRemoteRowInvariant({
   );
   assert.equal(result.site.files[filePath], expectedFileValue, `${label} file apply result`);
   assert.equal(result.site.db.wp_posts[rowId].post_title, expectedRowTitle, `${label} remote row preserved`);
+
+  return { plan: firstPlan, result, durableJournal };
+}
+
+function assertRemoteOnlyPluginMetadataInvariant({
+  label,
+  base,
+  local,
+  remote,
+  now = fixedNow,
+  pluginName,
+  expectedPluginMetadata,
+  privateValues = [],
+  expectedSummary,
+  expectedLocalFile,
+  minimumMutations,
+}) {
+  const pluginKey = `plugin:${pluginName}`;
+  const firstPlan = createPushPlan({ base, local, remote, now });
+  const secondPlan = createPushPlan({
+    base: cloneJson(base),
+    local: cloneJson(local),
+    remote: cloneJson(remote),
+    now,
+  });
+  const pluginDecision = decisionFor(firstPlan, pluginKey);
+  const pluginPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === pluginKey);
+  const planEvidence = mergeInvariantHashOnlyPlanEvidence(firstPlan);
+  const durableJournal = failingDurableJournal();
+  const result = applyPlan(cloneJson(remote), firstPlan, { durableJournal });
+
+  assert.equal(firstPlan.status, 'ready', `${label} status`);
+  assertPlannerSummaryMatchesEvidence(firstPlan, label);
+  if (expectedSummary) {
+    assert.deepEqual(firstPlan.summary, expectedSummary, `${label} summary`);
+  }
+  if (minimumMutations !== undefined) {
+    assert.ok(
+      firstPlan.mutations.length >= minimumMutations,
+      `${label} should retain independent local mutations`,
+    );
+  }
+  assert.deepEqual(
+    planEvidence,
+    mergeInvariantHashOnlyPlanEvidence(secondPlan),
+    `${label} hash-only evidence changed between deterministic planning runs`,
+  );
+  assert.ok(pluginDecision, `${label} missing remote-only plugin metadata decision`);
+  assert.equal(pluginDecision.decision, 'keep-remote', `${label} plugin metadata decision`);
+  assert.equal(pluginDecision.change.localChange, 'unchanged', `${label} plugin metadata local change`);
+  assert.equal(pluginDecision.change.remoteChange, 'update', `${label} plugin metadata remote change`);
+  assert.match(pluginDecision.remoteHash, /^[a-f0-9]{64}$/, `${label} plugin metadata remote hash`);
+  assert.equal(
+    pluginDecision.change.remote.hash,
+    pluginDecision.remoteHash,
+    `${label} plugin metadata decision hash mismatch`,
+  );
+  assert.equal(mutationFor(firstPlan, pluginKey), undefined, `${label} plugin metadata mutation should not emit`);
+  assert.equal(pluginPrecondition, undefined, `${label} plugin metadata precondition should not emit`);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+  assertHashOnlyEvidenceRedacted(planEvidence, privateValues);
+  assertHashOnlyEvidenceRedacted(pluginDecision, privateValues);
+  assertHashOnlyEvidenceRedacted(durableJournal.events, privateValues);
+  assert.equal(
+    durableJournal.events.some((event) => event.resourceKey === pluginKey),
+    false,
+    `${label} plugin metadata should not appear in mutation journal events`,
+  );
+
+  if (expectedLocalFile) {
+    const fileKey = `file:${expectedLocalFile.path}`;
+    const fileMutation = mutationFor(firstPlan, fileKey);
+    const filePrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === fileKey);
+
+    assert.ok(fileMutation, `${label} missing independent local file mutation`);
+    assert.equal(fileMutation.action, 'put', `${label} independent local file mutation action`);
+    assert.equal(filePrecondition?.mutationId, fileMutation.id, `${label} independent file precondition id`);
+    assert.equal(
+      filePrecondition.expectedHash,
+      fileMutation.remoteBeforeHash,
+      `${label} independent file precondition hash`,
+    );
+    assert.equal(
+      result.site.files[expectedLocalFile.path],
+      expectedLocalFile.value,
+      `${label} independent local file apply result`,
+    );
+  }
+
+  assert.deepEqual(
+    result.site.plugins[pluginName],
+    expectedPluginMetadata,
+    `${label} remote-only plugin metadata should be preserved`,
+  );
 
   return { plan: firstPlan, result, durableJournal };
 }
@@ -1620,35 +1749,93 @@ test('preserves remote-only plugin changes', () => {
 test('RPP-0206 preserves remote-only plugin metadata while applying independent local changes', () => {
   const base = baseSite();
   const local = baseSite();
-  local.files['index.php'] = '<?php echo "local ordinary edit";';
+  const privateLocalFile = '<?php echo "rpp0206-local-ordinary-edit";';
+  const privateRemoteChannel = 'rpp0206-remote-only-channel';
+  local.files['index.php'] = privateLocalFile;
   const remote = baseSite();
   remote.plugins.forms = {
     version: '1.2.3',
     active: false,
-    updateChannel: 'remote-only-channel',
+    updateChannel: privateRemoteChannel,
   };
 
-  const plan = planFor(base, local, remote);
-  const pluginDecision = decisionFor(plan, 'plugin:forms');
-  const localMutation = mutationFor(plan, 'file:index.php');
-  const result = applyPlan(remote, plan);
-
-  assert.equal(plan.status, 'ready');
-  assert.equal(localMutation.action, 'put');
-  assert.equal(pluginDecision.decision, 'keep-remote');
-  assert.equal(pluginDecision.change.remoteChange, 'update');
-  assert.equal(mutationFor(plan, 'plugin:forms'), undefined);
-  assert.equal(
-    plan.preconditions.some((precondition) => precondition.resourceKey === 'plugin:forms'),
-    false,
-  );
-  assertEveryMutationHasLiveRemotePrecondition(plan);
-  assert.equal(result.site.files['index.php'], '<?php echo "local ordinary edit";');
-  assert.deepEqual(result.site.plugins.forms, {
-    version: '1.2.3',
-    active: false,
-    updateChannel: 'remote-only-channel',
+  assertRemoteOnlyPluginMetadataInvariant({
+    label: 'RPP-0206 focused plugin metadata invariant',
+    base,
+    local,
+    remote,
+    pluginName: 'forms',
+    expectedPluginMetadata: {
+      version: '1.2.3',
+      active: false,
+      updateChannel: privateRemoteChannel,
+    },
+    privateValues: [privateLocalFile, privateRemoteChannel],
+    expectedSummary: {
+      mutations: 1,
+      decisions: 1,
+      conflicts: 0,
+      blockers: 0,
+      atomicGroups: 0,
+    },
+    expectedLocalFile: {
+      path: 'index.php',
+      value: privateLocalFile,
+    },
   });
+
+  const generatedCases = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'remote-only-plugin-metadata');
+  assert.deepEqual(
+    [...new Set(generatedCases.map((testCase) => testCase.tier))],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    'generated remote-only plugin metadata fixtures must cover every tier',
+  );
+
+  for (const generatedCase of generatedCases) {
+    assert.ok(generatedCase.tags.has('remote-preserve'), `${generatedCase.id} missing remote preserve tag`);
+    assert.ok(
+      generatedCase.tags.has('plugin-metadata-preserve'),
+      `${generatedCase.id} missing plugin metadata preserve tag`,
+    );
+    const validation = validateGeneratedCase(generatedCase);
+    const target = generatedRemoteOnlyPluginMetadataTargets(generatedCase);
+
+    assert.equal(validation.status, 'ready', `${generatedCase.id} generated validation status`);
+    assert.equal(validation.applied, true, `${generatedCase.id} generated validation apply result`);
+    assert.equal(
+      validation.unplannedRemotePreserved,
+      true,
+      `${generatedCase.id} generated validation must preserve unplanned remote plugin metadata`,
+    );
+    assert.equal(
+      validation.staleReplayRejected,
+      true,
+      `${generatedCase.id} generated validation must reject stale replay`,
+    );
+    assert.equal(
+      validation.staleReplayRejectionCode,
+      'PRECONDITION_FAILED',
+      `${generatedCase.id} generated stale replay refusal code`,
+    );
+    assert.equal(
+      validation.staleReplayRemoteUnchanged,
+      true,
+      `${generatedCase.id} generated stale replay must leave remote unchanged`,
+    );
+
+    assertRemoteOnlyPluginMetadataInvariant({
+      label: `RPP-0206 generated ${generatedCase.id}`,
+      base: generatedCase.base,
+      local: generatedCase.local,
+      remote: generatedCase.remote,
+      now: fixedGeneratedHarnessNow,
+      pluginName: target.pluginName,
+      expectedPluginMetadata: target.remoteMetadata,
+      privateValues: target.privateValues,
+      minimumMutations: 1,
+    });
+  }
 });
 
 test('combines local ordinary changes while preserving remote-only plugin changes', () => {
