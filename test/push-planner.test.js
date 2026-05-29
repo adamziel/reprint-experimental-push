@@ -720,6 +720,84 @@ function assertPlannerSummaryMatchesEvidence(plan, label) {
   );
 }
 
+
+function rpp0211MutationPreconditionMappingFixture() {
+  const pluginOptionResourceKey = 'row:["wp_options","option_name:forms_settings"]';
+  const base = cloneJson(baseSite());
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateValues = [
+    '<?php echo "rpp0211-local-private-file";',
+    'rpp0211-local-private-post-title',
+    'rpp0211-local-private-option-mode',
+    'rpp0211-forged-precondition-secret',
+  ];
+
+  local.files['index.php'] = privateValues[0];
+  local.db.wp_posts['ID:1'].post_title = privateValues[1];
+  local.db.wp_options['option_name:forms_settings'].option_value.mode = privateValues[2];
+  local.meta = {
+    pushPolicy: pluginOwnedResourcePolicy(
+      allowedPluginOwnedResource(pluginOptionResourceKey, 'forms', 'wp-option'),
+    ),
+  };
+
+  return {
+    base,
+    local,
+    remote,
+    privateValues,
+    mutationResourceKeys: [
+      'file:index.php',
+      pluginOptionResourceKey,
+      'row:["wp_posts","ID:1"]',
+    ],
+  };
+}
+
+function assertRpp0211MutationPreconditionOneToOne(plan, remote, label) {
+  assert.equal(
+    plan.preconditions.length,
+    plan.mutations.length,
+    `${label} should emit exactly one live-remote precondition per mutation`,
+  );
+
+  const mutationById = new Map();
+  for (const mutation of plan.mutations) {
+    assert.equal(mutationById.has(mutation.id), false, `${label} duplicate mutation id ${mutation.id}`);
+    assert.equal(mutation.resource?.key, mutation.resourceKey, `${label} mutation resource key mismatch`);
+    mutationById.set(mutation.id, mutation);
+  }
+
+  const preconditionByMutationId = new Map();
+  for (const precondition of plan.preconditions) {
+    assert.equal(
+      preconditionByMutationId.has(precondition.mutationId),
+      false,
+      `${label} duplicate precondition for ${precondition.mutationId}`,
+    );
+    preconditionByMutationId.set(precondition.mutationId, precondition);
+    const mutation = mutationById.get(precondition.mutationId);
+    assert.ok(mutation, `${label} orphan precondition ${precondition.mutationId}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey, `${label} precondition resource key mismatch`);
+    assert.deepEqual(precondition.resource, mutation.resource, `${label} precondition resource object mismatch`);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash, `${label} precondition hash mismatch`);
+    assert.equal(
+      precondition.expectedHash,
+      resourceHash(remote, mutation.resource),
+      `${label} precondition should bind to live remote hash`,
+    );
+    assert.equal(precondition.checkedAgainst, 'live-remote', `${label} precondition scope mismatch`);
+  }
+
+  for (const mutation of plan.mutations) {
+    assert.ok(
+      preconditionByMutationId.has(mutation.id),
+      `${label} missing precondition for ${mutation.id}`,
+    );
+  }
+}
+
 function buildRpp0210SummaryCountCases() {
   const readyBase = baseSite();
   const readyLocal = baseSite();
@@ -862,6 +940,145 @@ test('RPP-0210 planner summary counts match emitted evidence deterministically',
       plannerSummaryEvidenceEnvelope(secondPlan),
       `${fixture.label} summary envelope changed between deterministic planning runs`,
     );
+  }
+});
+
+
+test('RPP-0211 maps mixed resource mutations and preconditions one-to-one', () => {
+  const {
+    base,
+    local,
+    remote,
+    privateValues,
+    mutationResourceKeys,
+  } = rpp0211MutationPreconditionMappingFixture();
+  const plan = planFor(base, local, remote);
+  const deterministicPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const planEvidence = mergeInvariantHashOnlyPlanEvidence(plan);
+  const durableJournal = failingDurableJournal();
+  const result = applyPlan(cloneJson(remote), plan, { durableJournal });
+
+  assert.equal(plan.status, 'ready');
+  assert.deepEqual(plan.summary, {
+    mutations: 3,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(
+    plan.mutations.map((mutation) => mutation.resourceKey).sort(),
+    [...mutationResourceKeys].sort(),
+  );
+  assert.deepEqual(
+    plan.preconditions.map((precondition) => precondition.resourceKey).sort(),
+    [...mutationResourceKeys].sort(),
+  );
+  assertRpp0211MutationPreconditionOneToOne(plan, remote, 'RPP-0211 focused mixed fixture');
+  assert.deepEqual(
+    planEvidence,
+    mergeInvariantHashOnlyPlanEvidence(deterministicPlan),
+    'RPP-0211 focused evidence changed between deterministic planning runs',
+  );
+  assertHashOnlyEvidenceRedacted(planEvidence, privateValues);
+  assertHashOnlyEvidenceRedacted(durableJournal.events, privateValues);
+  assert.equal(result.site.files['index.php'], local.files['index.php']);
+  assert.equal(result.site.db.wp_posts['ID:1'].post_title, local.db.wp_posts['ID:1'].post_title);
+  assert.equal(
+    result.site.db.wp_options['option_name:forms_settings'].option_value.mode,
+    local.db.wp_options['option_name:forms_settings'].option_value.mode,
+  );
+});
+
+test('RPP-0211 executor rejects forged mutation/precondition mappings before mutation', () => {
+  const {
+    base,
+    local,
+    remote,
+    privateValues,
+  } = rpp0211MutationPreconditionMappingFixture();
+  const plan = planFor(base, local, remote);
+  assert.equal(plan.status, 'ready');
+  assertRpp0211MutationPreconditionOneToOne(plan, remote, 'RPP-0211 forged-plan baseline');
+  const [firstMutation, secondMutation] = plan.mutations;
+  assert.ok(firstMutation, 'RPP-0211 baseline should include a first mutation');
+  assert.ok(secondMutation, 'RPP-0211 baseline should include a second mutation');
+
+  const forgedCases = [
+    {
+      label: 'missing precondition',
+      issueCode: 'MISSING_LIVE_REMOTE_PRECONDITION',
+      mutate(forged) {
+        forged.preconditions = forged.preconditions.filter(
+          (precondition) => precondition.mutationId !== firstMutation.id,
+        );
+      },
+    },
+    {
+      label: 'duplicate precondition',
+      issueCode: 'DUPLICATE_LIVE_REMOTE_PRECONDITION',
+      mutate(forged) {
+        forged.preconditions.push(cloneJson(forged.preconditions[0]));
+      },
+    },
+    {
+      label: 'orphan precondition',
+      issueCode: 'PRECONDITION_WITHOUT_MUTATION',
+      mutate(forged) {
+        forged.preconditions.push({
+          ...cloneJson(forged.preconditions[0]),
+          mutationId: 'mutation-rpp0211-orphan',
+        });
+      },
+    },
+    {
+      label: 'resource key mismatch',
+      issueCode: 'PRECONDITION_RESOURCE_KEY_MISMATCH',
+      mutate(forged) {
+        const precondition = forged.preconditions.find((entry) => entry.mutationId === firstMutation.id);
+        precondition.resourceKey = secondMutation.resourceKey;
+      },
+    },
+    {
+      label: 'resource object mismatch',
+      issueCode: 'PRECONDITION_RESOURCE_OBJECT_MISMATCH',
+      mutate(forged) {
+        const precondition = forged.preconditions.find((entry) => entry.mutationId === firstMutation.id);
+        precondition.resource = cloneJson(secondMutation.resource);
+      },
+    },
+    {
+      label: 'hash mismatch',
+      issueCode: 'PRECONDITION_HASH_MISMATCH',
+      mutate(forged) {
+        const precondition = forged.preconditions.find((entry) => entry.mutationId === firstMutation.id);
+        precondition.expectedHash = '0'.repeat(64);
+      },
+    },
+    {
+      label: 'non-live-remote precondition',
+      issueCode: 'PRECONDITION_NOT_LIVE_REMOTE',
+      mutate(forged) {
+        const precondition = forged.preconditions.find((entry) => entry.mutationId === firstMutation.id);
+        precondition.checkedAgainst = 'dry-run-snapshot';
+      },
+    },
+  ];
+
+  for (const forgedCase of forgedCases) {
+    const forgedPlan = tamperReadyPlan(plan, forgedCase.mutate);
+    const remoteBefore = cloneJson(remote);
+    const remoteBeforeHash = digest(remoteBefore);
+    const error = captureError(() => applyPlan(remoteBefore, forgedPlan));
+
+    assert.ok(error instanceof PushPlanError, forgedCase.label);
+    assert.equal(error.code, 'PLAN_INVARIANT_VIOLATION', forgedCase.label);
+    assert.ok(
+      error.details.issues.some((issue) => issue.code === forgedCase.issueCode),
+      `${forgedCase.label} should report ${forgedCase.issueCode}`,
+    );
+    assert.equal(digest(remoteBefore), remoteBeforeHash, `${forgedCase.label} mutated the remote`);
+    assertHashOnlyEvidenceRedacted(error.details, privateValues);
   }
 });
 

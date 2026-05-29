@@ -49,6 +49,45 @@ function claimFencedDurableJournal(events) {
   };
 }
 
+function assertRpp0211GeneratedMutationPreconditionOneToOne(testCase, plan) {
+  assert.equal(
+    plan.preconditions.length,
+    plan.mutations.length,
+    `${testCase.id} should emit exactly one precondition per mutation`,
+  );
+
+  const mutationById = new Map();
+  for (const mutation of plan.mutations) {
+    assert.equal(mutationById.has(mutation.id), false, `${testCase.id} duplicate mutation id ${mutation.id}`);
+    assert.equal(mutation.resource?.key, mutation.resourceKey, `${testCase.id} mutation resource key mismatch`);
+    mutationById.set(mutation.id, mutation);
+  }
+
+  const preconditionByMutationId = new Map();
+  for (const precondition of plan.preconditions) {
+    assert.equal(
+      preconditionByMutationId.has(precondition.mutationId),
+      false,
+      `${testCase.id} duplicate precondition for ${precondition.mutationId}`,
+    );
+    preconditionByMutationId.set(precondition.mutationId, precondition);
+    const mutation = mutationById.get(precondition.mutationId);
+    assert.ok(mutation, `${testCase.id} orphan precondition ${precondition.mutationId}`);
+    assert.equal(precondition.resourceKey, mutation.resourceKey);
+    assert.deepEqual(precondition.resource, mutation.resource);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(precondition.expectedHash, resourceHash(testCase.remote, mutation.resource));
+    assert.equal(precondition.checkedAgainst, 'live-remote');
+  }
+
+  for (const mutation of plan.mutations) {
+    assert.ok(
+      preconditionByMutationId.has(mutation.id),
+      `${testCase.id} missing precondition for ${mutation.id}`,
+    );
+  }
+}
+
 const requiredFamilies = [
   'local-file-update',
   'remote-only-post-update',
@@ -272,6 +311,40 @@ test('generated push harness covers 300+ general cases from trivial to highly co
     'post_author mapping tag needs stale/blocked coverage',
   );
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0211 generated cases keep mutation preconditions one-to-one', () => {
+  const cases = generatePushHarnessCases();
+  const summary = {
+    ready: 0,
+    nonReady: 0,
+    mutations: 0,
+    preconditions: 0,
+    maxMutations: 0,
+  };
+
+  for (const testCase of cases) {
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+
+    assertRpp0211GeneratedMutationPreconditionOneToOne(testCase, plan);
+    summary.ready += plan.status === 'ready' ? 1 : 0;
+    summary.nonReady += plan.status === 'ready' ? 0 : 1;
+    summary.mutations += plan.mutations.length;
+    summary.preconditions += plan.preconditions.length;
+    summary.maxMutations = Math.max(summary.maxMutations, plan.mutations.length);
+  }
+
+  assert.equal(cases.length, DEFAULT_GENERATED_PUSH_CASES);
+  assert.ok(summary.ready > 0, 'generated RPP-0211 proof needs ready fixtures');
+  assert.ok(summary.nonReady > 0, 'generated RPP-0211 proof needs non-ready fixtures');
+  assert.ok(summary.mutations > cases.length, 'generated RPP-0211 proof needs broad mutation coverage');
+  assert.equal(summary.preconditions, summary.mutations);
+  assert.ok(summary.maxMutations >= 15, 'generated RPP-0211 proof needs high-mutation fixtures');
 });
 
 test('RPP-0407 generated harness covers supported and unsupported wp_usermeta driver variants', () => {
