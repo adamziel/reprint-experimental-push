@@ -328,7 +328,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 Focus: replace narrow stable-ID graph cases with general identity mapping.
 
 - [x] RPP-0301 (Mid / graph-identity) Implement post_parent page hierarchy, variant 1. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0302 (Mid / graph-identity) Implement featured image attachment reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0302 (Mid / graph-identity) Implement featured image attachment reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0303 (Mid / graph-identity) Implement post author reference, variant 1. Success: generated harness includes ready and stale cases.
 - [x] RPP-0304 (Mid / graph-identity) Implement postmeta post_id reference, variant 1. Success: local production verifier carries the target through apply.
 - [x] RPP-0305 (Mid / graph-identity) Implement comment post reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
