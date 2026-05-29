@@ -537,7 +537,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 
 Focus: ship a real production push protocol on the Reprint endpoint.
 
-- [ ] RPP-0501 (Mid-Far / executor-auth) Implement production preflight route, variant 1. Success: real endpoint test runs against a live URL.
+- [x] RPP-0501 (Mid-Far / executor-auth) Implement production preflight route, variant 1. Success: real endpoint test runs against a live URL.
 - [x] RPP-0502 (Mid-Far / executor-auth) Implement production snapshot hashes route, variant 1. Success: negative auth cases fail before JSON parsing and mutation.
 - [x] RPP-0503 (Mid-Far / executor-auth) Implement production dry-run route, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [x] RPP-0504 (Mid-Far / executor-auth) Implement production apply route, variant 1. Success: apply revalidates the live source before mutation.
