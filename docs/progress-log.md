@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-28 23:33 CEST.
+- Last update: 2026-05-29 02:22 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 228
-  items checked and leaves 772 open.
-- Checked slices: 92 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 229
+  items checked and leaves 771 open.
+- Checked slices: 93 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 36 generated
   harness items, and 21 merge-invariant items. No release-ops items are checked
@@ -226,6 +226,17 @@ linked implementation artifacts.
   credential, carries exact `dryRunRouteEligibility` evidence into release
   gates, and keeps the eligible positive path held at `NO-GO` without final
   production provenance.
+- Release verifier journal route read-only carry-through refresh: the current
+  lane now contains
+  `test/release-verifier-journal-route-carry-through-focused-regression.test.js`
+  and `docs/evidence/rpp-0094-release-verifier-journal-route-carry-through.md`
+  for `RPP-0094`. The command
+  `node --test test/release-verifier-journal-route-carry-through-focused-regression.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-route-recovery-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
+  passed 36/36, proving verifier-shaped journal route read-only evidence carries
+  into release gates, the write-observed `POST`/row-growth path fails closed
+  with `JOURNAL_ROUTE_READ_ONLY_REQUIRED`, the stable `GET` path passes the
+  journal gate, and final release remains `NO-GO` without production
+  provenance.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also

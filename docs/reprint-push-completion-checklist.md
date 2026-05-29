@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 228.
-- Remaining open: 772.
+- Verified complete: 229.
+- Remaining open: 771.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -105,7 +105,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0091 (Near / release-gates) Carry through the release verifier for preflight route identity proof, variant 5. Success: checked command exits with the named code and no mutation attempt.
 - [x] RPP-0092 (Near / release-gates) Carry through the release verifier for dry-run route eligibility proof, variant 5. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0093 (Near / release-gates) Carry through the release verifier for apply route pre-mutation proof, variant 5. Success: progress report links the command and observed status.
-- [ ] RPP-0094 (Near / release-gates) Carry through the release verifier for journal route read-only proof, variant 5. Success: scenario matrix records the negative and positive path.
+- [x] RPP-0094 (Near / release-gates) Carry through the release verifier for journal route read-only proof, variant 5. Success: scenario matrix records the negative and positive path.
 - [ ] RPP-0095 (Near / release-gates) Carry through the release verifier for recovery inspect read-only proof, variant 5. Success: tmux-visible run prints a final bracketed status marker.
 - [ ] RPP-0096 (Near / release-gates) Carry through the release verifier for releaseMovement allowed/denied summary, variant 5. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0097 (Near / release-gates) Carry through the release verifier for tmux stdout proof status marker, variant 5. Success: test asserts the exact reason and evidence object.
