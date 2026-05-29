@@ -1,23 +1,23 @@
 # AO localHash correctness evidence for RPP-0213
 
-Date: 2026-05-28
+Date: 2026-05-29
 Lane: RPP-0213 localHash correctness
 Checklist item: RPP-0213 — localHash correctness, variant 1.
 
 ## What changed
 
-- Added an executor-side fail-closed guard that rejects ready plans whose emitted mutation `localHash` evidence is missing, malformed, or different from the serialized planned local resource value.
-- Strengthened generated harness contract checks so generated mutations prove `localHash === sha256(planned mutation value)`.
-- Added a focused mixed resource fixture covering a file, a core row, and an allowlisted plugin-owned row.
-- Added forged-plan coverage for missing, malformed, wrong, stale-value, and stale-local-hash evidence before mutation.
+- Added focused planner/executor coverage for mixed file, core row, and allowlisted plugin-owned row mutations.
+- Proved every emitted mutation `localHash` is a SHA-256 hex digest of both the local snapshot resource and the serialized planned resource value.
+- Proved missing, malformed, wrong, stale-value, and stale-snapshot `localHash` attempts fail closed before remote mutation or durable journal writes.
+- Serialized only hash/redacted plan evidence and asserted private fixture values never appear in ready-plan or refusal evidence.
+- Marked the RPP-0213 checklist row after the focused localHash evidence passed.
 
 ## Evidence
 
-Focused commands:
+Focused command:
 
 ```sh
-node --test test/push-planner.test.js
-node --test test/generated-push-harness.test.js
+node --test test/local-hash-correctness-rpp-0213.test.js
 ```
 
 Focused tests:
@@ -27,4 +27,13 @@ RPP-0213 localHash binds mixed resource mutations to planned local snapshots
 RPP-0213 executor rejects forged or stale localHash before mutation
 ```
 
-Caveat: executor rejection details use mutation ids, resource keys, and SHA-256 hashes only. The focused fixture includes private-looking local values and asserts those values do not appear in error evidence. This branch does not mark checklist state as integrated; release remains NO-GO until the integration lane accepts it.
+Additional local validation:
+
+```sh
+node --check test/local-hash-correctness-rpp-0213.test.js
+node --test --test-name-pattern=RPP-0213 test/local-hash-correctness-rpp-0213.test.js
+node scripts/release/checklist-completion-lint.mjs
+node scripts/release/artifact-redaction-scan.mjs docs/evidence/ao-local-hash-correctness-rpp-0213.md docs/reprint-push-completion-checklist.md
+```
+
+Caveat: executable ready plans still carry mutation payloads. The serialized proof evidence for this slice uses hash-only `localHash`/`remoteBeforeHash` fields and redacted planned resource/change evidence, and the tests assert the private fixture values are absent from both serialized evidence and executor refusal details.
