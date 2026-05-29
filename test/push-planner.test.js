@@ -952,6 +952,105 @@ test('RPP-0202 independent local row plus remote file edit rejects forged and st
   ]);
 });
 
+test('RPP-0203 local delete versus remote edit refuses before remote overwrite with redacted evidence', () => {
+  const base = baseSite();
+  base.files['wp-content/themes/theme/style.css'] = 'base-style-rpp0203';
+  base.db.wp_posts['ID:1'].post_title = 'base-private-rpp0203-row-title';
+  base.db.wp_posts['ID:1'].post_content = 'base-private-rpp0203-row-body';
+  const local = cloneJson(base);
+  const remote = cloneJson(base);
+  const privateLocalFile = 'local-private-rpp0203-independent-file';
+  const privateRemoteTitle = 'remote-private-rpp0203-row-title';
+  const privateRemoteBody = 'remote-private-rpp0203-row-body';
+  const fileKey = 'file:wp-content/themes/theme/style.css';
+  const rowKey = 'row:["wp_posts","ID:1"]';
+  const privateValues = [
+    base.db.wp_posts['ID:1'].post_title,
+    base.db.wp_posts['ID:1'].post_content,
+    privateLocalFile,
+    privateRemoteTitle,
+    privateRemoteBody,
+  ];
+
+  delete local.db.wp_posts['ID:1'];
+  local.files['wp-content/themes/theme/style.css'] = privateLocalFile;
+  remote.db.wp_posts['ID:1'].post_title = privateRemoteTitle;
+  remote.db.wp_posts['ID:1'].post_content = privateRemoteBody;
+
+  const firstPlan = planFor(base, local, remote);
+  const secondPlan = planFor(cloneJson(base), cloneJson(local), cloneJson(remote));
+  const conflict = firstPlan.conflicts.find((entry) => entry.resourceKey === rowKey);
+  const rowMutation = mutationFor(firstPlan, rowKey);
+  const rowPrecondition = firstPlan.preconditions.find((entry) => entry.resourceKey === rowKey);
+  const fileMutation = mutationFor(firstPlan, fileKey);
+  const planEvidence = mergeInvariantHashOnlyPlanEvidence(firstPlan);
+  const durableJournal = failingDurableJournal();
+  const remoteBefore = JSON.stringify(remote);
+  const refusalBeforeHash = digest(remote);
+  const error = captureError(() => applyPlan(remote, firstPlan, { durableJournal }));
+  const refusalEvidence = {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    remoteBeforeHash: refusalBeforeHash,
+    remoteAfterHash: digest(remote),
+    durableJournalEvents: durableJournal.events.map((event) => event.type),
+  };
+  const redactedEvidence = redactEvidence({
+    plan: firstPlan,
+    hashOnlyPlanEvidence: planEvidence,
+    refusal: refusalEvidence,
+  });
+  const serializedPlanEvidence = JSON.stringify(planEvidence);
+  const serializedRedactedEvidence = JSON.stringify(redactedEvidence);
+  const serializedRefusalEvidence = JSON.stringify(refusalEvidence);
+
+  assert.equal(firstPlan.status, 'conflict');
+  assertPlannerSummaryMatchesEvidence(firstPlan, 'RPP-0203 local delete remote edit invariant');
+  assert.deepEqual(firstPlan.summary, {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 1,
+    blockers: 0,
+    atomicGroups: 0,
+  });
+  assert.deepEqual(planEvidence, mergeInvariantHashOnlyPlanEvidence(secondPlan));
+  assert.ok(conflict, 'missing local delete versus remote edit conflict');
+  assert.equal(conflict.class, 'row-conflict');
+  assert.equal(conflict.change.localChange, 'delete');
+  assert.equal(conflict.change.remoteChange, 'update');
+  assert.equal(conflict.change.base.state, 'present');
+  assert.equal(conflict.change.local.state, 'absent');
+  assert.equal(conflict.change.remote.state, 'present');
+  assert.equal(conflict.resolutionPolicy, 'preserve-remote-and-stop');
+  assert.match(conflict.remoteHash, /^[a-f0-9]{64}$/);
+  assert.equal(conflict.change.remote.hash, conflict.remoteHash);
+  assert.equal(rowMutation, undefined);
+  assert.equal(rowPrecondition, undefined);
+  assert.equal(fileMutation?.action, 'put');
+  assert.equal(fileMutation.resourceKey, fileKey);
+  assertEveryMutationHasLiveRemotePrecondition(firstPlan);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(refusalEvidence.remoteAfterHash, refusalEvidence.remoteBeforeHash);
+  assert.equal(JSON.stringify(remote), remoteBefore);
+  assert.deepEqual(durableJournal.events, []);
+  assert.equal(remote.db.wp_posts['ID:1'].post_title, privateRemoteTitle);
+  assert.equal(remote.db.wp_posts['ID:1'].post_content, privateRemoteBody);
+  assert.equal(remote.files['wp-content/themes/theme/style.css'], 'base-style-rpp0203');
+  assert.deepEqual(findEvidenceRedactionIssues(redactedEvidence), []);
+  assert.ok(findEvidenceRedactionIssues({ plan: firstPlan }).length > 0, 'raw plan fixture should require redaction');
+  assertHashOnlyEvidenceRedacted(planEvidence, privateValues);
+  assertHashOnlyEvidenceRedacted(conflict, privateValues);
+  assertHashOnlyEvidenceRedacted(error.details, privateValues);
+  for (const rawValue of privateValues) {
+    assert.equal(serializedPlanEvidence.includes(rawValue), false, `RPP-0203 plan evidence leaked ${rawValue}`);
+    assert.equal(serializedRedactedEvidence.includes(rawValue), false, `RPP-0203 redacted evidence leaked ${rawValue}`);
+    assert.equal(serializedRefusalEvidence.includes(rawValue), false, `RPP-0203 refusal evidence leaked ${rawValue}`);
+  }
+});
+
 test('RPP-0221 independent local file plus remote row edit stays hash-only and unplanned-safe', () => {
   const base = baseSite();
   base.files['wp-content/themes/theme/style.css'] = 'base-style-rpp0221';
