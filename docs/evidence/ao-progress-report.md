@@ -1,9 +1,9 @@
-# AO Progress Report - 2026-05-29 02:22 CEST
+# AO Progress Report - 2026-05-29 02:33 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0094 release-verifier journal route carry-through
+`lane/evidence-integration-20260527` through the current RPP-0093 release-verifier apply route carry-through
 refresh. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
@@ -11,8 +11,15 @@ progress.
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 229 are
-  checked from integrated evidence and 771 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 230 are
+  checked from integrated evidence and 770 remain open.
+- Release verifier apply route pre-mutation carry-through now checks `RPP-0093`.
+  `umask 0022 && node --test test/release-verifier-apply-route-carry-through-focused-regression.test.js`
+  passed 3/3, proving verifier-shaped apply-route evidence is carried into
+  `check-release-gates`, the `412` before-first-mutation path preserves
+  `observedStatus: 412`, the mutation-before-rejection fixture fails closed
+  with `APPLY_ROUTE_PRE_MUTATION_REQUIRED`, and final release remains
+  **NO-GO**.
 - Release verifier journal route read-only carry-through now checks `RPP-0094`.
   `node --test test/release-verifier-journal-route-carry-through-focused-regression.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-route-recovery-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   passed 36/36, proving verifier-shaped journal-route evidence is carried into
@@ -251,6 +258,16 @@ progress.
   and leaves final release **NO-GO** without production provenance.
   - Command: `node --test test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gate-dry-run-route-eligibility-regression.test.js test/release-gate-dry-run-route-eligibility-generated.test.js test/release-gates.test.js test/release-gate-cli.test.js`
   - Observed status: `pass`; verifier marker: `[verify-release:held exit=1 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED mutationAttempted=false]`; dry-run route gate: `DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=DRY_RUN_ROUTE_ELIGIBILITY_REQUIRED]`.
+- Release verifier apply route pre-mutation carry-through now checks
+  `RPP-0093`. `umask 0022 && node --test
+  test/release-verifier-apply-route-carry-through-focused-regression.test.js`
+  passed 3/3, proving verifier-shaped `applyRoutePreMutation` evidence carries
+  into release gates, the `412` before-first-mutation positive path passes the
+  apply-route gate, the mutation-before-rejection negative fixture emits
+  `APPLY_ROUTE_PRE_MUTATION_REQUIRED`, and final release remains **NO-GO**
+  without production provenance.
+  - Command: `umask 0022 && node --test test/release-verifier-apply-route-carry-through-focused-regression.test.js`
+  - Observed status: `pass`; apply route observed status: `412`; failure code: `APPLY_ROUTE_PRE_MUTATION_REQUIRED`; release marker: `[release-gates-ci:held final=19/20 candidate=19/20 reason=APPLY_ROUTE_PRE_MUTATION_REQUIRED]`.
 - Release verifier journal route read-only carry-through now checks
   `RPP-0094`. `node --test
   test/release-verifier-journal-route-carry-through-focused-regression.test.js
@@ -1183,7 +1200,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 | Range | Goal slice | Checked / total |
 | --- | --- | --- |
-| `RPP-0001`-`RPP-0100` | Release gate foundation | 93 / 100 |
+| `RPP-0001`-`RPP-0100` | Release gate foundation | 94 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 36 / 100 |
 | `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 21 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 19 / 100 |
@@ -1196,7 +1213,7 @@ tracks the near-to-far slices used to supervise the AO team:
 
 Checked IDs in this report are:
 
-- Release gates: `RPP-0001` through `RPP-0092`, plus `RPP-0094`.
+- Release gates: `RPP-0001` through `RPP-0094`.
 - Generated harness: `RPP-0101`, `RPP-0102`, `RPP-0103`, `RPP-0104`,
   `RPP-0105`, `RPP-0106`, `RPP-0107`, `RPP-0108`, `RPP-0109`,
   `RPP-0110`, `RPP-0111`, `RPP-0112`, `RPP-0113`, `RPP-0114`, `RPP-0115`, `RPP-0116`, `RPP-0117`, `RPP-0118`,
@@ -1231,6 +1248,7 @@ Checked IDs in this report are:
 
 - `node --test test/release-gate-tmux-status-marker-focused-regression.test.js` — 1 pass / 0 fail for the RPP-0077 focused tmux stdout proof marker regression.
 - `node --test test/release-verifier-application-password-binding-carry-through-focused-regression.test.js test/release-gate-application-password-binding-regression.test.js test/release-gate-application-password-binding-generated.test.js test/release-verifier-missing-production-secret-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 39 pass / 0 fail for the RPP-0088 release verifier Application Password credential binding carry-through plus binding/release-gate/CLI coverage.
+- `umask 0022 && node --test test/release-verifier-apply-route-carry-through-focused-regression.test.js` — 3 pass / 0 fail for the RPP-0093 release verifier apply route pre-mutation carry-through focused coverage.
 - `node --test test/release-verifier-journal-route-carry-through-focused-regression.test.js test/release-gate-journal-route-read-only-generated.test.js test/release-gate-route-recovery-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 36 pass / 0 fail for the RPP-0094 release verifier journal route read-only carry-through plus journal route/release-gate/CLI coverage.
 - `node --test test/release-verifier-preflight-route-carry-through-focused-regression.test.js test/release-gate-preflight-route-identity-regression.test.js test/release-gate-preflight-route-identity-generated.test.js test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 39 pass / 0 fail for the RPP-0091 release verifier preflight route identity carry-through plus preflight/same-source/dry-run/release-gate/CLI coverage.
 - `node --test test/release-verifier-same-source-carry-through-focused-regression.test.js test/release-gate-same-source-identity-regression.test.js test/release-gate-same-source-generated.test.js test/release-verifier-dry-run-route-carry-through-focused-regression.test.js test/release-gates.test.js test/release-gate-cli.test.js` — 37 pass / 0 fail for the RPP-0090 release verifier same-source identity carry-through plus same-source/dry-run/release-gate/CLI coverage.
