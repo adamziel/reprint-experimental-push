@@ -1020,6 +1020,16 @@ function pluginOwnedMetaDriverEvidence({
       row,
     });
   }
+  if (driver === 'wp-usermeta' || driver === 'wp-user-meta') {
+    return pluginOwnedUsermetaDriverEvidence({
+      resource,
+      owner,
+      driver,
+      policySource,
+      evidenceScope,
+      row,
+    });
+  }
   return null;
 }
 
@@ -1111,6 +1121,43 @@ function pluginOwnedTermmetaDriverEvidence({ resource, owner, driver, policySour
         ...evidence,
         supported: false,
         reason: 'wp_termmeta driver requires row meta_id to match the resource id.',
+      };
+    }
+  }
+  return evidence;
+}
+
+function pluginOwnedUsermetaDriverEvidence({ resource, owner, driver, policySource, evidenceScope, row }) {
+  const scope = evidenceScope || 'local-candidate';
+  const evidence = {
+    supported: true,
+    driver,
+    table: resource.table,
+    resourceKey: resource.key,
+    rowId: resource.id,
+    rowIdKind: 'umeta_id',
+    pluginOwner: owner,
+    policySource,
+    evidenceScope: scope,
+    releaseGateEvidenceScope: scope,
+  };
+  const match = /^umeta_id:([1-9]\d*)$/.exec(resource.id || '');
+  if (!match) {
+    return {
+      ...evidence,
+      supported: false,
+      reason: 'wp_usermeta driver requires row id umeta_id:<positive-int>.',
+    };
+  }
+  const umetaId = Number.parseInt(match[1], 10);
+  if (row && row !== ABSENT && typeof row === 'object') {
+    evidence.userId = row.user_id ?? null;
+    evidence.metaKey = row.meta_key ?? null;
+    if (Number(row.umeta_id) !== umetaId) {
+      return {
+        ...evidence,
+        supported: false,
+        reason: 'wp_usermeta driver requires row umeta_id to match the resource id.',
       };
     }
   }
