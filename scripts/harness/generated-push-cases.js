@@ -99,6 +99,7 @@ const readyPreservingFamilies = new Set([
   'unsupported-plugin-usermeta',
   'same-plan-post-parent-graph',
   'same-plan-post-author-graph',
+  'stale-post-author-graph',
   'same-plan-taxonomy-graph',
   'same-plan-comment-graph',
   'plugin-owned-custom-table-changes',
@@ -260,6 +261,10 @@ const targetCoverageDefinitions = Object.freeze({
       && result.staleReplayRejected === true
       && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
       && result.staleReplayRemoteUnchanged === true,
+  },
+  postAuthorGraph: {
+    family: 'same-plan-post-author-graph',
+    tag: 'post-author-graph',
   },
   commentUserGraph: {
     family: 'comment-user-graph-ready',
@@ -1075,27 +1080,11 @@ const scenarioFamilyBuilders = {
     });
     tags.add('stale-graph');
   },
-  'same-plan-post-author-graph': ({ local, allocator, tags }) => {
-    const userId = allocator.graphId();
-    const postId = allocator.graphId();
-    setRow(local, 'wp_users', `ID:${userId}`, makeUser(userId));
-    setRow(local, 'wp_posts', `ID:${postId}`, makePost(postId, `Generated author post ${postId}`, {
-      post_author: userId,
-    }));
-    tags.add('same-plan-graph');
-    tags.add('post-author-graph');
-    tags.add('post-author-ready');
+  'same-plan-post-author-graph': ({ base, local, remote, allocator, tags }) => {
+    addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget: false });
   },
-  'stale-post-author-graph': ({ local, remote, allocator, tags }) => {
-    const userId = allocator.graphId();
-    const postId = allocator.graphId();
-    setRow(remote, 'wp_users', `ID:${userId}`, makeUser(userId));
-    setRow(local, 'wp_posts', `ID:${postId}`, makePost(postId, `Generated stale author post ${postId}`, {
-      post_author: userId,
-    }));
-    tags.add('stale-graph');
-    tags.add('post-author-graph');
-    tags.add('post-author-stale');
+  'stale-post-author-graph': ({ base, local, remote, allocator, tags }) => {
+    addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget: true });
   },
   'same-plan-taxonomy-graph': ({ local, allocator, tags }) => {
     const termId = allocator.graphId();
@@ -2918,6 +2907,47 @@ function addCommentGraph(local, allocator) {
     comment_parent: parentId,
     user_id: 1,
   }));
+}
+
+function addPostAuthorGraph(base, local, remote, allocator, tags, { staleTarget }) {
+  const userId = allocator.graphId();
+  const postId = allocator.graphId();
+  const userRowId = `ID:${userId}`;
+  const postRowId = `ID:${postId}`;
+  const user = {
+    ...makeUser(userId),
+    user_login: `post-author-target-${userId}`,
+    user_email: `post-author-target-${userId}@example.test`,
+    display_name: `Generated post author target ${userId}`,
+  };
+
+  if (staleTarget) {
+    setRow(base, 'wp_users', userRowId, user);
+    setRow(local, 'wp_users', userRowId, user);
+    setRow(remote, 'wp_users', userRowId, {
+      ...user,
+      user_email: `remote-private-post-author-${userId}@example.test`,
+      display_name: `Remote stale post author ${userId}`,
+    });
+  } else {
+    setRow(local, 'wp_users', userRowId, user);
+  }
+
+  setRow(local, 'wp_posts', postRowId, makePost(postId, `post-author-reference-${postId}`, {
+    post_author: userId,
+  }));
+
+  tags.add('same-plan-graph');
+  tags.add('post-author-graph');
+
+  if (staleTarget) {
+    tags.add('stale-graph');
+    tags.add('post-author-stale');
+    tags.add('post-author-stale-target');
+    tags.add('wp-users-remote-drift');
+  } else {
+    tags.add('post-author-ready');
+  }
 }
 
 function addCommentUserGraph(base, local, remote, allocator, tags, { staleTarget }) {
