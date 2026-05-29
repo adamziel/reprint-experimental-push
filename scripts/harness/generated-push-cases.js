@@ -263,6 +263,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-custom-table-variant1',
     tag: 'plugin-owned-custom-table-variant1',
   },
+  pluginOwnedResourceRefusalVariant3: {
+    family: 'plugin-owned-resource-refusal-variant3',
+    tag: 'plugin-owned-resource-refusal-v3',
+  },
   staleRemoteAfterDryRun: {
     family: 'ready-plan-stale-remote-after-dry-run',
     matches: (_testCase, result) => result.status === 'ready'
@@ -838,6 +842,16 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addPluginOwnedResourceRefusalVariant3Target({
+    family,
+    tier,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addGeneratedComplexity({
     id,
     family,
@@ -865,6 +879,65 @@ function buildGeneratedCase({ index, tier, rng }) {
     local,
     remote,
   };
+}
+
+function addPluginOwnedResourceRefusalVariant3Target({
+  family,
+  tier,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const variantsByFamily = {
+    'supported-plugin-option': 'ready',
+    'unsupported-plugin-usermeta': 'changed',
+    'plugin-owned-option-change-conflict': 'stale',
+  };
+  const variant = variantsByFamily[family];
+  if (!variant) {
+    return;
+  }
+
+  const optionName = `rpp0143_plugin_owned_refusal_v3_${variant}_${tier}_${allocator.next()}`;
+  const rowId = `option_name:${optionName}`;
+  const resourceKey = rowKey('wp_options', rowId);
+  const baseRow = {
+    option_name: optionName,
+    option_value: {
+      mode: 'base',
+      privateToken: `rpp0143-${variant}-base-private-token-${tier}`,
+    },
+    __pluginOwner: 'forms',
+  };
+
+  setRow(base, 'wp_options', rowId, baseRow);
+  setRow(local, 'wp_options', rowId, {
+    ...baseRow,
+    option_value: {
+      mode: `local-${variant}`,
+      privateToken: `rpp0143-${variant}-local-private-token-${tier}`,
+    },
+  });
+  setRow(remote, 'wp_options', rowId, baseRow);
+
+  if (variant === 'ready') {
+    allowPluginOwned(local, resourceKey, 'forms', 'wp-option');
+  }
+
+  if (variant === 'stale') {
+    setRow(remote, 'wp_options', rowId, {
+      ...baseRow,
+      option_value: {
+        mode: 'remote-stale',
+        privateToken: `rpp0143-${variant}-remote-private-token-${tier}`,
+      },
+    });
+  }
+
+  tags.add('plugin-owned-resource-refusal-v3');
+  tags.add(`plugin-owned-resource-refusal-v3-${variant}`);
 }
 
 function addWpTermRelationshipsGraphTarget({
