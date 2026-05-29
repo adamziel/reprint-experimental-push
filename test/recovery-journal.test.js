@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import {
   appendJournalCompleted,
   appendRecoveryClaimOpened,
@@ -216,6 +217,99 @@ test('file-backed journal opens or creates a missing JSONL file', () => {
   const restarted = readRecoveryJournal(filePath);
   assert.equal(restarted.integrity.status, 'ok');
   assert.deepEqual(restarted.records.map((record) => record.sequence), [1]);
+});
+
+test('file-backed journal open state survives process restart readback', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const childScript = `
+    import { openPlanRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+
+    function baseSite() {
+      const files = {};
+      for (let index = 1; index <= 8; index++) {
+        files[\`file-\${index}.txt\`] = \`base-private-content-\${index}\`;
+      }
+      return { files, plugins: {}, db: {} };
+    }
+
+    function localSite() {
+      const site = baseSite();
+      for (let index = 1; index <= 8; index++) {
+        site.files[\`file-\${index}.txt\`] = \`local-private-content-\${index}\`;
+      }
+      return site;
+    }
+
+    const filePath = process.env.RPP0607_JOURNAL_PATH;
+    const remote = baseSite();
+    const plan = createPushPlan({ base: baseSite(), local: localSite(), remote, now: fixedNow });
+    openPlanRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      now: fixedNow,
+      artifactRefs: { openState: 'artifact://rpp-0607-open-state' },
+    });
+    process.exit(0);
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0607_JOURNAL_PATH: filePath,
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.openState.status, 'opened');
+  assert.equal(restarted.openState.phase, 'open');
+  assert.equal(restarted.openState.restartReadable, true);
+  assert.equal(restarted.openState.durableRows, plan.mutations.length + 1);
+  assert.equal(restarted.openState.records, plan.mutations.length + 1);
+  assert.equal(restarted.openState.openRows, 1);
+  assert.equal(restarted.openState.firstOpenSequence, 1);
+  assert.equal(restarted.openState.latestOpenSequence, 1);
+  assert.equal(restarted.openState.latestOpenType, 'journal-opened');
+  assert.equal(restarted.openState.planId, plan.id);
+  assert.equal(restarted.openState.state, 'opened');
+  assert.match(restarted.openState.observedHash, /^[a-f0-9]{64}$/);
+  assert.deepEqual(restarted.openState.artifactRefs, {
+    openState: 'artifact://rpp-0607-open-state',
+  });
+  assert.deepEqual(restarted.openState.fsync, {
+    requested: true,
+    strategy: 'after-append',
+  });
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: plan.mutations.length + 1 }, (_, index) => index + 1),
+  );
+  assert.equal(
+    restarted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current: remote,
+  });
+  assert.equal(inspection.status, 'old-remote');
+  assert.equal(inspection.journal.openState.restartReadable, true);
 });
 
 test('file-backed journal schema migration preserves rows and remains restart-readable', () => {

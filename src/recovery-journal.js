@@ -21,6 +21,10 @@ const CLAIM_APPEND_EVENT_TYPES = new Set([
   ...CLAIM_STATE_EVENT_TYPES,
   'stale-claim-rejected',
 ]);
+const RECOVERY_JOURNAL_OPEN_EVENT_TYPES = new Set([
+  'journal-opened',
+  'journal-retry-opened',
+]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 export class RecoveryJournalClaimStaleError extends Error {
@@ -64,6 +68,46 @@ function claimScopedConsumedRecord(records, claim) {
       && record.claimHash === claim.activeClaimHash
       && record.claimId === claim.activeClaimId,
   ) || null;
+}
+
+export function summarizeRecoveryJournalOpenState(journalOrRecords, options = {}) {
+  const records = Array.isArray(journalOrRecords)
+    ? journalOrRecords
+    : Array.isArray(journalOrRecords?.records)
+      ? journalOrRecords.records
+      : [];
+  const integrityStatus = options.integrityStatus
+    || options.integrity?.status
+    || journalOrRecords?.integrity?.status
+    || 'unknown';
+  const openRecords = records.filter((record) => RECOVERY_JOURNAL_OPEN_EVENT_TYPES.has(record.type));
+  const firstOpenRecord = openRecords[0] || null;
+  const latestOpenRecord = openRecords.at(-1) || null;
+  const latestOpenFsync = latestOpenRecord?.fsync && typeof latestOpenRecord.fsync === 'object'
+    ? latestOpenRecord.fsync
+    : null;
+
+  return {
+    status: latestOpenRecord ? 'opened' : 'missing',
+    phase: latestOpenRecord ? 'open' : 'missing',
+    restartReadable: integrityStatus === 'ok' && latestOpenRecord !== null,
+    durableRows: integrityStatus === 'ok' ? records.length : 0,
+    records: records.length,
+    openRows: openRecords.length,
+    firstOpenSequence: firstOpenRecord?.sequence ?? null,
+    latestOpenSequence: latestOpenRecord?.sequence ?? null,
+    latestOpenType: latestOpenRecord?.type ?? null,
+    planId: latestOpenRecord?.planId ?? null,
+    state: latestOpenRecord?.state ?? null,
+    observedHash: latestOpenRecord?.observedHash ?? null,
+    artifactRefs: latestOpenRecord?.artifactRefs && typeof latestOpenRecord.artifactRefs === 'object'
+      ? { ...latestOpenRecord.artifactRefs }
+      : {},
+    fsync: {
+      requested: latestOpenFsync?.requested === true,
+      strategy: latestOpenFsync?.strategy ?? null,
+    },
+  };
 }
 
 function artifactRefsEqual(left, right) {
@@ -945,6 +989,7 @@ export function openProductionRecoveryJournal(options) {
         schemaVersion: persisted.records[0]?.schemaVersion ?? null,
         integrity: persisted.integrity,
         records: persisted.records.length,
+        openState: persisted.openState,
         staleClaimRejected,
         claim,
         claimExpiry,
@@ -1326,6 +1371,7 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
           message: `SQLite recovery journal table ${tableName} is missing.`,
         }],
       },
+      openState: summarizeRecoveryJournalOpenState([], { integrityStatus: 'missing' }),
     };
   }
 
@@ -1443,6 +1489,9 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
   }
 
   const tableSchemaVersions = recordTableSchemaVersions(rows);
+  const integrity = errors.length === 0
+    ? { status: 'ok', reason: null, errors: [] }
+    : { status: 'blocked', reason: 'SQLite recovery journal table is corrupt or uses an unsupported schema.', errors };
 
   return {
     storage: 'sqlite',
@@ -1455,9 +1504,8 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
     tableSchemaVersions,
     recordSchemaVersions: recordSchemaVersions(records),
     schemaVersionColumnPresent,
-    integrity: errors.length === 0
-      ? { status: 'ok', reason: null, errors: [] }
-      : { status: 'blocked', reason: 'SQLite recovery journal table is corrupt or uses an unsupported schema.', errors },
+    integrity,
+    openState: summarizeRecoveryJournalOpenState(records, { integrity }),
   };
 }
 
@@ -1613,11 +1661,13 @@ function readRecoveryJournalFile(filePath, options = {}) {
   }
 
   if (text.length === 0) {
+    const integrity = { status: 'ok', reason: null, errors: [] };
     return {
       filePath,
       exists: true,
       records: [],
-      integrity: { status: 'ok', reason: null, errors: [] },
+      integrity,
+      openState: summarizeRecoveryJournalOpenState([], { integrity }),
     };
   }
 
@@ -1679,13 +1729,16 @@ function readRecoveryJournalFile(filePath, options = {}) {
     });
   }
 
+  const integrity = errors.length === 0
+    ? { status: 'ok', reason: null, errors: [] }
+    : { status: 'blocked', reason: 'Recovery journal is corrupt or truncated.', errors };
+
   return {
     filePath,
     exists: true,
     records,
-    integrity: errors.length === 0
-      ? { status: 'ok', reason: null, errors: [] }
-      : { status: 'blocked', reason: 'Recovery journal is corrupt or truncated.', errors },
+    integrity,
+    openState: summarizeRecoveryJournalOpenState(records, { integrity }),
   };
 }
 
@@ -2333,5 +2386,6 @@ function emptyRead(filePath, status, reason) {
       reason,
       errors: [{ line: null, code: 'JOURNAL_MISSING', message: reason }],
     },
+    openState: summarizeRecoveryJournalOpenState([], { integrityStatus: status }),
   };
 }
