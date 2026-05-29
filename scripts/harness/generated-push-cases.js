@@ -160,6 +160,16 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'same-independent-content',
     tag: 'same-independent-content-target',
   },
+  remoteOnlyPreservation: {
+    family: 'remote-only-post-update',
+    matches: (testCase, result) => testCase.family === 'remote-only-post-update'
+      && testCase.tags.has('remote-preserve')
+      && result.status === 'ready'
+      && result.unplannedRemotePreserved === true
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true,
+  },
   fileTypeSwap: {
     family: 'file-type-swap-ready',
     tag: 'file-type-swap',
