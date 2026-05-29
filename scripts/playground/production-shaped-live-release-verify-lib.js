@@ -35,6 +35,15 @@ export function buildDurableRecoveryJournalReleaseProof({
     || leaseFence?.writerLease
     || releaseProof?.dbJournal?.leaseFence?.writerLease
     || null;
+  const claimExpiry = journal?.claimExpiry
+    || claim?.claimExpiry
+    || releaseProof?.dbJournal?.claimExpiry
+    || durableJournal?.proof?.claimExpiry
+    || null;
+  const activeClaimKeyHash = claim?.activeClaimKeyHash || claim?.activeClaimHash || null;
+  const previousClaimKeyHash = claim?.previousClaimKeyHash || claim?.previousClaimHash || null;
+  const writerLeaseClaimKeyHash = writerLease?.claimKeyHash || writerLease?.claimHash || null;
+  const leaseFenceClaimKeyHash = leaseWriterLease?.claimKeyHash || leaseWriterLease?.claimHash || null;
   const planMutationCount = Number.isInteger(releaseProof?.plan?.mutations)
     ? releaseProof.plan.mutations
     : Array.isArray(releaseProof?.planObject?.mutations)
@@ -64,18 +73,18 @@ export function buildDurableRecoveryJournalReleaseProof({
   const expectedMutationEvents = Number.isInteger(planMutationCount) ? planMutationCount : mutationApplied;
   const leaseOwnerIdentity = {
     activeClaimId: claim?.activeClaimId || null,
-    activeClaimKeyHash: claim?.activeClaimKeyHash || null,
+    activeClaimKeyHash,
     writerLeaseClaimId: writerLease?.claimId || null,
-    writerLeaseClaimKeyHash: writerLease?.claimKeyHash || null,
+    writerLeaseClaimKeyHash,
     leaseFenceClaimId: leaseWriterLease?.claimId || null,
-    leaseFenceClaimKeyHash: leaseWriterLease?.claimKeyHash || null,
+    leaseFenceClaimKeyHash,
     matches: Boolean(
       claim?.activeClaimId
-      && claim?.activeClaimKeyHash
+      && activeClaimKeyHash
       && writerLease?.claimId === claim.activeClaimId
-      && writerLease?.claimKeyHash === claim.activeClaimKeyHash
+      && writerLeaseClaimKeyHash === activeClaimKeyHash
       && leaseWriterLease?.claimId === claim.activeClaimId
-      && leaseWriterLease?.claimKeyHash === claim.activeClaimKeyHash,
+      && leaseFenceClaimKeyHash === activeClaimKeyHash,
     ),
   };
   const staleOwnerFencing = {
@@ -85,13 +94,49 @@ export function buildDurableRecoveryJournalReleaseProof({
       && writerLease?.staleClaimRejected === true
       && leaseWriterLease?.staleClaimRejected === true
       && claim?.previousClaimId
-      && claim?.previousClaimKeyHash,
+      && previousClaimKeyHash,
     ),
     activeClaimId: claim?.activeClaimId || null,
     previousClaimId: claim?.previousClaimId || null,
-    previousClaimKeyHash: claim?.previousClaimKeyHash || null,
+    previousClaimKeyHash,
     activeClaimEvent: claim?.activeClaimEvent || null,
     leaseFenceStaleClaimRejected: leaseFence?.staleClaimRejected === true,
+  };
+  const claimExpiryPolicy = {
+    proved: Boolean(
+      claimExpiry?.policy
+      && claimExpiry?.expired === true
+      && (claimExpiry?.previousClaimExpired === true || claim?.staleClaimRejected === true)
+      && Number.isInteger(claimExpiry?.staleThresholdMs)
+      && claimExpiry.staleThresholdMs >= 0
+      && nonEmptyString(claimExpiry?.openedAt || claimExpiry?.previousClaimOpenedAt)
+      && nonEmptyString(claimExpiry?.expiresAt || claimExpiry?.previousClaimExpiresAt)
+      && (
+        positiveInteger(claimExpiry?.activeClaimSequence)
+        || positiveInteger(claim?.activeClaimSequence)
+        || positiveInteger(claim?.sequence)
+      )
+      && (
+        positiveInteger(claimExpiry?.previousClaimSequence)
+        || nonEmptyString(claim?.previousClaimId)
+        || nonEmptyString(previousClaimKeyHash)
+      ),
+    ),
+    policy: claimExpiry?.policy || null,
+    expired: claimExpiry?.expired === true,
+    previousClaimExpired: claimExpiry?.previousClaimExpired === true,
+    staleThresholdMs: Number.isInteger(claimExpiry?.staleThresholdMs)
+      ? claimExpiry.staleThresholdMs
+      : null,
+    openedAt: claimExpiry?.openedAt || null,
+    expiresAt: claimExpiry?.expiresAt || null,
+    previousClaimOpenedAt: claimExpiry?.previousClaimOpenedAt || null,
+    previousClaimExpiresAt: claimExpiry?.previousClaimExpiresAt || null,
+    previousClaimAgeMs: Number.isInteger(claimExpiry?.previousClaimAgeMs)
+      ? claimExpiry.previousClaimAgeMs
+      : null,
+    activeClaimSequence: claimExpiry?.activeClaimSequence ?? claim?.activeClaimSequence ?? claim?.sequence ?? null,
+    previousClaimSequence: claimExpiry?.previousClaimSequence ?? claim?.previousClaimSequence ?? null,
   };
   const sameKeyBodyReplay = {
     proved: Boolean(
@@ -191,6 +236,7 @@ export function buildDurableRecoveryJournalReleaseProof({
     restartReadable: ownership.restartReadable === true && leaseFence?.restartReadable === true,
     leaseOwnerIdentity: leaseOwnerIdentity.matches === true,
     staleOwnerFencing: staleOwnerFencing.proved === true,
+    claimExpiryPolicy: claimExpiryPolicy.proved === true,
     recoveryInspectAfterRestart: recoveryInspectAfterRestart.proved === true,
     sameKeyBodyReplay: sameKeyBodyReplay.proved === true,
     sameKeyDifferentBodyConflict: sameKeyDifferentBodyConflict.proved === true,
@@ -213,6 +259,7 @@ export function buildDurableRecoveryJournalReleaseProof({
     ownership,
     leaseOwnerIdentity,
     staleOwnerFencing,
+    claimExpiryPolicy,
     recoveryInspectAfterRestart,
     sameKeyBodyReplay,
     sameKeyDifferentBodyConflict,
@@ -243,15 +290,25 @@ function durableRecoveryJournalCandidateScore(journal) {
   const leaseFence = journal.leaseFence || {};
   const writerLease = journal.writerLease || {};
   const leaseWriterLease = leaseFence.writerLease || {};
+  const activeClaimKeyHash = claim.activeClaimKeyHash || claim.activeClaimHash;
+  const previousClaimKeyHash = claim.previousClaimKeyHash || claim.previousClaimHash;
+  const writerLeaseClaimKeyHash = writerLease.claimKeyHash || writerLease.claimHash;
+  const leaseWriterLeaseClaimKeyHash = leaseWriterLease.claimKeyHash || leaseWriterLease.claimHash;
+  const claimExpiry = journal.claimExpiry || claim.claimExpiry || null;
   const hasActiveClaimIdentity = nonEmptyString(claim.activeClaimId)
-    && nonEmptyString(claim.activeClaimKeyHash);
+    && nonEmptyString(activeClaimKeyHash);
   const hasPreviousClaimIdentity = nonEmptyString(claim.previousClaimId)
-    && nonEmptyString(claim.previousClaimKeyHash);
+    && nonEmptyString(previousClaimKeyHash);
   const writerLeaseMatchesClaim = hasActiveClaimIdentity
     && writerLease.claimId === claim.activeClaimId
-    && writerLease.claimKeyHash === claim.activeClaimKeyHash
+    && writerLeaseClaimKeyHash === activeClaimKeyHash
     && leaseWriterLease.claimId === claim.activeClaimId
-    && leaseWriterLease.claimKeyHash === claim.activeClaimKeyHash;
+    && leaseWriterLeaseClaimKeyHash === activeClaimKeyHash;
+  const provesClaimExpiry = Boolean(
+    claimExpiry?.policy
+    && claimExpiry?.expired === true
+    && (claimExpiry?.previousClaimExpired === true || claim.staleClaimRejected === true),
+  );
 
   let score = 0;
   if (journal.ownership?.ownsJournal === true || journal.ownsJournal === true) score += 10;
@@ -265,6 +322,7 @@ function durableRecoveryJournalCandidateScore(journal) {
   if (hasActiveClaimIdentity) score += 10;
   if (hasPreviousClaimIdentity) score += 50;
   if (claim.staleClaimRejected === true && hasPreviousClaimIdentity) score += 50;
+  if (provesClaimExpiry) score += 50;
   if (writerLeaseMatchesClaim) score += 25;
   if (journal.applyCommitted === true) score += 5;
   if (Number.isInteger(journal.mutationApplied) && journal.mutationApplied > 0) score += 5;
@@ -274,6 +332,10 @@ function durableRecoveryJournalCandidateScore(journal) {
 
 function nonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function positiveInteger(value) {
+  return Number.isInteger(value) && value > 0;
 }
 
 export function shouldRequestCheckedLivePackagedBoundary({

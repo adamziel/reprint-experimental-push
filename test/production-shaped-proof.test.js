@@ -158,6 +158,25 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
     staleClaimRejected: true,
     restartReadable: true,
   };
+  const claimExpiry = {
+    policy: 'bounded-stale-claim-advance',
+    scope: 'claim-fenced-restart-readable',
+    proven: true,
+    expired: true,
+    previousClaimExpired: true,
+    staleClaimRejected: true,
+    staleThresholdMs: 0,
+    openedAt: '2026-05-24T00:00:02Z',
+    expiresAt: '2026-05-24T00:00:02Z',
+    evaluatedAt: '2026-05-24T00:00:02Z',
+    previousClaimOpenedAt: '2026-05-24T00:00:01Z',
+    previousClaimExpiresAt: '2026-05-24T00:00:02Z',
+    previousClaimAgeMs: 0,
+    activeClaimSequence: 2,
+    activeClaimEvent: 'stale-claim-rejected',
+    previousClaimSequence: 1,
+    previousClaimEvent: 'recovery-claim-opened',
+  };
   const journal = {
     ownership: {
       ownsJournal: true,
@@ -166,6 +185,7 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
       supportedSurface: 'claim-fenced-restart-readable',
     },
     claim,
+    claimExpiry,
     writerLease,
     leaseFence: {
       restartReadable: true,
@@ -277,6 +297,7 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
   assert.equal(proof.ownership.restartReadable, true);
   assert.equal(proof.leaseOwnerIdentity.matches, true);
   assert.equal(proof.staleOwnerFencing.proved, true);
+  assert.equal(proof.claimExpiryPolicy.proved, true);
   assert.equal(proof.recoveryInspectAfterRestart.proved, true);
   assert.equal(proof.sameKeyBodyReplay.proved, true);
   assert.equal(proof.sameKeyDifferentBodyConflict.proved, true);
@@ -6791,6 +6812,10 @@ maybeTest('production-shaped live release verify command proves the explicit che
         assert.equal(summary.boundary?.authSession?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
         assert.equal(summary.boundary?.durableJournal?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
         assert.equal(summary.boundary?.replayAndRetry?.verdict, 'LIVE_RELEASE_BOUNDARY_OK');
+        assert.equal(summary.gate2DurableRecoveryJournal?.gate, 'GATE-2');
+        assert.equal(summary.gate2DurableRecoveryJournal?.gateStatus, 'proven');
+        assert.equal(summary.gate2DurableRecoveryJournal?.checks?.claimExpiryPolicy, true);
+        assert.equal(summary.gate2DurableRecoveryJournal?.claimExpiryPolicy?.proved, true);
         assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.type, 'production-auth-session');
         assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.status, 'active');
         assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.expired, false);

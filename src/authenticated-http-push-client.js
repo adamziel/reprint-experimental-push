@@ -2677,6 +2677,7 @@ function summarizeDbJournal(response) {
       }))
       : [],
     claim: summarizeDbJournalClaim(response.body?.dbJournal?.claim),
+    ...summarizeDbJournalClaimExpiryField(response.body?.dbJournal?.claimExpiry),
     storageGuard,
     ownership: summarizeDbJournalOwnership(response.body?.dbJournal),
     writerLease: summarizeDbJournalWriterLease(response.body?.dbJournal?.writerLease),
@@ -3046,6 +3047,67 @@ function summarizeDbJournalClaim(claim) {
   };
 }
 
+function summarizeDbJournalClaimExpiryField(claimExpiry) {
+  const summarized = summarizeDbJournalClaimExpiry(claimExpiry);
+  return summarized ? { claimExpiry: summarized } : {};
+}
+
+function summarizeDbJournalClaimExpiry(claimExpiry) {
+  if (!claimExpiry || typeof claimExpiry !== 'object') {
+    return undefined;
+  }
+
+  return {
+    policy: typeof claimExpiry.policy === 'string' && claimExpiry.policy.trim().length > 0
+      ? claimExpiry.policy.trim()
+      : null,
+    scope: typeof claimExpiry.scope === 'string' && claimExpiry.scope.trim().length > 0
+      ? claimExpiry.scope.trim()
+      : null,
+    proven: claimExpiry.proven === true,
+    expired: claimExpiry.expired === true,
+    previousClaimExpired: claimExpiry.previousClaimExpired === true,
+    staleClaimRejected: claimExpiry.staleClaimRejected === true,
+    staleThresholdMs: Number.isInteger(claimExpiry.staleThresholdMs)
+      ? claimExpiry.staleThresholdMs
+      : null,
+    openedAt: typeof claimExpiry.openedAt === 'string' && claimExpiry.openedAt.trim().length > 0
+      ? claimExpiry.openedAt.trim()
+      : null,
+    expiresAt: typeof claimExpiry.expiresAt === 'string' && claimExpiry.expiresAt.trim().length > 0
+      ? claimExpiry.expiresAt.trim()
+      : null,
+    evaluatedAt: typeof claimExpiry.evaluatedAt === 'string' && claimExpiry.evaluatedAt.trim().length > 0
+      ? claimExpiry.evaluatedAt.trim()
+      : null,
+    previousClaimOpenedAt: typeof claimExpiry.previousClaimOpenedAt === 'string'
+      && claimExpiry.previousClaimOpenedAt.trim().length > 0
+      ? claimExpiry.previousClaimOpenedAt.trim()
+      : null,
+    previousClaimExpiresAt: typeof claimExpiry.previousClaimExpiresAt === 'string'
+      && claimExpiry.previousClaimExpiresAt.trim().length > 0
+      ? claimExpiry.previousClaimExpiresAt.trim()
+      : null,
+    previousClaimAgeMs: Number.isInteger(claimExpiry.previousClaimAgeMs)
+      ? claimExpiry.previousClaimAgeMs
+      : null,
+    activeClaimSequence: Number.isInteger(claimExpiry.activeClaimSequence)
+      ? claimExpiry.activeClaimSequence
+      : null,
+    activeClaimEvent: typeof claimExpiry.activeClaimEvent === 'string'
+      && claimExpiry.activeClaimEvent.trim().length > 0
+      ? claimExpiry.activeClaimEvent.trim()
+      : null,
+    previousClaimSequence: Number.isInteger(claimExpiry.previousClaimSequence)
+      ? claimExpiry.previousClaimSequence
+      : null,
+    previousClaimEvent: typeof claimExpiry.previousClaimEvent === 'string'
+      && claimExpiry.previousClaimEvent.trim().length > 0
+      ? claimExpiry.previousClaimEvent.trim()
+      : null,
+  };
+}
+
 function sanitizeStorageGuard(storageGuard) {
   if (!storageGuard || typeof storageGuard !== 'object') {
     return undefined;
@@ -3123,6 +3185,7 @@ function summarizeRecoveryInspectJournal(journal) {
     scope: journal.scope || integrity?.scope || null,
     integrity,
     claim: summarizeDbJournalClaim(journal.claim),
+    ...summarizeDbJournalClaimExpiryField(journal.claimExpiry || journal.claim?.claimExpiry),
     storageGuard: sanitizeStorageGuard(journal.storageGuard) || inferTrustedDbJournalStorageGuard(journal),
     ownership: summarizeDbJournalOwnership(journal),
     writerLease: summarizeDbJournalWriterLease(journal.writerLease),

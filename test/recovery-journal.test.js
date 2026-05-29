@@ -26,6 +26,7 @@ import {
 import { inspectRecoveryJournal } from '../src/recovery-inspect.js';
 import { createPushPlan } from '../src/planner.js';
 import { deserializeResourceValue, setResource } from '../src/resources.js';
+import { buildDurableRecoveryJournalReleaseProof } from '../scripts/playground/production-shaped-live-release-verify-lib.js';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 let DatabaseSync = null;
@@ -101,6 +102,103 @@ function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_
     insert.run(record.sequence, JSON.stringify(record));
   }
   return legacyRecords;
+}
+
+function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents }) {
+  const latestEvents = [
+    { sequence: 1, event: 'idempotency-opened' },
+    { sequence: 2, event: 'apply-started' },
+    ...Array.from({ length: mutationEvents }, (_, index) => ({
+      sequence: 3 + index,
+      event: 'mutation-applied',
+    })),
+    { sequence: 3 + mutationEvents, event: 'apply-committed' },
+    { sequence: 4 + mutationEvents, event: 'apply-replayed' },
+    { sequence: 5 + mutationEvents, event: 'idempotency-key-conflict' },
+  ];
+  return {
+    topology: {
+      sourceUrl: 'http://127.0.0.1:8080',
+    },
+    boundary: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
+    },
+    durableJournal: {
+      proof: inspection,
+    },
+    releaseProof: {
+      plan: {
+        mutations: mutationEvents,
+      },
+      recoveryInspect: {
+        status: 200,
+        recovery: {
+          state: 'fully-updated-remote',
+          journalState: 'ok',
+          counts: {
+            old: 0,
+            new: mutationEvents,
+            blockedUnknown: 0,
+            total: mutationEvents,
+          },
+        },
+      },
+      replay: {
+        idempotency: {
+          replayed: true,
+          freshMutationWork: false,
+        },
+      },
+      idempotencyConflict: {
+        status: 409,
+        code: 'IDEMPOTENCY_KEY_CONFLICT',
+        idempotency: {
+          conflict: true,
+          freshMutationWork: false,
+        },
+        targetSnapshotUnchanged: true,
+      },
+      dbJournal: {
+        mutationApplied: mutationEvents,
+        eventCounts: {
+          'idempotency-key-conflict': 1,
+        },
+        latestEvents,
+      },
+      staleClaimRetry: {
+        abandoned: {
+          status: 500,
+          code: 'LAB_SIMULATED_STALE_CLAIM_ALL_OLD',
+        },
+      },
+      replayAndRetry: {
+        required: '/snapshot',
+        observed: '/snapshot',
+        retryAttempts: 2,
+        verdict: 'PRESERVED_REMOTE_RETRY_PROVEN',
+      },
+    },
+  };
+}
+
+function buildBlockedApplyRevalidation() {
+  return {
+    apply: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+    },
+    recoveryInspect: {
+      recovery: {
+        state: 'blocked-recovery',
+        counts: {
+          old: 1,
+          new: 0,
+          blockedUnknown: 1,
+          total: 2,
+        },
+      },
+    },
+  };
 }
 
 test('file-backed journal opens or creates a missing JSONL file', () => {
@@ -586,6 +684,104 @@ test('production recovery journal wrapper writes a restart-readable claim-fenced
     }),
     RecoveryJournalClaimStaleError,
   );
+});
+
+test('production recovery journal claim expiry advances stale ownership and release proof stays on the same path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const artifactRefs = {
+    releaseProof: 'artifact://release-proof-claim-expiry',
+  };
+  const staleThresholdMs = 1_000;
+  const activeClaimId = 'production-claim-expiry-active';
+  const retryClaimId = 'production-claim-expiry-retry';
+  const initial = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId: activeClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  initial.close();
+
+  assert.throws(
+    () => openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      now: new Date(fixedNow.getTime() + 500),
+      truncate: false,
+      claimId: retryClaimId,
+      claimStaleThresholdMs: staleThresholdMs,
+    }),
+    (error) => {
+      assert.ok(error instanceof RecoveryJournalClaimStaleError);
+      assert.equal(error.details.activeClaimId, activeClaimId);
+      assert.equal(error.details.claimExpired, false);
+      assert.equal(error.details.activeClaimAgeMs, 500);
+      return true;
+    },
+  );
+
+  const retry = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: new Date(fixedNow.getTime() + 5_000),
+    truncate: false,
+    claimId: retryClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  const inspection = retry.inspect();
+  retry.close();
+
+  const restarted = readRecoveryJournal(filePath);
+  const advancedRecord = restarted.records.find((record) => record.type === 'stale-claim-advanced');
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(
+    restarted.records.filter((record) => record.type === 'stale-claim-rejected').length,
+    1,
+  );
+  assert.ok(advancedRecord);
+  assert.equal(advancedRecord.previousClaimId, activeClaimId);
+  assert.equal(advancedRecord.claimId, retryClaimId);
+  assert.equal(advancedRecord.previousClaimAgeMs, 5_000);
+  assert.equal(advancedRecord.staleThresholdMs, staleThresholdMs);
+  assert.equal(advancedRecord.claimExpired, true);
+  assert.equal(advancedRecord.previousClaimExpiresAt, '2026-05-24T00:00:01.000Z');
+
+  assert.equal(inspection.claim.activeClaimId, retryClaimId);
+  assert.equal(inspection.claim.previousClaimId, activeClaimId);
+  assert.equal(inspection.claim.staleClaimRejected, true);
+  assert.equal(inspection.claim.claimExpiry.expired, true);
+  assert.equal(inspection.claim.claimExpiry.previousClaimExpired, true);
+  assert.equal(inspection.claim.claimExpiry.staleThresholdMs, staleThresholdMs);
+  assert.equal(inspection.journal.claimExpiry, inspection.claim.claimExpiry);
+  assert.equal(inspection.journal.writerLease.claimHash, recoveryClaimHash(retryClaimId));
+  assert.equal(inspection.journal.writerLease.claimKeyHash, recoveryClaimHash(retryClaimId));
+  assert.equal(productionRecoveryJournalInspectionSurfaceIsPresent(inspection), true);
+
+  const releaseProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: buildRecoveryReleaseSummary({
+      inspection,
+      plan,
+      mutationEvents: plan.mutations.length,
+    }),
+    applyRevalidation: buildBlockedApplyRevalidation(),
+  });
+
+  assert.equal(releaseProof.ok, true);
+  assert.equal(releaseProof.gate, 'GATE-2');
+  assert.equal(releaseProof.gateStatus, 'proven');
+  assert.equal(releaseProof.sameReleaseBoundary, true);
+  assert.equal(releaseProof.checks.claimExpiryPolicy, true);
+  assert.equal(releaseProof.claimExpiryPolicy.proved, true);
+  assert.equal(releaseProof.claimExpiryPolicy.previousClaimAgeMs, 5_000);
 });
 
 test('production recovery journal ownership record is durable after restart', () => {

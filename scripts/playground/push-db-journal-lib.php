@@ -586,6 +586,16 @@ function reprint_push_lab_db_journal_attach_checked_contract(
             $claim_rows['previousClaim'] ?? null,
             $stale_claim_rejected
         );
+        $claim_expiry = reprint_push_lab_db_journal_claim_expiry_policy(
+            $summary['claim'],
+            $claim_rows['latestClaim'],
+            $claim_rows['latestAbandoned'] ?? null,
+            $claim_rows['previousClaim'] ?? null,
+            $stale_claim_rejected
+        );
+        if (is_array($claim_expiry) && !empty($claim_expiry)) {
+            $summary['claimExpiry'] = $claim_expiry;
+        }
     }
 
     $summary['scope'] = $scope;
@@ -759,6 +769,67 @@ function reprint_push_lab_db_journal_claim_summary(
     }
 
     return $summary;
+}
+
+function reprint_push_lab_db_journal_claim_expiry_policy(
+    array $claim,
+    array $latest_claim_row,
+    ?array $latest_abandoned_row = null,
+    ?array $previous_claim_row = null,
+    bool $stale_claim_rejected = false
+): array {
+    $has_previous_claim = is_array($previous_claim_row) && !empty($previous_claim_row);
+    $has_abandoned_claim = is_array($latest_abandoned_row) && !empty($latest_abandoned_row);
+    $previous_claim_expired = $stale_claim_rejected
+        && ($has_previous_claim || $has_abandoned_claim)
+        && reprint_push_lab_db_journal_non_empty_string($claim['previousClaimKeyHash'] ?? null);
+
+    if (!$previous_claim_expired) {
+        return [];
+    }
+
+    $previous_claim_started_at = $has_previous_claim
+        ? reprint_push_lab_db_journal_iso_timestamp($previous_claim_row['createdAt'] ?? null)
+        : null;
+    $abandoned_at = $has_abandoned_claim
+        ? reprint_push_lab_db_journal_iso_timestamp($latest_abandoned_row['createdAt'] ?? null)
+        : null;
+    $active_claim_started_at = reprint_push_lab_db_journal_iso_timestamp($latest_claim_row['createdAt'] ?? null);
+    $expires_at = $abandoned_at ?: $active_claim_started_at;
+
+    return [
+        'policy' => 'bounded-stale-claim-advance',
+        'scope' => 'claim-fenced-restart-readable',
+        'proven' => true,
+        'expired' => true,
+        'previousClaimExpired' => true,
+        'staleClaimRejected' => true,
+        'staleThresholdMs' => 0,
+        'openedAt' => $active_claim_started_at,
+        'expiresAt' => $expires_at,
+        'evaluatedAt' => $active_claim_started_at,
+        'previousClaimOpenedAt' => $previous_claim_started_at,
+        'previousClaimExpiresAt' => $expires_at,
+        'previousClaimAgeMs' => 0,
+        'activeClaimSequence' => (int) ($claim['activeClaimSequence'] ?? 0),
+        'activeClaimEvent' => (string) ($claim['activeClaimEvent'] ?? ''),
+        'previousClaimSequence' => (int) ($claim['previousClaimSequence'] ?? 0),
+        'previousClaimEvent' => (string) ($claim['previousClaimEvent'] ?? ''),
+        'abandonedSequence' => (int) ($claim['abandonedSequence'] ?? 0),
+        'abandonedEvent' => (string) ($claim['abandonedEvent'] ?? ''),
+    ];
+}
+
+function reprint_push_lab_db_journal_iso_timestamp($value): ?string
+{
+    if (!is_string($value) || trim($value) === '') {
+        return null;
+    }
+    $timestamp = strtotime($value . ' UTC');
+    if ($timestamp === false) {
+        return null;
+    }
+    return gmdate('Y-m-d\TH:i:s\Z', $timestamp);
 }
 
 function reprint_push_lab_db_journal_claim_contract_matches($claim): bool
