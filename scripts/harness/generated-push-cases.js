@@ -235,6 +235,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-postmeta-create-update-delete-ready',
     tag: 'wp-postmeta-create-update-delete',
   },
+  wpPostmetaCreateUpdateDeleteVariant3: {
+    family: 'wp-postmeta-create-update-delete-variant3',
+    tag: 'wp-postmeta-create-update-delete-v3',
+  },
   wpCommentsCommentmetaGraph: {
     family: 'wp-comments-commentmeta-graph-ready',
     tag: 'wp-comments-commentmeta-graph',
@@ -2741,6 +2745,8 @@ function addWpPostmetaCreateUpdateDelete(base, local, remote, allocator, tags, {
   tags.add('wp-postmeta-create');
   tags.add('wp-postmeta-update');
   tags.add('wp-postmeta-delete');
+  tags.add('wp-postmeta-create-update-delete-v3');
+  tags.add(conflict ? 'wp-postmeta-create-update-delete-v3-non-ready' : 'wp-postmeta-create-update-delete-v3-ready');
 
   if (conflict) {
     remote.db.wp_postmeta[updateRowId].meta_value = `remote concurrent wp_postmeta update ${allocator.next()}`;
