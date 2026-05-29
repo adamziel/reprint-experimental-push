@@ -161,6 +161,15 @@ mutation. Concurrent remote edits to the updated post remain `conflict` and
 refuse apply so local `wp_posts` create/update/delete plans cannot overwrite
 newer remote rows.
 
+RPP-0147 adds `wpPostsCreateUpdateDeleteVariant3` coverage for the same
+`wp_posts` create/update/delete surface with an explicit variant-3 target tag.
+The deterministic roster emits 20 variant-3 target cases: 10 ready post
+create/update/delete plans and 10 non-ready remote-drift conflicts, with two
+cases in every tier. The focused proof records only resource keys, post types,
+counts, and hashes, verifies the ready case applies the planned create, update,
+and delete mutations and rejects stale replay before mutation, then verifies
+the conflicting updated post refuses apply without mutating the remote digest.
+
 The `fileTypeSwap` target coverage records per-tier counts for file topology
 type swaps. Ready cases replace an empty directory with the planned file value
 and preserve unplanned remote resources; conflict cases add a remote descendant
