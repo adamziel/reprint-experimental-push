@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T04:17:00+02:00">Last updated: May 29, 2026, 04:17 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T04:25:00+02:00">Last updated: May 29, 2026, 04:25 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>241</strong>
+        <strong>242</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>759</strong>
+        <strong>758</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,12 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0405 plugin-driver</span>
+        <span>RPP-0502 executor-auth</span>
       </div>
-      <p>The latest refresh integrates RPP-0405 wp_postmeta plugin-driver evidence: focused tests prove canonical postmeta and alias row semantics, exact meta_id matching, local-candidate versus production-backed release-gate scope carry-through, unsupported row identifiers failing closed before mutation, and redacted evidence without raw meta_value payloads. Counts are now 241/759; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0502 production snapshot-hashes route evidence: focused tests prove the authenticated permission and signed-request checks run before JSON parsing, the route stays planning-only without mutation helpers, and receipts expose hash-only snapshot metadata. Counts are now 242/758; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0502 snapshot hashes: 4/4 focused</span>
+        <span class="tag">RPP-0502 auth matrix: 139/139</span>
         <span class="tag">RPP-0405 postmeta: 6/6 focused</span>
         <span class="tag">RPP-0136 harness: 1/1 focused</span>
         <span class="tag">RPP-0203 invariant: 2/2 focused</span>
@@ -449,7 +451,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 40/40</span>
-        <span class="tag">checked goals: 241/1000</span>
+        <span class="tag">checked goals: 242/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
