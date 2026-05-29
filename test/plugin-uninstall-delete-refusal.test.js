@@ -180,6 +180,52 @@ test('executor rejects forged ready plugin delete before mutation', () => {
   assert.equal(JSON.stringify(remote), before);
 });
 
+test('executor rejects forged ready plugin package file delete before mutation', () => {
+  const remote = baseSite();
+  const before = JSON.stringify(remote);
+  const forgedPlan = {
+    schemaVersion: 1,
+    id: 'forged-plugin-package-file-delete-plan',
+    generatedAt: fixedNow.toISOString(),
+    status: 'ready',
+    summary: { mutations: 1, decisions: 0, conflicts: 0, blockers: 0, atomicGroups: 0 },
+    mutations: [
+      {
+        id: 'mutation-1',
+        resource: {
+          type: 'file',
+          path: 'wp-content/plugins/forms/forms.php',
+          key: formsPluginFileResourceKey,
+        },
+        resourceKey: formsPluginFileResourceKey,
+        action: 'delete',
+        value: { absent: true },
+        remoteBeforeHash: 'forged',
+      },
+    ],
+    preconditions: [],
+    decisions: [],
+    conflicts: [],
+    blockers: [],
+    atomicGroups: [],
+  };
+
+  const error = captureError(() => applyPlan(remote, forgedPlan));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PLUGIN_UNINSTALL_DELETE_REFUSED');
+  assert.deepEqual(error.details, {
+    mutationId: 'mutation-1',
+    resourceKey: formsPluginFileResourceKey,
+    pluginOwner: 'forms',
+    reasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    operation: 'delete',
+    resourceType: 'file',
+    supportsDelete: false,
+  });
+  assert.equal(JSON.stringify(remote), before);
+});
+
 test('allowed non-delete plugin and plugin-owned data paths remain ready', () => {
   const base = baseSite();
   const local = cloneJson(base);

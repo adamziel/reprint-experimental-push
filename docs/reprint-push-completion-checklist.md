@@ -442,7 +442,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0408 (Mid / plugin-driver) Implement serialized option validator, variant 1. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0409 (Mid / plugin-driver) Implement plugin activation dependency validator, variant 1. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0410 (Mid / plugin-driver) Implement plugin update dependency validator, variant 1. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0411 (Mid / plugin-driver) Implement plugin uninstall/delete refusal, variant 1. Success: focused test proves exact driver behavior.
+- [x] RPP-0411 (Mid / plugin-driver) Implement plugin uninstall/delete refusal, variant 1. Success: focused test proves exact driver behavior.
 - [x] RPP-0412 (Mid / plugin-driver) Implement direct active_plugins mutation refusal, variant 1. Success: generated harness covers supported and unsupported variants.
 - [ ] RPP-0413 (Mid / plugin-driver) Implement owner context stale plugin file refusal, variant 1. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0414 (Mid / plugin-driver) Implement owner context stale metadata refusal, variant 1. Success: remote drift preserves plugin-owned remote data.
