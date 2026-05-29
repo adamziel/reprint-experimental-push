@@ -333,7 +333,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0304 (Mid / graph-identity) Implement postmeta post_id reference, variant 1. Success: local production verifier carries the target through apply.
 - [x] RPP-0305 (Mid / graph-identity) Implement comment post reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0306 (Mid / graph-identity) Implement comment parent thread reference, variant 1. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0307 (Mid / graph-identity) Implement comment user reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0307 (Mid / graph-identity) Implement comment user reference, variant 1. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0308 (Mid / graph-identity) Implement commentmeta comment reference, variant 1. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0309 (Mid / graph-identity) Implement category term taxonomy reference, variant 1. Success: local production verifier carries the target through apply.
 - [x] RPP-0310 (Mid / graph-identity) Implement post_tag taxonomy reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.

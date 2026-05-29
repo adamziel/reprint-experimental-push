@@ -2877,13 +2877,15 @@ function wordpressGraphReferenceEvidence(
 }
 
 function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localValue, remoteValue }) {
+  if (reference.relationshipType === 'comment-user') {
+    return wordpressGraphCommentUserTargetSupport(reference, { baseValue, localValue, remoteValue });
+  }
+
   if (reference.relationshipType !== 'featured-image-attachment') {
     return { supported: true };
   }
 
-  const targetValue = localValue !== ABSENT
-    ? localValue
-    : (remoteValue !== ABSENT ? remoteValue : baseValue);
+  const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
   if (targetValue === ABSENT) {
     return { supported: true };
   }
@@ -2901,6 +2903,34 @@ function wordpressGraphRelationshipTargetSupport(reference, { baseValue, localVa
   }
 
   return { supported: true };
+}
+
+function wordpressGraphCommentUserTargetSupport(reference, { baseValue, localValue, remoteValue }) {
+  const targetValue = wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue });
+  if (targetValue === ABSENT) {
+    return { supported: true };
+  }
+
+  const targetUserId = normalizePositiveInteger(targetValue?.ID);
+  const expectedUserId = wordpressGraphResourcePrimaryInteger(reference.targetResource);
+  if (
+    expectedUserId == null
+    || targetUserId !== expectedUserId
+  ) {
+    return {
+      supported: false,
+      className: 'stale-wordpress-graph-identity',
+      reason: `WordPress graph mutation ${reference.sourceResourceKey} references an unsupported wp_comments.user_id target that is not a valid wp_users row.`,
+    };
+  }
+
+  return { supported: true };
+}
+
+function wordpressGraphRelationshipTargetValue({ baseValue, localValue, remoteValue }) {
+  return localValue !== ABSENT
+    ? localValue
+    : (remoteValue !== ABSENT ? remoteValue : baseValue);
 }
 
 function wordpressGraphTargetResource({ sourceTable, targetSuffix, id }) {
