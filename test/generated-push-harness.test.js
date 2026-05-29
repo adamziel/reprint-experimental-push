@@ -199,6 +199,8 @@ const requiredFamilies = [
   'post-author-stale-target',
   'plugin-owned-supported',
   'plugin-owned-unsupported',
+  'plugin-usermeta-driver-supported',
+  'plugin-usermeta-driver-unsupported',
   'plugin-owned-custom-table-change',
   'plugin-owned-custom-table-variant1',
   'plugin-owned-custom-table-update',
@@ -255,6 +257,84 @@ test('generated push harness covers 300+ general cases from trivial to highly co
     'post_author mapping tag needs stale/blocked coverage',
   );
   assert.ok(summary.totalDecisions > 0);
+});
+
+test('RPP-0407 generated harness covers supported and unsupported wp_usermeta driver variants', () => {
+  const report = runGeneratedPushHarness();
+  const supportedCoverage = report.summary.targetCoverage.usermetaDriverSupported;
+  const unsupportedCoverage = report.summary.targetCoverage.usermetaDriverUnsupported;
+
+  assert.ok(supportedCoverage, 'missing supported wp_usermeta driver coverage');
+  assert.ok(unsupportedCoverage, 'missing unsupported wp_usermeta driver coverage');
+  assert.equal(supportedCoverage.family, 'supported-plugin-usermeta');
+  assert.equal(unsupportedCoverage.family, 'unsupported-plugin-usermeta');
+  assert.ok(supportedCoverage.statuses.ready > 0, 'supported usermeta driver cases should be ready');
+  assert.ok(unsupportedCoverage.statuses.blocked > 0, 'unsupported usermeta driver cases should fail closed');
+  assert.equal(unsupportedCoverage.statuses.ready || 0, 0, 'unsupported usermeta driver cases must not be ready');
+  assert.deepEqual(
+    Object.keys(supportedCoverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(
+    Object.keys(unsupportedCoverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  const cases = generatePushHarnessCases();
+  const supportedCase = cases.find((testCase) => testCase.family === 'supported-plugin-usermeta');
+  const unsupportedCase = cases.find((testCase) => testCase.family === 'unsupported-plugin-usermeta');
+  assert.ok(supportedCase, 'missing generated supported wp_usermeta case');
+  assert.ok(unsupportedCase, 'missing generated unsupported wp_usermeta case');
+
+  const supportedShape = generatedPluginUsermetaShape(supportedCase);
+  const unsupportedShape = generatedPluginUsermetaShape(unsupportedCase);
+  const supportedPlan = createPushPlan({
+    base: supportedCase.base,
+    local: supportedCase.local,
+    remote: supportedCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const unsupportedPlan = createPushPlan({
+    base: unsupportedCase.base,
+    local: unsupportedCase.local,
+    remote: unsupportedCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const supportedResult = validateGeneratedCase(supportedCase);
+  const unsupportedResult = validateGeneratedCase(unsupportedCase);
+  const supportedMutation = supportedPlan.mutations.find((mutation) =>
+    mutation.resourceKey === supportedShape.resourceKey);
+  const unsupportedBlocker = unsupportedPlan.blockers.find((blocker) =>
+    blocker.resourceKey === unsupportedShape.resourceKey);
+  const supportedEvidence = supportedMutation.pluginOwnedResource.driverEvidence;
+  const supportedEvidenceJson = JSON.stringify(supportedEvidence);
+  const unsupportedBlockerJson = JSON.stringify(unsupportedBlocker);
+
+  assert.equal(supportedResult.status, 'ready');
+  assert.equal(supportedMutation.pluginOwnedResource.driver, 'wp-usermeta');
+  assert.equal(supportedEvidence.supported, true);
+  assert.equal(supportedEvidence.table, 'wp_usermeta');
+  assert.equal(supportedEvidence.rowId, supportedShape.rowId);
+  assert.equal(supportedEvidence.rowIdKind, 'umeta_id');
+  assert.equal(supportedEvidence.userId, supportedShape.row.user_id);
+  assert.equal(supportedEvidence.metaKey, supportedShape.row.meta_key);
+  assert.equal(Object.hasOwn(supportedEvidence, 'meta_value'), false);
+  assert.equal(Object.hasOwn(supportedEvidence, 'metaValue'), false);
+  assert.equal(supportedEvidenceJson.includes('"mode":"local"'), false);
+  assert.equal(supportedEvidenceJson.includes('"ordinal"'), false);
+
+  assert.equal(unsupportedResult.status, 'blocked');
+  assert.equal(unsupportedPlan.status, 'blocked');
+  assert.equal(unsupportedPlan.mutations.some((mutation) =>
+    mutation.resourceKey === unsupportedShape.resourceKey), false);
+  assert.equal(unsupportedBlocker.class, 'unsupported-plugin-owned-resource');
+  assert.equal(unsupportedBlocker.driver, 'wp-usermeta');
+  assert.equal(unsupportedBlocker.driverEvidence.supported, false);
+  assert.equal(unsupportedBlocker.driverEvidence.rowId, unsupportedShape.rowId);
+  assert.equal(unsupportedBlocker.driverEvidence.rowIdKind, 'umeta_id');
+  assert.match(unsupportedBlocker.reason, /umeta_id to match the resource id/);
+  assert.equal(unsupportedBlockerJson.includes('local-invalid'), false);
+  assert.equal(unsupportedBlockerJson.includes('meta_value'), false);
 });
 
 test('RPP-0221 generated harness preserves independent local files and remote rows', () => {
@@ -519,6 +599,23 @@ test('RPP-0138 same independent content variant 2 proves ready preservation with
   assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
   assert.equal(evidenceText.includes('Shared independent'), false, 'variant 2 evidence leaked shared row title');
 });
+
+function generatedPluginUsermetaShape(testCase) {
+  const entry = Object.entries(testCase.local.db.wp_usermeta)
+    .find(([, row]) => row.__pluginOwner === 'forms'
+      && typeof row.meta_key === 'string'
+      && row.meta_key.startsWith('_forms_generated_user_flag_'));
+  assert.ok(entry, `${testCase.id} missing generated plugin-owned usermeta row`);
+  const [rowId, row] = entry;
+  assert.match(rowId, /^umeta_id:[1-9]\d*$/);
+  assert.equal(testCase.base.db.wp_usermeta[rowId]?.__pluginOwner, 'forms');
+  assert.equal(testCase.remote.db.wp_usermeta[rowId]?.__pluginOwner, 'forms');
+  return {
+    rowId,
+    row,
+    resourceKey: `row:${JSON.stringify(['wp_usermeta', rowId])}`,
+  };
+}
 
 test('RPP-0119 remote-only preservation rejects stale replay before mutation with hash-only evidence', () => {
   const report = runGeneratedPushHarness();
