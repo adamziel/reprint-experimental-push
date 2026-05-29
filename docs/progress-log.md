@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 05:07 CEST.
+- Last update: 2026-05-29 05:18 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 247
-  items checked and leaves 753 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 249
+  items checked and leaves 751 open.
 - Checked slices: 100 release-gate foundation items, 20 graph identity items,
-  31 plugin-driver boundary items, 11 executor/auth items, 13 recovery items,
+  31 plugin-driver boundary items, 12 executor/auth items, 13 recovery items,
   7 chunking/performance items, 2 production-topology items, 39 generated
-  harness items, and 24 merge-invariant items. No release-ops items are checked
+  harness items, and 25 merge-invariant items. No release-ops items are checked
   yet.
+- Focused remote-only plugin metadata preservation refresh: the current lane now
+  contains `RPP-0206` evidence in
+  `docs/evidence/rpp-0206-remote-only-plugin-metadata-preservation.md`,
+  `docs/scenario-matrix.md`, and `test/push-planner.test.js`. `node --test
+  --test-name-pattern='RPP-0206' test/push-planner.test.js` passed 1/1,
+  proving an independent local file mutation can proceed while remote-only
+  plugin metadata is kept as hash-only `keep-remote` evidence with no plugin
+  mutation or live remote precondition. `node --check
+  test/push-planner.test.js`, checklist lint, artifact redaction scan, and
+  `git diff --check` also passed. Counts are now 249/751; final release
+  remains `NO-GO`.
 - Focused wp_termmeta plugin-driver semantics refresh: the current lane now
   contains `RPP-0406` evidence in
   `docs/evidence/rpp-0406-wp-termmeta-driver-semantics.md` and
