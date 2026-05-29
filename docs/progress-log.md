@@ -6,19 +6,19 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 03:40 CEST.
+- Last update: 2026-05-29 03:47 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 237
-  items checked and leaves 763 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 238
+  items checked and leaves 762 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 37 generated
-  harness items, and 21 merge-invariant items. No release-ops items are checked
+  harness items, and 22 merge-invariant items. No release-ops items are checked
   yet.
 - Focused tmux stdout marker refresh: the current lane now contains
   `test/release-gate-tmux-status-marker-focused-regression.test.js` for
@@ -185,6 +185,17 @@ linked implementation artifacts.
   generated independent local-file plus remote-row invariant remains hash-only
   and unplanned remote row changes are preserved. Counts are now 227/773;
   final release remains `NO-GO`.
+- Focused merge-invariant independent row/file refresh: `4acd8eeec` integrates
+  `RPP-0202` evidence in
+  `docs/evidence/rpp-0202-independent-local-row-remote-file-edit.md`,
+  `src/apply.js`, and `test/push-planner.test.js`. `node --test
+  --test-name-pattern='RPP-0202|RPP-0222' test/push-planner.test.js` passed
+  2/2, and `umask 077 && node --test test/push-planner.test.js` passed 135/135,
+  proving the independent local row mutation preserves an unplanned remote file
+  edit, rejects forged keep-remote mutation overlap before durable mutation
+  writes, rejects stale row replay with `PRECONDITION_FAILED`, and keeps private
+  row/file payloads out of evidence. Counts are now 238/762; final release
+  remains `NO-GO`.
 - Generated harness atomic plugin install stack variant-1 refresh: the current
   lane now contains RPP-0116 coverage in `scripts/harness/generated-push-cases.js`,
   `test/generated-push-harness.test.js`, `docs/generated-push-harness.md`, and

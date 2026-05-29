@@ -223,7 +223,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 Focus: turn every known merge rule into broad planner/executor coverage.
 
 - [x] RPP-0201 (Near-Mid / merge-invariants) Implement independent local file plus remote row edit, variant 1. Success: node test proves the invariant over generated and focused fixtures.
-- [ ] RPP-0202 (Near-Mid / merge-invariants) Implement independent local row plus remote file edit, variant 1. Success: executor rejects forged or stale mutation attempts.
+- [x] RPP-0202 (Near-Mid / merge-invariants) Implement independent local row plus remote file edit, variant 1. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0203 (Near-Mid / merge-invariants) Implement local delete versus remote edit, variant 1. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0204 (Near-Mid / merge-invariants) Implement local directory delete versus remote descendant create, variant 1. Success: scenario matrix row names the behavior and command.
 - [x] RPP-0205 (Near-Mid / merge-invariants) Implement local file type swap versus remote descendant, variant 1. Success: progress log records the command and caveat.
