@@ -59,7 +59,7 @@ function mutationFor(plan, resourceKey) {
   return plan.mutations.find((mutation) => mutation.resourceKey === resourceKey);
 }
 
-test('passing plugin driver apply validation hook carries one real mutation through apply', () => {
+test('RPP-0418 passing plugin driver apply validation hook carries one real mutation through apply', () => {
   const base = baseSite();
   const local = cloneJson(base);
   local.db.wp_options['option_name:forms_settings'].option_value.mode = 'local-validated-apply';
@@ -75,7 +75,29 @@ test('passing plugin driver apply validation hook carries one real mutation thro
   const plan = planFor(base, local, remote);
   const mutation = mutationFor(plan, formsOptionResourceKey);
   const evidence = mutation.pluginOwnedResource.applyValidationEvidence;
-  const result = applyPlan(remote, plan);
+  const hookEvidence = [];
+  const result = applyPlan(remote, plan, {
+    beforeMutation({ mutation: appliedMutation, mutationIndex, driverApplyValidation }) {
+      hookEvidence.push({ mutation: appliedMutation, mutationIndex, driverApplyValidation });
+    },
+  });
+  const driverApplyValidation = hookEvidence[0].driverApplyValidation;
+  const proof = {
+    rpp: 'RPP-0418',
+    evidenceSource: 'local-production-plugin-driver-test',
+    productionBacked: false,
+    productionProofShape: 'single-real-wp-option-mutation',
+    rawValuesIncluded: false,
+    mutationCount: plan.summary.mutations,
+    appliedMutations: result.appliedMutations,
+    mutationApplyValidationReasonCode: evidence.reasonCode,
+    driverApplyValidationReasonCode: driverApplyValidation.reasonCode,
+    driverApplyValidationOutcome: driverApplyValidation.outcome,
+    plannedHash: driverApplyValidation.planned.hash,
+    remoteHash: driverApplyValidation.remote.hash,
+  };
+  const proofJson = JSON.stringify(proof);
+  const driverApplyValidationJson = JSON.stringify(driverApplyValidation);
 
   assert.equal(plan.status, 'ready');
   assert.equal(plan.summary.mutations, 1);
@@ -89,8 +111,28 @@ test('passing plugin driver apply validation hook carries one real mutation thro
   assert.equal(evidence.hook, 'wp-option:validate-apply');
   assert.equal(evidence.supportedHook, true);
   assert.equal(evidence.status, 'passed');
+  assert.equal(hookEvidence.length, 1);
+  assert.equal(hookEvidence[0].mutationIndex, 1);
+  assert.equal(hookEvidence[0].mutation.resourceKey, formsOptionResourceKey);
+  assert.equal(driverApplyValidation.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED');
+  assert.equal(driverApplyValidation.operation, 'driver-apply-validation');
+  assert.equal(driverApplyValidation.outcome, 'accepted');
+  assert.equal(driverApplyValidation.resourceKey, formsOptionResourceKey);
+  assert.equal(driverApplyValidation.pluginOwner, 'forms');
+  assert.equal(driverApplyValidation.driver, 'wp-option');
+  assert.equal(driverApplyValidation.resource.table, 'wp_options');
+  assert.equal(driverApplyValidation.planned.state, 'present');
+  assert.match(driverApplyValidation.planned.hash, /^[a-f0-9]{64}$/);
+  assert.equal(driverApplyValidation.remote.state, 'present');
+  assert.match(driverApplyValidation.remote.hash, /^[a-f0-9]{64}$/);
   assert.equal(result.appliedMutations, 1);
   assert.equal(result.site.db.wp_options['option_name:forms_settings'].option_value.mode, 'local-validated-apply');
+  assert.equal(proof.mutationCount, 1);
+  assert.equal(proof.appliedMutations, 1);
+  assert.equal(driverApplyValidationJson.includes('local-validated-apply'), false);
+  assert.equal(driverApplyValidationJson.includes('remote-preserved-apply-hook'), false);
+  assert.equal(proofJson.includes('local-validated-apply'), false);
+  assert.equal(proofJson.includes('remote-preserved-apply-hook'), false);
 });
 
 test('failing plugin driver apply validation hook refuses before mutation with stable evidence', () => {
