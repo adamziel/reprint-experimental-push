@@ -129,6 +129,12 @@ function reprint_push_lab_rest_register_routes(): void
             'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
         ]);
 
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/snapshot-hashes', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_snapshot_hashes',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
+
         register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/apply', [
             'methods' => WP_REST_Server::CREATABLE,
             'callback' => 'reprint_push_lab_rest_authenticated_apply',
@@ -202,6 +208,12 @@ function reprint_push_lab_rest_register_routes(): void
     register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/dry-run', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'reprint_push_lab_rest_authenticated_dry_run',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/snapshot-hashes', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_snapshot_hashes',
         'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
     ]);
 
@@ -483,6 +495,34 @@ function reprint_push_lab_rest_authenticated_dry_run(WP_REST_Request $request): 
     return reprint_push_lab_rest_json_response($result);
 }
 
+function reprint_push_lab_rest_authenticated_snapshot_hashes(WP_REST_Request $request): WP_REST_Response
+{
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'snapshot-hashes');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
+    try {
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $result = reprint_push_lab_rest_snapshot_hashes_response($request, $payload);
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $result = $error->result;
+    } catch (Throwable $error) {
+        $result = [
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ];
+    }
+
+    return reprint_push_lab_rest_json_response($result);
+}
+
 function reprint_push_lab_rest_authenticated_apply(WP_REST_Request $request): WP_REST_Response
 {
     $signature_error = reprint_push_lab_rest_require_signed_request($request, 'apply');
@@ -565,6 +605,490 @@ function reprint_push_lab_rest_authenticated_db_journal(WP_REST_Request $request
         $response->set_data($result);
     }
     return $response;
+}
+
+function reprint_push_lab_rest_snapshot_hashes_response(WP_REST_Request $request, array $payload): array
+{
+    $snapshot = reprint_push_export_snapshot();
+    $snapshot_hash = hash('sha256', reprint_push_stable_json($snapshot));
+    $source = reprint_push_lab_rest_source_identity($request);
+    $options = reprint_push_lab_rest_snapshot_hashes_options($payload);
+    $resources = reprint_push_lab_rest_snapshot_hash_resources($snapshot, $options);
+    $resource_proofs = array_map(
+        'reprint_push_lab_rest_snapshot_hash_resource_proof',
+        $resources
+    );
+    $snapshot_hash_set_hash = 'sha256:' . hash('sha256', reprint_push_stable_json($resource_proofs));
+    $resource_count = count($resources);
+    $offset = (int) $options['cursorOffset'];
+    $batch_size = (int) $options['batchSize'];
+    if ($offset > $resource_count) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Snapshot hashes cursor is outside the current remote comparison set.',
+            'mode' => 'snapshot-hashes',
+        ]);
+    }
+
+    $page_resources = array_slice($resources, $offset, $batch_size);
+    $page_proofs = array_map(
+        'reprint_push_lab_rest_snapshot_hash_resource_proof',
+        $page_resources
+    );
+    $next_offset = $offset + count($page_resources);
+    $complete = $next_offset >= $resource_count;
+    $cursor = $complete
+        ? null
+        : reprint_push_lab_rest_snapshot_hashes_cursor_for_offset($source, $next_offset);
+    $coverage_hash = 'sha256:' . hash('sha256', reprint_push_stable_json([
+        'snapshotHash' => 'sha256:' . $snapshot_hash,
+        'snapshotHashSetHash' => $snapshot_hash_set_hash,
+        'resourceCount' => $resource_count,
+        'scopeHash' => (string) $options['scopeHash'],
+    ]));
+
+    $result = [
+        'ok' => true,
+        'mode' => 'snapshot-hashes',
+        'snapshot_id' => reprint_push_lab_rest_snapshot_hashes_id($source, $snapshot_hash_set_hash),
+        'snapshotId' => reprint_push_lab_rest_snapshot_hashes_id($source, $snapshot_hash_set_hash),
+        'snapshotHash' => 'sha256:' . $snapshot_hash,
+        'snapshotHashSetHash' => $snapshot_hash_set_hash,
+        'site_epoch' => 'epoch:' . substr($snapshot_hash, 0, 24),
+        'coverage' => [
+            'coverage_id' => reprint_push_lab_rest_snapshot_hashes_coverage_id($source, $coverage_hash),
+            'coverage_hash' => $coverage_hash,
+            'scanner_version' => 'reprint-push-scanner/1',
+            'hash_algorithm' => 'sha256',
+            'complete' => true,
+            'resource_count' => $resource_count,
+            'scopes' => [
+                'scope_hash' => (string) $options['scopeHash'],
+                'file_prefix_filter_count' => count($options['fileScopes']),
+                'table_filter_count' => count($options['tables']),
+                'plugins' => (bool) $options['includePlugins'],
+            ],
+            'excluded' => [
+                [
+                    'resource_key' => 'runtime:transients',
+                    'reason' => 'generated-cache',
+                ],
+            ],
+            'blocked' => [],
+        ],
+        'cursor' => $cursor,
+        'complete' => $complete,
+        'resources' => array_values($page_resources),
+        'pageHash' => 'sha256:' . hash('sha256', reprint_push_stable_json($page_proofs)),
+        'request' => [
+            'bodyHash' => hash('sha256', reprint_push_stable_json($payload)),
+            'scopeHash' => (string) $options['scopeHash'],
+            'batchSize' => $batch_size,
+            'cursorOffset' => $offset,
+            'includeAbsentForBaseKeysCount' => count($options['includeAbsentKeys']),
+        ],
+        'planningOnly' => [
+            'readOnly' => true,
+            'mutates' => false,
+            'authority' => 'snapshot hashes are planning evidence only and never write authority',
+            'receiptBoundary' => 'snapshot hash receipts and dry-run receipts do not promote cursors into locks',
+            'applyBoundary' => 'apply must revalidate fresh live evidence before mutation',
+        ],
+    ];
+    $result['receipt'] = reprint_push_lab_rest_snapshot_hashes_receipt($request, $payload, $result);
+
+    return $result;
+}
+
+function reprint_push_lab_rest_snapshot_hashes_options(array $payload): array
+{
+    $scope = [];
+    if (array_key_exists('scope', $payload)) {
+        if (!is_array($payload['scope'])) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => 'Snapshot hashes scope must be a JSON object.',
+                'mode' => 'snapshot-hashes',
+            ]);
+        }
+        $scope = $payload['scope'];
+    }
+
+    $include_plugins = true;
+    if (array_key_exists('plugins', $scope)) {
+        if (!is_bool($scope['plugins'])) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => 'Snapshot hashes scope.plugins must be a boolean when supplied.',
+                'mode' => 'snapshot-hashes',
+            ]);
+        }
+        $include_plugins = (bool) $scope['plugins'];
+    }
+
+    $file_scopes = reprint_push_lab_rest_snapshot_hashes_string_list($scope['files'] ?? null, 'scope.files');
+    $tables = reprint_push_lab_rest_snapshot_hashes_string_list($scope['tables'] ?? null, 'scope.tables');
+    $include_absent_keys = reprint_push_lab_rest_snapshot_hashes_string_list(
+        $payload['include_absent_for_base_keys'] ?? null,
+        'include_absent_for_base_keys'
+    );
+    $batch_size = reprint_push_lab_rest_snapshot_hashes_batch_size($payload);
+    $cursor = $payload['cursor'] ?? null;
+    $cursor_offset = reprint_push_lab_rest_snapshot_hashes_cursor_offset($cursor);
+
+    return [
+        'fileScopes' => $file_scopes,
+        'tables' => $tables,
+        'includePlugins' => $include_plugins,
+        'includeAbsentKeys' => $include_absent_keys,
+        'batchSize' => $batch_size,
+        'cursor' => is_string($cursor) ? $cursor : null,
+        'cursorOffset' => $cursor_offset,
+        'scopeHash' => hash('sha256', reprint_push_stable_json([
+            'files' => $file_scopes,
+            'tables' => $tables,
+            'plugins' => $include_plugins,
+            'includeAbsentForBaseKeys' => $include_absent_keys,
+        ])),
+    ];
+}
+
+function reprint_push_lab_rest_snapshot_hashes_string_list($value, string $field): array
+{
+    if ($value === null) {
+        return [];
+    }
+    if (!is_array($value)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Snapshot hashes ' . $field . ' must be an array of strings when supplied.',
+            'mode' => 'snapshot-hashes',
+        ]);
+    }
+
+    $strings = [];
+    foreach ($value as $entry) {
+        if (!is_scalar($entry)) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'INVALID_ARGUMENT',
+                'message' => 'Snapshot hashes ' . $field . ' must contain only strings.',
+                'mode' => 'snapshot-hashes',
+            ]);
+        }
+        $normalized = trim((string) $entry);
+        if ($normalized !== '') {
+            $strings[] = $normalized;
+        }
+    }
+
+    $strings = array_values(array_unique($strings));
+    sort($strings, SORT_STRING);
+    return $strings;
+}
+
+function reprint_push_lab_rest_snapshot_hashes_batch_size(array $payload): int
+{
+    if (!array_key_exists('batch_size', $payload)) {
+        return 1000;
+    }
+
+    $batch_size = $payload['batch_size'];
+    if (!is_int($batch_size) && !(is_string($batch_size) && preg_match('/^\d+$/', $batch_size))) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Snapshot hashes batch_size must be an integer between 1 and 1000.',
+            'mode' => 'snapshot-hashes',
+        ]);
+    }
+
+    $batch_size = (int) $batch_size;
+    if ($batch_size < 1 || $batch_size > 1000) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Snapshot hashes batch_size must be between 1 and 1000.',
+            'mode' => 'snapshot-hashes',
+        ]);
+    }
+
+    return $batch_size;
+}
+
+function reprint_push_lab_rest_snapshot_hashes_cursor_offset($cursor): int
+{
+    if ($cursor === null || $cursor === '') {
+        return 0;
+    }
+    if (!is_string($cursor) || !preg_match('/^snapcursor:[a-f0-9]{16}:(\d+)$/', $cursor, $matches)) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Snapshot hashes cursor is invalid.',
+            'mode' => 'snapshot-hashes',
+        ]);
+    }
+
+    return (int) $matches[1];
+}
+
+function reprint_push_lab_rest_snapshot_hash_resources(array $snapshot, array $options): array
+{
+    $resources = [];
+
+    foreach (array_keys($snapshot['files'] ?? []) as $path) {
+        $resource = [
+            'type' => 'file',
+            'path' => (string) $path,
+            'key' => 'file:' . (string) $path,
+        ];
+        if (reprint_push_lab_rest_snapshot_hash_resource_in_scope($resource, $options)) {
+            $resources[$resource['key']] = reprint_push_lab_rest_snapshot_hash_resource_entry($snapshot, $resource);
+        }
+    }
+
+    if ((bool) $options['includePlugins']) {
+        foreach (array_keys($snapshot['plugins'] ?? []) as $name) {
+            $resource = [
+                'type' => 'plugin',
+                'name' => (string) $name,
+                'key' => 'plugin:' . (string) $name,
+            ];
+            $resources[$resource['key']] = reprint_push_lab_rest_snapshot_hash_resource_entry($snapshot, $resource);
+        }
+    }
+
+    foreach ($snapshot['db'] ?? [] as $table => $rows) {
+        foreach (array_keys(is_array($rows) ? $rows : []) as $id) {
+            $resource = [
+                'type' => 'row',
+                'table' => (string) $table,
+                'id' => (string) $id,
+                'key' => 'row:' . json_encode([(string) $table, (string) $id], JSON_UNESCAPED_SLASHES),
+            ];
+            if (reprint_push_lab_rest_snapshot_hash_resource_in_scope($resource, $options)) {
+                $resources[$resource['key']] = reprint_push_lab_rest_snapshot_hash_resource_entry($snapshot, $resource);
+            }
+        }
+    }
+
+    foreach ($options['includeAbsentKeys'] as $resource_key) {
+        if (isset($resources[$resource_key])) {
+            continue;
+        }
+        $resource = reprint_push_lab_rest_snapshot_hash_resource_from_key($resource_key);
+        if ($resource === null || !reprint_push_lab_rest_snapshot_hash_resource_in_scope($resource, $options, true)) {
+            continue;
+        }
+        $resources[$resource_key] = reprint_push_lab_rest_snapshot_hash_resource_entry($snapshot, $resource);
+    }
+
+    ksort($resources, SORT_STRING);
+    return array_values($resources);
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_in_scope(array $resource, array $options, bool $include_absent = false): bool
+{
+    if (($resource['type'] ?? '') === 'file') {
+        $file_scopes = $options['fileScopes'];
+        if (count($file_scopes) === 0) {
+            return true;
+        }
+        $path = (string) ($resource['path'] ?? '');
+        foreach ($file_scopes as $prefix) {
+            if ($path === $prefix || str_starts_with($path, rtrim($prefix, '/') . '/')) {
+                return true;
+            }
+        }
+        return $include_absent;
+    }
+
+    if (($resource['type'] ?? '') === 'row') {
+        $tables = $options['tables'];
+        return count($tables) === 0 || in_array((string) ($resource['table'] ?? ''), $tables, true) || $include_absent;
+    }
+
+    if (($resource['type'] ?? '') === 'plugin') {
+        return (bool) $options['includePlugins'] || $include_absent;
+    }
+
+    return false;
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_entry(array $snapshot, array $resource): array
+{
+    $resource_value = reprint_push_get_resource($snapshot, $resource);
+    $exists = (bool) ($resource_value['exists'] ?? false);
+    $hash = reprint_push_hash_resource($snapshot, $resource);
+    $entry = [
+        'resource_key' => (string) ($resource['key'] ?? ''),
+        'resourceKey' => (string) ($resource['key'] ?? ''),
+        'resource_type' => (string) ($resource['type'] ?? ''),
+        'resourceType' => (string) ($resource['type'] ?? ''),
+        'hash' => 'sha256:' . $hash,
+        'exists' => $exists,
+        'owner' => reprint_push_lab_rest_snapshot_hash_resource_owner($resource, $resource_value),
+        'capabilities' => reprint_push_lab_rest_snapshot_hash_resource_capabilities($resource),
+        'storage_guard' => reprint_push_lab_rest_snapshot_hash_resource_storage_guard($resource),
+    ];
+
+    return $entry;
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_owner(array $resource, array $resource_value): string
+{
+    if (($resource['type'] ?? '') === 'plugin') {
+        return (string) ($resource['name'] ?? 'unknown');
+    }
+
+    $value = $resource_value['value'] ?? null;
+    if (is_array($value) && isset($value['__pluginOwner'])) {
+        return (string) $value['__pluginOwner'];
+    }
+
+    if (($resource['type'] ?? '') === 'file') {
+        $path = (string) ($resource['path'] ?? '');
+        if (preg_match('#^wp-content/plugins/([^/]+)#', $path, $matches)) {
+            return (string) $matches[1];
+        }
+    }
+
+    return 'core';
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_capabilities(array $resource): array
+{
+    return match ((string) ($resource['type'] ?? '')) {
+        'file' => ['put', 'delete', 'stage'],
+        'row' => ['put', 'delete', 'transaction'],
+        'plugin' => ['activate', 'deactivate', 'validate'],
+        default => [],
+    };
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_storage_guard(array $resource): string
+{
+    return match ((string) ($resource['type'] ?? '')) {
+        'file' => 'filesystem-compare-rename',
+        'row' => 'mysql-transaction-row-lock',
+        'plugin' => 'semantic-driver',
+        default => 'unknown',
+    };
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_proof(array $entry): array
+{
+    return [
+        'resource_key' => (string) ($entry['resource_key'] ?? ''),
+        'hash' => (string) ($entry['hash'] ?? ''),
+        'exists' => (bool) ($entry['exists'] ?? false),
+        'storage_guard' => (string) ($entry['storage_guard'] ?? ''),
+    ];
+}
+
+function reprint_push_lab_rest_snapshot_hash_resource_from_key(string $resource_key): ?array
+{
+    if (str_starts_with($resource_key, 'file:')) {
+        $path = substr($resource_key, 5);
+        return $path === ''
+            ? null
+            : ['type' => 'file', 'path' => $path, 'key' => $resource_key];
+    }
+
+    if (str_starts_with($resource_key, 'plugin:')) {
+        $name = substr($resource_key, 7);
+        return $name === ''
+            ? null
+            : ['type' => 'plugin', 'name' => $name, 'key' => $resource_key];
+    }
+
+    if (str_starts_with($resource_key, 'row:')) {
+        $decoded = json_decode(substr($resource_key, 4), true);
+        if (!is_array($decoded) || count($decoded) !== 2) {
+            return null;
+        }
+        return [
+            'type' => 'row',
+            'table' => (string) $decoded[0],
+            'id' => (string) $decoded[1],
+            'key' => $resource_key,
+        ];
+    }
+
+    return null;
+}
+
+function reprint_push_lab_rest_snapshot_hashes_cursor_for_offset(array $source, int $offset): string
+{
+    return 'snapcursor:' . substr((string) ($source['sourceHash'] ?? hash('sha256', 'reprint-push')), 0, 16) . ':' . $offset;
+}
+
+function reprint_push_lab_rest_snapshot_hashes_id(array $source, string $snapshot_hash_set_hash): string
+{
+    return 'snap_' . substr(hash('sha256', reprint_push_stable_json([
+        'sourceHash' => (string) ($source['sourceHash'] ?? ''),
+        'snapshotHashSetHash' => $snapshot_hash_set_hash,
+    ])), 0, 32);
+}
+
+function reprint_push_lab_rest_snapshot_hashes_coverage_id(array $source, string $coverage_hash): string
+{
+    return 'cov_' . substr(hash('sha256', reprint_push_stable_json([
+        'sourceHash' => (string) ($source['sourceHash'] ?? ''),
+        'coverageHash' => $coverage_hash,
+    ])), 0, 32);
+}
+
+function reprint_push_lab_rest_snapshot_hashes_receipt(WP_REST_Request $request, array $payload, array $result): array
+{
+    $auth = reprint_push_lab_rest_auth_evidence($request);
+    $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
+    $source = reprint_push_lab_rest_source_identity($request);
+    $profile = reprint_push_lab_rest_route_profile($request);
+    $cursor = $result['cursor'] ?? null;
+    $receipt = [
+        'schemaVersion' => 1,
+        'type' => 'snapshot-hashes',
+        'scope' => (string) $profile['authScope'],
+        'routeProfile' => (string) $profile['profile'],
+        'restNamespace' => (string) $profile['restNamespace'],
+        'route' => reprint_push_lab_rest_profile_route($request, '/snapshot-hashes'),
+        'snapshotId' => (string) ($result['snapshot_id'] ?? ''),
+        'snapshotHash' => (string) ($result['snapshotHash'] ?? ''),
+        'snapshotHashSetHash' => (string) ($result['snapshotHashSetHash'] ?? ''),
+        'coverageHash' => (string) ($result['coverage']['coverage_hash'] ?? ''),
+        'pageHash' => (string) ($result['pageHash'] ?? ''),
+        'resourceCount' => (int) ($result['coverage']['resource_count'] ?? 0),
+        'pageResourceCount' => count($result['resources'] ?? []),
+        'complete' => (bool) ($result['complete'] ?? false),
+        'cursorHash' => is_string($cursor) && $cursor !== '' ? hash('sha256', $cursor) : '',
+        'request' => [
+            'bodyHash' => hash('sha256', reprint_push_stable_json($payload)),
+            'rawBodyHash' => (string) ($signed_request['contentHash'] ?? ''),
+            'canonicalHash' => (string) ($signed_request['request']['canonicalHash'] ?? ''),
+            'idempotencyKeyHash' => (string) ($signed_request['request']['idempotencyKeyHash'] ?? ''),
+        ],
+        'authBinding' => [
+            'identityHash' => hash('sha256', reprint_push_stable_json($auth['identity'] ?? [])),
+            'sessionHash' => (string) ($signed_request['sessionHash'] ?? ''),
+            'signingKeyHash' => (string) ($signed_request['signingKeyHash'] ?? ''),
+            'sourceHash' => (string) ($source['sourceHash'] ?? ''),
+        ],
+        'planningOnly' => [
+            'readOnly' => true,
+            'mutates' => false,
+            'authority' => 'snapshot hashes are planning evidence only and never write authority',
+        ],
+        'issuedAt' => gmdate('Y-m-d\TH:i:s\Z'),
+    ];
+    $receipt['receiptHash'] = 'sha256:' . hash('sha256', reprint_push_stable_json($receipt));
+
+    return $receipt;
 }
 
 function reprint_push_lab_rest_recovery_journal_evidence(WP_REST_Request $request): array
@@ -2169,14 +2693,14 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         if ($session_id === '') {
             return reprint_push_lab_rest_signature_failure(
                 'SIGNED_SESSION_REQUIRED',
-                'X-Reprint-Push-Session is required for signed dry-run, apply, recovery inspect, and journal inspect requests.',
+                'X-Reprint-Push-Session is required for signed dry-run, snapshot hashes, apply, recovery inspect, and journal inspect requests.',
                 401
             );
         }
         if ($idempotency_key === '') {
             return reprint_push_lab_rest_signature_failure(
                 'MISSING_IDEMPOTENCY_KEY',
-                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, apply, recovery inspect, and journal inspect requests.',
+                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, snapshot hashes, apply, recovery inspect, and journal inspect requests.',
                 400
             );
         }
@@ -3096,6 +3620,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_step(WP_REST_Request $requ
     $route = (string) $request->get_route();
     return match (true) {
         str_ends_with($route, '/preflight') => 'preflight',
+        str_ends_with($route, '/snapshot-hashes') => 'snapshot-hashes',
         str_ends_with($route, '/dry-run') => 'dry-run',
         str_ends_with($route, '/apply') => 'apply',
         str_ends_with($route, '/recovery/inspect') => 'recovery-inspect',
@@ -3157,6 +3682,7 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
             'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
             'mutationCount' => (int) ($receipt['mutationCount'] ?? 0),
         ],
+        'snapshotHashes' => reprint_push_lab_rest_authenticated_receipt_snapshot_hash_binding($receipt, $payload, $plan),
         'issuedAt' => gmdate('Y-m-d\TH:i:s\Z'),
         'expiresAt' => gmdate('Y-m-d\TH:i:s\Z', time() + 300),
     ];
@@ -3164,6 +3690,39 @@ function reprint_push_lab_rest_bind_authenticated_receipt(
     $receipt['receiptHash'] = hash('sha256', reprint_push_stable_json($receipt));
 
     return $receipt;
+}
+
+function reprint_push_lab_rest_authenticated_receipt_snapshot_hash_binding(
+    array $receipt,
+    array $payload,
+    array $plan
+): array {
+    $snapshot_id = (string) (
+        $payload['remote_snapshot_id']
+        ?? $payload['snapshot_id']
+        ?? $plan['remoteSnapshotId']
+        ?? $plan['snapshotId']
+        ?? ''
+    );
+    $coverage_hash = (string) (
+        $payload['remote_coverage_hash']
+        ?? $payload['coverage_hash']
+        ?? $plan['remoteCoverageHash']
+        ?? $plan['coverageHash']
+        ?? ''
+    );
+
+    return [
+        'schemaVersion' => 1,
+        'required' => 'dry-run receipt binds snapshot hash preconditions as planning evidence only',
+        'planningOnly' => true,
+        'snapshotIdHash' => $snapshot_id !== '' ? hash('sha256', $snapshot_id) : '',
+        'coverageHash' => $coverage_hash,
+        'preconditionSetHash' => (string) ($receipt['preconditionSetHash'] ?? ''),
+        'mutationSetHash' => (string) ($receipt['mutationSetHash'] ?? ''),
+        'mutationCount' => (int) ($receipt['mutationCount'] ?? 0),
+        'planHash' => (string) ($receipt['planHash'] ?? ''),
+    ];
 }
 
 function reprint_push_lab_rest_source_identity(WP_REST_Request $request): array
@@ -3258,6 +3817,18 @@ function reprint_push_lab_rest_validate_authenticated_receipt(
         || (int) ($preconditions['mutationCount'] ?? -1) !== (int) ($receipt['mutationCount'] ?? -2)
     ) {
         reprint_push_lab_rest_auth_receipt_mismatch('Receipt precondition binding does not match receipt evidence.', $receipt);
+    }
+
+    $snapshot_hashes = isset($binding['snapshotHashes']) && is_array($binding['snapshotHashes'])
+        ? $binding['snapshotHashes']
+        : [];
+    if ((string) ($snapshot_hashes['preconditionSetHash'] ?? '') === ''
+        || (string) ($snapshot_hashes['preconditionSetHash'] ?? '') !== (string) ($receipt['preconditionSetHash'] ?? '')
+        || (string) ($snapshot_hashes['mutationSetHash'] ?? '') !== (string) ($receipt['mutationSetHash'] ?? '')
+        || (int) ($snapshot_hashes['mutationCount'] ?? -1) !== (int) ($receipt['mutationCount'] ?? -2)
+        || empty($snapshot_hashes['planningOnly'])
+    ) {
+        reprint_push_lab_rest_auth_receipt_mismatch('Receipt snapshot-hashes binding does not match receipt evidence.', $receipt);
     }
 
     $signed_request = reprint_push_lab_rest_signed_request_evidence($request);
