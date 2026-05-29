@@ -122,6 +122,9 @@ const requiredFamilies = [
   'scalar-option-update',
   'scalar-option-string',
   'scalar-option-number',
+  'wp-options-scalar-v3',
+  'wp-options-scalar-v3-ready',
+  'wp-options-scalar-v3-non-ready',
   'wp-options-serialized-ready',
   'wp-options-serialized-conflict',
   'wp-options-serialized',
@@ -3659,6 +3662,326 @@ test('RPP-0125 wp_options scalar target exposes per-tier ready and conflict cove
   assert.ok(conflict.conflicts >= 1, 'remote scalar option drift should be a conflict');
   assert.equal(conflict.applied, false, 'conflicting scalar option must not apply mutations');
 });
+
+test('RPP-0145 wp_options scalar option changes variant 3 records surface and invariant', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpOptionsScalarChangesVariant3;
+
+  assert.ok(coverage, 'missing wp_options scalar option changes variant 3 target coverage');
+  assert.equal(coverage.family, 'wp-options-scalar-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-options-scalar-v3']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 3 target should include ready scalar option cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 3 target should include non-ready scalar option cases');
+  assert.equal(report.summary.featureFamilies['wp-options-scalar-v3-ready'], 10);
+  assert.equal(report.summary.featureFamilies['wp-options-scalar-v3-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedWpOptionsScalarChangesVariant3Evidence(coverage);
+  const replayEvidence = generatedWpOptionsScalarChangesVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0145 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 scalar option evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpOptionsScalarChangesVariant3');
+  assert.equal(firstEvidence.family, 'wp-options-scalar-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.scalarMutation.action, 'put');
+  assert.equal(readyCase.scalarMutation.changeKind, 'update');
+  assert.equal(readyCase.scalarMutation.plannedMutation, true);
+  assert.equal(readyCase.scalarMutation.plannedPrecondition, true);
+  assert.equal(readyCase.scalarMutation.appliedHash, readyCase.surface.option.localHash);
+  assert.equal(readyCase.scalarMutation.preconditionExpectedHash, readyCase.scalarMutation.remoteBeforeHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.option.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('base-scalar-option-'), false, 'variant 3 evidence leaked base scalar option payload');
+  assert.equal(evidenceText.includes('local-scalar-option-'), false, 'variant 3 evidence leaked local scalar option payload');
+  assert.equal(evidenceText.includes('remote-scalar-option-'), false, 'variant 3 evidence leaked remote scalar option payload');
+});
+
+function generatedWpOptionsScalarChangesVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('wp-options-scalar-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedWpOptionsScalarChangesVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 scalar option target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 scalar option target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 scalar option target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready scalar option case');
+  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready scalar option case');
+
+  return {
+    target: 'wpOptionsScalarChangesVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('non-ready'),
+    ],
+  };
+}
+
+function generatedWpOptionsScalarChangesVariant3CaseEvidence(testCase, result) {
+  const conflict = testCase.family === 'wp-options-scalar-conflict';
+  const shape = wpOptionsScalarVariant3Shape(testCase, { conflict });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = wpOptionsScalarVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    valueKind: shape.valueKind,
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const scalarMutation = wpOptionsScalarVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      scalarMutation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        scalarMutation,
+      })}`,
+    };
+  }
+
+  assert.equal(conflict, true, `${testCase.id} non-ready scalar option evidence should come from conflict family`);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.notEqual(result.status, 'ready', `${testCase.id} should validate as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const conflictEvidence = wpOptionsScalarVariant3ConflictEvidence({ testCase, plan, shape });
+  const refusal = wpOptionsScalarVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    conflict: conflictEvidence,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      conflict: conflictEvidence,
+      refusal,
+    })}`,
+  };
+}
+
+function wpOptionsScalarVariant3Shape(testCase, { conflict = false } = {}) {
+  const scalarRows = Object.entries(testCase.base.db.wp_options)
+    .filter(([id, row]) => id.startsWith('option_name:scalar_generated_')
+      && isScalar(row.option_value));
+
+  assert.equal(scalarRows.length, 1, `${testCase.id} should seed one scalar option row`);
+  const [rowId, baseRow] = scalarRows[0];
+  const localRow = testCase.local.db.wp_options[rowId];
+  const remoteRow = testCase.remote.db.wp_options[rowId];
+
+  assert.ok(localRow, `${testCase.id} missing local scalar option row`);
+  assert.ok(remoteRow, `${testCase.id} missing remote scalar option row`);
+  assert.equal(localRow.__pluginOwner, undefined, `${testCase.id} scalar option should not be plugin-owned`);
+  assert.equal(remoteRow.__pluginOwner, undefined, `${testCase.id} scalar option should not be plugin-owned`);
+  assert.equal(typeof localRow.option_value, typeof baseRow.option_value);
+  assert.equal(typeof remoteRow.option_value, typeof baseRow.option_value);
+  assert.ok(isScalar(localRow.option_value), `${testCase.id} local option_value must stay scalar`);
+  assert.equal(baseRow.autoload, 'no');
+  assert.notEqual(localRow.option_value, baseRow.option_value);
+
+  if (conflict) {
+    assert.notEqual(remoteRow.option_value, baseRow.option_value);
+    assert.notEqual(remoteRow.option_value, localRow.option_value);
+  } else {
+    assert.equal(remoteRow.option_value, baseRow.option_value);
+  }
+
+  return {
+    rowId,
+    resource: rowResource('wp_options', rowId),
+    resourceKey: rowResourceKey('wp_options', rowId),
+    valueKind: typeof baseRow.option_value,
+    autoload: baseRow.autoload,
+  };
+}
+
+function wpOptionsScalarVariant3SurfaceEvidence(testCase, shape) {
+  return {
+    option: {
+      resourceKey: shape.resourceKey,
+      baseHash: resourceHash(testCase.base, shape.resource),
+      localHash: resourceHash(testCase.local, shape.resource),
+      remoteHash: resourceHash(testCase.remote, shape.resource),
+      valueKind: shape.valueKind,
+      autoload: shape.autoload,
+      pluginOwned: false,
+    },
+  };
+}
+
+function wpOptionsScalarVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.resourceKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === shape.resourceKey);
+  const localHash = resourceHash(testCase.local, shape.resource);
+  const appliedHash = resourceHash(applied.site, shape.resource);
+
+  assert.ok(mutation, `${testCase.id} should plan a scalar option mutation for ${shape.resourceKey}`);
+  assert.ok(precondition, `${testCase.id} should precondition ${shape.resourceKey}`);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'update');
+  assert.equal(precondition.mutationId, mutation.id);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(appliedHash, localHash, `${testCase.id} did not apply local scalar option value`);
+
+  return {
+    resourceKey: shape.resourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    localHash,
+    remoteBeforeHash: mutation.remoteBeforeHash,
+    preconditionExpectedHash: precondition.expectedHash,
+    appliedHash,
+    plannedMutation: true,
+    plannedPrecondition: true,
+    mutationHash: `sha256:${digest({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+    })}`,
+  };
+}
+
+function wpOptionsScalarVariant3ConflictEvidence({ testCase, plan, shape }) {
+  const conflict = plan.conflicts.find((entry) => entry.resourceKey === shape.resourceKey);
+  const plannedMutation = plan.mutations.some((mutation) => mutation.resourceKey === shape.resourceKey);
+
+  assert.ok(conflict, `${testCase.id} should report a scalar option conflict for ${shape.resourceKey}`);
+  assert.equal(plannedMutation, false, `${testCase.id} should not plan the conflicted scalar option mutation`);
+
+  return {
+    resourceKey: conflict.resourceKey,
+    class: conflict.class,
+    change: conflict.change,
+    plannedMutation,
+    conflictHash: `sha256:${digest(conflict)}`,
+  };
+}
+
+function wpOptionsScalarVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+}
 
 function assertWpOptionsScalarShape(testCase, { conflict }) {
   const scalarRows = Object.entries(testCase.base.db.wp_options)

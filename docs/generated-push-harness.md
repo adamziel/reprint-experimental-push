@@ -54,7 +54,8 @@ The default generated run covers:
   plus per-tier target counts, row create/update/delete mixes with
   ready/conflict outcomes plus per-tier target counts and stale replay rejection
   before mutation, non-plugin-owned `wp_options` scalar changes with per-tier
-  target counts, serialized option changes with per-tier target counts and
+  target counts plus explicit variant-3 scalar option coverage, serialized
+  option changes with per-tier target counts and
   redacted hash-only evidence for private serialized payloads, `wp_posts`
   create/update/delete mixes with per-tier target counts and ready/conflict
   outcomes, `wp_postmeta` create/update/delete mixes with per-tier target
@@ -91,6 +92,15 @@ regular scalar `wp_options.option_value` update surface. Ready cases apply the
 local scalar while preserving unplanned remote resources and rejecting stale
 replay before mutation; conflict cases drift the same scalar remotely and refuse
 apply so local scalar options cannot overwrite newer remote values.
+
+RPP-0145 adds `wpOptionsScalarChangesVariant3` coverage for the same regular
+scalar option update surface with an explicit variant-3 target tag. The
+deterministic roster emits 20 variant-3 target cases: 10 ready scalar option
+updates and 10 non-ready remote-drift conflicts, with two cases in every tier.
+The focused proof records only resource keys, scalar value kinds, counts, and
+hashes, verifies the ready case applies the planned scalar option update and
+rejects stale replay before mutation, then verifies the conflicting scalar
+option refuses apply without mutating the remote digest.
 
 The `wpOptionsSerialized` surface seeds regular, non-plugin-owned `wp_options`
 rows with PHP-serialized option strings that include public labels plus private
