@@ -460,6 +460,114 @@ test('RPP-0118 same independent content target applies without unplanned remote 
   assert.equal(result.unplannedRemotePreserved, true, 'same independent content must preserve unplanned remote data');
 });
 
+test('RPP-0119 remote-only preservation rejects stale replay before mutation with hash-only evidence', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.remoteOnlyPreservation;
+
+  assert.ok(coverage, 'missing remote-only preservation target coverage');
+  assert.equal(coverage.family, 'remote-only-post-update');
+  assert.equal(coverage.total, 9);
+  assert.deepEqual(coverage.statuses, { ready: 9 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.equal(
+    report.summary.statusByFeatureFamily['remote-only-post-update'].ready,
+    10,
+    'remote-only generated family should still include the zero-mutation tier-0 preservation case',
+  );
+
+  const generatedCase = generatePushHarnessCases()
+    .filter((testCase) => testCase.family === 'remote-only-post-update')
+    .at(-1);
+  assert.ok(generatedCase, 'missing generated remote-only preservation case');
+  assert.ok(generatedCase.tags.has('remote-preserve'));
+
+  const { rowId, remoteTitle } = generatedRemoteOnlyPostUpdateTargets(generatedCase);
+  const rowKey = generatedRowResourceKey('wp_posts', rowId);
+  const plan = createPushPlan({
+    base: generatedCase.base,
+    local: generatedCase.local,
+    remote: generatedCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const validation = validateGeneratedCase(generatedCase);
+  const rowDecision = plan.decisions.find((decision) => decision.resourceKey === rowKey);
+  const staleMutationIndex = plan.mutations.findIndex((mutation, index) =>
+    index > 0 && mutation.action === 'put' && mutation.resource.type === 'file');
+
+  assert.ok(staleMutationIndex > 0, `${generatedCase.id} should have a later file mutation for preflight proof`);
+  const staleMutation = plan.mutations[staleMutationIndex];
+  const stalePrecondition = plan.preconditions.find((entry) => entry.mutationId === staleMutation.id);
+  const plannedFileValue = deserializeResourceValue(staleMutation.value);
+  const plannedFilePayload = plannedFileValue.content;
+  const stalePrivatePayload = 'stale-private-rpp0119-late-precondition';
+  const staleRemote = cloneJson(generatedCase.remote);
+
+  assert.ok(rowDecision, `${generatedCase.id} should record the remote-only row decision`);
+  assert.ok(stalePrecondition, `${generatedCase.id} should record the stale mutation precondition`);
+  assert.equal(typeof plannedFilePayload, 'string');
+
+  setResource(staleRemote, staleMutation.resource, { type: 'file', content: stalePrivatePayload });
+  const staleBeforeHash = digest(staleRemote);
+  const staleError = captureError(() => applyPlan(staleRemote, plan));
+  const staleAfterHash = digest(staleRemote);
+  const hashOnlyEvidence = {
+    target: 'RPP-0119',
+    caseId: generatedCase.id,
+    family: generatedCase.family,
+    status: plan.status,
+    summary: plan.summary,
+    remoteOnlyDecision: {
+      resourceKey: rowDecision.resourceKey,
+      decision: rowDecision.decision,
+      remoteHash: rowDecision.remoteHash,
+      change: rowDecision.change,
+    },
+    staleReplay: {
+      code: staleError.code,
+      resourceKey: staleError.details.resourceKey,
+      expectedHash: staleError.details.expectedHash,
+      actualHash: staleError.details.actualHash,
+      detailsHash: `sha256:${digest(staleError.details)}`,
+      remoteBeforeHash: staleBeforeHash,
+      remoteAfterHash: staleAfterHash,
+    },
+    plan: hashOnlyGeneratedPlanEvidence(plan),
+  };
+  const evidenceJson = JSON.stringify(hashOnlyEvidence);
+  const applied = applyPlan(cloneJson(generatedCase.remote), plan);
+
+  assert.equal(plan.status, 'ready');
+  assert.equal(validation.status, 'ready');
+  assert.equal(validation.applied, true);
+  assert.equal(validation.unplannedRemotePreserved, true);
+  assert.equal(validation.staleReplayRejected, true);
+  assert.equal(validation.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(validation.staleReplayRemoteUnchanged, true);
+  assert.ok(plan.mutations.length > 1, `${generatedCase.id} should carry planned local mutations`);
+  assert.equal(rowDecision?.decision, 'keep-remote');
+  assert.equal(rowDecision.change.localChange, 'unchanged');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((mutation) => mutation.resourceKey === rowKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === rowKey), false);
+  assert.equal(stalePrecondition?.resourceKey, staleMutation.resourceKey);
+  assert.equal(stalePrecondition.expectedHash, staleMutation.remoteBeforeHash);
+  assert.ok(staleError instanceof PushPlanError);
+  assert.equal(staleError.code, 'PRECONDITION_FAILED');
+  assert.equal(staleError.details.resourceKey, staleMutation.resourceKey);
+  assert.equal(staleError.details.expectedHash, stalePrecondition.expectedHash);
+  assert.match(staleError.details.actualHash, /^[a-f0-9]{64}$/);
+  assert.equal(staleAfterHash, staleBeforeHash, 'stale replay mutated remote before refusal');
+  assert.match(hashOnlyEvidence.staleReplay.detailsHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceJson.includes(remoteTitle), false, 'hash-only evidence leaked remote-only row title');
+  assert.equal(evidenceJson.includes(plannedFilePayload), false, 'hash-only evidence leaked local file payload');
+  assert.equal(evidenceJson.includes(stalePrivatePayload), false, 'hash-only evidence leaked stale replay payload');
+  assert.equal(JSON.stringify(rowDecision).includes(remoteTitle), false, 'decision evidence leaked remote-only row title');
+  assert.equal(applied.site.db.wp_posts[rowId].post_title, remoteTitle);
+});
+
 function assertSameIndependentContentShape(testCase) {
   const sharedRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, localRow]) => testCase.base.db.wp_posts[id]
@@ -3714,6 +3822,31 @@ function generatedIndependentRowRemoteFileTargets(testCase) {
     rowTitle: rowEntry[1].post_title,
     filePath: fileEntry[0],
     fileValue: fileEntry[1],
+  };
+}
+
+function generatedRemoteOnlyPostUpdateTargets(testCase) {
+  const rowEntry = Object.entries(testCase.remote.db.wp_posts)
+    .find(([id, row]) =>
+      testCase.base.db.wp_posts[id]
+      && testCase.local.db.wp_posts[id]
+      && row.post_title?.startsWith('Remote editorial '));
+
+  assert.ok(rowEntry, `${testCase.id} missing generated remote-only row update`);
+  assert.deepEqual(
+    testCase.local.db.wp_posts[rowEntry[0]],
+    testCase.base.db.wp_posts[rowEntry[0]],
+    `${testCase.id} remote-only row should be unchanged locally`,
+  );
+  assert.notDeepEqual(
+    testCase.remote.db.wp_posts[rowEntry[0]],
+    testCase.base.db.wp_posts[rowEntry[0]],
+    `${testCase.id} remote-only row should drift remotely`,
+  );
+
+  return {
+    rowId: rowEntry[0],
+    remoteTitle: rowEntry[1].post_title,
   };
 }
 
