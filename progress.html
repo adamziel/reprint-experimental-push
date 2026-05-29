@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-29T04:00:00+02:00">Last updated: May 29, 2026, 04:00 CEST</time>
+        <time class="update-stamp" datetime="2026-05-29T04:12:00+02:00">Last updated: May 29, 2026, 04:12 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>239</strong>
+        <strong>240</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>761</strong>
+        <strong>760</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>39/39 generated harness tests pass across 620 deterministic three-way push cases, including remote-only preservation, plugin-owned custom-table, and atomic plugin install stack variant-1 coverage.</span>
+            <span><strong>Generated push harness</strong>40/40 generated harness tests pass across 620 deterministic three-way push cases, including remote-only preservation, plugin-owned custom-table, and atomic plugin install stack variant-1 and variant-2 coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,10 +406,11 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0203 merge invariant</span>
+        <span>RPP-0136 generated harness</span>
       </div>
-      <p>The latest refresh integrates RPP-0203 local delete versus remote edit evidence: focused tests prove the conflicted row is refused before any independent mutation, durable journal write, or remote overwrite, emits no mutation or live-remote precondition for that row, preserves the remote row edit, and keeps private row/file payloads out of evidence. Counts are now 239/761; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0136 atomic plugin install stack variant-2 evidence: focused and full generated harness tests prove one ready atomic stack and one non-ready missing-dependency stack from the real fixtures, keep dependency resolution inside the same atomic group, propagate blockers before mutation, and keep raw plugin files and option payload values out of evidence. Counts are now 240/760; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0136 harness: 1/1 focused</span>
         <span class="tag">RPP-0203 invariant: 2/2 focused</span>
         <span class="tag">RPP-0202 invariant: 2/2 focused</span>
         <span class="tag">remote-only preservation: 1/1</span>
@@ -446,8 +447,8 @@
         <span class="tag">tmux marker regression: 1/1</span>
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
-        <span class="tag">generated harness: 39/39</span>
-        <span class="tag">checked goals: 239/1000</span>
+        <span class="tag">generated harness: 40/40</span>
+        <span class="tag">checked goals: 240/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

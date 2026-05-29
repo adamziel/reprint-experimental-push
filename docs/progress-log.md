@@ -6,18 +6,18 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 04:00 CEST.
+- Last update: 2026-05-29 04:12 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 239
-  items checked and leaves 761 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 240
+  items checked and leaves 760 open.
 - Checked slices: 100 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
-  7 chunking/performance items, 2 production-topology items, 37 generated
+  7 chunking/performance items, 2 production-topology items, 38 generated
   harness items, and 23 merge-invariant items. No release-ops items are checked
   yet.
 - Focused tmux stdout marker refresh: the current lane now contains
@@ -206,6 +206,17 @@ linked implementation artifacts.
   overwrite, with no mutation or live-remote precondition emitted for the
   conflicted row and no private row/file payloads in serialized evidence.
   Counts are now 239/761; final release remains `NO-GO`.
+- Generated harness atomic plugin install stack variant-2 refresh: the current
+  lane now contains `RPP-0136` evidence in
+  `docs/evidence/rpp-0136-atomic-plugin-install-stack.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --test
+  --test-name-pattern=RPP-0136 test/generated-push-harness.test.js` passed
+  1/1, and `npm run test:generated-push-harness` passed 40/40 across the 620
+  deterministic generated cases, proving ready plus non-ready missing-dependency
+  model evidence for atomic plugin install stack variant 2 while keeping raw
+  plugin file contents and option payload values out of serialized evidence.
+  Counts are now 240/760; final release remains `NO-GO`.
 - Generated harness atomic plugin install stack variant-1 refresh: the current
   lane now contains RPP-0116 coverage in `scripts/harness/generated-push-cases.js`,
   `test/generated-push-harness.test.js`, `docs/generated-push-harness.md`, and
