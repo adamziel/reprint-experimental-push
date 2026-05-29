@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 05:45 CEST.
+- Last update: 2026-05-29 05:56 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the current release-gate focused regression and session/rpp integration
-  refresh.
+  the current RPP-0407 plugin-driver usermeta refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 252
-  items checked and leaves 748 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 253
+  items checked and leaves 747 open.
 - Checked slices: 100 release-gate foundation items, 21 graph identity items,
-  31 plugin-driver boundary items, 12 executor/auth items, 14 recovery items,
+  32 plugin-driver boundary items, 12 executor/auth items, 14 recovery items,
   7 chunking/performance items, 2 production-topology items, 40 generated
   harness items, and 25 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_usermeta plugin-driver semantics refresh: the current lane now
+  contains `RPP-0407` evidence in
+  `docs/evidence/rpp-0407-wp-usermeta-driver-semantics.md`,
+  `src/planner.js`, `test/plugin-driver-usermeta-semantics.test.js`, and
+  `test/generated-push-harness.test.js`. `node --test
+  test/plugin-driver-usermeta-semantics.test.js` passed 5/5, `node --test
+  --test-name-pattern 'RPP-0407' test/generated-push-harness.test.js`
+  passed 1/1, and `node --test --test-name-pattern 'generated push
+  harness covers 300\+|RPP-0407' test/generated-push-harness.test.js`
+  passed 2/2, proving exact `wp-usermeta` and `wp-user-meta` alias
+  `umeta_id` row semantics, local-candidate versus production-backed
+  `releaseGateEvidenceScope` carry-through, fail-closed mismatched and
+  unsupported row identifiers, and redacted evidence without raw `meta_value`
+  payloads. Counts are now 253/747; final release remains `NO-GO`.
 - Focused recovery journal ownership refresh: the current lane now contains
   `RPP-0602` evidence in
   `docs/evidence/rpp-0602-journal-ownership-record.md`,
