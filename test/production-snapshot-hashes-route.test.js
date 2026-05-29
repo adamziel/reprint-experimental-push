@@ -137,7 +137,7 @@ test('snapshot hashes receipts bind hash evidence without credential material', 
 
 test('signed request and auth lifecycle explicitly include snapshot hashes', () => {
   const signedVerifier = functionBody('reprint_push_lab_rest_verify_signed_request');
-  assert.match(signedVerifier, /signed dry-run, snapshot hashes, apply, recovery inspect, and journal inspect requests/);
+  assert.match(signedVerifier, /signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests/);
 
   const lifecycle = functionBody('reprint_push_lab_rest_auth_session_lifecycle_step');
   assertBefore(lifecycle, "str_ends_with($route, '/snapshot-hashes')", "str_ends_with($route, '/dry-run')");

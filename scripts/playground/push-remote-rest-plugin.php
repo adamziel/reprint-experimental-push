@@ -197,6 +197,18 @@ function reprint_push_lab_rest_register_routes(): void
             'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
             'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
         ]);
+
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/recovery/mutate', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_recovery_mutate',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
+
+        register_rest_route(REPRINT_PUSH_LAB_REST_NAMESPACE, '/authenticated/recovery/repair', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => 'reprint_push_lab_rest_authenticated_recovery_mutate',
+            'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+        ]);
     }
 
     register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/preflight', [
@@ -277,6 +289,18 @@ function reprint_push_lab_rest_register_routes(): void
     register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/recovery/inspect', [
         'methods' => WP_REST_Server::CREATABLE,
         'callback' => 'reprint_push_lab_rest_authenticated_recovery_inspect',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/recovery/mutate', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_recovery_mutate',
+        'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
+    ]);
+
+    register_rest_route(REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE, '/push/recovery/repair', [
+        'methods' => WP_REST_Server::CREATABLE,
+        'callback' => 'reprint_push_lab_rest_authenticated_recovery_mutate',
         'permission_callback' => 'reprint_push_lab_rest_authenticated_permission',
     ]);
 }
@@ -585,6 +609,22 @@ function reprint_push_lab_rest_authenticated_recovery_inspect(WP_REST_Request $r
         ) {
             $result['recovery']['journal'] = reprint_push_lab_rest_recovery_journal_evidence($request);
         }
+        $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
+        $response->set_data($result);
+    }
+    return $response;
+}
+
+function reprint_push_lab_rest_authenticated_recovery_mutate(WP_REST_Request $request): WP_REST_Response
+{
+    $signature_error = reprint_push_lab_rest_require_signed_request($request, 'recovery-mutate');
+    if ($signature_error instanceof WP_REST_Response) {
+        return $signature_error;
+    }
+
+    $response = reprint_push_lab_rest_recovery_mutate($request);
+    $result = $response->get_data();
+    if (is_array($result)) {
         $result = reprint_push_lab_rest_attach_authenticated_response_evidence($result, $request);
         $response->set_data($result);
     }
@@ -1207,6 +1247,129 @@ function reprint_push_lab_rest_recovery_inspect(WP_REST_Request $request): WP_RE
     }
 
     return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_recovery_mutate(WP_REST_Request $request): WP_REST_Response
+{
+    try {
+        $payload = reprint_push_lab_rest_json_payload($request);
+        $plan = reprint_push_lab_rest_recovery_mutate_plan_payload($payload);
+        $receipt = reprint_push_lab_rest_receipt_payload($payload);
+        if ($receipt === null) {
+            reprint_push_protocol_fail([
+                'ok' => false,
+                'code' => 'MISSING_DRY_RUN_RECEIPT',
+                'message' => 'Recovery mutate requires a supplied dry-run receipt JSON.',
+                'mode' => 'recovery-mutate',
+            ]);
+        }
+
+        $profile = reprint_push_lab_rest_route_profile($request);
+        $route_suffix = reprint_push_lab_rest_recovery_mutate_route_suffix($request);
+        $inspect_result = reprint_push_protocol_inspect_recovery($plan, $receipt, [
+            'transport' => 'wordpress-rest',
+            'restNamespace' => (string) $profile['restNamespace'],
+            'restRoute' => reprint_push_lab_rest_profile_route($request, $route_suffix),
+            'routeProfile' => (string) $profile['profile'],
+            'recoveryMutation' => 'inspect-first',
+        ]);
+        $recovery = isset($inspect_result['recovery']) && is_array($inspect_result['recovery'])
+            ? $inspect_result['recovery']
+            : [];
+        $inspect_state = (string) ($recovery['state'] ?? '');
+        $inspect_safe = in_array($inspect_state, ['old-remote', 'fully-updated-remote'], true);
+        if (!$inspect_safe) {
+            $result = [
+                'ok' => false,
+                'code' => 'RECOVERY_MUTATE_INSPECT_BLOCKED',
+                'message' => 'Recovery mutate requires recovery inspect to prove a safe repair branch before mutation.',
+                'mode' => 'recovery-mutate',
+                'recovery' => $recovery,
+                'recoveryMutation' => reprint_push_lab_rest_recovery_mutate_boundary_evidence(
+                    $request,
+                    $inspect_state,
+                    false,
+                    'inspect-blocked'
+                ),
+            ];
+        } else {
+            $result = [
+                'ok' => false,
+                'code' => 'RECOVERY_MUTATE_NOT_IMPLEMENTED',
+                'message' => 'Recovery mutate is wired behind authenticated inspect-first route plumbing, but this fixture has no repair executor.',
+                'mode' => 'recovery-mutate',
+                'recovery' => $recovery,
+                'recoveryMutation' => reprint_push_lab_rest_recovery_mutate_boundary_evidence(
+                    $request,
+                    $inspect_state,
+                    true,
+                    'route-plumbing-only-no-repair-executor'
+                ),
+            ];
+        }
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $result = $error->result;
+    } catch (Throwable $error) {
+        $result = [
+            'ok' => false,
+            'code' => 'PUSH_PROTOCOL_ERROR',
+            'message' => $error->getMessage(),
+            'error' => [
+                'class' => get_class($error),
+                'message' => $error->getMessage(),
+            ],
+        ];
+    }
+
+    return reprint_push_lab_rest_json_response($result);
+}
+
+function reprint_push_lab_rest_recovery_mutate_plan_payload(array $payload): array
+{
+    if (!isset($payload['plan'])) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Recovery mutate requires a plan JSON object.',
+            'mode' => 'recovery-mutate',
+        ]);
+    }
+    if (!is_array($payload['plan'])) {
+        reprint_push_protocol_fail([
+            'ok' => false,
+            'code' => 'INVALID_ARGUMENT',
+            'message' => 'Recovery mutate plan must be a JSON object.',
+            'mode' => 'recovery-mutate',
+        ]);
+    }
+    return $payload['plan'];
+}
+
+function reprint_push_lab_rest_recovery_mutate_boundary_evidence(
+    WP_REST_Request $request,
+    string $inspect_state,
+    bool $inspect_safe,
+    string $reason
+): array {
+    return [
+        'schemaVersion' => 1,
+        'route' => reprint_push_lab_rest_profile_route(
+            $request,
+            reprint_push_lab_rest_recovery_mutate_route_suffix($request)
+        ),
+        'inspectFirst' => true,
+        'inspectState' => $inspect_state,
+        'inspectSafe' => $inspect_safe,
+        'mutationAttempted' => false,
+        'reason' => $reason,
+        'authFloor' => 'application-password-basic + signed production push request + manage_options',
+    ];
+}
+
+function reprint_push_lab_rest_recovery_mutate_route_suffix(WP_REST_Request $request): string
+{
+    $route = (string) $request->get_route();
+    return str_ends_with($route, '/recovery/repair') ? '/recovery/repair' : '/recovery/mutate';
 }
 
 function reprint_push_lab_rest_protocol_response(string $mode, WP_REST_Request $request): WP_REST_Response
@@ -2759,14 +2922,14 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         if ($session_id === '') {
             return reprint_push_lab_rest_signature_failure(
                 'SIGNED_SESSION_REQUIRED',
-                'X-Reprint-Push-Session is required for signed dry-run, snapshot hashes, apply, recovery inspect, and journal inspect requests.',
+                'X-Reprint-Push-Session is required for signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests.',
                 401
             );
         }
         if ($idempotency_key === '') {
             return reprint_push_lab_rest_signature_failure(
                 'MISSING_IDEMPOTENCY_KEY',
-                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, snapshot hashes, apply, recovery inspect, and journal inspect requests.',
+                'X-Reprint-Push-Idempotency-Key is required for signed dry-run, snapshot hashes, apply, recovery inspect, recovery mutate, and journal inspect requests.',
                 400
             );
         }
@@ -3690,6 +3853,7 @@ function reprint_push_lab_rest_auth_session_lifecycle_step(WP_REST_Request $requ
         str_ends_with($route, '/dry-run') => 'dry-run',
         str_ends_with($route, '/apply') => 'apply',
         str_ends_with($route, '/recovery/inspect') => 'recovery-inspect',
+        str_ends_with($route, '/recovery/mutate'), str_ends_with($route, '/recovery/repair') => 'recovery-mutate',
         str_ends_with($route, '/db-journal') => 'journal',
         default => null,
     };
@@ -4394,7 +4558,10 @@ function reprint_push_lab_rest_status_for_result(array $result): int
         case 'IDEMPOTENCY_KEY_CONFLICT':
         case 'IDEMPOTENCY_KEY_IN_PROGRESS':
         case 'RECOVERY_BLOCKED':
+        case 'RECOVERY_MUTATE_INSPECT_BLOCKED':
             return 409;
+        case 'RECOVERY_MUTATE_NOT_IMPLEMENTED':
+            return 501;
         case 'MISSING_DRY_RUN_RECEIPT':
             return 428;
         case 'INVALID_ARGUMENT':
