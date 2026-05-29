@@ -6,16 +6,16 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 02:47 CEST.
+- Last update: 2026-05-29 02:53 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
   the current release-gate focused regression and session/rpp integration
   refresh.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 231
-  items checked and leaves 769 open.
-- Checked slices: 95 release-gate foundation items, 19 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 232
+  items checked and leaves 768 open.
+- Checked slices: 96 release-gate foundation items, 19 graph identity items,
   29 plugin-driver boundary items, 10 executor/auth items, 12 recovery items,
   7 chunking/performance items, 2 production-topology items, 36 generated
   harness items, and 21 merge-invariant items. No release-ops items are checked
@@ -260,6 +260,17 @@ linked implementation artifacts.
   preserved with `mutationAttempted=false`, and the positive read-only path
   remains held only by final production provenance. Final release remains
   `NO-GO`.
+- Release verifier releaseMovement summary carry-through refresh: the current
+  lane now contains
+  `test/release-verifier-release-movement-summary-carry-through-focused-regression.test.js`
+  and `docs/evidence/rpp-0096-release-verifier-release-movement-carry-through.md`
+  for `RPP-0096`. The command
+  `umask 0022 && node --test test/release-verifier-release-movement-summary-carry-through-focused-regression.test.js`
+  passed 3/3, proving the verifier denial path preserves
+  `releaseMovement.allowed=false` before mutation, release gates carry the
+  denied summary under both top-level and summary surfaces, the allowed
+  `releaseMovement.allowed=true` path reaches `finalGates=20/20`, and final
+  release remains `NO-GO` without production provenance.
 - Branch integration audit: all freshly fetched `origin/session/rpp*` refs are
   ancestors of `lane/evidence-integration-20260527` (397 checked, 0 unmerged).
   The broader local/remote `rpp`/session-like sweep checked 843 refs and also

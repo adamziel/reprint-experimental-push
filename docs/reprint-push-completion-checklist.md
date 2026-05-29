@@ -107,7 +107,7 @@ Focus: make the existing release verdict auditable and fail-closed.
 - [x] RPP-0093 (Near / release-gates) Carry through the release verifier for apply route pre-mutation proof, variant 5. Success: progress report links the command and observed status.
 - [x] RPP-0094 (Near / release-gates) Carry through the release verifier for journal route read-only proof, variant 5. Success: scenario matrix records the negative and positive path.
 - [x] RPP-0095 (Near / release-gates) Carry through the release verifier for recovery inspect read-only proof, variant 5. Success: tmux-visible run prints a final bracketed status marker.
-- [ ] RPP-0096 (Near / release-gates) Carry through the release verifier for releaseMovement allowed/denied summary, variant 5. Success: checked command exits with the named code and no mutation attempt.
+- [x] RPP-0096 (Near / release-gates) Carry through the release verifier for releaseMovement allowed/denied summary, variant 5. Success: checked command exits with the named code and no mutation attempt.
 - [ ] RPP-0097 (Near / release-gates) Carry through the release verifier for tmux stdout proof status marker, variant 5. Success: test asserts the exact reason and evidence object.
 - [ ] RPP-0098 (Near / release-gates) Carry through the release verifier for progress.html release timestamp, variant 5. Success: progress report links the command and observed status.
 - [ ] RPP-0099 (Near / release-gates) Carry through the release verifier for .agents/RELEASE_GATES.md status row, variant 5. Success: scenario matrix records the negative and positive path.
