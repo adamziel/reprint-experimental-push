@@ -8,6 +8,7 @@ export const RECOVERY_JOURNAL_SCHEMA_VERSION = 1;
 const PRODUCTION_RECOVERY_JOURNAL_KIND = 'production-recovery-journal';
 const PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE = 'claim-fenced-restart-readable';
 const PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER = 'filesystem-compare-rename';
+const PRODUCTION_RECOVERY_JOURNAL_OWNERSHIP_RECORD_TYPE = 'journal-ownership-recorded';
 const checkedDbJournalSupportedSurface = 'claim-fenced-restart-readable';
 
 const CLAIM_STATE_EVENT_TYPES = new Set([
@@ -106,12 +107,34 @@ function claimScopedPlanId(records, claim) {
   const scopedRecord = (Array.isArray(records) ? [...records] : [])
     .reverse()
     .find(
-      (record) => record.claimHash === claim.activeClaimHash
+      (record) => CLAIM_STATE_EVENT_TYPES.has(record.type)
+        && record.claimHash === claim.activeClaimHash
         && record.claimId === claim.activeClaimId
         && hasNonEmptyString(record.planId),
     );
 
   return scopedRecord?.planId || null;
+}
+
+function claimScopedOwnershipRecord(records, claim) {
+  const ownershipRecords = (Array.isArray(records) ? [...records] : [])
+    .reverse()
+    .filter(productionRecoveryJournalOwnershipRecordContractMatches);
+
+  if (
+    CLAIM_HASH_PATTERN.test(claim?.activeClaimHash || '')
+    && typeof claim?.activeClaimId === 'string'
+    && claim.activeClaimId.length > 0
+  ) {
+    return ownershipRecords.find(
+      (record) => record.claimHash === claim.activeClaimHash
+        && record.claimId === claim.activeClaimId,
+    ) || null;
+  }
+
+  return ownershipRecords.find(
+    (record) => record.claimHash === null && record.claimId === null,
+  ) || ownershipRecords[0] || null;
 }
 
 function persistedTargetEnvelopeMatchesPlan(records, plan) {
@@ -305,6 +328,9 @@ export function productionRecoveryJournalInspectionSurfaceIsPresent(inspection) 
     && journal?.claimId === claim.activeClaimId
     && journal?.claimHash === claim.activeClaimHash
     && consumedIdentityMatches
+    && (!Object.hasOwn(journal, 'ownershipRecord')
+      || journal.ownershipRecord === null
+      || productionRecoveryJournalOwnershipSummaryContractMatches(journal.ownershipRecord, ownership, claim))
     && productionRecoveryJournalWriterLeaseContractMatches(writerLease, claim)
     && writerLease?.restartReadable === journal.restartReadable
     && writerLease?.staleClaimRejected === journal.staleClaimRejected
@@ -429,6 +455,73 @@ function productionRecoveryJournalOwnershipContractMatches(ownership) {
     && ownership?.supportedSurface === PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE;
 }
 
+function productionRecoveryJournalOwnershipRecordContractMatches(record) {
+  return hasOwnProperties(record, [
+    'sequence',
+    'type',
+    'state',
+    'journalIdentityHash',
+    'claimId',
+    'claimHash',
+    'ownership',
+    'storageGuard',
+    'fsync',
+  ])
+    && isPositiveInteger(record?.sequence)
+    && record?.type === PRODUCTION_RECOVERY_JOURNAL_OWNERSHIP_RECORD_TYPE
+    && record?.state === 'owned'
+    && CLAIM_HASH_PATTERN.test(record?.journalIdentityHash || '')
+    && (record?.claimId === null || hasNonEmptyString(record?.claimId))
+    && (record?.claimHash === null || CLAIM_HASH_PATTERN.test(record?.claimHash || ''))
+    && ((record?.claimId === null && record?.claimHash === null)
+      || (hasNonEmptyString(record?.claimId) && CLAIM_HASH_PATTERN.test(record?.claimHash || '')))
+    && productionRecoveryJournalOwnershipContractMatches(record?.ownership)
+    && productionRecoveryJournalStorageGuardContractMatches(record?.storageGuard)
+    && record?.fsync?.requested === true
+    && record?.fsync?.strategy === 'after-append';
+}
+
+function productionRecoveryJournalOwnershipSummaryContractMatches(ownershipRecord, ownership, claim) {
+  return hasOwnProperties(ownershipRecord, [
+    'sequence',
+    'type',
+    'state',
+    'journalIdentityHash',
+    'claimId',
+    'claimHash',
+    'ownership',
+    'storageGuard',
+    'restartReadable',
+    'fsync',
+  ])
+    && isPositiveInteger(ownershipRecord?.sequence)
+    && ownershipRecord?.type === PRODUCTION_RECOVERY_JOURNAL_OWNERSHIP_RECORD_TYPE
+    && ownershipRecord?.state === 'owned'
+    && CLAIM_HASH_PATTERN.test(ownershipRecord?.journalIdentityHash || '')
+    && ownershipRecord?.claimId === claim?.activeClaimId
+    && ownershipRecord?.claimHash === claim?.activeClaimHash
+    && productionRecoveryJournalOwnershipContractMatches(ownershipRecord?.ownership)
+    && ownershipRecord?.ownership?.ownsJournal === ownership?.ownsJournal
+    && ownershipRecord?.ownership?.restartReadable === ownership?.restartReadable
+    && ownershipRecord?.ownership?.productionAdapter === ownership?.productionAdapter
+    && ownershipRecord?.ownership?.supportedSurface === ownership?.supportedSurface
+    && productionRecoveryJournalStorageGuardContractMatches(ownershipRecord?.storageGuard)
+    && ownershipRecord?.restartReadable === true
+    && ownershipRecord?.fsync?.requested === true
+    && ownershipRecord?.fsync?.strategy === 'after-append';
+}
+
+function productionRecoveryJournalStorageGuardContractMatches(storageGuard) {
+  return hasOwnProperties(storageGuard, [
+    'boundary',
+    'operation',
+    'outcome',
+  ])
+    && storageGuard?.boundary === PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER
+    && storageGuard?.operation === 'append'
+    && storageGuard?.outcome === 'ownership-recorded';
+}
+
 function productionRecoveryJournalClaimContractMatches(claim) {
   return hasOwnProperties(claim, [
     'status',
@@ -522,6 +615,84 @@ function recoveryJournalIntegrityContractMatches(integrity) {
       || integrity.reason === null
       || hasNonEmptyString(integrity.reason))
     && (!Object.hasOwn(integrity, 'errors') || Array.isArray(integrity.errors));
+}
+
+function appendProductionRecoveryJournalOwnershipRecord(journal, {
+  filePath,
+  plan,
+  current,
+  artifactRefs = {},
+  claimId = null,
+}) {
+  const claimHash = claimId ? recoveryClaimHash(claimId) : null;
+  return journal.appendEvent(PRODUCTION_RECOVERY_JOURNAL_OWNERSHIP_RECORD_TYPE, {
+    planId: plan.id,
+    state: 'owned',
+    observedHash: digest(current),
+    journalIdentityHash: digest({
+      kind: PRODUCTION_RECOVERY_JOURNAL_KIND,
+      storageAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+      filePath,
+    }),
+    claimId,
+    claimHash,
+    artifactRefs,
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+      supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
+    },
+    storageGuard: {
+      boundary: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+      operation: 'append',
+      outcome: 'ownership-recorded',
+    },
+  });
+}
+
+function productionRecoveryJournalOwnershipFromRecord(ownershipRecord, persisted) {
+  const restartReadable = persisted.integrity.status === 'ok';
+  if (productionRecoveryJournalOwnershipRecordContractMatches(ownershipRecord)) {
+    return {
+      ...ownershipRecord.ownership,
+      restartReadable: restartReadable && ownershipRecord.ownership.restartReadable === true,
+    };
+  }
+
+  return {
+    ownsJournal: true,
+    restartReadable,
+    productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
+    supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
+  };
+}
+
+function productionRecoveryJournalOwnershipRecordSummary(ownershipRecord, persisted) {
+  if (!productionRecoveryJournalOwnershipRecordContractMatches(ownershipRecord)) {
+    return null;
+  }
+
+  return {
+    sequence: ownershipRecord.sequence,
+    type: ownershipRecord.type,
+    state: ownershipRecord.state,
+    journalIdentityHash: ownershipRecord.journalIdentityHash,
+    claimId: ownershipRecord.claimId,
+    claimHash: ownershipRecord.claimHash,
+    ownership: {
+      ...ownershipRecord.ownership,
+      restartReadable: persisted.integrity.status === 'ok'
+        && ownershipRecord.ownership.restartReadable === true,
+    },
+    storageGuard: { ...ownershipRecord.storageGuard },
+    restartReadable: persisted.integrity.status === 'ok'
+      && ownershipRecord.ownership.restartReadable === true,
+    fsync: {
+      requested: ownershipRecord.fsync.requested === true,
+      strategy: ownershipRecord.fsync.strategy,
+    },
+  };
 }
 
 export function openProductionRecoveryJournal(options) {
@@ -626,15 +797,34 @@ export function openProductionRecoveryJournal(options) {
       observedHash: digest(current),
       artifactRefs,
     });
+    if (!claimScopedOwnershipRecord(existingJournal.records, existingClaim)) {
+      appendProductionRecoveryJournalOwnershipRecord(journal, {
+        filePath,
+        plan,
+        current,
+        artifactRefs,
+        claimId,
+      });
+    }
   } else {
-    journal = openPlanRecoveryJournal({
+    journal = openRecoveryJournal(filePath, { truncate, now });
+    journal.appendEvent('journal-opened', {
+      planId: plan.id,
+      state: 'opened',
+      observedHash: digest(current),
+      artifactRefs,
+    });
+    appendProductionRecoveryJournalOwnershipRecord(journal, {
       filePath,
       plan,
       current,
       artifactRefs,
-      now,
-      truncate,
+      claimId,
     });
+
+    for (const mutation of plan.mutations) {
+      journal.appendEvent('target-planned', plannedTargetPayload({ plan, mutation, current }));
+    }
 
     if (claimId) {
       appendRecoveryClaimOpened(journal, {
@@ -659,6 +849,8 @@ export function openProductionRecoveryJournal(options) {
   journal.inspect = function inspectProductionRecoveryJournal() {
     const persisted = readRecoveryJournal(filePath);
     const claim = summarizeProductionRecoveryJournalClaim(persisted);
+    const ownershipRecord = claimScopedOwnershipRecord(persisted.records, claim);
+    const ownership = productionRecoveryJournalOwnershipFromRecord(ownershipRecord, persisted);
     const staleClaimRejected = claimScopedStaleClaimRejectionEvidence(persisted.records, claim);
     const writerLease = productionRecoveryJournalWriterLease(persisted, claim);
     const consumedRecord = claimScopedConsumedRecord(persisted.records, claim);
@@ -684,12 +876,11 @@ export function openProductionRecoveryJournal(options) {
         artifactRefs: { ...artifactRefs },
         productionAdapter: 'openProductionRecoveryJournal',
         supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
-        ownership: {
-          ownsJournal: true,
-          restartReadable: persisted.integrity.status === 'ok',
-          productionAdapter: PRODUCTION_RECOVERY_JOURNAL_STORAGE_ADAPTER,
-          supportedSurface: PRODUCTION_RECOVERY_JOURNAL_SUPPORTED_SURFACE,
-        },
+        ownership,
+        ownershipRecord: productionRecoveryJournalOwnershipRecordSummary(
+          ownershipRecord,
+          persisted,
+        ),
         claimId,
         ownsJournal: true,
         claimHash: claimId ? recoveryClaimHash(claimId) : null,
