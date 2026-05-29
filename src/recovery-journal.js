@@ -25,6 +25,10 @@ const RECOVERY_JOURNAL_OPEN_EVENT_TYPES = new Set([
   'journal-opened',
   'journal-retry-opened',
 ]);
+const RECOVERY_JOURNAL_STAGED_EVENT_TYPES = new Set([
+  'apply-staged',
+  'dependencies-validated',
+]);
 const CLAIM_HASH_PATTERN = /^[a-f0-9]{64}$/;
 
 export class RecoveryJournalClaimStaleError extends Error {
@@ -106,6 +110,66 @@ export function summarizeRecoveryJournalOpenState(journalOrRecords, options = {}
     fsync: {
       requested: latestOpenFsync?.requested === true,
       strategy: latestOpenFsync?.strategy ?? null,
+    },
+  };
+}
+
+export function summarizeRecoveryJournalStagedState(journalOrRecords, options = {}) {
+  const records = Array.isArray(journalOrRecords)
+    ? journalOrRecords
+    : Array.isArray(journalOrRecords?.records)
+      ? journalOrRecords.records
+      : [];
+  const integrityStatus = options.integrityStatus
+    || options.integrity?.status
+    || journalOrRecords?.integrity?.status
+    || 'unknown';
+  const stagedRecords = records.filter((record) => RECOVERY_JOURNAL_STAGED_EVENT_TYPES.has(record.type));
+  const firstStagedRecord = stagedRecords[0] || null;
+  const latestStagedRecord = stagedRecords.at(-1) || null;
+  const latestStagedFsync = latestStagedRecord?.fsync && typeof latestStagedRecord.fsync === 'object'
+    ? latestStagedRecord.fsync
+    : null;
+  const latestStagedStateHasHash = CLAIM_HASH_PATTERN.test(latestStagedRecord?.stagedHash || '');
+  const targetRecords = latestStagedRecord
+    ? records.filter((record) => (
+      record.type === 'target-planned'
+        && record.planId === latestStagedRecord.planId
+        && hasNonEmptyString(record.mutationId)
+        && hasNonEmptyString(record.resourceKey)
+        && CLAIM_HASH_PATTERN.test(record.beforeHash || '')
+        && CLAIM_HASH_PATTERN.test(record.afterHash || '')
+    ))
+    : [];
+
+  return {
+    status: latestStagedRecord ? 'staged' : 'missing',
+    phase: latestStagedRecord ? latestStagedRecord.state || 'staged' : 'missing',
+    restartReadable: integrityStatus === 'ok' && latestStagedStateHasHash,
+    durableRows: integrityStatus === 'ok' ? records.length : 0,
+    records: records.length,
+    stagedRows: stagedRecords.length,
+    targetRows: targetRecords.length,
+    firstStagedSequence: firstStagedRecord?.sequence ?? null,
+    latestStagedSequence: latestStagedRecord?.sequence ?? null,
+    latestStagedType: latestStagedRecord?.type ?? null,
+    planId: latestStagedRecord?.planId ?? null,
+    state: latestStagedRecord?.state ?? null,
+    observedHash: latestStagedRecord?.observedHash ?? null,
+    stagedHash: latestStagedRecord?.stagedHash ?? null,
+    targetEnvelope: {
+      plannedTargets: targetRecords.length,
+      allTargetsHaveHashes: latestStagedRecord !== null && targetRecords.every((record) => (
+        CLAIM_HASH_PATTERN.test(record.beforeHash || '')
+          && CLAIM_HASH_PATTERN.test(record.afterHash || '')
+      )),
+    },
+    artifactRefs: latestStagedRecord?.artifactRefs && typeof latestStagedRecord.artifactRefs === 'object'
+      ? { ...latestStagedRecord.artifactRefs }
+      : {},
+    fsync: {
+      requested: latestStagedFsync?.requested === true,
+      strategy: latestStagedFsync?.strategy ?? null,
     },
   };
 }
@@ -990,6 +1054,7 @@ export function openProductionRecoveryJournal(options) {
         integrity: persisted.integrity,
         records: persisted.records.length,
         openState: persisted.openState,
+        stagedState: persisted.stagedState,
         staleClaimRejected,
         claim,
         claimExpiry,
@@ -1372,6 +1437,7 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
         }],
       },
       openState: summarizeRecoveryJournalOpenState([], { integrityStatus: 'missing' }),
+      stagedState: summarizeRecoveryJournalStagedState([], { integrityStatus: 'missing' }),
     };
   }
 
@@ -1506,6 +1572,7 @@ export function readSqliteRecoveryJournalTable(database, options = {}) {
     schemaVersionColumnPresent,
     integrity,
     openState: summarizeRecoveryJournalOpenState(records, { integrity }),
+    stagedState: summarizeRecoveryJournalStagedState(records, { integrity }),
   };
 }
 
@@ -1668,6 +1735,7 @@ function readRecoveryJournalFile(filePath, options = {}) {
       records: [],
       integrity,
       openState: summarizeRecoveryJournalOpenState([], { integrity }),
+      stagedState: summarizeRecoveryJournalStagedState([], { integrity }),
     };
   }
 
@@ -1739,6 +1807,7 @@ function readRecoveryJournalFile(filePath, options = {}) {
     records,
     integrity,
     openState: summarizeRecoveryJournalOpenState(records, { integrity }),
+    stagedState: summarizeRecoveryJournalStagedState(records, { integrity }),
   };
 }
 
@@ -2387,5 +2456,6 @@ function emptyRead(filePath, status, reason) {
       errors: [{ line: null, code: 'JOURNAL_MISSING', message: reason }],
     },
     openState: summarizeRecoveryJournalOpenState([], { integrityStatus: status }),
+    stagedState: summarizeRecoveryJournalStagedState([], { integrityStatus: status }),
   };
 }
