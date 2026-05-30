@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:54 CEST +02:00.
+- Last update: 2026-05-30 23:03 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0329 category term taxonomy reference variant 2 merge ending at
-  `3cf7f9`.
+  the RPP-0330 post_tag taxonomy reference variant 2 merge ending at
+  `6e4931c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 530
-  items checked and leaves 470 open.
-- Checked slices: 100 release-gate foundation items, 74 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 531
+  items checked and leaves 469 open.
+- Checked slices: 100 release-gate foundation items, 75 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 90 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Post_tag taxonomy reference variant-2 carry-through: the current lane now
+  checks `RPP-0330` with focused local-production-shaped verifier evidence for
+  core `post_tag` taxonomy references. The proof builds a ready post_tag
+  taxonomy plan, verifies the carried `wp_term_taxonomy` row has a live-remote
+  precondition, applies to the local hash, and records hash-only evidence for
+  base, local, remote-before, precondition, apply, and proof hashes. It also
+  documents remaining unmapped WordPress surfaces and fails closed when apply
+  revalidation for the post_tag taxonomy resource is omitted. Validation passed
+  with Node syntax checks, focused RPP-0330 coverage 3/3, adjacent
+  post_tag/RPP-0390/local-production coverage 10/10, adjacent RPP-0329/RPP-0389
+  category taxonomy coverage 4/4, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 531/469; final release remains `NO-GO`
+  because this is local production-shaped verifier evidence, not
+  production-backed release proof.
 - Category term taxonomy reference variant-2 carry-through: the current lane
   now checks `RPP-0329` with focused local-production-shaped verifier evidence
   for category `wp_term_taxonomy` references. The proof builds a ready category
