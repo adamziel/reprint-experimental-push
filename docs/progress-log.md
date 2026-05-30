@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:07 CEST +02:00.
+- Last update: 2026-05-30 18:11 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0287 local plugin data stale owner-context release-verifier proof
-  merge ending at `590cd613`.
+  the RPP-0362 featured image attachment reference variant-4 proof merge ending
+  at `f0be820e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 495
-  items checked and leaves 505 open.
-- Checked slices: 100 release-gate foundation items, 55 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 496
+  items checked and leaves 504 open.
+- Checked slices: 100 release-gate foundation items, 56 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Featured image attachment reference variant-4 proof: the current lane now
+  contains `RPP-0362` evidence in
+  `docs/evidence/rpp-0362-featured-image-attachment-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0362-featured-image-attachment-reference-v4.test.js`. The focused
+  graph-identity regression proves stale remote attachment targets and
+  unsupported non-attachment `_thumbnail_id` targets block before mutation, keep
+  zero preconditions and zero mutations, and expose hash-only blocker/reference
+  evidence without raw attachment, page, or postmeta fixture values. Validation
+  passed with Node syntax checks, focused RPP-0362 coverage 2/2, adjacent
+  featured-image graph coverage 5/5, checklist lint, scoped artifact redaction
+  scan, raw fixture scan, and merge diff whitespace checks. Counts are now
+  496/504; final release remains `NO-GO` because this is local focused graph
+  regression evidence, not production-backed release evidence.
 - Local plugin data stale owner-context release-verifier proof v5: the current
   lane now contains `RPP-0287` evidence in
   `docs/evidence/rpp-0287-local-plugin-data-stale-owner-context-release-verifier-v5.md`,
