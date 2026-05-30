@@ -86,7 +86,7 @@ The default generated run covers:
   explicit plugin-owned resource refusal variant-3 ready/changed/stale
   targets, supported forms-lab custom-table rows, plugin-owned custom-table
   update variant-1 cases, explicit plugin-owned custom-table variant-3
-  update coverage, and delete refusal with per-tier target
+  and variant-4 update coverage, and delete refusal with per-tier target
   counts, atomic plugin install ready and missing-dependency paths with
   per-tier target counts, stale remote after dry-run target counts with
   explicit variant-3 hash-only replay refusal evidence, same-plan post-parent,
@@ -552,6 +552,19 @@ planned `fixture-forms-lab-table` mutation with a matching live-remote
 precondition; verifies the ready case preserves the unplanned remote-only file
 and rejects stale replay before mutation; then verifies the stale custom-table
 row refuses apply without mutating the remote digest.
+
+RPP-0175 adds `pluginOwnedCustomTableChangesVariant4` coverage as focused
+regression coverage over the same plugin-owned forms-lab custom-table update
+surface with an explicit variant-4 target tag. The deterministic roster emits
+10 variant-4 target cases: five ready custom-table updates and five stale
+non-ready remote-drift conflicts, with one target in every tier. The focused
+proof reuses the variant-3 custom-table model invariant and separately checks
+the variant-4 ready, stale, and non-ready tags: ready cases apply the
+`fixture-forms-lab-table` mutation with matching live-remote preconditions,
+preserve the unplanned remote-only file, and reject stale replay before
+mutation; stale cases record plugin-data conflicts and refuse apply without
+mutating the remote digest. Evidence remains hash-only for row ids, row fields,
+owner/driver metadata, audit/refusal data, and remote-only preservation data.
 
 RPP-0143 adds `pluginOwnedResourceRefusalVariant3` coverage for plugin-owned
 `wp_options` rows owned by `forms`. The deterministic roster emits 30 target
