@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:31 CEST.
+- Last update: 2026-05-30 08:33 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0498 driver apply-validation hook release-verifier merge ending at
-  `0e3a8acc3`.
+  the RPP-0499 driver audit evidence redaction release-verifier merge ending at
+  `9293daa21`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 369
-  items checked and leaves 631 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 370
+  items checked and leaves 630 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  71 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
+  72 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 75 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Driver audit evidence redaction release-verifier refresh: the current lane
+  now contains `RPP-0499` evidence in
+  `docs/evidence/rpp-0499-driver-audit-evidence-redaction-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0499-driver-audit-evidence-redaction-release-verifier-v5.test.js`.
+  `node --check` passed for the changed verifier and test file, the combined
+  RPP-0498/RPP-0499 focused verifier tests passed 4/4, the adjacent audit
+  redaction/wp_options verifier slice passed 7/7, the production boundary plus
+  RPP-0484/RPP-0499 slice passed 5/5, and adjacent v5 release-verifier
+  plugin-driver slices passed 15 tests. Checklist lint, artifact redaction
+  scan, and merge diff whitespace checks also passed. Counts are now 370/630;
+  final release remains `NO-GO`.
 - Driver apply-validation hook release-verifier refresh: the current lane now
   contains `RPP-0498` evidence in
   `docs/evidence/rpp-0498-driver-apply-validation-release-verifier-v5.md`,
