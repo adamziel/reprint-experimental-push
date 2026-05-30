@@ -73,7 +73,7 @@ The default generated run covers:
   ready/stale non-ready outcomes, and explicit variant-3 term-taxonomy graph
   coverage, `wp_term_relationships`
   graph cases with one target per tier, ready creates, stale taxonomy drift,
-  redacted hash-only evidence, and explicit variant-3 relationship graph
+  redacted hash-only evidence, and explicit variant-3 and variant-4 relationship graph
   coverage, plugin-owned `wp_options` update cases with
   ready/conflict outcomes, stale replay rejection before mutation, and explicit
   variant-3 plugin-owned option coverage,
@@ -492,6 +492,18 @@ remote-only preservation file; verifies each ready graph row applies with a
 matching precondition; verifies the ready case preserves the unplanned
 remote-only file and rejects stale replay before mutation; then verifies the
 stale taxonomy reference refuses apply without mutating the remote digest.
+
+RPP-0173 adds `wpTermRelationshipsGraphVariant4` focused regression coverage
+for the same `wp_term_relationships` graph surface with an explicit variant-4
+target tag. The deterministic roster emits 10 variant-4 target cases: five
+ready term/taxonomy/relationship graph creates and five stale non-ready
+taxonomy drift cases, with one relationship target in every tier. The focused
+proof replays the variant-3 graph invariants under the variant-4 target tag,
+verifies each ready graph row carries a matching precondition and applies the
+local hash without overwriting the unplanned remote-only file, rejects stale
+replay before mutation, and verifies the stale taxonomy reference refuses apply
+without mutating the remote digest. The evidence remains hash-only for term,
+taxonomy, relationship, blocker, refusal, and remote-only preservation data.
 
 The `pluginOwnedOptionChange` target coverage records per-tier counts for
 generated plugin-owned `wp_options` rows using the supported forms driver.
