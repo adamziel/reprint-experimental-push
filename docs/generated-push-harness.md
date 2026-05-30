@@ -330,6 +330,17 @@ applies the planned postmeta create, update, and delete mutations and rejects
 stale replay before mutation, then verifies the conflicting updated postmeta row
 refuses apply without mutating the remote digest.
 
+RPP-0168 adds `wpPostmetaCreateUpdateDeleteVariant4` coverage for the same
+`wp_postmeta` create/update/delete surface with an explicit variant-4 target
+tag. The deterministic roster emits 20 variant-4 target cases: 10 ready
+postmeta create/update/delete plans and 10 non-ready remote-drift conflicts,
+with two cases in every tier. The focused proof keeps the evidence hash-only,
+verifies the ready case applies the planned create, update, and delete
+`wp_postmeta` mutations while preserving unplanned remote resources, rejects
+stale replay with `PRECONDITION_FAILED` before mutation, and confirms the
+conflicting updated postmeta row refuses apply without mutating the remote
+digest.
+
 The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
 generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
 Ready cases create the comment and commentmeta row in one plan, preserve
