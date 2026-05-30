@@ -191,9 +191,22 @@ function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemo
 
 function buildBlockedApplyRevalidation() {
   return {
+    ok: true,
     apply: {
       status: 412,
       code: 'PRECONDITION_FAILED',
+      applied: 0,
+      applyRevalidation: {
+        phase: 'before-first-mutation',
+        checkedAgainst: 'live-remote',
+      },
+    },
+    replay: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+      replayed: true,
+      freshMutationWork: false,
+      preservedRemoteUnchanged: true,
     },
     recoveryInspect: {
       recovery: {
@@ -205,6 +218,18 @@ function buildBlockedApplyRevalidation() {
           total: 2,
         },
       },
+    },
+    dbJournal: {
+      ordering: {
+        ordered: true,
+        applyRejected: 20,
+        applyReplayed: 21,
+        mutationAppliedBeforeFailure: 0,
+        applyCommitted: false,
+      },
+    },
+    boundary: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
     },
   };
 }
@@ -1156,9 +1181,14 @@ test('production recovery journal claim expiry advances stale ownership and rele
   assert.equal(releaseProof.sameReleaseBoundary, true);
   assert.equal(releaseProof.checks.claimExpiryPolicy, true);
   assert.equal(releaseProof.checks.oldState, true);
+  assert.equal(releaseProof.checks.sameKeyReplayAfterRejection, true);
   assert.equal(releaseProof.partialStates.old.proved, true);
   assert.equal(releaseProof.partialStates.old.state, 'old-remote');
   assert.deepEqual(releaseProof.partialStates.old.counts, oldRemoteRecovery.counts);
+  assert.equal(releaseProof.sameKeyReplayAfterRejection.proved, true);
+  assert.equal(releaseProof.sameKeyReplayAfterRejection.applyStatus, 412);
+  assert.equal(releaseProof.sameKeyReplayAfterRejection.replayed, true);
+  assert.equal(releaseProof.sameKeyReplayAfterRejection.preservedRemoteUnchanged, true);
   assert.equal(releaseProof.claimExpiryPolicy.proved, true);
   assert.equal(releaseProof.claimExpiryPolicy.previousClaimAgeMs, 5_000);
 });

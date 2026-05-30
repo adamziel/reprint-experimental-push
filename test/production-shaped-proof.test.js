@@ -294,9 +294,22 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
     },
   };
   const applyRevalidation = {
+    ok: true,
     apply: {
       status: 412,
       code: 'PRECONDITION_FAILED',
+      applied: 0,
+      applyRevalidation: {
+        phase: 'before-first-mutation',
+        checkedAgainst: 'live-remote',
+      },
+    },
+    replay: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+      replayed: true,
+      freshMutationWork: false,
+      preservedRemoteUnchanged: true,
     },
     recoveryInspect: {
       recovery: {
@@ -308,6 +321,18 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
           total: 2,
         },
       },
+    },
+    dbJournal: {
+      ordering: {
+        ordered: true,
+        applyRejected: 20,
+        applyReplayed: 21,
+        mutationAppliedBeforeFailure: 0,
+        applyCommitted: false,
+      },
+    },
+    boundary: {
+      verdict: 'LIVE_RELEASE_BOUNDARY_OK',
     },
   };
 
@@ -327,6 +352,10 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
   assert.equal(proof.recoveryInspectAfterRestart.proved, true);
   assert.equal(proof.sameKeyBodyReplay.proved, true);
   assert.equal(proof.sameKeyDifferentBodyConflict.proved, true);
+  assert.equal(proof.sameKeyReplayAfterRejection.proved, true);
+  assert.equal(proof.sameKeyReplayAfterRejection.applyStatus, 412);
+  assert.equal(proof.sameKeyReplayAfterRejection.replayed, true);
+  assert.equal(proof.sameKeyReplayAfterRejection.mutationAppliedBeforeFailure, 0);
   assert.equal(proof.partialStates.old.proved, true);
   assert.equal(proof.partialStates.old.state, 'old-remote');
   assert.equal(proof.partialStates.old.counts.old, 2);
@@ -6846,6 +6875,7 @@ maybeTest('production-shaped live release verify command proves the explicit che
         assert.equal(summary.gate2DurableRecoveryJournal?.gate, 'GATE-2');
         assert.equal(summary.gate2DurableRecoveryJournal?.gateStatus, 'proven');
         assert.equal(summary.gate2DurableRecoveryJournal?.checks?.claimExpiryPolicy, true);
+        assert.equal(summary.gate2DurableRecoveryJournal?.checks?.sameKeyReplayAfterRejection, true);
         assert.equal(summary.gate2DurableRecoveryJournal?.claimExpiryPolicy?.proved, true);
         assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.type, 'production-auth-session');
         assert.equal(summary.releaseProof?.authSessionLifecycle?.minted?.status, 'active');
