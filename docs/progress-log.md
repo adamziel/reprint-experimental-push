@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 09:47 CEST.
+- Last update: 2026-05-30 09:51 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0178 same independent content variant-4 generated-harness merge
-  ending at `76bc395d5`.
+  the RPP-0248 unknown plugin-owned resource refusal variant-3 merge ending at
+  `10d4af669`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 381
-  items checked and leaves 619 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 382
+  items checked and leaves 618 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 46 merge-invariant items. No release-ops items are checked
+  harness items, and 47 merge-invariant items. No release-ops items are checked
   yet.
+- Unknown plugin-owned resource refusal variant-3 refresh: the current lane
+  now contains `RPP-0248` evidence in
+  `docs/evidence/rpp-0248-unknown-plugin-owned-resource-refusal-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0248-unknown-plugin-owned-resource-refusal-v3.test.js`. `node
+  --check` passed for the focused test, the focused RPP-0248 test passed 1/1,
+  the adjacent RPP-0208/RPP-0228 planner slice passed 2/2, the adjacent
+  RPP-0143 generated harness slice passed 1/1, and
+  `test/evidence-redaction.test.js` passed 7/7. Checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks also passed.
+  Counts are now 382/618; final release remains `NO-GO`.
 - Same independent content variant-4 refresh: the current lane now contains
   `RPP-0178` evidence in
   `docs/evidence/rpp-0178-same-independent-content-v4.md`,
