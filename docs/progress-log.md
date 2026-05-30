@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 21:05 CEST +02:00.
+- Last update: 2026-05-30 21:17 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0709 chunk replay idempotency ancestry merge ending at `bce0e7`.
+  the RPP-0180 large ready plan tier variant-4 merge ending at `fc9169`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 514
-  items checked and leaves 486 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 515
+  items checked and leaves 485 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 78 generated
+  23 storage/performance items, 3 production-topology items, 79 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Large ready plan tier variant-4 coverage: the current lane now checks
+  `RPP-0180` with focused generated-harness coverage for the large ready plan
+  tier surface. The generator exposes `largeReadyPlanTierVariant4` target
+  coverage, carrying 10 ready cases across tiers 0 through 9, and the focused
+  proof validates row/file create, update, delete, unplanned row/file
+  preservation, exact mutation/precondition surfaces, and stale replay refusal
+  without leaking raw generated payloads. Validation passed with Node syntax
+  checks, focused RPP-0180 coverage 1/1, generated-harness summary check
+  reporting 620 total cases with 10 ready variant-4 large-ready cases,
+  adjacent RPP-0120/RPP-0140/RPP-0160 coverage 3/3, checklist lint, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 515/485;
+  final release remains `NO-GO` because this is local generated-model evidence,
+  not production-backed release proof.
 - Chunk replay idempotency ancestry refinement: the current lane now preserves
   the older `session/rpp-709` RPP-0709 ancestry while retaining the stronger
   current guarded executor benchmark gates. Chunk receipts now carry
