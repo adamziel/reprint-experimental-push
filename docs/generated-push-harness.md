@@ -434,6 +434,12 @@ the planned mutation and precondition key sets match that generated surface,
 checks the row/file `keep-remote` decisions, and drifts a non-initial planned
 resource after dry-run to prove `PRECONDITION_FAILED` occurs before mutation
 without serializing generated row titles, file payloads, or stale replay data.
+RPP-0160 adds `largeReadyPlanTierVariant3` coverage for the same deterministic
+large-ready surface with an explicit variant-3 target tag. The proof
+cross-checks the variant-3 summary against the legacy `largeReadyPlanTier`
+target, verifies all 10 tiered cases remain ready, and records only counts,
+resource-key hashes, precondition hashes, decision hashes, and stale-replay
+refusal hashes while the release gate remains NO-GO.
 
 The `postAuthorGraph` target coverage records per-tier counts for generated
 `wp_posts.post_author` references to `wp_users` rows. Ready cases create the

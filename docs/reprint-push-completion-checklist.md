@@ -176,7 +176,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0157 (Near / generated-harness) Add generated coverage for stale remote after dry-run, variant 3. Success: summary exposes per-tier counts for this target.
 - [x] RPP-0158 (Near / generated-harness) Add generated coverage for same independent content, variant 3. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0159 (Near / generated-harness) Add generated coverage for remote-only preservation, variant 3. Success: stale remote replay fails before mutation.
-- [ ] RPP-0160 (Near / generated-harness) Add generated coverage for large ready plan tier, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
+- [x] RPP-0160 (Near / generated-harness) Add generated coverage for large ready plan tier, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0161 (Near / generated-harness) Add focused regression coverage for file create/update/delete mix, variant 4. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0162 (Near / generated-harness) Add focused regression coverage for directory descendant conflict, variant 4. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0163 (Near / generated-harness) Add focused regression coverage for file type-swap conflict, variant 4. Success: ready cases apply with no unplanned remote overwrite.
@@ -557,7 +557,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [ ] RPP-0518 (Mid-Far / executor-auth) Implement capability downgrade rejection, variant 1. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0519 (Mid-Far / executor-auth) Implement credential rotation behavior, variant 1. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0520 (Mid-Far / executor-auth) Implement production audit event schema, variant 1. Success: verify:release includes the route evidence in one summary.
-- [ ] RPP-0521 (Mid-Far / executor-auth) Prove production preflight route, variant 2. Success: real endpoint test runs against a live URL.
+- [x] RPP-0521 (Mid-Far / executor-auth) Prove production preflight route, variant 2. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0522 (Mid-Far / executor-auth) Prove production snapshot hashes route, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
 - [ ] RPP-0523 (Mid-Far / executor-auth) Prove production dry-run route, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0524 (Mid-Far / executor-auth) Prove production apply route, variant 2. Success: apply revalidates the live source before mutation.

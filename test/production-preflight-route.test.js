@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-preflight-route-live-smoke.mjs');
+const liveSmokeSource = readFileSync(liveSmokeSourcePath, 'utf8');
 
 function functionBody(name) {
   const declaration = `function ${name}`;
@@ -46,6 +48,14 @@ function assertBefore(body, first, second) {
   assert.notEqual(firstIndex, -1, `missing ${first}`);
   assert.notEqual(secondIndex, -1, `missing ${second}`);
   assert.ok(firstIndex < secondIndex, `${first} must appear before ${second}`);
+}
+
+function sourceSlice(source, startNeedle, endNeedle) {
+  const start = source.indexOf(startNeedle);
+  assert.notEqual(start, -1, `missing ${startNeedle}`);
+  const end = source.indexOf(endNeedle, start);
+  assert.notEqual(end, -1, `missing ${endNeedle} after ${startNeedle}`);
+  return source.slice(start, end);
 }
 
 test('production preflight route is a signed GET route behind authenticated permission', () => {
@@ -100,4 +110,58 @@ test('production preflight response exposes production route profile and hash-on
   assert.match(callback, /'sessionStore'\s*=>\s*\[/);
   assert.match(callback, /'snapshotHash'\s*=>\s*hash\('sha256',\s*reprint_push_stable_json\(reprint_push_export_snapshot\(\)\)\)/);
   assert.doesNotMatch(callback, /Authorization|Basic\s+[A-Za-z0-9+/=]{16,}|applicationPassword\s*=>|password\s*=>/i);
+});
+
+test('RPP-0521 preflight proof uses the real production-shaped route over sandbox-local loopback', () => {
+  assert.match(liveSmokeSource, /const endpointPath = '\/wp-json\/reprint\/v1\/push\/preflight';/);
+  assert.match(liveSmokeSource, /const routeIndexPath = '\/reprint\/v1\/push\/preflight';/);
+  assert.match(liveSmokeSource, /assertRoute\(index\.body, routeIndexPath, 'GET'\)/);
+
+  assert.match(liveSmokeSource, /assert\.equal\(unsigned\.status, 401, `unsigned production preflight HTTP \$\{unsigned\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(unsigned\.body\?\.code, 'SIGNED_HEADER_REQUIRED'\)/);
+
+  assert.match(
+    liveSmokeSource,
+    /authenticatedHttpClient\(\{\s+sourceUrl: server\.baseUrl,\s+credential: credentials,\s+routeProfile: 'production-shaped',/s,
+  );
+  assert.match(liveSmokeSource, /const preflight = await client\.signedGet\('\/preflight'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.status, 200, `production-shaped preflight HTTP \$\{preflight\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.request\?\.pathname, endpointPath\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.body\?\.routeProfile\?\.profile, 'production-shaped'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.body\?\.routeProfile\?\.restNamespace, 'reprint\/v1'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.body\?\.routeProfile\?\.routePrefix, '\/push'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.body\?\.auth\?\.session\?\.type, 'production-auth-session'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(preflight\.body\?\.sessionStore\?\.type, 'wp-options'\)/);
+  assert.match(liveSmokeSource, /assert\.match\(preflight\.body\?\.snapshotHash \|\| '', \/\^\[a-f0-9\]\{64\}\$\/\)/);
+
+  assert.match(liveSmokeSource, /host: '127\.0\.0\.1'/);
+  assert.match(liveSmokeSource, /port: 'ephemeral'/);
+  assert.match(liveSmokeSource, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(liveSmokeSource, /tunnel: 'none'/);
+  assert.match(liveSmokeSource, /http\.Server\.prototype\.listen = function reprintPushLocalhostListen/);
+  assert.doesNotMatch(liveSmokeSource, /\b(?:ngrok|cloudflared|localtunnel|serveo|localhost\.run|lhr\.life|Tailscale Funnel)\b/i);
+});
+
+test('RPP-0521 live proof summary reports proof class with hash-only preflight evidence', () => {
+  const summaryInitializer = sourceSlice(liveSmokeSource, 'const summary = {', 'try {');
+  assert.match(summaryInitializer, /routeProfile: 'production-shaped'/);
+  assert.match(summaryInitializer, /endpoint: endpointPath/);
+  assert.match(summaryInitializer, /liveUrl: \{/);
+  assert.match(summaryInitializer, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(summaryInitializer, /tunnel: 'none'/);
+
+  const unsignedSummary = sourceSlice(liveSmokeSource, 'summary.unsigned = {', '    const client = authenticatedHttpClient');
+  assert.match(unsignedSummary, /status: unsigned\.status/);
+  assert.match(unsignedSummary, /code: unsigned\.body\?\.code \|\| null/);
+  assert.doesNotMatch(unsignedSummary, /authorization|Basic|password|credential/i);
+
+  const preflightSummary = sourceSlice(liveSmokeSource, 'summary.preflight = {', '    summary.ok = true;');
+  assert.match(preflightSummary, /routeProfile: preflight\.body\.routeProfile/);
+  assert.match(preflightSummary, /sessionType: preflight\.body\.auth\.session\.type/);
+  assert.match(preflightSummary, /sessionStatus: preflight\.body\.auth\.session\.status/);
+  assert.match(preflightSummary, /idPattern: '\^\[A-Za-z0-9_-\]\{32,160\}\$'/);
+  assert.match(preflightSummary, /sessionHashLength: String\(preflight\.body\.session\.sessionHash \|\| ''\)\.length/);
+  assert.match(preflightSummary, /signingKeyHashLength: String\(preflight\.body\.session\.signingKeyHash \|\| ''\)\.length/);
+  assert.match(preflightSummary, /snapshotHashLength: String\(preflight\.body\.snapshotHash \|\| ''\)\.length/);
+  assert.doesNotMatch(preflightSummary, /authorization|Basic|applicationPassword|password|credentialHash|signingKey:|sessionHash:/i);
 });
