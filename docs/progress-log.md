@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 00:04 CEST +02:00.
+- Last update: 2026-05-31 00:06 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0270 focused planner summary consistency variant 4 merge ending at
-  `f4f1f28`.
+  the RPP-0275 focused keep-remote decision variant 4 merge ending at
+  `cd18552`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 543
-  items checked and leaves 457 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 544
+  items checked and leaves 456 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 94 generated
-  harness items, and 80 merge-invariant items. No release-ops items are checked
+  harness items, and 81 merge-invariant items. No release-ops items are checked
   yet.
+- Focused keep-remote decision variant-4 proof: the current lane now checks
+  `RPP-0275` with focused planner/apply regression evidence for remote-only
+  create, update, and delete decisions. The proof verifies each keep-remote
+  resource emits no mutation or precondition, preserves the live remote value
+  during apply, rejects forged overlapping mutations before durable journal
+  writes, and keeps decision/refusal proof envelopes hash-only. Validation
+  passed with a Node syntax check, focused RPP-0275 coverage 1/1, adjacent
+  RPP-0215/RPP-0235/RPP-0275 keep-remote coverage 4/4, the full
+  `test/push-planner.test.js` suite 148/148, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 544/456; final release remains
+  `NO-GO` because this is local focused planner evidence, not
+  production-backed release proof.
 - Focused planner summary consistency variant-4 proof: the current lane now
   checks `RPP-0270` with standalone focused fixtures for ready, conflict,
   blocked, ready atomic, and blocked atomic plans. The proof verifies

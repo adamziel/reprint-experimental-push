@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-31T00:04:00+02:00">Last updated: May 31, 2026, 00:04 CEST</time>
+        <time class="update-stamp" datetime="2026-05-31T00:06:00+02:00">Last updated: May 31, 2026, 00:06 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>543</strong>
+        <strong>544</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>457</strong>
+        <strong>456</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0270</span>
+        <span>RPP-0275</span>
       </div>
-      <p>The latest refresh checks RPP-0270 with focused planner summary consistency variant 4: ready, conflict, blocked, ready atomic, and blocked atomic fixtures prove plan.summary matches emitted mutations, decisions, conflicts, blockers, atomic groups, and preconditions across deterministic replays, while command/caveat evidence stays hash-only. Counts are now 543/457; final release remains NO-GO because this is local focused evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0275 with focused keep-remote decision variant 4: remote-only create, update, and delete decisions emit no mutation or precondition, preserve the live remote value during apply, reject forged overlapping mutations before journal writes, and keep decision/refusal proof envelopes hash-only. Counts are now 544/456; final release remains NO-GO because this is local focused evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0275 focused: 1/1</span>
+        <span class="tag">RPP-0215/0235/0275: 4/4</span>
+        <span class="tag">push-planner: 148/148</span>
+        <span class="tag">remote-only create/update/delete</span>
+        <span class="tag">forged overlap refused</span>
+        <span class="tag">keep-remote preserved</span>
+        <span class="tag">hash-only evidence: pass</span>
+        <span class="tag">redaction/diff: pass</span>
         <span class="tag">RPP-0270 focused: 1/1</span>
         <span class="tag">RPP-0210/0270: 2/2</span>
         <span class="tag">push-planner: 148/148</span>
