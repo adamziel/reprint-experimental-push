@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 06:29 CEST.
+- Last update: 2026-05-30 06:39 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0162 directory descendant conflict variant-4 generated-harness merge
-  ending at `13c8ca100`.
+  the RPP-0163 file type-swap conflict variant-4 generated-harness merge
+  ending at `045f06e9b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 355
-  items checked and leaves 645 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 356
+  items checked and leaves 644 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 62 generated
+  11 storage/performance items, 3 production-topology items, 63 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- File type-swap conflict variant-4 refresh: the current lane now contains
+  `RPP-0163` evidence in
+  `docs/evidence/rpp-0163-file-type-swap-conflict-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0163 test passed 1/1, the adjacent
+  RPP-0103/RPP-0123/RPP-0143/RPP-0163 file type-swap slice passed 4/4, and
+  `npm run test:generated-push-harness` passed 70/70 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 356/644; final release remains
+  `NO-GO`.
 - Directory descendant conflict variant-4 refresh: the current lane now
   contains `RPP-0162` evidence in
   `docs/evidence/rpp-0162-directory-descendant-conflict-v4.md`,
