@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:46 CEST.
+- Last update: 2026-05-30 13:51 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0519 credential rotation behavior merge ending at `813b68238`.
+  the RPP-0363 post author reference merge ending at `88d0c43ef`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 444
-  items checked and leaves 556 open.
-- Checked slices: 100 release-gate foundation items, 46 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 445
+  items checked and leaves 555 open.
+- Checked slices: 100 release-gate foundation items, 47 graph identity items,
   73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Post author reference focused regression: the current lane now contains
+  `RPP-0363` evidence in
+  `docs/evidence/rpp-0363-post-author-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0363-post-author-reference-v4.test.js`. The focused graph identity
+  proof plans a `wp_posts.post_author` mutation when the author target identity
+  is stable, blocks stale author-target drift with hash-only reference evidence,
+  requires live-remote preconditions before apply, and checks that raw private
+  user and post payloads stay out of serialized evidence. Validation passed
+  with Node syntax checks, focused RPP-0363 coverage 2/2, adjacent post-author
+  release-verifier coverage 3/3, checklist lint, scoped artifact redaction scan,
+  and merge diff whitespace checks. Counts are now 445/555; final release
+  remains `NO-GO` because this is local graph identity regression evidence, not
+  externally hosted production topology proof.
 - Credential rotation behavior: the current lane now contains `RPP-0519`
   evidence in `docs/evidence/rpp-0519-credential-rotation-behavior.md`,
   `docs/reprint-push-completion-checklist.md`,
