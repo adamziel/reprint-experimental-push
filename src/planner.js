@@ -242,6 +242,7 @@ export function createPushPlan({ base, local, remote, now = new Date() }) {
           remote,
           intents,
           intentByResource,
+          evidenceScope: support.evidenceScope,
         });
         if (!ownerContextSupport.supported) {
           addPluginOwnedResourceBlocker(plan, {
@@ -592,6 +593,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
           supported: true,
           driver: supported.driver,
           policySource: supported.source,
+          evidenceScope: supported.evidenceScope,
           supportsDelete: false,
           driverEvidence,
         };
@@ -658,6 +660,7 @@ function buildPluginOwnedResourcePolicy({ base, local, remote, intents }) {
         supported: true,
         driver: supported.driver,
         policySource: supported.source,
+        evidenceScope: supported.evidenceScope,
         supportsDelete: supported.supportsDelete === true,
         ...(driverEvidence ? { driverEvidence } : {}),
         ...(serializedOptionValidationEvidence?.serialized ? { serializedOptionValidationEvidence } : {}),
@@ -3277,6 +3280,7 @@ function pluginOwnedOwnerContextSupport({
   remote,
   intents,
   intentByResource,
+  evidenceScope,
 }) {
   const intentId = intentByResource.get(resource.key) || null;
   const intent = intentId
@@ -3312,6 +3316,7 @@ function pluginOwnedOwnerContextSupport({
       resource,
       owner,
       staleContext,
+      evidenceScope,
     }),
     ownerMetadataRefusalEvidence: stalePluginMetadataOwnerContextRefusalEvidence({
       resource,
@@ -3327,6 +3332,7 @@ function pluginOwnedOwnerContextSupport({
       resource,
       owner,
       staleContext,
+      evidenceScope,
     }),
   };
 }
@@ -3422,24 +3428,43 @@ function stalePluginFileOwnerContextRefusalEvidence({ resource, owner, staleCont
   };
 }
 
-function stalePluginOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
-  return remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, staleContext })
+function stalePluginOwnerContextRefusalEvidence({
+  resource,
+  owner,
+  staleContext,
+  evidenceScope = null,
+}) {
+  return remotePluginRemovalOwnerContextRefusalEvidence({
+    resource,
+    owner,
+    staleContext,
+    evidenceScope,
+  })
     || stalePluginFileOwnerContextRefusalEvidence({ resource, owner, staleContext })
     || stalePluginMetadataOwnerContextRefusalEvidence({ resource, owner, staleContext });
 }
 
-function remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, staleContext }) {
+function remotePluginRemovalOwnerContextRefusalEvidence({
+  resource,
+  owner,
+  staleContext,
+  evidenceScope = null,
+}) {
   const removedPluginContexts = staleContext.filter((context) =>
     context.type === 'plugin' && context.change.remoteChange === 'delete');
   if (removedPluginContexts.length === 0) {
     return null;
   }
+  const releaseGateEvidence = remotePluginRemovalReleaseGateEvidence(evidenceScope);
   return {
     reasonCode: 'REMOTE_PLUGIN_REMOVAL_OWNER_CONTEXT',
     operation: 'refuse-before-mutation',
-    proofScope: 'local-focused',
-    productionBacked: false,
-    releaseGateNote: 'Local proof only; production-backed release gate evidence is still required.',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    proofScope: releaseGateEvidence.proofScope,
+    releaseGateEvidenceScope: releaseGateEvidence.releaseGateEvidenceScope,
+    productionBacked: releaseGateEvidence.productionBacked,
+    releaseGateNote: releaseGateEvidence.releaseGateNote,
     resourceKey: resource.key,
     pluginOwner: owner,
     removedPluginResourceKeys: removedPluginContexts.map((context) => context.resourceKey).sort(),
@@ -3453,6 +3478,25 @@ function remotePluginRemovalOwnerContextRefusalEvidence({ resource, owner, stale
         remoteChange: context.change.remoteChange,
       }))
       .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey)),
+  };
+}
+
+function remotePluginRemovalReleaseGateEvidence(evidenceScope) {
+  if (evidenceScope === 'production-backed') {
+    return {
+      proofScope: 'production-backed',
+      releaseGateEvidenceScope: 'production-backed',
+      productionBacked: true,
+      releaseGateNote:
+        'Production-backed release gate evidence observed live remote owner plugin removal before mutation.',
+    };
+  }
+
+  return {
+    proofScope: 'local-focused',
+    releaseGateEvidenceScope: evidenceScope || 'local-focused',
+    productionBacked: false,
+    releaseGateNote: 'Local proof only; production-backed release gate evidence is still required.',
   };
 }
 
