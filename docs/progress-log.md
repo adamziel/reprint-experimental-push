@@ -6,20 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:10 CEST +02:00.
+- Last update: 2026-05-30 22:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0186 wp_options serialized release-verifier v5 merge ending at
-  `5e1642`.
+  the RPP-0187 wp_posts create/update/delete release-verifier v5 merge ending
+  at `433e96`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 522
-  items checked and leaves 478 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 523
+  items checked and leaves 477 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 86 generated
+  23 storage/performance items, 3 production-topology items, 87 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP posts create/update/delete release-verifier v5 carry-through: the current
+  lane now checks `RPP-0187` with generated-harness release-verifier
+  support-only proof for regular `wp_posts` create/update/delete plans. The
+  generator exposes `wpPostsCreateUpdateDeleteReleaseVerifierVariant5` target
+  coverage with 20 cases across tiers 0 through 9: 10 ready post
+  create/update/delete plans and 10 remote-drift conflict cases, with two cases
+  in every tier. The focused proof verifies ready create, update, and delete
+  mutations each carry matching live-remote preconditions, apply the local
+  `wp_posts` hashes, preserve unplanned remote data, and reject stale replay
+  with `PRECONDITION_FAILED` before the mutation callback. It also verifies the
+  non-ready row-conflict path suppresses the conflicted update
+  mutation/precondition, refuses apply with `PLAN_NOT_READY` before the mutation
+  callback, and keeps evidence hash-only without generated post titles or
+  content payloads. Validation passed with Node syntax checks, focused RPP-0187
+  coverage 2/2, adjacent RPP-0147/RPP-0167/RPP-0187 wp_posts coverage 4/4,
+  generated summary checks for the RPP-0187 target coverage surface, checklist
+  lint, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 523/477; final release remains `NO-GO` because this is local
+  generated/release-verifier evidence, not production-backed release proof.
 - WP options serialized release-verifier v5 carry-through: the current lane now
   checks `RPP-0186` with generated-harness release-verifier support-only proof
   for regular, non-plugin-owned `wp_options` serialized option updates. The
