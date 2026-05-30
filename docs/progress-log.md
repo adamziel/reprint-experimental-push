@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:30 CEST.
+- Last update: 2026-05-30 04:33 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0441 driver registration API v3 proof merge ending at `012a8ecc7`.
+  the RPP-0465 wp_postmeta driver semantics proof merge ending at `acfcd32fe`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 326
-  items checked and leaves 674 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 327
+  items checked and leaves 673 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  52 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  53 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_postmeta driver semantics variant-4 refresh: the current lane now
+  contains `RPP-0465` evidence in
+  `docs/evidence/rpp-0465-wp-postmeta-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0465-wp-postmeta-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0465-wp-postmeta-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0465-wp-postmeta-driver-semantics-v4.test.js` passed 3/3,
+  and the adjacent wp_postmeta plugin-driver semantics slice passed 10/10. The
+  proof covers exact post_id/meta_key and meta_id row semantics, production
+  scope carried only from explicit remote policy metadata, mismatched row
+  refusal before mutation, hash-only evidence, checklist lint, artifact
+  redaction scan, and `git diff --check`. Counts are now 327/673; final
+  release remains `NO-GO`.
 - Generated driver registration API variant-3 refresh: the current lane now
   contains `RPP-0441` evidence in
   `docs/evidence/rpp-0441-driver-registration-api-v3.md`,

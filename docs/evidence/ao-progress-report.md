@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 04:30 CEST
+# AO Progress Report - 2026-05-30 04:33 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0441 driver
-registration API v3 proof refresh ending at `012a8ecc7`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0465 wp_postmeta
+driver semantics proof refresh ending at `acfcd32fe`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 326 are
-  checked from integrated evidence and 674 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 327 are
+  checked from integrated evidence and 673 remain open.
+- `RPP-0465` is now checked with focused wp_postmeta driver semantics variant-4
+  evidence in
+  `docs/evidence/rpp-0465-wp-postmeta-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0465-wp-postmeta-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0465-wp-postmeta-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0465-wp-postmeta-driver-semantics-v4.test.js` passed 3/3,
+  and `node --test test/plugin-driver-postmeta-semantics.test.js
+  test/rpp-0425-wp-postmeta-driver-semantics.test.js` passed 10/10, proving
+  exact post_id/meta_key and meta_id row semantics, production scope carried
+  only from explicit remote policy metadata, mismatched row refusal before
+  mutation, hash-only evidence, checklist lint, artifact redaction scan, and
+  `git diff --check` while final release remains **NO-GO**.
 - `RPP-0441` is now checked with generated driver registration API variant-3
   evidence in
   `docs/evidence/rpp-0441-driver-registration-api-v3.md`,
