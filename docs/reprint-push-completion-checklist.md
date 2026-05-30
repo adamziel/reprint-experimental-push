@@ -348,7 +348,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0319 (Mid / graph-identity) Implement cross-table create batch mapping, variant 1. Success: local production verifier carries the target through apply.
 - [x] RPP-0320 (Mid / graph-identity) Implement production importer/exporter identity map, variant 1. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0321 (Mid / graph-identity) Prove post_parent page hierarchy, variant 2. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0322 (Mid / graph-identity) Prove featured image attachment reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0322 (Mid / graph-identity) Prove featured image attachment reference, variant 2. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0323 (Mid / graph-identity) Prove post author reference, variant 2. Success: generated harness includes ready and stale cases.
 - [x] RPP-0324 (Mid / graph-identity) Prove postmeta post_id reference, variant 2. Success: local production verifier carries the target through apply.
 - [x] RPP-0325 (Mid / graph-identity) Prove comment post reference, variant 2. Success: docs state remaining unmapped WordPress surfaces.
