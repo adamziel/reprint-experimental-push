@@ -464,7 +464,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0430 (Mid / plugin-driver) Prove plugin update dependency validator, variant 2. Success: release gate notes whether evidence is local or production-backed.
 - [x] RPP-0431 (Mid / plugin-driver) Prove plugin uninstall/delete refusal, variant 2. Success: focused test proves exact driver behavior.
 - [x] RPP-0432 (Mid / plugin-driver) Prove direct active_plugins mutation refusal, variant 2. Success: generated harness covers supported and unsupported variants.
-- [ ] RPP-0433 (Mid / plugin-driver) Prove owner context stale plugin file refusal, variant 2. Success: local production proof carries one real mutation through apply.
+- [x] RPP-0433 (Mid / plugin-driver) Prove owner context stale plugin file refusal, variant 2. Success: local production proof carries one real mutation through apply.
 - [ ] RPP-0434 (Mid / plugin-driver) Prove owner context stale metadata refusal, variant 2. Success: remote drift preserves plugin-owned remote data.
 - [ ] RPP-0435 (Mid / plugin-driver) Prove remote plugin removal refusal, variant 2. Success: release gate notes whether evidence is local or production-backed.
 - [ ] RPP-0436 (Mid / plugin-driver) Prove driver delete support flag, variant 2. Success: focused test proves exact driver behavior.
