@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:04 CEST +02:00.
+- Last update: 2026-05-30 22:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0185 wp_options scalar release-verifier v5 merge ending at
-  `60b9e8`.
+  the RPP-0186 wp_options serialized release-verifier v5 merge ending at
+  `5e1642`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 521
-  items checked and leaves 479 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 522
+  items checked and leaves 478 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 85 generated
+  23 storage/performance items, 3 production-topology items, 86 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP options serialized release-verifier v5 carry-through: the current lane now
+  checks `RPP-0186` with generated-harness release-verifier support-only proof
+  for regular, non-plugin-owned `wp_options` serialized option updates. The
+  generator exposes `wpOptionsSerializedChangesReleaseVerifierVariant5` target
+  coverage with 20 cases across tiers 0 through 9: 10 ready serialized option
+  updates and 10 remote-drift conflict cases, with two cases in every tier. The
+  focused proof verifies ready serialized update apply, live-remote
+  precondition binding, unplanned remote preservation, stale replay refusal
+  with `PRECONDITION_FAILED` before the mutation callback, non-ready
+  row-conflict refusal with `PLAN_NOT_READY` before the mutation callback, and
+  hash-only evidence. Validation passed with Node syntax checks, focused
+  RPP-0186 coverage 2/2, adjacent RPP-0146/RPP-0166/RPP-0186 serialized-option
+  coverage 4/4, generated summary checks for the RPP-0186 target coverage
+  surface, checklist lint, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 522/478; final release remains `NO-GO` because this is
+  local generated/release-verifier evidence, not production-backed release
+  proof.
 - WP options scalar release-verifier v5 carry-through: the current lane now
   checks `RPP-0185` with generated-harness release-verifier support-only proof
   for regular, non-plugin-owned `wp_options` scalar option updates. The

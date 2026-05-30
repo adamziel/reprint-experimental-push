@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 521.
-- Remaining open: 479.
+- Verified complete: 522.
+- Remaining open: 478.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -202,7 +202,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0183 (Near / generated-harness) Carry through the release verifier for file type-swap conflict, variant 5. Success: ready cases apply with no unplanned remote overwrite.
 - [x] RPP-0184 (Near / generated-harness) Carry through the release verifier for row create/update/delete mix, variant 5. Success: stale remote replay fails before mutation.
 - [x] RPP-0185 (Near / generated-harness) Carry through the release verifier for wp_options scalar option changes, variant 5. Success: docs/generated-push-harness.md records the surface and invariant.
-- [ ] RPP-0186 (Near / generated-harness) Carry through the release verifier for wp_options serialized option changes, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.
+- [x] RPP-0186 (Near / generated-harness) Carry through the release verifier for wp_options serialized option changes, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.
 - [ ] RPP-0187 (Near / generated-harness) Carry through the release verifier for wp_posts create/update/delete changes, variant 5. Success: summary exposes per-tier counts for this target.
 - [ ] RPP-0188 (Near / generated-harness) Carry through the release verifier for wp_postmeta create/update/delete changes, variant 5. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0189 (Near / generated-harness) Carry through the release verifier for wp_users and wp_usermeta graph changes, variant 5. Success: stale remote replay fails before mutation.
