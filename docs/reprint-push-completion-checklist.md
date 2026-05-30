@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 495.
-- Remaining open: 505.
+- Verified complete: 496.
+- Remaining open: 504.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -388,7 +388,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [ ] RPP-0359 (Mid / graph-identity) Add generated coverage for cross-table create batch mapping, variant 3. Success: local production verifier carries the target through apply.
 - [ ] RPP-0360 (Mid / graph-identity) Add generated coverage for production importer/exporter identity map, variant 3. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0361 (Mid / graph-identity) Add focused regression coverage for post_parent page hierarchy, variant 4. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0362 (Mid / graph-identity) Add focused regression coverage for featured image attachment reference, variant 4. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0362 (Mid / graph-identity) Add focused regression coverage for featured image attachment reference, variant 4. Success: unsupported target fails closed with hash-only evidence.
 - [x] RPP-0363 (Mid / graph-identity) Add focused regression coverage for post author reference, variant 4. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0364 (Mid / graph-identity) Add focused regression coverage for postmeta post_id reference, variant 4. Success: local production verifier carries the target through apply.
 - [x] RPP-0365 (Mid / graph-identity) Add focused regression coverage for comment post reference, variant 4. Success: docs state remaining unmapped WordPress surfaces.
