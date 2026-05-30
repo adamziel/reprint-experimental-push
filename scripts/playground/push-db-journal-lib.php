@@ -1220,6 +1220,8 @@ function reprint_push_lab_db_journal_replay_result(array $committed_row): array
     $result['idempotency'] = [
         'replayed' => true,
         'freshMutationWork' => false,
+        'status' => 'replayed',
+        'conflict' => false,
         'idempotencyKeyHash' => (string) ($committed_row['idempotency_key_hash'] ?? ''),
         'requestHash' => (string) ($committed_row['request_hash'] ?? ''),
         'committedSequence' => (int) ($committed_row['id'] ?? 0),
@@ -1243,6 +1245,8 @@ function reprint_push_lab_db_journal_replay_rejected_result(array $rejected_row)
     $result['idempotency'] = [
         'replayed' => true,
         'freshMutationWork' => false,
+        'status' => 'replayed',
+        'conflict' => false,
         'idempotencyKeyHash' => (string) ($rejected_row['idempotency_key_hash'] ?? ''),
         'requestHash' => (string) ($rejected_row['request_hash'] ?? ''),
         'rejectedSequence' => (int) ($rejected_row['id'] ?? 0),
