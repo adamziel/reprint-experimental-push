@@ -24,6 +24,7 @@
     "test:playground:production-shaped-release-proof": "node ./scripts/playground/production-shaped-release-proof.mjs",
     "test:playground:production-shaped-live-source-gate": "node ./scripts/playground/production-shaped-live-source-gate-smoke.mjs",
     "test:playground:production-shaped-apply-revalidation": "node ./scripts/playground/production-shaped-apply-revalidation-smoke.mjs",
+    "test:playground:rpp-0516-same-key-same-body-replay": "node ./scripts/playground/rpp-0516-same-key-same-body-replay-smoke.mjs",
     "test:playground:production-shaped-missing-secret": "node ./scripts/playground/production-shaped-missing-secret-smoke.mjs",
     "test:playground:production-shaped-missing-live-source": "node ./scripts/playground/production-shaped-live-source-gate-smoke.mjs",
     "test:playground:production-shaped-live-preflight": "node ./scripts/playground/production-shaped-live-preflight-smoke.mjs",

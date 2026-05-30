@@ -111,6 +111,7 @@ export async function runAuthenticatedHttpPush({
     apply: null,
     recoveryInspect: null,
     replay: null,
+    sameKeySameBodyReplay: null,
     idempotencyConflict: null,
     after: null,
     dbJournal: null,
@@ -1174,6 +1175,14 @@ export async function runAuthenticatedHttpPush({
   const replayEquivalence = summarizeReplayEquivalence(apply, replay, observationNow);
   summary.replayEquivalence = replayEquivalence;
   const replayEquivalent = replayEquivalence.equivalent;
+  summary.sameKeySameBodyReplay = summarizeSameKeySameBodyReplay({
+    idempotencyKey,
+    session,
+    applyPayload,
+    applyResponse: apply,
+    replayResponse: replay,
+    replayEquivalence,
+  });
   const applyAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, apply);
   const replayAuthEnvelopeDrift = describeAuthEnvelopeDrift(preflightAuthEnvelope, replay);
   const replayAuthSessionDrift = requireProductionAuthSession && (
@@ -1776,6 +1785,7 @@ export async function runAuthenticatedHttpPush({
     && replay.body?.ok === true
     && replay.body?.idempotency?.replayed === true
     && replay.body?.idempotency?.freshMutationWork === false
+    && summary.sameKeySameBodyReplay?.proved === true
     && (!proveDurableJournalBoundary
       || (
         summary.idempotencyConflict?.status === 409
@@ -1816,6 +1826,7 @@ export async function runAuthenticatedHttpPush({
         || replayIdempotency?.freshMutationWork !== false
         || !replayEquivalent
       );
+    const sameKeySameBodyReplayFailed = summary.sameKeySameBodyReplay?.proved !== true;
     summary.code = authEnvelopeDrift
       ? 'AUTH_SESSION_LIFECYCLE_DRIFT'
       : !sessionUserIdentityBindingAccepted
@@ -1826,6 +1837,8 @@ export async function runAuthenticatedHttpPush({
         ? 'DURABLE_JOURNAL_NOT_PROVEN'
       : (replayIdempotency?.replayed !== true || replayIdempotency?.freshMutationWork !== false)
         ? 'REPLAY_NOT_IDEMPOTENT'
+        : sameKeySameBodyReplayFailed
+          ? 'SAME_KEY_SAME_BODY_REPLAY_NOT_PROVEN'
         : apply.body?.code
           || recoveryInspect.body?.code
           || replay.body?.code
@@ -3558,6 +3571,63 @@ function summarizeReplayEquivalence(applyResponse, replayResponse, now = new Dat
   };
 }
 
+function summarizeSameKeySameBodyReplay({
+  idempotencyKey,
+  session,
+  applyPayload,
+  applyResponse,
+  replayResponse,
+  replayEquivalence,
+}) {
+  const requestBodyHash = sha256Hex(JSON.stringify(applyPayload));
+  const applySignedRequest = applyResponse?.body?.signedRequest || {};
+  const replaySignedRequest = replayResponse?.body?.signedRequest || {};
+  const applyContentHash = nonEmptyStringOrNull(applySignedRequest.contentHash);
+  const replayContentHash = nonEmptyStringOrNull(replaySignedRequest.contentHash);
+  const signedContentHashesMatch = applyContentHash && replayContentHash
+    ? applyContentHash === replayContentHash
+    : null;
+  const signedContentHashMatchesSubmittedBody = applyContentHash && replayContentHash
+    ? applyContentHash === requestBodyHash && replayContentHash === requestBodyHash
+    : null;
+  const signedRequestEvidenceRequired = applySignedRequest.signed === true || replaySignedRequest.signed === true;
+  const signedRequestEvidenceProven = signedRequestEvidenceRequired
+    ? signedContentHashesMatch === true
+    : signedContentHashesMatch !== false;
+  const replayed = replayResponse?.body?.idempotency?.replayed === true;
+  const noFreshMutationWork = replayResponse?.body?.idempotency?.freshMutationWork === false;
+  const replayEquivalent = replayEquivalence?.equivalent === true;
+  const proved = hasNonEmptyString(idempotencyKey)
+    && hasNonEmptyString(session)
+    && requestBodyHash.length === 64
+    && replayed
+    && noFreshMutationWork
+    && replayEquivalent
+    && signedRequestEvidenceProven;
+
+  return {
+    schemaVersion: 1,
+    required: 'same idempotency key, identical request body, replay without fresh mutation work',
+    idempotencyKeyHash: digest(idempotencyKey),
+    sessionHash: digest(session),
+    requestBodyHash,
+    applyContentHash,
+    replayContentHash,
+    signedContentHashesMatch,
+    signedContentHashMatchesSubmittedBody,
+    signedRequestEvidenceRequired,
+    signedRequestEvidenceProven,
+    replayed,
+    freshMutationWork: replayResponse?.body?.idempotency?.freshMutationWork === true,
+    noFreshMutationWork,
+    replayEquivalent,
+    proved,
+    verdict: proved
+      ? 'SAME_KEY_SAME_BODY_REPLAY_PROVEN'
+      : 'SAME_KEY_SAME_BODY_REPLAY_NOT_PROVEN',
+  };
+}
+
 function summarizeReplayAuthSessionLifecycle(session, now = new Date()) {
   if (!session || typeof session !== 'object') {
     return {
@@ -4777,6 +4847,10 @@ function sha256Hex(data) {
 
 function hasNonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
+}
+
+function nonEmptyStringOrNull(value) {
+  return hasNonEmptyString(value) ? value : null;
 }
 
 function currentSignedTimestamp() {
