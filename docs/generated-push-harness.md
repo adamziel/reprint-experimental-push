@@ -76,7 +76,8 @@ The default generated run covers:
   redacted hash-only evidence, and explicit variant-3 and variant-4 relationship graph
   coverage, plugin-owned `wp_options` update cases with
   ready/conflict outcomes, stale replay rejection before mutation, and explicit
-  variant-3 and variant-4 plugin-owned option coverage,
+  variant-3 and variant-4 plugin-owned option coverage plus explicit
+  variant-3 `wp-option` driver semantics coverage,
   `wp_posts.post_author` cases with per-tier ready/stale target counts and
   hash-only stale-user blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
@@ -195,6 +196,18 @@ now validates those cases through `validateDriverOwnerIdentityBindingCase()`,
 keeps evidence local-generated and non-production-backed, and asserts the
 generated private markers stay out of mutation, blocker, error, and journal
 evidence.
+
+RPP-0444 adds `wpOptionsDriverSemanticsVariant3` coverage over the generated
+plugin-owned `wp_options` surface with an explicit `wp-option` driver target
+tag. The deterministic roster emits 20 variant-3 target cases: 10 ready
+driver-backed option updates and 10 non-ready remote-drift conflicts, with two
+cases in every tier. The proof selects one ready and one non-ready generated
+case, records owner/driver metadata plus SHA-256 evidence hashes, verifies the
+ready mutation is bound to the exact plugin-owned option row and live-remote
+precondition, then drifts that row before apply and observes
+`PRECONDITION_FAILED` while the drifted row hash and whole-remote hash remain
+unchanged. The non-ready case refuses apply without mutating the remote digest.
+This is local generated-model evidence only; release posture remains NO-GO.
 
 The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,
@@ -690,7 +703,7 @@ stack from the real generated harness, checks per-tier summary counts, and
 keeps dependency hashes, resource keys, and blockers without serializing plugin
 file contents or private install option values.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 20 `atomicPluginInstallStackV2` cases, 20 `atomicPluginInstallStackV4` cases, 20 `wpOptionsDriverSemanticsVariant3` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant4` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 
