@@ -1,18 +1,33 @@
-# AO Progress Report - 2026-05-30 03:54 CEST
+# AO Progress Report - 2026-05-30 03:56 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0435
-remote plugin removal refusal refresh ending at `e4e118643`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0239
+redacted evidence proof refresh ending at `e0b1411f1`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 315 are
-  checked from integrated evidence and 685 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 316 are
+  checked from integrated evidence and 684 remain open.
+- `RPP-0239` is now checked with focused redacted raw value evidence in
+  `docs/evidence/rpp-0239-redacted-raw-value-evidence-v2.md`,
+  `docs/scenario-matrix.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0239-redacted-raw-value-evidence-v2.test.js`. `node --check
+  test/rpp-0239-redacted-raw-value-evidence-v2.test.js` exited 0, `node
+  --test --test-name-pattern=RPP-0239
+  test/rpp-0239-redacted-raw-value-evidence-v2.test.js` passed 1/1, `node
+  --test --test-name-pattern='RPP-0219|RPP-0239' test/push-planner.test.js
+  test/rpp-0239-redacted-raw-value-evidence-v2.test.js` passed 3/3, and `node
+  --test test/evidence-redaction.test.js` passed 7/7, proving planner and
+  journal evidence omit raw payload bytes while preserving hashes, the scenario
+  matrix names the command, serialized proof blocks private value leakage,
+  checklist lint, artifact redaction scan, and `git diff --check` while final
+  release remains **NO-GO**.
 - `RPP-0435` is now checked with focused remote plugin removal refusal evidence
   in `docs/evidence/rpp-0435-remote-plugin-removal-refusal.md`,
   `docs/reprint-push-completion-checklist.md`, and

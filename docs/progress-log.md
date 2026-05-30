@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:54 CEST.
+- Last update: 2026-05-30 03:56 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0435 remote plugin removal refusal merge ending at `e4e118643`.
+  the RPP-0239 redacted evidence proof merge ending at `e0b1411f1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 315
-  items checked and leaves 685 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 316
+  items checked and leaves 684 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   44 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 53 generated
-  harness items, and 39 merge-invariant items. No release-ops items are checked
+  harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused redacted raw value evidence refresh: the current lane now contains
+  `RPP-0239` evidence in
+  `docs/evidence/rpp-0239-redacted-raw-value-evidence-v2.md`,
+  `docs/scenario-matrix.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0239-redacted-raw-value-evidence-v2.test.js`. `node --check
+  test/rpp-0239-redacted-raw-value-evidence-v2.test.js` exited 0, `node
+  --test --test-name-pattern=RPP-0239
+  test/rpp-0239-redacted-raw-value-evidence-v2.test.js` passed 1/1, `node
+  --test --test-name-pattern='RPP-0219|RPP-0239' test/push-planner.test.js
+  test/rpp-0239-redacted-raw-value-evidence-v2.test.js` passed 3/3, and `node
+  --test test/evidence-redaction.test.js` passed 7/7. The proof keeps planner
+  and journal evidence free of raw payload bytes while preserving hash evidence,
+  names the behavior and command in the scenario matrix, and blocks raw private
+  value leakage in serialized proof. Checklist lint, artifact redaction scan,
+  and `git diff --check` also passed. Counts are now 316/684; final release
+  remains `NO-GO`.
 - Focused remote plugin removal refusal refresh: the current lane now contains
   `RPP-0435` evidence in
   `docs/evidence/rpp-0435-remote-plugin-removal-refusal.md`,
