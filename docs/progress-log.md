@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:46 CEST +02:00.
+- Last update: 2026-05-30 22:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0327 comment user reference variant 2 merge ending at `26d63b`.
+  the RPP-0190 wp_comments/wp_commentmeta graph release-verifier v5 merge
+  ending at `23381f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 527
-  items checked and leaves 473 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 528
+  items checked and leaves 472 open.
 - Checked slices: 100 release-gate foundation items, 72 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 89 generated
+  23 storage/performance items, 3 production-topology items, 90 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP comments/commentmeta graph release-verifier v5 carry-through: the current
+  lane now checks `RPP-0190` with deterministic generated-harness support-only
+  proof for `wp_comments` and `wp_commentmeta` graph changes. The generator
+  exposes `wpCommentsCommentmetaGraphReleaseVerifierVariant5` target coverage
+  with 20 cases across tiers 0 through 9: 10 ready comment/commentmeta graph
+  creates and 10 stale non-ready commentmeta graph references, with two cases in
+  every tier. The focused proof verifies ready cases apply both graph rows with
+  matching live-remote preconditions, preserve unplanned remote data, and reject
+  stale replay against both rows with `PRECONDITION_FAILED` before the mutation
+  callback. It also verifies stale graph targets block commentmeta references to
+  drifted remote comments, refuse apply with `PLAN_NOT_READY` before mutation,
+  and keep comment bodies, comment author email, commentmeta keys, and
+  commentmeta values hash-only. Validation passed with Node syntax checks,
+  focused RPP-0190 coverage 2/2, adjacent RPP-0150/RPP-0170/RPP-0190 generated
+  graph coverage 4/4, scoped artifact redaction scan, checklist lint, and diff
+  whitespace checks. Counts are now 528/472; final release remains `NO-GO`
+  because this is local generated release-verifier evidence, not
+  production-backed release proof.
 - Comment user reference variant-2 fail-closed proof: the current lane now
   checks `RPP-0327` with focused local graph-identity evidence for unsupported
   `wp_comments.user_id` targets. The proof builds a blocked plan for a comment
