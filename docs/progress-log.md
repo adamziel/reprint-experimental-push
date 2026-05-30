@@ -6,20 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 09:53 CEST.
+- Last update: 2026-05-30 09:54 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0249 conflict evidence hash redaction variant-3 merge ending at
-  `ad06589bb`.
+  the RPP-0251 mutation/precondition one-to-one variant-3 merge ending at
+  `5a854123a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 383
-  items checked and leaves 617 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 384
+  items checked and leaves 616 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 48 merge-invariant items. No release-ops items are checked
+  harness items, and 49 merge-invariant items. No release-ops items are checked
   yet.
+- Mutation/precondition one-to-one variant-3 refresh: the current lane now
+  contains `RPP-0251` evidence in
+  `docs/evidence/rpp-0251-mutation-precondition-one-to-one-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0251-mutation-precondition-one-to-one-v3.test.js`. `node
+  --check` passed for the focused test, the focused RPP-0251 test passed 2/2,
+  and the adjacent RPP-0211/RPP-0231/RPP-0251 one-to-one slice passed 4/4.
+  Checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks also passed. Counts are now 384/616; final release remains `NO-GO`.
 - Conflict evidence hash redaction variant-3 refresh: the current lane now
   contains `RPP-0249` evidence in
   `docs/evidence/rpp-0249-conflict-evidence-hash-redaction-v3.md`,
