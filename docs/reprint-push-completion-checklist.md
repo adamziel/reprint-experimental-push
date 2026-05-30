@@ -757,7 +757,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0708 (Far / storage-performance) Implement chunk resume after interruption, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0709 (Far / storage-performance) Implement chunk replay idempotency, variant 1. Success: large-site run finishes inside documented budgets.
 - [ ] RPP-0710 (Far / storage-performance) Implement parallel snapshot hashing, variant 1. Success: fast-path lane updates only after correctness gates hold.
-- [ ] RPP-0711 (Far / storage-performance) Implement remote hash pagination, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
+- [x] RPP-0711 (Far / storage-performance) Implement remote hash pagination, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0712 (Far / storage-performance) Implement dry-run batch sizing, variant 1. Success: guarded writes reject stale storage state.
 - [ ] RPP-0713 (Far / storage-performance) Implement apply batch sizing, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [ ] RPP-0714 (Far / storage-performance) Implement large post table benchmark, variant 1. Success: large-site run finishes inside documented budgets.
