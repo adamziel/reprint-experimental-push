@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 11:27 CEST
+# AO Progress Report - 2026-05-30 11:30 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0322 featured
-image attachment graph proof ending at `04f57df7`.
+`lane/evidence-integration-20260527` through the current RPP-0374 term
+relationship taxonomy graph proof ending at `e8af615f`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 413 are
-  checked from integrated evidence and 587 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 414 are
+  checked from integrated evidence and 586 remain open.
+- `RPP-0374` is now checked with focused graph-identity proof for
+  `wp_term_relationships.term_taxonomy_id` references to same-plan
+  `wp_term_taxonomy` targets in
+  `docs/evidence/rpp-0374-term-relationship-taxonomy-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0374-term-relationship-taxonomy-reference-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0374 coverage passed 2/2,
+  and the adjacent taxonomy relationship planner/local verifier slice passed
+  13/13. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. This remains local graph support evidence, not production endpoint
+  proof.
 - `RPP-0322` is now checked with focused graph-identity proof for featured
   image `_thumbnail_id` attachment references in
   `docs/evidence/rpp-0322-featured-image-attachment-reference-v2.md`,

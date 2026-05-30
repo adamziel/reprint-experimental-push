@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:27 CEST.
+- Last update: 2026-05-30 11:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0322 featured image attachment graph proof merge ending at
-  `04f57df7`.
+  the RPP-0374 term relationship taxonomy graph proof merge ending at
+  `e8af615f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 413
-  items checked and leaves 587 open.
-- Checked slices: 100 release-gate foundation items, 30 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 414
+  items checked and leaves 586 open.
+- Checked slices: 100 release-gate foundation items, 31 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Term relationship taxonomy graph proof: the current lane now contains
+  `RPP-0374` evidence in
+  `docs/evidence/rpp-0374-term-relationship-taxonomy-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0374-term-relationship-taxonomy-reference-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0374 coverage passed 2/2,
+  and the adjacent taxonomy relationship planner/local verifier slice passed
+  13/13. Checklist lint, scoped artifact redaction scan, checklist/redaction
+  guard tests, and merge diff whitespace checks also passed. Counts are now
+  414/586; final release remains `NO-GO`.
 - Featured image attachment graph proof: the current lane now contains
   `RPP-0322` evidence in
   `docs/evidence/rpp-0322-featured-image-attachment-reference-v2.md`,
