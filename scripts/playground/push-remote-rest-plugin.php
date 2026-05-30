@@ -1916,6 +1916,7 @@ function reprint_push_lab_rest_run_db_journal_apply(
     $started_entry = reprint_push_lab_db_journal_append_event('apply-started', $context + [
         'resourceHashEvidence' => $started_evidence,
     ]);
+    reprint_push_lab_rest_delay_after_db_journal_started($payload);
 
     if (reprint_push_lab_rest_should_simulate_stale_claim_all_old($payload) && !is_array($stale_claim_retry)) {
         $abandoned_result = [
@@ -4462,6 +4463,15 @@ function reprint_push_lab_rest_delay_after_idempotency_open(array $payload): voi
     }
 
     reprint_push_lab_rest_delay_from_payload($payload, 'labDelayAfterIdempotencyOpenMs');
+}
+
+function reprint_push_lab_rest_delay_after_db_journal_started(array $payload): void
+{
+    if (!array_key_exists('labDelayAfterDbJournalStartedMs', $payload)) {
+        return;
+    }
+
+    reprint_push_lab_rest_delay_from_payload($payload, 'labDelayAfterDbJournalStartedMs');
 }
 
 function reprint_push_lab_rest_delay_from_payload(array $payload, string $key): void
