@@ -524,6 +524,346 @@ export function summarizeWpOptionsDriverReleaseVerifierProof({
   }
 }
 
+export function summarizeDriverAuditEvidenceRedactionReleaseVerifierProof({
+  now = new Date('2026-05-30T10:49:00.000Z'),
+} = {}) {
+  try {
+    return buildDriverAuditEvidenceRedactionReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0499',
+      evidenceSource: 'release-verifier-driver-audit-evidence-redaction-v5',
+      status: 'blocked',
+      verdict: 'DRIVER_AUDIT_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      driver: wpOptionsDriverReleaseVerifierBoundary.driver,
+      owner: wpOptionsDriverReleaseVerifierBoundary.owner,
+      resource: wpOptionsDriverReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildDriverAuditEvidenceRedactionReleaseVerifierProof(now) {
+  const boundary = wpOptionsDriverReleaseVerifierBoundary;
+  const resource = wpOptionsDriverReleaseVerifierResourceEvidence();
+  const rawFixtures = {
+    base: 'rpp-0499-release-verifier-audit-base-option',
+    local: 'rpp-0499-release-verifier-audit-local-option',
+    ownerContextDrift: '<?php /* rpp-0499 release verifier audit owner-context drift */',
+    staleRemoteDrift: 'rpp-0499-release-verifier-audit-stale-remote-drift-option',
+    staleRemoteOnly: 'rpp-0499-release-verifier-audit-remote-only-field',
+  };
+  const ownerContextBase = wpOptionsDriverReleaseVerifierSnapshot(rawFixtures.base);
+  const ownerContextLocal = wpOptionsDriverReleaseVerifierSnapshot(rawFixtures.base);
+  ownerContextLocal.db[boundary.table][boundary.rowId].option_value.mode = rawFixtures.local;
+  ownerContextLocal.meta = wpOptionsDriverReleaseVerifierPolicy();
+  const ownerContextRemote = wpOptionsDriverReleaseVerifierSnapshot(rawFixtures.base);
+  ownerContextRemote.files['wp-content/plugins/forms/forms.php'] = rawFixtures.ownerContextDrift;
+  const ownerContextRowResource = {
+    type: 'row',
+    table: boundary.table,
+    id: boundary.rowId,
+    key: boundary.resourceKey,
+  };
+  const ownerContextPlan = createPushPlan({
+    base: ownerContextBase,
+    local: ownerContextLocal,
+    remote: ownerContextRemote,
+    now,
+  });
+  const ownerContextBlocker =
+    ownerContextPlan.blockers.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const ownerContextRemoteBeforeJson = JSON.stringify(ownerContextRemote);
+  const ownerContextRowHashBefore = resourceHash(ownerContextRemote, ownerContextRowResource);
+  const ownerContextRemoteHashBefore = sha256Evidence(ownerContextRemote);
+  let ownerContextApplyError = null;
+  try {
+    applyPlan(ownerContextRemote, ownerContextPlan, { mutateRemote: true });
+  } catch (error) {
+    ownerContextApplyError = error;
+  }
+  const ownerContextRowHashAfter = resourceHash(ownerContextRemote, ownerContextRowResource);
+  const ownerContextRemoteHashAfter = sha256Evidence(ownerContextRemote);
+  const ownerContextRemoteDataPreserved =
+    ownerContextRowHashAfter === ownerContextRowHashBefore
+    && ownerContextRemoteHashAfter === ownerContextRemoteHashBefore
+    && JSON.stringify(ownerContextRemote) === ownerContextRemoteBeforeJson;
+  const ownerContextDecisionEvidence = ownerContextBlocker?.driverAuditEvidence || null;
+  const ownerContextEvidenceRedacted =
+    ownerContextDecisionEvidence?.redaction === 'hash-only'
+    && ownerContextDecisionEvidence?.rawValuesIncluded === false;
+  const ownerContextOk =
+    ownerContextPlan.status === 'blocked'
+    && ownerContextPlan.summary.mutations === 0
+    && ownerContextBlocker?.class === 'stale-plugin-owner-context'
+    && ownerContextBlocker?.resourceKey === boundary.resourceKey
+    && ownerContextBlocker?.pluginOwner === boundary.owner
+    && ownerContextBlocker?.driver === boundary.driver
+    && ownerContextDecisionEvidence?.reasonCode === 'PLUGIN_DRIVER_REMOTE_DRIFT_PRESERVED'
+    && ownerContextDecisionEvidence?.decision === 'blocked'
+    && ownerContextEvidenceRedacted
+    && ownerContextApplyError instanceof PushPlanError
+    && ownerContextApplyError.code === 'PLAN_NOT_READY'
+    && ownerContextRemoteDataPreserved;
+
+  const base = wpOptionsDriverReleaseVerifierSnapshot(rawFixtures.base);
+  const local = wpOptionsDriverReleaseVerifierSnapshot(rawFixtures.base);
+  local.db[boundary.table][boundary.rowId].option_value.mode = rawFixtures.local;
+  local.meta = wpOptionsDriverReleaseVerifierPolicy();
+  const remote = wpOptionsDriverReleaseVerifierSnapshot(rawFixtures.base);
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const plannerAuditEvidence = mutation?.pluginOwnedResource?.auditEvidence || null;
+  const driverDecisionEvidence = mutation?.pluginOwnedResource?.driverAuditEvidence || null;
+  const driftedRemote = cloneReleaseVerifierJson(remote);
+  driftedRemote.db[boundary.table][boundary.rowId].option_value.mode = rawFixtures.staleRemoteDrift;
+  driftedRemote.db[boundary.table][boundary.rowId].option_value.remoteOnly = rawFixtures.staleRemoteOnly;
+  const rowHashBefore = mutation ? resourceHash(driftedRemote, mutation.resource) : null;
+  const remoteHashBefore = sha256Evidence(driftedRemote);
+  let beforeMutationCalls = 0;
+  let staleError = null;
+  try {
+    applyPlan(driftedRemote, plan, {
+      mutateRemote: true,
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    staleError = error;
+  }
+  const rowHashAfter = mutation ? resourceHash(driftedRemote, mutation.resource) : null;
+  const remoteHashAfter = sha256Evidence(driftedRemote);
+  const stalePreconditionFailed = staleError instanceof PushPlanError
+    && staleError.code === 'PRECONDITION_FAILED';
+  const staleRemoteDataPreserved = rowHashBefore !== null
+    && rowHashAfter === rowHashBefore
+    && remoteHashAfter === remoteHashBefore;
+  const exactMutation = mutation?.resource?.type === 'row'
+    && mutation.resource.table === boundary.table
+    && mutation.resource.id === boundary.rowId
+    && mutation.pluginOwnedResource?.pluginOwner === boundary.owner
+    && mutation.pluginOwnedResource?.driver === boundary.driver
+    && mutation.pluginOwnedResource?.supportsDelete === false;
+  const exactPrecondition = precondition?.resourceKey === boundary.resourceKey
+    && precondition?.expectedHash === mutation?.remoteBeforeHash
+    && precondition?.checkedAgainst === 'live-remote';
+  const plannerAuditEvidenceRedacted =
+    plannerAuditEvidence?.evidenceSource === 'planner-plugin-driver-audit'
+    && plannerAuditEvidence?.format === 'hash-only'
+    && plannerAuditEvidence?.rawValuesIncluded === false;
+  const driverDecisionEvidenceRedacted =
+    driverDecisionEvidence?.operation === 'plugin-driver-audit'
+    && driverDecisionEvidence?.redaction === 'hash-only'
+    && driverDecisionEvidence?.rawValuesIncluded === false;
+  const acceptedAuditOk =
+    plan.status === 'ready'
+    && plan.summary.mutations === 1
+    && plan.summary.blockers === 0
+    && exactMutation
+    && exactPrecondition
+    && plannerAuditEvidenceRedacted
+    && driverDecisionEvidenceRedacted
+    && driverDecisionEvidence?.reasonCode === 'PLUGIN_DRIVER_DECISION_SUPPORTED'
+    && driverDecisionEvidence?.decision === 'supported';
+  const staleRemoteOk =
+    stalePreconditionFailed
+    && beforeMutationCalls === 0
+    && staleError.details?.expectedHash === mutation?.remoteBeforeHash
+    && staleError.details?.actualHash === rowHashBefore
+    && staleRemoteDataPreserved;
+  const evidenceSurfaceJson = JSON.stringify([
+    ownerContextBlocker,
+    ownerContextApplyError?.details || null,
+    plannerAuditEvidence,
+    driverDecisionEvidence,
+    staleError?.details || null,
+  ]);
+  const rawEvidenceValuesIncluded = Object.values(rawFixtures).some((raw) =>
+    evidenceSurfaceJson.includes(raw));
+  const rawEvidenceFieldNamesIncluded =
+    evidenceSurfaceJson.includes('option_value') || evidenceSurfaceJson.includes('__pluginOwner');
+  const evidenceSurfacesRedacted = !rawEvidenceValuesIncluded && !rawEvidenceFieldNamesIncluded;
+  const ok = ownerContextOk && acceptedAuditOk && staleRemoteOk && evidenceSurfacesRedacted;
+
+  const proof = {
+    rpp: 'RPP-0499',
+    evidenceSource: 'release-verifier-driver-audit-evidence-redaction-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'DRIVER_AUDIT_EVIDENCE_REDACTED_REMOTE_DRIFT_PRESERVED'
+      : 'DRIVER_AUDIT_EVIDENCE_REDACTION_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    driver: boundary.driver,
+    owner: boundary.owner,
+    resource,
+    rawValuesIncluded: rawEvidenceValuesIncluded,
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'plugin-driver-audit-evidence-redaction',
+      variant: 'v5',
+      remoteDriftPreservesPluginOwnedData: ownerContextRemoteDataPreserved && staleRemoteDataPreserved,
+    },
+    blockedOwnerContextDrift: {
+      status: ownerContextPlan.status,
+      mutationCount: ownerContextPlan.mutations.length,
+      blockerCount: ownerContextPlan.blockers.length,
+      blockerClass: ownerContextBlocker?.class || null,
+      resourceKey: ownerContextBlocker?.resourceKey || null,
+      pluginOwner: ownerContextBlocker?.pluginOwner || null,
+      driver: ownerContextBlocker?.driver || null,
+      reasonCode: ownerContextDecisionEvidence?.reasonCode || null,
+      decision: ownerContextDecisionEvidence?.decision || null,
+      driverDecisionEvidenceHash: ownerContextDecisionEvidence
+        ? sha256Evidence(ownerContextDecisionEvidence)
+        : null,
+      blockerHash: ownerContextBlocker ? sha256Evidence({
+        class: ownerContextBlocker.class,
+        resourceKey: ownerContextBlocker.resourceKey,
+        pluginOwner: ownerContextBlocker.pluginOwner,
+        driver: ownerContextBlocker.driver,
+        policySource: ownerContextBlocker.policySource,
+        baseHash: ownerContextBlocker.baseHash,
+        localHash: ownerContextBlocker.localHash,
+        remoteHash: ownerContextBlocker.remoteHash,
+        driverAuditEvidence: ownerContextBlocker.driverAuditEvidence,
+        ownerContextRefusalEvidence: ownerContextBlocker.ownerContextRefusalEvidence,
+      }) : null,
+      applyRefusalCode: ownerContextApplyError?.code || null,
+      applyRefusalDetailsHash: ownerContextApplyError
+        ? sha256Evidence(ownerContextApplyError.details || null)
+        : null,
+      rowHashBefore: `sha256:${ownerContextRowHashBefore}`,
+      rowHashAfter: `sha256:${ownerContextRowHashAfter}`,
+      remoteHashBefore: ownerContextRemoteHashBefore,
+      remoteHashAfter: ownerContextRemoteHashAfter,
+      remoteDataPreserved: ownerContextRemoteDataPreserved,
+      evidenceRedacted: ownerContextEvidenceRedacted,
+    },
+    acceptedAuditEvidence: mutation ? {
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      policySource: mutation.pluginOwnedResource?.policySource || null,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+      ownerContextRequired: mutation.pluginOwnedResource?.ownerContextRequired === true,
+      exactMutation,
+      plannerAudit: plannerAuditEvidence ? {
+        evidenceSource: plannerAuditEvidence.evidenceSource,
+        format: plannerAuditEvidence.format,
+        rawValuesIncluded: plannerAuditEvidence.rawValuesIncluded === true,
+        plannerAuditEvidenceHash: sha256Evidence(plannerAuditEvidence),
+        ownerContextHash: plannerAuditEvidence.ownerContextHash
+          ? `sha256:${plannerAuditEvidence.ownerContextHash}`
+          : null,
+      } : null,
+      driverDecision: driverDecisionEvidence ? {
+        operation: driverDecisionEvidence.operation,
+        reasonCode: driverDecisionEvidence.reasonCode,
+        decision: driverDecisionEvidence.decision,
+        redaction: driverDecisionEvidence.redaction,
+        rawValuesIncluded: driverDecisionEvidence.rawValuesIncluded === true,
+        driverDecisionEvidenceHash: sha256Evidence(driverDecisionEvidence),
+      } : null,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      mutationHash: sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      }),
+    } : null,
+    precondition: precondition ? {
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+      exactPrecondition,
+      preconditionHash: sha256Evidence(precondition),
+    } : null,
+    staleRemotePreservation: {
+      preMutation: stalePreconditionFailed,
+      code: staleError?.code || null,
+      beforeMutationCalls,
+      detailsHash: staleError ? sha256Evidence(staleError.details || null) : null,
+      expectedHashMatchesMutation: staleError?.details?.expectedHash === mutation?.remoteBeforeHash,
+      actualHashMatchesRowBefore: staleError?.details?.actualHash === rowHashBefore,
+      rowHashBefore: rowHashBefore ? `sha256:${rowHashBefore}` : null,
+      rowHashAfter: rowHashAfter ? `sha256:${rowHashAfter}` : null,
+      remoteHashBefore,
+      remoteHashAfter,
+      remoteDataPreserved: staleRemoteDataPreserved,
+    },
+    redaction: {
+      format: 'hash-only',
+      surfaces: [
+        'blocked-driver-decision-evidence',
+        'planner-audit-evidence',
+        'supported-driver-decision-evidence',
+        'apply-refusal-details',
+        'stale-precondition-details',
+        'release-verifier-proof',
+      ],
+      evidenceSurfacesRedacted,
+      rawValuesIncluded: rawEvidenceValuesIncluded,
+      rawFieldNamesIncluded: rawEvidenceFieldNamesIncluded,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    releaseVerifier: proof.releaseVerifier,
+    blockedOwnerContextDrift: proof.blockedOwnerContextDrift,
+    acceptedAuditEvidence: proof.acceptedAuditEvidence,
+    precondition: proof.precondition,
+    staleRemotePreservation: proof.staleRemotePreservation,
+    redaction: proof.redaction,
+  });
+
+  const serialized = JSON.stringify(proof);
+  const leakedRawFixture = Object.values(rawFixtures).some((raw) => serialized.includes(raw));
+  const leakedRawFieldName = serialized.includes('option_value') || serialized.includes('__pluginOwner');
+  if (leakedRawFixture || leakedRawFieldName || rawEvidenceValuesIncluded || rawEvidenceFieldNamesIncluded) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'DRIVER_AUDIT_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource,
+      rawValuesIncluded: leakedRawFixture || rawEvidenceValuesIncluded,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: leakedRawFixture || rawEvidenceValuesIncluded,
+        rawFieldNamesIncluded: leakedRawFieldName || rawEvidenceFieldNamesIncluded,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'DRIVER_AUDIT_EVIDENCE_REDACTION_REQUIRED',
+        resource,
+      }),
+    };
+  }
+  return proof;
+}
+
 function buildWpOptionsDriverReleaseVerifierProof(now) {
   const boundary = wpOptionsDriverReleaseVerifierBoundary;
   const rawFixtures = {
@@ -713,6 +1053,24 @@ function wpOptionsDriverReleaseVerifierResourceEvidence() {
     resourceKey: boundary.resourceKey,
     table: boundary.table,
     rowId: boundary.rowId,
+  };
+}
+
+function wpOptionsDriverReleaseVerifierPolicy() {
+  const boundary = wpOptionsDriverReleaseVerifierBoundary;
+  return {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: boundary.resourceKey,
+            pluginOwner: boundary.owner,
+            driver: boundary.driver,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
   };
 }
 
@@ -2911,6 +3269,7 @@ try {
           productionOwned: productionPluginDriverProof,
           driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+          auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
@@ -3213,6 +3572,7 @@ try {
         productionOwned: productionPluginDriverProof,
         driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+        auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
