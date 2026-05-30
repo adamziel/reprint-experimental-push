@@ -2,10 +2,12 @@ import { buildAuthSessionSourceCommand } from './auth-session-source-command.js'
 import { isPackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-production-plugin-source-command.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
+import { assertEvidenceHasNoRawValues } from '../../src/evidence-redaction.js';
 import {
   buildManualRecoveryAuditExport,
   manualRecoveryAuditExportProvesRecoveryGate,
 } from '../../src/recovery-audit-export.js';
+import { digest } from '../../src/stable-json.js';
 
 export function resolveCheckedReleaseRequirementEnv() {
   return {
@@ -338,13 +340,16 @@ export function buildDurableRecoveryJournalReleaseProof({
     productionAdapter: journal?.ownership?.productionAdapter || journal?.productionAdapter || null,
     supportedSurface: journal?.ownership?.supportedSurface || journal?.supportedSurface || null,
   };
-  const manualRecoveryAuditExport = selectManualRecoveryAuditExport({
+  const manualRecoveryAudit = resolveManualRecoveryAuditExportProof({
     releaseSummary,
     releaseProof,
     durableJournal,
-    recovery,
-  });
-  const manualRecoveryAudit = manualRecoveryAuditExportProvesRecoveryGate(manualRecoveryAuditExport, {
+    journal,
+    ownership,
+    leaseFence,
+    leaseOwnerIdentity,
+    recoveryInspectAfterRestart,
+    partialStates,
     planMutationCount,
     recovery,
   });
@@ -394,25 +399,54 @@ export function buildDurableRecoveryJournalReleaseProof({
   };
 }
 
-function selectManualRecoveryAuditExport({
+function resolveManualRecoveryAuditExportProof({
   releaseSummary,
   releaseProof,
   durableJournal,
+  journal,
+  ownership,
+  leaseFence,
+  leaseOwnerIdentity,
+  recoveryInspectAfterRestart,
+  partialStates,
+  planMutationCount,
   recovery,
 }) {
-  const explicitCandidates = [
+  const explicit = selectManualRecoveryAuditExportCandidate([
     releaseSummary?.manualRecoveryAuditExport,
     releaseProof?.manualRecoveryAuditExport,
     releaseProof?.recoveryInspect?.manualRecoveryAuditExport,
     releaseProof?.recoveryInspect?.recovery?.manualRecoveryAuditExport,
     durableJournal?.proof?.manualRecoveryAuditExport,
-  ];
-  const explicit = explicitCandidates.find((candidate) => candidate && typeof candidate === 'object');
+    journal?.manualRecoveryAuditExport,
+  ]);
   if (explicit) {
-    return explicit;
+    const legacyProof = withManualRecoveryAuditBoundary(
+      manualRecoveryAuditExportProvesRecoveryGate(explicit, {
+        planMutationCount,
+        recovery,
+      }),
+      { releaseSummary },
+    );
+    if (legacyProof.proved) {
+      return legacyProof;
+    }
+
+    return manualRecoveryAuditExportProof({
+      explicitExport: explicit,
+      releaseSummary,
+      releaseProof,
+      journal,
+      ownership,
+      leaseFence,
+      leaseOwnerIdentity,
+      recoveryInspectAfterRestart,
+      partialStates,
+      planMutationCount,
+    });
   }
 
-  return buildManualRecoveryAuditExport({
+  const auditExport = buildManualRecoveryAuditExport({
     recovery,
     plan: releaseProof?.planObject,
     source: {
@@ -427,6 +461,194 @@ function selectManualRecoveryAuditExport({
       releaseVerifier: 'scripts/playground/production-shaped-live-release-verify.mjs',
     },
   });
+
+  return withManualRecoveryAuditBoundary(
+    manualRecoveryAuditExportProvesRecoveryGate(auditExport, {
+      planMutationCount,
+      recovery,
+    }),
+    { releaseSummary },
+  );
+}
+
+function manualRecoveryAuditExportProof({
+  explicitExport,
+  releaseSummary,
+  releaseProof,
+  journal,
+  ownership,
+  leaseFence,
+  leaseOwnerIdentity,
+  recoveryInspectAfterRestart,
+  partialStates,
+  planMutationCount,
+}) {
+  const normalized = explicitExport
+    ? normalizeManualRecoveryAuditExportCandidate(explicitExport, { releaseSummary })
+    : deriveManualRecoveryAuditExport({
+        releaseSummary,
+        releaseProof,
+        journal,
+        ownership,
+        leaseFence,
+        leaseOwnerIdentity,
+        recoveryInspectAfterRestart,
+        partialStates,
+        planMutationCount,
+      });
+
+  return withManualRecoveryAuditExportSafety(normalized);
+}
+
+function selectManualRecoveryAuditExportCandidate(candidates) {
+  return candidates.find((candidate) => candidate && typeof candidate === 'object') || null;
+}
+
+function normalizeManualRecoveryAuditExportCandidate(candidate, { releaseSummary }) {
+  const sameReleaseBoundary = candidate.sameReleaseBoundary === true
+    || candidate.sourceUrl === releaseSummary?.topology?.sourceUrl
+    || releaseSummary?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK';
+  const rawValuesIncluded = candidate.rawValuesIncluded === true;
+  const format = candidate.format || null;
+  const kind = candidate.kind || candidate.auditKind || null;
+  const schemaVersion = candidate.schemaVersion ?? null;
+  const targetEnvelope = candidate.targetEnvelope || {};
+  const counts = candidate.counts || {};
+  const targetTotal = integerOrNull(targetEnvelope.total ?? counts.total);
+  const targetHashOnly = candidate.hashOnly === true
+    || targetEnvelope.hashOnly === true
+    || format === 'hash-only';
+
+  return {
+    ...candidate,
+    schemaVersion,
+    kind,
+    format,
+    rawValuesIncluded,
+    sameReleaseBoundary,
+    sourceUrl: candidate.sourceUrl || releaseSummary?.topology?.sourceUrl || null,
+    targetEnvelope: {
+      ...targetEnvelope,
+      total: targetTotal,
+      hashOnly: targetHashOnly,
+    },
+    proved: Boolean(
+      schemaVersion === 1
+      && kind === 'manual-recovery-audit-export'
+      && format === 'hash-only'
+      && rawValuesIncluded === false
+      && sameReleaseBoundary
+      && (targetTotal === null || targetTotal >= 0)
+      && targetHashOnly
+    ),
+  };
+}
+
+function deriveManualRecoveryAuditExport({
+  releaseSummary,
+  releaseProof,
+  journal,
+  ownership,
+  leaseFence,
+  leaseOwnerIdentity,
+  recoveryInspectAfterRestart,
+  partialStates,
+  planMutationCount,
+}) {
+  const recovery = releaseProof?.recoveryInspect?.recovery || {};
+  const counts = normalizeRecoveryCounts(recovery?.counts, { planMutationCount });
+  const body = {
+    schemaVersion: 1,
+    kind: 'manual-recovery-audit-export',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    sameReleaseBoundary: true,
+    source: 'release-verifier recovery summary',
+    sourceUrl: releaseSummary?.topology?.sourceUrl || null,
+    gate: 'GATE-2',
+    gateStatus: releaseSummary?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+      ? 'proven'
+      : 'support_only',
+    plan: {
+      mutations: planMutationCount,
+    },
+    journal: {
+      ownsJournal: ownership.ownsJournal === true,
+      restartReadable: ownership.restartReadable === true,
+      leaseFenceRestartReadable: leaseFence?.restartReadable === true,
+      productionAdapter: ownership.productionAdapter,
+      supportedSurface: ownership.supportedSurface,
+      records: integerOrNull(journal?.records),
+      integrityStatus: journal?.integrity?.status || recovery?.journalState || null,
+    },
+    recoveryInspect: {
+      status: recoveryInspectAfterRestart.status,
+      state: recoveryInspectAfterRestart.state,
+      journalState: recoveryInspectAfterRestart.journalState,
+      counts,
+    },
+    targetEnvelope: {
+      total: counts?.total ?? planMutationCount ?? null,
+      hashOnly: true,
+      rawValuesIncluded: false,
+      oldStateProved: partialStates.old.proved === true,
+      newStateProved: partialStates.new.proved === true,
+      blockedStateProved: partialStates.blocked.proved === true,
+    },
+    leaseOwnerIdentity: {
+      activeClaimId: leaseOwnerIdentity.activeClaimId,
+      activeClaimKeyHash: leaseOwnerIdentity.activeClaimKeyHash,
+      writerLeaseClaimId: leaseOwnerIdentity.writerLeaseClaimId,
+      writerLeaseClaimKeyHash: leaseOwnerIdentity.writerLeaseClaimKeyHash,
+      leaseFenceClaimId: leaseOwnerIdentity.leaseFenceClaimId,
+      leaseFenceClaimKeyHash: leaseOwnerIdentity.leaseFenceClaimKeyHash,
+      matches: leaseOwnerIdentity.matches === true,
+    },
+  };
+  const exportHash = digest(body);
+
+  return {
+    ...body,
+    exportHash,
+    proved: Boolean(
+      releaseSummary?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK'
+      && recoveryInspectAfterRestart.proved === true
+      && ownership.ownsJournal === true
+      && ownership.restartReadable === true
+      && leaseFence?.restartReadable === true
+      && leaseOwnerIdentity.matches === true
+      && Number.isInteger(body.targetEnvelope.total)
+      && body.targetEnvelope.total >= 0
+    ),
+  };
+}
+
+function withManualRecoveryAuditExportSafety(auditExport) {
+  try {
+    assertEvidenceHasNoRawValues(auditExport, {
+      label: 'Manual recovery audit export proof',
+      code: 'MANUAL_RECOVERY_AUDIT_EXPORT_RAW_VALUE_FIELD',
+    });
+    return auditExport;
+  } catch (error) {
+    return {
+      schemaVersion: auditExport?.schemaVersion ?? null,
+      kind: auditExport?.kind || auditExport?.auditKind || null,
+      format: auditExport?.format || null,
+      rawValuesIncluded: auditExport?.rawValuesIncluded === true,
+      sameReleaseBoundary: auditExport?.sameReleaseBoundary === true,
+      proved: false,
+      reason: error?.message || 'Manual recovery audit export proof contained raw or sensitive evidence.',
+    };
+  }
+}
+
+function withManualRecoveryAuditBoundary(proof, { releaseSummary }) {
+  return {
+    ...proof,
+    sameReleaseBoundary: releaseSummary?.boundary?.verdict === 'LIVE_RELEASE_BOUNDARY_OK',
+    sourceUrl: releaseSummary?.topology?.sourceUrl || null,
+  };
 }
 
 function selectOldRemoteRecoveryClassification({ releaseProof, planMutationCount }) {

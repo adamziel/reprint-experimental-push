@@ -395,6 +395,9 @@ test('durable recovery journal release proof binds ownership, replay, conflict, 
   assert.equal(proof.partialStates.new.proved, true);
   assert.equal(proof.partialStates.blocked.proved, true);
   assert.equal(proof.preservedRejectedRemoteEvidence.proved, true);
+  assert.equal(proof.checks.manualRecoveryAuditExport, true);
+  assert.equal(proof.manualRecoveryAuditExport.proved, true);
+  assert.equal(proof.manualRecoveryAuditExport.sameReleaseBoundary, true);
 
   const dbJournalWithCompleteClaim = {
     ...journal,

@@ -1,4 +1,5 @@
 import { deepClone, digest } from './stable-json.js';
+import { assertEvidenceHasNoRawValues } from './evidence-redaction.js';
 import { deserializeResourceValue, setResource as defaultSetResource } from './resources.js';
 import { inspectRecoveryJournal } from './recovery-inspect.js';
 import {
@@ -236,6 +237,87 @@ export function repairSummary(report) {
     rollForwardTargets: report.rollForwardTargets.map(publicTargetSummary),
     alreadyUpdatedTargets: report.alreadyUpdatedTargets.map(publicTargetSummary),
     unknownTargets: report.unknownTargets.map(publicTargetSummary),
+  };
+}
+
+export function buildManualRecoveryAuditExport(reportOrOptions = {}, options = {}) {
+  const report = isRecoveryRepairReport(reportOrOptions)
+    ? reportOrOptions
+    : inspectRecoveryRepair(reportOrOptions);
+  const exportOptions = isRecoveryRepairReport(reportOrOptions) ? options : reportOrOptions;
+  const journal = report.journal || {};
+  const claim = report.claim || {};
+  const exportedAt = isoTimestampOrNull(exportOptions.exportedAt || exportOptions.now);
+  const summary = repairSummary(report);
+  const body = stripUndefined({
+    schemaVersion: 1,
+    kind: 'manual-recovery-audit-export',
+    format: 'hash-only',
+    rawValuesIncluded: false,
+    exportedAt,
+    exportedBy: hasNonEmptyString(exportOptions.exportedBy) ? exportOptions.exportedBy : null,
+    source: 'recovery-repair-inspection',
+    planId: report.planId,
+    status: report.status,
+    reason: report.reason,
+    journal: {
+      integrityStatus: report.journalStatus,
+      records: Number.isInteger(journal.records?.length) ? journal.records.length : null,
+      openState: restartStateAuditSummary(journal.openState),
+      stagedState: restartStateAuditSummary(journal.stagedState),
+      committedState: restartStateAuditSummary(journal.committedState),
+    },
+    claim: {
+      status: claim.status || 'none',
+      activeClaimId: claim.activeClaimId || null,
+      activeClaimHash: claim.activeClaimHash || null,
+      previousClaimId: claim.previousClaimId || null,
+      previousClaimHash: claim.previousClaimHash || null,
+      sequence: claim.sequence ?? null,
+      type: claim.type || null,
+    },
+    counts: { ...report.counts },
+    decisions: {
+      canRollForward: report.canRollForward === true,
+      canRollback: report.canRollback === true,
+      canMarkRepaired: report.canMarkRepaired === true,
+      requiresOperatorDecision: report.requiresOperatorDecision === true,
+    },
+    targetEnvelope: {
+      complete: report.journalStatus === 'ok' && report.incompleteJournalTargets.length === 0,
+      total: report.counts.total,
+      old: report.counts.old,
+      new: report.counts.new,
+      unknown: report.counts.unknown,
+      drifted: report.driftedTargets.length,
+      incomplete: report.incompleteJournalTargets.length,
+      hashOnly: true,
+    },
+    targets: {
+      rollForward: report.rollForwardTargets.map(publicTargetSummary),
+      alreadyUpdated: report.alreadyUpdatedTargets.map(publicTargetSummary),
+      unknown: report.unknownTargets.map(publicTargetSummary),
+      drifted: report.driftedTargets.map(publicTargetSummary),
+      incomplete: report.incompleteJournalTargets.map(publicTargetSummary),
+    },
+    rollbackBoundary: {
+      supported: report.rollbackBoundary?.supported === true,
+      reason: report.rollbackBoundary?.reason || null,
+      targetCount: Array.isArray(report.rollbackBoundary?.targets)
+        ? report.rollbackBoundary.targets.length
+        : 0,
+    },
+    artifactRefs: exportOptions.artifactRefs && typeof exportOptions.artifactRefs === 'object'
+      ? { ...exportOptions.artifactRefs }
+      : {},
+    summaryHash: digest(summary),
+    journalPathHash: hasNonEmptyString(journal.filePath) ? digest(journal.filePath) : null,
+  });
+
+  assertManualRecoveryAuditExportSafe(body);
+  return {
+    ...body,
+    exportHash: digest(body),
   };
 }
 
@@ -498,6 +580,89 @@ function publicTargetSummary(target) {
 
 function defaultWriteResource(site, resource, value) {
   defaultSetResource(site, resource, value);
+}
+
+function isRecoveryRepairReport(value) {
+  return Boolean(value)
+    && typeof value === 'object'
+    && typeof value.status === 'string'
+    && typeof value.planId === 'string'
+    && value.counts
+    && typeof value.counts === 'object'
+    && Array.isArray(value.rollForwardTargets)
+    && Array.isArray(value.alreadyUpdatedTargets)
+    && Array.isArray(value.unknownTargets)
+    && value.inspection
+    && typeof value.inspection === 'object';
+}
+
+function restartStateAuditSummary(state) {
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
+  return {
+    status: state.status || null,
+    phase: state.phase || null,
+    restartReadable: state.restartReadable === true,
+    durableRows: Number.isInteger(state.durableRows) ? state.durableRows : null,
+    records: Number.isInteger(state.records) ? state.records : null,
+    planId: state.planId || null,
+    observedHash: state.observedHash || null,
+    stagedHash: state.stagedHash || null,
+    latestSequence: state.latestOpenSequence
+      ?? state.latestStagedSequence
+      ?? state.latestCommittedSequence
+      ?? null,
+    latestType: state.latestOpenType
+      || state.latestStagedType
+      || state.latestCommittedType
+      || null,
+    fsync: {
+      requested: state.fsync?.requested === true,
+      strategy: state.fsync?.strategy || null,
+    },
+    leaseOwner: state.leaseOwner && typeof state.leaseOwner === 'object'
+      ? {
+          visible: state.leaseOwner.visible === true,
+          claimId: state.leaseOwner.claimId || null,
+          claimHash: state.leaseOwner.claimHash || null,
+          claimKeyHash: state.leaseOwner.claimKeyHash || null,
+          sequence: state.leaseOwner.sequence ?? null,
+          eventType: state.leaseOwner.eventType || null,
+        }
+      : null,
+  };
+}
+
+function assertManualRecoveryAuditExportSafe(auditExport) {
+  assertEvidenceHasNoRawValues(auditExport, {
+    label: 'Manual recovery audit export',
+    code: 'RECOVERY_AUDIT_EXPORT_RAW_VALUE_FIELD',
+  });
+}
+
+function isoTimestampOrNull(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function stripUndefined(value) {
+  if (Array.isArray(value)) {
+    return value.map(stripUndefined);
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  const result = {};
+  for (const [key, child] of Object.entries(value)) {
+    if (child !== undefined) {
+      result[key] = stripUndefined(child);
+    }
+  }
+  return result;
 }
 
 function hasJournalRecord(journal, type) {
