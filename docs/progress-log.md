@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:03 CEST.
+- Last update: 2026-05-30 05:06 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0157 stale remote after dry-run variant-3 proof merge ending at
-  `16e00804b`.
+  the RPP-0476 driver delete support flag proof merge ending at `0f68fad55`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 335
-  items checked and leaves 665 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 336
+  items checked and leaves 664 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  59 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  60 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 57 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused driver delete support flag variant-4 refresh: the current lane now
+  contains `RPP-0476` evidence in
+  `docs/evidence/rpp-0476-driver-delete-support-flag-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0476-driver-delete-support-flag-v4.test.js`. `node --check
+  test/rpp-0476-driver-delete-support-flag-v4.test.js` exited 0, the focused
+  RPP-0476 test passed 3/3, and the adjacent delete-support/plugin-driver slice
+  passed 21/21. The proof binds delete support to the exact matched driver,
+  applies explicit boolean delete support on the exact wp-option driver,
+  rejects forged deletes whose driver no longer matches, and keeps evidence
+  hash-only. Checklist lint, artifact redaction scan, and `git diff --check`
+  also passed. Counts are now 336/664; final release remains `NO-GO`.
 - Generated stale remote after dry-run variant-3 refresh: the current lane now
   contains `RPP-0157` evidence in
   `docs/evidence/rpp-0157-stale-remote-after-dry-run-v3.md`,

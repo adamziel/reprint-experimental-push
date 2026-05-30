@@ -1,17 +1,28 @@
-# AO Progress Report - 2026-05-30 05:03 CEST
+# AO Progress Report - 2026-05-30 05:06 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0157 stale remote
-after dry-run variant-3 proof refresh ending at `16e00804b`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0476 driver delete
+support flag proof refresh ending at `0f68fad55`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 335 are
-  checked from integrated evidence and 665 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 336 are
+  checked from integrated evidence and 664 remain open.
+- `RPP-0476` is now checked with focused driver delete support flag variant-4
+  evidence in `docs/evidence/rpp-0476-driver-delete-support-flag-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0476-driver-delete-support-flag-v4.test.js`. `node --check
+  test/rpp-0476-driver-delete-support-flag-v4.test.js` exited 0, `node --test
+  test/rpp-0476-driver-delete-support-flag-v4.test.js` passed 3/3, and the
+  adjacent delete-support/plugin-driver slice passed 21/21, proving delete
+  support binds to the exact matched driver, explicit boolean delete support
+  applies on the exact wp-option driver, forged deletes whose driver no longer
+  matches reject, evidence stays hash-only, checklist lint, artifact redaction
+  scan, and `git diff --check` while final release remains **NO-GO**.
 - `RPP-0157` is now checked with generated stale remote after dry-run variant-3
   evidence in `docs/evidence/rpp-0157-stale-remote-after-dry-run-v3.md`,
   `docs/generated-push-harness.md`,
