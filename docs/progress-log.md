@@ -6,20 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:47 CEST +02:00.
+- Last update: 2026-05-30 18:51 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0395 nav menu item fail-closed reference release-verifier proof merge
-  ending at `669adb4`.
+  the RPP-0396 wp_navigation fail-closed reference release-verifier proof merge
+  ending at `d75cecf`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 505
-  items checked and leaves 495 open.
-- Checked slices: 100 release-gate foundation items, 65 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 506
+  items checked and leaves 494 open.
+- Checked slices: 100 release-gate foundation items, 66 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- wp_navigation fail-closed reference release-verifier proof v5: the current
+  lane now contains `RPP-0396` evidence in
+  `docs/evidence/rpp-0396-wp-navigation-fail-closed-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0396-wp-navigation-fail-closed-reference-release-verifier-v5.test.js`.
+  The local-production-shaped proof keeps unmapped `wp_navigation` post rows
+  and dependent `wp_postmeta.post_id` references fail-closed with hash-only
+  `stale-wordpress-graph-identity` evidence, and `applyPlan()` refuses the
+  blocked plan with `PLAN_NOT_READY` before durable-journal events or remote
+  mutation. With an explicit WordPress graph identity map, it preserves the
+  proven remote navigation row, rewrites the dependent postmeta mutation to the
+  remote row ID, keeps the rewritten mutation live-preconditioned, and carries
+  it through apply revalidation. A missing-revalidation negative proof reports a
+  blocked verifier result and keeps the release gate `NO-GO`. Validation passed
+  with Node syntax checks, focused RPP-0396 coverage 3/3, adjacent wp_navigation
+  coverage 6/6, adjacent serialized-block coverage 4/4, adjacent
+  release-verifier coverage 4/4, checklist lint, scoped artifact redaction scan,
+  raw fixture scan, and merge diff whitespace checks. Counts are now 506/494;
+  final release remains `NO-GO` because this is local support-only
+  release-verifier evidence, not production-backed release evidence.
 - Nav menu item fail-closed reference release-verifier proof v5: the current
   lane now contains `RPP-0395` evidence in
   `docs/evidence/rpp-0395-nav-menu-item-fail-closed-reference-release-verifier-v5.md`,
