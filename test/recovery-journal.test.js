@@ -173,6 +173,28 @@ function writeCurrentSqliteJournalTable(database, records, tableName = 'recovery
   return records.map((record) => ({ ...record }));
 }
 
+function sqliteEventRecord(sequence, event, fields = {}) {
+  return {
+    schemaVersion: 1,
+    sequence,
+    type: event,
+    event,
+    ...fields,
+  };
+}
+
+function countEventRows(records, event) {
+  return records.filter((record) => record.event === event || record.type === event).length;
+}
+
+function latestEventsFromJournalRows(records) {
+  return records.map((record) => ({
+    sequence: record.sequence,
+    event: record.event || record.type,
+    ...(record.requestHash ? { requestHash: record.requestHash } : {}),
+  }));
+}
+
 function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
   const originalRequestHash = '8'.repeat(64);
   const conflictingRequestHash = '9'.repeat(64);
@@ -2876,6 +2898,309 @@ test('production recovery journal same-claim retry rejects target envelope drift
       return true;
     },
   );
+});
+
+test('RPP-0636 SQLite-backed different-body idempotency conflict proves no post-conflict mutation', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const activeClaimId = 'rpp-0636-active-claim';
+  const previousClaimId = 'rpp-0636-previous-claim';
+  const activeClaimKeyHash = recoveryClaimHash(activeClaimId);
+  const previousClaimKeyHash = recoveryClaimHash(previousClaimId);
+  const idempotencyKeyHash = digest({
+    proof: 'rpp-0636',
+    idempotencyKey: 'same-key',
+  });
+  const originalRequestHash = digest({
+    proof: 'rpp-0636',
+    idempotencyKeyHash,
+    requestVariantHash: digest('original-apply-request'),
+  });
+  const conflictingRequestHash = digest({
+    proof: 'rpp-0636',
+    idempotencyKeyHash,
+    requestVariantHash: digest('different-apply-request'),
+  });
+  const targetSnapshotHash = digest({
+    proof: 'rpp-0636',
+    planId: plan.id,
+    mutationHashes: plan.mutations.map((mutation) => mutation.localHash),
+  });
+
+  let sequence = 1;
+  const rows = [
+    sqliteEventRecord(sequence++, 'idempotency-opened', {
+      planId: plan.id,
+      claimId: activeClaimId,
+      claimHash: activeClaimKeyHash,
+      idempotencyKeyHash,
+      requestHash: originalRequestHash,
+      state: 'opened',
+    }),
+    sqliteEventRecord(sequence++, 'apply-started', {
+      planId: plan.id,
+      claimId: activeClaimId,
+      claimHash: activeClaimKeyHash,
+      idempotencyKeyHash,
+      requestHash: originalRequestHash,
+      state: 'started',
+    }),
+    ...plan.mutations.map((mutation) => sqliteEventRecord(sequence++, 'mutation-applied', {
+      planId: plan.id,
+      mutationId: mutation.id,
+      resourceKey: mutation.resourceKey,
+      beforeHash: mutation.remoteBeforeHash,
+      afterHash: mutation.localHash,
+      idempotencyKeyHash,
+      requestHash: originalRequestHash,
+      state: 'applied',
+    })),
+    sqliteEventRecord(sequence++, 'apply-committed', {
+      planId: plan.id,
+      claimId: activeClaimId,
+      claimHash: activeClaimKeyHash,
+      idempotencyKeyHash,
+      requestHash: originalRequestHash,
+      mutationApplied: plan.mutations.length,
+      targetSnapshotHash,
+      state: 'committed',
+    }),
+    sqliteEventRecord(sequence++, 'apply-replayed', {
+      planId: plan.id,
+      claimId: activeClaimId,
+      claimHash: activeClaimKeyHash,
+      idempotencyKeyHash,
+      requestHash: originalRequestHash,
+      replayed: true,
+      freshMutationWork: false,
+      targetSnapshotHash,
+      state: 'replayed',
+    }),
+    sqliteEventRecord(sequence++, 'idempotency-key-conflict', {
+      planId: plan.id,
+      claimId: activeClaimId,
+      claimHash: activeClaimKeyHash,
+      idempotencyKeyHash,
+      requestHash: conflictingRequestHash,
+      previousRequestHash: originalRequestHash,
+      sameIdempotencyKey: true,
+      differentRequestHash: true,
+      status: 409,
+      code: 'IDEMPOTENCY_KEY_CONFLICT',
+      freshMutationWork: false,
+      targetSnapshotHashBeforeConflict: targetSnapshotHash,
+      targetSnapshotHashAfterConflict: targetSnapshotHash,
+      targetSnapshotUnchanged: true,
+      state: 'conflict',
+    }),
+  ];
+
+  let database = new DatabaseSync(sqlitePath);
+  writeSqliteJournalTable(database, rows);
+  database.close();
+
+  database = new DatabaseSync(sqlitePath);
+  const sqliteJournal = readSqliteRecoveryJournalTable(database);
+  database.close();
+
+  assert.equal(sqliteJournal.storage, 'sqlite');
+  assert.equal(sqliteJournal.integrity.status, 'ok');
+  assert.equal(sqliteJournal.schemaVersionColumnPresent, true);
+  assert.deepEqual(
+    sqliteJournal.records.map((record) => record.sequence),
+    Array.from({ length: rows.length }, (_, index) => index + 1),
+  );
+
+  const openedRecord = sqliteJournal.records.find((record) => record.event === 'idempotency-opened');
+  const conflictRecord = sqliteJournal.records.find((record) => record.event === 'idempotency-key-conflict');
+  assert.ok(openedRecord);
+  assert.ok(conflictRecord);
+  assert.equal(conflictRecord.status, 409);
+  assert.equal(conflictRecord.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  assert.equal(conflictRecord.idempotencyKeyHash, openedRecord.idempotencyKeyHash);
+  assert.notEqual(conflictRecord.requestHash, openedRecord.requestHash);
+  assert.equal(conflictRecord.previousRequestHash, openedRecord.requestHash);
+  assert.equal(conflictRecord.sameIdempotencyKey, true);
+  assert.equal(conflictRecord.differentRequestHash, true);
+  assert.equal(conflictRecord.freshMutationWork, false);
+  assert.equal(conflictRecord.targetSnapshotHashBeforeConflict, targetSnapshotHash);
+  assert.equal(conflictRecord.targetSnapshotHashAfterConflict, targetSnapshotHash);
+  assert.equal(conflictRecord.targetSnapshotUnchanged, true);
+  assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(conflictRecord));
+
+  assert.equal(countEventRows(sqliteJournal.records, 'idempotency-opened'), 1);
+  assert.equal(countEventRows(sqliteJournal.records, 'apply-started'), 1);
+  assert.equal(countEventRows(sqliteJournal.records, 'mutation-applied'), plan.mutations.length);
+  assert.equal(countEventRows(sqliteJournal.records, 'apply-committed'), 1);
+  assert.equal(countEventRows(sqliteJournal.records, 'apply-replayed'), 1);
+  assert.equal(countEventRows(sqliteJournal.records, 'idempotency-key-conflict'), 1);
+  assert.deepEqual(
+    sqliteJournal.records
+      .filter((record) => record.sequence > conflictRecord.sequence)
+      .map((record) => record.event),
+    [],
+  );
+
+  const writerLease = {
+    strategy: 'claim-fenced-single-writer',
+    claimId: activeClaimId,
+    claimKeyHash: activeClaimKeyHash,
+    claimKeyUnique: true,
+    fsyncEvidence: true,
+    storageGuard: 'wpdb-single-statement-cas',
+    monotonicSequence: true,
+    restartReadable: true,
+    staleClaimRejected: true,
+  };
+  const claimExpiry = {
+    policy: 'bounded-stale-claim-advance',
+    scope: 'claim-fenced-restart-readable',
+    proven: true,
+    expired: true,
+    previousClaimExpired: true,
+    staleClaimRejected: true,
+    staleThresholdMs: 0,
+    openedAt: '2026-05-24T00:00:02.000Z',
+    expiresAt: '2026-05-24T00:00:02.000Z',
+    previousClaimOpenedAt: '2026-05-24T00:00:01.000Z',
+    previousClaimExpiresAt: '2026-05-24T00:00:02.000Z',
+    previousClaimAgeMs: 1000,
+    activeClaimSequence: 2,
+    activeClaimEvent: 'stale-claim-rejected',
+    previousClaimSequence: 1,
+    previousClaimEvent: 'idempotency-opened',
+  };
+  const dbJournal = {
+    scope: 'checked live production-shaped journal surface',
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'wpdb-single-statement-cas',
+      supportedSurface: 'claim-fenced-restart-readable',
+    },
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimId,
+      activeClaimKeyHash,
+      activeClaimSequence: 2,
+      activeClaimEvent: 'stale-claim-rejected',
+      idempotencyKeyHash,
+      requestHash: originalRequestHash,
+      staleClaimRejected: true,
+      previousClaimId,
+      previousClaimKeyHash,
+      previousClaimSequence: 1,
+      previousClaimEvent: 'idempotency-opened',
+      previousStartedSequence: null,
+      abandonedSequence: null,
+      abandonedEvent: null,
+      claimExpiry,
+    },
+    claimExpiry,
+    writerLease,
+    leaseFence: {
+      boundary: 'wpdb-single-statement-cas',
+      storageGuard: 'wpdb-single-statement-cas',
+      fsyncEvidence: true,
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease,
+    },
+    storageGuard: {
+      boundary: 'wpdb-single-statement-cas',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    mutationApplied: countEventRows(sqliteJournal.records, 'mutation-applied'),
+    eventCounts: latestEventsFromJournalRows(sqliteJournal.records).reduce((counts, entry) => {
+      counts[entry.event] = (counts[entry.event] || 0) + 1;
+      return counts;
+    }, {}),
+    latestEvents: latestEventsFromJournalRows(sqliteJournal.records),
+  };
+
+  assert.equal(checkedDurableJournalBoundarySatisfied(dbJournal), true);
+
+  const oldRemoteRecovery = {
+    source: 'SQLite-backed idempotency conflict recovery inspection before mutation',
+    status: 200,
+    code: 'SQLITE_IDEMPOTENCY_CONFLICT_OLD_REMOTE',
+    state: 'old-remote',
+    observedState: 'sqlite-conflict-pre-mutation',
+    counts: {
+      old: plan.mutations.length,
+      new: 0,
+      blockedUnknown: 0,
+      total: plan.mutations.length,
+    },
+  };
+  const releaseSummary = buildRecoveryReleaseSummary({
+    inspection: {
+      journal: dbJournal,
+      leaseFence: dbJournal.leaseFence,
+    },
+    plan,
+    mutationEvents: plan.mutations.length,
+    oldRemoteRecovery,
+  });
+  releaseSummary.releaseProof.dbJournal = dbJournal;
+  releaseSummary.releaseProof.idempotencyConflict = {
+    status: conflictRecord.status,
+    code: conflictRecord.code,
+    idempotency: {
+      conflict: true,
+      freshMutationWork: false,
+      sameKey: conflictRecord.sameIdempotencyKey,
+      differentRequestHash: conflictRecord.differentRequestHash,
+      requestHash: conflictingRequestHash,
+      originalRequestHash,
+      conflictingRequestHash,
+    },
+    targetSnapshotUnchanged: conflictRecord.targetSnapshotUnchanged,
+    targetSnapshotHashBeforeConflict: conflictRecord.targetSnapshotHashBeforeConflict,
+    targetSnapshotHashAfterConflict: conflictRecord.targetSnapshotHashAfterConflict,
+    recoveryState: {
+      source: 'SQLite-backed different-body conflict recovery inspection',
+      storage: 'sqlite',
+      state: 'fully-updated-remote',
+      restartReadable: true,
+      counts: {
+        old: 0,
+        new: plan.mutations.length,
+        blockedUnknown: 0,
+        total: plan.mutations.length,
+      },
+    },
+  };
+
+  const proof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary,
+    applyRevalidation: buildBlockedApplyRevalidation(),
+  });
+  assert.equal(proof.ok, true);
+  assert.equal(proof.checks.sameKeyDifferentBodyConflict, true);
+  assert.equal(proof.sameKeyDifferentBodyConflict.proved, true);
+  assert.equal(proof.sameKeyDifferentBodyConflict.status, 409);
+  assert.equal(proof.sameKeyDifferentBodyConflict.code, 'IDEMPOTENCY_KEY_CONFLICT');
+  assert.equal(proof.sameKeyDifferentBodyConflict.conflictEventSequence, conflictRecord.sequence);
+  assert.equal(proof.sameKeyDifferentBodyConflict.mutationEventsAfterConflict, 0);
+
+  const mutationAfterConflictSummary = clone(releaseSummary);
+  mutationAfterConflictSummary.releaseProof.dbJournal.latestEvents.push({
+    sequence: conflictRecord.sequence + 1,
+    event: 'mutation-applied',
+  });
+  const mutationAfterConflictProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: mutationAfterConflictSummary,
+    applyRevalidation: buildBlockedApplyRevalidation(),
+  });
+  assert.equal(mutationAfterConflictProof.sameKeyDifferentBodyConflict.proved, false);
+  assert.equal(mutationAfterConflictProof.sameKeyDifferentBodyConflict.mutationEventsAfterConflict, 1);
 });
 
 test('checked release path consumes the production recovery journal inspection surface', () => {
