@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:21 CEST.
+- Last update: 2026-05-30 04:24 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0462 driver owner identity binding proof merge ending at
-  `9cf2f62e8`.
+  the RPP-0463 custom table allowlist proof merge ending at `1edaa985f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 323
-  items checked and leaves 677 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 324
+  items checked and leaves 676 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  49 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  50 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused custom table allowlist exact-match variant-4 refresh: the current
+  lane now contains `RPP-0463` evidence in
+  `docs/evidence/rpp-0463-custom-table-allowlist-exact-match-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0463-custom-table-allowlist-exact-match-v4.test.js`. `node
+  --check test/rpp-0463-custom-table-allowlist-exact-match-v4.test.js` exited
+  0, `node --test test/rpp-0463-custom-table-allowlist-exact-match-v4.test.js`
+  passed 6/6, the push-planner custom-table slice passed 8/8, the
+  production-shaped allowlist boundary slice passed 3/3, the local production
+  planner proof slice passed 1/1, and the snapshot-lib exact custom-table gate
+  slice passed 1/1. The proof carries one exact forms-lab custom-table mutation
+  through apply while near misses fail closed before mutation and evidence stays
+  hash-only. Checklist lint, artifact redaction scan, and `git diff --check`
+  also passed. Counts are now 324/676; final release remains `NO-GO`.
 - Focused driver owner identity binding variant-4 refresh: the current lane now
   contains `RPP-0462` evidence in
   `docs/evidence/rpp-0462-driver-owner-identity-binding-v4.md`,

@@ -1,17 +1,31 @@
-# AO Progress Report - 2026-05-30 04:21 CEST
+# AO Progress Report - 2026-05-30 04:24 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0462 driver owner
-identity binding proof refresh ending at `9cf2f62e8`. It separates committed
-proof from visible AO worker output that is still branch-local or in progress.
+`lane/evidence-integration-20260527` through the current RPP-0463 custom table
+allowlist proof refresh ending at `1edaa985f`. It separates committed proof
+from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 323 are
-  checked from integrated evidence and 677 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 324 are
+  checked from integrated evidence and 676 remain open.
+- `RPP-0463` is now checked with focused custom table allowlist exact-match
+  variant-4 evidence in
+  `docs/evidence/rpp-0463-custom-table-allowlist-exact-match-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0463-custom-table-allowlist-exact-match-v4.test.js`. `node
+  --check test/rpp-0463-custom-table-allowlist-exact-match-v4.test.js` exited
+  0, `node --test test/rpp-0463-custom-table-allowlist-exact-match-v4.test.js`
+  passed 6/6, the push-planner custom-table slice passed 8/8, the
+  production-shaped allowlist boundary slice passed 3/3, the local production
+  planner proof slice passed 1/1, and the snapshot-lib exact custom-table gate
+  slice passed 1/1, proving the exact forms-lab row/owner/driver/table tuple
+  applies one row mutation, near misses fail closed before apply, evidence stays
+  hash-only, checklist lint, artifact redaction scan, and `git diff --check`
+  while final release remains **NO-GO**.
 - `RPP-0462` is now checked with focused driver owner identity binding
   variant-4 evidence in
   `docs/evidence/rpp-0462-driver-owner-identity-binding-v4.md`,
