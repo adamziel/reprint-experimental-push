@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:26 CEST +02:00.
+- Last update: 2026-05-30 23:28 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0192 wp_term_taxonomy graph release-verifier variant 5 merge ending
-  at `87caabc`.
+  the RPP-0339 cross-table create batch mapping variant 2 merge ending at
+  `af84649`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 538
-  items checked and leaves 462 open.
-- Checked slices: 100 release-gate foundation items, 80 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 539
+  items checked and leaves 461 open.
+- Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 92 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Cross-table create batch mapping variant-2 proof: the current lane now checks
+  `RPP-0339` with focused local-production verifier carry-through evidence for
+  same-plan post and postmeta creates. The proof verifies both rows have
+  live-remote preconditions, apply to the local hashes, and are carried into the
+  release evidence envelope with hash-only post/postmeta hashes and proof hash;
+  it also fails closed when the dependent postmeta row is omitted from
+  apply-time revalidation. Validation passed with Node syntax checks, focused
+  RPP-0339 coverage 2/2, adjacent RPP-0379/RPP-0399/local-production coverage
+  25/25, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 539/461; final release remains `NO-GO` because this is local
+  production-shaped verifier evidence, not production-backed release proof.
 - WP term taxonomy graph release-verifier v5 carry-through: the current lane
   now checks `RPP-0192` with deterministic generated-harness support-only proof
   for `wp_terms` and `wp_term_taxonomy` graph changes. The generator exposes

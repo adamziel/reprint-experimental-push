@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 538.
-- Remaining open: 462.
+- Verified complete: 539.
+- Remaining open: 461.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -365,7 +365,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0336 (Mid / graph-identity) Prove wp_navigation fail-closed reference, variant 2. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0337 (Mid / graph-identity) Prove serialized block reference detection, variant 2. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0338 (Mid / graph-identity) Prove GUID and slug collision handling, variant 2. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0339 (Mid / graph-identity) Prove cross-table create batch mapping, variant 2. Success: local production verifier carries the target through apply.
+- [x] RPP-0339 (Mid / graph-identity) Prove cross-table create batch mapping, variant 2. Success: local production verifier carries the target through apply.
 - [x] RPP-0340 (Mid / graph-identity) Prove production importer/exporter identity map, variant 2. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0341 (Mid / graph-identity) Add generated coverage for post_parent page hierarchy, variant 3. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0342 (Mid / graph-identity) Add generated coverage for featured image attachment reference, variant 3. Success: unsupported target fails closed with hash-only evidence.
