@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:55 CEST +02:00.
+- Last update: 2026-05-30 18:07 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0719 long-push progress-reporting proof merge ending at `83814225`.
+  the RPP-0287 local plugin data stale owner-context release-verifier proof
+  merge ending at `590cd613`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 494
-  items checked and leaves 506 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 495
+  items checked and leaves 505 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 77 merge-invariant items. No release-ops items are checked
+  harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Local plugin data stale owner-context release-verifier proof v5: the current
+  lane now contains `RPP-0287` evidence in
+  `docs/evidence/rpp-0287-local-plugin-data-stale-owner-context-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0287-local-plugin-data-stale-owner-context-release-verifier-v5.test.js`.
+  The release verifier now summarizes a hash-only boundary for local plugin
+  option data with stale owner context, including baseline and stale apply
+  attempts, owner file and metadata resource evidence, policy fields, and
+  explicit fail-closed error details under the merge-invariant proof. Validation
+  passed with Node syntax checks, focused RPP-0287 coverage 2/2, adjacent stale
+  owner-context coverage 6/6, adjacent release-verifier coverage 17/17,
+  checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks. Counts are now 495/505; final release remains `NO-GO` because this is
+  local release-verifier evidence, not production-backed topology or auth
+  evidence.
 - Long-push progress-reporting proof: the current lane now contains `RPP-0719`
   evidence in
   `docs/evidence/rpp-0719-long-push-progress-reporting.md`,
