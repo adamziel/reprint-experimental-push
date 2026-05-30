@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:57:00+02:00">Last updated: May 30, 2026, 14:57 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:02:00+02:00">Last updated: May 30, 2026, 15:02 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>459</strong>
+        <strong>460</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>541</strong>
+        <strong>540</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, plugin update dependency release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0518</span>
+        <span>RPP-0490</span>
       </div>
-      <p>The latest refresh integrates RPP-0518 capability downgrade rejection evidence: route permission uses the shared manage_options guard, short-lived push sessions bind required capability and capability hash, signed dry-run, apply, recovery, snapshot-hashes, and journal requests reject downgraded capability before canonical verification, nonce claiming, JSON parsing, or mutation setup, and the authenticated HTTP client fails closed before apply when a later auth/session read reports manage_options false. Counts are now 459/541; final release remains NO-GO because this is local authenticated-client and source-level route evidence, not production-backed credential lifecycle proof.</p>
+      <p>The latest refresh integrates RPP-0490 plugin update dependency release-verifier evidence: the verifier emits hash-only pluginUpdateDependencyValidator proof beside plugin-driver release evidence, builds a ready atomic plugin update plan for reprint-push-atomic-dependent-fixture with a live-remote dependency requirement on reprint-push-atomic-dependency-fixture, carries expectedVersion, version range, live remote hash, requirement hash, update mutation hash, and plugin-owned data evidence, applies the valid update while preserving dependency state and applying the plugin-owned row, refuses version mismatch, unsupported range, and stale dependency before mutation, preserves remote hashes, and differentiates local/support-only, production-scoped, and checked production-backed evidence. Counts are now 460/540; final release remains NO-GO because this is local/support-only release-verifier evidence, not production-backed plugin update proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0490 focused: 3/3</span>
+        <span class="tag">planner adjacent: 3/3</span>
+        <span class="tag">release-verifier adjacent: 24/24</span>
+        <span class="tag">hash-only update dependency</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0518 route focused: 3/3</span>
         <span class="tag">RPP-0518 client focused: 1/1</span>
         <span class="tag">session/auth adjacent: 8/8</span>
