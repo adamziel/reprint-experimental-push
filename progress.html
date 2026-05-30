@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T22:52:00+02:00">Last updated: May 30, 2026, 22:52 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T22:54:00+02:00">Last updated: May 30, 2026, 22:54 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>529</strong>
+        <strong>530</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>471</strong>
+        <strong>470</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0326</span>
+        <span>RPP-0329</span>
       </div>
-      <p>The latest refresh checks RPP-0326 with focused local graph-identity proof for wp_comments.comment_parent targets variant 2: stable parent identity, identity-map parent rewrite, and stale parent fail-closed paths all produce deterministic hash-only evidence, with ready live-remote preconditions and stale PLAN_NOT_READY refusal before mutation. Counts are now 529/471; final release remains NO-GO because this is local graph-identity evidence, not production-backed release proof.</p>
+      <p>The latest refresh checks RPP-0329 with focused local-production-shaped verifier proof for category wp_term_taxonomy references variant 2: the ready category taxonomy row carries a live-remote precondition through apply, records only hash evidence, and fails closed when apply revalidation is omitted. Counts are now 530/470; final release remains NO-GO because this is local verifier evidence, not production-backed release proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0329 focused: 2/2</span>
+        <span class="tag">RPP-0309/RPP-0389: 5/5</span>
+        <span class="tag">category taxonomy carry-through: pass</span>
+        <span class="tag">apply revalidation omitted: fail closed</span>
+        <span class="tag">hash-only evidence: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0326 focused: 1/1</span>
         <span class="tag">RPP-0386 adjacent: 4/4</span>
         <span class="tag">stable/rewrite/stale: pass</span>
