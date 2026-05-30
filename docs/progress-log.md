@@ -6,20 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:52 CEST.
+- Last update: 2026-05-30 14:54 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0489 plugin activation dependency release-verifier merge ending at
-  `eae224ead`.
+  the RPP-0711 remote hash pagination merge ending at `bf7feee79`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 457
-  items checked and leaves 543 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 458
+  items checked and leaves 542 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   75 plugin-driver boundary items, 26 executor/auth items, 29 recovery items,
-  14 storage/performance items, 3 production-topology items, 78 generated
+  15 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Remote hash pagination: the current lane now contains `RPP-0711` evidence in
+  `docs/evidence/rpp-0711-remote-hash-pagination.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/remote-hash-pagination.js`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/remote-hash-pagination.test.js`. The authenticated
+  `snapshot-hashes` route now issues source- and scope-bound cursors shaped as
+  `snapcursor:{sourceHashPrefix}:{scopeHashPrefix}:{offset}`, refuses malformed
+  cursors, source drift, scope drift, out-of-range offsets, and invalid batch
+  sizes before returning a page, and records hash-only pagination plus receipt
+  evidence under a read-only planning boundary. The deterministic benchmark
+  paginates 1205 remote hash resources in 10 pages with zero duplicate resource
+  keys and zero raw value evidence leaks while staying inside runtime/resource
+  budgets. Validation passed with Node syntax checks, PHP lint, focused
+  snapshot pagination coverage 9/9, adjacent production route coverage 24/24,
+  the deterministic remote hash pagination benchmark, checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks. Counts are now
+  458/542; final release remains `NO-GO` because this is deterministic
+  no-live-remote pagination evidence, not production-backed storage receipt
+  proof.
 - Plugin activation dependency release-verifier carry-through: the current lane
   now contains `RPP-0489` evidence in
   `docs/evidence/rpp-0489-plugin-activation-dependency-release-verifier-v5.md`,

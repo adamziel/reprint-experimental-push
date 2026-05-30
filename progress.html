@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:52:00+02:00">Last updated: May 30, 2026, 14:52 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:54:00+02:00">Last updated: May 30, 2026, 14:54 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>457</strong>
+        <strong>458</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>543</strong>
+        <strong>542</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency and bounded parallel snapshot hashing, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, and remote hash pagination, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0489</span>
+        <span>RPP-0711</span>
       </div>
-      <p>The latest refresh integrates RPP-0489 plugin activation dependency release-verifier evidence: the verifier records hash-only pluginDriver.coreSemantics.pluginActivationDependency proof, refuses remote dependency drift with ATOMIC_GROUP_DEPENDENCY_STALE before activation or plugin-owned row mutation, leaves dependent activation and plugin-owned wp_options updates unapplied, and preserves the drifted remote row hash plus full remote hash. Counts are now 457/543; final release remains NO-GO because this is support-only local release-verifier evidence, not externally hosted production topology proof.</p>
+      <p>The latest refresh integrates RPP-0711 remote hash pagination evidence: the authenticated snapshot-hashes route issues source- and scope-bound snapcursor pages, rejects malformed cursors, source drift, scope drift, out-of-range offsets, and invalid batch sizes before returning a page, and records hash-only pagination plus receipt evidence under a read-only planning boundary. The deterministic benchmark paginates 1205 remote hash resources in 10 pages with zero duplicate resource keys and zero raw value evidence leaks. Counts are now 458/542; final release remains NO-GO because this is deterministic no-live-remote pagination evidence, not production-backed storage receipt proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0711 focused: 9/9</span>
+        <span class="tag">production routes adjacent: 24/24</span>
+        <span class="tag">remote hash bench: pass</span>
+        <span class="tag">source/scope cursors</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0489 focused: 2/2</span>
         <span class="tag">plugin dependency adjacent: 2/2</span>
         <span class="tag">release-verifier adjacent: 21/21</span>
