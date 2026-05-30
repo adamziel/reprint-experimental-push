@@ -1642,6 +1642,18 @@ function validateReadyPlanEnvelope(plan) {
         actualResourceKey: mutationResourceObjectKey,
       });
     }
+    if (
+      mutation.change
+      && typeof mutation.change.remoteChange === 'string'
+      && mutation.change.remoteChange !== 'unchanged'
+    ) {
+      issues.push({
+        code: 'MUTATION_REMOTE_CHANGE_NOT_UNCHANGED',
+        mutationId: mutation.id,
+        resourceKey: mutation.resourceKey || null,
+        remoteChange: mutation.change.remoteChange,
+      });
+    }
 
     const remoteBeforeHashState = hashEvidenceState(mutation.remoteBeforeHash);
     if (remoteBeforeHashState === 'missing') {
