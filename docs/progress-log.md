@@ -6,19 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:09 CEST.
+- Last update: 2026-05-30 15:15 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0712 dry-run batch sizing merge ending at `92d28a1a0`.
+  the RPP-0491 plugin uninstall/delete release-verifier merge ending at
+  `c7c8015cb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 462
-  items checked and leaves 538 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 463
+  items checked and leaves 537 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  76 plugin-driver boundary items, 27 executor/auth items, 30 recovery items,
+  77 plugin-driver boundary items, 27 executor/auth items, 30 recovery items,
   16 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin uninstall/delete release-verifier carry-through: the current lane now
+  contains `RPP-0491` evidence in
+  `docs/evidence/rpp-0491-plugin-uninstall-delete-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0491-plugin-uninstall-delete-release-verifier-v5.test.js`. The
+  verifier emits hash-only `pluginDriver.uninstallDeleteRefusal` proof beside
+  plugin-driver release evidence; refuses plugin metadata deletes and package
+  file deletes with `PLUGIN_UNINSTALL_DELETE_REFUSED`; refuses plugin-owned
+  `wp_options` row deletes with `PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED`;
+  preserves the remote snapshot for blocked-plan apply; and rejects forged ready
+  plugin metadata/package file deletes before mutation. Evidence excludes raw
+  plugin versions, package file contents, option payloads, `option_value`
+  fields, and forged apply details. Validation passed with Node syntax checks,
+  focused RPP-0491 coverage 2/2, uninstall/delete refusal coverage 6/6, planner
+  adjacent coverage 2/2, adjacent release-verifier coverage 35/35, checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks.
+  Counts are now 463/537; final release remains `NO-GO` because this is
+  local/support-only plugin-driver release-verifier evidence, not
+  production-backed uninstall/delete proof.
 - Dry-run batch sizing benchmark: the current lane now contains `RPP-0712`
   evidence in `docs/evidence/rpp-0712-dry-run-batch-sizing.md`,
   `docs/reprint-push-completion-checklist.md`,
