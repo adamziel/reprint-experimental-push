@@ -59,7 +59,10 @@ import {
   shouldUseProductionSnapshotExport,
 } from './production-shaped-live-release-verify-lib.js';
 import { loadBlueprintSnapshotFixture } from './blueprint-snapshot-fixture.js';
-import { summarizeArbitraryPluginFixturePackageEvidence } from './production-plugin-package-scenarios.js';
+import {
+  arbitraryPluginFixturePackageBoundary,
+  summarizeArbitraryPluginFixturePackageEvidence,
+} from './production-plugin-package-scenarios.js';
 import {
   appendRecoveryClaimOpened,
   checkedDurableJournalBoundarySatisfied,
@@ -1725,6 +1728,147 @@ function summarizePluginDriverApplyCarryThrough({
   };
 }
 
+export function summarizeArbitraryPluginFixturePackageReleaseVerifierEvidence({
+  packagedPluginDriverProof = null,
+  checkedProductionEvidence = false,
+} = {}) {
+  const packageSummary = resolveArbitraryPluginFixturePackageReleaseVerifierSummary(packagedPluginDriverProof);
+  const evidenceScope = normalizeReleaseVerifierEvidenceScope(
+    packageSummary.releaseGateEvidenceScope || packageSummary.evidenceScope,
+  );
+  const productionScopeClaimed = packageSummary.productionBacked === true
+    || packageSummary.releaseGate?.productionBacked === true
+    || evidenceScope === 'production-backed';
+  const checked = packageSummary.checked === true;
+  const productionBacked = checked === true
+    && checkedProductionEvidence === true
+    && productionScopeClaimed === true;
+  const releaseGate = buildArbitraryPluginFixturePackageReleaseVerifierGate({
+    checked,
+    checkedProductionEvidence,
+    evidenceScope,
+    productionScopeClaimed,
+    productionBacked,
+  });
+
+  return {
+    proofKind: 'arbitrary-plugin-fixture-package',
+    plugin: packageSummary.plugin || arbitraryPluginFixturePackageBoundary.plugin,
+    driver: packageSummary.driver || arbitraryPluginFixturePackageBoundary.driver,
+    pluginOwner: packageSummary.pluginOwner || arbitraryPluginFixturePackageBoundary.pluginOwner,
+    table: packageSummary.table || arbitraryPluginFixturePackageBoundary.table,
+    resourceKey: packageSummary.resourceKey || arbitraryPluginFixturePackageBoundary.resourceKey,
+    scenario: packageSummary.scenario || arbitraryPluginFixturePackageBoundary.scenario,
+    status: checked
+      ? (productionBacked ? 'checked' : 'support_only')
+      : 'blocked',
+    verdict: checked
+      ? (productionBacked
+          ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_PRODUCTION_BACKED'
+          : 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_SUPPORT_ONLY')
+      : 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_REQUIRED',
+    evidenceScope,
+    releaseGateEvidenceScope: evidenceScope,
+    sourceKind: productionBacked ? 'production-backed' : (packageSummary.sourceKind || evidenceScope),
+    productionScopeClaimed,
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    productionBacked,
+    supportOnly: !productionBacked,
+    checked,
+    remoteDataPreserved: packageSummary.remoteDataPreserved === true,
+    acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
+    releaseGate,
+    packageSmoke: {
+      status: Number.isInteger(packagedPluginDriverProof?.status) ? packagedPluginDriverProof.status : null,
+      mode: typeof packagedPluginDriverProof?.mode === 'string' ? packagedPluginDriverProof.mode : null,
+    },
+    packageProof: packageSummary.packageProof || {
+      allowlistExact: false,
+      planReady: false,
+      mutationCount: null,
+      noMutationAfterRevokedCredential: false,
+    },
+    revokedCredentialGuard: packageSummary.revokedCredentialGuard || {
+      resourceKey: arbitraryPluginFixturePackageBoundary.resourceKey,
+      applyRejectedCode: null,
+      rowRetainedAfterReject: false,
+      updatedMarkerAfterReject: null,
+      payloadModeAfterReject: null,
+    },
+    packagedReleaseGate: packageSummary.releaseGate ? {
+      status: packageSummary.releaseGate.status || null,
+      verdict: packageSummary.releaseGate.verdict || null,
+      evidenceScope: packageSummary.releaseGate.evidenceScope || evidenceScope,
+      productionBacked: packageSummary.releaseGate.productionBacked === true,
+      acceptedForReleaseGate: packageSummary.releaseGate.acceptedForReleaseGate === true,
+    } : null,
+  };
+}
+
+function resolveArbitraryPluginFixturePackageReleaseVerifierSummary(packagedPluginDriverProof) {
+  const packagedSummary = packagedPluginDriverProof?.arbitraryPluginFixturePackage;
+  if (packagedSummary?.proofKind === 'arbitrary-plugin-fixture-package') {
+    return packagedSummary;
+  }
+  if (packagedPluginDriverProof?.proofKind === 'arbitrary-plugin-fixture-package') {
+    return packagedPluginDriverProof;
+  }
+  return summarizeArbitraryPluginFixturePackageEvidence({
+    driverReceiptRevokedCredentialGuard: packagedPluginDriverProof?.packagedRevokedCredentialGuard
+      || packagedPluginDriverProof?.driverReceiptRevokedCredentialGuard,
+    arbitraryPluginFixturePackageProof: packagedPluginDriverProof?.arbitraryPluginFixturePackageProof,
+    arbitraryPluginFixturePackage: packagedSummary,
+  });
+}
+
+function normalizeReleaseVerifierEvidenceScope(value) {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+  return 'local-playground';
+}
+
+function buildArbitraryPluginFixturePackageReleaseVerifierGate({
+  checked,
+  checkedProductionEvidence,
+  evidenceScope,
+  productionScopeClaimed,
+  productionBacked,
+}) {
+  if (checked && productionBacked) {
+    return {
+      status: 'GO',
+      verdict: 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_PRODUCTION_BACKED',
+      evidenceScope,
+      productionBacked: true,
+      acceptedForReleaseGate: true,
+      note: 'arbitrary plugin fixture package proof is production-backed and carried through the checked release verifier path',
+    };
+  }
+
+  if (productionScopeClaimed) {
+    return {
+      status: 'NO-GO',
+      verdict: checkedProductionEvidence
+        ? 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_INCOMPLETE'
+        : 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_PRODUCTION_PROOF_REQUIRED',
+      evidenceScope,
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'arbitrary plugin fixture package proof carries production-backed scope but lacks complete checked production verifier proof; release gate remains NO-GO',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    verdict: checked ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED' : 'ARBITRARY_PLUGIN_FIXTURE_PACKAGE_REQUIRED',
+    evidenceScope,
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: `arbitrary plugin fixture package proof is local/support-only; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
+  };
+}
+
 export function summarizeWpPostmetaReleaseVerifierEvidence({
   proof,
   checkedProductionEvidence = false,
@@ -3265,11 +3409,17 @@ try {
           proof,
           checkedProductionEvidence: false,
         });
+        const arbitraryPluginFixturePackageReleaseVerifierEvidence =
+          summarizeArbitraryPluginFixturePackageReleaseVerifierEvidence({
+            packagedPluginDriverProof,
+            checkedProductionEvidence: false,
+          });
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
           auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
+          arbitraryPluginFixturePackage: arbitraryPluginFixturePackageReleaseVerifierEvidence,
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
@@ -3568,11 +3718,19 @@ try {
           && Boolean(explicitReleaseVerifySourceUrl)
           && checkedDurableJournalAccepted,
       });
+      const arbitraryPluginFixturePackageReleaseVerifierEvidence =
+        summarizeArbitraryPluginFixturePackageReleaseVerifierEvidence({
+          packagedPluginDriverProof,
+          checkedProductionEvidence: packagedSourceFixture === null
+            && Boolean(explicitReleaseVerifySourceUrl)
+            && checkedDurableJournalAccepted,
+        });
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
         auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
+        arbitraryPluginFixturePackage: arbitraryPluginFixturePackageReleaseVerifierEvidence,
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
