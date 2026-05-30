@@ -1,17 +1,33 @@
-# AO Progress Report - 2026-05-30 04:45 CEST
+# AO Progress Report - 2026-05-30 04:49 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0467 wp_usermeta
-driver semantics proof refresh ending at `693be1112`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0472 direct
+active_plugins refusal proof refresh ending at `d58845537`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 330 are
-  checked from integrated evidence and 670 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 331 are
+  checked from integrated evidence and 669 remain open.
+- `RPP-0472` is now checked with focused direct active_plugins mutation refusal
+  variant-4 evidence in
+  `docs/evidence/rpp-0472-direct-active-plugins-mutation-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/rpp-0472-direct-active-plugins-mutation-refusal-v4.test.js`. `node
+  --check scripts/harness/generated-push-cases.js`, `node --check
+  test/rpp-0472-direct-active-plugins-mutation-refusal-v4.test.js`, `node
+  --test test/rpp-0472-direct-active-plugins-mutation-refusal-v4.test.js`, the
+  adjacent plugin-driver refusal/redaction slice, and the production-shaped
+  active_plugins/plugin-driver boundary slice exited 0, and `node --test
+  test/generated-push-harness.test.js` passed 63/63, proving plugin-managed
+  option updates remain distinct from direct `active_plugins` writes, direct
+  local edits and forged ready plans reject before mutation, evidence stays
+  hash-only, checklist lint, artifact redaction scan, and `git diff --check`
+  while final release remains **NO-GO**.
 - `RPP-0467` is now checked with focused wp_usermeta driver semantics variant-4
   evidence in
   `docs/evidence/rpp-0467-wp-usermeta-driver-semantics-v4.md`,

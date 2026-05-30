@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:45 CEST.
+- Last update: 2026-05-30 04:49 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0467 wp_usermeta driver semantics proof merge ending at `693be1112`.
+  the RPP-0472 direct active_plugins refusal proof merge ending at `d58845537`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 330
-  items checked and leaves 670 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 331
+  items checked and leaves 669 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  55 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  56 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 56 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused direct active_plugins mutation refusal variant-4 refresh: the current
+  lane now contains `RPP-0472` evidence in
+  `docs/evidence/rpp-0472-direct-active-plugins-mutation-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/rpp-0472-direct-active-plugins-mutation-refusal-v4.test.js`. `node
+  --check scripts/harness/generated-push-cases.js`, `node --check
+  test/rpp-0472-direct-active-plugins-mutation-refusal-v4.test.js`, the
+  focused RPP-0472 test, the adjacent plugin-driver refusal/redaction slice, and
+  the production-shaped active_plugins/plugin-driver boundary slice all exited
+  0, and the full generated harness passed 63/63. The proof keeps
+  plugin-managed option updates distinct from direct `active_plugins` writes,
+  blocks direct local edits before mutation, rejects forged ready plans before
+  apply hooks run, and keeps evidence hash-only. Checklist lint, artifact
+  redaction scan, and `git diff --check` also passed. Counts are now 331/669;
+  final release remains `NO-GO`.
 - Focused wp_usermeta driver semantics variant-4 refresh: the current lane now
   contains `RPP-0467` evidence in
   `docs/evidence/rpp-0467-wp-usermeta-driver-semantics-v4.md`,
