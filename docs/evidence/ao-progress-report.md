@@ -1,17 +1,31 @@
-# AO Progress Report - 2026-05-30 05:24 CEST
+# AO Progress Report - 2026-05-30 05:26 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0480 arbitrary
-plugin fixture package proof refresh ending at `5c476db98`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0481 driver
+registration API release-verifier proof refresh ending at `a7e7f71b5`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 341 are
-  checked from integrated evidence and 659 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 342 are
+  checked from integrated evidence and 658 remain open.
+- `RPP-0481` is now checked with focused driver registration API
+  release-verifier variant-5 evidence in
+  `docs/evidence/rpp-0481-driver-registration-api-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0481-driver-registration-api-release-verifier-v5.test.js`. `node
+  --check test/rpp-0481-driver-registration-api-release-verifier-v5.test.js`
+  exited 0, `node --test
+  test/rpp-0481-driver-registration-api-release-verifier-v5.test.js` passed
+  2/2, and the adjacent driver registration/release-verifier slice passed 8/8,
+  proving the packaged driver verifier guard bundle is selected by the release
+  verifier, verifier aliases expand into receipt and registration guards, exact
+  fixture driver behavior is accepted, malformed registrations fail closed,
+  evidence stays hash-only, checklist lint, artifact redaction scan, and `git
+  diff --check` while final release remains **NO-GO**.
 - `RPP-0480` is now checked with focused arbitrary plugin fixture package
   variant-4 evidence in
   `docs/evidence/rpp-0480-arbitrary-plugin-fixture-package-v4.md`,

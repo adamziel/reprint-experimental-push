@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:24 CEST.
+- Last update: 2026-05-30 05:26 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0480 arbitrary plugin fixture package proof merge ending at
-  `5c476db98`.
+  the RPP-0481 driver registration API release-verifier proof merge ending at
+  `a7e7f71b5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 341
-  items checked and leaves 659 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 342
+  items checked and leaves 658 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  64 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  65 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 58 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Release verifier driver registration API variant-5 refresh: the current lane
+  now contains `RPP-0481` evidence in
+  `docs/evidence/rpp-0481-driver-registration-api-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0481-driver-registration-api-release-verifier-v5.test.js`. `node
+  --check test/rpp-0481-driver-registration-api-release-verifier-v5.test.js`
+  exited 0, the focused RPP-0481 test passed 2/2, and the adjacent driver
+  registration/release-verifier slice passed 8/8. The proof carries the packaged
+  driver verifier guard bundle through the release verifier, expands the verifier
+  alias into receipt and registration guards, proves exact accepted fixture
+  driver behavior, fails malformed registrations closed, and keeps the proof
+  envelope hash-only. Checklist lint, artifact redaction scan, and `git diff
+  --check` also passed. Counts are now 342/658; final release remains `NO-GO`.
 - Focused arbitrary plugin fixture package variant-4 refresh: the current lane
   now contains `RPP-0480` evidence in
   `docs/evidence/rpp-0480-arbitrary-plugin-fixture-package-v4.md`,
