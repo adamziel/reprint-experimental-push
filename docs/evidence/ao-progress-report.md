@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 03:43 CEST
+# AO Progress Report - 2026-05-30 03:46 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0434
-stale metadata owner context refresh ending at `8e208f799`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0236
+blocked plan apply refusal refresh ending at `2070c8398`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 311 are
-  checked from integrated evidence and 689 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 312 are
+  checked from integrated evidence and 688 remain open.
+- `RPP-0236` is now checked with focused blocked plan apply-refusal evidence in
+  `docs/evidence/rpp-0236-blocked-plan-apply-refusal-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0236-blocked-plan-apply-refusal-v2.test.js`. `node --check
+  test/rpp-0236-blocked-plan-apply-refusal-v2.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0236
+  test/rpp-0236-blocked-plan-apply-refusal-v2.test.js` passed 2/2, and `node
+  --test --test-name-pattern='RPP-0216|RPP-0236|RPP-0240'
+  test/push-planner.test.js test/generated-push-harness.test.js
+  test/rpp-0236-blocked-plan-apply-refusal-v2.test.js` passed 6/6, proving
+  blocked plans refuse before mutation, durable journal evidence contains no
+  target mutation rows, generated blocked resources are preserved, serialized
+  refusal evidence is hash-only, checklist lint, artifact redaction scan, and
+  `git diff --check` while final release remains **NO-GO**.
 - `RPP-0434` is now checked with focused stale metadata owner context refusal
   evidence in
   `docs/evidence/rpp-0434-owner-context-stale-metadata-refusal.md`,

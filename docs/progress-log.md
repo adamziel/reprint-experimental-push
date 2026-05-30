@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:43 CEST.
+- Last update: 2026-05-30 03:46 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0434 stale metadata owner context merge ending at `8e208f799`.
+  the RPP-0236 blocked plan apply refusal merge ending at `2070c8398`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 311
-  items checked and leaves 689 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 312
+  items checked and leaves 688 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   43 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 52 generated
-  harness items, and 37 merge-invariant items. No release-ops items are checked
+  harness items, and 38 merge-invariant items. No release-ops items are checked
   yet.
+- Focused blocked plan apply-refusal refresh: the current lane now contains
+  `RPP-0236` evidence in
+  `docs/evidence/rpp-0236-blocked-plan-apply-refusal-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0236-blocked-plan-apply-refusal-v2.test.js`. `node --check
+  test/rpp-0236-blocked-plan-apply-refusal-v2.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0236
+  test/rpp-0236-blocked-plan-apply-refusal-v2.test.js` passed 2/2, and `node
+  --test --test-name-pattern='RPP-0216|RPP-0236|RPP-0240'
+  test/push-planner.test.js test/generated-push-harness.test.js
+  test/rpp-0236-blocked-plan-apply-refusal-v2.test.js` passed 6/6. The proof
+  refuses blocked plans before mutation, keeps durable journal evidence free of
+  target mutation rows, preserves generated blocked resources, and serializes
+  only hash-only refusal evidence. Checklist lint, artifact redaction scan, and
+  `git diff --check` also passed. Counts are now 312/688; final release
+  remains `NO-GO`.
 - Focused stale metadata owner context refusal refresh: the current lane now
   contains `RPP-0434` evidence in
   `docs/evidence/rpp-0434-owner-context-stale-metadata-refusal.md`,
