@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:55 CEST.
+- Last update: 2026-05-30 12:04 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0382 featured image attachment release-verifier proof merge ending
-  at `b1f2ff0e`.
+  the RPP-0383 post author release-verifier proof merge ending at `e90fb8b7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 422
-  items checked and leaves 578 open.
-- Checked slices: 100 release-gate foundation items, 39 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 423
+  items checked and leaves 577 open.
+- Checked slices: 100 release-gate foundation items, 40 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Post author reference release-verifier proof: the current lane now contains
+  `RPP-0383` evidence in
+  `docs/evidence/rpp-0383-post-author-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0383-post-author-reference-release-verifier-v5.test.js`. `node
+  --check` passed for the focused test, focused RPP-0383 coverage passed 3/3,
+  adjacent RPP-0303 generated post-author coverage passed 1/1, adjacent
+  post-author planner coverage passed 1/1, and the full generated push harness
+  passed 85/85. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. Counts are now 423/577; final release remains `NO-GO`.
 - Featured image attachment release-verifier proof: the current lane now
   contains `RPP-0382` evidence in
   `docs/evidence/rpp-0382-featured-image-attachment-reference-release-verifier-v5.md`,

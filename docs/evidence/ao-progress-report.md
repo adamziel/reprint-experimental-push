@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 11:55 CEST
+# AO Progress Report - 2026-05-30 12:04 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0382 featured
-image attachment release-verifier proof ending at `b1f2ff0e`.
+`lane/evidence-integration-20260527` through the current RPP-0383 post author
+release-verifier proof ending at `e90fb8b7`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 422 are
-  checked from integrated evidence and 578 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 423 are
+  checked from integrated evidence and 577 remain open.
+- `RPP-0383` is now checked with local generated-harness release-verifier proof
+  for `wp_posts.post_author` references in
+  `docs/evidence/rpp-0383-post-author-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0383-post-author-reference-release-verifier-v5.test.js`. `node
+  --check` passed for the focused test, focused RPP-0383 coverage passed 3/3,
+  adjacent RPP-0303 generated post-author coverage passed 1/1, adjacent
+  post-author planner coverage passed 1/1, and the full generated push harness
+  passed 85/85. Checklist lint, scoped artifact redaction scan, checklist
+  redaction guard coverage, and merge diff whitespace checks also passed. This
+  remains local generated release-verifier support evidence, not production
+  endpoint proof.
 - `RPP-0382` is now checked with local fail-closed release-verifier proof for
   unsupported featured image attachment graph targets in
   `docs/evidence/rpp-0382-featured-image-attachment-reference-release-verifier-v5.md`,
