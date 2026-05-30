@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-recovery-mutate-auth-smoke.mjs');
+const liveSmokeSource = readFileSync(liveSmokeSourcePath, 'utf8');
 
 function functionBody(name) {
   const declaration = `function ${name}`;
@@ -66,6 +68,11 @@ function assertNoKnownMutationCalls(body) {
   }
 }
 
+function assertNoJsonParsing(body, label) {
+  assert.doesNotMatch(body, /reprint_push_lab_rest_json_payload\(\$request\)/, `${label} must not call JSON payload parsing`);
+  assert.doesNotMatch(body, /get_json_params\(\)/, `${label} must not call WP_REST_Request JSON parsing`);
+}
+
 test('production recovery mutate route is a signed POST route behind authenticated permission', () => {
   const productionRoute = routeRegistration(
     'REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE',
@@ -116,6 +123,89 @@ test('negative recovery mutate auth and signature cases fail before JSON parsing
   assertNoKnownMutationCalls(callback);
   assertNoKnownMutationCalls(mutate);
   assertNoKnownMutationCalls(boundaryEvidence);
+});
+
+test('RPP-0527 recovery mutate negative auth floor fails before JSON parsing or mutation', () => {
+  const productionRoute = routeRegistration(
+    'REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE',
+    '/push/recovery/mutate',
+  );
+  const permission = functionBody('reprint_push_lab_rest_authenticated_permission');
+  const callback = functionBody('reprint_push_lab_rest_authenticated_recovery_mutate');
+  const requireSigned = functionBody('reprint_push_lab_rest_require_signed_request');
+  const verifier = functionBody('reprint_push_lab_rest_verify_signed_request');
+  const status = functionBody('reprint_push_lab_rest_status_for_result');
+
+  assert.match(productionRoute, /'callback'\s*=>\s*'reprint_push_lab_rest_authenticated_recovery_mutate'/);
+  assert.match(productionRoute, /'permission_callback'\s*=>\s*'reprint_push_lab_rest_authenticated_permission'/);
+
+  assert.match(permission, /reprint_push_lab_rest_basic_auth_context\(\$request\)/);
+  assert.match(permission, /new WP_Error\(\s*'reprint_push_lab_auth_required'/);
+  assert.match(permission, /'status'\s*=>\s*401/);
+  assert.match(permission, /new WP_Error\(\s*'reprint_push_lab_forbidden'/);
+  assert.match(permission, /'status'\s*=>\s*403/);
+  assertNoJsonParsing(permission, 'permission callback');
+  assertNoKnownMutationCalls(permission);
+
+  assertBefore(
+    callback,
+    "reprint_push_lab_rest_require_signed_request($request, 'recovery-mutate')",
+    'reprint_push_lab_rest_recovery_mutate($request)',
+  );
+  assertBefore(callback, 'return $signature_error;', 'reprint_push_lab_rest_recovery_mutate($request)');
+  assertNoJsonParsing(callback, 'authenticated recovery mutate callback');
+  assertNoKnownMutationCalls(callback);
+
+  assertBefore(
+    requireSigned,
+    'reprint_push_lab_rest_verify_signed_request($request, $mode)',
+    'reprint_push_lab_rest_set_signature_context',
+  );
+  assertBefore(
+    requireSigned,
+    "return reprint_push_lab_rest_json_response($result + ['mode' => $mode]);",
+    'reprint_push_lab_rest_set_signature_context',
+  );
+  assertNoJsonParsing(requireSigned, 'signed request guard');
+
+  for (const code of [
+    'SIGNED_HEADER_REQUIRED',
+    'SIGNED_CONTENT_HASH_MISMATCH',
+    'SIGNED_AUTH_SIGNATURE_MISMATCH',
+    'SIGNED_SESSION_REQUIRED',
+    'MISSING_IDEMPOTENCY_KEY',
+  ]) {
+    assert.match(verifier, new RegExp(`'${code}'`));
+    assert.match(status, new RegExp(`case '${code}':`));
+    assertBefore(verifier, `'${code}'`, 'reprint_push_lab_rest_claim_signed_nonce');
+  }
+  assertBefore(verifier, '$raw_body = (string) $request->get_body();', "$actual_content_hash = hash('sha256', $raw_body)");
+  assertNoJsonParsing(verifier, 'signed request verifier');
+});
+
+test('RPP-0527 live smoke covers malformed JSON negative auth cases on the production recovery mutate route', () => {
+  assert.match(liveSmokeSource, /const endpointPath = '\/wp-json\/reprint\/v1\/push\/recovery\/mutate';/);
+  assert.match(liveSmokeSource, /const routeIndexPath = '\/reprint\/v1\/push\/recovery\/mutate';/);
+  assert.match(liveSmokeSource, /const malformedJsonBody = '\{"plan":';/);
+  assert.match(liveSmokeSource, /const malformedJsonBodyContentType = 'text\/plain';/);
+  assert.match(liveSmokeSource, /WordPress core rejects invalid JSON before route permission callbacks run/);
+  assert.match(liveSmokeSource, /assertRoute\(index\.body, routeIndexPath, 'POST'\)/);
+
+  assert.match(liveSmokeSource, /assert\.equal\(unauthenticated\.body\?\.code, 'reprint_push_lab_auth_required'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(missingSignedHeaders\.body\?\.code, 'SIGNED_HEADER_REQUIRED'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(contentHashMismatch\.body\?\.code, 'SIGNED_CONTENT_HASH_MISMATCH'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(authSignatureMismatch\.body\?\.code, 'SIGNED_AUTH_SIGNATURE_MISMATCH'\)/);
+  assert.match(liveSmokeSource, /assertNotJsonParseFailure\(unauthenticated, 'unauthenticated recovery mutate'\)/);
+  assert.match(liveSmokeSource, /assertNotJsonParseFailure\(authSignatureMismatch, 'auth-signature mismatch recovery mutate'\)/);
+
+  assert.match(liveSmokeSource, /assertTargetSurfaceEqual\(/);
+  assert.match(liveSmokeSource, /mutationAttempted: false/);
+  assert.match(liveSmokeSource, /host: '127\.0\.0\.1'/);
+  assert.match(liveSmokeSource, /port: 'ephemeral'/);
+  assert.match(liveSmokeSource, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(liveSmokeSource, /tunnel: 'none'/);
+  assert.match(liveSmokeSource, /http\.Server\.prototype\.listen = function reprintPushLocalhostListen/);
+  assert.doesNotMatch(liveSmokeSource, /\b(?:ngrok|cloudflared|localtunnel|serveo|localhost\.run|lhr\.life|Tailscale Funnel)\b/i);
 });
 
 test('signed auth lifecycle and status mapping explicitly include recovery mutate', () => {
