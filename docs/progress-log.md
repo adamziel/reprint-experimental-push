@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:25 CEST.
+- Last update: 2026-05-30 11:27 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0286 remote-only plugin metadata release-verifier carry-through
-  merge ending at `8e8a5f50`.
+  the RPP-0322 featured image attachment graph proof merge ending at
+  `04f57df7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 412
-  items checked and leaves 588 open.
-- Checked slices: 100 release-gate foundation items, 29 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 413
+  items checked and leaves 587 open.
+- Checked slices: 100 release-gate foundation items, 30 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Featured image attachment graph proof: the current lane now contains
+  `RPP-0322` evidence in
+  `docs/evidence/rpp-0322-featured-image-attachment-reference-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0322-featured-image-attachment-reference-v2.test.js`. `node
+  --check` passed for the focused test, focused RPP-0322 coverage passed 2/2,
+  the adjacent RPP-0302/RPP-0322 featured-image planner slice passed 4/4,
+  adjacent RPP-0342 generated harness coverage passed 1/1, and local
+  production-shaped featured-image graph checks passed 3/3. Checklist lint,
+  scoped artifact redaction scan, checklist/redaction guard tests, and merge
+  diff whitespace checks also passed. Counts are now 413/587; final release
+  remains `NO-GO`.
 - Remote-only plugin metadata release-verifier carry-through: the current lane
   now contains `RPP-0286` evidence in
   `docs/evidence/rpp-0286-remote-only-plugin-metadata-release-verifier-v5.md`,

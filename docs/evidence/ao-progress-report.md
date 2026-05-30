@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 11:25 CEST
+# AO Progress Report - 2026-05-30 11:27 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0286 remote-only
-plugin metadata release-verifier carry-through ending at `8e8a5f50`.
+`lane/evidence-integration-20260527` through the current RPP-0322 featured
+image attachment graph proof ending at `04f57df7`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 412 are
-  checked from integrated evidence and 588 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 413 are
+  checked from integrated evidence and 587 remain open.
+- `RPP-0322` is now checked with focused graph-identity proof for featured
+  image `_thumbnail_id` attachment references in
+  `docs/evidence/rpp-0322-featured-image-attachment-reference-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0322-featured-image-attachment-reference-v2.test.js`.
+  `node --check` passed for the focused test, focused RPP-0322 coverage passed
+  2/2, the adjacent RPP-0302/RPP-0322 featured-image planner slice passed 4/4,
+  adjacent RPP-0342 generated harness coverage passed 1/1, and local
+  production-shaped featured-image graph checks passed 3/3. Checklist lint,
+  scoped artifact redaction scan, checklist/redaction guard tests, and merge
+  diff whitespace checks also passed. This remains local graph support
+  evidence, not production endpoint proof.
 - `RPP-0286` is now checked with support-only release-verifier carry-through
   for remote-only plugin metadata evidence in
   `docs/evidence/rpp-0286-remote-only-plugin-metadata-release-verifier-v5.md`,
