@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:49 CEST.
+- Last update: 2026-05-30 12:54 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0615 same-key replay after rejection merge ending at `563b2fe6`.
+  the RPP-0616 different-body idempotency conflict merge ending at `eb6106de`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 432
-  items checked and leaves 568 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 433
+  items checked and leaves 567 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 22 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 23 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Different-body idempotency conflict: the current lane now contains `RPP-0616`
+  evidence in
+  `docs/evidence/rpp-0616-different-body-idempotency-conflict.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-live-release-verify-lib.js`,
+  `test/production-shaped-proof.test.js`, `test/recovery-journal.test.js`, and
+  `test/rpp-0616-different-body-idempotency-conflict.test.js`. The durable
+  recovery release proof now requires different-body conflict evidence to bind
+  distinct original and conflicting request hashes, no fresh mutation work,
+  unchanged target state, no mutation events after the conflict, and a
+  database-backed restart-readable fully-updated recovery state. Focused
+  RPP-0616/recovery/release-proof coverage passed 163 node tests with 152
+  passing and 11 live-only skips. Checklist lint, scoped artifact redaction
+  scan, and merge diff whitespace checks also passed. Counts are now 433/567;
+  final release remains `NO-GO` because this is local SQLite/release-verifier
+  evidence, not external production durability proof.
 - Same-key replay after rejection: the current lane now contains `RPP-0615`
   evidence in
   `docs/evidence/rpp-0615-same-key-replay-after-rejection.md`,
