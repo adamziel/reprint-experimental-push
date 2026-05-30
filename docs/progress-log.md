@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 07:15 CEST.
+- Last update: 2026-05-30 07:22 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0167 wp_posts create/update/delete variant-4 generated-harness merge
-  ending at `9e799c6b2`.
+  the RPP-0168 wp_postmeta create/update/delete variant-4 generated-harness
+  merge ending at `a08aaaecf`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 360
-  items checked and leaves 640 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 361
+  items checked and leaves 639 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 67 generated
+  11 storage/performance items, 3 production-topology items, 68 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- wp_postmeta create/update/delete variant-4 refresh: the current lane now
+  contains `RPP-0168` evidence in
+  `docs/evidence/rpp-0168-wp-postmeta-create-update-delete-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0168 test passed 1/1, the adjacent
+  RPP-0108/RPP-0128/RPP-0148/RPP-0168 postmeta slice passed 3/3, and
+  `npm run test:generated-push-harness` passed 75/75 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 361/639; final release remains
+  `NO-GO`.
 - wp_posts create/update/delete variant-4 refresh: the current lane now contains
   `RPP-0167` evidence in
   `docs/evidence/rpp-0167-wp-posts-create-update-delete-v4.md`,
