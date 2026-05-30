@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:10:00+02:00">Last updated: May 30, 2026, 13:10 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T13:12:00+02:00">Last updated: May 30, 2026, 13:12 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>437</strong>
+        <strong>438</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>563</strong>
+        <strong>562</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0709</span>
+        <span>RPP-0622</span>
       </div>
-      <p>The latest refresh integrates RPP-0709 chunk replay idempotency evidence: the guarded executor benchmark now proves accepted chunk replays reuse matching durable receipts without duplicate receipt rows, rewritten bytes, or duplicate mutation work, while still blocking production throughput on the remaining live storage and atomic commit gaps. Counts are now 437/563; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0622 journal ownership record evidence: a SQLite-backed regression now persists the claim-fenced ownership row through restart, proves the row keeps hash-only claim and artifact evidence, and verifies recovery inspection remains old-remote without leaking local paths. Counts are now 438/562; final release remains NO-GO because this is local durability evidence, not external production restart proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0621/RPP-0622 focused: 2/2</span>
+        <span class="tag">recovery journal: 30/30</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">guarded/perf tests: 18/18</span>
         <span class="tag">replay-only guardedLarge: pass</span>
         <span class="tag">full guardedLarge: 8 pass / 3 blocked</span>
