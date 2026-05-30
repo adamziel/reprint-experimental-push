@@ -76,7 +76,7 @@ The default generated run covers:
   redacted hash-only evidence, and explicit variant-3 and variant-4 relationship graph
   coverage, plugin-owned `wp_options` update cases with
   ready/conflict outcomes, stale replay rejection before mutation, and explicit
-  variant-3 plugin-owned option coverage,
+  variant-3 and variant-4 plugin-owned option coverage,
   `wp_posts.post_author` cases with per-tier ready/stale target counts and
   hash-only stale-user blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
@@ -170,6 +170,16 @@ metadata, counts, hashes, conflict hashes, and refusal hashes, verifies the
 ready case applies the planned plugin-owned option update and rejects stale
 replay before mutation, then verifies the conflicting plugin-owned option
 refuses apply without mutating the remote digest.
+
+RPP-0174 adds `pluginOwnedOptionChangeVariant4` coverage for the same
+plugin-owned `wp_options` update surface with an explicit variant-4 target tag.
+The deterministic roster emits 20 variant-4 target cases: 10 ready
+plugin-owned option updates and 10 non-ready remote-drift conflicts, with two
+cases in every tier. The focused proof keeps plugin-owned option payloads
+hash-only, verifies the ready case carries owner/driver evidence, applies the
+planned option hash, preserves unplanned remote resources, and rejects stale
+replay with `PRECONDITION_FAILED` before mutation, then verifies the conflicting
+plugin-owned option refuses apply without mutating the remote digest.
 
 The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,
@@ -511,7 +521,9 @@ Ready cases apply the local option update with owner/driver evidence and reject
 stale replays before mutation; conflict cases drift the same plugin-owned option
 remotely and must refuse apply without losing the remote value. RPP-0134 keeps
 private plugin-owned option tokens and notes out of summary and planner evidence
-while retaining redacted hashes and plugin owner/driver metadata.
+while retaining redacted hashes and plugin owner/driver metadata. RPP-0174 adds
+the variant-4 target and proves the ready replay guard still fails before the
+plugin-owned option mutation.
 
 The `pluginOwnedCustomTableChanges` target coverage records per-tier counts for
 forms-lab custom table rows owned by the forms plugin. Ready cases apply through
