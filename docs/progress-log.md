@@ -6,20 +6,42 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 19:14 CEST +02:00.
+- Last update: 2026-05-30 19:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0398 GUID and slug collision release-verifier proof merge ending
-  at `1e1f968`.
+  the RPP-0399 cross-table create batch release-verifier proof merge ending
+  at `fb72737`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 508
-  items checked and leaves 492 open.
-- Checked slices: 100 release-gate foundation items, 68 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 509
+  items checked and leaves 491 open.
+- Checked slices: 100 release-gate foundation items, 69 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Cross-table create batch release-verifier proof v5: the current lane now
+  contains `RPP-0399` evidence in
+  `docs/evidence/rpp-0399-cross-table-create-batch-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0399-cross-table-create-batch-release-verifier-v5.test.js`. The
+  production-shaped verifier now reports
+  `graphIdentity.crossTableCreateBatch` support evidence for a six-row create
+  batch across `wp_posts`, `wp_postmeta`, `wp_terms`, `wp_term_taxonomy`,
+  `wp_term_relationships`, and `wp_termmeta`. The proof requires all six
+  mutations to be creates with live-remote preconditions, preserves five
+  cross-table reference edges, carries the batch through `applyPlan()` with
+  durable-journal events, verifies the final remote matches local, and proves
+  stale replay fails with `PRECONDITION_FAILED` before mutation. Validation
+  passed with Node syntax checks, focused RPP-0399 coverage 3/3, planner graph
+  adjacent coverage 7/7, wp_postmeta/wp_termmeta release-verifier adjacent
+  coverage 8/8, complex-site adjacent coverage 3/3, full production-shaped
+  proof coverage 134 tests (123 passing, 11 skipped), checklist lint, scoped
+  artifact redaction scan, release hygiene tests 23/23, raw fixture scan, and
+  merge diff whitespace checks. Counts are now 509/491; final release remains
+  `NO-GO` because this is local support-only release-verifier evidence, not
+  production-backed release evidence.
 - GUID and slug collision release-verifier proof v5: the current lane now
   contains `RPP-0398` evidence in
   `docs/evidence/rpp-0398-guid-slug-collision-release-verifier-v5.md`,
