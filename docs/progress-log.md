@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 07:49 CEST.
+- Last update: 2026-05-30 07:57 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0171 wp_terms/wp_termmeta graph variant-4 generated-harness merge
-  ending at `5fab710e7`.
+  the RPP-0172 wp_term_taxonomy graph variant-4 generated-harness merge ending
+  at `2161fa896`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 364
-  items checked and leaves 636 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 365
+  items checked and leaves 635 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 71 generated
+  11 storage/performance items, 3 production-topology items, 72 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- wp_term_taxonomy graph variant-4 refresh: the current lane now contains
+  `RPP-0172` evidence in
+  `docs/evidence/rpp-0172-wp-term-taxonomy-graph-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0172 test passed 1/1, the adjacent
+  RPP-0112/RPP-0132/RPP-0152/RPP-0172 term-taxonomy graph slice passed 3/3,
+  and `npm run test:generated-push-harness` passed 79/79 across 620
+  deterministic generated cases. Checklist lint, artifact redaction scan, and
+  merge diff whitespace checks also passed. Counts are now 365/635; final
+  release remains `NO-GO`.
 - wp_terms/wp_termmeta graph variant-4 refresh: the current lane now contains
   `RPP-0171` evidence in
   `docs/evidence/rpp-0171-wp-terms-termmeta-graph-v4.md`,
