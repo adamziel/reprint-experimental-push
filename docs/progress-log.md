@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:13 CEST.
+- Last update: 2026-05-30 03:17 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0149 users/usermeta generated coverage merge ending at `cdb4217a0`.
+  the RPP-0317 serialized block reference detection merge ending at
+  `1e1eff8fd`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 303
-  items checked and leaves 697 open.
-- Checked slices: 100 release-gate foundation items, 28 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 304
+  items checked and leaves 696 open.
+- Checked slices: 100 release-gate foundation items, 29 graph identity items,
   40 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 51 generated
   harness items, and 34 merge-invariant items. No release-ops items are checked
   yet.
+- Serialized block reference detection refresh: the current lane now contains
+  `RPP-0317` evidence in
+  `docs/evidence/rpp-0317-serialized-block-reference-detection.md`,
+  `src/planner.js`, and
+  `test/rpp-0317-serialized-block-reference-detection.test.js`. `node --test
+  test/rpp-0317-serialized-block-reference-detection.test.js` passed 3/3, the
+  focused planner pattern for `RPP-0317|serialized block` passed 4/4, and
+  `node --test test/push-planner.test.js` passed 147/147. The proof detects
+  selected serialized Gutenberg block references in `wp_posts.post_content` and
+  `post_excerpt`, keeps stable same-ID targets eligible, fails closed for drift
+  or unsupported targets with hash-only evidence, and avoids scalar rewriting
+  until parser-aware serialized block rewriting exists. Checklist lint,
+  artifact redaction scan, and `git diff --check` also passed. Counts are now
+  304/696; final release remains `NO-GO`.
 - Generated users/usermeta graph variant-3 refresh: the current lane now
   contains `RPP-0149` evidence in `docs/generated-push-harness.md`,
   `scripts/harness/generated-push-cases.js`, and

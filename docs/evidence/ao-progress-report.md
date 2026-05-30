@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 03:13 CEST
+# AO Progress Report - 2026-05-30 03:17 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current restored live-team
-and RPP-0149 users/usermeta generated coverage refresh ending at `cdb4217a0`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0317 serialized
+block reference detection refresh ending at `1e1eff8fd`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 303 are
-  checked from integrated evidence and 697 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 304 are
+  checked from integrated evidence and 696 remain open.
+- `RPP-0317` is now checked with serialized Gutenberg block reference
+  detection evidence in
+  `docs/evidence/rpp-0317-serialized-block-reference-detection.md`,
+  `src/planner.js`, and
+  `test/rpp-0317-serialized-block-reference-detection.test.js`. `node --test
+  test/rpp-0317-serialized-block-reference-detection.test.js` passed 3/3, the
+  focused `RPP-0317|serialized block` planner pattern passed 4/4, and
+  `node --test test/push-planner.test.js` passed 147/147, proving selected
+  serialized block references in `wp_posts.post_content` and `post_excerpt`
+  are detected, stable same-ID targets remain eligible, drift and unsupported
+  targets fail closed with hash-only evidence, and scalar rewriting is not
+  attempted until parser-aware serialized block rewriting exists while final
+  release remains **NO-GO**.
 - `RPP-0149` is now checked with generated `wp_users`/`wp_usermeta` graph
   variant-3 evidence in `docs/generated-push-harness.md`,
   `scripts/harness/generated-push-cases.js`, and
