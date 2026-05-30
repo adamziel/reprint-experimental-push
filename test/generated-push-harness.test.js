@@ -219,6 +219,9 @@ const requiredFamilies = [
   'row-create-update-delete-mix-v3',
   'row-create-update-delete-mix-v3-ready',
   'row-create-update-delete-mix-v3-non-ready',
+  'row-create-update-delete-mix-v4',
+  'row-create-update-delete-mix-v4-ready',
+  'row-create-update-delete-mix-v4-non-ready',
   'row-create',
   'row-update',
   'row-delete',
@@ -4195,6 +4198,80 @@ test('RPP-0144 row create/update/delete mix variant 3 rejects stale replay befor
   assert.equal(evidenceText.includes('Remote concurrent row mix update '), false, 'variant 3 evidence leaked conflict row payload');
 });
 
+test('RPP-0164 row create/update/delete mix variant 4 rejects stale replay before mutation', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.rowCreateUpdateDeleteMixVariant4;
+
+  assert.ok(coverage, 'missing row create/update/delete mix variant 4 target coverage');
+  assert.equal(coverage.family, 'row-create-update-delete-mix-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['row-create-update-delete-mix-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready row mix cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include non-ready row mix cases');
+  assert.equal(report.summary.featureFamilies['row-create-update-delete-mix-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['row-create-update-delete-mix-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedRowCreateUpdateDeleteMixVariant4Evidence(coverage);
+  const replayEvidence = generatedRowCreateUpdateDeleteMixVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0164 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 row mix evidence changed between runs');
+  assert.equal(firstEvidence.target, 'rowCreateUpdateDeleteMixVariant4');
+  assert.equal(firstEvidence.family, 'row-create-update-delete-mix-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 1, delete: 1, update: 1 });
+  assert.equal(readyCase.remoteOnly.decision, 'keep-remote');
+  assert.equal(readyCase.remoteOnly.plannedMutation, false);
+  assert.equal(readyCase.remoteOnly.plannedPrecondition, false);
+  assert.equal(readyCase.remoteOnly.appliedHash, readyCase.remoteOnly.remoteHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.update.resourceKey);
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated row mix create '), false, 'variant 4 evidence leaked created row payload');
+  assert.equal(evidenceText.includes('Generated row mix update '), false, 'variant 4 evidence leaked updated row payload');
+  assert.equal(evidenceText.includes('Remote-only row mix preserve '), false, 'variant 4 evidence leaked remote-only row payload');
+  assert.equal(evidenceText.includes('Remote concurrent row mix update '), false, 'variant 4 evidence leaked conflict row payload');
+});
+
 function assertRowMixShape(testCase) {
   const createRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, row]) => !testCase.base.db.wp_posts[id] && row.post_title.startsWith('Generated row mix create '));
@@ -4228,13 +4305,29 @@ function assertRowMixConflictShape(testCase) {
 }
 
 function generatedRowCreateUpdateDeleteMixVariant3Evidence(targetCoverage) {
+  return generatedRowCreateUpdateDeleteMixVariantEvidence(targetCoverage, {
+    target: 'rowCreateUpdateDeleteMixVariant3',
+    tag: 'row-create-update-delete-mix-v3',
+    variantLabel: 'variant 3',
+  });
+}
+
+function generatedRowCreateUpdateDeleteMixVariant4Evidence(targetCoverage) {
+  return generatedRowCreateUpdateDeleteMixVariantEvidence(targetCoverage, {
+    target: 'rowCreateUpdateDeleteMixVariant4',
+    tag: 'row-create-update-delete-mix-v4',
+    variantLabel: 'variant 4',
+  });
+}
+
+function generatedRowCreateUpdateDeleteMixVariantEvidence(targetCoverage, { target, tag, variantLabel }) {
   const perTier = {};
   const statuses = {};
   const selectedCases = new Map();
   let totalCases = 0;
 
   for (const testCase of generatePushHarnessCases()) {
-    if (!testCase.tags.has('row-create-update-delete-mix-v3')) {
+    if (!testCase.tags.has(tag)) {
       continue;
     }
 
@@ -4252,14 +4345,14 @@ function generatedRowCreateUpdateDeleteMixVariant3Evidence(targetCoverage) {
   const sortedPerTier = sortNumericObject(perTier);
   const sortedStatuses = sortStringObject(statuses);
 
-  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 row target recount should match summary tiers');
-  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 row target recount should match summary statuses');
-  assert.equal(totalCases, targetCoverage.total, 'variant 3 row target recount should match summary total');
-  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready row mix case');
-  assert.ok(selectedCases.has('non-ready'), 'variant 3 target should select one non-ready row mix case');
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, `${variantLabel} row target recount should match summary tiers`);
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, `${variantLabel} row target recount should match summary statuses`);
+  assert.equal(totalCases, targetCoverage.total, `${variantLabel} row target recount should match summary total`);
+  assert.ok(selectedCases.has('ready'), `${variantLabel} target should select one ready row mix case`);
+  assert.ok(selectedCases.has('non-ready'), `${variantLabel} target should select one non-ready row mix case`);
 
   return {
-    target: 'rowCreateUpdateDeleteMixVariant3',
+    target,
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,

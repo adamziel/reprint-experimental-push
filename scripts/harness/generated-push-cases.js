@@ -258,6 +258,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'row-create-update-delete-mix-variant3',
     tag: 'row-create-update-delete-mix-v3',
   },
+  rowCreateUpdateDeleteMixVariant4: {
+    family: 'row-create-update-delete-mix-variant4',
+    tag: 'row-create-update-delete-mix-v4',
+  },
   wpPostsCreateUpdateDelete: {
     family: 'wp-posts-create-update-delete-ready',
     tag: 'wp-posts-create-update-delete',
@@ -3039,6 +3043,7 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
 
   tags.add('row-create-update-delete-mix');
   tags.add('row-create-update-delete-mix-v3');
+  tags.add('row-create-update-delete-mix-v4');
   tags.add('row-create');
   tags.add('row-update');
   tags.add('row-delete');
@@ -3047,8 +3052,10 @@ function addRowCreateUpdateDeleteMix(base, local, remote, allocator, tags, { con
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent row mix update ${allocator.next()}`;
     tags.add('row-create-update-delete-mix-v3-non-ready');
+    tags.add('row-create-update-delete-mix-v4-non-ready');
   } else {
     tags.add('row-create-update-delete-mix-v3-ready');
+    tags.add('row-create-update-delete-mix-v4-ready');
   }
 }
 
