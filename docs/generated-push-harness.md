@@ -457,6 +457,18 @@ stale replay with `PRECONDITION_FAILED` before mutation, and confirms the
 conflicting updated postmeta row refuses apply without mutating the remote
 digest.
 
+RPP-0188 adds `wpPostmetaCreateUpdateDeleteReleaseVerifierVariant5` coverage for
+the same `wp_postmeta` create/update/delete surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready postmeta create/update/delete plans and 10 non-ready
+remote-drift conflicts, with two cases in every tier. The focused proof keeps
+the evidence hash-only, verifies every ready case applies the planned create,
+update, and delete `wp_postmeta` mutations with matching live-remote
+preconditions while preserving unplanned remote resources, rejects stale replay
+with `PRECONDITION_FAILED` before mutation, and confirms the conflicting
+updated postmeta row suppresses the conflicted mutation/precondition and
+refuses apply with `PLAN_NOT_READY` before mutation.
+
 The `wpCommentsCommentmetaGraph` target coverage records per-tier counts for
 generated `wp_comments` rows and their `wp_commentmeta` graph relationships.
 Ready cases create the comment and commentmeta row in one plan, preserve
