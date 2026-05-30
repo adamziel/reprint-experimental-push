@@ -1836,6 +1836,8 @@ export async function runAuthenticatedHttpPush({
       ? 'SESSION_USER_IDENTITY_BINDING_REQUIRED'
       : replayEquivalenceFailed
       ? 'REPLAY_NOT_EQUIVALENT'
+      : sameKeySameBodyReplayFailed
+      ? 'SAME_KEY_SAME_BODY_REPLAY_NOT_PROVEN'
       : journalProofFailed
         ? 'DURABLE_JOURNAL_NOT_PROVEN'
       : (replayIdempotency?.replayed !== true || replayIdempotency?.freshMutationWork !== false)
@@ -2042,6 +2044,7 @@ export function authenticatedHttpClient({
         requestTimeoutMs,
         {
           retryable: options.retryable === true && !hasSideEffectQueryParam(pathname),
+          requestEvidence: signedRequestEvidence('GET', pathname, '', options),
         },
       );
     },
@@ -2066,6 +2069,7 @@ export function authenticatedHttpClient({
         requestTimeoutMs,
         {
           retryable: options.retryable === true || (!readOnlyInspect && options.idempotencyKey !== undefined),
+          requestEvidence: signedRequestEvidence('POST', pathname, rawBody, options),
         },
       );
     },
@@ -2166,6 +2170,9 @@ function summarizeResponse(response) {
       method: response.request.method || null,
       pathname: response.request.pathname || null,
       retryable: response.request.retryable === true,
+      contentHash: response.request.contentHash || null,
+      idempotencyKeyHash: response.request.idempotencyKeyHash || null,
+      canonicalHash: response.request.canonicalHash || null,
     } : undefined,
   };
 }
@@ -3670,15 +3677,22 @@ function summarizeSameKeySameBodyReplay({
   const requestBodyHash = sha256Hex(JSON.stringify(applyPayload));
   const applySignedRequest = applyResponse?.body?.signedRequest || {};
   const replaySignedRequest = replayResponse?.body?.signedRequest || {};
-  const applyContentHash = nonEmptyStringOrNull(applySignedRequest.contentHash);
-  const replayContentHash = nonEmptyStringOrNull(replaySignedRequest.contentHash);
+  const applyRequest = applyResponse?.request || {};
+  const replayRequest = replayResponse?.request || {};
+  const applyContentHash = nonEmptyStringOrNull(applySignedRequest.contentHash)
+    || nonEmptyStringOrNull(applyRequest.contentHash);
+  const replayContentHash = nonEmptyStringOrNull(replaySignedRequest.contentHash)
+    || nonEmptyStringOrNull(replayRequest.contentHash);
   const signedContentHashesMatch = applyContentHash && replayContentHash
     ? applyContentHash === replayContentHash
     : null;
   const signedContentHashMatchesSubmittedBody = applyContentHash && replayContentHash
     ? applyContentHash === requestBodyHash && replayContentHash === requestBodyHash
     : null;
-  const signedRequestEvidenceRequired = applySignedRequest.signed === true || replaySignedRequest.signed === true;
+  const signedRequestEvidenceRequired = applySignedRequest.signed === true
+    || replaySignedRequest.signed === true
+    || hasNonEmptyString(applyRequest.contentHash)
+    || hasNonEmptyString(replayRequest.contentHash);
   const signedRequestEvidenceProven = signedRequestEvidenceRequired
     ? signedContentHashesMatch === true
     : signedContentHashesMatch !== false;
@@ -4635,6 +4649,9 @@ async function requestJsonRaw(baseUrl, method, pathname, rawBody = undefined, he
           method,
           pathname,
           retryable,
+          ...(options.requestEvidence && typeof options.requestEvidence === 'object'
+            ? options.requestEvidence
+            : {}),
         },
       };
     } catch (error) {
@@ -4797,6 +4814,23 @@ function signedRequestHeaders(credential, method, pathname, rawBody, options = {
   }
 
   return headers;
+}
+
+function signedRequestEvidence(method, pathname, rawBody, options = {}) {
+  const contentHash = sha256Hex(rawBody);
+  const idempotencyKey = options.idempotencyKey || '';
+  const session = options.session || '';
+  return {
+    contentHash,
+    idempotencyKeyHash: idempotencyKey ? sha256Hex(idempotencyKey) : '',
+    canonicalHash: sha256Hex(pushCanonicalString({
+      method,
+      pathname,
+      contentHash,
+      session,
+      idempotencyKey,
+    })),
+  };
 }
 
 function signedNonceForAttempt(options = {}) {
