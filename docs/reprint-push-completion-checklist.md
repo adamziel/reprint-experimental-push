@@ -275,7 +275,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0251 (Near-Mid / merge-invariants) Add generated coverage for mutation/precondition one-to-one mapping, variant 3. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0252 (Near-Mid / merge-invariants) Add generated coverage for remoteBeforeHash correctness, variant 3. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0253 (Near-Mid / merge-invariants) Add generated coverage for localHash correctness, variant 3. Success: no raw private value appears in serialized plan evidence.
-- [ ] RPP-0254 (Near-Mid / merge-invariants) Add generated coverage for already-in-sync decision, variant 3. Success: scenario matrix row names the behavior and command.
+- [x] RPP-0254 (Near-Mid / merge-invariants) Add generated coverage for already-in-sync decision, variant 3. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0255 (Near-Mid / merge-invariants) Add generated coverage for keep-remote decision, variant 3. Success: progress log records the command and caveat.
 - [ ] RPP-0256 (Near-Mid / merge-invariants) Add generated coverage for blocked plan apply refusal, variant 3. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0257 (Near-Mid / merge-invariants) Add generated coverage for conflict plan apply refusal, variant 3. Success: executor rejects forged or stale mutation attempts.
