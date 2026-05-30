@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:12:00+02:00">Last updated: May 30, 2026, 13:12 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T13:19:00+02:00">Last updated: May 30, 2026, 13:19 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>438</strong>
+        <strong>439</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>562</strong>
+        <strong>561</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0622</span>
+        <span>RPP-0361</span>
       </div>
-      <p>The latest refresh integrates RPP-0622 journal ownership record evidence: a SQLite-backed regression now persists the claim-fenced ownership row through restart, proves the row keeps hash-only claim and artifact evidence, and verifies recovery inspection remains old-remote without leaking local paths. Counts are now 438/562; final release remains NO-GO because this is local durability evidence, not external production restart proof.</p>
+      <p>The latest refresh integrates RPP-0361 post_parent page hierarchy evidence: the focused graph proof rewrites a page parent reference through explicit identity-map evidence when the remote target is equivalent, and blocks stale hash-only hierarchy evidence before mutation when the remote target diverges. Counts are now 439/561; final release remains NO-GO because this is local graph-identity evidence, not production topology or release provenance.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0361 focused: 2/2</span>
+        <span class="tag">planner/apply suite: 147/147</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0621/RPP-0622 focused: 2/2</span>
         <span class="tag">recovery journal: 30/30</span>
         <span class="tag">checklist/redaction/diff: pass</span>
