@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:56 CEST.
+- Last update: 2026-05-30 05:03 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0475 remote plugin removal refusal proof merge ending at `229f1c704`.
+  the RPP-0157 stale remote after dry-run variant-3 proof merge ending at
+  `16e00804b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 334
-  items checked and leaves 666 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 335
+  items checked and leaves 665 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   59 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 56 generated
+  11 storage/performance items, 3 production-topology items, 57 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated stale remote after dry-run variant-3 refresh: the current lane now
+  contains `RPP-0157` evidence in
+  `docs/evidence/rpp-0157-stale-remote-after-dry-run-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, the focused `RPP-0157` test, the
+  `generated push harness covers|RPP-0157` pattern, and the
+  `RPP-0117|RPP-0137|RPP-0157` adjacent stale-dry-run slice all exited 0, and
+  `npm run test:generated-push-harness` passed 64/64. The proof exposes
+  per-tier variant-3 ready replay rejection counts, selects hash-only replay
+  evidence across tiers, refuses stale post-dry-run replays before mutation, and
+  keeps remote hashes unchanged. Checklist lint, artifact redaction scan, and
+  `git diff --check` also passed. Counts are now 335/665; final release remains
+  `NO-GO`.
 - Focused remote plugin removal refusal variant-4 refresh: the current lane now
   contains `RPP-0475` evidence in
   `docs/evidence/rpp-0475-remote-plugin-removal-refusal-v4.md`,

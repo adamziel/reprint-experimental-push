@@ -1,17 +1,32 @@
-# AO Progress Report - 2026-05-30 04:56 CEST
+# AO Progress Report - 2026-05-30 05:03 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0475 remote plugin
-removal refusal proof refresh ending at `229f1c704`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0157 stale remote
+after dry-run variant-3 proof refresh ending at `16e00804b`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 334 are
-  checked from integrated evidence and 666 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 335 are
+  checked from integrated evidence and 665 remain open.
+- `RPP-0157` is now checked with generated stale remote after dry-run variant-3
+  evidence in `docs/evidence/rpp-0157-stale-remote-after-dry-run-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, `node --test
+  --test-name-pattern=RPP-0157 test/generated-push-harness.test.js`, the
+  `generated push harness covers|RPP-0157` pattern, and the
+  `RPP-0117|RPP-0137|RPP-0157` adjacent stale-dry-run slice exited 0, and `npm
+  run test:generated-push-harness` passed 64/64, proving per-tier variant-3
+  ready replay rejection counts, hash-only replay evidence, stale post-dry-run
+  refusal before mutation, unchanged remote hashes, checklist lint, artifact
+  redaction scan, and `git diff --check` while final release remains **NO-GO**.
 - `RPP-0475` is now checked with focused remote plugin removal refusal
   variant-4 evidence in
   `docs/evidence/rpp-0475-remote-plugin-removal-refusal-v4.md`,
