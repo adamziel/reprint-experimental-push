@@ -596,6 +596,18 @@ export const directActivePluginsMutationRefusalBoundary = Object.freeze({
   ]),
 });
 
+export const ownerContextStalePluginFileReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-postmeta',
+  owner: 'rpp-0493-owner-context',
+  table: 'wp_postmeta',
+  rowId: 'meta_id:9493',
+  resourceKey: 'row:["wp_postmeta","meta_id:9493"]',
+  pluginResourceKey: 'plugin:rpp-0493-owner-context',
+  pluginFilePath: 'wp-content/plugins/rpp-0493-owner-context/rpp-0493-owner-context.php',
+  pluginFileResourceKey: 'file:wp-content/plugins/rpp-0493-owner-context/rpp-0493-owner-context.php',
+  proofKind: 'owner-context-stale-plugin-file-refusal',
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -5142,6 +5154,364 @@ function pluginUpdateDependencyTamperedPlan(plan, mutate) {
   return copy;
 }
 
+export function summarizeOwnerContextStalePluginFileReleaseVerifierProof({
+  now = new Date('2026-05-30T13:49:30.000Z'),
+} = {}) {
+  try {
+    return buildOwnerContextStalePluginFileReleaseVerifierProof(now);
+  } catch (error) {
+    const boundary = ownerContextStalePluginFileReleaseVerifierBoundary;
+    return {
+      rpp: 'RPP-0493',
+      proofKind: boundary.proofKind,
+      evidenceSource: 'release-verifier-owner-context-stale-plugin-file-v5',
+      status: 'blocked',
+      verdict: 'OWNER_CONTEXT_STALE_PLUGIN_FILE_REFUSAL_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: {
+        status: 'NO-GO',
+        acceptedForReleaseGate: false,
+        reason: 'owner-context stale plugin-file release-verifier proof failed to build',
+      },
+      owner: boundary.owner,
+      driver: boundary.driver,
+      resource: ownerContextStalePluginFileReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'OWNER_CONTEXT_STALE_PLUGIN_FILE_REFUSAL_REQUIRED',
+        resource: ownerContextStalePluginFileReleaseVerifierResourceEvidence(),
+      }),
+    };
+  }
+}
+
+function buildOwnerContextStalePluginFileReleaseVerifierProof(now) {
+  const boundary = ownerContextStalePluginFileReleaseVerifierBoundary;
+  const rawFixtures = {
+    baseRow: 'RPP_0493_BASE_ROW_PRIVATE',
+    localRow: 'RPP_0493_LOCAL_ROW_PRIVATE',
+    baseOwnerFile: 'RPP_0493_BASE_OWNER_FILE_PRIVATE',
+    sharedOwnerFile: 'RPP_0493_SHARED_OWNER_FILE_PRIVATE',
+    staleOwnerFile: 'RPP_0493_STALE_OWNER_FILE_PRIVATE',
+  };
+
+  const base = ownerContextStalePluginFileReleaseVerifierSnapshot({
+    rowMode: rawFixtures.baseRow,
+    pluginFileMode: rawFixtures.baseOwnerFile,
+  });
+  const local = ownerContextStalePluginFileReleaseVerifierSnapshot({
+    rowMode: rawFixtures.localRow,
+    pluginFileMode: rawFixtures.sharedOwnerFile,
+    withPolicy: true,
+  });
+  const readyRemote = ownerContextStalePluginFileReleaseVerifierSnapshot({
+    rowMode: rawFixtures.baseRow,
+    pluginFileMode: rawFixtures.sharedOwnerFile,
+  });
+  const readyPlan = createPushPlan({ base, local, remote: readyRemote, now });
+  const readyMutation = readyPlan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const readyPrecondition = readyPlan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const readyOwnerFileContext = readyMutation?.pluginOwnedResource?.ownerContext?.find?.(
+    (entry) => entry.resourceKey === boundary.pluginFileResourceKey,
+  ) || null;
+  const readyOwnerMetadataContext = readyMutation?.pluginOwnedResource?.ownerContext?.find?.(
+    (entry) => entry.resourceKey === boundary.pluginResourceKey,
+  ) || null;
+  const readyApplyRemote = cloneReleaseVerifierJson(readyRemote);
+  const readyRowHashBefore = readyMutation ? resourceHash(readyApplyRemote, readyMutation.resource) : null;
+  const readyRemoteHashBefore = sha256Evidence(readyApplyRemote);
+  const beforeMutation = [];
+  const readyApplyResult = applyPlan(readyApplyRemote, readyPlan, {
+    mutateRemote: true,
+    beforeMutation(context) {
+      beforeMutation.push({
+        mutationIndex: context.mutationIndex,
+        resourceKey: context.mutation.resourceKey,
+        driverApplyValidation: context.driverApplyValidation,
+      });
+    },
+  });
+  const readyRowHashAfter = readyMutation ? resourceHash(readyApplyRemote, readyMutation.resource) : null;
+  const readyRemoteHashAfter = sha256Evidence(readyApplyRemote);
+  const readyDriverApplyValidation = beforeMutation[0]?.driverApplyValidation || null;
+
+  const staleRemote = ownerContextStalePluginFileReleaseVerifierSnapshot({
+    rowMode: rawFixtures.baseRow,
+    pluginFileMode: rawFixtures.staleOwnerFile,
+  });
+  const staleLocal = ownerContextStalePluginFileReleaseVerifierSnapshot({
+    rowMode: rawFixtures.localRow,
+    pluginFileMode: rawFixtures.baseOwnerFile,
+    withPolicy: true,
+  });
+  const staleRemoteBefore = sha256Evidence(staleRemote);
+  const stalePlan = createPushPlan({ base, local: staleLocal, remote: staleRemote, now });
+  const staleBlocker = stalePlan.blockers.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const stalePlanApplyError = captureReleaseVerifierError(() => applyPlan(staleRemote, stalePlan, {
+    mutateRemote: true,
+  }));
+  const staleRemoteAfter = sha256Evidence(staleRemote);
+  const staleOwnerFileEvidence = staleBlocker?.ownerFileRefusalEvidence || null;
+
+  const replayRemote = ownerContextStalePluginFileReleaseVerifierSnapshot({
+    rowMode: rawFixtures.baseRow,
+    pluginFileMode: rawFixtures.staleOwnerFile,
+  });
+  const replayRowHashBefore = readyMutation ? resourceHash(replayRemote, readyMutation.resource) : null;
+  const replayRemoteHashBefore = sha256Evidence(replayRemote);
+  let replayBeforeMutationCalls = 0;
+  const staleReplayError = captureReleaseVerifierError(() => applyPlan(replayRemote, readyPlan, {
+    mutateRemote: true,
+    beforeMutation() {
+      replayBeforeMutationCalls += 1;
+    },
+  }));
+  const replayRowHashAfter = readyMutation ? resourceHash(replayRemote, readyMutation.resource) : null;
+  const replayRemoteHashAfter = sha256Evidence(replayRemote);
+
+  const readyOk = readyPlan.status === 'ready'
+    && readyPlan.summary.mutations === 1
+    && readyPlan.summary.blockers === 0
+    && readyMutation?.resource?.table === boundary.table
+    && readyMutation?.resource?.id === boundary.rowId
+    && readyMutation?.pluginOwnedResource?.pluginOwner === boundary.owner
+    && readyMutation?.pluginOwnedResource?.driver === boundary.driver
+    && readyMutation?.pluginOwnedResource?.ownerContextRequired === true
+    && readyPrecondition?.expectedHash === readyMutation?.remoteBeforeHash
+    && readyPrecondition?.checkedAgainst === 'live-remote'
+    && readyApplyResult.appliedMutations === 1
+    && readyRowHashAfter === readyMutation?.localHash
+    && readyRowHashAfter !== readyRowHashBefore
+    && readyOwnerFileContext?.localHash === readyOwnerFileContext?.remoteHash
+    && readyOwnerFileContext?.remoteHash !== readyOwnerFileContext?.baseHash
+    && readyOwnerMetadataContext?.localHash === readyOwnerMetadataContext?.baseHash
+    && readyOwnerMetadataContext?.remoteHash === readyOwnerMetadataContext?.baseHash
+    && readyDriverApplyValidation?.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED';
+  const stalePlannerOk = stalePlan.status === 'blocked'
+    && stalePlan.summary.mutations === 0
+    && stalePlan.summary.blockers === 1
+    && staleBlocker?.class === 'stale-plugin-owner-context'
+    && staleOwnerFileEvidence?.reasonCode === 'STALE_PLUGIN_FILE_OWNER_CONTEXT'
+    && staleOwnerFileEvidence?.stalePluginFileResourceKeys?.includes(boundary.pluginFileResourceKey)
+    && stalePlanApplyError instanceof PushPlanError
+    && stalePlanApplyError.code === 'PLAN_NOT_READY'
+    && staleRemoteAfter === staleRemoteBefore;
+  const staleReplayOk = staleReplayError instanceof PushPlanError
+    && staleReplayError.code === 'STALE_PLUGIN_OWNER_CONTEXT'
+    && staleReplayError.details?.resourceKey === boundary.resourceKey
+    && staleReplayError.details?.pluginOwner === boundary.owner
+    && staleReplayError.details?.contextResourceKey === boundary.pluginFileResourceKey
+    && staleReplayError.details?.expectedHash === readyOwnerFileContext?.remoteHash
+    && staleReplayError.details?.actualHash !== readyOwnerFileContext?.remoteHash
+    && replayBeforeMutationCalls === 0
+    && replayRowHashAfter === replayRowHashBefore
+    && replayRemoteHashAfter === replayRemoteHashBefore;
+  const ok = readyOk && stalePlannerOk && staleReplayOk;
+
+  const proof = {
+    rpp: 'RPP-0493',
+    proofKind: boundary.proofKind,
+    evidenceSource: 'release-verifier-owner-context-stale-plugin-file-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'OWNER_CONTEXT_STALE_PLUGIN_FILE_REFUSAL_CARRIED'
+      : 'OWNER_CONTEXT_STALE_PLUGIN_FILE_REFUSAL_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: {
+      status: 'NO-GO',
+      acceptedForReleaseGate: false,
+      reason: 'local owner-context stale plugin-file proof carried through release-verifier evidence only',
+    },
+    owner: boundary.owner,
+    driver: boundary.driver,
+    resource: ownerContextStalePluginFileReleaseVerifierResourceEvidence(),
+    rawValuesIncluded: false,
+    readyApply: {
+      status: readyPlan.status,
+      mutationCount: readyPlan.summary.mutations,
+      decisionCount: readyPlan.summary.decisions,
+      blockerCount: readyPlan.summary.blockers,
+      preconditionCount: readyPlan.preconditions.length,
+      appliedMutations: readyApplyResult.appliedMutations,
+      ownerContextRequired: readyMutation?.pluginOwnedResource?.ownerContextRequired === true,
+      policySource: readyMutation?.pluginOwnedResource?.policySource || null,
+      releaseGateEvidenceScope: readyMutation?.pluginOwnedResource?.driverEvidence?.releaseGateEvidenceScope || null,
+      rowHashBefore: readyRowHashBefore ? `sha256:${readyRowHashBefore}` : null,
+      rowHashAfter: readyRowHashAfter ? `sha256:${readyRowHashAfter}` : null,
+      remoteHashBefore: readyRemoteHashBefore,
+      remoteHashAfter: readyRemoteHashAfter,
+      mutationHash: sha256Evidence({
+        resourceKey: readyMutation?.resourceKey || null,
+        action: readyMutation?.action || null,
+        baseHash: readyMutation?.baseHash || null,
+        localHash: readyMutation?.localHash || null,
+        remoteBeforeHash: readyMutation?.remoteBeforeHash || null,
+      }),
+      ownerContextHash: sha256Evidence(readyMutation?.pluginOwnedResource?.ownerContext || null),
+      ownerFileContext: readyOwnerFileContext ? {
+        resourceKey: readyOwnerFileContext.resourceKey,
+        localRemoteMatch: readyOwnerFileContext.localHash === readyOwnerFileContext.remoteHash,
+        changedSinceBase: readyOwnerFileContext.remoteHash !== readyOwnerFileContext.baseHash,
+        contextHash: sha256Evidence(readyOwnerFileContext),
+      } : null,
+      ownerMetadataContextHash: readyOwnerMetadataContext ? sha256Evidence(readyOwnerMetadataContext) : null,
+      driverApplyValidationHash: sha256Evidence(readyDriverApplyValidation),
+      journalHash: sha256Evidence(readyApplyResult.journal),
+    },
+    stalePlanner: {
+      status: stalePlan.status,
+      mutationCount: stalePlan.summary.mutations,
+      decisionCount: stalePlan.summary.decisions,
+      blockerCount: stalePlan.summary.blockers,
+      blockerClass: staleBlocker?.class || null,
+      reasonCode: staleOwnerFileEvidence?.reasonCode || null,
+      stalePluginFileResourceKeys: staleOwnerFileEvidence?.stalePluginFileResourceKeys || [],
+      remoteUnchanged: staleRemoteAfter === staleRemoteBefore,
+      blockedPlanApplyCode: stalePlanApplyError?.code || null,
+      blockerHash: sha256Evidence(staleBlocker),
+      ownerFileRefusalEvidenceHash: sha256Evidence(staleOwnerFileEvidence),
+      ownerContextRefusalEvidenceHash: sha256Evidence(staleBlocker?.ownerContextRefusalEvidence || null),
+      driverAuditEvidenceHash: sha256Evidence(staleBlocker?.driverAuditEvidence || null),
+      blockedPlanApplyErrorHash: sha256Evidence(stalePlanApplyError?.details || null),
+    },
+    staleReplay: {
+      code: staleReplayError?.code || null,
+      contextResourceKey: staleReplayError?.details?.contextResourceKey || null,
+      expectedHashMatchesReadyContext: staleReplayError?.details?.expectedHash === readyOwnerFileContext?.remoteHash,
+      actualHashDiffersFromReadyContext: staleReplayError?.details?.actualHash !== readyOwnerFileContext?.remoteHash,
+      beforeMutationCalls: replayBeforeMutationCalls,
+      rowHashBefore: replayRowHashBefore ? `sha256:${replayRowHashBefore}` : null,
+      rowHashAfter: replayRowHashAfter ? `sha256:${replayRowHashAfter}` : null,
+      remoteHashBefore: replayRemoteHashBefore,
+      remoteHashAfter: replayRemoteHashAfter,
+      remoteUnchanged: replayRemoteHashAfter === replayRemoteHashBefore,
+      errorDetailsHash: sha256Evidence(staleReplayError?.details || null),
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    readyApply: proof.readyApply,
+    stalePlanner: proof.stalePlanner,
+    staleReplay: proof.staleReplay,
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      proofKind: proof.proofKind,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'OWNER_CONTEXT_STALE_PLUGIN_FILE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: proof.releaseGate,
+      owner: boundary.owner,
+      driver: boundary.driver,
+      resource: proof.resource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'OWNER_CONTEXT_STALE_PLUGIN_FILE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function ownerContextStalePluginFileReleaseVerifierResourceEvidence() {
+  const boundary = ownerContextStalePluginFileReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
+    pluginResourceKey: boundary.pluginResourceKey,
+    pluginFileResourceKey: boundary.pluginFileResourceKey,
+  };
+}
+
+function ownerContextStalePluginFileReleaseVerifierSnapshot({
+  rowMode,
+  pluginFileMode,
+  withPolicy = false,
+} = {}) {
+  const boundary = ownerContextStalePluginFileReleaseVerifierBoundary;
+  const site = {
+    files: {
+      [boundary.pluginFilePath]: `<?php /* ${boundary.owner} ${pluginFileMode} */`,
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      wp_posts: {
+        'ID:9493': {
+          ID: 9493,
+          post_title: 'RPP-0493 owner context fixture',
+          post_name: 'rpp-0493-owner-context-fixture',
+          post_status: 'publish',
+          post_type: 'post',
+          post_parent: 0,
+          post_author: 0,
+        },
+      },
+      [boundary.table]: {
+        [boundary.rowId]: {
+          meta_id: 9493,
+          post_id: 9493,
+          meta_key: '_rpp_0493_owner_context',
+          meta_value: {
+            mode: rowMode,
+            proof: 'release-verifier-v5',
+          },
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+
+  if (withPolicy) {
+    site.meta = {
+      evidenceScope: 'local-release-verifier',
+      pushPolicy: {
+        pluginOwnedResources: {
+          evidenceScope: 'local-release-verifier',
+          allowedResources: [
+            {
+              resourceKey: boundary.resourceKey,
+              pluginOwner: boundary.owner,
+              driver: boundary.driver,
+              table: boundary.table,
+              evidenceScope: 'local-release-verifier',
+              supportsDelete: false,
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  return site;
+}
+
 function captureReleaseVerifierError(fn) {
   try {
     fn();
@@ -8015,6 +8385,8 @@ try {
             packagedPluginDriverProof,
             checkedProductionEvidence: false,
           });
+        const ownerContextStalePluginFileEvidence =
+          summarizeOwnerContextStalePluginFileReleaseVerifierProof();
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
@@ -8026,6 +8398,9 @@ try {
           pluginUpdateDependencyValidator: summarizePluginUpdateDependencyReleaseVerifierProof(),
           directActivePluginsMutationRefusal:
             summarizeDirectActivePluginsMutationRefusalReleaseVerifierProof(),
+          ownerContext: {
+            stalePluginFile: ownerContextStalePluginFileEvidence,
+          },
           coreSemantics: {
             pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
@@ -8340,6 +8715,8 @@ try {
             && Boolean(explicitReleaseVerifySourceUrl)
             && checkedDurableJournalAccepted,
         });
+      const ownerContextStalePluginFileEvidence =
+        summarizeOwnerContextStalePluginFileReleaseVerifierProof();
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
@@ -8351,6 +8728,9 @@ try {
         pluginUpdateDependencyValidator: summarizePluginUpdateDependencyReleaseVerifierProof(),
         directActivePluginsMutationRefusal:
           summarizeDirectActivePluginsMutationRefusalReleaseVerifierProof(),
+        ownerContext: {
+          stalePluginFile: ownerContextStalePluginFileEvidence,
+        },
         coreSemantics: {
           pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
