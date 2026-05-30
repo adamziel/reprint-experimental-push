@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T07:22:00+02:00">Last updated: May 30, 2026, 07:22 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T07:31:00+02:00">Last updated: May 30, 2026, 07:31 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>361</strong>
+        <strong>362</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>639</strong>
+        <strong>638</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>75/75 generated harness tests pass across 620 deterministic three-way push cases, including wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span><strong>Generated push harness</strong>76/76 generated harness tests pass across 620 deterministic three-way push cases, including wp_users/wp_usermeta graph variant-4, wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,14 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0168</span>
+        <span>RPP-0169</span>
       </div>
-      <p>The latest refresh integrates RPP-0168 wp_postmeta create/update/delete variant-4 generated-harness evidence: syntax checks, focused and adjacent postmeta tests, and the full generated harness prove ready postmeta changes apply without unplanned overwrite. Counts are now 361/639; final release remains NO-GO because this is generated-model coverage, not production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0169 wp_users/wp_usermeta graph variant-4 generated-harness evidence: syntax checks, focused and adjacent user/usermeta graph tests, and the full generated harness prove stale graph replay/refusal remains deterministic. Counts are now 362/638; final release remains NO-GO because this is generated-model coverage, not production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0169 focused: 1/1</span>
+        <span class="tag">user/usermeta slice: 3/3</span>
+        <span class="tag">generated harness: 76/76</span>
+        <span class="tag">620 cases</span>
         <span class="tag">RPP-0168 focused: 1/1</span>
         <span class="tag">postmeta slice: 3/3</span>
         <span class="tag">generated harness: 75/75</span>
-        <span class="tag">620 cases</span>
         <span class="tag">RPP-0167 focused: 1/1</span>
         <span class="tag">wp_posts slice: 3/3</span>
         <span class="tag">generated harness: 74/74</span>
