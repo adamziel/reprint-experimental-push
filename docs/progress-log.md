@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:20 CEST.
+- Last update: 2026-05-30 14:23 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0371 custom taxonomy fail-closed reference merge ending at
-  `d9b674efc`.
+  the RPP-0372 termmeta term reference merge ending at `69c5be064`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 452
-  items checked and leaves 548 open.
-- Checked slices: 100 release-gate foundation items, 54 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 453
+  items checked and leaves 547 open.
+- Checked slices: 100 release-gate foundation items, 55 graph identity items,
   73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Termmeta term reference focused regression: the current lane now contains
+  `RPP-0372` evidence in
+  `docs/evidence/rpp-0372-termmeta-term-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0372-termmeta-term-reference-v4.test.js`. The focused planner/apply
+  proof blocks `wp_termmeta.term_id` references to missing or stale `wp_terms`
+  targets with hash-only `stale-wordpress-graph-identity` evidence, keeps stale
+  term targets remote, redacts raw local probe values to hashes, and refuses
+  apply before mutation. Validation passed with Node syntax checks, focused
+  RPP-0372 coverage 2/2, adjacent termmeta/term graph coverage 5/5, checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks.
+  Counts are now 453/547; final release remains `NO-GO` because this is local
+  graph identity regression evidence, not externally hosted production topology
+  proof.
 - Custom taxonomy fail-closed focused regression: the current lane now contains
   `RPP-0371` evidence in
   `docs/evidence/rpp-0371-custom-taxonomy-fail-closed-reference-v4.md`,
