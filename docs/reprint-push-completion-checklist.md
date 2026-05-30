@@ -306,7 +306,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [x] RPP-0282 (Near-Mid / merge-invariants) Carry through the release verifier for independent local row plus remote file edit, variant 5. Success: executor rejects forged or stale mutation attempts.
 - [x] RPP-0283 (Near-Mid / merge-invariants) Carry through the release verifier for local delete versus remote edit, variant 5. Success: no raw private value appears in serialized plan evidence.
 - [x] RPP-0284 (Near-Mid / merge-invariants) Carry through the release verifier for local directory delete versus remote descendant create, variant 5. Success: scenario matrix row names the behavior and command.
-- [ ] RPP-0285 (Near-Mid / merge-invariants) Carry through the release verifier for local file type swap versus remote descendant, variant 5. Success: progress log records the command and caveat.
+- [x] RPP-0285 (Near-Mid / merge-invariants) Carry through the release verifier for local file type swap versus remote descendant, variant 5. Success: progress log records the command and caveat.
 - [x] RPP-0286 (Near-Mid / merge-invariants) Carry through the release verifier for remote-only plugin metadata preservation, variant 5. Success: node test proves the invariant over generated and focused fixtures.
 - [x] RPP-0287 (Near-Mid / merge-invariants) Carry through the release verifier for local plugin data with stale owner context, variant 5. Success: executor rejects forged or stale mutation attempts.
 - [ ] RPP-0288 (Near-Mid / merge-invariants) Carry through the release verifier for unknown plugin-owned resource refusal, variant 5. Success: no raw private value appears in serialized plan evidence.

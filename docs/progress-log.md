@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 00:15 CEST +02:00.
+- Last update: 2026-05-31 00:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0280 atomic group blocker propagation variant 4 merge ending at
-  `9a5c8c577`.
+  the RPP-0285 local file type swap versus remote descendant release-verifier
+  v5 merge ending at `fd60bea7b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 546
-  items checked and leaves 454 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 547
+  items checked and leaves 453 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 95 generated
-  harness items, and 82 merge-invariant items. No release-ops items are checked
+  harness items, and 83 merge-invariant items. No release-ops items are checked
   yet.
+- Local file type-swap versus remote descendant release-verifier v5
+  carry-through: the current lane now checks `RPP-0285` with focused
+  planner/apply release-verifier evidence for a local directory-to-file type
+  swap while the live remote created a descendant. The proof verifies the unsafe
+  type swap emits no mutation or precondition, the remote descendant is
+  preserved as `keep-remote`, an unrelated local mutation remains
+  live-preconditioned, apply refuses with `PLAN_NOT_READY` before durable
+  journal writes or mutation callbacks, and the proof envelope remains
+  hash-only. Validation passed with a Node syntax check, focused RPP-0285
+  coverage 2/2, adjacent RPP-0205/RPP-0225/RPP-0265/RPP-0285 file-type-swap
+  coverage 5/5, the full `test/push-planner.test.js` suite 148/148, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 547/453;
+  final release remains `NO-GO` because this is local focused planner/apply
+  evidence, not production-backed release proof.
 - Atomic group blocker propagation variant-4 proof: the current lane now checks
   `RPP-0280` with focused planner/apply regression evidence for an atomic
   plugin-install group that includes valid sibling mutations, an unsupported
