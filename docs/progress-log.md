@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:23 CEST +02:00.
+- Last update: 2026-05-30 23:26 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0336 wp_navigation fail-closed reference variant 2 merge ending at
-  `60a0278`.
+  the RPP-0192 wp_term_taxonomy graph release-verifier variant 5 merge ending
+  at `87caabc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 537
-  items checked and leaves 463 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 538
+  items checked and leaves 462 open.
 - Checked slices: 100 release-gate foundation items, 80 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 91 generated
+  23 storage/performance items, 3 production-topology items, 92 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP term taxonomy graph release-verifier v5 carry-through: the current lane
+  now checks `RPP-0192` with deterministic generated-harness support-only proof
+  for `wp_terms` and `wp_term_taxonomy` graph changes. The generator exposes
+  `wpTermTaxonomyGraphReleaseVerifierVariant5` target coverage with 20 cases
+  across tiers 0 through 9, two cases per tier, and status counts of 10 ready,
+  4 blocked, and 6 conflict. The focused proof verifies the summary, per-tier
+  counts, ready/non-ready tags, and stale replay refusal before mutation, while
+  keeping term names, slugs, taxonomy descriptions, and remote drift values
+  hash-only. Validation passed with Node syntax checks, focused RPP-0192
+  coverage 2/2, adjacent RPP-0152/RPP-0172/RPP-0192 generated graph coverage
+  4/4, scoped artifact redaction scan, and diff whitespace checks. Counts are
+  now 538/462; final release remains `NO-GO` because this is local generated
+  release-verifier evidence, not production-backed release proof.
 - WP navigation fail-closed reference variant-2 proof: the current lane now
   checks `RPP-0336` with focused graph-identity evidence for `wp_navigation`
   references through postmeta targets. The proof verifies unmapped
