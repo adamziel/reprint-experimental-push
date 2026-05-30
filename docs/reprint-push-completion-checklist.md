@@ -564,7 +564,7 @@ Focus: ship a real production push protocol on the Reprint endpoint.
 - [x] RPP-0525 (Mid-Far / executor-auth) Prove production journal route, variant 2. Success: verify:release includes the route evidence in one summary.
 - [x] RPP-0526 (Mid-Far / executor-auth) Prove production recovery inspect route, variant 2. Success: real endpoint test runs against a live URL.
 - [ ] RPP-0527 (Mid-Far / executor-auth) Prove production recovery mutate route, variant 2. Success: negative auth cases fail before JSON parsing and mutation.
-- [ ] RPP-0528 (Mid-Far / executor-auth) Prove short-lived push session issue, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
+- [x] RPP-0528 (Mid-Far / executor-auth) Prove short-lived push session issue, variant 2. Success: dry-run receipts bind session, identity, scope, and plan hash.
 - [ ] RPP-0529 (Mid-Far / executor-auth) Prove session source URL binding, variant 2. Success: apply revalidates the live source before mutation.
 - [ ] RPP-0530 (Mid-Far / executor-auth) Prove session user identity binding, variant 2. Success: verify:release includes the route evidence in one summary.
 - [ ] RPP-0531 (Mid-Far / executor-auth) Prove Application Password integration, variant 2. Success: real endpoint test runs against a live URL.

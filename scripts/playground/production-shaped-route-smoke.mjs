@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
@@ -136,6 +137,12 @@ try {
     assert.equal(dryRun.body.receipt.authBinding.request.labBacked, true);
     assert.equal(dryRun.body.receipt.authBinding.session.type, 'production-auth-session');
     assert.equal(dryRun.body.receipt.authBinding.session.id, session);
+    const dryRunReceiptBinding = assertProductionDryRunReceiptBinding(dryRun.body.receipt, {
+      plan: readyPlan,
+      preflight: preflight.body,
+      session,
+      idempotencyKey,
+    });
     await assertCurrentSurface(client, snapshots.base, 'production-shaped dry-run must not mutate');
 
     const labPreflight = await labClient.signedGet('/preflight');
@@ -292,6 +299,7 @@ try {
     summary.dryRun = {
       receiptHash: dryRun.body.receipt.receiptHash,
       dryRunRoute: dryRun.body.receipt.authBinding.request.dryRunRoute,
+      binding: dryRunReceiptBinding,
     };
     summary.apply = {
       applied: apply.body.applied,
@@ -336,6 +344,96 @@ function mutateReceipt(receipt, mutate) {
   delete next.receiptHash;
   next.receiptHash = digest(next);
   return next;
+}
+
+function assertProductionDryRunReceiptBinding(receipt, { plan, preflight, session, idempotencyKey }) {
+  const receiptHash = String(receipt?.receiptHash || '');
+  assertHash(receiptHash, 'production-shaped dry-run receipt hash');
+
+  const planHash = digest(plan);
+  assert.equal(receipt.planHash, planHash, 'receipt plan hash must match the canonical dry-run plan');
+
+  const authBinding = receipt.authBinding;
+  assert.equal(authBinding?.schemaVersion, 1);
+  assert.equal(authBinding.scope, 'reprint-push-lab:authenticated-http-push');
+  assert.equal(authBinding.planHash, planHash);
+  assert.equal(authBinding.request.planHash, planHash);
+  assert.equal(authBinding.request.planPayloadHash, planHash);
+  assert.equal(authBinding.plan.schemaVersion, 1);
+  assert.equal(authBinding.plan.planHash, planHash);
+  assert.equal(authBinding.plan.planPayloadHash, planHash);
+
+  assert.equal(authBinding.identity.userLogin, credentials.username);
+  assert.equal(authBinding.identity.capabilities.manage_options, true);
+  assert.equal(authBinding.session.type, 'production-auth-session');
+  assert.equal(authBinding.session.status, 'active');
+  assert.equal(authBinding.session.id, session);
+  assert.equal(authBinding.session.expiresAt, preflight.session.expiresAt);
+
+  const subject = authBinding.binding;
+  assert.equal(subject.schemaVersion, 1);
+  assert.equal(subject.planHash, planHash);
+  assertHash(subject.scopeHash, 'receipt subject scope hash');
+  assertHash(subject.identityHash, 'receipt subject identity hash');
+  assertHash(subject.authSessionHash, 'receipt subject auth-session hash');
+  assertHash(subject.pushSessionHash, 'receipt subject push-session hash');
+  assertHash(subject.bindingHash, 'receipt subject binding hash');
+
+  const pushSession = authBinding.pushSession;
+  assert.equal(pushSession.sessionHash, preflight.session.sessionHash);
+  assert.equal(pushSession.sessionHash, subject.pushSessionHash);
+  assert.equal(pushSession.signingKeyHash, preflight.session.signingKeyHash);
+  assertHash(pushSession.dryRunNonceHash, 'receipt dry-run nonce hash');
+  assertHash(pushSession.dryRunContentHash, 'receipt dry-run content hash');
+  assertHash(pushSession.dryRunCanonicalHash, 'receipt dry-run canonical hash');
+  assert.equal(pushSession.dryRunIdempotencyKeyHash, sha256(idempotencyKey));
+
+  const issue = pushSession.issue;
+  assert.equal(issue.schemaVersion, 1);
+  assert.equal(issue.type, 'short-lived-push-session');
+  assert.equal(issue.sessionHash, pushSession.sessionHash);
+  assert.equal(issue.signingKeyHash, pushSession.signingKeyHash);
+  assert.equal(issue.scopeHash, subject.scopeHash);
+  assert.equal(issue.identityHash, subject.identityHash);
+  assert.equal(issue.userIdentityHash, preflight.session.userIdentityHash);
+  assert.equal(issue.sourceHash, preflight.session.sourceHash);
+  assert.equal(issue.sourceUrlHash, preflight.session.sourceUrlHash);
+  assert.equal(issue.issuedAt, preflight.session.issuedAt);
+  assert.equal(issue.expiresAt, preflight.session.expiresAt);
+  assert.equal(issue.ttlSeconds, 300);
+  assertHash(issue.issueHash, 'short-lived push-session issue hash');
+
+  return {
+    scope: authBinding.scope,
+    planHashMatches: authBinding.planHash === planHash,
+    identity: {
+      userLogin: authBinding.identity.userLogin,
+      manageOptions: authBinding.identity.capabilities.manage_options,
+    },
+    session: {
+      type: authBinding.session.type,
+      status: authBinding.session.status,
+      sameSession: authBinding.session.id === session,
+      sessionHashLength: String(pushSession.sessionHash || '').length,
+    },
+    subjectBindingHashLength: String(subject.bindingHash || '').length,
+    issue: {
+      type: issue.type,
+      ttlSeconds: issue.ttlSeconds,
+      issueHashLength: String(issue.issueHash || '').length,
+      sameSessionHash: issue.sessionHash === pushSession.sessionHash,
+      sameIdentityHash: issue.identityHash === subject.identityHash,
+      sameScopeHash: issue.scopeHash === subject.scopeHash,
+    },
+  };
+}
+
+function assertHash(value, label) {
+  assert.match(String(value || ''), /^[a-f0-9]{64}$/, `${label} must be a SHA-256 hex digest`);
+}
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
 }
 
 function exportSnapshot(name, blueprintPath) {
