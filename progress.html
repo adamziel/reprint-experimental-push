@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:38:00+02:00">Last updated: May 30, 2026, 14:38 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:43:00+02:00">Last updated: May 30, 2026, 14:43 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0517</span>
+        <span>RPP-0612 supplemental</span>
       </div>
-      <p>The latest refresh integrates RPP-0517 same-key different-body idempotency conflict evidence: the authenticated client carries hash-only conflict fields for idempotency key and request hashes, the route smoke proves the conflict returns 409 without extra mutation events after the committed replay path, and raw key/body/probe values stay out of summarized evidence. Counts are now 455/545; final release remains NO-GO because this is local production-shaped executor evidence, not externally hosted production topology proof. The broader npm test suite was not rerun for this slice; earlier lane evidence recorded a pre-existing RPP-0615 release-verifier assertion failure.</p>
+      <p>The latest refresh integrates supplemental RPP-0612 blocked recovery restart evidence: a child process writes a claim-fenced file-backed recovery journal, fails after two committed mutations, and the parent process rereads durable JSONL rows proving monotonic sequences, fsync evidence, no completion row, and a restarted blocked-recovery classification with 2 new, 6 old, and 0 blocked-unknown targets. Counts remain 455/545 because RPP-0612 was already checked; final release remains NO-GO because this is local durability evidence, not externally hosted production topology proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0612 dedicated focused: 1/1</span>
+        <span class="tag">RPP-0612 journal focused: 1/1</span>
+        <span class="tag">restart/classification: 9/9</span>
+        <span class="tag">recovery journal/repair: 38/38</span>
+        <span class="tag">file-journal smoke: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0517 focused: 1/1</span>
         <span class="tag">idempotency/replay: 28/28</span>
         <span class="tag">production-shaped smoke: pass</span>
