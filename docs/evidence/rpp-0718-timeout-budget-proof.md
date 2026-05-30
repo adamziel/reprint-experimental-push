@@ -30,6 +30,19 @@ Result:
 
 - 1 test, 1 ok, 0 failed
 
+Integrated lane validation also passed:
+
+- syntax checks for `src/timeout-budget-proof.js`,
+  `scripts/bench/guarded-executor-benchmark.js`,
+  `test/rpp-0718-timeout-budget-proof.test.js`, and
+  `test/guarded-executor-benchmark.test.js`;
+- `node --test test/rpp-0718-timeout-budget-proof.test.js test/guarded-executor-benchmark.test.js`
+  with 10 tests ok and 0 failed;
+- checklist completion lint;
+- scoped artifact redaction scan for this evidence document and the checklist;
+- raw fixture scan for benchmark payload labels and row values; and
+- merge diff whitespace checks.
+
 Observed focused evidence from the guarded executor benchmark:
 
 - file size: 1,048,576 bytes

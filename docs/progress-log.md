@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:23 CEST +02:00.
+- Last update: 2026-05-30 17:27 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0487 wp_usermeta release verifier carry-through merge ending at
-  `fd72deca7`.
+  the RPP-0718 timeout budget proof merge ending at `f78eb2a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 487
-  items checked and leaves 513 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 488
+  items checked and leaves 512 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   84 plugin-driver boundary items, 30 executor/auth items, 39 recovery items,
-  21 storage/performance items, 3 production-topology items, 78 generated
+  22 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Timeout budget proof: the current lane now contains `RPP-0718` evidence in
+  `docs/evidence/rpp-0718-timeout-budget-proof.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/timeout-budget-proof.js`,
+  `scripts/bench/guarded-executor-benchmark.js`, and
+  `test/rpp-0718-timeout-budget-proof.test.js`. The guarded-executor benchmark
+  now emits `evidence.timeoutBudgetProof` and mirrors it under
+  `evidence.guardedTransfer.timeoutBudgetProof`, proving a bounded chunk
+  transfer attempt stops before the next unacknowledged chunk would exceed the
+  budget, resumes only from exact plan/resource/range/digest receipts, uploads
+  the unacknowledged remainder, and opens mutation apply only after file staging
+  finalizes. Focused validation passed 1/1 and adjacent guarded-executor
+  validation passed 10/10, with syntax checks, checklist lint, scoped artifact
+  redaction scan, raw fixture scan, and merge diff whitespace checks also
+  passing. Counts are now 488/512; final release remains `NO-GO` because this
+  is lab guarded-executor timeout evidence, not production transport deadline,
+  production storage receipt, row batching, atomic commit, or rollback proof.
 - wp_usermeta release verifier carry-through v5: the current lane now contains
   `RPP-0487` evidence in
   `docs/evidence/rpp-0487-wp-usermeta-release-verifier-v5.md`,
