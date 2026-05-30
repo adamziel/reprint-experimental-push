@@ -319,6 +319,151 @@ test('file-backed journal open state survives process restart readback', () => {
   assert.equal(inspection.journal.openState.restartReadable, true);
 });
 
+test('RPP-0627 production recovery journal open state remains restart-readable after process restart retry', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'rpp-0627-open-state-production-claim';
+  const artifactRefs = {
+    openState: 'artifact://rpp-0627-open-state-v2',
+    releaseProof: 'artifact://rpp-0627-release-proof',
+  };
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const childScript = `
+    import { openProductionRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+
+    try {
+      const journal = openProductionRecoveryJournal({
+        filePath: process.env.RPP0627_JOURNAL_PATH,
+        plan: JSON.parse(process.env.RPP0627_PLAN),
+        current: JSON.parse(process.env.RPP0627_REMOTE),
+        artifactRefs: JSON.parse(process.env.RPP0627_ARTIFACT_REFS),
+        now: new Date(process.env.RPP0627_NOW),
+        truncate: process.env.RPP0627_TRUNCATE === 'true',
+        claimId: process.env.RPP0627_CLAIM_ID,
+      });
+
+      if (process.env.RPP0627_PRINT_INSPECTION === 'true') {
+        const inspection = journal.inspect();
+        console.log(JSON.stringify({
+          productionAdapter: inspection.journal.productionAdapter,
+          restartReadable: inspection.journal.restartReadable,
+          records: inspection.journal.records,
+          openState: inspection.journal.openState,
+          leaseFenceRestartReadable: inspection.journal.leaseFence.restartReadable,
+        }));
+      }
+
+      process.exit(0);
+    } catch (error) {
+      console.error(error?.stack || String(error));
+      process.exit(2);
+    }
+  `;
+  const spawnOpen = ({ truncate, now, printInspection = false }) => spawnSync(
+    process.execPath,
+    ['--input-type=module', '-e', childScript],
+    {
+      env: {
+        ...process.env,
+        RPP0627_ARTIFACT_REFS: JSON.stringify(artifactRefs),
+        RPP0627_CLAIM_ID: claimId,
+        RPP0627_JOURNAL_PATH: filePath,
+        RPP0627_NOW: now.toISOString(),
+        RPP0627_PLAN: JSON.stringify(plan),
+        RPP0627_PRINT_INSPECTION: printInspection ? 'true' : 'false',
+        RPP0627_REMOTE: JSON.stringify(remote),
+        RPP0627_TRUNCATE: truncate ? 'true' : 'false',
+      },
+      encoding: 'utf8',
+    },
+  );
+
+  const firstOpen = spawnOpen({ truncate: true, now: fixedNow });
+
+  assert.equal(firstOpen.error, undefined);
+  assert.equal(firstOpen.status, 0, firstOpen.stderr || firstOpen.stdout);
+
+  const afterFirstOpen = readRecoveryJournal(filePath);
+  assert.equal(afterFirstOpen.integrity.status, 'ok');
+  assert.equal(afterFirstOpen.openState.restartReadable, true);
+  assert.equal(afterFirstOpen.openState.openRows, 1);
+  assert.equal(afterFirstOpen.openState.firstOpenSequence, 1);
+  assert.equal(afterFirstOpen.openState.latestOpenSequence, 1);
+  assert.equal(afterFirstOpen.openState.latestOpenType, 'journal-opened');
+  assert.equal(afterFirstOpen.openState.planId, plan.id);
+  assert.equal(afterFirstOpen.openState.state, 'opened');
+  assert.equal(afterFirstOpen.openState.observedHash, digest(remote));
+  assert.deepEqual(afterFirstOpen.openState.artifactRefs, artifactRefs);
+  assert.equal(afterFirstOpen.records.filter((record) => record.type === 'target-planned').length, plan.mutations.length);
+  assert.equal(afterFirstOpen.records.filter((record) => record.type === 'journal-ownership-recorded').length, 1);
+  assert.equal(afterFirstOpen.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
+  assert.deepEqual(
+    afterFirstOpen.records.map((record) => record.sequence),
+    Array.from({ length: afterFirstOpen.records.length }, (_, index) => index + 1),
+  );
+
+  const retryOpen = spawnOpen({
+    truncate: false,
+    now: new Date(fixedNow.getTime() + 1_000),
+    printInspection: true,
+  });
+
+  assert.equal(retryOpen.error, undefined);
+  assert.equal(retryOpen.status, 0, retryOpen.stderr || retryOpen.stdout);
+
+  const productionSurface = JSON.parse(retryOpen.stdout);
+  const restarted = readRecoveryJournal(filePath);
+  const openRecords = restarted.records.filter((record) => (
+    record.type === 'journal-opened' || record.type === 'journal-retry-opened'
+  ));
+  const retryRecord = openRecords.at(-1);
+
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.openState.status, 'opened');
+  assert.equal(restarted.openState.phase, 'open');
+  assert.equal(restarted.openState.restartReadable, true);
+  assert.equal(restarted.openState.records, restarted.records.length);
+  assert.equal(restarted.openState.durableRows, restarted.records.length);
+  assert.equal(restarted.openState.openRows, 2);
+  assert.equal(restarted.openState.firstOpenSequence, 1);
+  assert.equal(restarted.openState.latestOpenSequence, retryRecord.sequence);
+  assert.equal(restarted.openState.latestOpenType, 'journal-retry-opened');
+  assert.equal(restarted.openState.planId, plan.id);
+  assert.equal(restarted.openState.state, 'retrying-active-claim');
+  assert.equal(restarted.openState.observedHash, digest(remote));
+  assert.deepEqual(restarted.openState.artifactRefs, artifactRefs);
+  assert.deepEqual(restarted.openState.fsync, {
+    requested: true,
+    strategy: 'after-append',
+  });
+  assert.equal(restarted.records.filter((record) => record.type === 'target-planned').length, plan.mutations.length);
+  assert.equal(restarted.records.filter((record) => record.type === 'journal-ownership-recorded').length, 1);
+  assert.equal(restarted.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
+  assert.equal(retryRecord.claimId, claimId);
+  assert.equal(retryRecord.claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: restarted.records.length }, (_, index) => index + 1),
+  );
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+  for (const record of restarted.records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+  }
+
+  assert.equal(productionSurface.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(productionSurface.restartReadable, true);
+  assert.equal(productionSurface.leaseFenceRestartReadable, true);
+  assert.equal(productionSurface.records, restarted.records.length);
+  assert.deepEqual(productionSurface.openState, restarted.openState);
+
+  const inspection = inspectRecoveryJournal({ journal: restarted, plan, current: remote });
+  assert.equal(inspection.status, 'old-remote');
+  assert.equal(inspection.journal.openState.restartReadable, true);
+  assert.equal(inspection.journal.openState.latestOpenType, 'journal-retry-opened');
+});
+
 test('file-backed journal staged state survives restart and retry preserves remote-only changes', () => {
   const filePath = tempJournalPath();
   fs.chmodSync(path.dirname(filePath), 0o700);
