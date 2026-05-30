@@ -644,6 +644,15 @@ cross-checks the variant-3 summary against the legacy `largeReadyPlanTier`
 target, verifies all 10 tiered cases remain ready, and records only counts,
 resource-key hashes, precondition hashes, decision hashes, and stale-replay
 refusal hashes while the release gate remains NO-GO.
+RPP-0180 adds `largeReadyPlanTierVariant4` coverage as focused regression
+coverage over the same deterministic large-ready surface with explicit
+variant-4 target and ready tags. The proof cross-checks the variant-4 summary
+against both `largeReadyPlanTierVariant3` and the legacy `largeReadyPlanTier`
+target, verifies all 10 tiered cases remain ready, applies only the planned
+post/file/taxonomy/comment graph resources, preserves the remote-only row/file
+drift, and rejects stale replay before mutation. Evidence remains hash-only for
+resource-key sets, preconditions, keep-remote decisions, planned values, and
+refusal details.
 
 The `postAuthorGraph` target coverage records per-tier counts for generated
 `wp_posts.post_author` references to `wp_users` rows. Ready cases create the
