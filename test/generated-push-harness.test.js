@@ -323,6 +323,10 @@ const requiredFamilies = [
   'wp-term-relationships-graph-v3-ready',
   'wp-term-relationships-graph-v3-stale',
   'wp-term-relationships-graph-v3-non-ready',
+  'wp-term-relationships-graph-v4',
+  'wp-term-relationships-graph-v4-ready',
+  'wp-term-relationships-graph-v4-stale',
+  'wp-term-relationships-graph-v4-non-ready',
   'wp-term-relationships-graph-ready',
   'wp-term-relationships-graph-stale',
   'wp-term-relationships-remote-drift',
@@ -9027,6 +9031,108 @@ test('RPP-0153 wp_term_relationships graph variant 3 records ready apply and sta
   );
 });
 
+test('RPP-0173 wp_term_relationships graph variant 4 retains ready apply and stale refusal regression coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermRelationshipsGraphVariant4;
+
+  assert.ok(coverage, 'missing wp_term_relationships graph variant 4 target coverage');
+  assert.equal(coverage.family, 'wp-term-relationships-graph-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-relationships-graph-v4']);
+  assert.equal(coverage.total, 10);
+  assert.equal(coverage.statuses.ready, 5);
+  assert.equal(nonReadyTargetCount(coverage), 5);
+  assert.ok(coverage.statuses.ready > 0, 'variant 4 target should include ready relationship graph cases');
+  assert.ok(nonReadyTargetCount(coverage) > 0, 'variant 4 target should include stale relationship graph cases');
+  assert.equal(report.summary.featureFamilies['wp-term-relationships-graph-v4-ready'], 5);
+  assert.equal(report.summary.featureFamilies['wp-term-relationships-graph-v4-stale'], 5);
+  assert.equal(report.summary.featureFamilies['wp-term-relationships-graph-v4-non-ready'], 5);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 1])),
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('Generated wp_term_relationships'), false, 'summary leaked relationship term/taxonomy value');
+  assert.equal(summaryEvidence.includes('Remote stale wp_term_relationships'), false, 'summary leaked stale relationship value');
+  assert.equal(
+    summaryEvidence.includes('Remote preserved wp_term_relationships graph note'),
+    false,
+    'summary leaked remote-only relationship note',
+  );
+
+  const firstEvidence = generatedWpTermRelationshipsGraphVariant4Evidence(coverage);
+  const replayEvidence = generatedWpTermRelationshipsGraphVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0173 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 relationship evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpTermRelationshipsGraphVariant4');
+  assert.equal(firstEvidence.family, 'wp-term-relationships-graph-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-non-ready'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.ok(readyCase.tags.includes('wp-term-relationships-graph-v4-ready'));
+  assert.ok(nonReadyCase.tags.includes('wp-term-relationships-graph-v4-stale'));
+  assert.ok(nonReadyCase.tags.includes('wp-term-relationships-graph-v4-non-ready'));
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 3 });
+  assert.equal(readyCase.graphMutations.term.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.taxonomy.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.relationship.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.term.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.taxonomy.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.relationship.plannedPrecondition, true);
+  assert.equal(readyCase.graphMutations.term.appliedHash, readyCase.surface.term.localHash);
+  assert.equal(readyCase.graphMutations.taxonomy.appliedHash, readyCase.surface.taxonomy.localHash);
+  assert.equal(readyCase.graphMutations.relationship.appliedHash, readyCase.surface.relationship.localHash);
+  assert.equal(readyCase.remoteOnlyPreservation.preserved, true);
+  assert.equal(readyCase.remoteOnlyPreservation.remoteBeforeHash, readyCase.remoteOnlyPreservation.appliedHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.status, 'blocked');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(nonReadyCase.staleBlocker.resourceKey, nonReadyCase.surface.relationship.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.targetResourceKey, nonReadyCase.surface.taxonomy.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.plannedGraphMutation, false);
+  assert.deepEqual(nonReadyCase.staleBlocker.relationshipKeys, ['wp_term_relationships.term_taxonomy_id']);
+  assert.match(nonReadyCase.staleBlocker.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated wp_term_relationships'), false, 'variant 4 evidence leaked relationship value');
+  assert.equal(evidenceText.includes('generated-wp-term-relationships'), false, 'variant 4 evidence leaked relationship slug');
+  assert.equal(evidenceText.includes('Remote stale wp_term_relationships'), false, 'variant 4 evidence leaked stale relationship value');
+  assert.equal(
+    evidenceText.includes('Remote preserved wp_term_relationships graph note'),
+    false,
+    'variant 4 evidence leaked remote-only relationship note',
+  );
+});
+
 function generatedWpTermRelationshipsGraphVariant3Evidence(targetCoverage) {
   const perTier = {};
   const statuses = {};
@@ -9060,6 +9166,72 @@ function generatedWpTermRelationshipsGraphVariant3Evidence(targetCoverage) {
 
   return {
     target: 'wpTermRelationshipsGraphVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale-non-ready'),
+    ],
+  };
+}
+
+function generatedWpTermRelationshipsGraphVariant4Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('wp-term-relationships-graph-v4')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const staleTarget = testCase.tags.has('wp-term-relationships-graph-v4-stale');
+
+    assert.equal(
+      staleTarget,
+      testCase.tags.has('wp-term-relationships-graph-stale'),
+      `${testCase.id} variant 4 stale tag should match relationship graph stale tag`,
+    );
+    assert.equal(
+      testCase.tags.has('wp-term-relationships-graph-v4-ready'),
+      testCase.tags.has('wp-term-relationships-graph-ready'),
+      `${testCase.id} variant 4 ready tag should match relationship graph ready tag`,
+    );
+    assert.equal(
+      testCase.tags.has('wp-term-relationships-graph-v4-non-ready'),
+      staleTarget,
+      `${testCase.id} variant 4 non-ready tag should match stale relationship graph target`,
+    );
+
+    const evidence = generatedWpTermRelationshipsGraphVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale-non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 4 relationship target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 4 relationship target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 4 relationship target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 4 target should select one ready relationship case');
+  assert.ok(selectedCases.has('stale-non-ready'), 'variant 4 target should select one stale non-ready relationship case');
+
+  return {
+    target: 'wpTermRelationshipsGraphVariant4',
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
