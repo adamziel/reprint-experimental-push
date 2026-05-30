@@ -97,6 +97,10 @@ test('guarded executor benchmark moves buffers and row payloads through durable 
     report.evidence.transactionBoundaryPolicy.apply.applyOpenedAfterTransferFinalize,
     true,
   );
+  assert.equal(report.evidence.parallelSnapshotHashing.status, 'passed');
+  assert.equal(report.evidence.parallelSnapshotHashing.fastPathLane.updated, true);
+  assert.equal(report.shape.snapshotHashJobs, report.shape.snapshotHashResources * 3);
+  assert.ok(report.shape.snapshotHashConcurrency > 0);
   assert.equal(report.evidence.guardedTransfer.visibility.livePathChangesOnlyAfterFinalize, true);
   assert.equal(report.evidence.preconditions.liveRemoteMutationPreconditions, report.shape.mutations);
   assert.equal(report.evidence.preconditions.everyMutationHasLiveRemotePrecondition, true);
@@ -218,6 +222,65 @@ test('RPP-0703 transaction boundary policy resumes chunk transfer without duplic
   assert.doesNotMatch(JSON.stringify(policy), /row-payload|commerce_bench|catalog identity/);
 });
 
+test('RPP-0710 parallel snapshot hashing updates the fast-path lane only after correctness gates hold', { concurrency: false }, () => {
+  const report = smallBenchmark({
+    fileBytes: 1024 * 1024,
+    chunkSizeBytes: 256 * 1024,
+    rowCount: 8,
+    rowPayloadBytes: 64,
+    snapshotHashConcurrency: 2,
+  });
+  const proof = report.evidence.parallelSnapshotHashing;
+  const gateIds = proof.correctnessGates.map((gate) => gate.id);
+  const rolloutGate = report.rolloutSafetyGates.gates.find((gate) =>
+    gate.id === 'parallel-snapshot-hashing');
+
+  assert.equal(proof.benchmarkId, 'rpp-0710-parallel-snapshot-hashing');
+  assert.equal(proof.variant, 1);
+  assert.equal(proof.scope, 'lab-guarded-executor-snapshot-hash-set');
+  assert.equal(proof.mode, 'bounded-parallel-scheduler-proof');
+  assert.equal(proof.status, 'passed');
+  assert.equal(proof.scheduler.maxConcurrency, 2);
+  assert.equal(proof.scheduler.maxAllowedConcurrency >= proof.scheduler.maxConcurrency, true);
+  assert.equal(proof.scheduler.maxObservedInFlight <= proof.scheduler.maxConcurrency, true);
+  assert.equal(proof.scheduler.bounded, true);
+  assert.equal(proof.hashSet.snapshotCount, 3);
+  assert.equal(proof.hashSet.hashCount, proof.hashSet.expectedHashCount);
+  assert.equal(proof.hashSet.hashCount, proof.hashSet.resourceCount * proof.hashSet.snapshotCount);
+  assert.equal(proof.hashSet.complete, true);
+  assert.equal(proof.hashSet.parallelMatchesSequential, true);
+  assert.equal(proof.hashSet.deterministicDigestMatches, true);
+  assert.equal(proof.hashSet.parallelDigest, proof.hashSet.sequentialDigest);
+  assert.match(proof.hashSet.parallelDigest, /^sha256:[a-f0-9]{64}$/);
+  assert.match(proof.scheduler.scheduleDigest, /^sha256:[a-f0-9]{64}$/);
+  assert.deepEqual(gateIds, [
+    'bounded-hash-concurrency',
+    'complete-snapshot-hash-set',
+    'parallel-matches-sequential',
+    'deterministic-hash-set',
+    'planning-only-no-write-authority',
+    'hash-only-evidence',
+  ]);
+  assert.ok(proof.correctnessGates.every((gate) => gate.status === 'passed'));
+  assert.equal(proof.applyBoundary.planningOnly, true);
+  assert.equal(proof.applyBoundary.authorizesApply, false);
+  assert.equal(proof.applyBoundary.applyMustRevalidate, true);
+  assert.equal(proof.applyBoundary.everyMutationHasLiveRemotePrecondition, true);
+  assert.equal(proof.fastPathLane.policy, 'update-only-after-correctness-gates-pass');
+  assert.equal(proof.fastPathLane.updated, true);
+  assert.deepEqual(proof.fastPathLane.blockedBy, []);
+  assert.match(proof.fastPathLane.proofDigest, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(rolloutGate.status, 'passed');
+  assert.equal(rolloutGate.speedClaimBlocker, null);
+  assert.ok(!productionThroughputBlockers(report).includes('missing-parallel-snapshot-hashing-evidence'));
+  assert.ok(proof.hashSet.hashSamples.length > 0);
+  assert.ok(proof.hashSet.hashSamples.every((sample) => !Object.hasOwn(sample, 'resourceKey')));
+  assert.doesNotMatch(
+    JSON.stringify(proof),
+    /row-payload|commerce_bench|catalog identity|catalog-export\.bin|wp-content\/plugins|benchmark-topic/i,
+  );
+});
+
 test('guarded benchmark refuses production throughput claims until production gaps are measured', { concurrency: false }, () => {
   const report = smallBenchmark();
 
@@ -236,6 +299,7 @@ test('guarded benchmark refuses production throughput claims until production ga
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-chunk-hash-verification'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-receipt-only-resume-evidence'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-chunk-replay-idempotency-evidence'));
+  assert.ok(!report.claims.productionThroughput.blockers.includes('missing-parallel-snapshot-hashing-evidence'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-live-remote-preconditions'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('missing-partial-commit-recovery-evidence'));
   assert.ok(!report.claims.productionThroughput.blockers.includes('wordpress-graph-identity-evidence-not-proven'));
@@ -285,6 +349,13 @@ test('production claim gate fails closed if benchmark evidence is tampered', { c
   missingTransactionBoundary.evidence.transactionBoundaryPolicy.apply.noDuplicateMutationWork = false;
   assert.ok(
     productionThroughputBlockers(missingTransactionBoundary).includes('missing-transaction-boundary-policy'),
+  );
+
+  const missingParallelSnapshotHashing = clone(report);
+  missingParallelSnapshotHashing.evidence.parallelSnapshotHashing.fastPathLane.updated = false;
+  assert.ok(
+    productionThroughputBlockers(missingParallelSnapshotHashing)
+      .includes('missing-parallel-snapshot-hashing-evidence'),
   );
 
   const missingPrecondition = clone(report);
@@ -379,7 +450,7 @@ test('CLI benchmark reports runtime resources and rollout gates before throughpu
   assert.equal(typeof report.timings.totalMs, 'number');
   assert.equal(report.resources.transfer.chunkReceipts, report.shape.chunkCount);
   assert.equal(report.resources.transfer.resourceKey, report.shape.largeUploadResourceKey);
-  assert.equal(report.rolloutSafetyGates.summary.passed, 8);
+  assert.equal(report.rolloutSafetyGates.summary.passed, 9);
   assert.equal(report.rolloutSafetyGates.summary.blocked, 3);
   assert.equal(report.rolloutSafetyGates.summary.failed, 0);
   assert.equal(report.throughput.productionThroughput, 'not-claimed');
@@ -408,6 +479,7 @@ test('rollout safety gates are named before speed claims', { concurrency: false 
     'receipt-only-resume',
     'chunk-replay-idempotency',
     'live-remote-preconditions',
+    'parallel-snapshot-hashing',
     'durable-journal-integrity',
     'failure-recovery-classification',
     'atomic-group-visibility',
@@ -420,7 +492,7 @@ test('rollout safety gates are named before speed claims', { concurrency: false 
   assert.equal(gatesById.get('production-row-batch-executor').status, 'blocked');
   assert.equal(gatesById.get('production-atomic-group-commit').status, 'blocked');
   assert.deepEqual(report.rolloutSafetyGates.summary, {
-    passed: 8,
+    passed: 9,
     blocked: 3,
     failed: 0,
     blockers: [
@@ -459,6 +531,7 @@ function deterministicTransferProjection(report) {
       transactionBoundaryPolicy: report.evidence.guardedTransfer.transactionBoundaryPolicy,
       visibility: report.evidence.guardedTransfer.visibility,
     },
+    parallelSnapshotHashing: report.evidence.parallelSnapshotHashing,
     productionThroughputBlockers: report.claims.productionThroughput.blockers,
   };
 }

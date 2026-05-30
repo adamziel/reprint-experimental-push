@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 439.
-- Remaining open: 561.
+- Verified complete: 440.
+- Remaining open: 560.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -756,7 +756,7 @@ Focus: make large safe pushes practical and measurable.
 - [x] RPP-0707 (Far / storage-performance) Implement chunk hash verification, variant 1. Success: guarded writes reject stale storage state.
 - [x] RPP-0708 (Far / storage-performance) Implement chunk resume after interruption, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0709 (Far / storage-performance) Implement chunk replay idempotency, variant 1. Success: large-site run finishes inside documented budgets.
-- [ ] RPP-0710 (Far / storage-performance) Implement parallel snapshot hashing, variant 1. Success: fast-path lane updates only after correctness gates hold.
+- [x] RPP-0710 (Far / storage-performance) Implement parallel snapshot hashing, variant 1. Success: fast-path lane updates only after correctness gates hold.
 - [ ] RPP-0711 (Far / storage-performance) Implement remote hash pagination, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [ ] RPP-0712 (Far / storage-performance) Implement dry-run batch sizing, variant 1. Success: guarded writes reject stale storage state.
 - [ ] RPP-0713 (Far / storage-performance) Implement apply batch sizing, variant 1. Success: chunk transfer resumes without duplicate mutation work.
