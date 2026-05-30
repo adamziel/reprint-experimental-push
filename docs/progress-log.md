@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:42 CEST.
+- Last update: 2026-05-30 12:45 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0522 production snapshot hashes route proof merge ending at
-  `19d9afc7`.
+  the RPP-0612 blocked recovery classification merge ending at `88dcc97e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 430
-  items checked and leaves 570 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 431
+  items checked and leaves 569 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 20 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 21 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Blocked recovery classification: the current lane now contains `RPP-0612`
+  evidence in
+  `docs/evidence/rpp-0612-blocked-recovery-classification.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/recovery-inspect.js`, and
+  `test/rpp-0612-blocked-recovery-classification.test.js`. Recovery inspection
+  now keeps the RPP-0611 `remoteClassification` surface while adding hash-only
+  `reasonCode` and `classification` summaries for fully updated, old remote,
+  journal-integrity blocked, target-unknown, and blocked partial-remote states.
+  Focused RPP-0611/RPP-0612 coverage passed 3/3, the broader recovery/auth
+  suite passed 164/164, and the file-journal restart smoke passed. Checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks also
+  passed. Counts are now 431/569; final release remains `NO-GO` because this is
+  local recovery evidence, not external production durability proof.
 - Production snapshot hashes route proof: the current lane now contains
   `RPP-0522` evidence in
   `docs/evidence/rpp-0522-production-snapshot-hashes-route-v2.md`,
