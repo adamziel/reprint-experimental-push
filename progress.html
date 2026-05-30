@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>308</strong>
+        <strong>309</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>692</strong>
+        <strong>691</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>56/56 generated harness tests pass across 620 deterministic three-way push cases, including wp_postmeta variant-3, post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span><strong>Generated push harness</strong>59/59 generated harness tests pass across 620 deterministic three-way push cases, including wp_postmeta variant-3, wp_terms/wp_termmeta variant-3, post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0234</span>
+        <span>RPP-0151</span>
       </div>
-      <p>The latest refresh integrates RPP-0234 already-in-sync decision safety: focused tests prove already-in-sync resources emit no mutations or preconditions, forged overwrite attempts fail before durable journal or mutation, the remote snapshot is preserved, and evidence remains hash-only. Counts are now 308/692; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0151 terms/termmeta graph variant-3 coverage: generated tests prove 20 deterministic wp_terms/wp_termmeta graph cases across all tiers, ready term/termmeta graph creates, stale term-drift blockers, stale replay refusal before mutation, and hash-only evidence. Counts are now 309/691; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0151 focused: 1/1</span>
+        <span class="tag">RPP-0151 pattern: 2/2</span>
+        <span class="tag">generated harness: 59/59</span>
         <span class="tag">RPP-0234 focused: 1/1</span>
         <span class="tag">RPP-0234 pattern: 2/2</span>
         <span class="tag">planner pair: 148/148</span>
@@ -485,7 +488,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 308/1000</span>
+        <span class="tag">checked goals: 309/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
