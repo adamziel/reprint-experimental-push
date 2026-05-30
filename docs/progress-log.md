@@ -6,20 +6,40 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:32 CEST +02:00.
+- Last update: 2026-05-30 15:37 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0493 owner-context stale plugin-file release-verifier merge ending at
-  `d9ded4d93`.
+  the RPP-0630 old-remote recovery classification merge ending at
+  `4a119b83c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 467
-  items checked and leaves 533 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 468
+  items checked and leaves 532 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  79 plugin-driver boundary items, 27 executor/auth items, 31 recovery items,
+  79 plugin-driver boundary items, 27 executor/auth items, 32 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Old-remote recovery classification v2: the current lane now contains
+  `RPP-0630` evidence in
+  `docs/evidence/rpp-0630-old-remote-recovery-classification-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof writes a claim-fenced production
+  recovery journal from a separate Node process, exits before mutation
+  observation or journal completion, reopens the JSONL journal from the parent
+  process, and verifies the unchanged remote still matches every journaled
+  before hash while matching no after hash. Restart inspection classifies the
+  persisted journal as `old-remote` with all targets in the old bucket, a retry
+  advances the expired claim without changing the target envelope, and the
+  hash-only old-remote classification is carried into the durable recovery
+  journal release proof with `GATE-2`, `gateStatus: proven`,
+  `checks.oldState: true`, and `partialStates.old.proved: true`. Validation
+  passed with Node syntax checks, focused RPP-0630 coverage 1/1, adjacent
+  recovery classification coverage 6/6, full recovery-journal coverage 36/36,
+  checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks. Counts are now 468/532; final release remains `NO-GO` because this is
+  local production-wrapper recovery evidence, not external WordPress
+  crash/restart durability proof.
 - Owner-context stale plugin-file release-verifier carry-through: the current
   lane now contains `RPP-0493` evidence in
   `docs/evidence/rpp-0493-owner-context-stale-plugin-file-release-verifier-v5.md`,
