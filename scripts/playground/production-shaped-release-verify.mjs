@@ -464,6 +464,19 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const driverApplyValidationHookReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-option',
+  owner: 'forms',
+  table: 'wp_options',
+  rowId: 'option_name:rpp_0498_forms_apply_validation',
+  resourceKey: 'row:["wp_options","option_name:rpp_0498_forms_apply_validation"]',
+  applyValidationHook: 'wp-option:validate-apply',
+  allowlist: Object.freeze({
+    resourceKeys: Object.freeze(['row:["wp_options","option_name:rpp_0498_forms_apply_validation"]']),
+    supportsDelete: false,
+  }),
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -722,6 +735,352 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
           option_value: {
             mode,
             nested: { enabled: true },
+          },
+          autoload: 'no',
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+export function summarizeDriverApplyValidationHookReleaseVerifierProof({
+  now = new Date('2026-05-30T13:49:08.000Z'),
+} = {}) {
+  try {
+    return buildDriverApplyValidationHookReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0498',
+      evidenceSource: 'release-verifier-driver-apply-validation-hook-v5',
+      status: 'blocked',
+      verdict: 'DRIVER_APPLY_VALIDATION_HOOK_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: 'local-production-shaped',
+      driver: driverApplyValidationHookReleaseVerifierBoundary.driver,
+      owner: driverApplyValidationHookReleaseVerifierBoundary.owner,
+      resource: driverApplyValidationHookReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildDriverApplyValidationHookReleaseVerifierProof(now) {
+  const boundary = driverApplyValidationHookReleaseVerifierBoundary;
+  const rawFixtures = {
+    baseMode: 'rpp-0498-base-private-apply-validation-mode',
+    baseToken: 'rpp-0498-base-private-apply-validation-token',
+    localMode: 'rpp-0498-local-private-apply-validation-mode',
+    localToken: 'rpp-0498-local-private-apply-validation-token',
+  };
+  const base = driverApplyValidationHookReleaseVerifierSnapshot(rawFixtures.baseMode, rawFixtures.baseToken);
+  const local = cloneReleaseVerifierJson(base);
+  local.db[boundary.table][boundary.rowId].option_value = {
+    mode: rawFixtures.localMode,
+    token: rawFixtures.localToken,
+  };
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: boundary.resourceKey,
+            pluginOwner: boundary.owner,
+            driver: boundary.driver,
+            supportsDelete: false,
+            applyValidation: {
+              hook: boundary.applyValidationHook,
+              status: 'passed',
+            },
+          },
+        ],
+      },
+    },
+  };
+  const remote = driverApplyValidationHookReleaseVerifierSnapshot(rawFixtures.baseMode, rawFixtures.baseToken);
+  const remoteBeforeHash = digest(remote);
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const rowBeforeHash = mutation ? resourceHash(remote, mutation.resource) : null;
+  const hookEvents = [];
+  let applyResult = null;
+  let applyError = null;
+  try {
+    applyResult = applyPlan(remote, plan, {
+      mutateRemote: true,
+      beforeMutation({ mutation: appliedMutation, mutationIndex, remote: liveRemote, driverApplyValidation }) {
+        hookEvents.push({
+          mutationIndex,
+          resourceKey: appliedMutation.resourceKey,
+          liveRemoteHash: digest(liveRemote),
+          driverApplyValidation,
+        });
+      },
+    });
+  } catch (error) {
+    applyError = error;
+  }
+
+  const remoteAfterHash = digest(remote);
+  const rowAfterHash = mutation ? resourceHash(remote, mutation.resource) : null;
+  const driverApplyValidation = hookEvents[0]?.driverApplyValidation || null;
+  const plannerApplyValidation = mutation?.pluginOwnedResource?.applyValidationEvidence || null;
+  const exactMutation = mutation?.resource?.type === 'row'
+    && mutation.resource.table === boundary.table
+    && mutation.resource.id === boundary.rowId
+    && mutation.action === 'put'
+    && mutation.pluginOwnedResource?.pluginOwner === boundary.owner
+    && mutation.pluginOwnedResource?.driver === boundary.driver
+    && mutation.pluginOwnedResource?.supportsDelete === false;
+  const exactPrecondition = precondition?.resourceKey === boundary.resourceKey
+    && precondition?.expectedHash === mutation?.remoteBeforeHash
+    && precondition?.checkedAgainst === 'live-remote';
+  const plannerApplyValidationPassed = plannerApplyValidation?.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_PASSED'
+    && plannerApplyValidation?.operation === 'apply-validation'
+    && plannerApplyValidation?.resourceKey === boundary.resourceKey
+    && plannerApplyValidation?.pluginOwner === boundary.owner
+    && plannerApplyValidation?.driver === boundary.driver
+    && plannerApplyValidation?.hook === boundary.applyValidationHook
+    && plannerApplyValidation?.supportedHook === true
+    && plannerApplyValidation?.status === 'passed';
+  const acceptedHook = driverApplyValidation?.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED'
+    && driverApplyValidation?.operation === 'driver-apply-validation'
+    && driverApplyValidation?.outcome === 'accepted'
+    && driverApplyValidation?.resourceKey === boundary.resourceKey
+    && driverApplyValidation?.pluginOwner === boundary.owner
+    && driverApplyValidation?.driver === boundary.driver
+    && driverApplyValidation?.supportsDelete === false
+    && driverApplyValidation?.action === 'put'
+    && driverApplyValidation?.resource?.table === boundary.table
+    && driverApplyValidation?.resource?.id === boundary.rowId
+    && driverApplyValidation?.planned?.state === 'present'
+    && driverApplyValidation?.planned?.hash === mutation?.localHash
+    && driverApplyValidation?.remote?.state === 'present'
+    && driverApplyValidation?.remote?.hash === mutation?.remoteBeforeHash;
+  const journalApplied = applyResult?.journal?.entries?.length === 1
+    && applyResult.journal.entries[0]?.status === 'applied'
+    && applyResult.journal.entries[0]?.resourceKey === boundary.resourceKey;
+  const carriedThroughApply = applyError === null
+    && applyResult?.site === remote
+    && applyResult?.appliedMutations === 1
+    && journalApplied
+    && hookEvents.length === 1
+    && hookEvents[0]?.resourceKey === boundary.resourceKey
+    && hookEvents[0]?.liveRemoteHash === remoteBeforeHash
+    && rowBeforeHash !== null
+    && rowAfterHash !== null
+    && rowAfterHash !== rowBeforeHash
+    && remoteAfterHash !== remoteBeforeHash;
+  const ok = plan.status === 'ready'
+    && plan.summary.mutations === 1
+    && plan.summary.conflicts === 0
+    && plan.summary.blockers === 0
+    && plan.preconditions.length === 1
+    && exactMutation
+    && exactPrecondition
+    && plannerApplyValidationPassed
+    && acceptedHook
+    && carriedThroughApply;
+
+  const proof = {
+    rpp: 'RPP-0498',
+    evidenceSource: 'release-verifier-driver-apply-validation-hook-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'DRIVER_APPLY_VALIDATION_HOOK_MUTATION_APPLIED'
+      : 'DRIVER_APPLY_VALIDATION_HOOK_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-production-shaped',
+    driver: boundary.driver,
+    owner: boundary.owner,
+    resource: driverApplyValidationHookReleaseVerifierResourceEvidence(),
+    rawValuesIncluded: false,
+    allowlist: {
+      resourceKey: boundary.resourceKey,
+      pluginOwner: boundary.owner,
+      driver: boundary.driver,
+      supportsDelete: false,
+      policySource: 'local-snapshot',
+      applyValidation: {
+        hook: boundary.applyValidationHook,
+        status: 'passed',
+      },
+    },
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    mutationBoundary: mutation ? {
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      policySource: mutation.pluginOwnedResource?.policySource || null,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+      exactMutation,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      auditEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.auditEvidence || null),
+      driverDecisionEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.driverAuditEvidence || null),
+      applyValidationEvidenceHash: sha256Evidence(plannerApplyValidation || null),
+      applyValidationEvidence: plannerApplyValidation ? {
+        reasonCode: plannerApplyValidation.reasonCode,
+        operation: plannerApplyValidation.operation,
+        hook: plannerApplyValidation.hook,
+        supportedHook: plannerApplyValidation.supportedHook === true,
+        status: plannerApplyValidation.status,
+        policySource: plannerApplyValidation.policySource || null,
+      } : null,
+      mutationHash: sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      }),
+    } : null,
+    precondition: precondition ? {
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+      exactPrecondition,
+      preconditionHash: sha256Evidence(precondition),
+    } : null,
+    driverApplyValidation: driverApplyValidation ? {
+      reasonCode: driverApplyValidation.reasonCode,
+      operation: driverApplyValidation.operation,
+      outcome: driverApplyValidation.outcome,
+      resourceKey: driverApplyValidation.resourceKey,
+      pluginOwner: driverApplyValidation.pluginOwner,
+      driver: driverApplyValidation.driver,
+      supportsDelete: driverApplyValidation.supportsDelete === true,
+      action: driverApplyValidation.action,
+      resource: {
+        type: driverApplyValidation.resource?.type || null,
+        table: driverApplyValidation.resource?.table || null,
+        id: driverApplyValidation.resource?.id || null,
+      },
+      planned: {
+        state: driverApplyValidation.planned?.state || null,
+        hash: driverApplyValidation.planned?.hash || null,
+      },
+      remote: {
+        state: driverApplyValidation.remote?.state || null,
+        hash: driverApplyValidation.remote?.hash || null,
+      },
+      evidenceHash: sha256Evidence(driverApplyValidation),
+    } : null,
+    applyCarryThrough: {
+      mutateRemote: applyResult?.site === remote,
+      applyPlanSucceeded: applyError === null,
+      remoteChanged: remoteAfterHash !== remoteBeforeHash,
+      rowChanged: rowAfterHash !== rowBeforeHash,
+      hookCount: hookEvents.length,
+      appliedMutations: applyResult?.appliedMutations ?? 0,
+      journalEntries: applyResult?.journal?.entries?.length ?? 0,
+      journalApplied,
+      acceptedHook,
+      carriedThroughApply,
+      finalRowHash: rowAfterHash ? `sha256:${rowAfterHash}` : null,
+      remoteHashBefore: `sha256:${remoteBeforeHash}`,
+      remoteHashAfter: `sha256:${remoteAfterHash}`,
+      driverApplyValidationHash: driverApplyValidation
+        ? sha256Evidence(driverApplyValidation)
+        : null,
+    },
+    failure: applyError ? {
+      name: applyError instanceof Error ? applyError.name : 'Error',
+      code: applyError?.code || null,
+      detailsHash: sha256Evidence(applyError?.details || null),
+    } : null,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    plan: proof.plan,
+    mutationBoundary: proof.mutationBoundary,
+    precondition: proof.precondition,
+    driverApplyValidation: proof.driverApplyValidation,
+    applyCarryThrough: proof.applyCarryThrough,
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'DRIVER_APPLY_VALIDATION_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: proof.evidenceScope,
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource: proof.resource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'DRIVER_APPLY_VALIDATION_EVIDENCE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+  return proof;
+}
+
+function driverApplyValidationHookReleaseVerifierResourceEvidence() {
+  const boundary = driverApplyValidationHookReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
+  };
+}
+
+function driverApplyValidationHookReleaseVerifierSnapshot(mode, token) {
+  const boundary = driverApplyValidationHookReleaseVerifierBoundary;
+  return {
+    files: {
+      'wp-content/plugins/forms/forms.php': '<?php /* forms plugin apply validation release verifier fixture */',
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          option_name: 'rpp_0498_forms_apply_validation',
+          option_value: {
+            mode,
+            token,
           },
           autoload: 'no',
           __pluginOwner: boundary.owner,
@@ -2550,6 +2909,7 @@ try {
         });
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
+          driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
@@ -2851,6 +3211,7 @@ try {
       });
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
+        driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
