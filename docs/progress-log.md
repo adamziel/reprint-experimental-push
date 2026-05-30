@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:52 CEST +02:00.
+- Last update: 2026-05-30 17:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0640 manual recovery audit export proof merge ending at `4c78468`.
+  the RPP-0719 long-push progress-reporting proof merge ending at `83814225`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 493
-  items checked and leaves 507 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 494
+  items checked and leaves 506 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  22 storage/performance items, 3 production-topology items, 78 generated
+  23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Long-push progress-reporting proof: the current lane now contains `RPP-0719`
+  evidence in
+  `docs/evidence/rpp-0719-long-push-progress-reporting.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/rpp-0719-long-push-progress-reporting.js`, and
+  `test/rpp-0719-long-push-progress-reporting.test.js`. The benchmark emits
+  bounded, operator-facing progress from durable plan, receipt, staging, and
+  commit evidence; reports phase coverage across plan scanning, preparation,
+  transfer, file publish, database batching, plugin metadata staging, group
+  finalization, and atomic commit; and keeps progress cursors hash-only without
+  file bodies, row values, raw resource keys, or absolute paths. Validation
+  passed with Node syntax checks, focused RPP-0719 coverage 3/3, adjacent
+  RPP-0718 timeout-budget coverage 1/1, the large-site benchmark reporting
+  `ok: true` with 40 progress events and max reporting gaps of 8 actions /
+  67108864 upload bytes, checklist lint, scoped artifact redaction scan, and
+  merge diff whitespace checks. Counts are now 494/506; final release remains
+  `NO-GO` because this is storage/performance benchmark evidence, not
+  production storage receipts or production row-batch execution.
 - Manual recovery audit export proof: the current lane now contains `RPP-0640`
   evidence in
   `docs/evidence/rpp-0640-manual-recovery-audit-export.md`,
