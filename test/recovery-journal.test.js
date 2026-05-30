@@ -2058,6 +2058,74 @@ test('RPP-0621 SQLite-backed journal table schema migration v2 preserves partial
   database.close();
 });
 
+test('RPP-0611 SQLite-backed restart inspection carries remote recovery classification metadata', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const seedFilePath = tempJournalPath();
+  const remote = baseSite();
+  const current = clone(remote);
+  const plan = planFor(baseSite(), localSite(), remote);
+  const seedJournal = openPlanRecoveryJournal({
+    filePath: seedFilePath,
+    plan,
+    current: remote,
+    now: fixedNow,
+  });
+  applyFirstMutations(current, plan, plan.mutations.length);
+  for (const mutation of plan.mutations) {
+    appendMutationObserved(seedJournal, {
+      plan,
+      mutation,
+      current,
+      state: 'applied',
+    });
+  }
+  appendJournalCompleted(seedJournal, { plan, current });
+  seedJournal.close();
+
+  const seedRows = readRecoveryJournal(seedFilePath).records;
+  const database = new DatabaseSync(sqlitePath);
+  try {
+    writeSqliteJournalTable(database, seedRows);
+    const restarted = readSqliteRecoveryJournalTable(database);
+    const inspection = inspectRecoveryJournal({
+      journal: restarted,
+      plan,
+      current,
+    });
+
+    assert.equal(restarted.storage, 'sqlite');
+    assert.equal(restarted.integrity.status, 'ok');
+    assert.equal(restarted.committedState.status, 'completed');
+    assert.equal(inspection.status, 'fully-updated-remote');
+    assert.deepEqual(inspection.counts, { old: 0, new: 8, blockedUnknown: 0 });
+    assert.deepEqual(inspection.remoteClassification, {
+      state: 'new-remote',
+      status: 'fully-updated-remote',
+      evidence: 'hash-only-before-after-target-envelope',
+      allTargetsAccountedFor: true,
+    });
+    assert.deepEqual(inspection.remoteRecoveryClassification, {
+      kind: 'new-remote',
+      state: 'fully-updated-remote',
+      proved: true,
+      replaySafe: true,
+      counts: {
+        old: 0,
+        new: 8,
+        blockedUnknown: 0,
+        total: 8,
+      },
+      journalState: 'ok',
+      storage: 'sqlite',
+    });
+    assert.ok(inspection.targets.every((target) => target.state === 'new'));
+  } finally {
+    database.close();
+  }
+});
+
 test('file-backed journal appends monotonic sequences and reads after restart', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();

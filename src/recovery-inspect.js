@@ -69,6 +69,12 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
   const status = overallStatus(counts, targets.length);
   const classification = classifyInspection({ status, counts, targets, persisted });
   const claim = classifyRecoveryJournalClaims(persisted.records);
+  const remoteRecoveryClassification = classifyRemoteRecoveryState({
+    status,
+    counts,
+    total: targets.length,
+    persisted,
+  });
 
   return {
     status,
@@ -79,6 +85,7 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
     planId: plan.id,
     counts,
     targets,
+    remoteRecoveryClassification,
     claim,
     journal: persisted,
   };
@@ -132,16 +139,17 @@ function blockedInspection({ plan, persisted, reason }) {
   const targets = (plan.mutations || []).map((mutation) =>
     unknownTarget(mutation, 'journal-integrity-blocked', reason));
   const counts = countTargets(targets);
+  const status = 'blocked-recovery';
   const classification = classifyInspection({
-    status: 'blocked-recovery',
+    status,
     counts,
     targets,
     persisted,
   });
   return {
-    status: 'blocked-recovery',
+    status,
     remoteClassification: recoveryRemoteClassification({
-      status: 'blocked-recovery',
+      status,
       counts,
       total: targets.length,
     }),
@@ -151,6 +159,12 @@ function blockedInspection({ plan, persisted, reason }) {
     planId: plan.id,
     counts,
     targets,
+    remoteRecoveryClassification: classifyRemoteRecoveryState({
+      status,
+      counts,
+      total: targets.length,
+      persisted,
+    }),
     claim: classifyRecoveryJournalClaims(persisted.records),
     journal: persisted,
   };
@@ -275,6 +289,63 @@ function recoveryRemoteClassification({ status, counts, total }) {
   };
 }
 
+export function classifyRemoteRecoveryState({ status, counts, total, persisted } = {}) {
+  const normalizedCounts = {
+    old: integerOrZero(counts?.old),
+    new: integerOrZero(counts?.new),
+    blockedUnknown: integerOrZero(counts?.blockedUnknown),
+    total: Number.isInteger(total) ? total : integerOrZero(counts?.total),
+  };
+  const journalState = persisted?.integrity?.status || 'unknown';
+  const storage = persisted?.storage || 'filesystem';
+  const allTargetsClassified = normalizedCounts.blockedUnknown === 0
+    && normalizedCounts.old + normalizedCounts.new === normalizedCounts.total;
+
+  if (
+    status === 'fully-updated-remote'
+    && normalizedCounts.total > 0
+    && normalizedCounts.new === normalizedCounts.total
+    && allTargetsClassified
+  ) {
+    return {
+      kind: 'new-remote',
+      state: 'fully-updated-remote',
+      proved: journalState === 'ok',
+      replaySafe: journalState === 'ok',
+      counts: normalizedCounts,
+      journalState,
+      storage,
+    };
+  }
+
+  if (
+    status === 'old-remote'
+    && normalizedCounts.total > 0
+    && normalizedCounts.old === normalizedCounts.total
+    && allTargetsClassified
+  ) {
+    return {
+      kind: 'old-remote',
+      state: 'old-remote',
+      proved: journalState === 'ok',
+      replaySafe: journalState === 'ok',
+      counts: normalizedCounts,
+      journalState,
+      storage,
+    };
+  }
+
+  return {
+    kind: 'blocked-recovery',
+    state: 'blocked-recovery',
+    proved: false,
+    replaySafe: false,
+    counts: normalizedCounts,
+    journalState,
+    storage,
+  };
+}
+
 function withIntegrityErrors(persisted, errors) {
   return {
     ...persisted,
@@ -284,4 +355,8 @@ function withIntegrityErrors(persisted, errors) {
       errors,
     },
   };
+}
+
+function integerOrZero(value) {
+  return Number.isInteger(value) ? value : 0;
 }
