@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:51 CEST.
+- Last update: 2026-05-30 10:53 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0276 blocked plan apply refusal variant-4 merge ending at
-  `3a6819455`.
+  the RPP-0277 conflict plan apply refusal variant-4 merge ending at
+  `97ebe07bb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 404
-  items checked and leaves 596 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 405
+  items checked and leaves 595 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 69 merge-invariant items. No release-ops items are checked
+  harness items, and 70 merge-invariant items. No release-ops items are checked
   yet.
+- Conflict plan apply refusal variant-4 refresh: the current lane now contains
+  `RPP-0277` evidence in
+  `docs/evidence/rpp-0277-conflict-plan-apply-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/apply.js`, and
+  `test/rpp-0277-conflict-plan-apply-refusal-v4.test.js`. `node --check`
+  passed for `src/apply.js` and the focused test, focused RPP-0277 coverage
+  passed 1/1, and the adjacent RPP-0217/RPP-0237/RPP-0257/RPP-0277
+  conflict-plan suite passed 5/5. Checklist lint, scoped artifact redaction
+  scan, and merge diff whitespace checks also passed. Counts are now 405/595;
+  final release remains `NO-GO`.
 - Blocked plan apply refusal variant-4 refresh: the current lane now contains
   `RPP-0276` evidence in
   `docs/evidence/rpp-0276-blocked-plan-apply-refusal-v4.md`,
