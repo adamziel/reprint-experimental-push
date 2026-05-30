@@ -6,10 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 19:59 CEST +02:00.
+- Last update: 2026-05-30 20:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0611 new-remote recovery classification metadata merge ending at
-  `a981e32`.
+  the RPP-0442 generated owner-identity ancestry merge ending at `e40906c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +19,17 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Driver owner identity generated-harness ancestry refinement: the current lane
+  now preserves the older `session/rpp-442` RPP-0442 ancestry while retaining
+  the stronger existing generated-harness test that checks unsupported remote
+  preservation and generated private-marker redaction. The merge adds the
+  RPP-0442 summary to `docs/generated-push-harness.md` and keeps
+  `docs/evidence/rpp-0442-driver-owner-identity-binding-v3.md` aligned with the
+  lane proof. Validation passed with Node syntax checks, focused RPP-0442 plus
+  adjacent RPP-0417/RPP-0456 generated coverage 3/3, checklist lint, scoped
+  artifact redaction scan, and diff whitespace checks. Counts remain 511/489;
+  final release remains `NO-GO` because this is local generated-harness
+  evidence, not external production-backed release evidence.
 - New-remote recovery classification metadata refinement: the current lane now
   carries the additional `RPP-0611` SQLite restart proof in
   `test/recovery-journal.test.js`, while keeping the focused hash-only
