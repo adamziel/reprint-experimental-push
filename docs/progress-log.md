@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:16 CEST.
+- Last update: 2026-05-30 14:20 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0370 post_tag taxonomy reference merge ending at `7897895c0`.
+  the RPP-0371 custom taxonomy fail-closed reference merge ending at
+  `d9b674efc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 451
-  items checked and leaves 549 open.
-- Checked slices: 100 release-gate foundation items, 53 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 452
+  items checked and leaves 548 open.
+- Checked slices: 100 release-gate foundation items, 54 graph identity items,
   73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Custom taxonomy fail-closed focused regression: the current lane now contains
+  `RPP-0371` evidence in
+  `docs/evidence/rpp-0371-custom-taxonomy-fail-closed-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0371-custom-taxonomy-fail-closed-reference-v4.test.js`. The focused
+  planner/apply proof blocks an unsupported `product_cat` term-taxonomy target
+  and dependent `wp_term_relationships.term_taxonomy_id` reference with
+  hash-only `stale-wordpress-graph-identity` evidence, refuses apply before
+  remote mutation, and proves the accepted path when explicit identity-map rows
+  rewrite the relationship to a stable remote custom-taxonomy target. Validation
+  passed with Node syntax checks, focused RPP-0371 coverage 2/2, adjacent
+  custom-taxonomy coverage 6/6, checklist lint, scoped artifact redaction scan,
+  and merge diff whitespace checks. Counts are now 452/548; final release
+  remains `NO-GO` because this is local graph identity regression evidence, not
+  externally hosted production topology proof.
 - Post tag taxonomy reference focused regression: the current lane now contains
   `RPP-0370` evidence in
   `docs/evidence/rpp-0370-post-tag-taxonomy-reference-v4.md`,
