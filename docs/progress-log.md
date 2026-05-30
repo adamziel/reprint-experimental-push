@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 22:21 CEST +02:00.
+- Last update: 2026-05-30 22:33 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0188 wp_postmeta create/update/delete release-verifier v5 merge
-  ending at `731c4f`.
+  the RPP-0323 post author reference variant 2 merge ending at `b24a34`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 524
-  items checked and leaves 476 open.
-- Checked slices: 100 release-gate foundation items, 70 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 525
+  items checked and leaves 475 open.
+- Checked slices: 100 release-gate foundation items, 71 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 88 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Post author reference variant-2 proof: the current lane now checks
+  `RPP-0323` with local generated graph evidence for post-author references.
+  The focused proof covers 20 generated `post-author-graph` cases across tiers
+  0 through 9: 10 ready author/post plans and 10 stale graph identity cases,
+  with two cases in every tier. Ready plans create `wp_users` and `wp_posts`
+  mutations with live-remote preconditions, preserve hash-only evidence, and
+  reject stale replay with `PRECONDITION_FAILED` before the mutation callback.
+  Stale plans remain blocked with `stale-wordpress-graph-identity`, refuse
+  apply with `PLAN_NOT_READY` before mutation, and do not expose raw author or
+  post payloads in evidence. Validation passed with Node syntax checks,
+  focused RPP-0323 coverage 1/1, adjacent RPP-0303 generated post-author
+  coverage 1/1, adjacent RPP-0383 post-author release-verifier coverage 3/3,
+  checklist lint, scoped artifact redaction scan, and diff whitespace checks.
+  Counts are now 525/475; final release remains `NO-GO` because this is local
+  generated graph evidence, not production-backed release proof.
 - WP postmeta create/update/delete release-verifier v5 carry-through: the
   current lane now checks `RPP-0188` with generated-harness release-verifier
   support-only proof for regular `wp_postmeta` create/update/delete plans. The
