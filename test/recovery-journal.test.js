@@ -195,6 +195,13 @@ function buildBlockedApplyRevalidation() {
       status: 412,
       code: 'PRECONDITION_FAILED',
     },
+    replay: {
+      status: 412,
+      code: 'PRECONDITION_FAILED',
+      replayed: true,
+      freshMutationWork: false,
+      preservedRemoteUnchanged: true,
+    },
     recoveryInspect: {
       recovery: {
         state: 'blocked-recovery',
@@ -204,6 +211,20 @@ function buildBlockedApplyRevalidation() {
           blockedUnknown: 1,
           total: 2,
         },
+      },
+    },
+    dbJournal: {
+      ordering: {
+        ordered: true,
+        idempotencyOpened: 1,
+        applyStarted: 2,
+        mutationPrepared: 3,
+        storageReady: 4,
+        preconditionFailed: 5,
+        applyRejected: 6,
+        applyReplayed: 7,
+        mutationAppliedBeforeFailure: 0,
+        applyCommitted: false,
       },
     },
   };
@@ -1161,6 +1182,103 @@ test('production recovery journal claim expiry advances stale ownership and rele
   assert.deepEqual(releaseProof.partialStates.old.counts, oldRemoteRecovery.counts);
   assert.equal(releaseProof.claimExpiryPolicy.proved, true);
   assert.equal(releaseProof.claimExpiryPolicy.previousClaimAgeMs, 5_000);
+});
+
+test('RPP-0635 release proof carries same-key replay after rejection on the checked path', () => {
+  const filePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const artifactRefs = {
+    releaseProof: 'artifact://release-proof-rpp-0635',
+  };
+  const staleThresholdMs = 1_000;
+  const activeClaimId = 'rpp-0635-rejected-replay-active';
+  const retryClaimId = 'rpp-0635-rejected-replay-retry';
+  const initial = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId: activeClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  initial.close();
+
+  const retry = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: new Date(fixedNow.getTime() + 5_000),
+    truncate: false,
+    claimId: retryClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  const inspection = retry.inspect();
+  retry.close();
+
+  const restarted = readRecoveryJournal(filePath);
+  const oldRemoteInspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: remote,
+  });
+  const applyRevalidation = buildBlockedApplyRevalidation();
+  const oldRemoteRecovery = {
+    source: 'production recovery journal restart inspection before rejected replay',
+    status: 200,
+    state: oldRemoteInspection.status,
+    counts: {
+      ...oldRemoteInspection.counts,
+      total: plan.mutations.length,
+    },
+  };
+
+  assert.equal(oldRemoteInspection.status, 'old-remote');
+  assert.equal(applyRevalidation.apply.status, 412);
+  assert.equal(applyRevalidation.apply.code, 'PRECONDITION_FAILED');
+  assert.equal(applyRevalidation.replay.status, 412);
+  assert.equal(applyRevalidation.replay.code, 'PRECONDITION_FAILED');
+  assert.equal(applyRevalidation.replay.replayed, true);
+  assert.equal(applyRevalidation.replay.freshMutationWork, false);
+  assert.equal(applyRevalidation.replay.preservedRemoteUnchanged, true);
+  assert.equal(
+    applyRevalidation.dbJournal.ordering.applyRejected
+      < applyRevalidation.dbJournal.ordering.applyReplayed,
+    true,
+  );
+  assert.equal(applyRevalidation.dbJournal.ordering.mutationAppliedBeforeFailure, 0);
+  assert.equal(applyRevalidation.dbJournal.ordering.applyCommitted, false);
+
+  const releaseProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: buildRecoveryReleaseSummary({
+      inspection,
+      plan,
+      mutationEvents: plan.mutations.length,
+      oldRemoteRecovery,
+    }),
+    applyRevalidation,
+  });
+
+  assert.equal(releaseProof.ok, true);
+  assert.equal(releaseProof.gate, 'GATE-2');
+  assert.equal(releaseProof.gateStatus, 'proven');
+  assert.equal(releaseProof.sameReleaseBoundary, true);
+  assert.equal(releaseProof.checks.sameKeyRejectedReplay, true);
+  assert.equal(releaseProof.sameKeyRejectedReplay.proved, true);
+  assert.equal(releaseProof.sameKeyRejectedReplay.required, true);
+  assert.equal(releaseProof.sameKeyRejectedReplay.status, 412);
+  assert.equal(releaseProof.sameKeyRejectedReplay.code, 'PRECONDITION_FAILED');
+  assert.equal(releaseProof.sameKeyRejectedReplay.replayed, true);
+  assert.equal(releaseProof.sameKeyRejectedReplay.freshMutationWork, false);
+  assert.equal(releaseProof.sameKeyRejectedReplay.preservedRemoteUnchanged, true);
+  assert.equal(releaseProof.sameKeyRejectedReplay.applyRejectedSequence, 6);
+  assert.equal(releaseProof.sameKeyRejectedReplay.applyReplayedSequence, 7);
+  assert.equal(releaseProof.sameKeyRejectedReplay.mutationAppliedBeforeFailure, 0);
+  assert.equal(releaseProof.sameKeyRejectedReplay.applyCommitted, false);
+  assert.equal(releaseProof.checks.preservedRejectedRemoteEvidence, true);
+  assert.equal(releaseProof.preservedRejectedRemoteEvidence.proved, true);
 });
 
 test('production recovery journal ownership record is durable after restart', () => {

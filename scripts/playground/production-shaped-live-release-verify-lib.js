@@ -73,6 +73,12 @@ export function buildDurableRecoveryJournalReleaseProof({
   const applyRevalidationCounts = applyRevalidationRecovery?.counts || {};
   const replay = releaseProof?.replay?.idempotency || {};
   const conflict = releaseProof?.idempotencyConflict || {};
+  const rejectedReplay = applyRevalidation?.replay || {};
+  const rejectedReplayOrdering = applyRevalidation?.dbJournal?.ordering || {};
+  const rejectedReplayEvidencePresent = Boolean(
+    Object.keys(rejectedReplay).length > 0
+    || Object.keys(rejectedReplayOrdering).length > 0,
+  );
   const mutationApplied = releaseProof?.dbJournal?.mutationApplied ?? null;
   const expectedMutationEvents = Number.isInteger(planMutationCount) ? planMutationCount : mutationApplied;
   const leaseOwnerIdentity = {
@@ -175,6 +181,34 @@ export function buildDurableRecoveryJournalReleaseProof({
     conflictEventSequence: conflictEvent?.sequence ?? null,
     mutationEventsAfterConflict: mutationEventsAfterConflict.length,
   };
+  const sameKeyRejectedReplay = {
+    proved: Boolean(
+      applyRevalidation?.apply?.status === 412
+      && applyRevalidation?.apply?.code === 'PRECONDITION_FAILED'
+      && rejectedReplay?.status === 412
+      && rejectedReplay?.code === 'PRECONDITION_FAILED'
+      && rejectedReplay?.replayed === true
+      && rejectedReplay?.freshMutationWork === false
+      && rejectedReplay?.preservedRemoteUnchanged === true
+      && rejectedReplayOrdering?.ordered === true
+      && positiveInteger(rejectedReplayOrdering.applyRejected)
+      && positiveInteger(rejectedReplayOrdering.applyReplayed)
+      && rejectedReplayOrdering.applyRejected < rejectedReplayOrdering.applyReplayed
+      && rejectedReplayOrdering.mutationAppliedBeforeFailure === 0
+      && rejectedReplayOrdering.applyCommitted === false,
+    ),
+    status: rejectedReplay?.status ?? null,
+    code: rejectedReplay?.code || null,
+    replayed: rejectedReplay?.replayed === true,
+    freshMutationWork: rejectedReplay?.freshMutationWork === true,
+    preservedRemoteUnchanged: rejectedReplay?.preservedRemoteUnchanged === true,
+    applyRejectedSequence: rejectedReplayOrdering?.applyRejected ?? null,
+    applyReplayedSequence: rejectedReplayOrdering?.applyReplayed ?? null,
+    mutationAppliedBeforeFailure: rejectedReplayOrdering?.mutationAppliedBeforeFailure ?? null,
+    applyCommitted: rejectedReplayOrdering?.applyCommitted === true,
+    ordered: rejectedReplayOrdering?.ordered === true,
+    required: rejectedReplayEvidencePresent,
+  };
   const partialStates = {
     old: {
       proved: oldRemoteRecoveryClassification.proved === true,
@@ -247,6 +281,9 @@ export function buildDurableRecoveryJournalReleaseProof({
     recoveryInspectAfterRestart: recoveryInspectAfterRestart.proved === true,
     sameKeyBodyReplay: sameKeyBodyReplay.proved === true,
     sameKeyDifferentBodyConflict: sameKeyDifferentBodyConflict.proved === true,
+    sameKeyRejectedReplay: rejectedReplayEvidencePresent
+      ? sameKeyRejectedReplay.proved === true
+      : true,
     oldState: partialStates.old.proved === true,
     newState: partialStates.new.proved === true,
     blockedState: partialStates.blocked.proved === true,
@@ -270,6 +307,7 @@ export function buildDurableRecoveryJournalReleaseProof({
     recoveryInspectAfterRestart,
     sameKeyBodyReplay,
     sameKeyDifferentBodyConflict,
+    sameKeyRejectedReplay,
     partialStates,
     preservedRejectedRemoteEvidence,
   };
