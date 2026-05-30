@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 539.
-- Remaining open: 461.
+- Verified complete: 540.
+- Remaining open: 460.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -209,7 +209,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0190 (Near / generated-harness) Carry through the release verifier for wp_comments and wp_commentmeta graph changes, variant 5. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0191 (Near / generated-harness) Carry through the release verifier for wp_terms and wp_termmeta graph changes, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.
 - [x] RPP-0192 (Near / generated-harness) Carry through the release verifier for wp_term_taxonomy graph changes, variant 5. Success: summary exposes per-tier counts for this target.
-- [ ] RPP-0193 (Near / generated-harness) Carry through the release verifier for wp_term_relationships graph changes, variant 5. Success: ready cases apply with no unplanned remote overwrite.
+- [x] RPP-0193 (Near / generated-harness) Carry through the release verifier for wp_term_relationships graph changes, variant 5. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0194 (Near / generated-harness) Carry through the release verifier for plugin-owned option changes, variant 5. Success: stale remote replay fails before mutation.
 - [ ] RPP-0195 (Near / generated-harness) Carry through the release verifier for plugin-owned custom-table changes, variant 5. Success: docs/generated-push-harness.md records the surface and invariant.
 - [ ] RPP-0196 (Near / generated-harness) Carry through the release verifier for atomic plugin install stack, variant 5. Success: generator emits at least one ready case and one non-ready case for this target.

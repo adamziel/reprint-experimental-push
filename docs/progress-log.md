@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:28 CEST +02:00.
+- Last update: 2026-05-30 23:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0339 cross-table create batch mapping variant 2 merge ending at
-  `af84649`.
+  the RPP-0193 wp_term_relationships graph release-verifier variant 5 merge
+  ending at `034caee`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 539
-  items checked and leaves 461 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 540
+  items checked and leaves 460 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 92 generated
+  23 storage/performance items, 3 production-topology items, 93 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- WP term relationships graph release-verifier v5 carry-through: the current
+  lane now checks `RPP-0193` with deterministic generated-harness support-only
+  proof for `wp_term_relationships` graph changes. The generator exposes
+  `wpTermRelationshipsGraphReleaseVerifierVariant5` target coverage with 10
+  cases across tiers 0 through 9, one case per tier, and status counts of 5
+  ready and 5 blocked. The focused proof verifies ready term/taxonomy/
+  relationship creates apply with live preconditions, preserve the unplanned
+  remote-only file, reject stale replay before mutation, and keep stale
+  relationship references blocked with hash-only evidence. Validation passed
+  with Node syntax checks, focused RPP-0193 coverage 2/2, adjacent
+  RPP-0153/RPP-0173/RPP-0193 generated graph coverage 4/4, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 540/460; final
+  release remains `NO-GO` because this is local generated release-verifier
+  evidence, not production-backed release proof.
 - Cross-table create batch mapping variant-2 proof: the current lane now checks
   `RPP-0339` with focused local-production verifier carry-through evidence for
   same-plan post and postmeta creates. The proof verifies both rows have
