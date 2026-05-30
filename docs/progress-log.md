@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:21 CEST +02:00.
+- Last update: 2026-05-30 16:24 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0496 driver delete support release-verifier v5 merge ending at
-  `3b2b64d65`.
+  the RPP-0715 large media library benchmark merge ending at `59b1baf2b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 476
-  items checked and leaves 524 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 477
+  items checked and leaves 523 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
   82 plugin-driver boundary items, 28 executor/auth items, 35 recovery items,
-  18 storage/performance items, 3 production-topology items, 78 generated
+  19 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Large media library benchmark: the current lane now contains `RPP-0715`
+  evidence in
+  `docs/evidence/rpp-0715-large-media-library-benchmark.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/large-media-library-benchmark.js`, and
+  `test/large-media-library-benchmark.test.js`. The benchmark drives media
+  upload-path storage through filesystem fsync evidence, retains attachment
+  and metadata row preconditions, blocks stale writes before rename, and
+  withholds fast-path lane updates when fsync gates are incomplete. Validation
+  passed with Node syntax checks, focused RPP-0715 coverage 3/3, a large-site
+  benchmark run with 128 lane updates, 16 blocked media writes, 3 database
+  batches, 500 max rows per batch, and all 9 gates passing, adjacent
+  storage/batch coverage 27/27, checklist lint, scoped artifact redaction scan,
+  raw media fixture scan, and merge diff whitespace checks. Counts are now
+  477/523; final release remains `NO-GO` because this is local benchmark
+  evidence, not production storage receipt or row batch execution proof.
 - Driver delete support release-verifier v5: the current lane now contains
   `RPP-0496` evidence in
   `docs/evidence/rpp-0496-driver-delete-support-release-verifier-v5.md`,
