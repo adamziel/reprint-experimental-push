@@ -6,20 +6,28 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:42 CEST.
+- Last update: 2026-05-30 10:46 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0272 remoteBeforeHash correctness variant-4 merge ending at
-  `6ad85b0bf`.
+  the RPP-0273 localHash correctness variant-4 merge ending at `43bbcd282`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 401
-  items checked and leaves 599 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 402
+  items checked and leaves 598 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 66 merge-invariant items. No release-ops items are checked
+  harness items, and 67 merge-invariant items. No release-ops items are checked
   yet.
+- LocalHash correctness variant-4 refresh: the current lane now contains
+  `RPP-0273` evidence in
+  `docs/evidence/rpp-0273-local-hash-correctness-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0273-local-hash-correctness-v4.test.js`. `node --check` passed
+  for the focused test, focused RPP-0273 coverage passed 2/2, and the adjacent
+  RPP-0213/RPP-0233/RPP-0253 localHash suite passed 5/5. Checklist lint, full
+  artifact redaction scan, and merge diff whitespace checks also passed. Counts
+  are now 402/598; final release remains `NO-GO`.
 - RemoteBeforeHash correctness variant-4 refresh: the current lane now contains
   `RPP-0272` evidence in
   `docs/evidence/rpp-0272-remote-before-hash-correctness-v4.md`,

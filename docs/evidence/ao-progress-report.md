@@ -1,19 +1,28 @@
-# AO Progress Report - 2026-05-30 10:42 CEST
+# AO Progress Report - 2026-05-30 10:46 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0272
-remoteBeforeHash correctness variant-4 merge-invariant refresh ending at
-`6ad85b0bf`.
+`lane/evidence-integration-20260527` through the current RPP-0273 localHash
+correctness variant-4 merge-invariant refresh ending at `43bbcd282`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 401 are
-  checked from integrated evidence and 599 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 402 are
+  checked from integrated evidence and 598 remain open.
+- `RPP-0273` is now checked with focused localHash correctness variant-4
+  merge-invariant evidence in
+  `docs/evidence/rpp-0273-local-hash-correctness-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0273-local-hash-correctness-v4.test.js`. `node --check` passed
+  for the focused test, focused RPP-0273 coverage passed 2/2, and the adjacent
+  RPP-0213/RPP-0233/RPP-0253 localHash suite passed 5/5. Checklist lint, full
+  artifact redaction scan, and merge diff whitespace checks also passed. This
+  remains local planner/apply generated-fixture evidence, not production
+  endpoint proof.
 - `RPP-0272` is now checked with focused remoteBeforeHash correctness
   variant-4 merge-invariant evidence in
   `docs/evidence/rpp-0272-remote-before-hash-correctness-v4.md`,
@@ -2496,7 +2505,7 @@ tracks the near-to-far slices used to supervise the AO team:
 | --- | --- | --- |
 | `RPP-0001`-`RPP-0100` | Release gate foundation | 100 / 100 |
 | `RPP-0101`-`RPP-0200` | Generated harness expansion | 78 / 100 |
-| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 66 / 100 |
+| `RPP-0201`-`RPP-0300` | Planner no-data-loss invariants | 67 / 100 |
 | `RPP-0301`-`RPP-0400` | WordPress graph identity mapping | 29 / 100 |
 | `RPP-0401`-`RPP-0500` | Plugin-driver ownership boundary | 73 / 100 |
 | `RPP-0501`-`RPP-0600` | Production executor and auth protocol | 22 / 100 |
