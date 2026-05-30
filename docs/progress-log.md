@@ -6,20 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:28 CEST +02:00.
+- Last update: 2026-05-30 18:33 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0391 custom taxonomy fail-closed reference release-verifier proof
-  merge ending at `d2c7f9c`.
+  the RPP-0392 termmeta term reference release-verifier proof merge ending at
+  `30e19e5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 501
-  items checked and leaves 499 open.
-- Checked slices: 100 release-gate foundation items, 61 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 502
+  items checked and leaves 498 open.
+- Checked slices: 100 release-gate foundation items, 62 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Termmeta term reference release-verifier proof v5: the current lane now
+  contains `RPP-0392` evidence in
+  `docs/evidence/rpp-0392-termmeta-term-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0392-termmeta-term-reference-release-verifier-v5.test.js`. The
+  local release-verifier proof keeps a local-only `wp_termmeta.term_id`
+  reference to an absent `wp_terms` target fail-closed, emits one
+  `stale-wordpress-graph-identity` blocker with zero mutations and zero
+  preconditions, refuses `applyPlan` before mutation with `PLAN_NOT_READY`, and
+  keeps plan, blocker, reference, and proof evidence hash-only. Validation
+  passed with Node syntax checks, focused RPP-0392 coverage 1/1, generated
+  termmeta graph coverage 2/2, planner taxonomy coverage 3/3, fail-closed
+  navigation graph coverage 5/5, adjacent wp_termmeta release-verifier coverage
+  4/4, hash-only release-verifier coverage 4/4, checklist lint, scoped
+  artifact redaction scan, raw fixture scan, and merge diff whitespace checks.
+  Counts are now 502/498; final release remains `NO-GO` because this is local
+  support-only release-verifier evidence, not production-backed release
+  evidence.
 - Custom taxonomy fail-closed reference release-verifier proof v5: the current
   lane now contains `RPP-0391` evidence in
   `docs/evidence/rpp-0391-custom-taxonomy-fail-closed-reference-release-verifier-v5.md`,
