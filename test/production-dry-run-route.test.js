@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const routeSourcePath = path.join(repoRoot, 'scripts/playground/push-remote-rest-plugin.php');
 const routeSource = readFileSync(routeSourcePath, 'utf8');
+const liveSmokeSourcePath = path.join(repoRoot, 'scripts/playground/production-dry-run-route-live-smoke.mjs');
+const liveSmokeSource = readFileSync(liveSmokeSourcePath, 'utf8');
 
 function functionBody(name) {
   const declaration = `function ${name}`;
@@ -46,6 +48,14 @@ function assertBefore(body, first, second) {
   assert.notEqual(firstIndex, -1, `missing ${first}`);
   assert.notEqual(secondIndex, -1, `missing ${second}`);
   assert.ok(firstIndex < secondIndex, `${first} must appear before ${second}`);
+}
+
+function sourceSlice(source, startNeedle, endNeedle) {
+  const start = source.indexOf(startNeedle);
+  assert.notEqual(start, -1, `missing ${startNeedle}`);
+  const end = source.indexOf(endNeedle, start);
+  assert.notEqual(end, -1, `missing ${endNeedle} after ${startNeedle}`);
+  return source.slice(start, end);
 }
 
 test('production dry-run route is a signed POST route behind authenticated permission', () => {
@@ -118,4 +128,75 @@ test('authenticated apply validates dry-run receipt subject and plan binding bef
     '$expected_subject_binding = reprint_push_lab_rest_authenticated_receipt_subject_binding',
     '$push_session = isset($binding[\'pushSession\'])',
   );
+});
+
+test('RPP-0523 dry-run proof uses the real production-shaped route over sandbox-local loopback', () => {
+  assert.match(liveSmokeSource, /const endpointPath = '\/wp-json\/reprint\/v1\/push\/dry-run';/);
+  assert.match(liveSmokeSource, /const routeIndexPath = '\/reprint\/v1\/push\/dry-run';/);
+  assert.match(liveSmokeSource, /assertRoute\(index\.body, routeIndexPath, 'POST'\)/);
+
+  assert.match(liveSmokeSource, /assert\.equal\(unsigned\.status, 401, `unsigned production dry-run HTTP \$\{unsigned\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(unsigned\.body\?\.code, 'SIGNED_HEADER_REQUIRED'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(unsigned\.body\?\.receipt, undefined, 'unsigned dry-run must not mint a receipt'\)/);
+
+  assert.match(
+    liveSmokeSource,
+    /authenticatedHttpClient\(\{\s+sourceUrl: server\.baseUrl,\s+credential: credentials,\s+routeProfile: 'production-shaped',/s,
+  );
+  assert.match(liveSmokeSource, /const preflight = await client\.signedGet\('\/preflight'\)/);
+  assert.match(liveSmokeSource, /const dryRun = await client\.signedPost\('\/dry-run', \{ plan: readyPlan \}, \{\s+session,\s+idempotencyKey,/s);
+  assert.match(liveSmokeSource, /assert\.equal\(dryRun\.status, 200, `production-shaped dry-run HTTP \$\{dryRun\.status\}`\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(dryRun\.request\?\.pathname, endpointPath\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.request\?\.restNamespace, 'reprint\/v1'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.request\?\.dryRunRoute, '\/push\/dry-run'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.request\?\.routeProfile, 'production-shaped'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.session\?\.type, 'production-auth-session'\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.session\?\.id, session\)/);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.authBinding\?\.binding\?\.planHash, expectedPlanHash\)/);
+  assert.match(liveSmokeSource, /receipt\.authBinding\.binding\.bindingHash,\s+digest\(withoutKey\(receipt\.authBinding\.binding, 'bindingHash'\)\),/s);
+  assert.match(liveSmokeSource, /assert\.equal\(receipt\.receiptHash, digest\(withoutKey\(receipt, 'receiptHash'\)\)\)/);
+  assert.match(liveSmokeSource, /assertVisibleSurfaceEqual\(after\.body\.snapshot, snapshots\.base, 'production-shaped dry-run must not mutate'\)/);
+
+  assert.match(liveSmokeSource, /host: '127\.0\.0\.1'/);
+  assert.match(liveSmokeSource, /port: 'ephemeral'/);
+  assert.match(liveSmokeSource, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(liveSmokeSource, /tunnel: 'none'/);
+  assert.match(liveSmokeSource, /http\.Server\.prototype\.listen = function reprintPushLocalhostListen/);
+  assert.doesNotMatch(liveSmokeSource, /\b(?:ngrok|cloudflared|localtunnel|serveo|localhost\.run|lhr\.life|Tailscale Funnel)\b/i);
+});
+
+test('RPP-0523 live proof summary reports hash-only dry-run binding evidence', () => {
+  const summaryInitializer = sourceSlice(liveSmokeSource, 'const summary = {', 'try {');
+  assert.match(summaryInitializer, /routeProfile: 'production-shaped'/);
+  assert.match(summaryInitializer, /endpoint: endpointPath/);
+  assert.match(summaryInitializer, /liveUrl: \{/);
+  assert.match(summaryInitializer, /exposure: 'sandbox-local-loopback-only'/);
+  assert.match(summaryInitializer, /tunnel: 'none'/);
+
+  const unsignedSummary = sourceSlice(liveSmokeSource, 'summary.unsigned = {', '    const client = authenticatedHttpClient');
+  assert.match(unsignedSummary, /status: unsigned\.status/);
+  assert.match(unsignedSummary, /code: unsigned\.body\?\.code \|\| null/);
+  assert.match(unsignedSummary, /receiptMinted: Boolean\(unsigned\.body\?\.receipt\)/);
+  assert.doesNotMatch(unsignedSummary, /authorization|Basic|password|credential/i);
+
+  const dryRunSummary = sourceSlice(liveSmokeSource, 'summary.dryRun = {', '    summary.after = {');
+  assert.match(dryRunSummary, /requestPath: dryRun\.request\.pathname/);
+  assert.match(dryRunSummary, /receiptHashLength: String\(receipt\.receiptHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /planHashMatchesExpected: receipt\.planHash === expectedPlanHash/);
+  assert.match(dryRunSummary, /scope: receipt\.authBinding\.scope/);
+  assert.match(dryRunSummary, /routeProfile: receipt\.authBinding\.request\.routeProfile/);
+  assert.match(dryRunSummary, /restNamespace: receipt\.authBinding\.request\.restNamespace/);
+  assert.match(dryRunSummary, /dryRunRoute: receipt\.authBinding\.request\.dryRunRoute/);
+  assert.match(dryRunSummary, /idMatchesPreflight: receipt\.authBinding\.session\.id === session/);
+  assert.match(dryRunSummary, /scopeHashLength: String\(receipt\.authBinding\.binding\.scopeHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /identityHashLength: String\(receipt\.authBinding\.binding\.identityHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /authSessionHashLength: String\(receipt\.authBinding\.binding\.authSessionHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /pushSessionHashLength: String\(receipt\.authBinding\.binding\.pushSessionHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /bindingHashLength: String\(receipt\.authBinding\.binding\.bindingHash \|\| ''\)\.length/);
+  assert.match(dryRunSummary, /idempotencyKeyHashLength: String\(dryRun\.body\.signedRequest\.request\.idempotencyKeyHash \|\| ''\)\.length/);
+  assert.doesNotMatch(dryRunSummary, /authorization|Basic|applicationPassword|password|credentialHash|signingKey:|sessionHash:/i);
+
+  const afterSummary = sourceSlice(liveSmokeSource, 'summary.after = {', '    summary.ok = true;');
+  assert.match(afterSummary, /finalMatchesBase: true/);
+  assert.match(afterSummary, /visibleSurfaceDigest: digest\(visibleSurface\(after\.body\.snapshot\)\)/);
 });
