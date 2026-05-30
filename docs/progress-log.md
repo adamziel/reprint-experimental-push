@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:10 CEST.
+- Last update: 2026-05-30 13:12 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0709 chunk replay idempotency merge ending at `df64aa3d`.
+  the RPP-0622 journal ownership record merge ending at `046f94b5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 437
-  items checked and leaves 563 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 438
+  items checked and leaves 562 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 23 executor/auth items, 26 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 27 recovery items,
   12 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Journal ownership record v2: the current lane now contains `RPP-0622`
+  evidence in `docs/evidence/rpp-0622-journal-ownership-record-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The SQLite-backed regression persists the
+  exact claim-fenced production recovery journal rows into a `recovery_journal`
+  table, closes and reopens the database, proves the single
+  `journal-ownership-recorded` row survives at sequence 2 with plan id, claim
+  hash, artifact refs, ownership contract, storage guard, and fsync evidence,
+  and confirms the row omits local file/SQLite paths while satisfying raw-value
+  redaction checks. Validation passed with Node syntax checks, focused
+  RPP-0621/RPP-0622 coverage 2/2 after conflict resolution, full recovery
+  journal coverage 30/30, checklist lint, scoped artifact redaction scan, and
+  merge diff whitespace checks. Counts are now 438/562; final release remains
+  `NO-GO` because this is SQLite-backed local durability evidence, not external
+  production restart proof.
 - Chunk replay idempotency: the current lane now contains `RPP-0709` evidence in
   `docs/evidence/rpp-0709-chunk-replay-idempotency.md`,
   `docs/reprint-push-completion-checklist.md`,
