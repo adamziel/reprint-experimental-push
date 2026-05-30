@@ -3076,6 +3076,21 @@ function reprint_push_lab_rest_blocked_missing_commit_result(
 
 function reprint_push_lab_rest_idempotency_conflict_result(array $context): array
 {
+    $idempotency_key_hash = (string) ($context['idempotencyKeyHash'] ?? '');
+    $request_hash = (string) ($context['requestHash'] ?? '');
+    $mutation_counts = reprint_push_lab_rest_mutation_event_counts_for_key_request(
+        $idempotency_key_hash,
+        $request_hash
+    );
+    $conflicting_request_hash = '';
+    $claim_row = reprint_push_lab_db_journal_claim_row_for_key($idempotency_key_hash);
+    if (is_array($claim_row)) {
+        $claim_request_hash = (string) ($claim_row['requestHash'] ?? '');
+        if ($claim_request_hash !== '' && $claim_request_hash !== $request_hash) {
+            $conflicting_request_hash = $claim_request_hash;
+        }
+    }
+
     $conflict_result = [
         'ok' => false,
         'code' => 'IDEMPOTENCY_KEY_CONFLICT',
@@ -3085,13 +3100,19 @@ function reprint_push_lab_rest_idempotency_conflict_result(array $context): arra
             'replayed' => false,
             'conflict' => true,
             'freshMutationWork' => false,
-            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
-            'requestHash' => $context['requestHash'],
+            'status' => 'conflict',
+            'idempotencyKeyHash' => $idempotency_key_hash,
+            'requestHash' => $request_hash,
+            'conflictingRequestHash' => $conflicting_request_hash,
+            'mutationEventCounts' => $mutation_counts,
         ],
     ];
     $conflict_entry = reprint_push_lab_db_journal_append_event('idempotency-key-conflict', $context + [
         'errorCode' => 'IDEMPOTENCY_KEY_CONFLICT',
         'result' => $conflict_result,
+        'resourceHashEvidence' => [
+            'idempotencyConflict' => $conflict_result['idempotency'],
+        ],
     ]);
     $conflict_result['dbJournal'] = reprint_push_lab_rest_db_journal_evidence($conflict_entry);
     return $conflict_result;

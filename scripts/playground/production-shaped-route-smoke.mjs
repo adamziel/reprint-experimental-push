@@ -276,15 +276,26 @@ try {
     assert.equal(conflict.body.idempotency.freshMutationWork, false);
     assert.deepEqual(Object.keys(conflict.body.idempotency).sort(), [
       'conflict',
+      'conflictingRequestHash',
       'freshMutationWork',
       'idempotencyKeyHash',
+      'mutationEventCounts',
       'replayed',
       'requestHash',
+      'status',
     ]);
+    assert.equal(conflict.body.idempotency.status, 'conflict');
     assertBareSha256(conflict.body.idempotency.idempotencyKeyHash, 'conflict idempotency key hash');
     assertBareSha256(conflict.body.idempotency.requestHash, 'conflict request hash');
+    assertBareSha256(conflict.body.idempotency.conflictingRequestHash, 'conflicting request hash');
     assert.equal(conflict.body.idempotency.idempotencyKeyHash, apply.body.idempotency.idempotencyKeyHash);
     assert.notEqual(conflict.body.idempotency.requestHash, apply.body.idempotency.requestHash);
+    assert.equal(conflict.body.idempotency.conflictingRequestHash, apply.body.idempotency.requestHash);
+    assert.deepEqual(conflict.body.idempotency.mutationEventCounts, {
+      prepared: 0,
+      applied: 0,
+      preconditionFailed: 0,
+    });
     assert.equal(conflict.body.dbJournal.event, 'idempotency-key-conflict');
     assert.equal(conflict.body.dbJournal.idempotencyKeyHash, conflict.body.idempotency.idempotencyKeyHash);
     assert.equal(conflict.body.dbJournal.requestHash, conflict.body.idempotency.requestHash);
