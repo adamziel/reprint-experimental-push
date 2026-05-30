@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 03:35 CEST
+# AO Progress Report - 2026-05-30 03:40 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0151
-terms/termmeta graph variant-3 refresh ending at `06ec656ee`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0235
+keep-remote decision safety refresh ending at `79ebf86a9`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 309 are
-  checked from integrated evidence and 691 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 310 are
+  checked from integrated evidence and 690 remain open.
+- `RPP-0235` is now checked with focused keep-remote decision safety evidence
+  in `docs/evidence/rpp-0235-keep-remote-decision-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0235-keep-remote-decision-v2.test.js`. `node --check
+  test/rpp-0235-keep-remote-decision-v2.test.js` exited 0, `node --test
+  test/rpp-0235-keep-remote-decision-v2.test.js` passed 1/1, the focused
+  `RPP-0215|RPP-0235` planner pattern passed 3/3, and `node --test
+  test/push-planner.test.js test/rpp-0235-keep-remote-decision-v2.test.js`
+  passed 148/148, proving keep-remote resources are preserved without local
+  overwrite mutations, forged overwrite attempts fail before durable journal or
+  mutation, serialized evidence stays hash-only, checklist lint, artifact
+  redaction scan, and `git diff --check` while final release remains
+  **NO-GO**.
 - `RPP-0151` is now checked with generated `wp_terms`/`wp_termmeta` graph
   variant-3 evidence in
   `docs/evidence/rpp-0151-wp-terms-termmeta-graph-v3.md`,

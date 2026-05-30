@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:35 CEST.
+- Last update: 2026-05-30 03:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0151 terms/termmeta graph variant-3 merge ending at `06ec656ee`.
+  the RPP-0235 keep-remote decision safety merge ending at `79ebf86a9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 309
-  items checked and leaves 691 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 310
+  items checked and leaves 690 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   42 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 52 generated
-  harness items, and 36 merge-invariant items. No release-ops items are checked
+  harness items, and 37 merge-invariant items. No release-ops items are checked
   yet.
+- Focused keep-remote decision safety refresh: the current lane now contains
+  `RPP-0235` evidence in
+  `docs/evidence/rpp-0235-keep-remote-decision-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0235-keep-remote-decision-v2.test.js`. `node --check
+  test/rpp-0235-keep-remote-decision-v2.test.js` exited 0, `node --test
+  test/rpp-0235-keep-remote-decision-v2.test.js` passed 1/1, the focused
+  `RPP-0215|RPP-0235` planner pattern passed 3/3, and `node --test
+  test/push-planner.test.js test/rpp-0235-keep-remote-decision-v2.test.js`
+  passed 148/148. The proof preserves remote resources for keep-remote
+  decisions, emits no local overwrite mutation for the preserved resource,
+  rejects forged overwrite attempts before durable journal or mutation, and
+  keeps serialized evidence hash-only. Checklist lint, artifact redaction scan,
+  and `git diff --check` also passed. Counts are now 310/690; final release
+  remains `NO-GO`.
 - Generated wp_terms/wp_termmeta graph variant-3 refresh: the current lane now
   contains `RPP-0151` evidence in
   `docs/evidence/rpp-0151-wp-terms-termmeta-graph-v3.md`,
