@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 06:23 CEST
+# AO Progress Report - 2026-05-30 06:29 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0161 file
-create/update/delete mix variant-4 generated-harness refresh ending at
-`1d58c3179`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0162 directory
+descendant conflict variant-4 generated-harness refresh ending at `13c8ca100`.
+It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 354 are
-  checked from integrated evidence and 646 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 355 are
+  checked from integrated evidence and 645 remain open.
+- `RPP-0162` is now checked with focused directory descendant conflict
+  variant-4 generated-harness evidence in
+  `docs/evidence/rpp-0162-directory-descendant-conflict-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0162 test passed 1/1, the adjacent
+  RPP-0102/RPP-0122/RPP-0142/RPP-0162 directory-descendant slice passed 3/3,
+  and `npm run test:generated-push-harness` passed 69/69 across 620
+  deterministic generated cases. Checklist lint, artifact redaction scan, and
+  merge diff whitespace checks also passed. This remains deterministic
+  generated-model coverage, not production endpoint proof.
 - `RPP-0161` is now checked with focused file create/update/delete mix
   variant-4 generated-harness evidence in
   `docs/evidence/rpp-0161-file-create-update-delete-mix-v4.md`,

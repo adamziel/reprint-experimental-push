@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T06:23:00+02:00">Last updated: May 30, 2026, 06:23 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T06:29:00+02:00">Last updated: May 30, 2026, 06:29 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>354</strong>
+        <strong>355</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>646</strong>
+        <strong>645</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>68/68 generated harness tests pass across 620 deterministic three-way push cases, including file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span><strong>Generated push harness</strong>69/69 generated harness tests pass across 620 deterministic three-way push cases, including directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,14 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0161</span>
+        <span>RPP-0162</span>
       </div>
-      <p>The latest refresh integrates RPP-0161 file create/update/delete mix variant-4 generated-harness evidence: syntax checks, focused and adjacent file-mix tests, and the full generated harness prove ready and non-ready file mutation coverage remains deterministic. Counts are now 354/646; final release remains NO-GO because this is generated-model coverage, not production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0162 directory descendant conflict variant-4 generated-harness evidence: syntax checks, focused and adjacent directory-descendant tests, and the full generated harness prove per-tier ready and conflict counts remain deterministic. Counts are now 355/645; final release remains NO-GO because this is generated-model coverage, not production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0162 focused: 1/1</span>
+        <span class="tag">directory slice: 3/3</span>
+        <span class="tag">generated harness: 69/69</span>
+        <span class="tag">620 cases</span>
         <span class="tag">RPP-0161 focused: 1/1</span>
         <span class="tag">file-mix slice: 4/4</span>
         <span class="tag">generated harness: 68/68</span>
-        <span class="tag">620 cases</span>
         <span class="tag">RPP-0160 focused: 1/1</span>
         <span class="tag">large-plan slice: 3/3</span>
         <span class="tag">generated harness: 67/67</span>
