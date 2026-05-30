@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T15:15:00+02:00">Last updated: May 30, 2026, 15:15 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:18:00+02:00">Last updated: May 30, 2026, 15:18 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>463</strong>
+        <strong>464</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>537</strong>
+        <strong>536</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote, new-remote, and blocked partial-remote classification, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0491</span>
+        <span>RPP-0629</span>
       </div>
-      <p>The latest refresh integrates RPP-0491 plugin uninstall/delete release-verifier evidence: the verifier emits hash-only pluginDriver.uninstallDeleteRefusal proof beside the plugin-driver release evidence; refuses plugin metadata deletes and package file deletes with PLUGIN_UNINSTALL_DELETE_REFUSED; refuses plugin-owned wp_options row deletes with PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED; preserves the remote snapshot for blocked-plan apply; and rejects forged ready plugin metadata/package file deletes before mutation. Counts are now 463/537; final release remains NO-GO because this is local/support-only plugin-driver release-verifier evidence, not production-backed uninstall/delete proof.</p>
+      <p>The latest refresh integrates RPP-0629 restart-readable committed-state recovery evidence: a separate Node process writes a claim-fenced file-backed recovery journal, applies every planned mutation, exits only after the durable journal-completed row, and the parent process reopens the JSONL journal to verify committedState.restartReadable, target-envelope completion, row-level fsync markers, completed-row sequence evidence, hash-only latest mutation metadata, and lease owner identity. Counts are now 464/536; final release remains NO-GO because this is local file-backed recovery journal evidence, not external WordPress crash/restart durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0629 focused: 1/1</span>
+        <span class="tag">restart-readable adjacent: 4/4</span>
+        <span class="tag">recovery journal full: 35/35</span>
+        <span class="tag">lease owner readback</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0491 focused: 2/2</span>
         <span class="tag">uninstall/delete: 6/6</span>
         <span class="tag">planner adjacent: 2/2</span>
@@ -1007,7 +1012,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 463/1000</span>
+        <span class="tag">checked goals: 464/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
