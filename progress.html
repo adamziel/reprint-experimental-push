@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T20:06:00+02:00">Last updated: May 30, 2026, 20:06 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T20:10:00+02:00">Last updated: May 30, 2026, 20:10 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>512</strong>
+        <strong>513</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>488</strong>
+        <strong>487</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through, direct active_plugins mutation refusal release-verifier carry-through, owner-context stale plugin-file and stale metadata release-verifier carry-through, remote plugin removal refusal release-verifier carry-through, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta, wp_termmeta, and wp_usermeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, plugin update dependency release-verifier carry-through, plugin uninstall/delete release-verifier carry-through, direct active_plugins mutation refusal release-verifier carry-through, owner-context stale plugin-file and stale metadata release-verifier carry-through, remote plugin removal refusal release-verifier carry-through, driver delete-support, dry-run-validation, apply-validation, and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, generated wp_options and wp_postmeta driver semantics variant-3 coverage, supported/unsupported wp_usermeta, dry-run validation hook, owner identity binding variant-3 and variant-4 coverage, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -406,14 +406,17 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0444</span>
+        <span>RPP-0445</span>
       </div>
-      <p>The latest refresh integrates RPP-0444 generated wp_options driver semantics coverage: the generated roster now tags 20 wp-option driver cases across all tiers, and the focused proof shows ready updates use hash-only owner/driver evidence while stale replay and remote drift preserve plugin-owned remote data before mutation. Counts are now 512/488; final release remains NO-GO because this is local generated-model plugin-driver evidence, not external production-backed release evidence.</p>
+      <p>The latest refresh integrates RPP-0445 generated wp_postmeta driver semantics coverage: the focused generated cases prove exact post_id/meta_key and meta_id rows, reject mismatched postmeta identity before mutation, and label local/support-only plus production-scoped release-gate evidence while keeping raw postmeta payloads hash-only. Counts are now 513/487; final release remains NO-GO because this is local generated-model plugin-driver evidence, not external production-backed release evidence.</p>
       <div class="tag-row" aria-label="Latest validation">
-        <span class="tag">RPP-0444 focused: 1/1</span>
-        <span class="tag">wp_options adjacent: 4/4</span>
+        <span class="tag">RPP-0445 focused: 1/1</span>
+        <span class="tag">RPP-0442/0444/0445: 3/3</span>
+        <span class="tag">wp_postmeta plugin-driver: 13/13</span>
         <span class="tag">generated cases: 620</span>
         <span class="tag">checklist/redaction/diff: pass</span>
+        <span class="tag">RPP-0444 focused: 1/1</span>
+        <span class="tag">wp_options adjacent: 4/4</span>
         <span class="tag">RPP-0442 focused: 3/3</span>
         <span class="tag">worker focused: 1/1</span>
         <span class="tag">generated docs updated</span>

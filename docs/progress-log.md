@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:06 CEST +02:00.
+- Last update: 2026-05-30 20:10 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0444 wp_options generated driver-semantics merge ending at
-  `062f1a`.
+  the RPP-0445 wp_postmeta generated driver-semantics merge ending at
+  `62a743`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 512
-  items checked and leaves 488 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 513
+  items checked and leaves 487 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
-  86 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
+  87 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- wp_postmeta driver semantics generated coverage: the current lane now checks
+  `RPP-0445` with local generated-model coverage for plugin-owned
+  `wp_postmeta` rows using `wp-post-meta` and `wp-postmeta` driver aliases. The
+  focused generated cases cover exact `post_id:<id>:meta_key:<key>` rows, exact
+  `meta_id:<id>` rows, and mismatched postmeta row identity that fails closed
+  before mutation. The proof labels local/support-only and production-scoped
+  release-gate evidence while keeping raw postmeta payloads hash-only and final
+  release `NO-GO`. Validation passed with Node syntax checks, focused RPP-0445
+  coverage 1/1, adjacent RPP-0442/RPP-0444/RPP-0445 generated coverage 3/3,
+  adjacent wp_postmeta plugin-driver coverage 13/13, checklist lint, scoped
+  artifact redaction scan, and diff whitespace checks. Counts are now 513/487;
+  final release remains `NO-GO` because this is local generated-model
+  plugin-driver evidence, not external production-backed release evidence.
 - wp_options driver semantics generated coverage: the current lane now checks
   `RPP-0444` with local generated-model coverage for plugin-owned `wp_options`
   rows using the `wp-option` driver. The generated roster tags 20
