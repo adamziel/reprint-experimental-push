@@ -73,7 +73,8 @@ The default generated run covers:
   graph cases with one target per tier, ready creates, stale taxonomy drift,
   redacted hash-only evidence, and explicit variant-3 relationship graph
   coverage, plugin-owned `wp_options` update cases with
-  ready/conflict outcomes and stale replay rejection before mutation,
+  ready/conflict outcomes, stale replay rejection before mutation, and explicit
+  variant-3 plugin-owned option coverage,
   `wp_posts.post_author` cases with per-tier ready/stale target counts and
   hash-only stale-user blockers, `wp_comments.user_id` author cases with
   per-tier ready/stale target counts and hash-only stale-user blockers,
@@ -129,6 +130,23 @@ redaction metadata, and hashes, verifies the ready case applies the planned
 serialized option update and rejects stale replay before mutation, then verifies
 the conflicting serialized option refuses apply without mutating the remote
 digest.
+
+The `pluginOwnedOptionChange` target coverage records per-tier counts for
+plugin-owned `wp_options` rows that are explicitly allowed by the owning plugin
+driver. Ready cases carry owner/driver evidence, apply the local option hash,
+preserve unplanned remote resources, and reject stale replay before mutation;
+conflict cases drift the same plugin-owned option remotely and refuse apply so
+plugin-owned option data cannot overwrite newer remote values.
+
+RPP-0154 adds `pluginOwnedOptionChangeVariant3` coverage for the same
+plugin-owned `wp_options` update surface with an explicit variant-3 target tag.
+The deterministic roster emits 20 variant-3 target cases: 10 ready
+plugin-owned option updates and 10 non-ready remote-drift conflicts, with two
+cases in every tier. The focused proof records only resource keys, owner/driver
+metadata, counts, hashes, conflict hashes, and refusal hashes, verifies the
+ready case applies the planned plugin-owned option update and rejects stale
+replay before mutation, then verifies the conflicting plugin-owned option
+refuses apply without mutating the remote digest.
 
 The `fileCreateUpdateDeleteMix` target coverage records per-tier counts for the
 file create/update/delete surface. Ready cases create one file, update one file,
