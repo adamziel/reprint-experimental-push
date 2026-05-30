@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:52 CEST.
+- Last update: 2026-05-30 03:54 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0238 forged ready plan defense merge ending at `9c3dc9c44`.
+  the RPP-0435 remote plugin removal refusal merge ending at `e4e118643`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 314
-  items checked and leaves 686 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 315
+  items checked and leaves 685 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  43 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  44 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 53 generated
   harness items, and 39 merge-invariant items. No release-ops items are checked
   yet.
+- Focused remote plugin removal refusal refresh: the current lane now contains
+  `RPP-0435` evidence in
+  `docs/evidence/rpp-0435-remote-plugin-removal-refusal.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0435-remote-plugin-removal-refusal.test.js`. `node --check
+  test/rpp-0435-remote-plugin-removal-refusal.test.js` exited 0, `node --test
+  test/rpp-0435-remote-plugin-removal-refusal.test.js` passed 2/2, `node
+  --test test/plugin-remote-removal-refusal.test.js
+  test/rpp-0435-remote-plugin-removal-refusal.test.js` passed 4/4, and the
+  adjacent plugin-driver regression slice passed 29/29. The proof refuses a
+  remote plugin removal before mutating plugin-owned rows, preserves remote
+  data on stale ready-plan replay, records local-only release-gate scope, and
+  keeps plugin-driver evidence hash-only. Checklist lint, artifact redaction
+  scan, and `git diff --check` also passed. Counts are now 315/685; final
+  release remains `NO-GO`.
 - Focused forged ready plan defense refresh: the current lane now contains
   `RPP-0238` evidence in
   `docs/evidence/rpp-0238-forged-ready-plan-defense-v2.md`,

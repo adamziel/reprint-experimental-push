@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 03:52 CEST
+# AO Progress Report - 2026-05-30 03:54 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0238
-forged ready plan defense refresh ending at `9c3dc9c44`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0435
+remote plugin removal refusal refresh ending at `e4e118643`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 314 are
-  checked from integrated evidence and 686 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 315 are
+  checked from integrated evidence and 685 remain open.
+- `RPP-0435` is now checked with focused remote plugin removal refusal evidence
+  in `docs/evidence/rpp-0435-remote-plugin-removal-refusal.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0435-remote-plugin-removal-refusal.test.js`. `node --check
+  test/rpp-0435-remote-plugin-removal-refusal.test.js` exited 0, `node --test
+  test/rpp-0435-remote-plugin-removal-refusal.test.js` passed 2/2, `node
+  --test test/plugin-remote-removal-refusal.test.js
+  test/rpp-0435-remote-plugin-removal-refusal.test.js` passed 4/4, and the
+  adjacent plugin-driver regression slice passed 29/29, proving remote plugin
+  removal refuses before plugin-owned row mutation, stale ready-plan replay
+  preserves remote data, release-gate scope remains local-only, evidence stays
+  hash-only, checklist lint, artifact redaction scan, and `git diff --check`
+  while final release remains **NO-GO**.
 - `RPP-0238` is now checked with focused forged ready plan defense evidence in
   `docs/evidence/rpp-0238-forged-ready-plan-defense-v2.md`,
   `docs/reprint-push-completion-checklist.md`, and
