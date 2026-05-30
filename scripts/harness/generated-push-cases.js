@@ -1090,7 +1090,7 @@ function buildDriverOwnerIdentityBindingCase({ variant, index }) {
     outcome: 'planner-blocked',
     blockerClass: 'stale-plugin-owner-context',
     owner: 'forms',
-    driver: null,
+    driver: 'wp-option',
     reasonCode: 'STALE_PLUGIN_METADATA_OWNER_CONTEXT',
   };
   return testCase;
