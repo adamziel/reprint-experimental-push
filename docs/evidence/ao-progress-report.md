@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 08:33 CEST
+# AO Progress Report - 2026-05-30 08:38 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0499 driver audit
-evidence redaction release-verifier refresh ending at `9293daa21`.
+`lane/evidence-integration-20260527` through the current RPP-0500 arbitrary
+plugin fixture package release-verifier refresh ending at `78fe37e2a`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 370 are
-  checked from integrated evidence and 630 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 371 are
+  checked from integrated evidence and 629 remain open.
+- `RPP-0500` is now checked with focused arbitrary plugin fixture package
+  release-verifier carry-through evidence in
+  `docs/evidence/rpp-0500-arbitrary-plugin-fixture-package-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0500-arbitrary-plugin-fixture-package-release-verifier-v5.test.js`.
+  `node --check` passed for the changed verifier and test file, the combined
+  RPP-0498/RPP-0499/RPP-0500 focused verifier tests passed 9/9, the adjacent
+  arbitrary package and production package scenario suite passed 24 tests, the
+  targeted production-shaped package verifier slice passed 7/7, and bounded
+  package smoke plus packaged plugin driver verifier guard checks passed.
+  Checklist lint, artifact redaction scan, and merge diff whitespace checks
+  also passed. This remains local/support-only release-verifier evidence, not
+  live production-backed release proof.
 - `RPP-0499` is now checked with focused driver audit evidence redaction
   release-verifier carry-through evidence in
   `docs/evidence/rpp-0499-driver-audit-evidence-redaction-release-verifier-v5.md`,

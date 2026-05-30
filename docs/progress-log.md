@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:33 CEST.
+- Last update: 2026-05-30 08:38 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0499 driver audit evidence redaction release-verifier merge ending at
-  `9293daa21`.
+  the RPP-0500 arbitrary plugin fixture package release-verifier merge ending
+  at `78fe37e2a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 370
-  items checked and leaves 630 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 371
+  items checked and leaves 629 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  72 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
+  73 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 75 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Arbitrary plugin fixture package release-verifier refresh: the current lane
+  now contains `RPP-0500` evidence in
+  `docs/evidence/rpp-0500-arbitrary-plugin-fixture-package-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0500-arbitrary-plugin-fixture-package-release-verifier-v5.test.js`.
+  `node --check` passed for the changed verifier and test file, the combined
+  RPP-0498/RPP-0499/RPP-0500 focused verifier tests passed 9/9, the adjacent
+  arbitrary package and production package scenario suite passed 24 tests, the
+  targeted production-shaped package verifier slice passed 7/7, and bounded
+  package smoke plus packaged plugin driver verifier guard checks passed.
+  Checklist lint, artifact redaction scan, and merge diff whitespace checks
+  also passed. Counts are now 371/629; final release remains `NO-GO`.
 - Driver audit evidence redaction release-verifier refresh: the current lane
   now contains `RPP-0499` evidence in
   `docs/evidence/rpp-0499-driver-audit-evidence-redaction-release-verifier-v5.md`,
