@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 00:02 CEST +02:00.
+- Last update: 2026-05-31 00:04 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0265 local file type-swap remote-descendant variant 4 merge ending
-  at `e057508`.
+  the RPP-0270 focused planner summary consistency variant 4 merge ending at
+  `f4f1f28`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 542
-  items checked and leaves 458 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 543
+  items checked and leaves 457 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 94 generated
-  harness items, and 79 merge-invariant items. No release-ops items are checked
+  harness items, and 80 merge-invariant items. No release-ops items are checked
   yet.
+- Focused planner summary consistency variant-4 proof: the current lane now
+  checks `RPP-0270` with standalone focused fixtures for ready, conflict,
+  blocked, ready atomic, and blocked atomic plans. The proof verifies
+  `plan.summary` exactly matches emitted mutations, decisions, conflicts,
+  blockers, atomic groups, and preconditions across deterministic replays,
+  aggregates two ready, one conflict, and two blocked cases, and records the
+  command/caveat evidence without leaking fixture-private values. Validation
+  passed with a Node syntax check, focused RPP-0270 coverage 1/1, adjacent
+  RPP-0210/RPP-0270 planner summary coverage 2/2, the full
+  `test/push-planner.test.js` suite 148/148, scoped artifact redaction scan,
+  and diff whitespace checks. Counts are now 543/457; final release remains
+  `NO-GO` because this is local focused planner evidence, not
+  production-backed release proof.
 - Local file type-swap versus remote descendant variant-4 proof: the current
   lane now checks `RPP-0265` with focused planner/apply regression evidence for
   a local directory-to-file type swap while the live remote created a
