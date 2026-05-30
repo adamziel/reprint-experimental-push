@@ -547,6 +547,18 @@ case applies the planned graph rows and rejects stale replay before mutation,
 then verifies the stale graph blocker refuses apply without mutating the remote
 digest.
 
+RPP-0189 adds `wpUsersUsermetaGraphReleaseVerifierVariant5` coverage for the
+same `wp_users` and `wp_usermeta` graph surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready user/usermeta graph creates and 10 stale non-ready graph
+references, with two cases in every tier. The focused proof keeps private user
+passwords, activation tokens, and usermeta payloads hash-only, verifies every
+ready case applies both planned graph rows with matching live-remote
+preconditions, then proves stale remote replay against both `wp_users` and
+`wp_usermeta` fails with `PRECONDITION_FAILED` before the mutation callback.
+The stale graph target still refuses apply with `PLAN_NOT_READY` before
+mutation and leaves the remote digest unchanged.
+
 The `rowCreateUpdateDeleteMix` target coverage records per-tier counts for the
 generic row create/update/delete surface. Ready cases create, update, and delete
 rows, preserve unplanned remote resources, and reject stale replay before
