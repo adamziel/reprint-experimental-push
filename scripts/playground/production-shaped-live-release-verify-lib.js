@@ -2,6 +2,10 @@ import { buildAuthSessionSourceCommand } from './auth-session-source-command.js'
 import { isPackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
 import { shouldRequestPackagedProductionPluginAuthSession } from './packaged-production-plugin-source-command.js';
 import { resolvePackagedProductionPluginSourceCommand } from './packaged-production-plugin-source-command.js';
+import {
+  buildManualRecoveryAuditExport,
+  manualRecoveryAuditExportProvesRecoveryGate,
+} from '../../src/recovery-audit-export.js';
 
 export function resolveCheckedReleaseRequirementEnv() {
   return {
@@ -237,6 +241,16 @@ export function buildDurableRecoveryJournalReleaseProof({
     productionAdapter: journal?.ownership?.productionAdapter || journal?.productionAdapter || null,
     supportedSurface: journal?.ownership?.supportedSurface || journal?.supportedSurface || null,
   };
+  const manualRecoveryAuditExport = selectManualRecoveryAuditExport({
+    releaseSummary,
+    releaseProof,
+    durableJournal,
+    recovery,
+  });
+  const manualRecoveryAudit = manualRecoveryAuditExportProvesRecoveryGate(manualRecoveryAuditExport, {
+    planMutationCount,
+    recovery,
+  });
 
   const checks = {
     ownsJournal: ownership.ownsJournal === true,
@@ -251,6 +265,7 @@ export function buildDurableRecoveryJournalReleaseProof({
     newState: partialStates.new.proved === true,
     blockedState: partialStates.blocked.proved === true,
     preservedRejectedRemoteEvidence: preservedRejectedRemoteEvidence.proved === true,
+    manualRecoveryAuditExport: manualRecoveryAudit.proved === true,
   };
 
   return {
@@ -272,7 +287,43 @@ export function buildDurableRecoveryJournalReleaseProof({
     sameKeyDifferentBodyConflict,
     partialStates,
     preservedRejectedRemoteEvidence,
+    manualRecoveryAuditExport: manualRecoveryAudit,
   };
+}
+
+function selectManualRecoveryAuditExport({
+  releaseSummary,
+  releaseProof,
+  durableJournal,
+  recovery,
+}) {
+  const explicitCandidates = [
+    releaseSummary?.manualRecoveryAuditExport,
+    releaseProof?.manualRecoveryAuditExport,
+    releaseProof?.recoveryInspect?.manualRecoveryAuditExport,
+    releaseProof?.recoveryInspect?.recovery?.manualRecoveryAuditExport,
+    durableJournal?.proof?.manualRecoveryAuditExport,
+  ];
+  const explicit = explicitCandidates.find((candidate) => candidate && typeof candidate === 'object');
+  if (explicit) {
+    return explicit;
+  }
+
+  return buildManualRecoveryAuditExport({
+    recovery,
+    plan: releaseProof?.planObject,
+    source: {
+      kind: 'release-verifier-recovery-inspect',
+      path: 'releaseProof.recoveryInspect.recovery',
+      releasePath: true,
+      readOnly: true,
+      mutates: false,
+      samePathRequiredForRecoveryMutation: true,
+    },
+    artifactRefs: {
+      releaseVerifier: 'scripts/playground/production-shaped-live-release-verify.mjs',
+    },
+  });
 }
 
 function selectOldRemoteRecoveryClassification({ releaseProof, planMutationCount }) {
