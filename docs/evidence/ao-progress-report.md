@@ -1,18 +1,29 @@
-# AO Progress Report - 2026-05-30 11:30 CEST
+# AO Progress Report - 2026-05-30 11:33 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0374 term
-relationship taxonomy graph proof ending at `e8af615f`.
+`lane/evidence-integration-20260527` through the current RPP-0375 nav menu item
+fail-closed graph proof ending at `143ff6d6`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 414 are
-  checked from integrated evidence and 586 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 415 are
+  checked from integrated evidence and 585 remain open.
+- `RPP-0375` is now checked with focused fail-closed graph proof for
+  unsupported nav menu item and `nav_menu` taxonomy references in
+  `docs/evidence/rpp-0375-nav-menu-item-fail-closed-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0375-nav-menu-item-fail-closed-reference-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0375 coverage passed 1/1,
+  adjacent RPP-0315/RPP-0375 nav-menu graph coverage passed 2/2, and the graph
+  mapping inventory/nav-menu pattern passed 4/4. Checklist lint, scoped
+  artifact redaction scan, checklist/redaction guard tests, and merge diff
+  whitespace checks also passed. This remains local graph support evidence,
+  not production endpoint proof.
 - `RPP-0374` is now checked with focused graph-identity proof for
   `wp_term_relationships.term_taxonomy_id` references to same-plan
   `wp_term_taxonomy` targets in

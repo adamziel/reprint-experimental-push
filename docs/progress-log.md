@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:30 CEST.
+- Last update: 2026-05-30 11:33 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0374 term relationship taxonomy graph proof merge ending at
-  `e8af615f`.
+  the RPP-0375 nav menu item fail-closed graph proof merge ending at
+  `143ff6d6`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 414
-  items checked and leaves 586 open.
-- Checked slices: 100 release-gate foundation items, 31 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 415
+  items checked and leaves 585 open.
+- Checked slices: 100 release-gate foundation items, 32 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Nav menu item fail-closed graph proof: the current lane now contains
+  `RPP-0375` evidence in
+  `docs/evidence/rpp-0375-nav-menu-item-fail-closed-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0375-nav-menu-item-fail-closed-reference-v4.test.js`. `node
+  --check` passed for the focused test, focused RPP-0375 coverage passed 1/1,
+  adjacent RPP-0315/RPP-0375 nav-menu graph coverage passed 2/2, and the graph
+  mapping inventory/nav-menu pattern passed 4/4. Checklist lint, scoped
+  artifact redaction scan, checklist/redaction guard tests, and merge diff
+  whitespace checks also passed. Counts are now 415/585; final release remains
+  `NO-GO`.
 - Term relationship taxonomy graph proof: the current lane now contains
   `RPP-0374` evidence in
   `docs/evidence/rpp-0374-term-relationship-taxonomy-reference-v4.md`,
