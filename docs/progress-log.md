@@ -6,20 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:33 CEST +02:00.
+- Last update: 2026-05-30 18:36 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0392 termmeta term reference release-verifier proof merge ending at
-  `30e19e5`.
+  the RPP-0393 term relationship object reference release-verifier proof merge
+  ending at `b7e7326`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 502
-  items checked and leaves 498 open.
-- Checked slices: 100 release-gate foundation items, 62 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 503
+  items checked and leaves 497 open.
+- Checked slices: 100 release-gate foundation items, 63 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Term relationship object reference release-verifier proof v5: the current
+  lane now contains `RPP-0393` evidence in
+  `docs/evidence/rpp-0393-term-relationship-object-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0393-term-relationship-object-reference-release-verifier-v5.test.js`.
+  The local generated-harness proof verifies 10 term-relationship object graph
+  cases across tiers 0-9, including five ready and five stale/non-ready cases.
+  It proves the ready relationship row carries a live-remote precondition,
+  applies to match local state, preserves unplanned remote data, rejects stale
+  replay with `PRECONDITION_FAILED`, and that stale generated and derived
+  stale-object cases refuse before mutation with hash-only proof. Validation
+  passed with Node syntax checks, focused RPP-0393 coverage 1/1, adjacent
+  generated term-relationship coverage 3/3, adjacent graph-identity coverage
+  6/6, hygiene coverage 23/23, checklist lint, scoped artifact redaction scan,
+  raw fixture scan, and merge diff whitespace checks. Counts are now 503/497;
+  final release remains `NO-GO` because this is local support-only
+  release-verifier evidence, not production-backed release evidence.
 - Termmeta term reference release-verifier proof v5: the current lane now
   contains `RPP-0392` evidence in
   `docs/evidence/rpp-0392-termmeta-term-reference-release-verifier-v5.md`,
