@@ -6,10 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:53 CEST +02:00.
+- Last update: 2026-05-30 20:57 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0612 blocked recovery classification ancestry merge ending at
-  `6b67b3`.
+  the RPP-0701 MySQL CAS write guard ancestry merge ending at `9bc89f`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +19,20 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- MySQL compare-and-swap write guard refinement: the current lane now preserves
+  the older `session/rpp-701` RPP-0701 ancestry while retaining the stronger
+  current runtime-capability evidence. The MySQL CAS benchmark now includes a
+  same-statement duplicate-key guard for logical `wp_postmeta` `(post_id,
+  meta_key)` writes, rejects ambiguous duplicate rows with zero affected rows,
+  reports duplicate-key and unsafe-multiple-match counters, and keeps all
+  evidence hash-only. Validation passed with Node syntax checks, focused MySQL
+  CAS coverage 7/7, `npm run bench:mysql-cas-write-guard -- --iterations 5`
+  reporting `ok: true` with 80 attempted guarded writes, 25 applied, 25 stale,
+  25 absent, 5 duplicate-key rejections, 0 unsafe multiple-match writes,
+  checklist lint, scoped artifact redaction scan, and diff whitespace checks.
+  Counts remain 514/486; final release remains `NO-GO` because this is
+  deterministic MySQL-shape and local capability evidence, not live MySQL DML
+  durability proof.
 - Blocked recovery classification SQLite refinement: the current lane now
   preserves the older `session/rpp-612` RPP-0612 ancestry while retaining the
   stronger current file-backed process-restart proof. The shared
