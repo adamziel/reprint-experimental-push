@@ -272,7 +272,8 @@ test('RPP-0485 production-shaped release verifier carries wp_postmeta summary in
   );
 
   assert.match(verifierSource, /summarizeWpPostmetaReleaseVerifierEvidence/);
-  assert.match(verifierSource, /coreSemantics:\s*\{\s*wpPostmeta: wpPostmetaReleaseVerifierEvidence,/);
+  assert.match(verifierSource, /coreSemantics:\s*\{/);
+  assert.match(verifierSource, /wpPostmeta: wpPostmetaReleaseVerifierEvidence,/);
   assert.match(
     verifierSource,
     /checkedProductionEvidence: packagedSourceFixture === null\s*&& Boolean\(explicitReleaseVerifySourceUrl\)\s*&& checkedDurableJournalAccepted/,

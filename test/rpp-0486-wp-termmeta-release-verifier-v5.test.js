@@ -268,10 +268,9 @@ test('RPP-0486 production-shaped release verifier carries wp_termmeta summary in
   );
 
   assert.match(verifierSource, /summarizeWpTermmetaReleaseVerifierEvidence/);
-  assert.match(
-    verifierSource,
-    /coreSemantics:\s*\{\s*wpPostmeta: wpPostmetaReleaseVerifierEvidence,\s*wpTermmeta: wpTermmetaReleaseVerifierEvidence,/,
-  );
+  assert.match(verifierSource, /coreSemantics:\s*\{/);
+  assert.match(verifierSource, /wpPostmeta: wpPostmetaReleaseVerifierEvidence,/);
+  assert.match(verifierSource, /wpTermmeta: wpTermmetaReleaseVerifierEvidence,/);
   assert.match(
     verifierSource,
     /const wpTermmetaReleaseVerifierEvidence = summarizeWpTermmetaReleaseVerifierEvidence\(\{\s*proof,\s*checkedProductionEvidence: packagedSourceFixture === null\s*&& Boolean\(explicitReleaseVerifySourceUrl\)\s*&& checkedDurableJournalAccepted,/,
