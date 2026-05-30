@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T13:19:00+02:00">Last updated: May 30, 2026, 13:19 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T13:27:00+02:00">Last updated: May 30, 2026, 13:27 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>439</strong>
+        <strong>440</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>561</strong>
+        <strong>560</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency and bounded parallel snapshot hashing, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0361</span>
+        <span>RPP-0710</span>
       </div>
-      <p>The latest refresh integrates RPP-0361 post_parent page hierarchy evidence: the focused graph proof rewrites a page parent reference through explicit identity-map evidence when the remote target is equivalent, and blocks stale hash-only hierarchy evidence before mutation when the remote target diverges. Counts are now 439/561; final release remains NO-GO because this is local graph-identity evidence, not production topology or release provenance.</p>
+      <p>The latest refresh integrates RPP-0710 parallel snapshot hashing evidence: the guarded benchmark hashes base, local, and remote snapshot resource sets through a bounded scheduler, proves the parallel hash set matches sequential resource hashing, and updates the fast-path lane only after correctness gates pass. Counts are now 440/560; final release remains NO-GO because production storage receipts, row batch execution, and atomic-group commit receipts are still not measured.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0710 focused: 1/1</span>
+        <span class="tag">guarded executor: 9/9</span>
+        <span class="tag">benchmark: 66 hash jobs</span>
+        <span class="tag">rollout gates: 9 pass / 3 blocked</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0361 focused: 2/2</span>
         <span class="tag">planner/apply suite: 147/147</span>
         <span class="tag">checklist/redaction/diff: pass</span>

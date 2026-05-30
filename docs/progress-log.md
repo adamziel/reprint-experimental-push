@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:19 CEST.
+- Last update: 2026-05-30 13:27 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0361 post_parent page hierarchy merge ending at `fe519d2af`.
+  the RPP-0710 parallel snapshot hashing merge ending at `665aded58`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 439
-  items checked and leaves 561 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 440
+  items checked and leaves 560 open.
 - Checked slices: 100 release-gate foundation items, 46 graph identity items,
   73 plugin-driver boundary items, 23 executor/auth items, 27 recovery items,
-  12 storage/performance items, 3 production-topology items, 78 generated
+  13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Parallel snapshot hashing: the current lane now contains `RPP-0710` evidence
+  in `docs/evidence/rpp-0710-parallel-snapshot-hashing.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/bench/guarded-executor-benchmark.js`, and
+  `test/guarded-executor-benchmark.test.js`. The guarded benchmark hashes base,
+  local, and remote snapshot resource sets through a bounded scheduler, proves
+  the parallel hash set matches the canonical sequential `resourceHash` output,
+  records deterministic hash-only evidence, and updates the fast-path lane only
+  after correctness gates pass. Validation passed with the worker-focused
+  RPP-0710 test 1/1, the merged guarded executor benchmark suite 9/9, the
+  merged benchmark command reporting 66 hash jobs with max in-flight 2/2 and 9
+  passed / 3 blocked rollout gates, checklist lint, scoped artifact redaction
+  scan, and merge diff whitespace checks. Counts are now 440/560; final release
+  remains `NO-GO` because production storage receipts, row batch execution, and
+  atomic-group commit receipts are still not measured.
 - Post parent hierarchy graph identity: the current lane now contains
   `RPP-0361` evidence in
   `docs/evidence/rpp-0361-post-parent-page-hierarchy-v4.md`,
