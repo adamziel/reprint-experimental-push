@@ -381,6 +381,15 @@ the ready case applies both graph rows and rejects stale replay before
 mutation; then verifies the stale term reference refuses apply without mutating
 the remote digest.
 
+RPP-0171 adds `wpTermsTermmetaGraphVariant4` coverage for the same `wp_terms`
+and `wp_termmeta` graph surface with an explicit variant-4 target tag. The
+deterministic roster emits 20 variant-4 target cases: 10 ready term/termmeta
+graph creates and 10 stale non-ready term drift cases, with two cases in every
+tier. The focused proof keeps the evidence hash-only, verifies the ready case
+applies both graph row creates while preserving unplanned remote resources,
+rejects stale replay with `PRECONDITION_FAILED` before mutation, and confirms
+the stale term reference refuses apply without mutating the remote digest.
+
 The `wpUsersUsermetaGraph` target coverage records per-tier counts for
 generated `wp_users` rows and their `wp_usermeta` graph relationships. Ready
 cases create the user and usermeta row in one plan, preserve unplanned remote

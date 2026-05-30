@@ -314,6 +314,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-terms-termmeta-graph-variant3',
     tag: 'wp-terms-termmeta-graph-v3',
   },
+  wpTermsTermmetaGraphVariant4: {
+    family: 'wp-terms-termmeta-graph-variant4',
+    tag: 'wp-terms-termmeta-graph-v4',
+  },
   wpUsersUsermetaGraph: {
     family: 'wp-users-usermeta-graph-ready',
     tag: 'wp-users-usermeta-graph',
@@ -3534,6 +3538,7 @@ function addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget, 
 
   tags.add('wp-terms-termmeta-graph');
   tags.add('wp-terms-termmeta-graph-v3');
+  tags.add('wp-terms-termmeta-graph-v4');
   tags.add('wp-terms-create');
   tags.add('wp-termmeta-create');
   tags.add('termmeta-term-graph');
@@ -3545,8 +3550,11 @@ function addWpTermsTermmetaGraph(local, remote, allocator, tags, { staleTarget, 
     tags.add('wp-terms-remote-drift');
     tags.add('wp-terms-termmeta-graph-v3-stale');
     tags.add('wp-terms-termmeta-graph-v3-non-ready');
+    tags.add('wp-terms-termmeta-graph-v4-stale');
+    tags.add('wp-terms-termmeta-graph-v4-non-ready');
   } else {
     tags.add('wp-terms-termmeta-graph-v3-ready');
+    tags.add('wp-terms-termmeta-graph-v4-ready');
   }
 }
 
