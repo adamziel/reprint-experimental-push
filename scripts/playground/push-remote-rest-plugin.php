@@ -1563,7 +1563,7 @@ function reprint_push_lab_rest_apply_with_db_journal(
         $result = reprint_push_lab_rest_run_db_journal_apply($request, $payload, $context, $opened_entry, $plan, $receipt, $accepted);
     } catch (Reprint_Push_Protocol_Error $error) {
         $result = $error->result;
-        if (is_array($accepted)) {
+        if (is_array($accepted) && !isset($result['applyRevalidation'])) {
             $result = reprint_push_lab_rest_attach_rejected_apply_revalidation_evidence(
                 $result,
                 $accepted,
@@ -1838,6 +1838,20 @@ function reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
     ];
 
     $current_source = reprint_push_lab_rest_apply_live_source_binding_evidence($request, $accepted);
+    $accepted['liveSourceRevalidation'] = [
+        'schemaVersion' => 1,
+        'phase' => 'before-first-mutation',
+        'checkedAgainst' => 'live-remote',
+        'snapshotHash' => '',
+        'sourceHash' => (string) ($current_source['sourceHash'] ?? ''),
+        'sourceUrlHash' => (string) ($current_source['sourceUrlHash'] ?? ''),
+        'receiptSourceHash' => (string) ($current_source['receiptSourceHash'] ?? ''),
+        'receiptSourceUrlHash' => (string) ($current_source['receiptSourceUrlHash'] ?? ''),
+        'sourceBindingHash' => (string) ($current_source['sourceBindingHash'] ?? ''),
+        'verifiedCount' => 0,
+        'verifiedResourceKeys' => [],
+        'dbJournalCursor' => $db_journal_cursor,
+    ];
     if (($current_source['ok'] ?? false) !== true) {
         reprint_push_lab_rest_auth_receipt_mismatch(
             'Receipt source URL binding does not match the current live source before apply mutation.',
@@ -1995,28 +2009,37 @@ function reprint_push_lab_rest_run_db_journal_apply(
         ];
     }
 
-    $accepted = reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
-        $request,
-        $plan,
-        $accepted,
-        $context,
-        $started_entry
-    );
+    try {
+        $accepted = reprint_push_lab_rest_revalidate_apply_live_source_before_mutation(
+            $request,
+            $plan,
+            $accepted,
+            $context,
+            $started_entry
+        );
 
-    $options = reprint_push_lab_rest_lab_options($payload);
-    $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
-        reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
-        reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
-        reprint_push_lab_rest_lab_drift_before_storage_write_callback($options),
-    ]);
-    $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
-        'transport' => 'wordpress-rest',
-        'restNamespace' => (string) ($context['restNamespace'] ?? REPRINT_PUSH_LAB_REST_NAMESPACE),
-        'routeProfile' => (string) ($context['routeProfile'] ?? 'lab-authenticated'),
-        'idempotencyKeyHash' => $context['idempotencyKeyHash'],
-        'requestHash' => $context['requestHash'],
-        'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
-    ], $options);
+        $options = reprint_push_lab_rest_lab_options($payload);
+        $options['mutationEventCallback'] = reprint_push_lab_rest_compose_mutation_callbacks([
+            reprint_push_lab_rest_db_journal_mutation_callback($context, $started_entry),
+            reprint_push_lab_rest_lab_drift_after_prepared_callback($options),
+            reprint_push_lab_rest_lab_drift_before_storage_write_callback($options),
+        ]);
+        $result = reprint_push_protocol_run_payload('apply', $plan, $receipt, [
+            'transport' => 'wordpress-rest',
+            'restNamespace' => (string) ($context['restNamespace'] ?? REPRINT_PUSH_LAB_REST_NAMESPACE),
+            'routeProfile' => (string) ($context['routeProfile'] ?? 'lab-authenticated'),
+            'idempotencyKeyHash' => $context['idempotencyKeyHash'],
+            'requestHash' => $context['requestHash'],
+            'dbJournalCursor' => 'db-journal:' . (int) ($started_entry['sequence'] ?? 0),
+        ], $options);
+    } catch (Reprint_Push_Protocol_Error $error) {
+        $error->result = reprint_push_lab_rest_attach_rejected_apply_revalidation_evidence(
+            $error->result,
+            $accepted,
+            $claim_entry
+        );
+        throw $error;
+    }
     $result['applyRevalidation'] = reprint_push_lab_rest_apply_revalidation_evidence(
         $accepted,
         $claim_entry,
