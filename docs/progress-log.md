@@ -6,10 +6,9 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 19:42 CEST +02:00.
+- Last update: 2026-05-30 19:51 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0442 driver owner identity generated coverage merge ending at
-  `21f5ac2`.
+  the RPP-0516 same-key same-body replay evidence merge ending at `9243afb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +19,20 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Same-key same-body replay evidence refinement: the current lane now carries
+  the additional `RPP-0516` focused fake-endpoint/source assertion in
+  `test/rpp-0516-same-key-same-body-replay.test.js`, retains the stronger
+  live-local Playground endpoint proof in
+  `docs/evidence/rpp-0516-same-key-same-body-replay.md`, and threads hash-only
+  signed request evidence through `src/authenticated-http-push-client.js` so
+  local fake endpoints can prove submitted-body replay without raw request body,
+  session, credential, or idempotency-key disclosure. Validation passed with
+  Node syntax checks, focused RPP-0516 coverage 2/2, authenticated replay and
+  idempotency adjacent coverage 29/29, protocol compatibility 8/8, full
+  authenticated HTTP push client coverage 135/135, checklist lint, scoped
+  artifact redaction scan, and diff whitespace checks. Counts remain 511/489;
+  final release remains `NO-GO` because this is local and live-local evidence,
+  not external production-backed release evidence.
 - Driver owner identity binding generated coverage v3: the current lane now
   contains `RPP-0442` evidence in
   `docs/evidence/rpp-0442-driver-owner-identity-binding-v3.md`,
