@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:44 CEST.
+- Last update: 2026-05-30 08:52 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0524 production apply route proof merge ending at `25112be86`.
+  the RPP-0176 atomic plugin install stack variant-4 generated-harness merge
+  ending at `aed14eb9d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 372
-  items checked and leaves 628 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 373
+  items checked and leaves 627 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 75 generated
+  11 storage/performance items, 3 production-topology items, 76 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Atomic plugin install stack variant-4 refresh: the current lane now contains
+  `RPP-0176` evidence in
+  `docs/evidence/rpp-0176-atomic-plugin-install-stack-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0176 test passed 1/1, the adjacent
+  atomic plugin install stack variants passed 4/4, and
+  `npm run test:generated-push-harness` passed 83/83 across 620 deterministic
+  generated cases. Checklist lint, scoped artifact redaction scan, and merge
+  diff whitespace checks also passed. Counts are now 373/627; final release
+  remains `NO-GO`.
 - Production apply route proof refresh: the current lane now contains
   `RPP-0524` evidence in
   `docs/evidence/rpp-0524-production-apply-route-v2.md`,
