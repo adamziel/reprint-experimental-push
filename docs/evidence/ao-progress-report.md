@@ -1,18 +1,29 @@
-# AO Progress Report - 2026-05-30 10:53 CEST
+# AO Progress Report - 2026-05-30 10:56 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0277 conflict
-plan apply refusal variant-4 merge-invariant refresh ending at `97ebe07bb`.
+`lane/evidence-integration-20260527` through the current RPP-0278 forged ready
+plan defense variant-4 merge-invariant refresh ending at `481777230`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 405 are
-  checked from integrated evidence and 595 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 406 are
+  checked from integrated evidence and 594 remain open.
+- `RPP-0278` is now checked with focused forged ready plan defense variant-4
+  merge-invariant evidence in
+  `docs/evidence/rpp-0278-forged-ready-plan-defense-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0278-forged-ready-plan-defense-v4.test.js`, covering the current
+  `src/apply.js` ready-plan redaction path. `node --check` passed for
+  `src/apply.js` and the focused test, focused RPP-0278 coverage passed 1/1,
+  and the adjacent RPP-0218/RPP-0238/RPP-0258/RPP-0278 forged-ready suite
+  passed 6/6. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. This remains local planner/apply
+  generated-fixture evidence, not production endpoint proof.
 - `RPP-0277` is now checked with focused conflict plan apply refusal variant-4
   merge-invariant evidence in
   `docs/evidence/rpp-0277-conflict-plan-apply-refusal-v4.md`,

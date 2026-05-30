@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T10:53:49+02:00">Last updated: May 30, 2026, 10:53 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T10:56:55+02:00">Last updated: May 30, 2026, 10:56 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>405</strong>
+        <strong>406</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>595</strong>
+        <strong>594</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, blocked plan apply refusal before mutation or journal writes, conflict plan apply refusal with forged conflict-mutation rejection, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation, stale plugin owner-context refusal, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, and local directory delete/remote descendant create refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, blocked plan apply refusal before mutation or journal writes, conflict plan apply refusal with forged conflict-mutation rejection, forged ready plan hash-redaction defense, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation, stale plugin owner-context refusal, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, and local directory delete/remote descendant create refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,12 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0277</span>
+        <span>RPP-0278</span>
       </div>
-      <p>The latest refresh integrates RPP-0277 conflict plan apply refusal variant-4 proof: focused RPP-0277 coverage and the adjacent RPP-0217/RPP-0237/RPP-0257/RPP-0277 conflict-plan suite pass. Counts are now 405/595; final release remains NO-GO because this is local planner/apply evidence, not production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0278 forged ready plan defense variant-4 proof: focused RPP-0278 coverage and the adjacent RPP-0218/RPP-0238/RPP-0258/RPP-0278 forged-ready suite pass. Counts are now 406/594; final release remains NO-GO because this is local planner/apply evidence, not production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0278 focused: 1/1</span>
+        <span class="tag">RPP-0218/0238/0258/0278 suite: 6/6</span>
         <span class="tag">RPP-0277 focused: 1/1</span>
         <span class="tag">RPP-0217/0237/0257/0277 suite: 5/5</span>
         <span class="tag">RPP-0276 focused/generated: 2/2</span>

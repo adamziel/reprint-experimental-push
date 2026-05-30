@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:53 CEST.
+- Last update: 2026-05-30 10:56 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0277 conflict plan apply refusal variant-4 merge ending at
-  `97ebe07bb`.
+  the RPP-0278 forged ready plan defense variant-4 merge ending at
+  `481777230`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 405
-  items checked and leaves 595 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 406
+  items checked and leaves 594 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 70 merge-invariant items. No release-ops items are checked
+  harness items, and 71 merge-invariant items. No release-ops items are checked
   yet.
+- Forged ready plan defense variant-4 refresh: the current lane now contains
+  `RPP-0278` evidence in
+  `docs/evidence/rpp-0278-forged-ready-plan-defense-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0278-forged-ready-plan-defense-v4.test.js`, covering the current
+  `src/apply.js` ready-plan redaction path. `node --check` passed for
+  `src/apply.js` and the focused test, focused RPP-0278 coverage passed 1/1,
+  and the adjacent RPP-0218/RPP-0238/RPP-0258/RPP-0278 forged-ready suite
+  passed 6/6. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 406/594; final release remains
+  `NO-GO`.
 - Conflict plan apply refusal variant-4 refresh: the current lane now contains
   `RPP-0277` evidence in
   `docs/evidence/rpp-0277-conflict-plan-apply-refusal-v4.md`,
