@@ -294,6 +294,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-comments-commentmeta-graph-ready',
     tag: 'wp-comments-commentmeta-graph',
   },
+  wpCommentsCommentmetaGraphVariant4: {
+    family: 'wp-comments-commentmeta-graph-variant4',
+    tag: 'wp-comments-commentmeta-graph-v4',
+  },
   commentmetaCommentGraph: {
     family: 'wp-comments-commentmeta-graph-ready',
     tag: 'commentmeta-comment-graph',
@@ -3424,6 +3428,7 @@ function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTa
   });
 
   tags.add('wp-comments-commentmeta-graph');
+  tags.add('wp-comments-commentmeta-graph-v4');
   tags.add('wp-comments-create');
   tags.add('wp-commentmeta-create');
   tags.add('commentmeta-comment-graph');
@@ -3433,6 +3438,10 @@ function addWpCommentsCommentmetaGraph(local, remote, allocator, tags, { staleTa
   if (staleTarget) {
     tags.add('stale-graph');
     tags.add('wp-comments-remote-drift');
+    tags.add('wp-comments-commentmeta-graph-v4-stale');
+    tags.add('wp-comments-commentmeta-graph-v4-non-ready');
+  } else {
+    tags.add('wp-comments-commentmeta-graph-v4-ready');
   }
 }
 
