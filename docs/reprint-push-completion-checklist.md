@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 485.
-- Remaining open: 515.
+- Verified complete: 486.
+- Remaining open: 514.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -679,7 +679,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0635 (Far / recovery) Prove same-key replay after rejection, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
 - [x] RPP-0636 (Far / recovery) Prove different-body idempotency conflict, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0637 (Far / recovery) Prove process kill before first mutation, variant 2. Success: journal rows are durable after process restart.
-- [ ] RPP-0638 (Far / recovery) Prove process kill mid mutation set, variant 2. Success: retry does not overwrite preserved remote changes.
+- [x] RPP-0638 (Far / recovery) Prove process kill mid mutation set, variant 2. Success: retry does not overwrite preserved remote changes.
 - [ ] RPP-0639 (Far / recovery) Prove missing commit finalization, variant 2. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0640 (Far / recovery) Prove manual recovery audit export, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0641 (Far / recovery) Add generated coverage for journal table schema migration, variant 3. Success: MySQL or SQLite-backed test proves the recovery state.

@@ -1475,6 +1475,196 @@ test('RPP-0629 committed-state completion row survives restart and exposes lease
   assert.equal(journalText.includes(committedTwo), false);
 });
 
+test('file-backed journal process kill mid mutation set retry preserves remote-only changes', () => {
+  const filePath = tempJournalPath();
+  const remoteAfterKillPath = path.join(path.dirname(filePath), 'remote-after-kill.json');
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = clone(base);
+  const remote = clone(base);
+  const plannedContents = {
+    'file-1.txt': 'local-private-content-rpp-0638-planned-one',
+    'file-2.txt': 'local-private-content-rpp-0638-planned-two',
+    'file-3.txt': 'local-private-content-rpp-0638-planned-three',
+    'file-4.txt': 'local-private-content-rpp-0638-planned-four',
+  };
+  const preservedBeforePlan = 'remote-preserved-private-content-rpp-0638-before-plan';
+  const preservedAfterKill = 'remote-preserved-private-content-rpp-0638-after-kill';
+  for (const [fileName, content] of Object.entries(plannedContents)) {
+    local.files[fileName] = content;
+  }
+  remote.files['file-8.txt'] = preservedBeforePlan;
+  const plan = planFor(base, local, remote);
+  const expectedPartial = clone(remote);
+  applyFirstMutations(expectedPartial, plan, 2);
+
+  assert.deepEqual(
+    plan.mutations.map((mutation) => mutation.resourceKey),
+    ['file:file-1.txt', 'file:file-2.txt', 'file:file-3.txt', 'file:file-4.txt'],
+  );
+
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const childScript = `
+    import fs from 'node:fs';
+    import path from 'node:path';
+    import { openRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0638_JOURNAL_PATH;
+    const remoteAfterKillPath = process.env.RPP0638_REMOTE_AFTER_KILL_PATH;
+    const base = JSON.parse(process.env.RPP0638_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0638_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0638_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+
+    function writeJsonDurably(targetPath, value) {
+      const tempPath = \`\${targetPath}.\${process.pid}.tmp\`;
+      const fd = fs.openSync(tempPath, 'w', 0o600);
+      try {
+        fs.writeSync(fd, JSON.stringify(value));
+        fs.fsyncSync(fd);
+      } finally {
+        fs.closeSync(fd);
+      }
+      fs.renameSync(tempPath, targetPath);
+      const dirFd = fs.openSync(path.dirname(targetPath), 'r');
+      try {
+        fs.fsyncSync(dirFd);
+      } finally {
+        fs.closeSync(dirFd);
+      }
+    }
+
+    const writer = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'rpp-0638-process-kill-mid-set',
+    });
+    let observedMutations = 0;
+    const durableJournal = {
+      filePath: writer.filePath,
+      claimFenced: writer.claimFenced,
+      claimHash: writer.claimHash,
+      get claimOpened() {
+        return writer.claimOpened;
+      },
+      set claimOpened(value) {
+        writer.claimOpened = value;
+      },
+      appendEvent(type, payload) {
+        const record = writer.appendEvent(type, payload);
+        if (type === 'mutation-observed') {
+          observedMutations += 1;
+          if (observedMutations === 2) {
+            writeJsonDurably(remoteAfterKillPath, remote);
+            process.kill(process.pid, 'SIGKILL');
+          }
+        }
+        return record;
+      },
+      assertCurrentClaim(type) {
+        return writer.assertCurrentClaim(type);
+      },
+      close() {
+        return writer.close();
+      },
+    };
+
+    applyPlan(remote, plan, {
+      durableJournal,
+      mutateRemote: true,
+    });
+    console.error('expected SIGKILL after the second mutation-observed row');
+    process.exit(4);
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0638_JOURNAL_PATH: filePath,
+      RPP0638_REMOTE_AFTER_KILL_PATH: remoteAfterKillPath,
+      RPP0638_BASE_SITE: JSON.stringify(base),
+      RPP0638_LOCAL_SITE: JSON.stringify(local),
+      RPP0638_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.signal, 'SIGKILL', child.stderr || child.stdout);
+  assert.equal(child.status, null, child.stderr || child.stdout);
+  assert.equal(fs.existsSync(remoteAfterKillPath), true);
+
+  const remoteAfterKill = JSON.parse(fs.readFileSync(remoteAfterKillPath, 'utf8'));
+  assert.deepEqual(remoteAfterKill, expectedPartial);
+  remoteAfterKill.files['file-7.txt'] = preservedAfterKill;
+
+  const restarted = readRecoveryJournal(filePath);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.committedState.status, 'committed');
+  assert.equal(restarted.committedState.restartReadable, true);
+  assert.equal(restarted.committedState.mutationRows, 2);
+  assert.equal(restarted.committedState.completedRows, 0);
+  assert.equal(restarted.records.some((record) => record.type === 'journal-completed'), false);
+  assert.equal(restarted.records.every((record) => record.fsync.requested === true), true);
+
+  const restartInspection = inspectRecoveryJournal({ journal: restarted, plan, current: remoteAfterKill });
+  const repairInspection = inspectRecoveryRepair({ journalPath: filePath, plan, current: remoteAfterKill });
+  const writeAttempts = [];
+  const retry = replayRecoveryRepair({
+    journalPath: filePath,
+    plan,
+    current: remoteAfterKill,
+    mutateCurrent: true,
+    writeResource(site, resource, value, context) {
+      writeAttempts.push({
+        resourceKey: context.mutation.resourceKey,
+        repairAction: context.repairAction,
+      });
+      setResource(site, resource, value);
+    },
+  });
+
+  assert.equal(restartInspection.status, 'blocked-recovery');
+  assert.deepEqual(restartInspection.counts, { old: 2, new: 2, blockedUnknown: 0 });
+  assert.equal(restartInspection.journal.committedState.restartReadable, true);
+  assert.equal(repairInspection.status, 'partial-remote-replayable');
+  assert.equal(repairInspection.canRollForward, true);
+  assert.equal(retry.status, 'replayed');
+  assert.equal(retry.appliedMutations, 2);
+  assert.deepEqual(
+    retry.appliedTargets.map((target) => target.resourceKey),
+    ['file:file-3.txt', 'file:file-4.txt'],
+  );
+  assert.deepEqual(
+    retry.skippedTargets.map((target) => target.resourceKey),
+    ['file:file-1.txt', 'file:file-2.txt'],
+  );
+  assert.deepEqual(writeAttempts, [
+    { resourceKey: 'file:file-3.txt', repairAction: 'apply-after' },
+    { resourceKey: 'file:file-4.txt', repairAction: 'apply-after' },
+  ]);
+  assert.equal(remoteAfterKill.files['file-1.txt'], plannedContents['file-1.txt']);
+  assert.equal(remoteAfterKill.files['file-2.txt'], plannedContents['file-2.txt']);
+  assert.equal(remoteAfterKill.files['file-3.txt'], plannedContents['file-3.txt']);
+  assert.equal(remoteAfterKill.files['file-4.txt'], plannedContents['file-4.txt']);
+  assert.equal(remoteAfterKill.files['file-7.txt'], preservedAfterKill);
+  assert.equal(remoteAfterKill.files['file-8.txt'], preservedBeforePlan);
+
+  const journalText = fs.readFileSync(filePath, 'utf8');
+  for (const rawValue of [
+    ...Object.values(plannedContents),
+    preservedBeforePlan,
+    preservedAfterKill,
+  ]) {
+    assert.equal(journalText.includes(rawValue), false);
+  }
+});
+
 test('file-backed journal schema migration preserves rows and remains restart-readable', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
