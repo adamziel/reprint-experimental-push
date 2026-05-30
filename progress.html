@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T15:51:00+02:00">Last updated: May 30, 2026, 15:51 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:55:00+02:00">Last updated: May 30, 2026, 15:55 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>470</strong>
+        <strong>471</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>530</strong>
+        <strong>529</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0520</span>
+        <span>RPP-0631</span>
       </div>
-      <p>The latest refresh integrates RPP-0520 production audit event schema evidence: the production-shaped DB journal exposes an authenticated schema route with reprint-push-production-audit-event/v1, append-only journal metadata, route evidence, required event fields, and hash-only redaction metadata that excludes credentials and raw row/content values. Counts are now 470/530; final release remains NO-GO because this is sandbox-local production-shaped route proof, not externally supplied production topology and credential evidence.</p>
+      <p>The latest refresh integrates RPP-0631 new-remote recovery classification evidence: a completed apply journal is persisted into SQLite with schema-version metadata, reopened through the recovery journal table reader, and inspected as fully-updated-remote only when live current hashes match the journaled after hashes; the same journal against the unchanged pre-apply remote still reports old-remote. Counts are now 471/529; final release remains NO-GO because this is local SQLite-backed recovery evidence, not external WordPress crash/restart durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0631 focused: 1/1</span>
+        <span class="tag">recovery classification adjacent: 7/7</span>
+        <span class="tag">recovery journal full: 37/37</span>
+        <span class="tag">SQLite new-remote hash-derived</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0520 route focused: 3/3</span>
         <span class="tag">RPP-0520 client focused: 1/1</span>
         <span class="tag">route/auth adjacent: 160/160</span>

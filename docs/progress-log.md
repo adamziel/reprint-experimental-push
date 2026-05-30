@@ -6,19 +6,37 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:51 CEST +02:00.
+- Last update: 2026-05-30 15:55 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0520 production audit event schema merge ending at `d2aedba5c`.
+  the RPP-0631 new-remote recovery classification merge ending at `bb240d3ed`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 470
-  items checked and leaves 530 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 471
+  items checked and leaves 529 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  80 plugin-driver boundary items, 28 executor/auth items, 32 recovery items,
+  80 plugin-driver boundary items, 28 executor/auth items, 33 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- SQLite-backed new-remote recovery classification v2: the current lane now
+  contains `RPP-0631` evidence in
+  `docs/evidence/rpp-0631-new-remote-recovery-classification-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof writes a completed apply journal
+  into a SQLite `recovery_journal` table with durable `schema_version` metadata,
+  closes and reopens the database, reads it through
+  `readSqliteRecoveryJournalTable()`, and proves restart inspection reports
+  `fully-updated-remote` with every planned target classified as `new` only when
+  the live current hashes match journaled after hashes. The same reopened
+  journal inspected against the unchanged pre-apply remote reports `old-remote`,
+  keeping the classification tied to current hash evidence rather than completion
+  metadata alone. Validation passed with focused RPP-0631 coverage 1/1, adjacent
+  recovery classification coverage 7/7, full recovery-journal coverage 37/37,
+  checklist lint, scoped artifact redaction scan, and merge diff whitespace
+  checks. Counts are now 471/529; final release remains `NO-GO` because this is
+  local SQLite-backed recovery evidence, not external WordPress crash/restart
+  durability proof.
 - Production audit event schema route: the current lane now contains
   `RPP-0520` evidence in
   `docs/evidence/rpp-0520-production-audit-event-schema.md`,
