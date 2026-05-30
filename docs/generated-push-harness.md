@@ -67,8 +67,9 @@ The default generated run covers:
   variant-3 terms/termmeta graph coverage, `wp_users` + `wp_usermeta` graph
   cases with per-tier target counts and
   ready/stale non-ready outcomes plus explicit variant-3 user/usermeta graph
-  coverage, `wp_term_taxonomy` graph cases with per-tier target counts and
-  ready/stale non-ready outcomes, `wp_term_relationships`
+  coverage, `wp_term_taxonomy` graph cases with per-tier target counts,
+  ready/stale non-ready outcomes, and explicit variant-3 term-taxonomy graph
+  coverage, `wp_term_relationships`
   graph cases with one target per tier, ready creates, stale taxonomy drift,
   and redacted hash-only evidence, plugin-owned `wp_options` update cases with
   ready/conflict outcomes and stale replay rejection before mutation,
@@ -301,6 +302,16 @@ fail closed instead of overwriting the drifted remote. RPP-0132 now runs in the
 620-case roster and proves 20 term-taxonomy graph cases across all 10 tiers,
 including 10 ready cases, 10 stale non-ready cases, and hash-only redacted
 evidence for generated taxonomy descriptions and stale term drift values.
+
+RPP-0152 adds `wpTermTaxonomyGraphVariant3` coverage for the same `wp_terms`
+and `wp_term_taxonomy` graph surface with an explicit variant-3 target tag. The
+deterministic roster emits 20 variant-3 target cases: 10 ready term/taxonomy
+graph creates and 10 stale non-ready term drift cases, with two cases in every
+tier. The focused proof records only resource keys, term-id hashes, term-slug
+hashes, taxonomy/description hashes, counts, blocker hashes, and refusal
+hashes; verifies the ready case applies both graph rows and rejects stale replay
+before mutation; then verifies the stale term reference refuses apply without
+mutating the remote digest.
 
 The `wpTermRelationshipsGraph` target coverage records per-tier counts for
 generated `wp_term_relationships` rows and their `wp_term_taxonomy` targets.
