@@ -1,17 +1,32 @@
-# AO Progress Report - 2026-05-30 05:33 CEST
+# AO Progress Report - 2026-05-30 05:40 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0482 driver owner
-identity release-verifier proof refresh ending at `b320a6bc1`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0159 remote-only
+preservation generated variant-3 proof refresh ending at `2524c9c5`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 343 are
-  checked from integrated evidence and 657 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 344 are
+  checked from integrated evidence and 656 remain open.
+- `RPP-0159` is now checked with generated remote-only preservation variant-3
+  evidence in `docs/evidence/rpp-0159-remote-only-preservation-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, the focused RPP-0159 test, the
+  `generated push harness covers|RPP-0159` pattern, and the
+  `RPP-0119|RPP-0139|RPP-0159` adjacent remote-only slice exited 0. The summary
+  probe reported 9 ready `remoteOnlyPreservationVariant3` cases, and `npm run
+  test:generated-push-harness` passed 66/66, proving stale replay fails before
+  mutation with hash-only remote-only evidence. Checklist lint, artifact
+  redaction scan, and `git diff --check` also passed while final release remains
+  **NO-GO**.
 - `RPP-0482` is now checked with focused driver owner identity
   release-verifier variant-5 evidence in
   `docs/evidence/rpp-0482-driver-owner-identity-release-verifier-v5.md`,

@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:33 CEST.
+- Last update: 2026-05-30 05:40 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0482 driver owner identity release-verifier proof merge ending at
-  `b320a6bc1`.
+  the RPP-0159 remote-only preservation generated variant-3 proof merge ending
+  at `2524c9c5`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 343
-  items checked and leaves 657 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 344
+  items checked and leaves 656 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   66 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 58 generated
+  11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated remote-only preservation variant-3 refresh: the current lane now
+  contains `RPP-0159` evidence in
+  `docs/evidence/rpp-0159-remote-only-preservation-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  scripts/harness/generated-push-cases.js`, `node --check
+  test/generated-push-harness.test.js`, the focused RPP-0159 test, the
+  `generated push harness covers|RPP-0159` pattern, and the
+  `RPP-0119|RPP-0139|RPP-0159` adjacent remote-only slice all exited 0. The
+  summary probe reported 9 ready `remoteOnlyPreservationVariant3` cases, and
+  the full generated harness passed 66/66. The proof keeps remote-only evidence
+  hash-only and rejects stale replay before mutation. Checklist lint, artifact
+  redaction scan, and `git diff --check` also passed. Counts are now 344/656;
+  final release remains `NO-GO`.
 - Release verifier driver owner identity variant-5 refresh: the current lane
   now contains `RPP-0482` evidence in
   `docs/evidence/rpp-0482-driver-owner-identity-release-verifier-v5.md`,
