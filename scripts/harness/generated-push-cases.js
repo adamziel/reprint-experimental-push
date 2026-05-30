@@ -254,6 +254,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-options-serialized-variant4',
     tag: 'wp-options-serialized-v4',
   },
+  wpOptionsSerializedChangesReleaseVerifierVariant5: {
+    family: 'wp-options-serialized-release-verifier-v5',
+    tag: 'wp-options-serialized-release-verifier-v5',
+  },
   sameIndependentContent: {
     family: 'same-independent-content',
     tag: 'same-independent-content-target',
@@ -4048,6 +4052,8 @@ function addWpOptionsSerializedChange(base, local, remote, allocator, tags, { co
   tags.add(conflict ? 'wp-options-serialized-v3-non-ready' : 'wp-options-serialized-v3-ready');
   tags.add('wp-options-serialized-v4');
   tags.add(conflict ? 'wp-options-serialized-v4-non-ready' : 'wp-options-serialized-v4-ready');
+  tags.add('wp-options-serialized-release-verifier-v5');
+  tags.add(conflict ? 'wp-options-serialized-release-verifier-v5-non-ready' : 'wp-options-serialized-release-verifier-v5-ready');
 
   if (conflict) {
     setRow(remote, 'wp_options', rowId, {

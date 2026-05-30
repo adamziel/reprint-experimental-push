@@ -174,6 +174,17 @@ precondition, applies the local serialized option hash, preserves unplanned
 remote data, and rejects stale replay before mutation, then verifies the
 conflicting serialized option refuses apply without mutating the remote digest.
 
+RPP-0186 adds `wpOptionsSerializedChangesReleaseVerifierVariant5` coverage for
+the same regular serialized option update surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready serialized option updates and 10 non-ready remote-drift
+conflicts, with two cases in every tier. The focused proof keeps generated
+serialized payloads hash-only, verifies the ready mutation carries a matching
+live-remote precondition, applies the local serialized option hash, preserves
+unplanned remote data, and rejects stale replay with `PRECONDITION_FAILED`
+before mutation, then verifies the conflicting serialized option refuses apply
+with `PLAN_NOT_READY` before mutation.
+
 The `pluginOwnedOptionChange` target coverage records per-tier counts for
 plugin-owned `wp_options` rows that are explicitly allowed by the owning plugin
 driver. Ready cases carry owner/driver evidence, apply the local option hash,
