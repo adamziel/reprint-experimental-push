@@ -3,8 +3,8 @@
 This is the near-to-far completion tracker for turning Reprint push into a fully complete production implementation. It is intentionally broader than the current green tests. Each item should move to checked only when the success evidence exists in the repository, command output, tmux proof, release gate file, or production run cited by the progress report.
 
 - Total checklist items: 1000.
-- Verified complete: 455.
-- Remaining open: 545.
+- Verified complete: 456.
+- Remaining open: 544.
 - Ordering: near-term release gates first, farthest release/operations proof last.
 - Rule: do not mark an item complete from intent, design notes, or a narrow fixture that does not cover the named goal.
 
@@ -747,7 +747,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 
 Focus: make large safe pushes practical and measurable.
 
-- [ ] RPP-0701 (Far / storage-performance) Implement MySQL compare-and-swap write guard, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
+- [x] RPP-0701 (Far / storage-performance) Implement MySQL compare-and-swap write guard, variant 1. Success: benchmark command reports runtime, resources, and pass/fail gates.
 - [x] RPP-0702 (Far / storage-performance) Implement SQLite compare-and-swap write guard, variant 1. Success: guarded writes reject stale storage state.
 - [x] RPP-0703 (Far / storage-performance) Implement transaction boundary policy, variant 1. Success: chunk transfer resumes without duplicate mutation work.
 - [x] RPP-0704 (Far / storage-performance) Implement filesystem compare-and-rename write, variant 1. Success: large-site run finishes inside documented budgets.

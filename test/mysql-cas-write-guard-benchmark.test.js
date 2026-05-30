@@ -6,6 +6,7 @@ import {
   applyMysqlCasWriteGuard,
   buildMysqlCasUpdateShape,
   createMysqlCasFixture,
+  detectMysqlRuntime,
   runMysqlCasWriteGuardBenchmark,
 } from '../scripts/bench/mysql-cas-write-guard.js';
 
@@ -121,6 +122,72 @@ test('guard applies matching storage and rejects stale or absent storage without
   }
 });
 
+test('MySQL runtime detection records missing connection settings exactly', () => {
+  const runtime = detectMysqlRuntime({}, fakeMysqlSpawn([
+    mysqlVersionResult(),
+  ]));
+
+  assert.equal(runtime.status, 'unavailable');
+  assert.deepEqual(runtime.unavailableCapabilities, ['mysql-runtime-connection-settings']);
+  assert.match(runtime.detail, /REPRINT_PUSH_MYSQL_CAS_DSN/);
+  assert.match(runtime.detail, /REPRINT_PUSH_MYSQL_CAS_DATABASE/);
+  assert.equal(runtime.clientVersion, mysqlVersionResult().stdout.trim());
+});
+
+test('MySQL runtime detection records connection probe failures without leaking settings', () => {
+  const env = {
+    REPRINT_PUSH_MYSQL_CAS_HOST: 'private-db.example',
+    REPRINT_PUSH_MYSQL_CAS_PORT: '3307',
+    REPRINT_PUSH_MYSQL_CAS_DATABASE: 'reprint_push_test',
+    REPRINT_PUSH_MYSQL_CAS_USER: 'cas_worker',
+    REPRINT_PUSH_MYSQL_CAS_PASSWORD: 'super-secret',
+  };
+  const runtime = detectMysqlRuntime(env, fakeMysqlSpawn([
+    mysqlVersionResult(),
+    {
+      status: 1,
+      stdout: '',
+      stderr: 'ERROR 1045 (28000): Access denied for user cas_worker on private-db.example using password super-secret',
+    },
+  ], ({ call, args, options }) => {
+    if (call === 1) {
+      assert.ok(args.includes('--protocol=tcp'));
+      assert.ok(args.includes('--host=private-db.example'));
+      assert.ok(args.includes('--port=3307'));
+      assert.ok(args.includes('--database=reprint_push_test'));
+      assert.ok(args.includes('--user=cas_worker'));
+      assert.ok(!args.some((arg) => arg.includes('super-secret')));
+      assert.equal(options.env.MYSQL_PWD, 'super-secret');
+    }
+  }));
+
+  assert.equal(runtime.status, 'unavailable');
+  assert.deepEqual(runtime.unavailableCapabilities, ['mysql-runtime-connection-probe']);
+  assert.equal(runtime.connection, 'configured-redacted');
+  assert.match(runtime.detail, /mysql connection probe exited 1/);
+  assertNoConnectionSecret(runtime.detail);
+});
+
+test('MySQL runtime detection records successful redacted probes without claiming live CAS DML', () => {
+  const runtime = detectMysqlRuntime({
+    REPRINT_PUSH_MYSQL_CAS_DSN: 'mysql://cas_worker:super-secret@private-db.example:3307/reprint_push_test',
+  }, fakeMysqlSpawn([
+    mysqlVersionResult(),
+    {
+      status: 0,
+      stdout: '8.0.36\n',
+      stderr: '',
+    },
+  ]));
+
+  assert.equal(runtime.status, 'available');
+  assert.deepEqual(runtime.unavailableCapabilities, []);
+  assert.equal(runtime.connection, 'configured-redacted');
+  assert.equal(runtime.serverVersion, '8.0.36');
+  assert.match(runtime.detail, /connection probe succeeded/);
+  assert.match(runtime.detail, /did not run live CAS DML/);
+});
+
 function assertNoRawFixtureEvidence(evidence) {
   const serialized = JSON.stringify(evidence);
   for (const token of [
@@ -140,4 +207,35 @@ function assertNoRawFixtureEvidence(evidence) {
 
 function fixtureColumnValueToken() {
   return 'reprint_push_option_7';
+}
+
+function mysqlVersionResult() {
+  return {
+    status: 0,
+    stdout: 'mysql  Ver 15.1 Distrib 10.11.13-MariaDB, for Linux (x86_64) using readline 5.1\n',
+    stderr: '',
+  };
+}
+
+function fakeMysqlSpawn(results, onCall = () => {}) {
+  let call = 0;
+  return (command, args, options) => {
+    assert.equal(command, 'mysql');
+    onCall({ call, args, options });
+    const result = results[call];
+    call += 1;
+    assert.ok(result, `unexpected mysql spawn call ${call}`);
+    return result;
+  };
+}
+
+function assertNoConnectionSecret(value) {
+  for (const token of [
+    'private-db.example',
+    'reprint_push_test',
+    'cas_worker',
+    'super-secret',
+  ]) {
+    assert.ok(!value.includes(token), `runtime evidence leaked ${token}`);
+  }
 }
