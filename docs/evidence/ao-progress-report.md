@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 05:09 CEST
+# AO Progress Report - 2026-05-30 05:13 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0477 driver
-dry-run validation hook proof refresh ending at `564e4a6a8`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0478 driver apply
+validation hook proof refresh ending at `fbddac7d2`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 337 are
-  checked from integrated evidence and 663 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 338 are
+  checked from integrated evidence and 662 remain open.
+- `RPP-0478` is now checked with focused driver apply validation hook
+  variant-4 evidence in
+  `docs/evidence/rpp-0478-driver-apply-validation-hook-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0478-driver-apply-validation-hook-v4.test.js`. `node --check
+  test/rpp-0478-driver-apply-validation-hook-v4.test.js` exited 0, `node
+  --test test/rpp-0478-driver-apply-validation-hook-v4.test.js` passed 1/1,
+  and the adjacent apply-validation/plugin-driver slice passed 15/15, proving
+  one local production-shaped plugin-owned `wp_options` mutation carries
+  through apply, apply-time driver validation evidence is recorded, audit and
+  journal proof remains hash-only, failing or unsupported apply hooks fail
+  closed before mutation, checklist lint, artifact redaction scan, and `git
+  diff --check` while final release remains **NO-GO**.
 - `RPP-0477` is now checked with focused driver dry-run validation hook
   variant-4 evidence in
   `docs/evidence/rpp-0477-driver-dry-run-validation-hook-v4.md`,
