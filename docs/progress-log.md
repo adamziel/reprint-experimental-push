@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:09 CEST.
+- Last update: 2026-05-30 14:12 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0368 commentmeta comment reference merge ending at `555da2b1f`.
+  the RPP-0369 category taxonomy reference merge ending at `98c849845`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 449
-  items checked and leaves 551 open.
-- Checked slices: 100 release-gate foundation items, 51 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 450
+  items checked and leaves 550 open.
+- Checked slices: 100 release-gate foundation items, 52 graph identity items,
   73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Category taxonomy reference focused regression: the current lane now contains
+  `RPP-0369` evidence in
+  `docs/evidence/rpp-0369-category-term-taxonomy-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0369-category-term-taxonomy-reference-v4.test.js`. The focused
+  planner/apply proof creates a category term graph, verifies the
+  `wp_term_taxonomy` mutation carries `term_taxonomy_id`, `term_id`, and
+  `taxonomy:"category"` with live-remote preconditions, and proves the applied
+  resource hash matches the planned local hash with raw fixture values absent
+  from evidence. Validation passed with Node syntax checks, focused RPP-0369
+  coverage 2/2, adjacent RPP-0309 category taxonomy coverage 3/3, checklist
+  lint, scoped artifact redaction scan, and merge diff whitespace checks.
+  Counts are now 450/550; final release remains `NO-GO` because this is local
+  graph identity regression evidence, not externally hosted production topology
+  proof.
 - Commentmeta comment reference focused regression: the current lane now
   contains `RPP-0368` evidence in
   `docs/evidence/rpp-0368-commentmeta-comment-reference-v4.md`,
