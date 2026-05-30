@@ -440,6 +440,17 @@ hashes; verifies the ready case applies both graph rows and rejects stale replay
 before mutation; then verifies the stale term reference refuses apply without
 mutating the remote digest.
 
+RPP-0172 adds `wpTermTaxonomyGraphVariant4` coverage as focused regression
+coverage for the same `wp_terms` and `wp_term_taxonomy` graph surface with an
+explicit variant-4 target tag. The deterministic roster emits 20 variant-4
+target cases: 10 ready term/taxonomy graph creates and 10 stale non-ready term
+drift cases, with two cases in every tier. The focused proof mirrors the
+variant-3 invariants, records only resource keys, term-id hashes, term-slug
+hashes, taxonomy/description hashes, counts, blocker/decision/refusal hashes,
+and planner hashes, verifies the ready case applies both graph rows and rejects
+stale replay before mutation, then verifies the stale graph blocker refuses
+apply without mutating the remote digest.
+
 The `wpTermRelationshipsGraph` target coverage records per-tier counts for
 generated `wp_term_relationships` rows and their `wp_term_taxonomy` targets.
 Ready cases create the term, taxonomy, and relationship in one plan, preserve
