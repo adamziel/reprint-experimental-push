@@ -3691,6 +3691,12 @@ function reprint_push_lab_rest_auth_fixture_credentials(): array
             'slug' => 'alternate-admin',
         ],
         [
+            'login' => getenv('REPRINT_PUSH_LAB_AUTH_ROTATED_ADMIN_USER') ?: 'reprint_push_admin',
+            'password' => getenv('REPRINT_PUSH_LAB_AUTH_ROTATED_ADMIN_APP_PASSWORD') ?: 'reprint-push-admin-rotated-app-password',
+            'role' => 'administrator',
+            'slug' => 'primary-admin-rotated',
+        ],
+        [
             'login' => getenv('REPRINT_PUSH_LAB_AUTH_LIMITED_USER') ?: 'reprint_push_limited',
             'password' => getenv('REPRINT_PUSH_LAB_AUTH_LIMITED_APP_PASSWORD') ?: 'reprint-push-limited-app-password',
             'role' => 'subscriber',
