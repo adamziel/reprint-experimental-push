@@ -30,8 +30,8 @@ Observed summary from this sandbox:
 
 - `ok: true`
 - profile: `large-site`
-- duration: `6007.18 ms` within the documented `15000 ms` budget
-- heap used: `9452872 bytes` within the documented `268435456 bytes` budget
+- duration: `2878.78 ms` within the documented `15000 ms` budget
+- heap used: `9462896 bytes` within the documented `268435456 bytes` budget
 - plugin files: `5`
 - total plugin file bytes: `19922944`
 - largest plugin file: `12582912 bytes`
