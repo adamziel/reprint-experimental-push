@@ -51,10 +51,24 @@ Inspection of the partial remote reports 2 new targets, 6 old targets, and 0
 blocked-unknown targets, proving the classification is derived from durable
 journal rows rather than in-memory apply state.
 
+## Supplemental SQLite regression
+
+`test/recovery-journal.test.js` also carries
+`RPP-0612 SQLite-backed blocked recovery rows survive process restart`. The
+regression runs a child Node writer process, records a hash-only partial remote
+state with 2 of 8 planned targets observed, copies those rows into a SQLite
+`recovery_journal` table with schema version 1, closes the database, and lets
+the writer process exit. The parent process reopens the SQLite file, reads it
+with `readSqliteRecoveryJournalTable()`, verifies monotonic rows and a
+restart-readable committed-state envelope, and confirms inspection reports
+`blocked-recovery` with 2 new targets, 6 old targets, and 0 blocked-unknown
+targets without retaining raw fixture payloads.
+
 ## Validation run
 
 ```bash
 node --test test/rpp-0612-blocked-recovery-classification.test.js
+node --test --test-name-pattern 'RPP-0612 SQLite-backed blocked recovery rows survive process restart' test/recovery-journal.test.js
 node --test --test-name-pattern 'blocked recovery classification survives process restart' test/recovery-journal.test.js
 node --test --test-name-pattern '(restart inspection|blocked recovery classification survives process restart|state survives restart)' test/recovery-journal.test.js
 node --test test/recovery-journal.test.js test/recovery-repair.test.js
@@ -68,13 +82,14 @@ Observed result: focused RPP-0612 coverage exited 0 with 1 subtest. The
 recovery journal and repair regressions exited 0 with 33 subtests, the file
 journal restart smoke exited 0, and the checklist lint, evidence redaction scan,
 and whitespace check all exited 0. Salvage validation for the supplemental
-recovery-journal regression exited 0 with 1 focused subtest, 9 adjacent
-restart/classification subtests, and the full recovery journal suite at 29
-subtests.
+recovery-journal regression exited 0 with the SQLite RPP-0612 subtest, 1
+file-backed focused subtest, 9 adjacent restart/classification subtests, and the
+full recovery journal suite at 29 subtests.
 
 ## Residual scope
 
-This evidence is limited to file-backed recovery journal restart readback and
-blocked partial-remote classification. It does not extend generated harness
-coverage, production route authentication, plugin-driver behavior, topology
-proofs, release verifier carry-through, or public progress reporting.
+This evidence is limited to file-backed and SQLite recovery journal restart
+readback plus blocked partial-remote classification. It does not extend
+generated harness coverage, production route authentication, plugin-driver
+behavior, topology proofs, release verifier carry-through, or public progress
+reporting.

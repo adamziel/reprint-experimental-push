@@ -2484,6 +2484,152 @@ test('restart inspection classifies fail-after-2 as blocked recovery with two ne
   assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
 });
 
+test('RPP-0612 SQLite-backed blocked recovery rows survive process restart', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const seedFilePath = tempJournalPath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const current = clone(remote);
+  applyFirstMutations(current, plan, 2);
+
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const resourcesModule = new URL('../src/resources.js', import.meta.url).href;
+  const stableJsonModule = new URL('../src/stable-json.js', import.meta.url).href;
+  const childScript = `
+    import { DatabaseSync } from 'node:sqlite';
+    import {
+      appendMutationObserved,
+      openPlanRecoveryJournal,
+      readRecoveryJournal,
+      RECOVERY_JOURNAL_SCHEMA_VERSION,
+    } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { deserializeResourceValue, setResource } from ${JSON.stringify(resourcesModule)};
+    import { digest } from ${JSON.stringify(stableJsonModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+
+    function baseSite() {
+      const files = {};
+      for (let index = 1; index <= 8; index++) {
+        files[\`file-\${index}.txt\`] = \`base-private-content-\${index}\`;
+      }
+      return { files, plugins: {}, db: {} };
+    }
+
+    function localSite() {
+      const site = baseSite();
+      for (let index = 1; index <= 8; index++) {
+        site.files[\`file-\${index}.txt\`] = \`local-private-content-\${index}\`;
+      }
+      return site;
+    }
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function applyFirstMutations(site, plan, count) {
+      for (const mutation of plan.mutations.slice(0, count)) {
+        setResource(site, mutation.resource, deserializeResourceValue(mutation.value));
+      }
+    }
+
+    const sqlitePath = process.env.RPP0612_SQLITE_PATH;
+    const seedFilePath = process.env.RPP0612_SEED_JOURNAL_PATH;
+    const remote = baseSite();
+    const plan = createPushPlan({ base: baseSite(), local: localSite(), remote, now: fixedNow });
+    const current = clone(remote);
+    const journal = openPlanRecoveryJournal({
+      filePath: seedFilePath,
+      plan,
+      current: remote,
+      now: fixedNow,
+      artifactRefs: { blockedRecovery: 'artifact://rpp-0612-blocked-recovery' },
+    });
+
+    applyFirstMutations(current, plan, 2);
+    for (const mutation of plan.mutations.slice(0, 2)) {
+      appendMutationObserved(journal, {
+        plan,
+        mutation,
+        current,
+        state: 'applied',
+      });
+    }
+    journal.appendEvent('recovery-state', {
+      planId: plan.id,
+      state: 'blocked-recovery',
+      reason: 'RPP-0612 partial remote mutation leaves a blocked recovery artifact.',
+      observedHash: digest(current),
+      artifactRefs: { blockedRecovery: 'artifact://rpp-0612-blocked-recovery' },
+    });
+    journal.close();
+
+    const database = new DatabaseSync(sqlitePath);
+    database.exec('CREATE TABLE recovery_journal (sequence INTEGER PRIMARY KEY, record_json TEXT NOT NULL, schema_version INTEGER NOT NULL)');
+    const insert = database.prepare('INSERT INTO recovery_journal (sequence, record_json, schema_version) VALUES (?, ?, ?)');
+    for (const record of readRecoveryJournal(seedFilePath).records) {
+      insert.run(record.sequence, JSON.stringify(record), RECOVERY_JOURNAL_SCHEMA_VERSION);
+    }
+    database.close();
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0612_SQLITE_PATH: sqlitePath,
+      RPP0612_SEED_JOURNAL_PATH: seedFilePath,
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const database = new DatabaseSync(sqlitePath);
+  try {
+    const restarted = readSqliteRecoveryJournalTable(database);
+    const inspection = inspectRecoveryJournal({
+      journal: restarted,
+      plan,
+      current,
+    });
+    const serializedRows = JSON.stringify(restarted.records);
+
+    assert.equal(restarted.storage, 'sqlite');
+    assert.equal(restarted.integrity.status, 'ok');
+    assert.equal(restarted.tableSchemaVersion, RECOVERY_JOURNAL_SCHEMA_VERSION);
+    assert.deepEqual(
+      restarted.records.map((record) => record.sequence),
+      Array.from({ length: plan.mutations.length + 4 }, (_, index) => index + 1),
+    );
+    assert.equal(restarted.records.filter((record) => record.type === 'target-planned').length, plan.mutations.length);
+    assert.equal(restarted.records.filter((record) => record.type === 'mutation-observed').length, 2);
+    assert.equal(restarted.records.at(-1).type, 'recovery-state');
+    assert.equal(restarted.records.at(-1).state, 'blocked-recovery');
+    assert.equal(restarted.committedState.status, 'committed');
+    assert.equal(restarted.committedState.restartReadable, true);
+    assert.equal(restarted.committedState.targetEnvelope.plannedTargets, plan.mutations.length);
+    assert.equal(restarted.committedState.targetEnvelope.committedTargets, 2);
+    assert.equal(restarted.committedState.targetEnvelope.allTargetsCommitted, false);
+    assert.equal(inspection.status, 'blocked-recovery');
+    assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
+    assert.deepEqual(
+      inspection.targets.filter((target) => target.state === 'new').map((target) => target.resourceKey),
+      ['file:file-1.txt', 'file:file-2.txt'],
+    );
+    assert.ok(inspection.targets.slice(2).every((target) => target.state === 'old'));
+    assert.equal(serializedRows.includes('base-private-content'), false);
+    assert.equal(serializedRows.includes('local-private-content'), false);
+  } finally {
+    database.close();
+  }
+});
+
 test('RPP-0632 blocked recovery classification variant 2 survives process restart with durable rows', () => {
   const filePath = tempJournalPath();
   fs.chmodSync(path.dirname(filePath), 0o700);
