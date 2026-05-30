@@ -6,20 +6,42 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:08 CEST +02:00.
+- Last update: 2026-05-30 17:23 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0638 process-kill mid-mutation retry preservation merge ending at
-  `e5428f4b`.
+  the RPP-0487 wp_usermeta release verifier carry-through merge ending at
+  `fd72deca7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 486
-  items checked and leaves 514 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 487
+  items checked and leaves 513 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  83 plugin-driver boundary items, 30 executor/auth items, 39 recovery items,
+  84 plugin-driver boundary items, 30 executor/auth items, 39 recovery items,
   21 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- wp_usermeta release verifier carry-through v5: the current lane now contains
+  `RPP-0487` evidence in
+  `docs/evidence/rpp-0487-wp-usermeta-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`,
+  `scripts/playground/production-plugin-package-smoke.mjs`, and
+  `test/rpp-0487-wp-usermeta-release-verifier-v5.test.js`. The proof carries
+  exact `umeta_id:<id>` `wp_usermeta` semantics under
+  `pluginDriver.coreSemantics.wpUsermeta`; local/support-only evidence stays
+  `NO-GO`, production-scoped evidence without checked proof stays `NO-GO`, and
+  checked production-backed proof is summarized separately as `GO` only inside
+  that verifier boundary. Generated supported and unsupported variants remain
+  distinct, the summary carries row identity and hashes without raw `meta_value`
+  payloads, and the package smoke now waits on REST index, snapshot, and
+  preflight probes before verifier guard scenarios run. Validation passed with
+  Node syntax checks, focused RPP-0487 coverage 5/5, adjacent wp_usermeta
+  plugin-driver coverage 15/15, generated push harness coverage 85/85,
+  production plugin package scenarios 9/9, the sandbox-local package verifier
+  guard smoke, checklist lint, scoped artifact redaction scan, exact raw fixture
+  scan, and merge diff whitespace checks. Counts are now 487/513; final release
+  remains `NO-GO` because this is local/support-only release-verifier and
+  plugin-driver evidence, not live production proof.
 - Process kill mid mutation set v2: the current lane now contains `RPP-0638`
   evidence in
   `docs/evidence/rpp-0638-process-kill-mid-mutation-retry-preservation.md`,

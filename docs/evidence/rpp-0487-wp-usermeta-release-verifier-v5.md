@@ -54,7 +54,7 @@ git diff --cached --check
 Observed result after validation: all commands exited 0. The focused RPP-0487
 test reported 5 subtests ok and 0 failed. The adjacent wp_usermeta
 plugin-driver slice reported 15 subtests ok and 0 failed. The generated push
-harness reported 66 subtests ok and 0 failed. The production plugin package
+harness reported 85 subtests ok and 0 failed on the integrated lane. The production plugin package
 scenario summary tests reported 9 subtests ok and 0 failed, and the packaged
 plugin driver verifier guard smoke completed all requested guard scenarios
 successfully. Checklist lint returned `"ok": true`; the scoped artifact
