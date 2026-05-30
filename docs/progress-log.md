@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:40 CEST.
+- Last update: 2026-05-30 13:46 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0627 restart-readable open-state v2 merge ending at `a9627e015`.
+  the RPP-0519 credential rotation behavior merge ending at `813b68238`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 443
-  items checked and leaves 557 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 444
+  items checked and leaves 556 open.
 - Checked slices: 100 release-gate foundation items, 46 graph identity items,
-  73 plugin-driver boundary items, 24 executor/auth items, 29 recovery items,
+  73 plugin-driver boundary items, 25 executor/auth items, 29 recovery items,
   13 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Credential rotation behavior: the current lane now contains `RPP-0519`
+  evidence in `docs/evidence/rpp-0519-credential-rotation-behavior.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/rpp-0519-credential-rotation.test.js`. The production-shaped local
+  Playground fixture provisions a rotated Application Password for the same
+  push admin, binds short-lived sessions to credential hash, signing-key hash,
+  user identity, auth scope, and source hashes before signed mutation
+  admission, and checks dry-run receipt auth binding again before journal-backed
+  apply. The live proof shows an invalid credential and a rotated same-user
+  credential both fail before mutation, while the original credential applies
+  after before-first-mutation revalidation. Validation passed with PHP and Node
+  syntax checks, focused RPP-0519 coverage 2/2, the merged adjacent auth/route
+  suite 162/162, the production-shaped push smoke, checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks. Counts are now
+  444/556; final release remains `NO-GO` because this is local Playground route
+  evidence, not externally hosted production credential lifecycle proof.
 - Restart-readable open state v2: the current lane now contains `RPP-0627`
   evidence in `docs/evidence/rpp-0627-restart-readable-open-state-v2.md`,
   `docs/reprint-push-completion-checklist.md`, and
