@@ -6,20 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:37 CEST +02:00.
+- Last update: 2026-05-30 15:43 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0630 old-remote recovery classification merge ending at
-  `4a119b83c`.
+  the RPP-0494 owner-context stale metadata release-verifier merge ending at
+  `6b34fec89`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 468
-  items checked and leaves 532 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 469
+  items checked and leaves 531 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  79 plugin-driver boundary items, 27 executor/auth items, 32 recovery items,
+  80 plugin-driver boundary items, 27 executor/auth items, 32 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Owner-context stale metadata release-verifier carry-through: the current lane
+  now contains `RPP-0494` evidence in
+  `docs/evidence/rpp-0494-owner-context-stale-metadata-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0494-owner-context-stale-metadata-release-verifier-v5.test.js`.
+  The verifier emits hash-only `pluginDriver.ownerContext.staleMetadata`
+  evidence beside the existing stale plugin-file owner-context proof; blocks
+  planning when live remote owner plugin metadata drift is present; preserves
+  the plugin-owned `wp_postmeta` row and remote snapshot hashes; rejects stale
+  ready-plan replay with `STALE_PLUGIN_OWNER_CONTEXT` before mutation hooks run;
+  and reports only resource ids, owner/driver labels, counts, reason codes, and
+  SHA-256 hashes. Validation passed with Node syntax checks, focused RPP-0494
+  coverage 3/3, adjacent owner-context/refusal coverage 22/22, adjacent
+  plugin-driver release-verifier coverage 37/37, focused production-shaped
+  plugin-driver verifier coverage 5/5, checklist lint, scoped artifact
+  redaction scan, and merge diff whitespace checks. Counts are now 469/531;
+  final release remains `NO-GO` because this is support-only release-verifier
+  evidence, not production-backed owner-context lifecycle proof.
 - Old-remote recovery classification v2: the current lane now contains
   `RPP-0630` evidence in
   `docs/evidence/rpp-0630-old-remote-recovery-classification-v2.md`,
