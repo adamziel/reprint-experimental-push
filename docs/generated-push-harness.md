@@ -388,6 +388,17 @@ counts, and planner hashes, verifies the ready case applies the planned user
 and usermeta creates and rejects stale replay before mutation, then verifies
 the stale graph blocker refuses apply without mutating the remote digest.
 
+RPP-0169 adds `wpUsersUsermetaGraphVariant4` coverage as focused regression
+coverage for the same `wp_users` and `wp_usermeta` graph surface with an
+explicit variant-4 target tag. The deterministic roster emits 20 variant-4
+target cases: 10 ready user/usermeta graph creates and 10 stale non-ready graph
+references, with two cases in every tier. The focused proof mirrors the
+variant-3 invariants, records only resource keys, user-id/meta-key hashes,
+counts, blocker/decision/refusal hashes, and planner hashes, verifies the ready
+case applies the planned graph rows and rejects stale replay before mutation,
+then verifies the stale graph blocker refuses apply without mutating the remote
+digest.
+
 The `rowCreateUpdateDeleteMix` target coverage records per-tier counts for the
 generic row create/update/delete surface. Ready cases create, update, and delete
 rows, preserve unplanned remote resources, and reject stale replay before

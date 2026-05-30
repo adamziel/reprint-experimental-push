@@ -318,6 +318,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-users-usermeta-graph-variant3',
     tag: 'wp-users-usermeta-graph-v3',
   },
+  wpUsersUsermetaGraphVariant4: {
+    family: 'wp-users-usermeta-graph-variant4',
+    tag: 'wp-users-usermeta-graph-v4',
+  },
   wpTermTaxonomyGraph: {
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
@@ -3576,6 +3580,7 @@ function addWpUsersUsermetaGraph(local, remote, allocator, tags, { staleTarget, 
 
   tags.add('wp-users-usermeta-graph');
   tags.add('wp-users-usermeta-graph-v3');
+  tags.add('wp-users-usermeta-graph-v4');
   tags.add('wp-users-create');
   tags.add('wp-usermeta-create');
   tags.add('usermeta-user-graph');
@@ -3587,8 +3592,11 @@ function addWpUsersUsermetaGraph(local, remote, allocator, tags, { staleTarget, 
     tags.add('wp-users-remote-drift');
     tags.add('wp-users-usermeta-graph-v3-stale');
     tags.add('wp-users-usermeta-graph-v3-non-ready');
+    tags.add('wp-users-usermeta-graph-v4-stale');
+    tags.add('wp-users-usermeta-graph-v4-non-ready');
   } else {
     tags.add('wp-users-usermeta-graph-v3-ready');
+    tags.add('wp-users-usermeta-graph-v4-ready');
   }
 }
 
