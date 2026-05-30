@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:45 CEST +02:00.
+- Last update: 2026-05-30 20:49 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0517 same-key different-body conflict ancestry merge ending at
-  `62dc43`.
+  the RPP-0611 new-remote recovery classification ancestry merge ending at
+  `5de0bb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +20,19 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- New-remote recovery classification ancestry refinement: the current lane now
+  preserves the older `session/rpp-611` RPP-0611 SQLite restart-classification
+  ancestry while retaining the stronger current classifier proof. The
+  SQLite-backed completed-journal regression now additionally checks the
+  restart-readable completed-state envelope: planned targets, committed targets,
+  and all-targets-committed match the plan mutation count after reopening the
+  table. Validation passed with Node syntax checks, focused RPP-0611 coverage
+  2/2, the shared recovery-journal RPP-0611/RPP-0621 pattern 2/2, recovery
+  journal/repair coverage 49/49, adjacent RPP-0612 coverage 1/1, checklist
+  lint, scoped artifact redaction scan, and diff whitespace checks. Counts
+  remain 514/486; final release remains `NO-GO` because this is local
+  recovery-classifier and SQLite recovery-table evidence, not external
+  production-backed durability proof.
 - Same-key different-body conflict route refinement: the current lane now
   preserves the older `session/rpp-517` RPP-0517 ancestry while retaining the
   stronger current production-shaped route proof. The route conflict payload now
