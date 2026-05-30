@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 10:56 CEST
+# AO Progress Report - 2026-05-30 11:00 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0278 forged ready
-plan defense variant-4 merge-invariant refresh ending at `481777230`.
+`lane/evidence-integration-20260527` through the current RPP-0279 redacted raw
+value evidence variant-4 merge-invariant refresh ending at `32e851aa3`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 406 are
-  checked from integrated evidence and 594 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 407 are
+  checked from integrated evidence and 593 remain open.
+- `RPP-0279` is now checked with focused redacted raw value evidence variant-4
+  merge-invariant evidence in
+  `docs/evidence/rpp-0279-redacted-raw-value-evidence-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, `docs/scenario-matrix.md`,
+  `src/evidence-redaction.js`, and
+  `test/rpp-0279-redacted-raw-value-evidence-v4.test.js`. `node --check`
+  passed for `src/evidence-redaction.js` and the focused test, focused
+  RPP-0279 coverage passed 1/1, the adjacent
+  RPP-0219/RPP-0239/RPP-0259/RPP-0279 redaction suite passed 5/5, and
+  `test/evidence-redaction.test.js` passed 7/7. Checklist lint, scoped
+  artifact redaction scans, and merge diff whitespace checks also passed. This
+  remains local planner/apply generated-fixture evidence, not production
+  endpoint proof.
 - `RPP-0278` is now checked with focused forged ready plan defense variant-4
   merge-invariant evidence in
   `docs/evidence/rpp-0278-forged-ready-plan-defense-v4.md`,

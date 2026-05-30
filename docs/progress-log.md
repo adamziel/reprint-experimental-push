@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:56 CEST.
+- Last update: 2026-05-30 11:00 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0278 forged ready plan defense variant-4 merge ending at
-  `481777230`.
+  the RPP-0279 redacted raw value evidence variant-4 merge ending at
+  `32e851aa3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 406
-  items checked and leaves 594 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 407
+  items checked and leaves 593 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 71 merge-invariant items. No release-ops items are checked
+  harness items, and 72 merge-invariant items. No release-ops items are checked
   yet.
+- Redacted raw value evidence variant-4 refresh: the current lane now contains
+  `RPP-0279` evidence in
+  `docs/evidence/rpp-0279-redacted-raw-value-evidence-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, `docs/scenario-matrix.md`,
+  `src/evidence-redaction.js`, and
+  `test/rpp-0279-redacted-raw-value-evidence-v4.test.js`. `node --check`
+  passed for `src/evidence-redaction.js` and the focused test, focused
+  RPP-0279 coverage passed 1/1, the adjacent
+  RPP-0219/RPP-0239/RPP-0259/RPP-0279 redaction suite passed 5/5, and
+  `test/evidence-redaction.test.js` passed 7/7. Checklist lint, scoped
+  artifact redaction scans, and merge diff whitespace checks also passed.
+  Counts are now 407/593; final release remains `NO-GO`.
 - Forged ready plan defense variant-4 refresh: the current lane now contains
   `RPP-0278` evidence in
   `docs/evidence/rpp-0278-forged-ready-plan-defense-v4.md`,
