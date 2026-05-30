@@ -169,7 +169,7 @@ Focus: grow broad model coverage without exact-shaped fixtures.
 - [x] RPP-0150 (Near / generated-harness) Add generated coverage for wp_comments and wp_commentmeta graph changes, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0151 (Near / generated-harness) Add generated coverage for wp_terms and wp_termmeta graph changes, variant 3. Success: generator emits at least one ready case and one non-ready case for this target.
 - [x] RPP-0152 (Near / generated-harness) Add generated coverage for wp_term_taxonomy graph changes, variant 3. Success: summary exposes per-tier counts for this target.
-- [ ] RPP-0153 (Near / generated-harness) Add generated coverage for wp_term_relationships graph changes, variant 3. Success: ready cases apply with no unplanned remote overwrite.
+- [x] RPP-0153 (Near / generated-harness) Add generated coverage for wp_term_relationships graph changes, variant 3. Success: ready cases apply with no unplanned remote overwrite.
 - [ ] RPP-0154 (Near / generated-harness) Add generated coverage for plugin-owned option changes, variant 3. Success: stale remote replay fails before mutation.
 - [ ] RPP-0155 (Near / generated-harness) Add generated coverage for plugin-owned custom-table changes, variant 3. Success: docs/generated-push-harness.md records the surface and invariant.
 - [x] RPP-0156 (Near / generated-harness) Add generated coverage for atomic plugin install stack, variant 3. Success: generator emits at least one ready case and one non-ready case for this target.

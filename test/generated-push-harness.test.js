@@ -292,6 +292,10 @@ const requiredFamilies = [
   'term-taxonomy-term-graph',
   'wp-term-relationships-graph',
   'wp-term-relationships-graph-target',
+  'wp-term-relationships-graph-v3',
+  'wp-term-relationships-graph-v3-ready',
+  'wp-term-relationships-graph-v3-stale',
+  'wp-term-relationships-graph-v3-non-ready',
   'wp-term-relationships-graph-ready',
   'wp-term-relationships-graph-stale',
   'wp-term-relationships-remote-drift',
@@ -7422,8 +7426,14 @@ function assertTermRelationshipsGraphShape(testCase, { staleTarget }) {
   const [taxonomyRowId, taxonomy] = taxonomyRows[0];
   const relationshipRowId = `object_id:1|term_taxonomy_id:${taxonomy.term_taxonomy_id}`;
   const relationship = testCase.local.db.wp_term_relationships[relationshipRowId];
+  const remoteOnlyPrefix = staleTarget ? 'stale-wp-term-relationships' : 'ready-wp-term-relationships';
+  const remoteOnlyPaths = Object.keys(testCase.remote.files)
+    .filter((path) => path.includes(`${remoteOnlyPrefix}-remote-only-`)
+      && !Object.hasOwn(testCase.base.files, path)
+      && !Object.hasOwn(testCase.local.files, path));
 
   assert.ok(relationship, `${testCase.id} should create one relationship for the target taxonomy`);
+  assert.equal(remoteOnlyPaths.length, 1, `${testCase.id} should seed one relationship remote-only preservation file`);
   assert.ok(testCase.base.db.wp_posts[`ID:${relationship.object_id}`], `${testCase.id} relationship post should exist`);
   assert.equal(taxonomy.term_id, term.term_id, `${testCase.id} taxonomy should reference the target term`);
   assert.equal(
@@ -7462,8 +7472,10 @@ function assertTermRelationshipsGraphShape(testCase, { staleTarget }) {
     termRowId,
     taxonomyRowId,
     relationshipRowId,
+    remoteOnlyPath: remoteOnlyPaths[0],
     termRow: term,
     taxonomyRow: taxonomy,
+    relationshipRow: relationship,
     remoteTaxonomyRow: testCase.remote.db.wp_term_taxonomy[taxonomyRowId],
   };
 }
@@ -7525,6 +7537,404 @@ function assertTermRelationshipsEvidenceRedacted(testCase, shape) {
       `${testCase.id} redacted evidence should not expose ${value}`,
     );
   }
+}
+
+test('RPP-0153 wp_term_relationships graph variant 3 records ready apply and stale non-ready coverage', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.wpTermRelationshipsGraphVariant3;
+
+  assert.ok(coverage, 'missing wp_term_relationships graph variant 3 target coverage');
+  assert.equal(coverage.family, 'wp-term-relationships-graph-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['wp-term-relationships-graph-v3']);
+  assert.equal(coverage.total, 10);
+  assert.equal(coverage.statuses.ready, 5);
+  assert.equal(nonReadyTargetCount(coverage), 5);
+  assert.equal(report.summary.featureFamilies['wp-term-relationships-graph-v3-ready'], 5);
+  assert.equal(report.summary.featureFamilies['wp-term-relationships-graph-v3-stale'], 5);
+  assert.equal(report.summary.featureFamilies['wp-term-relationships-graph-v3-non-ready'], 5);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 1])),
+  );
+
+  const summaryEvidence = JSON.stringify(report);
+  assert.equal(summaryEvidence.includes('Generated wp_term_relationships'), false, 'summary leaked relationship term/taxonomy value');
+  assert.equal(summaryEvidence.includes('Remote stale wp_term_relationships'), false, 'summary leaked stale relationship value');
+  assert.equal(
+    summaryEvidence.includes('Remote preserved wp_term_relationships graph note'),
+    false,
+    'summary leaked remote-only relationship note',
+  );
+
+  const firstEvidence = generatedWpTermRelationshipsGraphVariant3Evidence(coverage);
+  const replayEvidence = generatedWpTermRelationshipsGraphVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0153 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 relationship evidence changed between runs');
+  assert.equal(firstEvidence.target, 'wpTermRelationshipsGraphVariant3');
+  assert.equal(firstEvidence.family, 'wp-term-relationships-graph-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.variant),
+    ['ready', 'stale-non-ready'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.status, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.deepEqual(readyCase.plannedChangeKinds, { create: 3 });
+  assert.equal(readyCase.graphMutations.term.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.taxonomy.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.relationship.changeKind, 'create');
+  assert.equal(readyCase.graphMutations.term.appliedHash, readyCase.surface.term.localHash);
+  assert.equal(readyCase.graphMutations.taxonomy.appliedHash, readyCase.surface.taxonomy.localHash);
+  assert.equal(readyCase.graphMutations.relationship.appliedHash, readyCase.surface.relationship.localHash);
+  assert.equal(readyCase.remoteOnlyPreservation.preserved, true);
+  assert.equal(readyCase.remoteOnlyPreservation.remoteBeforeHash, readyCase.remoteOnlyPreservation.appliedHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.notEqual(nonReadyCase.status, 'ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.equal(nonReadyCase.staleBlocker.class, 'stale-wordpress-graph-identity');
+  assert.equal(nonReadyCase.staleBlocker.resourceKey, nonReadyCase.surface.relationship.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.targetResourceKey, nonReadyCase.surface.taxonomy.resourceKey);
+  assert.equal(nonReadyCase.staleBlocker.plannedGraphMutation, false);
+  assert.deepEqual(nonReadyCase.staleBlocker.relationshipKeys, ['wp_term_relationships.term_taxonomy_id']);
+  assert.match(nonReadyCase.staleBlocker.blockerHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated wp_term_relationships'), false, 'variant 3 evidence leaked relationship value');
+  assert.equal(evidenceText.includes('generated-wp-term-relationships'), false, 'variant 3 evidence leaked relationship slug');
+  assert.equal(evidenceText.includes('Remote stale wp_term_relationships'), false, 'variant 3 evidence leaked stale relationship value');
+  assert.equal(
+    evidenceText.includes('Remote preserved wp_term_relationships graph note'),
+    false,
+    'variant 3 evidence leaked remote-only relationship note',
+  );
+});
+
+function generatedWpTermRelationshipsGraphVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('wp-term-relationships-graph-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedWpTermRelationshipsGraphVariant3CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'stale-non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (!selectedCases.has(selectedKey)) {
+      selectedCases.set(selectedKey, evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 relationship target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 relationship target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 relationship target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 3 target should select one ready relationship case');
+  assert.ok(selectedCases.has('stale-non-ready'), 'variant 3 target should select one stale non-ready relationship case');
+
+  return {
+    target: 'wpTermRelationshipsGraphVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('stale-non-ready'),
+    ],
+  };
+}
+
+function generatedWpTermRelationshipsGraphVariant3CaseEvidence(testCase, result) {
+  const staleTarget = testCase.tags.has('wp-term-relationships-graph-v3-stale');
+  assert.equal(
+    staleTarget,
+    testCase.tags.has('wp-term-relationships-graph-stale'),
+    `${testCase.id} variant 3 stale tag should match relationship graph stale tag`,
+  );
+  assert.equal(
+    testCase.tags.has('wp-term-relationships-graph-v3-ready'),
+    testCase.tags.has('wp-term-relationships-graph-ready'),
+    `${testCase.id} variant 3 ready tag should match relationship graph ready tag`,
+  );
+
+  const shape = assertTermRelationshipsGraphShape(testCase, { staleTarget });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = wpTermRelationshipsGraphVariant3SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'stale-non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  assertTermRelationshipsEvidenceRedacted(testCase, shape);
+
+  if (result.status === 'ready') {
+    assert.equal(staleTarget, false, `${testCase.id} ready evidence should not use stale graph target`);
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const {
+      plannedChangeKinds,
+      graphMutations,
+      remoteOnlyPreservation,
+    } = wpTermRelationshipsGraphVariant3ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      plannedChangeKinds,
+      graphMutations,
+      remoteOnlyPreservation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        plannedChangeKinds,
+        graphMutations,
+        remoteOnlyPreservation,
+      })}`,
+    };
+  }
+
+  assert.equal(staleTarget, true, `${testCase.id} non-ready evidence should use stale graph target`);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.notEqual(result.status, 'ready', `${testCase.id} should validate as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const staleBlocker = wpTermRelationshipsGraphVariant3StaleBlockerEvidence({ testCase, plan, shape });
+  const refusal = wpTermRelationshipsGraphVariant3RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    staleBlocker,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      staleBlocker,
+      refusal,
+    })}`,
+  };
+}
+
+function wpTermRelationshipsGraphVariant3SurfaceEvidence(testCase, shape) {
+  const termResource = rowResource('wp_terms', shape.termRowId);
+  const taxonomyResource = rowResource('wp_term_taxonomy', shape.taxonomyRowId);
+  const relationshipResource = rowResource('wp_term_relationships', shape.relationshipRowId);
+  const remoteOnlyResource = { type: 'file', path: shape.remoteOnlyPath, key: `file:${shape.remoteOnlyPath}` };
+
+  return {
+    term: {
+      resourceKey: termResource.key,
+      baseHash: resourceHash(testCase.base, termResource),
+      localHash: resourceHash(testCase.local, termResource),
+      remoteHash: resourceHash(testCase.remote, termResource),
+      termIdHash: `sha256:${digest(shape.termRowId)}`,
+      slugHash: `sha256:${digest(shape.termRow.slug)}`,
+    },
+    taxonomy: {
+      resourceKey: taxonomyResource.key,
+      baseHash: resourceHash(testCase.base, taxonomyResource),
+      localHash: resourceHash(testCase.local, taxonomyResource),
+      remoteHash: resourceHash(testCase.remote, taxonomyResource),
+      termIdHash: `sha256:${digest(String(shape.taxonomyRow.term_id))}`,
+      taxonomyHash: `sha256:${digest(shape.taxonomyRow.taxonomy)}`,
+      descriptionHash: `sha256:${digest(shape.taxonomyRow.description)}`,
+    },
+    relationship: {
+      resourceKey: relationshipResource.key,
+      baseHash: resourceHash(testCase.base, relationshipResource),
+      localHash: resourceHash(testCase.local, relationshipResource),
+      remoteHash: resourceHash(testCase.remote, relationshipResource),
+      objectIdHash: `sha256:${digest(String(shape.relationshipRow.object_id))}`,
+      taxonomyIdHash: `sha256:${digest(String(shape.relationshipRow.term_taxonomy_id))}`,
+      termOrderHash: `sha256:${digest(String(shape.relationshipRow.term_order))}`,
+    },
+    remoteOnly: {
+      resourceKey: remoteOnlyResource.key,
+      baseHash: resourceHash(testCase.base, remoteOnlyResource),
+      localHash: resourceHash(testCase.local, remoteOnlyResource),
+      remoteHash: resourceHash(testCase.remote, remoteOnlyResource),
+    },
+  };
+}
+
+function wpTermRelationshipsGraphVariant3ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const expected = [
+    { label: 'term', resource: rowResource('wp_terms', shape.termRowId), changeKind: 'create' },
+    { label: 'taxonomy', resource: rowResource('wp_term_taxonomy', shape.taxonomyRowId), changeKind: 'create' },
+    { label: 'relationship', resource: rowResource('wp_term_relationships', shape.relationshipRowId), changeKind: 'create' },
+  ];
+  const mutations = new Map(plan.mutations.map((mutation) => [mutation.resourceKey, mutation]));
+  const preconditions = new Map(plan.preconditions.map((precondition) => [precondition.resourceKey, precondition]));
+  const plannedChangeKinds = {};
+  const graphMutations = {};
+
+  for (const { label, resource, changeKind } of expected) {
+    const mutation = mutations.get(resource.key);
+    const precondition = preconditions.get(resource.key);
+    const localHash = resourceHash(testCase.local, resource);
+    const appliedHash = resourceHash(applied.site, resource);
+
+    assert.ok(mutation, `${testCase.id} should plan ${label} graph mutation for ${resource.key}`);
+    assert.ok(precondition, `${testCase.id} should precondition ${label} graph mutation for ${resource.key}`);
+    assert.equal(mutation.action, 'put');
+    assert.equal(mutation.changeKind, changeKind);
+    assert.equal(precondition.mutationId, mutation.id);
+    assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+    assert.equal(appliedHash, localHash, `${testCase.id} did not apply local ${label} graph row`);
+    incrementCount(plannedChangeKinds, changeKind);
+
+    graphMutations[label] = {
+      resourceKey: resource.key,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      preconditionExpectedHash: precondition.expectedHash,
+      appliedHash,
+      plannedMutation: true,
+      plannedPrecondition: true,
+      mutationHash: `sha256:${digest({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        changeKind: mutation.changeKind,
+        localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      })}`,
+    };
+  }
+
+  const remoteOnlyResource = { type: 'file', path: shape.remoteOnlyPath, key: `file:${shape.remoteOnlyPath}` };
+  const remoteBeforeHash = resourceHash(testCase.remote, remoteOnlyResource);
+  const appliedHash = resourceHash(applied.site, remoteOnlyResource);
+  assert.equal(appliedHash, remoteBeforeHash, `${testCase.id} overwrote unplanned relationship remote-only file`);
+
+  return {
+    plannedChangeKinds: sortStringObject(plannedChangeKinds),
+    graphMutations,
+    remoteOnlyPreservation: {
+      resourceKey: remoteOnlyResource.key,
+      remoteBeforeHash,
+      appliedHash,
+      preserved: true,
+    },
+  };
+}
+
+function wpTermRelationshipsGraphVariant3StaleBlockerEvidence({ testCase, plan, shape }) {
+  const termResourceKey = rowResourceKey('wp_terms', shape.termRowId);
+  const taxonomyResourceKey = rowResourceKey('wp_term_taxonomy', shape.taxonomyRowId);
+  const relationshipResourceKey = rowResourceKey('wp_term_relationships', shape.relationshipRowId);
+  const graphResourceKeys = new Set([termResourceKey, taxonomyResourceKey, relationshipResourceKey]);
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === relationshipResourceKey
+    && entry.references?.some((reference) => reference.targetResourceKey === taxonomyResourceKey));
+  const taxonomyDecision = plan.decisions.find((entry) => entry.resourceKey === taxonomyResourceKey);
+  const plannedGraphMutation = plan.mutations.some((mutation) => graphResourceKeys.has(mutation.resourceKey));
+
+  assert.ok(blocker, `${testCase.id} should report a stale term-relationship graph blocker`);
+  assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+  assert.ok(taxonomyDecision, `${testCase.id} should keep the stale remote taxonomy`);
+  assert.equal(taxonomyDecision.decision, 'keep-remote');
+  assert.equal(plannedGraphMutation, false, `${testCase.id} should not plan stale relationship graph mutations`);
+
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    plannedGraphMutation,
+    relationshipKeys: blocker.references.map((reference) => reference.relationshipKey).sort(),
+    targetResourceKey: taxonomyResourceKey,
+    targetChange: blocker.references.find((reference) => reference.targetResourceKey === taxonomyResourceKey).targetChange,
+    blockerHash: `sha256:${digest(blocker)}`,
+    decision: {
+      resourceKey: taxonomyDecision.resourceKey,
+      decision: taxonomyDecision.decision,
+      decisionHash: `sha256:${digest(taxonomyDecision)}`,
+    },
+  };
+}
+
+function wpTermRelationshipsGraphVariant3RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
 }
 
 

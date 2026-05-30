@@ -71,7 +71,8 @@ The default generated run covers:
   ready/stale non-ready outcomes, and explicit variant-3 term-taxonomy graph
   coverage, `wp_term_relationships`
   graph cases with one target per tier, ready creates, stale taxonomy drift,
-  and redacted hash-only evidence, plugin-owned `wp_options` update cases with
+  redacted hash-only evidence, and explicit variant-3 relationship graph
+  coverage, plugin-owned `wp_options` update cases with
   ready/conflict outcomes and stale replay rejection before mutation,
   `wp_posts.post_author` cases with per-tier ready/stale target counts and
   hash-only stale-user blockers, `wp_comments.user_id` author cases with
@@ -322,6 +323,18 @@ require the new relationship row to fail closed instead of applying partial
 graph mutations. RPP-0133 now runs in the 620-case roster and proves one
 relationship target in every tier: five ready cases, five stale blocked cases,
 and hash-only redacted evidence for generated relationship target values.
+
+RPP-0153 adds `wpTermRelationshipsGraphVariant3` coverage for the same
+`wp_term_relationships` graph surface with an explicit variant-3 target tag.
+The deterministic roster emits 10 variant-3 target cases: five ready
+term/taxonomy/relationship graph creates and five stale non-ready taxonomy
+drift cases, with one relationship target in every tier. The focused proof
+records only resource keys, term-id hashes, taxonomy/description hashes,
+relationship field hashes, blocker hashes, refusal hashes, and the hash of the
+remote-only preservation file; verifies each ready graph row applies with a
+matching precondition; verifies the ready case preserves the unplanned
+remote-only file and rejects stale replay before mutation; then verifies the
+stale taxonomy reference refuses apply without mutating the remote digest.
 
 The `pluginOwnedOptionChange` target coverage records per-tier counts for
 generated plugin-owned `wp_options` rows using the supported forms driver.
