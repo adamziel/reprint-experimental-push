@@ -457,7 +457,7 @@ Focus: generalize plugin-owned mutation safety beyond release-state rows.
 - [x] RPP-0423 (Mid / plugin-driver) Prove custom table allowlist exact match, variant 2. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0424 (Mid / plugin-driver) Prove wp_options driver semantics, variant 2. Success: remote drift preserves plugin-owned remote data.
 - [x] RPP-0425 (Mid / plugin-driver) Prove wp_postmeta driver semantics, variant 2. Success: release gate notes whether evidence is local or production-backed.
-- [ ] RPP-0426 (Mid / plugin-driver) Prove wp_termmeta driver semantics, variant 2. Success: focused test proves exact driver behavior.
+- [x] RPP-0426 (Mid / plugin-driver) Prove wp_termmeta driver semantics, variant 2. Success: focused test proves exact driver behavior.
 - [ ] RPP-0427 (Mid / plugin-driver) Prove wp_usermeta driver semantics, variant 2. Success: generated harness covers supported and unsupported variants.
 - [x] RPP-0428 (Mid / plugin-driver) Prove serialized option validator, variant 2. Success: local production proof carries one real mutation through apply.
 - [x] RPP-0429 (Mid / plugin-driver) Prove plugin activation dependency validator, variant 2. Success: remote drift preserves plugin-owned remote data.
