@@ -6,19 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:10 CEST.
+- Last update: 2026-05-30 12:13 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0385 comment post release-verifier proof merge ending at `45b57370`.
+  the RPP-0386 comment parent release-verifier proof merge ending at `7ce032a9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 425
-  items checked and leaves 575 open.
-- Checked slices: 100 release-gate foundation items, 42 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 426
+  items checked and leaves 574 open.
+- Checked slices: 100 release-gate foundation items, 43 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Comment parent thread reference release-verifier proof: the current lane now
+  contains `RPP-0386` evidence in
+  `docs/evidence/rpp-0386-comment-parent-thread-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0386-comment-parent-thread-reference-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0386 coverage passed
+  4/4, adjacent comment-parent planner coverage passed 4/4, and
+  local-production comment graph coverage passed 2/2. Checklist lint, scoped
+  artifact redaction scan, and merge diff whitespace checks also passed. Counts
+  are now 426/574; final release remains `NO-GO`.
 - Comment post reference release-verifier proof: the current lane now contains
   `RPP-0385` evidence in
   `docs/evidence/rpp-0385-comment-post-reference-release-verifier-v5.md`,
