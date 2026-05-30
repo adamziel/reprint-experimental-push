@@ -42,7 +42,7 @@ git diff --cached --check
 ```
 
 Observed result: each command exited 0. The focused and adjacent Node route/auth
-bundle reported 141 subtests ok. The sandbox-local route smoke returned `ok: true` and showed the
+bundle reported 147 subtests ok. The sandbox-local route smoke returned `ok: true` and showed the
 apply `liveSourceBinding` source hash and source URL hash both matched the
 receipt-bound hashes at the post-`apply-started` DB journal cursor.
 

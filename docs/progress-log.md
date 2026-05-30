@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:36 CEST +02:00.
+- Last update: 2026-05-30 17:42 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0639 missing commit finalization proof merge ending at `d61a387`.
+  the RPP-0529 session source URL binding proof merge ending at `ad5b0d0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 490
-  items checked and leaves 510 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 491
+  items checked and leaves 509 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  84 plugin-driver boundary items, 31 executor/auth items, 40 recovery items,
+  84 plugin-driver boundary items, 32 executor/auth items, 40 recovery items,
   22 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Session source URL binding proof v2: the current lane now contains `RPP-0529`
+  evidence in
+  `docs/evidence/rpp-0529-session-source-url-binding-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `scripts/playground/production-shaped-apply-revalidation-smoke.mjs`, and
+  `test/rpp-0529-session-source-url-binding-v2.test.js`. The production-shaped
+  apply path now preserves rejected apply-revalidation evidence from inside the
+  apply runner, so a stale-write rejection still carries the live source URL
+  binding checked after `apply-started` and before mutation execution. Focused
+  coverage pins that ordering and the fail-closed auth-source mismatch path; the
+  local route smoke confirms `sameSourceHash: true`, `sameSourceUrlHash: true`,
+  `applied: 0`, and a post-claim DB journal cursor. Validation passed with PHP
+  and Node syntax checks, focused RPP-0529 coverage 2/2, adjacent auth/apply
+  coverage 18/18, the documented route/auth bundle 147/147, the
+  production-shaped apply-revalidation smoke, checklist lint, scoped artifact
+  redaction scan, raw fixture scan, and merge diff whitespace checks. Counts
+  are now 491/509; final release remains `NO-GO` because this is sandbox-local
+  production-shaped evidence, not external production WordPress topology and
+  credential proof.
 - Missing commit finalization v2: the current lane now contains `RPP-0639`
   evidence in
   `docs/evidence/rpp-0639-missing-commit-finalization-v2.md`,
