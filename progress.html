@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>445</strong>
+        <strong>446</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>555</strong>
+        <strong>554</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -348,7 +348,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
-            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
+            <span><strong>Graph identity</strong>Local graph identity-map proof, importer/exporter identity rewriting, production importer/exporter identity-map metadata, post_parent page hierarchy local and release-verifier proof, postmeta post_id release-verifier proof, comment post, comment parent, comment user, and commentmeta comment release-verifier proof, featured image fail-closed release-verifier proof, post-author release-verifier proof, focused post_author stale-target regression, focused comment_post_ID rewrite and stale-target regression, featured image attachment references, term relationship taxonomy references, nav menu item fail-closed references, `wp_navigation` fail-closed references, cross-table create batch mapping, post_tag taxonomy proof, serialized block reference detection, GUID/slug collision handling, post-author graph targets, and comment-user generated graph evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0363</span>
+        <span>RPP-0365</span>
       </div>
-      <p>The latest refresh integrates RPP-0363 post_author graph identity evidence: the focused local regression plans a post mutation when the author target identity is stable, blocks stale author-target drift with hash-only reference evidence, and keeps private user and post payloads out of serialized proof. Counts are now 445/555; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof.</p>
+      <p>The latest refresh integrates RPP-0365 comment_post_ID graph identity evidence: the focused local regression rewrites a comment target through an explicit WordPress graph identity map, applies the ready comment against the mapped remote post, and blocks drifted target posts with hash-only reference evidence before mutation. Counts are now 446/554; final release remains NO-GO because this is local graph identity regression evidence, not externally hosted production topology proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0365 focused: 2/2</span>
+        <span class="tag">comment-post verifier: 2/2</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0363 focused: 2/2</span>
         <span class="tag">post-author verifier: 3/3</span>
         <span class="tag">checklist/redaction/diff: pass</span>
