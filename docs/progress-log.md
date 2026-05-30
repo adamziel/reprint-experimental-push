@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:59 CEST +02:00.
+- Last update: 2026-05-30 16:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0495 remote plugin removal refusal release-verifier merge ending at
-  `cee6524a9`.
+  the RPP-0632 blocked recovery classification merge ending at `678b51d74`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 472
-  items checked and leaves 528 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 473
+  items checked and leaves 527 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  81 plugin-driver boundary items, 28 executor/auth items, 33 recovery items,
+  81 plugin-driver boundary items, 28 executor/auth items, 34 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Blocked recovery classification v2: the current lane now contains `RPP-0632`
+  evidence in
+  `docs/evidence/rpp-0632-blocked-recovery-classification-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof writes a claim-fenced JSONL
+  recovery journal from a separate Node process, injects failure during the
+  second committed mutation, reopens the durable rows after restart, and proves
+  restart inspection reports `blocked-recovery` with two `new` targets, six
+  `old` targets, no unknown drift, no completion marker, monotonic sequences,
+  and hash-only journal contents. Validation passed with focused RPP-0632
+  coverage 1/1, adjacent recovery classification coverage 7/7, full
+  recovery-journal coverage 37/37, checklist lint, scoped artifact redaction
+  scan, and merge diff whitespace checks. Counts are now 473/527; final release
+  remains `NO-GO` because this is local process-restart recovery evidence, not
+  external WordPress crash/restart durability proof.
 - Remote plugin removal refusal release-verifier carry-through: the current lane
   now contains `RPP-0495` evidence in
   `docs/evidence/rpp-0495-remote-plugin-removal-refusal-release-verifier-v5.md`,
