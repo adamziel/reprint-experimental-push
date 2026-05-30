@@ -657,7 +657,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0613 (Far / recovery) Implement unknown drift classification, variant 1. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0614 (Far / recovery) Implement same-key replay after commit, variant 1. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0615 (Far / recovery) Implement same-key replay after rejection, variant 1. Success: release verifier reports the recovery gate as proven on the same path.
-- [ ] RPP-0616 (Far / recovery) Implement different-body idempotency conflict, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
+- [x] RPP-0616 (Far / recovery) Implement different-body idempotency conflict, variant 1. Success: MySQL or SQLite-backed test proves the recovery state.
 - [ ] RPP-0617 (Far / recovery) Implement process kill before first mutation, variant 1. Success: journal rows are durable after process restart.
 - [x] RPP-0618 (Far / recovery) Implement process kill mid mutation set, variant 1. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0619 (Far / recovery) Implement missing commit finalization, variant 1. Success: lease owner identity is visible in audit evidence.

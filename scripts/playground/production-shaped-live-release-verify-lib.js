@@ -75,6 +75,17 @@ export function buildDurableRecoveryJournalReleaseProof({
   const conflict = releaseProof?.idempotencyConflict || {};
   const mutationApplied = releaseProof?.dbJournal?.mutationApplied ?? null;
   const expectedMutationEvents = Number.isInteger(planMutationCount) ? planMutationCount : mutationApplied;
+  const differentBodyRequestHashEvidence = selectDifferentBodyRequestHashEvidence({
+    conflict,
+    conflictEvent,
+    latestEvents,
+  });
+  const differentBodyRecoveryState = selectDifferentBodyConflictRecoveryState({
+    conflict,
+    fallbackRecovery: recovery,
+    journal,
+    planMutationCount,
+  });
   const leaseOwnerIdentity = {
     activeClaimId: claim?.activeClaimId || null,
     activeClaimKeyHash,
@@ -163,6 +174,8 @@ export function buildDurableRecoveryJournalReleaseProof({
       && conflict?.code === 'IDEMPOTENCY_KEY_CONFLICT'
       && conflict?.idempotency?.conflict === true
       && conflict?.idempotency?.freshMutationWork === false
+      && differentBodyRequestHashEvidence.proved === true
+      && differentBodyRecoveryState.proved === true
       && conflict?.targetSnapshotUnchanged === true
       && conflictEvent
       && mutationEventsAfterConflict.length === 0,
@@ -174,6 +187,8 @@ export function buildDurableRecoveryJournalReleaseProof({
     targetSnapshotUnchanged: conflict?.targetSnapshotUnchanged === true,
     conflictEventSequence: conflictEvent?.sequence ?? null,
     mutationEventsAfterConflict: mutationEventsAfterConflict.length,
+    requestHashEvidence: differentBodyRequestHashEvidence,
+    recoveryState: differentBodyRecoveryState,
   };
   const partialStates = {
     old: {
@@ -305,6 +320,88 @@ function selectOldRemoteRecoveryClassification({ releaseProof, planMutationCount
   };
 }
 
+function selectDifferentBodyRequestHashEvidence({ conflict, conflictEvent, latestEvents }) {
+  const conflictRequestHash = firstHashString([
+    conflict?.idempotency?.requestHash,
+    conflict?.requestHash,
+    conflict?.dbJournal?.requestHash,
+    conflict?.dbJournal?.entry?.requestHash,
+    conflictEvent?.requestHash,
+    conflictEvent?.request_hash,
+  ]);
+  const originalRequestHash = firstHashString([
+    conflict?.idempotency?.originalRequestHash,
+    conflict?.idempotency?.activeRequestHash,
+    conflict?.idempotency?.persistedRequestHash,
+    conflict?.originalRequestHash,
+    conflict?.activeRequestHash,
+    conflict?.persistedRequestHash,
+    conflict?.dbJournal?.originalRequestHash,
+    conflict?.dbJournal?.activeRequestHash,
+    conflict?.dbJournal?.persistedRequestHash,
+    ...requestHashesFromEvents({
+      latestEvents,
+      beforeSequence: conflictEvent?.sequence,
+      events: new Set(['idempotency-opened', 'apply-started', 'apply-committed']),
+      exclude: conflictRequestHash,
+    }),
+  ]);
+  const conflictEventHashes = requestHashesFromEvents({
+    latestEvents,
+    atOrAfterSequence: conflictEvent?.sequence,
+    events: new Set(['idempotency-key-conflict', 'idempotency-conflict']),
+  });
+  const distinctRequestHashes = uniqueHashStrings([
+    originalRequestHash,
+    conflictRequestHash,
+    ...requestHashesFromEvents({ latestEvents }),
+  ]);
+
+  return {
+    proved: Boolean(originalRequestHash && conflictRequestHash && originalRequestHash !== conflictRequestHash),
+    originalRequestHash: originalRequestHash || null,
+    conflictingRequestHash: conflictRequestHash || null,
+    conflictEventRequestHash: firstHashString(conflictEventHashes) || null,
+    distinctRequestHashes: distinctRequestHashes.length,
+  };
+}
+
+function selectDifferentBodyConflictRecoveryState({
+  conflict,
+  fallbackRecovery,
+  journal,
+  planMutationCount,
+}) {
+  const candidate = conflict?.recoveryState
+    || conflict?.recovery
+    || conflict?.recoveryInspect?.recovery
+    || fallbackRecovery
+    || {};
+  const counts = normalizeRecoveryCounts(candidate.counts || candidate.recoveryCounts, { planMutationCount });
+  const state = candidate.state || candidate.recoveryState || (
+    typeof candidate.status === 'string' ? candidate.status : null
+  );
+  const storage = recoveryStorageEvidence(candidate, journal);
+  const allNew = recoveryCountsAreAllNew(counts, { planMutationCount });
+  const stateMatches = !state || state === 'fully-updated-remote';
+  const restartReadable = candidate.restartReadable === true
+    || candidate?.journal?.restartReadable === true
+    || candidate?.journal?.ownership?.restartReadable === true
+    || journal?.restartReadable === true
+    || journal?.ownership?.restartReadable === true
+    || journal?.integrity?.status === 'ok';
+
+  return {
+    proved: Boolean(allNew && stateMatches && storage.dbBacked === true && restartReadable),
+    source: candidate.source || 'different-body idempotency conflict recovery state',
+    state: state || null,
+    counts,
+    storage: storage.storage,
+    dbBacked: storage.dbBacked,
+    restartReadable,
+  };
+}
+
 function normalizeOldRemoteRecoveryClassification(candidate, { planMutationCount } = {}) {
   if (!candidate || typeof candidate !== 'object') {
     return { proved: false };
@@ -361,6 +458,42 @@ function recoveryCountsAreAllOld(counts, { planMutationCount } = {}) {
     && counts.old === expectedTotal
     && counts.new === 0
     && counts.blockedUnknown === 0;
+}
+
+function recoveryCountsAreAllNew(counts, { planMutationCount } = {}) {
+  if (!counts) {
+    return false;
+  }
+  const expectedTotal = positiveInteger(planMutationCount) ? planMutationCount : counts.total;
+  return positiveInteger(expectedTotal)
+    && counts.total === expectedTotal
+    && counts.old === 0
+    && counts.new === expectedTotal
+    && counts.blockedUnknown === 0;
+}
+
+function recoveryStorageEvidence(candidate, journal) {
+  const storageCandidates = [
+    candidate.storage,
+    candidate.storageAdapter,
+    candidate.productionAdapter,
+    candidate?.journal?.storage,
+    candidate?.journal?.productionAdapter,
+    candidate?.journal?.ownership?.productionAdapter,
+    candidate?.journal?.leaseFence?.boundary,
+    candidate?.journal?.storageGuard?.boundary,
+    journal?.storage,
+    journal?.productionAdapter,
+    journal?.ownership?.productionAdapter,
+    journal?.leaseFence?.boundary,
+    journal?.storageGuard?.boundary,
+  ].filter(nonEmptyString);
+  const storage = storageCandidates[0] || null;
+  const dbBacked = storageCandidates.some((value) =>
+    /\b(sqlite|mysql|mariadb|wpdb|database|sql)\b/i.test(value)
+      || /wpdb-|sqlite-|mysql-|mariadb-/i.test(value));
+
+  return { storage, dbBacked };
 }
 
 function selectDurableRecoveryJournalCandidate(candidates) {
@@ -427,6 +560,60 @@ function durableRecoveryJournalCandidateScore(journal) {
 
 function nonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+function hashString(value) {
+  return typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
+}
+
+function firstHashString(values) {
+  return values.find(hashString) || null;
+}
+
+function uniqueHashStrings(values) {
+  return [...new Set(values.filter(hashString))];
+}
+
+function requestHashesFromEvents({
+  latestEvents,
+  beforeSequence = null,
+  atOrAfterSequence = null,
+  events = null,
+  exclude = null,
+} = {}) {
+  if (!Array.isArray(latestEvents)) {
+    return [];
+  }
+  return latestEvents
+    .filter((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return false;
+      }
+      if (events && !events.has(entry.event)) {
+        return false;
+      }
+      if (
+        Number.isInteger(beforeSequence)
+        && Number.isInteger(entry.sequence)
+        && entry.sequence >= beforeSequence
+      ) {
+        return false;
+      }
+      if (
+        Number.isInteger(atOrAfterSequence)
+        && Number.isInteger(entry.sequence)
+        && entry.sequence < atOrAfterSequence
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .flatMap((entry) => [
+      entry.requestHash,
+      entry.request_hash,
+      entry.result?.idempotency?.requestHash,
+    ])
+    .filter((hash) => hashString(hash) && hash !== exclude);
 }
 
 function positiveInteger(value) {
