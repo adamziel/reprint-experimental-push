@@ -831,6 +831,107 @@ test('restart inspection classifies fail-after-2 as blocked recovery with two ne
   assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
 });
 
+test('file-backed journal blocked recovery classification survives process restart', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = localSite();
+  const remote = baseSite();
+  const plan = planFor(base, local, remote);
+  const current = clone(remote);
+  applyFirstMutations(current, plan, 2);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const childScript = `
+    import { openRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0612_JOURNAL_PATH;
+    const base = JSON.parse(process.env.RPP0612_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0612_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0612_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const durableJournal = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: 'rpp-0612-blocked-recovery-writer',
+    });
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        mutateRemote: true,
+        failDuringCommitAtMutation: 2,
+      });
+      console.error('expected injected commit failure');
+      process.exit(3);
+    } catch (error) {
+      if (error?.code !== 'INJECTED_FAILURE_DURING_COMMIT') {
+        console.error(error?.stack || String(error));
+        process.exit(2);
+      }
+      process.exit(0);
+    }
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0612_JOURNAL_PATH: filePath,
+      RPP0612_BASE_SITE: JSON.stringify(base),
+      RPP0612_LOCAL_SITE: JSON.stringify(local),
+      RPP0612_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const restarted = readRecoveryJournal(filePath);
+  const mutationRows = restarted.records.filter((record) => record.type === 'mutation-observed');
+  const recoveryState = restarted.records.find((record) => record.type === 'recovery-state');
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: restarted.records.length }, (_, index) => index + 1),
+  );
+  assert.equal(
+    restarted.records.filter((record) => record.type === 'target-planned').length,
+    plan.mutations.length,
+  );
+  assert.equal(mutationRows.length, 2);
+  assert.deepEqual(
+    mutationRows.map((record) => record.resourceKey),
+    plan.mutations.slice(0, 2).map((mutation) => mutation.resourceKey),
+  );
+  assert.equal(restarted.records.some((record) => record.type === 'journal-completed'), false);
+  assert.equal(recoveryState.state, 'blocked-recovery');
+  assert.equal(restarted.committedState.status, 'committed');
+  assert.equal(restarted.committedState.restartReadable, true);
+  assert.equal(restarted.committedState.targetEnvelope.committedTargets, 2);
+  assert.equal(restarted.committedState.targetEnvelope.allTargetsCommitted, false);
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+
+  const inspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current,
+  });
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.match(inspection.reason, /partially updated/);
+  assert.deepEqual(inspection.counts, { old: 6, new: 2, blockedUnknown: 0 });
+  assert.deepEqual(
+    inspection.targets.map((target) => target.state),
+    ['new', 'new', 'old', 'old', 'old', 'old', 'old', 'old'],
+  );
+  assert.equal(inspection.journal.records.length, restarted.records.length);
+});
+
 test('file-backed journal refuses completion when apply is incomplete', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
