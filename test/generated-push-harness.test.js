@@ -159,6 +159,8 @@ const requiredFamilies = [
   'large-ready-plan-tier',
   'large-ready-plan',
   'large-ready-plan-target',
+  'large-ready-plan-v3',
+  'large-ready-plan-v3-ready',
   'supported-plugin-option',
   'unsupported-plugin-owned-row',
   'plugin-owner-context-drift',
@@ -1582,6 +1584,113 @@ test('RPP-0140 large ready plan tier variant 2 proves ready surface and invarian
   assert.equal(evidenceText.includes('stale-private-rpp0140'), false, 'variant 2 evidence leaked stale replay payload');
 });
 
+test('RPP-0160 large ready plan tier variant 3 records generated coverage surface', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.largeReadyPlanTierVariant3;
+  const legacyCoverage = report.summary.targetCoverage.largeReadyPlanTier;
+
+  assert.ok(coverage, 'missing large ready plan tier variant 3 target coverage');
+  assert.ok(legacyCoverage, 'missing legacy large ready plan tier target coverage');
+
+  const firstEvidence = generatedLargeReadyPlanTierVariant3Evidence(coverage, legacyCoverage);
+  const replayEvidence = generatedLargeReadyPlanTierVariant3Evidence(coverage, legacyCoverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0160 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(coverage.family, 'large-ready-plan-tier-variant3');
+  assert.equal(coverage.total, report.summary.featureFamilies['large-ready-plan-v3']);
+  assert.equal(coverage.total, 10);
+  assert.deepEqual(coverage.statuses, { ready: 10 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 large ready evidence changed between runs');
+  assert.equal(firstEvidence.target, 'largeReadyPlanTierVariant3');
+  assert.equal(firstEvidence.family, 'large-ready-plan-tier-variant3');
+  assert.equal(firstEvidence.legacyTarget, 'largeReadyPlanTier');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.cases.map((entry) => entry.tier),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  for (const entry of firstEvidence.cases) {
+    const expectedSurface = expectedLargeReadyPlanTierSurfaceCounts(entry.tier);
+    const expectedChangeKinds = largeReadyPlanExpectedChangeKinds(expectedSurface);
+
+    assert.equal(entry.status, 'ready', `${entry.id} should remain ready`);
+    assert.equal(entry.applied, true, `${entry.id} should apply through the harness`);
+    assert.equal(entry.unplannedRemotePreserved, true, `${entry.id} should preserve unplanned remote data`);
+    assert.equal(entry.staleReplayRejected, true, `${entry.id} should reject stale replay`);
+    assert.equal(entry.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(entry.staleReplayRemoteUnchanged, true, `${entry.id} stale replay should not mutate remote`);
+    assert.ok(entry.tags.includes('large-ready-plan-v3'), `${entry.id} should carry the variant-3 target tag`);
+    assert.ok(entry.tags.includes('large-ready-plan-v3-ready'), `${entry.id} should carry the variant-3 ready tag`);
+    assert.deepEqual(entry.surfaceCounts, expectedSurface, `${entry.id} surface counts drifted`);
+    assert.deepEqual(entry.plannedMutations.changeKinds, expectedChangeKinds, `${entry.id} mutation kinds drifted`);
+    assert.equal(entry.plannedMutations.total, entry.planSummary.mutations);
+    assert.equal(entry.plannedMutations.preconditions, entry.plannedMutations.total);
+    assert.equal(
+      entry.plannedMutations.total,
+      Object.values(entry.plannedMutations.changeKinds).reduce((sum, count) => sum + count, 0),
+    );
+    assert.equal(entry.planSummary.decisions, 2, `${entry.id} should record row and file keep-remote decisions`);
+    assert.match(entry.plannedMutations.resourceKeySetHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.plannedMutations.preconditionResourceKeySetHash, /^sha256:[a-f0-9]{64}$/);
+    assert.equal(
+      entry.plannedMutations.resourceKeySetHash,
+      entry.plannedMutations.preconditionResourceKeySetHash,
+      `${entry.id} precondition surface should match planned mutations`,
+    );
+    assert.equal(entry.remotePreservation.length, 2, `${entry.id} should preserve one row and one file`);
+
+    for (const remoteEntry of entry.remotePreservation) {
+      assert.equal(remoteEntry.decision, 'keep-remote');
+      assert.equal(remoteEntry.change.localChange, 'unchanged');
+      assert.equal(remoteEntry.change.remoteChange, 'update');
+      assert.equal(remoteEntry.localHash, remoteEntry.baseHash);
+      assert.equal(remoteEntry.appliedHash, remoteEntry.remoteHash);
+      assert.notEqual(remoteEntry.remoteHash, remoteEntry.baseHash);
+      assert.equal(remoteEntry.plannedMutation, false);
+      assert.equal(remoteEntry.plannedPrecondition, false);
+      assert.match(remoteEntry.decisionHash, /^sha256:[a-f0-9]{64}$/);
+    }
+
+    assert.equal(entry.staleReplay.code, 'PRECONDITION_FAILED');
+    assert.ok(entry.staleReplay.mutationIndex > 0, `${entry.id} should drift a non-initial mutation`);
+    assert.equal(entry.staleReplay.remoteBeforeHash, entry.staleReplay.remoteAfterHash);
+    assert.equal(entry.staleReplay.expectedHash, entry.staleReplay.mutationRemoteBeforeHash);
+    assert.notEqual(entry.staleReplay.actualHash, entry.staleReplay.expectedHash);
+    assert.match(entry.staleReplay.detailsHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.plannedValueHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.preconditionHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+  }
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Generated large ready create'), false, 'variant 3 evidence leaked row create title');
+  assert.equal(evidenceText.includes('Generated large ready update'), false, 'variant 3 evidence leaked row update title');
+  assert.equal(evidenceText.includes('Base large ready delete'), false, 'variant 3 evidence leaked row delete title');
+  assert.equal(evidenceText.includes('Remote large ready preserved'), false, 'variant 3 evidence leaked remote row title');
+  assert.equal(evidenceText.includes('generated large ready file'), false, 'variant 3 evidence leaked file payload');
+  assert.equal(evidenceText.includes('remote large ready preserved file'), false, 'variant 3 evidence leaked remote file payload');
+  assert.equal(evidenceText.includes('stale-private-rpp0140'), false, 'variant 3 evidence leaked stale replay payload');
+});
+
 function assertLargeReadyPlanShape(testCase) {
   const createRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, row]) => !testCase.base.db.wp_posts[id]
@@ -1696,6 +1805,48 @@ function generatedLargeReadyPlanTierVariant2Evidence(targetCoverage) {
     family: targetCoverage.family,
     evidenceScope: 'local-generated-model',
     productionBacked: false,
+    totalCases,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    cases: cases.sort((left, right) => left.tier - right.tier || left.id.localeCompare(right.id)),
+  };
+}
+
+function generatedLargeReadyPlanTierVariant3Evidence(targetCoverage, legacyCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const cases = [];
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (testCase.family !== 'large-ready-plan-tier'
+      || !testCase.tags.has('large-ready-plan-v3')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    cases.push(generatedLargeReadyPlanTierCaseEvidence(testCase, result));
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const totalCases = cases.length;
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
+  assert.deepEqual(sortedPerTier, legacyCoverage.perTier, 'variant 3 target tiers should match legacy large-ready target');
+  assert.deepEqual(sortedStatuses, legacyCoverage.statuses, 'variant 3 target statuses should match legacy large-ready target');
+  assert.equal(totalCases, legacyCoverage.total, 'variant 3 target total should match legacy large-ready target');
+
+  return {
+    target: 'largeReadyPlanTierVariant3',
+    legacyTarget: 'largeReadyPlanTier',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
     totalCases,
     perTier: sortedPerTier,
     statuses: sortedStatuses,
