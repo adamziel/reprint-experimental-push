@@ -398,6 +398,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-variant4',
     tag: 'wp-term-taxonomy-graph-v4',
   },
+  wpTermTaxonomyGraphReleaseVerifierVariant5: {
+    family: 'wp-term-taxonomy-graph-release-verifier-v5',
+    tag: 'wp-term-taxonomy-graph-release-verifier-v5',
+  },
   wpTermRelationshipsGraph: {
     family: 'wp-term-relationships-graph',
     tag: 'wp-term-relationships-graph-target',
@@ -4588,6 +4592,7 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   tags.add('wp-term-taxonomy-graph');
   tags.add('wp-term-taxonomy-graph-v3');
   tags.add('wp-term-taxonomy-graph-v4');
+  tags.add('wp-term-taxonomy-graph-release-verifier-v5');
   tags.add('wp-terms-create');
   tags.add('wp-term-taxonomy-create');
   tags.add('term-taxonomy-term-graph');
@@ -4601,9 +4606,12 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
     tags.add('wp-term-taxonomy-graph-v3-non-ready');
     tags.add('wp-term-taxonomy-graph-v4-stale');
     tags.add('wp-term-taxonomy-graph-v4-non-ready');
+    tags.add('wp-term-taxonomy-graph-release-verifier-v5-stale');
+    tags.add('wp-term-taxonomy-graph-release-verifier-v5-non-ready');
   } else {
     tags.add('wp-term-taxonomy-graph-v3-ready');
     tags.add('wp-term-taxonomy-graph-v4-ready');
+    tags.add('wp-term-taxonomy-graph-release-verifier-v5-ready');
   }
 }
 
