@@ -568,8 +568,15 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
     status: plan.status,
     mutations: plan.mutations.length,
     blockers: plan.blockers.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
     proofHash: digest({
       id: testCase.id,
+      variant: testCase.variant,
+      evidenceScope: 'local-generated',
+      productionBacked: false,
+      releaseGate: 'NO-GO',
       status: plan.status,
       mutations: plan.mutations.map((mutation) => ({
         resourceKey: mutation.resourceKey,
@@ -597,7 +604,12 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
     assert.ok(mutation, `${testCase.id} should plan the plugin-owned mutation`);
     assert.equal(mutation.pluginOwnedResource.pluginOwner, testCase.expected.owner);
     assert.equal(mutation.pluginOwnedResource.driver, testCase.expected.driver);
+    assert.equal(mutation.pluginOwnedResource.policySource, 'local-snapshot');
     assert.equal(mutation.pluginOwnedResource.ownerContextRequired, true);
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.format, 'hash-only');
+    assert.equal(mutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
+    assert.equal(mutation.pluginOwnedResource.driverAuditEvidence.reasonCode, 'PLUGIN_DRIVER_DECISION_SUPPORTED');
+    assert.equal(mutation.pluginOwnedResource.driverAuditEvidence.rawValuesIncluded, false);
     const applied = applyPlan(deepClone(testCase.remote), plan);
     assert.equal(applied.appliedMutations, 1);
     assert.equal(
@@ -632,6 +644,7 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
     assertGeneratedOwnerBindingRedacted(testCase, blocker);
     assertGeneratedOwnerBindingRedacted(testCase, error.details);
     result.applied = false;
+    result.remotePreserved = true;
     result.outcome = 'planner-blocked';
     return result;
   }
@@ -649,9 +662,12 @@ export function validateDriverOwnerIdentityBindingCase(testCase) {
   assert.equal(error.details.resourceKey, testCase.resourceKey);
   assert.equal(error.details.pluginOwner, testCase.expected.applyOwner);
   assert.equal(error.details.driver, testCase.expected.driver);
+  assert.equal(error.details.applyValidationEvidence.reasonCode, 'PLUGIN_DRIVER_APPLY_VALIDATION_REFUSED');
+  assert.equal(error.details.applyValidationEvidence.outcome, 'refused-before-mutation');
   assert.equal(digest(remote), remoteBefore, `${testCase.id} mutated a refused remote`);
   assertGeneratedOwnerBindingRedacted(testCase, error.details);
   result.applied = false;
+  result.remotePreserved = true;
   result.outcome = 'apply-refused';
   return result;
 }
