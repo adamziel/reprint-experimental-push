@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-31 00:13 CEST +02:00.
+- Last update: 2026-05-31 00:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0195 plugin-owned custom-table release-verifier v5 merge ending at
-  `38a1bafcc`.
+  the RPP-0280 atomic group blocker propagation variant 4 merge ending at
+  `9a5c8c577`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 545
-  items checked and leaves 455 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 546
+  items checked and leaves 454 open.
 - Checked slices: 100 release-gate foundation items, 81 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 95 generated
-  harness items, and 81 merge-invariant items. No release-ops items are checked
+  harness items, and 82 merge-invariant items. No release-ops items are checked
   yet.
+- Atomic group blocker propagation variant-4 proof: the current lane now checks
+  `RPP-0280` with focused planner/apply regression evidence for an atomic
+  plugin-install group that includes valid sibling mutations, an unsupported
+  plugin-owned option blocker, and a missing dependency group blocker. The
+  proof verifies the plan and atomic group stay blocked, the unsupported row
+  emits no mutation or precondition, every grouped mutation carries propagated
+  blocker evidence referencing both source blockers, apply refuses before
+  durable journal writes or mutation callbacks, and the proof envelope remains
+  hash-only. Validation passed with a Node syntax check, focused RPP-0280
+  coverage 1/1, adjacent RPP-0220/RPP-0240/RPP-0280 atomic-group coverage 3/3,
+  the full `test/push-planner.test.js` suite 148/148, scoped artifact
+  redaction scan, and diff whitespace checks. Counts are now 546/454; final
+  release remains `NO-GO` because this is local focused planner/apply evidence,
+  not production-backed release proof.
 - Plugin-owned custom-table release-verifier v5 carry-through: the current lane
   now checks `RPP-0195` with deterministic generated-harness support-only proof
   for plugin-owned custom-table changes handled by the supported forms
