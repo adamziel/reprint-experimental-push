@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T04:10:00+02:00">Last updated: May 30, 2026, 04:10 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T04:15:00+02:00">Last updated: May 30, 2026, 04:15 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>320</strong>
+        <strong>321</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>680</strong>
+        <strong>679</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>61/61 generated harness tests pass across 620 deterministic three-way push cases, including wp_postmeta variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span><strong>Generated push harness</strong>62/62 generated harness tests pass across 620 deterministic three-way push cases, including wp_postmeta variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, post-author graph targets, remote-only preservation, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0437</span>
+        <span>RPP-0154</span>
       </div>
-      <p>The latest refresh integrates RPP-0437 driver dry-run validation hook proof: focused and adjacent plugin-driver tests prove supported and unsupported generated variants, fail-closed dry-run validation errors before mutation, and hash-only generated fixture evidence. Counts are now 320/680; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0154 plugin-owned option variant-3 coverage: focused and full generated harness tests prove 20 deterministic plugin-owned wp_options cases, ready/conflict counts across all tiers, stale replay refusal before mutation, and hash-only evidence. Counts are now 321/679; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0154 focused: 1/1</span>
+        <span class="tag">RPP-0154 pattern: 2/2</span>
+        <span class="tag">generated harness: 62/62</span>
+        <span class="tag">generated cases: 620</span>
         <span class="tag">RPP-0437 focused: 3/3</span>
         <span class="tag">dry-run hook: 3/3</span>
         <span class="tag">plugin dry-run slice: 16/16</span>
