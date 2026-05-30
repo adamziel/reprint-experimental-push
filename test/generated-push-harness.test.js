@@ -12165,6 +12165,132 @@ test('RPP-0303 generated harness emits post author ready and stale graph cases',
   }
 });
 
+test('RPP-0398 generated harness emits GUID and slug collision ready and stale cases', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.postGuidSlugCollision;
+
+  assert.ok(coverage, 'missing GUID and slug collision target coverage');
+  assert.equal(coverage.family, 'post-guid-slug-collision-guard');
+  assert.equal(coverage.total, report.summary.featureFamilies['post-guid-slug-collision-guard']);
+  assert.deepEqual(coverage.statuses, { blocked: 10, ready: 10 });
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const cases = generatePushHarnessCases();
+  const targetCases = cases.filter((testCase) => testCase.tags.has('post-guid-slug-collision-guard'));
+  const readyCases = targetCases.filter((testCase) => testCase.tags.has('post-guid-slug-collision-ready'));
+  const staleCases = targetCases.filter((testCase) => testCase.tags.has('post-guid-slug-collision-stale'));
+
+  assert.equal(targetCases.length, 20, 'expected one ready and one stale collision case per tier');
+  assert.equal(readyCases.length, 10, 'expected one ready GUID/slug case per tier');
+  assert.equal(staleCases.length, 10, 'expected one stale GUID/slug collision case per tier');
+
+  for (const readyCase of readyCases) {
+    const shape = assertPostGuidSlugCollisionShape(readyCase, { staleTarget: false });
+    const plan = createPushPlan({
+      base: readyCase.base,
+      local: readyCase.local,
+      remote: readyCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(readyCase);
+    const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.localResourceKey);
+    const blocker = plan.blockers.find((entry) => entry.resourceKey === shape.localResourceKey);
+
+    assert.equal(plan.status, 'ready', `${readyCase.id} should be ready without a remote identity collision`);
+    assert.equal(result.status, 'ready');
+    assert.equal(result.applied, true);
+    assert.equal(result.staleReplayRejected, true);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.ok(mutation, `${readyCase.id} should plan the unique GUID/slug post`);
+    assert.equal(blocker, undefined, `${readyCase.id} should not block the unique GUID/slug post`);
+    const plannedPost = deserializeResourceValue(mutation.value);
+    assert.equal(plannedPost.guid, shape.guid);
+    assert.equal(plannedPost.post_name, shape.slug);
+    assert.equal(plannedPost.post_type, 'page');
+  }
+
+  for (const staleCase of staleCases) {
+    const shape = assertPostGuidSlugCollisionShape(staleCase, { staleTarget: true });
+    const plan = createPushPlan({
+      base: staleCase.base,
+      local: staleCase.local,
+      remote: staleCase.remote,
+      now: fixedGeneratedHarnessNow,
+    });
+    const result = validateGeneratedCase(staleCase);
+    const blocker = plan.blockers.find((entry) => entry.resourceKey === shape.localResourceKey);
+    const reference = blocker?.references?.find((entry) =>
+      entry.relationshipType === 'post-natural-identity-collision');
+    const remoteDecision = plan.decisions.find((entry) => entry.resourceKey === shape.remoteResourceKey);
+    const planJson = JSON.stringify(plan);
+
+    assert.equal(plan.status, 'blocked', `${staleCase.id} should fail closed on GUID/slug collision`);
+    assert.equal(result.status, 'blocked');
+    assert.equal(result.applied, false);
+    assert.equal(result.nonReadyRemoteUnchanged, true);
+    assert.equal(
+      plan.mutations.some((entry) => entry.resourceKey === shape.localResourceKey),
+      false,
+      `${staleCase.id} must not plan the colliding local post`,
+    );
+    assert.ok(blocker, `${staleCase.id} should expose a collision blocker`);
+    assert.equal(blocker.class, 'stale-wordpress-graph-identity');
+    assert.match(blocker.reason, /collides with existing remote post identity/);
+    assert.ok(reference, `${staleCase.id} should include natural identity collision evidence`);
+    assert.equal(reference.targetResourceKey, shape.remoteResourceKey);
+    assert.deepEqual(reference.identityKinds, ['guid', 'post_type+post_name']);
+    assert.match(reference.targetRemoteHash, /^[a-f0-9]{64}$/);
+    assert.equal(remoteDecision?.decision, 'keep-remote');
+    assert.equal(planJson.includes(shape.localTitle), false, `${staleCase.id} leaked local title`);
+    assert.equal(planJson.includes(shape.remoteTitle), false, `${staleCase.id} leaked remote title`);
+    assert.equal(planJson.includes(shape.guid), false, `${staleCase.id} leaked colliding GUID`);
+    assert.equal(planJson.includes(shape.slug), false, `${staleCase.id} leaked colliding slug`);
+  }
+});
+
+function assertPostGuidSlugCollisionShape(testCase, { staleTarget }) {
+  const localRows = Object.entries(testCase.local.db.wp_posts)
+    .filter(([, row]) => String(row.post_title || '').startsWith('Generated GUID slug collision guard '));
+
+  assert.equal(localRows.length, 1, `${testCase.id} should include one generated GUID/slug collision row`);
+
+  const [localRowId, localRow] = localRows[0];
+  const matchingRemoteRows = Object.entries(testCase.remote.db.wp_posts)
+    .filter(([remoteRowId, row]) =>
+      remoteRowId !== localRowId
+      && row?.guid === localRow.guid
+      && row?.post_type === localRow.post_type
+      && row?.post_name === localRow.post_name);
+
+  assert.equal(localRowId, `ID:${localRow.ID}`);
+  assert.equal(localRow.post_type, 'page');
+  assert.ok(localRow.guid, `${testCase.id} should set a GUID identity`);
+  assert.ok(localRow.post_name, `${testCase.id} should set a slug identity`);
+
+  if (staleTarget) {
+    assert.equal(matchingRemoteRows.length, 1, `${testCase.id} should include one remote identity collision`);
+    assert.equal(testCase.base.db.wp_posts[localRowId], undefined);
+    assert.equal(testCase.remote.db.wp_posts[localRowId], undefined);
+  } else {
+    assert.equal(matchingRemoteRows.length, 0, `${testCase.id} should not collide with remote identity`);
+  }
+
+  const [remoteRowId, remoteRow] = matchingRemoteRows[0] || [];
+  return {
+    localRowId,
+    localTitle: localRow.post_title,
+    localResourceKey: rowResourceKey('wp_posts', localRowId),
+    remoteRowId,
+    remoteTitle: remoteRow?.post_title || null,
+    remoteResourceKey: remoteRowId ? rowResourceKey('wp_posts', remoteRowId) : null,
+    guid: localRow.guid,
+    slug: localRow.post_name,
+  };
+}
+
 function assertPostAuthorGraphShape(testCase, { staleTarget }) {
   const authoredRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([, row]) => String(row.post_title || '').startsWith('post-author-reference-'));
