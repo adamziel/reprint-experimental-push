@@ -398,7 +398,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [ ] RPP-0369 (Mid / graph-identity) Add focused regression coverage for category term taxonomy reference, variant 4. Success: local production verifier carries the target through apply.
 - [ ] RPP-0370 (Mid / graph-identity) Add focused regression coverage for post_tag taxonomy reference, variant 4. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0371 (Mid / graph-identity) Add focused regression coverage for custom taxonomy fail-closed reference, variant 4. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0372 (Mid / graph-identity) Add focused regression coverage for termmeta term reference, variant 4. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0372 (Mid / graph-identity) Add focused regression coverage for termmeta term reference, variant 4. Success: unsupported target fails closed with hash-only evidence.
 - [ ] RPP-0373 (Mid / graph-identity) Add focused regression coverage for term relationship object reference, variant 4. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0374 (Mid / graph-identity) Add focused regression coverage for term relationship taxonomy reference, variant 4. Success: local production verifier carries the target through apply.
 - [ ] RPP-0375 (Mid / graph-identity) Add focused regression coverage for nav menu item fail-closed reference, variant 4. Success: docs state remaining unmapped WordPress surfaces.
