@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 04:10 CEST
+# AO Progress Report - 2026-05-30 04:15 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0437
-driver dry-run validation hook refresh ending at `483f7cada`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0154
+plugin-owned option generated coverage refresh ending at `72dda86f9`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 320 are
-  checked from integrated evidence and 680 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 321 are
+  checked from integrated evidence and 679 remain open.
+- `RPP-0154` is now checked with generated plugin-owned option variant-3
+  evidence in `docs/evidence/rpp-0154-plugin-owned-option-changes-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0154 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0154` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 62/62, proving 20 deterministic
+  variant-3 plugin-owned `wp_options` cases across all tiers, ready/conflict
+  counts, stale replay refusal before mutation, hash-only plugin-owned option
+  evidence, checklist lint, artifact redaction scan, and `git diff --check`
+  while final release remains **NO-GO**.
 - `RPP-0437` is now checked with focused driver dry-run validation hook
   evidence in `docs/evidence/rpp-0437-driver-dry-run-validation-hook.md`,
   `docs/reprint-push-completion-checklist.md`, and

@@ -6,19 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:10 CEST.
+- Last update: 2026-05-30 04:15 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0437 driver dry-run validation hook merge ending at `483f7cada`.
+  the RPP-0154 plugin-owned option generated coverage merge ending at
+  `72dda86f9`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 320
-  items checked and leaves 680 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 321
+  items checked and leaves 679 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   47 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 54 generated
+  11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated plugin-owned option variant-3 refresh: the current lane now
+  contains `RPP-0154` evidence in
+  `docs/evidence/rpp-0154-plugin-owned-option-changes-v3.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0154 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0154` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 62/62. The proof adds 20
+  deterministic variant-3 plugin-owned `wp_options` cases across all 10 tiers,
+  with 10 ready and 10 conflict cases, verifies stale replay refuses before
+  mutation, and keeps plugin-owned option evidence hash-only. Checklist lint,
+  artifact redaction scan, and `git diff --check` also passed. Counts are now
+  321/679; final release remains `NO-GO`.
 - Focused driver dry-run validation hook refresh: the current lane now contains
   `RPP-0437` evidence in
   `docs/evidence/rpp-0437-driver-dry-run-validation-hook.md`,
