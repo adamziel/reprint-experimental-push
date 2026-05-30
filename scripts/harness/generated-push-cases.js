@@ -307,6 +307,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'plugin-owned-custom-table-variant1',
     tag: 'plugin-owned-custom-table-variant1',
   },
+  pluginOwnedCustomTableChangesVariant3: {
+    family: 'plugin-owned-custom-table-changes-variant3',
+    tag: 'plugin-owned-custom-table-variant3',
+  },
   pluginOwnedResourceRefusalVariant3: {
     family: 'plugin-owned-resource-refusal-variant3',
     tag: 'plugin-owned-resource-refusal-v3',
@@ -2871,12 +2875,16 @@ function addPluginOwnedCustomTableChanges(base, local, remote, allocator, tags, 
     });
     tags.add('forms-lab-custom-table-stale');
     tags.add('forms-lab-remote-drift');
+    tags.add('plugin-owned-custom-table-variant3-stale');
+    tags.add('plugin-owned-custom-table-variant3-non-ready');
   } else {
     tags.add('forms-lab-custom-table-ready');
+    tags.add('plugin-owned-custom-table-variant3-ready');
   }
 
   tags.add('plugin-owned-custom-table-target');
   tags.add('plugin-owned-custom-table-variant1');
+  tags.add('plugin-owned-custom-table-variant3');
   tags.add('plugin-owned-custom-table-update');
   tags.add('plugin-owned-custom-table-change');
   tags.add('forms-lab-custom-table-change');
