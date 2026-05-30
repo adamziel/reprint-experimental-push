@@ -4687,6 +4687,7 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
             REPRINT_PUSH_CHECKED_JOURNAL_SUPPORTED_SURFACE
         );
     }
+    $db_journal['auditEventSchema'] = reprint_push_lab_rest_production_audit_event_schema($request);
     $result = [
         'ok' => true,
         'dbJournal' => $db_journal,
@@ -4701,10 +4702,106 @@ function reprint_push_lab_rest_db_journal(WP_REST_Request $request): WP_REST_Res
 
 function reprint_push_lab_rest_db_journal_schema(WP_REST_Request $request): WP_REST_Response
 {
+    $audit_event_schema = reprint_push_lab_rest_production_audit_event_schema($request);
+    $db_journal_schema = reprint_push_lab_db_journal_schema();
+    $db_journal_schema['auditEventSchema'] = $audit_event_schema;
+
     return reprint_push_lab_rest_json_response([
         'ok' => true,
-        'dbJournalSchema' => reprint_push_lab_db_journal_schema(),
+        'dbJournalSchema' => $db_journal_schema,
+        'auditEventSchema' => $audit_event_schema,
     ]);
+}
+
+function reprint_push_lab_rest_production_audit_event_schema(WP_REST_Request $request): array
+{
+    $profile = reprint_push_lab_rest_route_profile($request);
+
+    return [
+        'schemaVersion' => 1,
+        'schemaId' => 'reprint-push-production-audit-event/v1',
+        'routeEvidence' => [
+            'routeProfile' => (string) ($profile['profile'] ?? ''),
+            'restNamespace' => (string) ($profile['restNamespace'] ?? ''),
+            'routePrefix' => (string) ($profile['routePrefix'] ?? ''),
+            'journalRoute' => reprint_push_lab_rest_profile_route($request, '/db-journal'),
+            'schemaRoute' => reprint_push_lab_rest_profile_route($request, '/db-journal/schema'),
+            'readMethod' => 'GET',
+            'permission' => 'authenticated manage_options REST permission',
+            'checkedSurface' => (string) ($profile['profile'] ?? '') === 'production-shaped'
+                ? 'production-shaped-rest-route'
+                : 'lab-authenticated-rest-route',
+        ],
+        'eventStore' => [
+            'storage' => 'wpdb',
+            'table' => reprint_push_lab_db_journal_table_name(),
+            'appendOnlyEvents' => true,
+            'sequenceField' => 'sequence',
+            'timestampFields' => ['createdAt', 'updatedAt'],
+            'cursorPrefix' => 'db-journal:',
+        ],
+        'eventShape' => [
+            'type' => 'object',
+            'required' => [
+                'schemaVersion',
+                'sequence',
+                'event',
+                'idempotencyKeyHash',
+                'requestHash',
+                'planHash',
+                'receiptHash',
+                'resultHash',
+                'resourceHashEvidence',
+                'createdAt',
+            ],
+            'properties' => [
+                'schemaVersion' => ['type' => 'integer', 'const' => 1],
+                'sequence' => ['type' => 'integer', 'minimum' => 1],
+                'event' => ['type' => 'string'],
+                'claimId' => ['type' => 'string'],
+                'idempotencyKeyHash' => ['type' => 'string', 'format' => 'sha256-hex'],
+                'requestHash' => ['type' => 'string', 'format' => 'sha256-hex'],
+                'planHash' => ['type' => 'string', 'format' => 'sha256-hex'],
+                'receiptHash' => ['type' => 'string', 'format' => 'sha256-or-receipt-hash'],
+                'planFingerprint' => ['type' => 'string', 'format' => 'sha256-hex'],
+                'mutationCount' => ['type' => 'integer', 'minimum' => 0],
+                'appliedCount' => ['type' => 'integer', 'minimum' => 0],
+                'resultHash' => ['type' => 'string', 'format' => 'sha256-hex'],
+                'resourceHashEvidence' => ['type' => ['object', 'null']],
+                'errorCode' => ['type' => 'string'],
+                'claimKeyHash' => ['type' => 'string', 'format' => 'sha256-hex'],
+                'createdAt' => ['type' => 'string', 'format' => 'date-time'],
+                'updatedAt' => ['type' => 'string', 'format' => 'date-time'],
+            ],
+        ],
+        'redaction' => [
+            'format' => 'hash-only',
+            'rawValuesIncluded' => false,
+            'hashAlgorithm' => 'sha256',
+            'hashOnlyFields' => [
+                'idempotencyKeyHash',
+                'requestHash',
+                'planHash',
+                'receiptHash',
+                'planFingerprint',
+                'resultHash',
+                'claimKeyHash',
+                'resourceHashEvidence.*Hash',
+            ],
+            'forbiddenRawFields' => [
+                'value',
+                'content',
+                'payload',
+                'payloads',
+                'post_content',
+                'option_value',
+                'meta_value',
+                'currentSnapshot',
+                'afterSnapshot',
+                'beforeSnapshot',
+            ],
+        ],
+    ];
 }
 
 function reprint_push_lab_rest_db_journal_evidence(array $entry): array

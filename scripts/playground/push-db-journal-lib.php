@@ -1149,6 +1149,7 @@ function reprint_push_lab_db_journal_public_row(array $row): array
     $resource_evidence = json_decode((string) ($row['resource_hash_evidence_json'] ?? ''), true);
 
     return [
+        'schemaVersion' => 1,
         'sequence' => (int) ($row['id'] ?? 0),
         'event' => (string) ($row['event'] ?? ''),
         'claimId' => reprint_push_lab_db_journal_claim_id_from_key_hash($row['claim_key_hash'] ?? null),

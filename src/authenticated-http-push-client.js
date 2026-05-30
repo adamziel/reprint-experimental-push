@@ -2734,6 +2734,7 @@ function summarizeDbJournal(response) {
     rowCount: Number.isInteger(response.body?.dbJournal?.rowCount)
       ? response.body.dbJournal.rowCount
       : rows.length,
+    auditEventSchema: summarizeAuditEventSchema(response.body?.dbJournal?.auditEventSchema),
     applyCommitted: rows.some((entry) => entry.event === 'apply-committed'),
     mutationApplied: rows.filter((entry) => entry.event === 'mutation-applied').length,
     idempotencyOpened: rows.filter((entry) => entry.event === 'idempotency-opened').length,
@@ -2767,6 +2768,53 @@ function summarizeDbJournal(response) {
     sessionType: response.body?.auth?.session?.type,
     sessionStatus: response.body?.auth?.session?.status,
     sessionExpiresAt: response.body?.auth?.session?.expiresAt,
+  };
+}
+
+function summarizeAuditEventSchema(schema) {
+  if (!schema || typeof schema !== 'object') {
+    return null;
+  }
+
+  const routeEvidence = schema.routeEvidence && typeof schema.routeEvidence === 'object'
+    ? schema.routeEvidence
+    : {};
+  const eventStore = schema.eventStore && typeof schema.eventStore === 'object'
+    ? schema.eventStore
+    : {};
+  const eventShape = schema.eventShape && typeof schema.eventShape === 'object'
+    ? schema.eventShape
+    : {};
+  const redaction = schema.redaction && typeof schema.redaction === 'object'
+    ? schema.redaction
+    : {};
+
+  return {
+    schemaVersion: Number.isInteger(schema.schemaVersion) ? schema.schemaVersion : null,
+    schemaId: typeof schema.schemaId === 'string' ? schema.schemaId : null,
+    schemaHash: digest(schema),
+    routeEvidence: {
+      routeProfile: routeEvidence.routeProfile || null,
+      restNamespace: routeEvidence.restNamespace || null,
+      routePrefix: routeEvidence.routePrefix || null,
+      journalRoute: routeEvidence.journalRoute || null,
+      schemaRoute: routeEvidence.schemaRoute || null,
+      checkedSurface: routeEvidence.checkedSurface || null,
+    },
+    eventStore: {
+      storage: eventStore.storage || null,
+      appendOnlyEvents: eventStore.appendOnlyEvents === true,
+      sequenceField: eventStore.sequenceField || null,
+      cursorPrefix: eventStore.cursorPrefix || null,
+    },
+    eventRequiredFields: Array.isArray(eventShape.required) ? eventShape.required : [],
+    redaction: {
+      format: redaction.format || null,
+      rawValuesIncluded: redaction.rawValuesIncluded === true,
+      hashAlgorithm: redaction.hashAlgorithm || null,
+      hashOnlyFields: Array.isArray(redaction.hashOnlyFields) ? redaction.hashOnlyFields : [],
+      forbiddenRawFields: Array.isArray(redaction.forbiddenRawFields) ? redaction.forbiddenRawFields : [],
+    },
   };
 }
 
