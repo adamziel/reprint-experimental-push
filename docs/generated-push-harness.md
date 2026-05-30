@@ -226,6 +226,18 @@ row remains a hash-only `keep-remote` decision with no mutation/precondition,
 checks apply preserves the remote row, and drifts a later planned mutation so
 `PRECONDITION_FAILED` is raised before any remote mutation.
 
+RPP-0159 adds `remoteOnlyPreservationVariant3` coverage for the same remote-only
+post-update surface as an explicit variant-3 target. The deterministic summary
+exposes the same 9 mutation-bearing ready cases across tiers 1 through 9, and
+the focused proof recounts every target case, applies the ready plan, verifies
+the remote-only row remains unplanned and preserved, then drifts the final
+planned mutation after dry-run. The replay must fail with `PRECONDITION_FAILED`
+and an unchanged remote digest, proving stale remote replay fails before any
+mutation. Evidence remains hash-only: row/resource keys, tier/status counts,
+decision hashes, precondition hashes, planned-value hashes, and refusal-detail
+hashes are retained while generated row titles, local payloads, and stale replay
+payloads are omitted.
+
 The `independentLocalFileRemoteRow` target coverage records per-tier counts for
 ready plans where a local file edit and remote row edit coexist. RPP-0221 proves
 the file mutation carries a live-remote precondition, the remote row remains a
@@ -476,7 +488,7 @@ model evidence samples one ready stack and one non-ready missing-dependency
 stack from the real generated harness while retaining hash-only resource and
 blocker summaries.
 
-At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
+At the time this note was refreshed, `node scripts/harness/generated-push-cases.js` reported 620 total cases with 345 ready, 201 conflict, and 74 blocked outcomes. The target coverage includes 10 `independentLocalFileRemoteRow` cases, 10 `independentLocalRowRemoteFile` cases, 10 `localDeleteRemoteEdit` cases, 10 `sameIndependentContent` cases, 10 `sameIndependentContentVariant3` cases, 20 `postAuthorGraph` cases, 20 `wpCommentsCommentmetaGraph` cases, 20 `featuredImageAttachmentGraph` cases, 20 `atomicPluginInstallStack` cases, 20 `atomicPluginInstallStackV1` cases, 10 `pluginOwnedCustomTableChanges` cases, 10 `pluginOwnedCustomTableVariant1` cases, 9 `remoteOnlyPreservation` cases, 9 `remoteOnlyPreservationVariant3` cases, 344 `staleRemoteAfterDryRun` ready-plan stale-replay precondition cases, and 344 `staleRemoteAfterDryRunVariant3` ready-plan stale-replay precondition cases. Use the direct summary command above for the full current JSON.
 
 ## Extension Rule
 

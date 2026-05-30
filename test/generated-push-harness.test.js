@@ -1074,6 +1074,80 @@ test('RPP-0139 remote-only preservation variant 2 proves stale replay refusal be
   assert.equal(evidenceText.includes('ready-bulk'), false, 'variant 2 evidence leaked generated file payload');
 });
 
+test('RPP-0159 remote-only preservation variant 3 rejects stale replay before mutation', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.remoteOnlyPreservationVariant3;
+  const legacyCoverage = report.summary.targetCoverage.remoteOnlyPreservation;
+
+  assert.ok(coverage, 'missing remote-only preservation variant 3 target coverage');
+  assert.ok(legacyCoverage, 'missing remote-only preservation legacy target coverage');
+
+  const firstEvidence = generatedRemoteOnlyPreservationVariant3Evidence(coverage);
+  const replayEvidence = generatedRemoteOnlyPreservationVariant3Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0159 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.equal(coverage.family, 'remote-only-preservation-variant3');
+  assert.equal(coverage.total, legacyCoverage.total);
+  assert.deepEqual(coverage.perTier, legacyCoverage.perTier);
+  assert.deepEqual(coverage.statuses, legacyCoverage.statuses);
+  assert.equal(coverage.total, 9);
+  assert.deepEqual(coverage.statuses, { ready: 9 });
+  assert.deepEqual(
+    Object.keys(coverage.perTier).map(Number),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 3 remote-only preservation evidence changed between runs');
+  assert.equal(firstEvidence.target, 'remoteOnlyPreservationVariant3');
+  assert.equal(firstEvidence.family, 'remote-only-preservation-variant3');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.cases.map((entry) => entry.tier),
+    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  );
+
+  for (const entry of firstEvidence.cases) {
+    assert.equal(entry.status, 'ready', `${entry.id} should remain ready`);
+    assert.equal(entry.applied, true, `${entry.id} should apply through the harness`);
+    assert.equal(entry.unplannedRemotePreserved, true, `${entry.id} should preserve unplanned remote data`);
+    assert.equal(entry.remoteOnly.decision, 'keep-remote');
+    assert.equal(entry.remoteOnly.change.localChange, 'unchanged');
+    assert.equal(entry.remoteOnly.change.remoteChange, 'update');
+    assert.equal(entry.remoteOnly.localHash, entry.remoteOnly.baseHash);
+    assert.equal(entry.remoteOnly.appliedHash, entry.remoteOnly.remoteHash);
+    assert.notEqual(entry.remoteOnly.remoteHash, entry.remoteOnly.baseHash);
+    assert.equal(entry.remoteOnly.plannedMutation, false);
+    assert.equal(entry.remoteOnly.plannedPrecondition, false);
+    assert.equal(entry.staleReplay.code, 'PRECONDITION_FAILED');
+    assert.ok(entry.staleReplay.mutationIndex > 0, `${entry.id} should drift a non-leading mutation`);
+    assert.equal(entry.staleReplay.mutationIndex, entry.staleReplay.mutationCount - 1);
+    assert.equal(entry.staleReplay.preconditionCount, entry.staleReplay.mutationCount);
+    assert.equal(entry.staleReplay.remoteBeforeHash, entry.staleReplay.remoteAfterHash);
+    assert.equal(entry.staleReplay.expectedHash, entry.staleReplay.mutationRemoteBeforeHash);
+    assert.notEqual(entry.staleReplay.actualHash, entry.staleReplay.expectedHash);
+    assert.match(entry.remoteOnly.decisionHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.detailsHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.plannedValueHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.staleReplay.preconditionHash, /^sha256:[a-f0-9]{64}$/);
+    assert.match(entry.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+  }
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('Remote editorial'), false, 'variant 3 evidence leaked remote-only row title');
+  assert.equal(evidenceText.includes('stale-private-rpp0159'), false, 'variant 3 evidence leaked stale replay payload');
+  assert.equal(evidenceText.includes('ready-bulk'), false, 'variant 3 evidence leaked generated ready payload');
+});
+
 function assertSameIndependentContentShape(testCase) {
   const sharedRows = Object.entries(testCase.local.db.wp_posts)
     .filter(([id, localRow]) => testCase.base.db.wp_posts[id]
@@ -10769,6 +10843,184 @@ function generatedRemoteOnlyPreservationCaseEvidence(testCase, result) {
     remoteOnly,
     staleReplay,
     modelProofHash: `sha256:${digest({ remoteOnly, staleReplay })}`,
+  };
+}
+
+function generatedRemoteOnlyPreservationVariant3Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const cases = [];
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (testCase.family !== 'remote-only-post-update'
+      || !testCase.tags.has('remote-preserve')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const targetMatch = result.status === 'ready'
+      && result.unplannedRemotePreserved === true
+      && result.staleReplayRejected === true
+      && result.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+      && result.staleReplayRemoteUnchanged === true;
+
+    if (!targetMatch) {
+      continue;
+    }
+
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    cases.push(generatedRemoteOnlyPreservationVariant3CaseEvidence(testCase, result));
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+  const totalCases = Object.values(sortedPerTier).reduce((sum, count) => sum + count, 0);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 3 target recount should match summary tiers');
+  assert.deepEqual(sortedStatuses, targetCoverage.statuses, 'variant 3 target recount should match summary statuses');
+  assert.equal(totalCases, targetCoverage.total, 'variant 3 target recount should match summary total');
+
+  return {
+    target: 'remoteOnlyPreservationVariant3',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    cases: cases.sort((left, right) => left.tier - right.tier || left.id.localeCompare(right.id)),
+  };
+}
+
+function generatedRemoteOnlyPreservationVariant3CaseEvidence(testCase, result) {
+  const { rowId } = generatedRemoteOnlyPostUpdateTargets(testCase);
+  const rowResource = { type: 'row', table: 'wp_posts', id: rowId };
+  const rowKey = generatedRowResourceKey('wp_posts', rowId);
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const rowDecision = plan.decisions.find((decision) => decision.resourceKey === rowKey);
+  const applied = applyPlan(cloneJson(testCase.remote), plan);
+  const mutationIndex = plan.mutations.length - 1;
+  const mutation = plan.mutations[mutationIndex];
+  const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation?.id);
+  const staleRemote = cloneJson(testCase.remote);
+  const stalePayload = `stale-private-rpp0159-${testCase.tier}-${mutation?.id}`;
+  const plannedValue = deserializeResourceValue(mutation?.value);
+
+  assert.equal(plan.status, 'ready', `${testCase.id} should be ready for remote-only preservation variant 3 evidence`);
+  assertGeneratedMutationPreconditionOneToOne(testCase, plan);
+  assert.equal(result.status, 'ready');
+  assert.equal(result.applied, true);
+  assert.equal(result.unplannedRemotePreserved, true);
+  assert.equal(result.staleReplayRejected, true);
+  assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(result.staleReplayRemoteUnchanged, true);
+  assert.ok(rowDecision, `${testCase.id} should record the remote-only row decision`);
+  assert.equal(rowDecision.decision, 'keep-remote');
+  assert.equal(rowDecision.change.localChange, 'unchanged');
+  assert.equal(rowDecision.change.remoteChange, 'update');
+  assert.equal(plan.mutations.some((entry) => entry.resourceKey === rowKey), false);
+  assert.equal(plan.preconditions.some((entry) => entry.resourceKey === rowKey), false);
+  assert.ok(mutation, `${testCase.id} should have a planned mutation to drift after dry-run`);
+  assert.ok(mutationIndex > 0, `${testCase.id} should drift a non-leading mutation for pre-mutation proof`);
+  assert.equal(mutationIndex, plan.mutations.length - 1, `${testCase.id} should drift the final planned mutation`);
+  assert.ok(precondition, `${testCase.id} should have a live-remote precondition for ${mutation.resourceKey}`);
+  assert.equal(precondition.resourceKey, mutation.resourceKey);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(resourceHash(staleRemote, mutation.resource), precondition.expectedHash);
+
+  setResource(
+    staleRemote,
+    mutation.resource,
+    rpp0159StaleRemoteValue(mutation.resource, getResource(staleRemote, mutation.resource), stalePayload),
+  );
+  const staleResourceHash = resourceHash(staleRemote, mutation.resource);
+  const remoteBeforeHash = digest(staleRemote);
+  const error = captureError(() => applyPlan(staleRemote, plan));
+  const remoteAfterHash = digest(staleRemote);
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'PRECONDITION_FAILED');
+  assert.equal(error.details.resourceKey, mutation.resourceKey);
+  assert.equal(error.details.expectedHash, precondition.expectedHash);
+  assert.equal(error.details.actualHash, staleResourceHash);
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} variant 3 stale replay mutated remote before refusal`);
+
+  const remoteOnly = {
+    resourceKey: rowKey,
+    decision: rowDecision.decision,
+    change: rowDecision.change,
+    baseHash: resourceHash(testCase.base, rowResource),
+    localHash: resourceHash(testCase.local, rowResource),
+    remoteHash: resourceHash(testCase.remote, rowResource),
+    appliedHash: resourceHash(applied.site, rowResource),
+    plannedMutation: false,
+    plannedPrecondition: false,
+    decisionHash: `sha256:${digest(rowDecision)}`,
+  };
+  const staleReplay = {
+    mutationId: mutation.id,
+    mutationIndex,
+    mutationCount: plan.mutations.length,
+    preconditionCount: plan.preconditions.length,
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    code: error.code,
+    expectedHash: error.details.expectedHash,
+    actualHash: error.details.actualHash,
+    mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+    plannedValueHash: `sha256:${digest(plannedValue)}`,
+    preconditionHash: `sha256:${digest(precondition)}`,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
+
+  return {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    applied: result.applied,
+    unplannedRemotePreserved: result.unplannedRemotePreserved,
+    remoteOnly,
+    staleReplay,
+    modelProofHash: `sha256:${digest({ remoteOnly, staleReplay })}`,
+  };
+}
+
+function rpp0159StaleRemoteValue(resource, currentValue, stalePayload) {
+  if (resource.type === 'file') {
+    return currentValue === ABSENT
+      ? stalePayload
+      : { type: 'file', content: stalePayload };
+  }
+
+  if (resource.type === 'plugin') {
+    return {
+      ...(currentValue === ABSENT ? {} : currentValue),
+      version: stalePayload,
+    };
+  }
+
+  if (currentValue && currentValue !== ABSENT && typeof currentValue === 'object' && !Array.isArray(currentValue)) {
+    return {
+      ...currentValue,
+      __rpp0159RemoteOnlyPreservationStaleReplay: stalePayload,
+    };
+  }
+
+  return {
+    value: currentValue === ABSENT ? 'absent-before-remote-only-preservation-v3-replay' : currentValue,
+    __rpp0159RemoteOnlyPreservationStaleReplay: stalePayload,
   };
 }
 
