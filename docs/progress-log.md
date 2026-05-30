@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 07:57 CEST.
+- Last update: 2026-05-30 08:07 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0172 wp_term_taxonomy graph variant-4 generated-harness merge ending
-  at `2161fa896`.
+  the RPP-0173 wp_term_relationships graph variant-4 generated-harness merge
+  ending at `667063215`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 365
-  items checked and leaves 635 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 366
+  items checked and leaves 634 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 72 generated
+  11 storage/performance items, 3 production-topology items, 73 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- wp_term_relationships graph variant-4 refresh: the current lane now contains
+  `RPP-0173` evidence in
+  `docs/evidence/rpp-0173-wp-term-relationships-graph-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0173 test passed 1/1, the adjacent
+  RPP-0113/RPP-0133/RPP-0153/RPP-0173 term-relationships graph slice passed
+  3/3, the generated-cover cross-check passed 2/2, and
+  `npm run test:generated-push-harness` passed 80/80 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 366/634; final release remains
+  `NO-GO`.
 - wp_term_taxonomy graph variant-4 refresh: the current lane now contains
   `RPP-0172` evidence in
   `docs/evidence/rpp-0172-wp-term-taxonomy-graph-v4.md`,

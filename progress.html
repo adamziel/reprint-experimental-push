@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T07:57:00+02:00">Last updated: May 30, 2026, 07:57 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T08:07:00+02:00">Last updated: May 30, 2026, 08:07 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>365</strong>
+        <strong>366</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>635</strong>
+        <strong>634</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -336,7 +336,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Generated harness checked">
-            <span><strong>Generated push harness</strong>79/79 generated harness tests pass across 620 deterministic three-way push cases, including wp_term_taxonomy graph variant-4, wp_terms/wp_termmeta graph variant-4, wp_comments/wp_commentmeta graph variant-4, wp_users/wp_usermeta graph variant-4, wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
+            <span><strong>Generated push harness</strong>80/80 generated harness tests pass across 620 deterministic three-way push cases, including wp_term_relationships graph variant-4, wp_term_taxonomy graph variant-4, wp_terms/wp_termmeta graph variant-4, wp_comments/wp_commentmeta graph variant-4, wp_users/wp_usermeta graph variant-4, wp_postmeta create/update/delete variant-4, wp_posts create/update/delete variant-4, wp_options serialized option changes variant-4, wp_options scalar option changes variant-4, row create/update/delete mix variant-4, file type-swap conflict variant-4, directory descendant conflict variant-4, file create/update/delete mix variant-4, large ready plan tier variant-3, remote-only preservation variant-3, wp_postmeta variant-3, same independent content variant-3, wp_terms/wp_termmeta variant-3, wp_term_taxonomy variant-3, wp_term_relationships variant-3, plugin-owned option variant-3, plugin-owned custom-table variant-3, stale remote after dry-run variant-3, post-author graph targets, plugin-owned custom-table, and atomic plugin install stack coverage.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
@@ -406,14 +406,18 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0172</span>
+        <span>RPP-0173</span>
       </div>
-      <p>The latest refresh integrates RPP-0172 wp_term_taxonomy graph variant-4 generated-harness evidence: syntax checks, focused and adjacent term-taxonomy graph tests, and the full generated harness prove term-taxonomy graph replay and refusal behavior remains deterministic. Counts are now 365/635; final release remains NO-GO because this is generated-model coverage, not production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0173 wp_term_relationships graph variant-4 generated-harness evidence: syntax checks, focused and adjacent term-relationships graph tests, a generated-cover cross-check, and the full generated harness prove term-relationships graph replay and refusal behavior remains deterministic. Counts are now 366/634; final release remains NO-GO because this is generated-model coverage, not production endpoint proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0173 focused: 1/1</span>
+        <span class="tag">term-relationships slice: 3/3</span>
+        <span class="tag">generated-cover check: 2/2</span>
+        <span class="tag">generated harness: 80/80</span>
+        <span class="tag">620 cases</span>
         <span class="tag">RPP-0172 focused: 1/1</span>
         <span class="tag">term-taxonomy slice: 3/3</span>
         <span class="tag">generated harness: 79/79</span>
-        <span class="tag">620 cases</span>
         <span class="tag">RPP-0171 focused: 1/1</span>
         <span class="tag">terms/termmeta slice: 3/3</span>
         <span class="tag">family cross-check: 3/3</span>
