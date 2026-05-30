@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T15:43:00+02:00">Last updated: May 30, 2026, 15:43 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T15:51:00+02:00">Last updated: May 30, 2026, 15:51 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>469</strong>
+        <strong>470</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>531</strong>
+        <strong>530</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight and snapshot-hashes route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight, snapshot-hashes, and audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0494</span>
+        <span>RPP-0520</span>
       </div>
-      <p>The latest refresh integrates RPP-0494 owner-context stale metadata release-verifier evidence: the verifier emits hash-only pluginDriver.ownerContext.staleMetadata proof beside stalePluginFile, blocks planning when live owner plugin metadata drift is present, preserves the plugin-owned wp_postmeta row and remote hashes, rejects stale ready-plan replay with STALE_PLUGIN_OWNER_CONTEXT before mutation hooks run, and records only resource ids, owner/driver labels, counts, reason codes, and SHA-256 hashes. Counts are now 469/531; final release remains NO-GO because this is support-only release-verifier evidence, not production-backed owner-context lifecycle proof.</p>
+      <p>The latest refresh integrates RPP-0520 production audit event schema evidence: the production-shaped DB journal exposes an authenticated schema route with reprint-push-production-audit-event/v1, append-only journal metadata, route evidence, required event fields, and hash-only redaction metadata that excludes credentials and raw row/content values. Counts are now 470/530; final release remains NO-GO because this is sandbox-local production-shaped route proof, not externally supplied production topology and credential evidence.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0520 route focused: 3/3</span>
+        <span class="tag">RPP-0520 client focused: 1/1</span>
+        <span class="tag">route/auth adjacent: 160/160</span>
+        <span class="tag">production-shaped route smoke: pass</span>
+        <span class="tag">audit schema hash-only</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0494 focused: 3/3</span>
         <span class="tag">owner-context adjacent: 22/22</span>
         <span class="tag">release-verifier adjacent: 37/37</span>

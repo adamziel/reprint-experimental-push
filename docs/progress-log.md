@@ -6,20 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 15:43 CEST +02:00.
+- Last update: 2026-05-30 15:51 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0494 owner-context stale metadata release-verifier merge ending at
-  `6b34fec89`.
+  the RPP-0520 production audit event schema merge ending at `d2aedba5c`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 469
-  items checked and leaves 531 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 470
+  items checked and leaves 530 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  80 plugin-driver boundary items, 27 executor/auth items, 32 recovery items,
+  80 plugin-driver boundary items, 28 executor/auth items, 32 recovery items,
   17 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Production audit event schema route: the current lane now contains
+  `RPP-0520` evidence in
+  `docs/evidence/rpp-0520-production-audit-event-schema.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-route-smoke.mjs`,
+  `scripts/playground/push-db-journal-lib.php`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `src/authenticated-http-push-client.js`,
+  `test/production-audit-event-schema-route.test.js`, and
+  `test/authenticated-http-push-client.test.js`. The production-shaped DB
+  journal exposes an authenticated `/push/db-journal/schema` surface with
+  `reprint-push-production-audit-event/v1`, append-only journal metadata,
+  route evidence, required event fields, and hash-only redaction metadata that
+  excludes credentials and raw row/content values. Validation passed with PHP
+  syntax checks, JS syntax checks, focused route coverage 3/3, focused
+  authenticated client coverage 1/1, the production-shaped route smoke, adjacent
+  route/auth coverage 160/160, checklist lint, scoped artifact redaction scan,
+  and merge diff whitespace checks. Counts are now 470/530; final release
+  remains `NO-GO` because this is sandbox-local production-shaped route proof,
+  not externally supplied production topology and credential evidence.
 - Owner-context stale metadata release-verifier carry-through: the current lane
   now contains `RPP-0494` evidence in
   `docs/evidence/rpp-0494-owner-context-stale-metadata-release-verifier-v5.md`,
