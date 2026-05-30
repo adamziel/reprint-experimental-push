@@ -289,7 +289,7 @@ Focus: turn every known merge rule into broad planner/executor coverage.
 - [ ] RPP-0265 (Near-Mid / merge-invariants) Add focused regression coverage for local file type swap versus remote descendant, variant 4. Success: progress log records the command and caveat.
 - [ ] RPP-0266 (Near-Mid / merge-invariants) Add focused regression coverage for remote-only plugin metadata preservation, variant 4. Success: node test proves the invariant over generated and focused fixtures.
 - [ ] RPP-0267 (Near-Mid / merge-invariants) Add focused regression coverage for local plugin data with stale owner context, variant 4. Success: executor rejects forged or stale mutation attempts.
-- [ ] RPP-0268 (Near-Mid / merge-invariants) Add focused regression coverage for unknown plugin-owned resource refusal, variant 4. Success: no raw private value appears in serialized plan evidence.
+- [x] RPP-0268 (Near-Mid / merge-invariants) Add focused regression coverage for unknown plugin-owned resource refusal, variant 4. Success: no raw private value appears in serialized plan evidence.
 - [ ] RPP-0269 (Near-Mid / merge-invariants) Add focused regression coverage for conflict evidence hash redaction, variant 4. Success: scenario matrix row names the behavior and command.
 - [ ] RPP-0270 (Near-Mid / merge-invariants) Add focused regression coverage for planner summary count consistency, variant 4. Success: progress log records the command and caveat.
 - [ ] RPP-0271 (Near-Mid / merge-invariants) Add focused regression coverage for mutation/precondition one-to-one mapping, variant 4. Success: node test proves the invariant over generated and focused fixtures.
