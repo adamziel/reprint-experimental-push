@@ -6,19 +6,38 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:49 CEST +02:00.
+- Last update: 2026-05-30 16:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0636 different-body idempotency conflict merge ending at `380e1f24f`.
+  the RPP-0637 process kill before mutation set merge ending at `60fa17796`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 482
-  items checked and leaves 518 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 483
+  items checked and leaves 517 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  83 plugin-driver boundary items, 29 executor/auth items, 37 recovery items,
+  83 plugin-driver boundary items, 29 executor/auth items, 38 recovery items,
   20 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Process kill before mutation set v2: the current lane now contains
+  `RPP-0637` evidence in
+  `docs/evidence/rpp-0637-process-kill-before-mutation-set-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof starts a child Node writer that
+  opens a claim-fenced file-backed recovery journal, fsyncs the claim/open,
+  target-planned, staged, dependency, and apply-committing rows, then blocks in
+  the before-mutation hook before any target mutation or mutation-observed row
+  can run. The parent kills that process, proves restart readback preserves
+  monotonic hash-only rows and classifies every target as old-remote, then
+  replays recovery repair exactly once to finish all planned mutations; a second
+  replay is rejected as already complete without writes. Validation passed with
+  Node syntax checks, focused RPP-0637 coverage 1/1, adjacent recovery/retry
+  coverage 11/11, full recovery-journal coverage 41/41, recovery repair
+  coverage 5/5, file-journal restart smoke, checklist lint, scoped artifact
+  redaction scan, raw fixture scan, and merge diff whitespace checks. Counts
+  are now 483/517; final release remains `NO-GO` because this is local
+  file-backed process-kill recovery evidence, not external WordPress
+  crash/restart durability proof.
 - Different-body idempotency conflict v2: the current lane now contains
   `RPP-0636` evidence in
   `docs/evidence/rpp-0636-different-body-idempotency-conflict-v2.md`,

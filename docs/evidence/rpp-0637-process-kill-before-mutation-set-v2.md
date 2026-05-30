@@ -56,7 +56,7 @@ git diff --cached --check
 
 Observed result: all listed commands exited 0. The focused RPP-0637 run reported
 1 pass / 0 fail, the adjacent recovery/retry slice reported 11 pass / 0 fail, the
-full recovery journal suite reported 29 pass / 0 fail, the recovery repair suite
+full recovery journal suite reported 41 pass / 0 fail, the recovery repair suite
 reported 5 pass / 0 fail, the file-journal restart smoke returned 0, checklist
 lint returned `"ok": true`, and the scoped redaction scan returned `"ok": true`.
 
