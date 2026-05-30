@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 03:40 CEST
+# AO Progress Report - 2026-05-30 03:43 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0235
-keep-remote decision safety refresh ending at `79ebf86a9`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0434
+stale metadata owner context refresh ending at `8e208f799`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 310 are
-  checked from integrated evidence and 690 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 311 are
+  checked from integrated evidence and 689 remain open.
+- `RPP-0434` is now checked with focused stale metadata owner context refusal
+  evidence in
+  `docs/evidence/rpp-0434-owner-context-stale-metadata-refusal.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0434-owner-context-stale-metadata-refusal.test.js`. `node --check
+  test/rpp-0434-owner-context-stale-metadata-refusal.test.js` exited 0, `node
+  --test test/rpp-0434-owner-context-stale-metadata-refusal.test.js` passed
+  2/2, and `node --test test/plugin-owner-context-metadata-refusal.test.js
+  test/plugin-owner-context-file-refusal.test.js
+  test/plugin-remote-removal-refusal.test.js` passed 11/11, proving stale
+  plugin metadata owner context refuses plugin-owned row and plugin file
+  mutations before mutation, preserves remote data on stale replay, keeps
+  evidence hash-only, passes checklist lint, artifact redaction scan, and `git
+  diff --check` while final release remains **NO-GO**.
 - `RPP-0235` is now checked with focused keep-remote decision safety evidence
   in `docs/evidence/rpp-0235-keep-remote-decision-v2.md`,
   `docs/reprint-push-completion-checklist.md`, and

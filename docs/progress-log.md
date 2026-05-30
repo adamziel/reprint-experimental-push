@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:40 CEST.
+- Last update: 2026-05-30 03:43 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0235 keep-remote decision safety merge ending at `79ebf86a9`.
+  the RPP-0434 stale metadata owner context merge ending at `8e208f799`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 310
-  items checked and leaves 690 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 311
+  items checked and leaves 689 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  42 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  43 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 52 generated
   harness items, and 37 merge-invariant items. No release-ops items are checked
   yet.
+- Focused stale metadata owner context refusal refresh: the current lane now
+  contains `RPP-0434` evidence in
+  `docs/evidence/rpp-0434-owner-context-stale-metadata-refusal.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0434-owner-context-stale-metadata-refusal.test.js`. `node --check
+  test/rpp-0434-owner-context-stale-metadata-refusal.test.js` exited 0, `node
+  --test test/rpp-0434-owner-context-stale-metadata-refusal.test.js` passed
+  2/2, and `node --test test/plugin-owner-context-metadata-refusal.test.js
+  test/plugin-owner-context-file-refusal.test.js
+  test/plugin-remote-removal-refusal.test.js` passed 11/11. The proof refuses
+  stale plugin metadata owner context before mutating a plugin-owned row or
+  plugin file, preserves remote data on stale replay, and keeps owner-context
+  evidence hash-only. Checklist lint, artifact redaction scan, and `git diff
+  --check` also passed. Counts are now 311/689; final release remains
+  `NO-GO`.
 - Focused keep-remote decision safety refresh: the current lane now contains
   `RPP-0235` evidence in
   `docs/evidence/rpp-0235-keep-remote-decision-v2.md`,
