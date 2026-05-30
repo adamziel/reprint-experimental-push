@@ -1,18 +1,32 @@
-# AO Progress Report - 2026-05-30 03:46 CEST
+# AO Progress Report - 2026-05-30 03:50 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0236
-blocked plan apply refusal refresh ending at `2070c8398`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0152
+term taxonomy graph coverage refresh ending at `56d8d5c54`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 312 are
-  checked from integrated evidence and 688 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 313 are
+  checked from integrated evidence and 687 remain open.
+- `RPP-0152` is now checked with generated `wp_term_taxonomy` graph variant-3
+  evidence in `docs/evidence/rpp-0152-wp-term-taxonomy-graph-v3.md`,
+  `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0152 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0152` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 60/60, proving 20 deterministic
+  variant-3 term/taxonomy graph cases across all tiers, per-tier target counts,
+  ready term/taxonomy graph apply without unplanned remote overwrite, stale
+  term-drift refusal before mutation, hash-only redacted graph evidence,
+  checklist lint, artifact redaction scan, and `git diff --check` while final
+  release remains **NO-GO**.
 - `RPP-0236` is now checked with focused blocked plan apply-refusal evidence in
   `docs/evidence/rpp-0236-blocked-plan-apply-refusal-v2.md`,
   `docs/reprint-push-completion-checklist.md`, and

@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:46 CEST.
+- Last update: 2026-05-30 03:50 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0236 blocked plan apply refusal merge ending at `2070c8398`.
+  the RPP-0152 term taxonomy graph coverage merge ending at `56d8d5c54`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 312
-  items checked and leaves 688 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 313
+  items checked and leaves 687 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   43 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 52 generated
+  11 storage/performance items, 3 production-topology items, 53 generated
   harness items, and 38 merge-invariant items. No release-ops items are checked
   yet.
+- Generated wp_term_taxonomy graph variant-3 refresh: the current lane now
+  contains `RPP-0152` evidence in
+  `docs/evidence/rpp-0152-wp-term-taxonomy-graph-v3.md`,
+  `docs/generated-push-harness.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check
+  test/generated-push-harness.test.js` exited 0, `node --test
+  --test-name-pattern=RPP-0152 test/generated-push-harness.test.js` passed
+  1/1, the `generated push harness covers|RPP-0152` pattern passed 2/2, and
+  `npm run test:generated-push-harness` passed 60/60. The proof adds 20
+  deterministic variant-3 `wp_terms`/`wp_term_taxonomy` graph cases across all
+  10 tiers, exposes per-tier target counts, applies ready term/taxonomy graph
+  rows without unplanned remote overwrite, refuses stale term drift before
+  mutation, and keeps term-taxonomy graph evidence hash-only. Checklist lint,
+  artifact redaction scan, and `git diff --check` also passed. Counts are now
+  313/687; final release remains `NO-GO`.
 - Focused blocked plan apply-refusal refresh: the current lane now contains
   `RPP-0236` evidence in
   `docs/evidence/rpp-0236-blocked-plan-apply-refusal-v2.md`,
