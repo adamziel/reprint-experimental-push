@@ -425,7 +425,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0396 (Mid / graph-identity) Carry through the release verifier for wp_navigation fail-closed reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0397 (Mid / graph-identity) Carry through the release verifier for serialized block reference detection, variant 5. Success: unsupported target fails closed with hash-only evidence.
 - [x] RPP-0398 (Mid / graph-identity) Carry through the release verifier for GUID and slug collision handling, variant 5. Success: generated harness includes ready and stale cases.
-- [ ] RPP-0399 (Mid / graph-identity) Carry through the release verifier for cross-table create batch mapping, variant 5. Success: local production verifier carries the target through apply.
+- [x] RPP-0399 (Mid / graph-identity) Carry through the release verifier for cross-table create batch mapping, variant 5. Success: local production verifier carries the target through apply.
 - [ ] RPP-0400 (Mid / graph-identity) Carry through the release verifier for production importer/exporter identity map, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 
 ## Mid: Plugin Driver Ownership Boundary
