@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>494</strong>
+        <strong>495</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>506</strong>
+        <strong>505</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, blocked plan apply refusal before mutation or journal writes, conflict plan apply refusal with forged conflict-mutation rejection, forged ready plan hash-redaction defense, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation and release-verifier carry-through, stale plugin owner-context refusal, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, and local directory delete/remote descendant create refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, mutation/precondition one-to-one mapping, remoteBeforeHash binding, localHash binding, already-in-sync no-op safety, blocked plan apply refusal before mutation or journal writes, conflict plan apply refusal with forged conflict-mutation rejection, forged ready plan hash-redaction defense, keep-remote preservation, forged ready plan defense, raw-value redaction, same-content, large plans, remote-only plugin metadata preservation and release-verifier carry-through, stale plugin owner-context refusal, local plugin data stale owner-context release-verifier carry-through, unknown plugin-owned resource refusal, conflict hash redaction, independent file/row and row/file preservation, local delete/remote edit refusal, and local directory delete/remote descendant create refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0719</span>
+        <span>RPP-0287</span>
       </div>
-      <p>The latest refresh integrates RPP-0719 long-push progress-reporting evidence: the benchmark emits bounded operator progress from durable plan, receipt, staging, and commit evidence, covers the long-push phases, and keeps progress cursors hash-only without file bodies, row values, raw resource keys, or absolute paths. Counts are now 494/506; final release remains NO-GO because this is storage/performance benchmark evidence, not production storage receipts or production row-batch execution.</p>
+      <p>The latest refresh integrates RPP-0287 local plugin data stale owner-context release-verifier evidence: the verifier now summarizes a hash-only boundary for local plugin option data with stale owner context, including baseline and stale apply attempts, owner file and metadata resource evidence, policy fields, and explicit fail-closed error details under the merge-invariant proof. Counts are now 495/505; final release remains NO-GO because this is local release-verifier evidence, not production-backed topology or auth evidence.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0287 focused: 2/2</span>
+        <span class="tag">stale owner-context adjacent: 6/6</span>
+        <span class="tag">release-verifier adjacent: 17/17</span>
+        <span class="tag">hash-only proof</span>
+        <span class="tag">fail-closed stale context</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0719 focused: 3/3</span>
         <span class="tag">timeout adjacent: 1/1</span>
         <span class="tag">large-site benchmark: ok</span>
@@ -1202,7 +1208,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 494/1000</span>
+        <span class="tag">checked goals: 495/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
