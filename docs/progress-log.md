@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 13:00 CEST.
+- Last update: 2026-05-30 12:42 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0611 new-remote recovery classification merge ending at `8be230ef`.
+  the RPP-0522 production snapshot hashes route proof merge ending at
+  `19d9afc7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 428
-  items checked and leaves 571 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 430
+  items checked and leaves 570 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 22 executor/auth items, 20 recovery items,
+  73 plugin-driver boundary items, 23 executor/auth items, 20 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Production snapshot hashes route proof: the current lane now contains
+  `RPP-0522` evidence in
+  `docs/evidence/rpp-0522-production-snapshot-hashes-route-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-snapshot-hashes-route-live-smoke.mjs`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/production-snapshot-hashes-route.test.js`. The route now has a
+  pre-dispatch auth/signature guard for malformed JSON negative cases while
+  leaving valid signed requests to claim the nonce once in the normal callback.
+  Focused RPP-0522 coverage passed 5/5, the local-lab-backed live smoke passed,
+  and the broader route/auth regression suite passed 160/160. Checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks also passed.
+  Counts are now 430/570; final release remains `NO-GO` because this proof is
+  sandbox-local and lab-backed, not production-backed endpoint evidence.
 - New-remote recovery classification: the current lane now contains
   `RPP-0611` evidence in
   `docs/evidence/rpp-0611-new-remote-recovery-classification.md`,
