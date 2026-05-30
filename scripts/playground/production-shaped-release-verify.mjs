@@ -464,6 +464,18 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const pluginActivationDependencyReleaseVerifierBoundary = Object.freeze({
+  dependencyPlugin: 'rpp-0489-activation-dependency',
+  dependentPlugin: 'rpp-0489-activation-dependent',
+  dependencyResourceKey: 'plugin:rpp-0489-activation-dependency',
+  dependentResourceKey: 'plugin:rpp-0489-activation-dependent',
+  dataTable: 'wp_options',
+  dataRowId: 'option_name:rpp_0489_activation_data',
+  dataResourceKey: 'row:["wp_options","option_name:rpp_0489_activation_data"]',
+  groupId: 'rpp-0489-activate-dependent-plugin',
+  driver: 'wp-option',
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -731,12 +743,374 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
   };
 }
 
+export function summarizePluginActivationDependencyReleaseVerifierProof({
+  now = new Date('2026-05-30T10:48:40.000Z'),
+} = {}) {
+  try {
+    return buildPluginActivationDependencyReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0489',
+      evidenceSource: 'release-verifier-plugin-activation-dependency-v5',
+      status: 'blocked',
+      verdict: 'PLUGIN_ACTIVATION_DEPENDENCY_REMOTE_DRIFT_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      dependencyPlugin: pluginActivationDependencyReleaseVerifierBoundary.dependencyPlugin,
+      dependentPlugin: pluginActivationDependencyReleaseVerifierBoundary.dependentPlugin,
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildPluginActivationDependencyReleaseVerifierProof(now) {
+  const boundary = pluginActivationDependencyReleaseVerifierBoundary;
+  const rawFixtures = {
+    dependencyBuild: 'rpp-0489-private-dependency-build',
+    dependencyDriftBuild: 'rpp-0489-private-dependency-drift-build',
+    privateEnvelope: 'rpp-0489-private-dependency-envelope',
+    privateToken: 'rpp-0489-private-dependency-token',
+    baseRowMode: 'rpp-0489-base-activation-row',
+    localRowMode: 'rpp-0489-local-activation-row',
+    remoteDriftRowMode: 'rpp-0489-remote-drift-activation-row',
+  };
+  const base = pluginActivationDependencyReleaseVerifierSnapshot({
+    dependencyActive: true,
+    dependentActive: false,
+    dependencyVersion: '2.1.0',
+    dependencyBuild: rawFixtures.dependencyBuild,
+    rowMode: rawFixtures.baseRowMode,
+  });
+  const remote = cloneReleaseVerifierJson(base);
+  const local = cloneReleaseVerifierJson(base);
+  local.plugins[boundary.dependentPlugin].active = true;
+  local.db[boundary.dataTable][boundary.dataRowId].option_value.mode = rawFixtures.localRowMode;
+
+  const dependencyResource = pluginActivationDependencyResource();
+  const dependentResource = pluginActivationDependentResource();
+  const dataResource = pluginActivationDependencyDataResource();
+  const dependencyRemoteHash = resourceHash(remote, dependencyResource);
+  local.pushIntents = [
+    {
+      id: boundary.groupId,
+      kind: 'plugin-activation',
+      requireAtomic: true,
+      resources: [boundary.dependentResourceKey, boundary.dataResourceKey],
+      dependencies: {
+        plugins: [
+          {
+            name: boundary.dependencyPlugin,
+            expectedVersion: '2.1.0',
+            expectedHash: dependencyRemoteHash,
+            active: true,
+            privateEnvelope: rawFixtures.privateEnvelope,
+            credentials: { token: rawFixtures.privateToken },
+          },
+        ],
+      },
+      resourcePolicy: {
+        pluginOwnedResources: {
+          allowedResources: [
+            {
+              resourceKey: boundary.dataResourceKey,
+              pluginOwner: boundary.dependentPlugin,
+              driver: boundary.driver,
+              supportsDelete: false,
+            },
+          ],
+        },
+      },
+    },
+  ];
+
+  const plan = createPushPlan({ base, local, remote, now });
+  const group = plan.atomicGroups.find((entry) => entry.id === boundary.groupId) || null;
+  const requirement = group?.dependencyRequirements?.[0] || null;
+  const activationMutation = plan.mutations.find((entry) =>
+    entry.resourceKey === boundary.dependentResourceKey) || null;
+  const dataMutation = plan.mutations.find((entry) =>
+    entry.resourceKey === boundary.dataResourceKey) || null;
+
+  const driftedRemote = cloneReleaseVerifierJson(remote);
+  driftedRemote.plugins[boundary.dependencyPlugin] = {
+    ...driftedRemote.plugins[boundary.dependencyPlugin],
+    version: '2.2.0',
+    active: false,
+    build: rawFixtures.dependencyDriftBuild,
+  };
+  driftedRemote.db[boundary.dataTable][boundary.dataRowId].option_value.mode = rawFixtures.remoteDriftRowMode;
+
+  const dependencyHashBefore = resourceHash(driftedRemote, dependencyResource);
+  const dependentHashBefore = resourceHash(driftedRemote, dependentResource);
+  const dataHashBefore = resourceHash(driftedRemote, dataResource);
+  const remoteHashBefore = sha256Evidence(driftedRemote);
+  let staleError = null;
+  let unexpectedApplyResult = null;
+  try {
+    unexpectedApplyResult = applyPlan(driftedRemote, plan);
+  } catch (error) {
+    staleError = error;
+  }
+  const dependencyHashAfter = resourceHash(driftedRemote, dependencyResource);
+  const dependentHashAfter = resourceHash(driftedRemote, dependentResource);
+  const dataHashAfter = resourceHash(driftedRemote, dataResource);
+  const remoteHashAfter = sha256Evidence(driftedRemote);
+
+  const dependencyRequirementExact = requirement?.plugin === boundary.dependencyPlugin
+    && requirement?.source === 'live-remote'
+    && requirement?.resourceKey === boundary.dependencyResourceKey
+    && requirement?.active === true
+    && requirement?.expectedVersion === '2.1.0'
+    && requirement?.expectedHash === dependencyRemoteHash
+    && requirement?.remoteHash === dependencyRemoteHash
+    && requirement?.baseHash === dependencyRemoteHash;
+  const exactActivationMutation = activationMutation?.resource?.type === 'plugin'
+    && activationMutation.resource.name === boundary.dependentPlugin
+    && activationMutation.action === 'put';
+  const exactDataMutation = dataMutation?.resource?.type === 'row'
+    && dataMutation.resource.table === boundary.dataTable
+    && dataMutation.resource.id === boundary.dataRowId
+    && dataMutation.pluginOwnedResource?.pluginOwner === boundary.dependentPlugin
+    && dataMutation.pluginOwnedResource?.driver === boundary.driver
+    && dataMutation.pluginOwnedResource?.supportsDelete === false;
+  const dependencyStaleRefused = staleError instanceof PushPlanError
+    && staleError.code === 'ATOMIC_GROUP_DEPENDENCY_STALE';
+  const dependencyDriftDetected = dependencyHashBefore !== dependencyRemoteHash
+    && staleError?.details?.expectedHash === dependencyRemoteHash
+    && staleError?.details?.actualHash === dependencyHashBefore;
+  const remoteDataPreserved = dataHashAfter === dataHashBefore;
+  const dependentPluginPreserved = dependentHashAfter === dependentHashBefore;
+  const dependencyPluginPreserved = dependencyHashAfter === dependencyHashBefore;
+  const targetUnchanged = remoteHashAfter === remoteHashBefore;
+  const ok = plan.status === 'ready'
+    && group?.status === 'ready'
+    && plan.summary.mutations === 2
+    && plan.summary.blockers === 0
+    && dependencyRequirementExact
+    && exactActivationMutation
+    && exactDataMutation
+    && dependencyStaleRefused
+    && dependencyDriftDetected
+    && remoteDataPreserved
+    && dependentPluginPreserved
+    && dependencyPluginPreserved
+    && targetUnchanged;
+
+  const proof = {
+    rpp: 'RPP-0489',
+    evidenceSource: 'release-verifier-plugin-activation-dependency-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'PLUGIN_ACTIVATION_DEPENDENCY_REMOTE_DRIFT_PRESERVED'
+      : 'PLUGIN_ACTIVATION_DEPENDENCY_REMOTE_DRIFT_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    dependencyPlugin: boundary.dependencyPlugin,
+    dependentPlugin: boundary.dependentPlugin,
+    rawValuesIncluded: false,
+    atomicGroup: group ? {
+      id: group.id,
+      kind: group.kind,
+      status: group.status,
+      mutationCount: Array.isArray(group.mutationIds) ? group.mutationIds.length : 0,
+      dependencyCount: Array.isArray(group.dependencyRequirements)
+        ? group.dependencyRequirements.length
+        : 0,
+      groupHash: sha256Evidence(group),
+    } : null,
+    dependencyRequirement: requirement ? {
+      groupId: group?.id || null,
+      plugin: requirement.plugin || null,
+      resourceKey: requirement.resourceKey || null,
+      source: requirement.source || null,
+      active: requirement.active === true,
+      expectedVersion: requirement.expectedVersion || null,
+      expectedHash: prefixedResourceHash(requirement.expectedHash),
+      baseHash: prefixedResourceHash(requirement.baseHash),
+      remoteHash: prefixedResourceHash(requirement.remoteHash),
+      requirementHash: sha256Evidence(requirement),
+      exact: dependencyRequirementExact,
+    } : null,
+    activationMutation: activationMutation ? {
+      id: activationMutation.id,
+      resourceKey: activationMutation.resourceKey,
+      action: activationMutation.action,
+      changeKind: activationMutation.changeKind,
+      baseHash: prefixedResourceHash(activationMutation.baseHash),
+      remoteBeforeHash: prefixedResourceHash(activationMutation.remoteBeforeHash),
+      localHash: prefixedResourceHash(activationMutation.localHash),
+      mutationHash: sha256Evidence({
+        resourceKey: activationMutation.resourceKey,
+        action: activationMutation.action,
+        baseHash: activationMutation.baseHash,
+        remoteBeforeHash: activationMutation.remoteBeforeHash,
+        localHash: activationMutation.localHash,
+      }),
+      exact: exactActivationMutation,
+    } : null,
+    pluginOwnedDataPreservation: dataMutation ? {
+      resourceKey: dataMutation.resourceKey,
+      action: dataMutation.action,
+      driver: dataMutation.pluginOwnedResource?.driver || null,
+      owner: dataMutation.pluginOwnedResource?.pluginOwner || null,
+      supportsDelete: dataMutation.pluginOwnedResource?.supportsDelete === true,
+      auditEvidenceHash: sha256Evidence(dataMutation.pluginOwnedResource?.auditEvidence || null),
+      driverDecisionEvidenceHash: sha256Evidence(dataMutation.pluginOwnedResource?.driverAuditEvidence || null),
+      mutationHash: sha256Evidence({
+        resourceKey: dataMutation.resourceKey,
+        action: dataMutation.action,
+        baseHash: dataMutation.baseHash,
+        remoteBeforeHash: dataMutation.remoteBeforeHash,
+        localHash: dataMutation.localHash,
+      }),
+      rowHashBefore: prefixedResourceHash(dataHashBefore),
+      rowHashAfter: prefixedResourceHash(dataHashAfter),
+      remoteDataPreserved,
+      exact: exactDataMutation,
+    } : null,
+    staleDependencyRefusal: {
+      preMutation: dependencyStaleRefused,
+      code: staleError?.code || null,
+      detailsHash: staleError ? sha256Evidence(staleError.details || null) : null,
+      expectedHashMatchesRequirement: staleError?.details?.expectedHash === dependencyRemoteHash,
+      actualHashMatchesDriftedDependency: staleError?.details?.actualHash === dependencyHashBefore,
+      dependencyHashBefore: prefixedResourceHash(dependencyHashBefore),
+      dependencyHashAfter: prefixedResourceHash(dependencyHashAfter),
+      dependentHashBefore: prefixedResourceHash(dependentHashBefore),
+      dependentHashAfter: prefixedResourceHash(dependentHashAfter),
+      dependencyPluginPreserved,
+      dependentPluginPreserved,
+      remoteHashBefore,
+      remoteHashAfter,
+      targetUnchanged,
+      unexpectedApplyMutationCount: unexpectedApplyResult?.appliedMutations ?? 0,
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    atomicGroup: proof.atomicGroup,
+    dependencyRequirement: proof.dependencyRequirement,
+    activationMutation: proof.activationMutation,
+    pluginOwnedDataPreservation: proof.pluginOwnedDataPreservation,
+    staleDependencyRefusal: proof.staleDependencyRefusal,
+  });
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'PLUGIN_ACTIVATION_DEPENDENCY_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      dependencyPlugin: boundary.dependencyPlugin,
+      dependentPlugin: boundary.dependentPlugin,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'PLUGIN_ACTIVATION_DEPENDENCY_EVIDENCE_REDACTION_REQUIRED',
+        dependencyPlugin: boundary.dependencyPlugin,
+        dependentPlugin: boundary.dependentPlugin,
+      }),
+    };
+  }
+  return proof;
+}
+
+function pluginActivationDependencyReleaseVerifierSnapshot({
+  dependencyActive,
+  dependentActive,
+  dependencyVersion,
+  dependencyBuild,
+  rowMode,
+}) {
+  const boundary = pluginActivationDependencyReleaseVerifierBoundary;
+  return {
+    files: {
+      [`wp-content/plugins/${boundary.dependencyPlugin}/${boundary.dependencyPlugin}.php`]:
+        '<?php /* RPP-0489 dependency fixture */',
+      [`wp-content/plugins/${boundary.dependentPlugin}/${boundary.dependentPlugin}.php`]:
+        '<?php /* RPP-0489 dependent fixture */',
+    },
+    plugins: {
+      [boundary.dependencyPlugin]: {
+        version: dependencyVersion,
+        active: dependencyActive,
+        build: dependencyBuild,
+      },
+      [boundary.dependentPlugin]: {
+        version: '1.0.0',
+        active: dependentActive,
+        requires: [boundary.dependencyPlugin],
+      },
+    },
+    db: {
+      [boundary.dataTable]: {
+        [boundary.dataRowId]: {
+          option_name: 'rpp_0489_activation_data',
+          option_value: {
+            mode: rowMode,
+          },
+          autoload: 'no',
+          __pluginOwner: boundary.dependentPlugin,
+        },
+      },
+    },
+  };
+}
+
+function pluginActivationDependencyResource() {
+  const boundary = pluginActivationDependencyReleaseVerifierBoundary;
+  return {
+    type: 'plugin',
+    name: boundary.dependencyPlugin,
+    key: boundary.dependencyResourceKey,
+  };
+}
+
+function pluginActivationDependentResource() {
+  const boundary = pluginActivationDependencyReleaseVerifierBoundary;
+  return {
+    type: 'plugin',
+    name: boundary.dependentPlugin,
+    key: boundary.dependentResourceKey,
+  };
+}
+
+function pluginActivationDependencyDataResource() {
+  const boundary = pluginActivationDependencyReleaseVerifierBoundary;
+  return {
+    type: 'row',
+    table: boundary.dataTable,
+    id: boundary.dataRowId,
+    key: boundary.dataResourceKey,
+  };
+}
+
 function cloneReleaseVerifierJson(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
 function sha256Evidence(value) {
   return `sha256:${digest(value)}`;
+}
+
+function prefixedResourceHash(value) {
+  return typeof value === 'string' ? `sha256:${value}` : null;
 }
 
 export function summarizeProductionPluginDriverBoundaryProof({
@@ -2552,6 +2926,7 @@ try {
           productionOwned: productionPluginDriverProof,
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
           coreSemantics: {
+            pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
           },
@@ -2853,6 +3228,7 @@ try {
         productionOwned: productionPluginDriverProof,
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
         coreSemantics: {
+          pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
         },
