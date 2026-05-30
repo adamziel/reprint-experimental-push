@@ -1,6 +1,8 @@
 # RPP-0442 driver owner identity binding v3 evidence
 
 Date: 2026-05-30
+Lane: RPP-0442 driver owner identity binding, variant 3
+Checklist item: RPP-0442 - Add generated coverage for driver owner identity binding, variant 3.
 
 ## Scope
 
@@ -28,7 +30,6 @@ required owner context, and hash-only driver audit evidence. Unsupported cases
 remain fail-closed in planning or apply revalidation and preserve the remote
 snapshot. The proof envelope records only outcomes and hashes and asserts that
 generated private markers are absent.
-
 ## Focused verification observed locally
 
 ```sh
@@ -56,6 +57,10 @@ instrumented validation iterated `generatePushHarnessCases()` and
 pass because it stalled at the TAP header twice in this sandbox. The adjacent
 owner identity v4 and v5 carry-through tests passed. Checklist lint returned
 `"ok": true`; the scoped artifact redaction scan returned `"ok": true`.
+
+The represented worker branch additionally validated its focused RPP-0442
+generated-harness subtest, checklist lint, scoped artifact redaction scan, and
+diff whitespace check before this ancestry-preserving merge.
 
 ## Release posture
 
