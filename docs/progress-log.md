@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 23:12 CEST +02:00.
+- Last update: 2026-05-30 23:21 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0335 nav menu item fail-closed reference variant 2 merge ending at
-  `2699de8`.
+  the RPP-0337 serialized block reference detection variant 2 merge ending at
+  `dcb5344`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 535
-  items checked and leaves 465 open.
-- Checked slices: 100 release-gate foundation items, 78 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 536
+  items checked and leaves 464 open.
+- Checked slices: 100 release-gate foundation items, 79 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 91 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Serialized block reference detection variant-2 proof: the current lane now
+  checks `RPP-0337` with focused graph-identity evidence for unsupported
+  serialized block references. The proof builds a `core/media-text` block in
+  `post_excerpt` whose `mediaId` points at a non-attachment page target, proves
+  the planner blocks the source row with hash-only target evidence, verifies no
+  mutation or precondition is emitted, and proves apply refuses with
+  `PLAN_NOT_READY` before mutation. Validation passed with Node syntax checks,
+  focused RPP-0337 coverage 1/1, adjacent RPP-0317/RPP-0377/RPP-0397
+  serialized-block coverage 7/7, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 536/464; final release remains `NO-GO`
+  because this is local graph-identity evidence, not production-backed release
+  proof.
 - Nav menu item fail-closed reference variant-2 proof: the current lane now
   checks `RPP-0335` with focused graph-identity evidence for unsupported
   navigation menu item surfaces. The proof verifies direct `nav_menu_item`
