@@ -267,6 +267,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-term-taxonomy-graph-ready',
     tag: 'wp-term-taxonomy-graph',
   },
+  wpTermTaxonomyGraphVariant3: {
+    family: 'wp-term-taxonomy-graph-variant3',
+    tag: 'wp-term-taxonomy-graph-v3',
+  },
   wpTermRelationshipsGraph: {
     family: 'wp-term-relationships-graph',
     tag: 'wp-term-relationships-graph-target',
@@ -3098,6 +3102,7 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   });
 
   tags.add('wp-term-taxonomy-graph');
+  tags.add('wp-term-taxonomy-graph-v3');
   tags.add('wp-terms-create');
   tags.add('wp-term-taxonomy-create');
   tags.add('term-taxonomy-term-graph');
@@ -3107,6 +3112,10 @@ function addWpTermTaxonomyGraph(local, remote, allocator, tags, { staleTarget, b
   if (staleTarget) {
     tags.add('stale-graph');
     tags.add('wp-terms-remote-drift');
+    tags.add('wp-term-taxonomy-graph-v3-stale');
+    tags.add('wp-term-taxonomy-graph-v3-non-ready');
+  } else {
+    tags.add('wp-term-taxonomy-graph-v3-ready');
   }
 }
 
