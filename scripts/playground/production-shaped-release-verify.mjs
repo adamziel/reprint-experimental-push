@@ -641,6 +641,20 @@ export const serializedBlockReferenceReleaseVerifierBoundary = Object.freeze({
   evidenceScope: 'local-production-shaped',
 });
 
+export const productionImporterExporterIdentityMapReleaseVerifierBoundary = Object.freeze({
+  mapAlias: 'pushIdentityMap',
+  mapSource: 'base-snapshot.meta.identityMap[2].resources[0]',
+  sourcePostId: 84001,
+  childPostId: 84002,
+  targetPostId: 85001,
+  metaKey: '_rpp_0400_importer_exporter_map',
+  sourceResourceKey: 'row:["wp_posts","ID:84001"]',
+  childResourceKey: 'row:["wp_posts","ID:84002"]',
+  targetResourceKey: 'row:["wp_posts","ID:85001"]',
+  sourcePostmetaResourceKey: 'row:["wp_postmeta","post_id:84001:meta_key:_rpp_0400_importer_exporter_map"]',
+  targetPostmetaResourceKey: 'row:["wp_postmeta","post_id:85001:meta_key:_rpp_0400_importer_exporter_map"]',
+});
+
 export const directActivePluginsMutationRefusalBoundary = Object.freeze({
   driver: 'plugin-activation-driver',
   owner: 'wordpress-core',
@@ -8147,6 +8161,7 @@ export function summarizeGraphIdentityReleaseVerifierProofs() {
     serializedBlockReference: summarizeSerializedBlockReferenceReleaseVerifierProof(),
     postGuidSlugCollision: summarizePostGuidSlugCollisionReleaseVerifierProof(),
     crossTableCreateBatch: summarizeCrossTableCreateBatchReleaseVerifierProof(),
+    productionImporterExporterIdentityMap: summarizeProductionImporterExporterIdentityMapReleaseVerifierProof(),
   };
 }
 
@@ -8639,6 +8654,605 @@ function crossTableCreateBatchDurableJournal(events) {
       return record;
     },
   };
+}
+
+export function summarizeProductionImporterExporterIdentityMapReleaseVerifierProof({
+  now = new Date('2026-05-30T16:04:00.000Z'),
+} = {}) {
+  try {
+    return buildProductionImporterExporterIdentityMapReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0400',
+      evidenceSource: 'release-verifier-production-importer-exporter-identity-map-v5',
+      status: 'blocked',
+      verdict: 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_RELEASE_VERIFIER_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: 'local-production-shaped',
+      boundary: productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildProductionImporterExporterIdentityMapReleaseVerifierProof(now) {
+  const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  const snapshots = productionImporterExporterIdentityMapReleaseVerifierSnapshots();
+  const readyPlan = createPushPlan({
+    base: snapshots.source,
+    local: snapshots.localEdited,
+    remote: snapshots.importedRemote,
+    now,
+  });
+  const appliedResult = readyPlan.status === 'ready'
+    ? applyPlan(cloneReleaseVerifierJson(snapshots.importedRemote), readyPlan)
+    : null;
+  const applied = appliedResult?.site || null;
+  const stalePlan = createPushPlan({
+    base: snapshots.source,
+    local: snapshots.localEdited,
+    remote: snapshots.staleRemote,
+    now,
+  });
+  const sourceDecision = readyPlan.decisions.find((decision) =>
+    decision.resourceKey === boundary.sourceResourceKey) || null;
+  const targetDecision = readyPlan.decisions.find((decision) =>
+    decision.resourceKey === boundary.targetResourceKey) || null;
+  const childMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === boundary.childResourceKey) || null;
+  const postmetaMutation = readyPlan.mutations.find((mutation) =>
+    mutation.resourceKey === boundary.targetPostmetaResourceKey) || null;
+  const sourceResource = productionImporterExporterIdentityMapReleaseVerifierResource(
+    'wp_posts',
+    `ID:${boundary.sourcePostId}`,
+  );
+  const targetResource = productionImporterExporterIdentityMapReleaseVerifierResource(
+    'wp_posts',
+    `ID:${boundary.targetPostId}`,
+  );
+  const childResource = productionImporterExporterIdentityMapReleaseVerifierResource(
+    'wp_posts',
+    `ID:${boundary.childPostId}`,
+  );
+  const targetPostmetaResource = productionImporterExporterIdentityMapReleaseVerifierResource(
+    'wp_postmeta',
+    `post_id:${boundary.targetPostId}:meta_key:${boundary.metaKey}`,
+  );
+  const staleReplayRemote = cloneReleaseVerifierJson(snapshots.staleRemote);
+  const staleRemoteHashBefore = sha256Evidence(staleReplayRemote);
+  const staleJournal = releaseVerifierMemoryDurableJournal();
+  let staleBeforeMutationCalls = 0;
+  let staleApplyError = null;
+  try {
+    applyPlan(staleReplayRemote, stalePlan, {
+      durableJournal: staleJournal,
+      mutateRemote: true,
+      beforeMutation() {
+        staleBeforeMutationCalls += 1;
+      },
+    });
+  } catch (error) {
+    staleApplyError = error;
+  }
+  const staleRemoteHashAfter = sha256Evidence(staleReplayRemote);
+  const mapEvidence = productionImporterExporterIdentityMapReleaseVerifierMapEvidence({
+    sourceSnapshot: snapshots.source,
+    sourceDecision,
+    targetDecision,
+    childMutation,
+    postmetaMutation,
+  });
+  const appliedEvidence = applied
+    ? productionImporterExporterIdentityMapReleaseVerifierAppliedEvidence({
+      importedRemote: snapshots.importedRemote,
+      applied,
+      sourceResource,
+      targetResource,
+      childResource,
+      targetPostmetaResource,
+    })
+    : null;
+  const staleBlockerEvidence = (stalePlan.blockers || [])
+    .filter((blocker) => blocker?.class === 'stale-wordpress-graph-identity')
+    .map(productionImporterExporterIdentityMapReleaseVerifierBlockerEvidence);
+  const staleRefusal = {
+    code: staleApplyError?.code || null,
+    beforeMutationCalls: staleBeforeMutationCalls,
+    durableJournalEventCount: staleJournal.events.length,
+    remoteHashBefore: staleRemoteHashBefore,
+    remoteHashAfter: staleRemoteHashAfter,
+    remoteUnchanged: staleRemoteHashBefore === staleRemoteHashAfter,
+    refusalHash: staleApplyError ? sha256Evidence(staleApplyError.details || null) : null,
+  };
+  const dependentRewriteTypes = mapEvidence.dependentRewrites.flatMap((entry) =>
+    entry.rewrites.map((rewrite) => rewrite.relationshipType));
+  const rawValuesIncluded = productionImporterExporterIdentityMapReleaseVerifierRawFixtures()
+    .some((raw) => JSON.stringify({ mapEvidence, appliedEvidence, staleBlockerEvidence, staleRefusal }).includes(raw));
+  const evidenceHashOnly = productionImporterExporterIdentityMapReleaseVerifierEvidenceIsHashOnly({
+    mapEvidence,
+    appliedEvidence,
+    staleBlockerEvidence,
+    staleRefusal,
+  });
+  const invariants = {
+    baseCarriesImporterPushIdentityMap:
+      productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.source).mapEntries === 1,
+    localCarriesExportedSourceRows: productionImporterExporterIdentityMapReleaseVerifierCounts(
+      snapshots.localEdited,
+    ).sourcePosts === 1
+      && productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.localEdited).childPosts === 1
+      && productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.localEdited).sourcePostmeta === 1,
+    importedRemoteCarriesTargetRows:
+      productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.importedRemote).targetPosts === 1,
+    readyPlanReady: readyPlan.status === 'ready',
+    identityDecisionUsesImporterMap: sourceDecision?.decision === 'map-local-identity-to-remote'
+      && sourceDecision?.identityMapSource === boundary.mapSource
+      && sourceDecision?.targetResourceKey === boundary.targetResourceKey,
+    sourceIdentityNotMutated: !readyPlan.mutations.some((mutation) =>
+      mutation.resourceKey === boundary.sourceResourceKey)
+      && applied
+      && getResource(applied, sourceResource) === ABSENT,
+    targetRemotePreserved: targetDecision?.decision === 'keep-remote'
+      && appliedEvidence?.targetPostHashBefore === appliedEvidence?.targetPostHashAfter,
+    dependentRowsRewrittenToImportedTarget: childMutation?.wordpressGraphIdentity?.rewrites?.some((rewrite) =>
+      rewrite.relationshipType === 'post-parent'
+      && rewrite.targetResourceKey === boundary.targetResourceKey)
+      && postmetaMutation?.wordpressGraphIdentity?.rewrites?.some((rewrite) =>
+        rewrite.relationshipType === 'postmeta-post'
+        && rewrite.targetResourceKey === boundary.targetResourceKey),
+    rewrittenPostmetaResourceKeyUsed: Boolean(postmetaMutation)
+      && postmetaMutation.resourceKey === boundary.targetPostmetaResourceKey
+      && !readyPlan.mutations.some((mutation) =>
+        mutation.resourceKey === boundary.sourcePostmetaResourceKey),
+    rewriteEvidenceCoversImporterExporterReferences: ['post-parent', 'postmeta-post'].every((relationshipType) =>
+      dependentRewriteTypes.includes(relationshipType)),
+    applyCarriesImportedTargetIds: appliedEvidence?.childPostParent === boundary.targetPostId
+      && appliedEvidence?.postmetaPostId === boundary.targetPostId,
+    staleRemoteFailsClosed: stalePlan.status === 'blocked'
+      && staleBlockerEvidence.length > 0
+      && staleRefusal.code === 'PLAN_NOT_READY'
+      && staleRefusal.remoteUnchanged === true,
+    allMutationsHaveLiveRemotePreconditions:
+      releaseVerifierPreconditionsAreLiveOneToOne(readyPlan, snapshots.importedRemote),
+    evidenceHashOnly,
+    evidenceRedactsRawValues: !rawValuesIncluded,
+  };
+  const ok = Object.values(invariants).every(Boolean);
+  const proof = {
+    rpp: 'RPP-0400',
+    evidenceSource: 'release-verifier-production-importer-exporter-identity-map-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_CARRIED_THROUGH'
+      : 'PRODUCTION_IMPORTER_EXPORTER_IDENTITY_MAP_RELEASE_VERIFIER_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-production-shaped',
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'production-importer-exporter-identity-map',
+      variant: 'v5',
+      serializedEvidence: 'hash-only',
+    },
+    boundary: productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence(),
+    counts: {
+      source: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.source),
+      localEdited: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.localEdited),
+      importedRemote: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.importedRemote),
+      staleRemote: productionImporterExporterIdentityMapReleaseVerifierCounts(snapshots.staleRemote),
+    },
+    plan: {
+      status: readyPlan.status,
+      summary: readyPlan.summary,
+      mutationCount: readyPlan.mutations.length,
+      decisionCount: readyPlan.decisions.length,
+      preconditionCount: readyPlan.preconditions.length,
+      blockerCount: readyPlan.blockers.length,
+      hash: sha256Evidence({
+        status: readyPlan.status,
+        summary: readyPlan.summary,
+        mutations: readyPlan.mutations.map((mutation) => ({
+          resourceKey: mutation.resourceKey,
+          action: mutation.action,
+          changeKind: mutation.changeKind,
+          baseHash: mutation.baseHash,
+          localHash: mutation.localHash,
+          remoteBeforeHash: mutation.remoteBeforeHash,
+        })),
+        decisions: readyPlan.decisions.map((decision) => ({
+          resourceKey: decision.resourceKey,
+          decision: decision.decision,
+          targetResourceKey: decision.targetResourceKey || null,
+          identityMapSource: decision.identityMapSource || null,
+          baseHash: decision.baseHash,
+          localHash: decision.localHash || null,
+          remoteHash: decision.remoteHash || null,
+        })),
+        preconditions: readyPlan.preconditions.map((precondition) => ({
+          mutationId: precondition.mutationId,
+          resourceKey: precondition.resourceKey,
+          expectedHash: precondition.expectedHash,
+          checkedAgainst: precondition.checkedAgainst,
+        })),
+      }),
+    },
+    preconditions: {
+      allMutationsHaveLiveRemotePreconditions: invariants.allMutationsHaveLiveRemotePreconditions,
+      count: readyPlan.preconditions.length,
+    },
+    mapEvidence,
+    appliedEvidence,
+    stale: {
+      planStatus: stalePlan.status,
+      summary: stalePlan.summary,
+      blockerCount: stalePlan.blockers.length,
+      staleBlockerEvidence,
+      staleRefusal,
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded,
+      checkedFixtureCount: productionImporterExporterIdentityMapReleaseVerifierRawFixtures().length,
+    },
+    invariants,
+  };
+  proof.proofHash = sha256Evidence({
+    boundary: proof.boundary,
+    plan: proof.plan,
+    mapEvidence: proof.mapEvidence,
+    appliedEvidence: proof.appliedEvidence,
+    stale: proof.stale,
+    invariants: proof.invariants,
+  });
+  return proof;
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierBoundaryEvidence() {
+  const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  return {
+    mapAlias: boundary.mapAlias,
+    mapSource: boundary.mapSource,
+    sourceResourceKey: boundary.sourceResourceKey,
+    targetResourceKey: boundary.targetResourceKey,
+    childResourceKey: boundary.childResourceKey,
+    sourcePostmetaResourceKey: boundary.sourcePostmetaResourceKey,
+    targetPostmetaResourceKey: boundary.targetPostmetaResourceKey,
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierSnapshots() {
+  const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  const empty = {
+    files: {},
+    plugins: {},
+    db: {
+      wp_posts: {},
+      wp_postmeta: {},
+    },
+  };
+  const source = cloneReleaseVerifierJson(empty);
+  source.meta = {
+    pushIdentityMap: {
+      provenance: {
+        exporter: {
+          artifactHash: '3'.repeat(64),
+          rowCount: 1,
+          observedAt: '2026-05-30T16:03:00.000Z',
+        },
+        importer: {
+          packageHash: '4'.repeat(64),
+          persistedAt: '2026-05-30T16:03:30.000Z',
+          immutableBase: true,
+        },
+      },
+      resources: [
+        {
+          sourceResourceKey: boundary.sourceResourceKey,
+          targetResourceKey: boundary.targetResourceKey,
+        },
+      ],
+    },
+  };
+  const localEdited = cloneReleaseVerifierJson(empty);
+  localEdited.db.wp_posts[`ID:${boundary.sourcePostId}`] = {
+    ID: boundary.sourcePostId,
+    post_title: 'rpp-0400-private-importer-exporter-source-title',
+    post_name: 'rpp-0400-importer-exporter-parent',
+    post_content: 'rpp-0400-private-importer-exporter-source-body',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  localEdited.db.wp_posts[`ID:${boundary.childPostId}`] = {
+    ID: boundary.childPostId,
+    post_title: 'rpp-0400-private-importer-exporter-child-title',
+    post_name: 'rpp-0400-importer-exporter-child',
+    post_content: 'rpp-0400-private-importer-exporter-child-body',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: boundary.sourcePostId,
+    post_author: 0,
+  };
+  localEdited.db.wp_postmeta[`post_id:${boundary.sourcePostId}:meta_key:${boundary.metaKey}`] = {
+    post_id: boundary.sourcePostId,
+    meta_key: boundary.metaKey,
+    meta_value: 'rpp-0400-private-importer-exporter-meta',
+  };
+
+  const importedRemote = cloneReleaseVerifierJson(empty);
+  importedRemote.db.wp_posts[`ID:${boundary.targetPostId}`] = {
+    ID: boundary.targetPostId,
+    post_title: 'rpp-0400-private-importer-exporter-source-title',
+    post_name: 'rpp-0400-importer-exporter-parent',
+    post_content: 'rpp-0400-private-importer-exporter-source-body',
+    post_status: 'publish',
+    post_type: 'page',
+    post_parent: 0,
+    post_author: 0,
+  };
+  const staleRemote = cloneReleaseVerifierJson(importedRemote);
+  staleRemote.db.wp_posts[`ID:${boundary.targetPostId}`].post_title =
+    'rpp-0400-private-importer-exporter-stale-title';
+  staleRemote.db.wp_posts[`ID:${boundary.targetPostId}`].post_content =
+    'rpp-0400-private-importer-exporter-stale-body';
+
+  return {
+    source,
+    localEdited,
+    importedRemote,
+    staleRemote,
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierResource(table, id) {
+  return {
+    type: 'row',
+    table,
+    id,
+    key: `row:${JSON.stringify([table, id])}`,
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierCounts(snapshot) {
+  const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  const posts = snapshot?.db?.wp_posts || {};
+  const postmeta = snapshot?.db?.wp_postmeta || {};
+  return {
+    mapEntries: Array.isArray(snapshot?.meta?.pushIdentityMap?.resources)
+      ? snapshot.meta.pushIdentityMap.resources.length
+      : 0,
+    sourcePosts: Object.hasOwn(posts, `ID:${boundary.sourcePostId}`) ? 1 : 0,
+    childPosts: Object.hasOwn(posts, `ID:${boundary.childPostId}`) ? 1 : 0,
+    targetPosts: Object.hasOwn(posts, `ID:${boundary.targetPostId}`) ? 1 : 0,
+    sourcePostmeta: Object.hasOwn(
+      postmeta,
+      `post_id:${boundary.sourcePostId}:meta_key:${boundary.metaKey}`,
+    ) ? 1 : 0,
+    targetPostmeta: Object.hasOwn(
+      postmeta,
+      `post_id:${boundary.targetPostId}:meta_key:${boundary.metaKey}`,
+    ) ? 1 : 0,
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierMapEvidence({
+  sourceSnapshot,
+  sourceDecision,
+  targetDecision,
+  childMutation,
+  postmetaMutation,
+}) {
+  const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  const identityMap = sourceSnapshot?.meta?.pushIdentityMap || {};
+  const mapRows = Array.isArray(identityMap.resources) ? identityMap.resources : [];
+  return {
+    mapAlias: boundary.mapAlias,
+    mapSource: boundary.mapSource,
+    mapRowsHash: sha256Evidence(mapRows),
+    exporterProvenanceHash: sha256Evidence(identityMap.provenance?.exporter || null),
+    importerProvenanceHash: sha256Evidence(identityMap.provenance?.importer || null),
+    sourceDecision: sourceDecision
+      ? productionImporterExporterIdentityMapReleaseVerifierDecisionEvidence(sourceDecision)
+      : null,
+    targetDecision: targetDecision
+      ? productionImporterExporterIdentityMapReleaseVerifierDecisionEvidence(targetDecision)
+      : null,
+    dependentRewrites: [childMutation, postmetaMutation]
+      .filter(Boolean)
+      .map(productionImporterExporterIdentityMapReleaseVerifierMutationRewriteEvidence),
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierDecisionEvidence(decision) {
+  return {
+    resourceKey: decision.resourceKey,
+    decision: decision.decision,
+    targetResourceKey: decision.targetResourceKey || null,
+    identityMapSource: decision.identityMapSource || null,
+    baseHash: decision.baseHash || null,
+    localHash: decision.localHash || null,
+    remoteHash: decision.remoteHash || null,
+    targetRemoteHash: decision.targetRemoteHash || null,
+    decisionHash: sha256Evidence({
+      resourceKey: decision.resourceKey,
+      decision: decision.decision,
+      targetResourceKey: decision.targetResourceKey || null,
+      identityMapSource: decision.identityMapSource || null,
+      baseHash: decision.baseHash || null,
+      localHash: decision.localHash || null,
+      remoteHash: decision.remoteHash || null,
+      targetRemoteHash: decision.targetRemoteHash || null,
+    }),
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierMutationRewriteEvidence(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    baseHash: mutation.baseHash || null,
+    localHash: mutation.localHash || null,
+    remoteBeforeHash: mutation.remoteBeforeHash || null,
+    mutationHash: sha256Evidence({
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      baseHash: mutation.baseHash || null,
+      localHash: mutation.localHash || null,
+      remoteBeforeHash: mutation.remoteBeforeHash || null,
+    }),
+    rewrites: (mutation.wordpressGraphIdentity?.rewrites || []).map((rewrite) => ({
+      relationshipKey: rewrite.relationshipKey || null,
+      relationshipType: rewrite.relationshipType || null,
+      sourceResourceKey: rewrite.sourceResourceKey || null,
+      rewrittenResourceKey: rewrite.rewrittenResourceKey || null,
+      sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+      targetResourceKey: rewrite.targetResourceKey || null,
+      identityMapSource: rewrite.identityMapSource || null,
+      sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+      targetRemoteHash: rewrite.targetRemoteHash || null,
+      rewriteHash: sha256Evidence({
+        relationshipKey: rewrite.relationshipKey || null,
+        relationshipType: rewrite.relationshipType || null,
+        sourceResourceKey: rewrite.sourceResourceKey || null,
+        rewrittenResourceKey: rewrite.rewrittenResourceKey || null,
+        sourceTargetResourceKey: rewrite.sourceTargetResourceKey || null,
+        targetResourceKey: rewrite.targetResourceKey || null,
+        identityMapSource: rewrite.identityMapSource || null,
+        sourceTargetLocalHash: rewrite.sourceTargetLocalHash || null,
+        targetRemoteHash: rewrite.targetRemoteHash || null,
+      }),
+    })),
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierAppliedEvidence({
+  importedRemote,
+  applied,
+  sourceResource,
+  targetResource,
+  childResource,
+  targetPostmetaResource,
+}) {
+  const boundary = productionImporterExporterIdentityMapReleaseVerifierBoundary;
+  const childRow = getResource(applied, childResource);
+  const postmetaRow = getResource(applied, targetPostmetaResource);
+  return {
+    appliedMutationCount: 2,
+    sourceResourceKey: sourceResource.key,
+    sourceAbsentAfterApply: getResource(applied, sourceResource) === ABSENT,
+    targetPostResourceKey: targetResource.key,
+    targetPostHashBefore: resourceHash(importedRemote, targetResource),
+    targetPostHashAfter: resourceHash(applied, targetResource),
+    childPostResourceKey: childResource.key,
+    childPostHashAfter: resourceHash(applied, childResource),
+    childPostParent: Number(childRow?.post_parent),
+    postmetaResourceKey: targetPostmetaResource.key,
+    postmetaHashAfter: resourceHash(applied, targetPostmetaResource),
+    postmetaPostId: Number(postmetaRow?.post_id),
+    appliedSiteHash: sha256Evidence(applied),
+    targetIdsApplied: Number(childRow?.post_parent) === boundary.targetPostId
+      && Number(postmetaRow?.post_id) === boundary.targetPostId,
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierBlockerEvidence(blocker) {
+  return {
+    resourceKey: blocker.resourceKey,
+    class: blocker.class,
+    resolutionPolicy: blocker.resolutionPolicy || null,
+    reasonHash: sha256Evidence(blocker.reason || ''),
+    baseHash: blocker.baseHash || null,
+    localHash: blocker.localHash || null,
+    remoteHash: blocker.remoteHash || null,
+    blockerHash: sha256Evidence({
+      resourceKey: blocker.resourceKey,
+      class: blocker.class,
+      resolutionPolicy: blocker.resolutionPolicy || null,
+      baseHash: blocker.baseHash || null,
+      localHash: blocker.localHash || null,
+      remoteHash: blocker.remoteHash || null,
+      references: blocker.references || [],
+    }),
+    references: (blocker.references || []).map((reference) => ({
+      relationshipKey: reference.relationshipKey || null,
+      relationshipType: reference.relationshipType || null,
+      sourceResourceKey: reference.sourceResourceKey || null,
+      targetResourceKey: reference.targetResourceKey || null,
+      identityMapSource: reference.identityMapSource || null,
+      className: reference.className || reference.targetSupport?.className || null,
+      targetBaseHash: reference.targetBaseHash || null,
+      targetLocalHash: reference.targetLocalHash || null,
+      targetRemoteHash: reference.targetRemoteHash || null,
+      referenceHash: sha256Evidence({
+        relationshipKey: reference.relationshipKey || null,
+        relationshipType: reference.relationshipType || null,
+        sourceResourceKey: reference.sourceResourceKey || null,
+        targetResourceKey: reference.targetResourceKey || null,
+        identityMapSource: reference.identityMapSource || null,
+        className: reference.className || reference.targetSupport?.className || null,
+        targetBaseHash: reference.targetBaseHash || null,
+        targetLocalHash: reference.targetLocalHash || null,
+        targetRemoteHash: reference.targetRemoteHash || null,
+      }),
+    })),
+  };
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierRawFixtures() {
+  return [
+    'rpp-0400-private-importer-exporter-source-title',
+    'rpp-0400-private-importer-exporter-source-body',
+    'rpp-0400-private-importer-exporter-child-title',
+    'rpp-0400-private-importer-exporter-child-body',
+    'rpp-0400-private-importer-exporter-meta',
+    'rpp-0400-private-importer-exporter-stale-title',
+    'rpp-0400-private-importer-exporter-stale-body',
+  ];
+}
+
+function productionImporterExporterIdentityMapReleaseVerifierEvidenceIsHashOnly(evidence) {
+  const serialized = JSON.stringify(evidence);
+  if (productionImporterExporterIdentityMapReleaseVerifierRawFixtures().some((raw) => serialized.includes(raw))) {
+    return false;
+  }
+  if (/post_title|post_content|meta_value/.test(serialized)) {
+    return false;
+  }
+  const hashes = [];
+  collectProductionImporterExporterHashValues(evidence, hashes);
+  return hashes.length > 0
+    && hashes.every((hash) => /^(?:sha256:)?[a-f0-9]{64}$/.test(hash));
+}
+
+function collectProductionImporterExporterHashValues(value, hashes) {
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectProductionImporterExporterHashValues(entry, hashes));
+    return;
+  }
+  if (!value || typeof value !== 'object') {
+    return;
+  }
+  for (const [key, entry] of Object.entries(value)) {
+    if (entry == null) {
+      continue;
+    }
+    const normalizedKey = key.toLowerCase();
+    if ((normalizedKey.endsWith('hash') || normalizedKey.endsWith('hashes')) && typeof entry === 'string') {
+      hashes.push(entry);
+      continue;
+    }
+    collectProductionImporterExporterHashValues(entry, hashes);
+  }
 }
 
 export function summarizeIndependentLocalRowRemoteFileReleaseVerifierProof({
