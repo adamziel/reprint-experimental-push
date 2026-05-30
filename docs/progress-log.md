@@ -6,9 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 19:51 CEST +02:00.
+- Last update: 2026-05-30 19:59 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0516 same-key same-body replay evidence merge ending at `9243afb`.
+  the RPP-0611 new-remote recovery classification metadata merge ending at
+  `a981e32`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -19,6 +20,22 @@ linked implementation artifacts.
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- New-remote recovery classification metadata refinement: the current lane now
+  carries the additional `RPP-0611` SQLite restart proof in
+  `test/recovery-journal.test.js`, while keeping the focused hash-only
+  classifier proof in
+  `test/rpp-0611-new-remote-recovery-classification.test.js`.
+  `src/recovery-inspect.js` now emits `remoteRecoveryClassification` alongside
+  the existing `remoteClassification` surface, including explicit kind/state,
+  replay safety, normalized target counts, journal integrity, and storage
+  adapter metadata. Validation passed with Node syntax checks, focused RPP-0611
+  coverage 2/2, the recovery-journal focused SQLite metadata regression 1/1,
+  recovery journal plus repair coverage 49/49, adjacent RPP-0612 coverage 1/1,
+  production-shaped/release-verifier coverage 125 passing and 11 skipped,
+  checklist lint, scoped artifact redaction scan, and diff whitespace checks.
+  Counts remain 511/489; final release remains `NO-GO` because this is local
+  recovery-classifier and SQLite recovery-table evidence, not external
+  production-backed release evidence.
 - Same-key same-body replay evidence refinement: the current lane now carries
   the additional `RPP-0516` focused fake-endpoint/source assertion in
   `test/rpp-0516-same-key-same-body-replay.test.js`, retains the stronger
