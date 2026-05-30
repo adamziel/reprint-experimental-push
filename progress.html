@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:43:00+02:00">Last updated: May 30, 2026, 14:43 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:46:00+02:00">Last updated: May 30, 2026, 14:46 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>455</strong>
+        <strong>456</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>545</strong>
+        <strong>544</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0612 supplemental</span>
+        <span>RPP-0701</span>
       </div>
-      <p>The latest refresh integrates supplemental RPP-0612 blocked recovery restart evidence: a child process writes a claim-fenced file-backed recovery journal, fails after two committed mutations, and the parent process rereads durable JSONL rows proving monotonic sequences, fsync evidence, no completion row, and a restarted blocked-recovery classification with 2 new, 6 old, and 0 blocked-unknown targets. Counts remain 455/545 because RPP-0612 was already checked; final release remains NO-GO because this is local durability evidence, not externally hosted production topology proof.</p>
+      <p>The latest refresh integrates RPP-0701 MySQL compare-and-swap write guard evidence: the benchmark records deterministic single-statement MySQL-style CAS shapes, applied/stale/absent outcomes, runtime resource gates, MySQL client capability evidence, missing connection-settings evidence, redacted connection-probe failures, and a successful redacted probe path that explicitly does not claim live CAS DML. Counts are now 456/544; final release remains NO-GO because this is deterministic storage guard evidence, not production-backed storage receipt proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0701 focused: 6/6</span>
+        <span class="tag">mysql CAS bench: pass</span>
+        <span class="tag">runtime capability: recorded</span>
+        <span class="tag">connection evidence: redacted</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0612 dedicated focused: 1/1</span>
         <span class="tag">RPP-0612 journal focused: 1/1</span>
         <span class="tag">restart/classification: 9/9</span>
