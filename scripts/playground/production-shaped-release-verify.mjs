@@ -608,6 +608,16 @@ export const ownerContextStalePluginFileReleaseVerifierBoundary = Object.freeze(
   proofKind: 'owner-context-stale-plugin-file-refusal',
 });
 
+export const remotePluginRemovalRefusalReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-postmeta',
+  owner: 'rpp-0495-forms-owner',
+  table: 'wp_postmeta',
+  rowId: 'meta_id:9495',
+  resourceKey: 'row:["wp_postmeta","meta_id:9495"]',
+  pluginResourceKey: 'plugin:rpp-0495-forms-owner',
+  pluginFilePath: 'wp-content/plugins/rpp-0495-forms-owner/rpp-0495-forms-owner.php',
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -6804,6 +6814,459 @@ function ownerContextStaleMetadataReleaseVerifierSnapshot(rowMode, ownerFileMark
     },
   };
 }
+export function summarizeRemotePluginRemovalRefusalReleaseVerifierProof({
+  now = new Date('2026-05-30T10:49:50.000Z'),
+  checkedProductionEvidence = false,
+} = {}) {
+  try {
+    return buildRemotePluginRemovalRefusalReleaseVerifierProof({
+      now,
+      checkedProductionEvidence,
+    });
+  } catch (error) {
+    const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+    return {
+      rpp: 'RPP-0495',
+      proofKind: 'remote-plugin-removal-refusal',
+      evidenceSource: 'release-verifier-remote-plugin-removal-refusal-v5',
+      status: 'blocked',
+      verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_REQUIRED',
+      releaseGate: {
+        status: 'NO-GO',
+        verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_REQUIRED',
+        productionBacked: false,
+        acceptedForReleaseGate: false,
+        note: 'remote plugin removal refusal release-verifier proof could not be built',
+      },
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      checkedProductionEvidence: checkedProductionEvidence === true,
+      rawValuesIncluded: false,
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource: remotePluginRemovalRefusalReleaseVerifierResourceEvidence(),
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildRemotePluginRemovalRefusalReleaseVerifierProof({
+  now,
+  checkedProductionEvidence,
+}) {
+  const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+  const rawFixtures = remotePluginRemovalRefusalRawFixtures();
+  const cases = [
+    buildRemotePluginRemovalRefusalReleaseVerifierCase({
+      id: 'local-candidate-policy',
+      policyLocation: 'local',
+      evidenceScope: null,
+      expectedPolicySource: 'local-snapshot',
+      now,
+      checkedProductionEvidence: false,
+      rawFixtures,
+    }),
+    buildRemotePluginRemovalRefusalReleaseVerifierCase({
+      id: 'production-backed-remote-snapshot',
+      policyLocation: 'remote',
+      evidenceScope: 'production-backed',
+      expectedPolicySource: 'remote-snapshot',
+      now,
+      checkedProductionEvidence: checkedProductionEvidence === true,
+      rawFixtures,
+    }),
+  ];
+  const checked = cases.every((entry) => entry.checked === true);
+  const productionCase = cases.find((entry) => entry.id === 'production-backed-remote-snapshot') || null;
+  const productionBacked = checked
+    && checkedProductionEvidence === true
+    && productionCase?.refusal?.productionBacked === true;
+  const releaseGate = buildRemotePluginRemovalRefusalReleaseGate({
+    checked,
+    checkedProductionEvidence,
+    productionScopeClaimed: productionCase?.refusal?.productionBacked === true,
+    productionBacked,
+  });
+
+  const proof = {
+    rpp: 'RPP-0495',
+    proofKind: 'remote-plugin-removal-refusal',
+    evidenceSource: 'release-verifier-remote-plugin-removal-refusal-v5',
+    status: checked
+      ? (productionBacked ? 'checked' : 'support_only')
+      : 'blocked',
+    verdict: checked
+      ? (productionBacked
+          ? 'REMOTE_PLUGIN_REMOVAL_REFUSAL_PRODUCTION_BACKED'
+          : 'REMOTE_PLUGIN_REMOVAL_REFUSAL_SUPPORT_ONLY')
+      : 'REMOTE_PLUGIN_REMOVAL_REFUSAL_REQUIRED',
+    releaseGate,
+    driver: boundary.driver,
+    owner: boundary.owner,
+    resource: remotePluginRemovalRefusalReleaseVerifierResourceEvidence(),
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    productionBacked,
+    supportOnly: !productionBacked,
+    acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
+    rawValuesIncluded: false,
+    caseCount: cases.length,
+    refusedBeforeMutationCount: cases.filter((entry) => entry.refusedBeforeMutation === true).length,
+    remotePreservedCount: cases.filter((entry) => entry.remotePreservation?.remoteDataPreserved === true).length,
+    releaseGateEvidenceScopes: uniqueNonEmpty(
+      cases.map((entry) => entry.refusal?.releaseGateEvidenceScope),
+    ),
+    cases,
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    releaseGate: proof.releaseGate,
+    cases: proof.cases.map((entry) => ({
+      id: entry.id,
+      checked: entry.checked,
+      releaseGate: entry.releaseGate,
+      planHash: entry.plan.hash,
+      blockerHash: entry.blocker?.blockerHash || null,
+      refusalHash: entry.refusal?.evidenceHash || null,
+      remotePreservation: entry.remotePreservation,
+    })),
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      proofKind: proof.proofKind,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_EVIDENCE_REDACTION_REQUIRED',
+      releaseGate: {
+        status: 'NO-GO',
+        verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_EVIDENCE_REDACTION_REQUIRED',
+        productionBacked: false,
+        acceptedForReleaseGate: false,
+        note: 'remote plugin removal refusal proof must remain hash-only',
+      },
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      rawValuesIncluded: true,
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource: proof.resource,
+      proofHash: sha256Evidence({
+        verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_EVIDENCE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function buildRemotePluginRemovalRefusalReleaseVerifierCase({
+  id,
+  policyLocation,
+  evidenceScope,
+  expectedPolicySource,
+  now,
+  checkedProductionEvidence,
+  rawFixtures,
+}) {
+  const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+  const resource = remotePluginRemovalRefusalReleaseVerifierResource();
+  const base = remotePluginRemovalRefusalReleaseVerifierSnapshot(rawFixtures.base);
+  const local = cloneReleaseVerifierJson(base);
+  local.db[boundary.table][boundary.rowId].meta_value.mode = rawFixtures.local;
+  const remote = cloneReleaseVerifierJson(base);
+  delete remote.plugins[boundary.owner];
+
+  if (policyLocation === 'local') {
+    attachRemotePluginRemovalRefusalPolicy(local, evidenceScope);
+  } else if (policyLocation === 'remote') {
+    attachRemotePluginRemovalRefusalPolicy(remote, evidenceScope);
+  }
+
+  const remoteBeforeJson = JSON.stringify(remote);
+  const remoteBeforeHash = sha256Evidence(remote);
+  const rowHashBefore = resourceHash(remote, resource);
+  const plan = createPushPlan({ base, local, remote, now });
+  const blocker = plan.blockers.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const refusalEvidence = blocker?.remotePluginRemovalRefusalEvidence || null;
+  let blockedError = null;
+  let unexpectedApplyResult = null;
+  try {
+    unexpectedApplyResult = applyPlan(remote, plan);
+  } catch (error) {
+    blockedError = error;
+  }
+  const remoteAfterHash = sha256Evidence(remote);
+  const rowHashAfter = resourceHash(remote, resource);
+  const refusedBeforeMutation = blockedError instanceof PushPlanError
+    && blockedError.code === 'PLAN_NOT_READY';
+  const remoteDataPreserved = remoteAfterHash === remoteBeforeHash
+    && rowHashAfter === rowHashBefore
+    && JSON.stringify(remote) === remoteBeforeJson;
+  const checked = plan.status === 'blocked'
+    && plan.summary.mutations === 0
+    && plan.summary.blockers === 1
+    && plan.preconditions.length === 0
+    && blocker?.class === 'stale-plugin-owner-context'
+    && blocker?.policySource === expectedPolicySource
+    && refusalEvidence?.reasonCode === 'REMOTE_PLUGIN_REMOVAL_OWNER_CONTEXT'
+    && refusalEvidence?.operation === 'refuse-before-mutation'
+    && refusalEvidence?.format === 'hash-only'
+    && refusalEvidence?.rawValuesIncluded === false
+    && refusalEvidence?.removedPluginResourceKeys?.includes(boundary.pluginResourceKey)
+    && refusedBeforeMutation
+    && remoteDataPreserved;
+  const releaseGate = buildRemotePluginRemovalRefusalCaseReleaseGate({
+    checked,
+    refusalEvidence,
+    checkedProductionEvidence,
+  });
+
+  return {
+    id,
+    policyLocation,
+    checked,
+    status: checked ? 'checked' : 'blocked',
+    refusedBeforeMutation,
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    productionBacked: checked === true
+      && checkedProductionEvidence === true
+      && refusalEvidence?.productionBacked === true,
+    acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
+    releaseGate,
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        decisions: plan.summary.decisions,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    blocker: blocker ? {
+      class: blocker.class,
+      resourceKey: blocker.resourceKey,
+      pluginOwner: blocker.pluginOwner,
+      driver: blocker.driver,
+      policySource: blocker.policySource,
+      blockerHash: sha256Evidence(blocker),
+      driverAuditEvidenceHash: sha256Evidence(blocker.driverAuditEvidence || null),
+    } : null,
+    refusal: refusalEvidence ? {
+      reasonCode: refusalEvidence.reasonCode,
+      operation: refusalEvidence.operation,
+      proofScope: refusalEvidence.proofScope,
+      releaseGateEvidenceScope: refusalEvidence.releaseGateEvidenceScope,
+      productionBacked: refusalEvidence.productionBacked === true,
+      releaseGateNote: refusalEvidence.releaseGateNote,
+      resourceKey: refusalEvidence.resourceKey,
+      pluginOwner: refusalEvidence.pluginOwner,
+      removedPluginResourceKeys: refusalEvidence.removedPluginResourceKeys || [],
+      contextHashes: (refusalEvidence.context || []).map((context) => ({
+        resourceKey: context.resourceKey,
+        baseHash: context.baseHash,
+        localHash: context.localHash,
+        remoteHash: context.remoteHash,
+        localChange: context.localChange,
+        remoteChange: context.remoteChange,
+      })),
+      evidenceHash: sha256Evidence(refusalEvidence),
+    } : null,
+    blockedApply: {
+      code: blockedError?.code || null,
+      detailsHash: blockedError ? sha256Evidence(blockedError.details || null) : null,
+      unexpectedApplyMutationCount: unexpectedApplyResult?.appliedMutations ?? 0,
+    },
+    remotePreservation: {
+      rowHashBefore: rowHashBefore ? `sha256:${rowHashBefore}` : null,
+      rowHashAfter: rowHashAfter ? `sha256:${rowHashAfter}` : null,
+      remoteHashBefore: remoteBeforeHash,
+      remoteHashAfter: remoteAfterHash,
+      remoteDataPreserved,
+    },
+  };
+}
+
+function buildRemotePluginRemovalRefusalReleaseGate({
+  checked,
+  checkedProductionEvidence,
+  productionScopeClaimed,
+  productionBacked,
+}) {
+  if (checked && productionBacked) {
+    return {
+      status: 'GO',
+      verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_PRODUCTION_BACKED',
+      evidenceScope: 'production-backed',
+      productionBacked: true,
+      acceptedForReleaseGate: true,
+      note: 'remote plugin removal refusal proof is production-backed and refused before mutation on the checked release path',
+    };
+  }
+
+  if (productionScopeClaimed) {
+    return {
+      status: 'NO-GO',
+      verdict: checkedProductionEvidence
+        ? 'REMOTE_PLUGIN_REMOVAL_REFUSAL_INCOMPLETE'
+        : 'REMOTE_PLUGIN_REMOVAL_REFUSAL_PRODUCTION_PROOF_REQUIRED',
+      evidenceScope: 'mixed',
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'remote plugin removal refusal proof includes production-backed scope and local support-only scope; checked production verifier evidence is still required before release',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    verdict: checked ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED' : 'REMOTE_PLUGIN_REMOVAL_REFUSAL_REQUIRED',
+    evidenceScope: 'local-candidate',
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: 'remote plugin removal refusal proof is local/support-only; production-backed release gate evidence is still required',
+  };
+}
+
+function buildRemotePluginRemovalRefusalCaseReleaseGate({
+  checked,
+  refusalEvidence,
+  checkedProductionEvidence,
+}) {
+  if (checked && refusalEvidence?.productionBacked === true && checkedProductionEvidence === true) {
+    return {
+      status: 'GO',
+      verdict: 'REMOTE_PLUGIN_REMOVAL_REFUSAL_PRODUCTION_BACKED',
+      evidenceScope: 'production-backed',
+      productionBacked: true,
+      acceptedForReleaseGate: true,
+      note: 'remote plugin removal refusal proof is production-backed and refused before mutation on the checked release path',
+    };
+  }
+
+  if (refusalEvidence?.productionBacked === true) {
+    return {
+      status: 'NO-GO',
+      verdict: checkedProductionEvidence
+        ? 'REMOTE_PLUGIN_REMOVAL_REFUSAL_INCOMPLETE'
+        : 'REMOTE_PLUGIN_REMOVAL_REFUSAL_PRODUCTION_PROOF_REQUIRED',
+      evidenceScope: 'production-backed',
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'remote plugin removal refusal proof carries production-backed scope but lacks checked production verifier proof; release gate remains NO-GO',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    verdict: checked ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED' : 'REMOTE_PLUGIN_REMOVAL_REFUSAL_REQUIRED',
+    evidenceScope: refusalEvidence?.releaseGateEvidenceScope || 'local-candidate',
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: 'remote plugin removal refusal proof is local/support-only; production-backed release gate evidence is still required',
+  };
+}
+
+function remotePluginRemovalRefusalReleaseVerifierResourceEvidence() {
+  const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
+    ownerPluginResourceKey: boundary.pluginResourceKey,
+  };
+}
+
+function remotePluginRemovalRefusalReleaseVerifierResource() {
+  const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+  return {
+    type: 'row',
+    table: boundary.table,
+    id: boundary.rowId,
+    key: boundary.resourceKey,
+  };
+}
+
+function remotePluginRemovalRefusalRawFixtures() {
+  return {
+    base: 'RPP_0495_BASE_ROW_SENTINEL',
+    local: 'RPP_0495_LOCAL_ROW_SENTINEL',
+    remotePreserved: 'RPP_0495_REMOTE_ROW_PRESERVED',
+    ownerPlugin: 'RPP_0495_OWNER_PLUGIN_BASE_SENTINEL',
+  };
+}
+
+function remotePluginRemovalRefusalReleaseVerifierSnapshot(rowMode) {
+  const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+  return {
+    files: {
+      [boundary.pluginFilePath]: `<?php /* ${remotePluginRemovalRefusalRawFixtures().ownerPlugin} */`,
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      wp_posts: {
+        'ID:9495': {
+          ID: 9495,
+          post_title: 'RPP-0495 owner context fixture',
+          post_name: 'rpp-0495-owner-context-fixture',
+          post_content: 'Stable post row for release verifier remote plugin removal refusal proof.',
+          post_status: 'publish',
+          post_type: 'post',
+          post_parent: 0,
+          post_author: 0,
+        },
+      },
+      [boundary.table]: {
+        [boundary.rowId]: {
+          meta_id: 9495,
+          post_id: 9495,
+          meta_key: '_rpp_0495_remote_plugin_removal',
+          meta_value: {
+            mode: rowMode,
+            proof: 'hash-only remote plugin removal refusal release verifier fixture',
+          },
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+function attachRemotePluginRemovalRefusalPolicy(site, evidenceScope = null) {
+  const boundary = remotePluginRemovalRefusalReleaseVerifierBoundary;
+  site.meta = {
+    ...(evidenceScope ? { evidenceScope } : {}),
+    pluginOwnedResources: {
+      ...(evidenceScope ? { evidenceScope } : {}),
+      allowedResources: [
+        {
+          resourceKey: boundary.resourceKey,
+          pluginOwner: boundary.owner,
+          driver: boundary.driver,
+          table: boundary.table,
+          ...(evidenceScope ? { evidenceScope } : {}),
+        },
+      ],
+    },
+  };
+  return site;
+}
+
 function incrementReleaseVerifierCount(object, key) {
   object[key] = (object[key] || 0) + 1;
 }
@@ -8780,6 +9243,7 @@ try {
             stalePluginFile: ownerContextStalePluginFileEvidence,
             staleMetadata: summarizeOwnerContextStaleMetadataReleaseVerifierEvidence(),
           },
+          remotePluginRemovalRefusal: summarizeRemotePluginRemovalRefusalReleaseVerifierProof(),
           coreSemantics: {
             pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
@@ -9110,6 +9574,7 @@ try {
           stalePluginFile: ownerContextStalePluginFileEvidence,
           staleMetadata: summarizeOwnerContextStaleMetadataReleaseVerifierEvidence(),
         },
+        remotePluginRemovalRefusal: summarizeRemotePluginRemovalRefusalReleaseVerifierProof(),
         coreSemantics: {
           pluginActivationDependency: summarizePluginActivationDependencyReleaseVerifierProof(),
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
