@@ -494,6 +494,19 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const serializedOptionValidatorReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-option',
+  owner: 'forms',
+  table: 'wp_options',
+  rowId: 'option_name:forms_serialized_settings',
+  resourceKey: 'row:["wp_options","option_name:forms_serialized_settings"]',
+  allowlist: Object.freeze({
+    resourceKeys: Object.freeze(['row:["wp_options","option_name:forms_serialized_settings"]']),
+    supportsDelete: false,
+    serialization: 'php-serialize',
+  }),
+});
+
 export const driverApplyValidationHookReleaseVerifierBoundary = Object.freeze({
   driver: 'wp-option',
   owner: 'forms',
@@ -2031,6 +2044,356 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
             nested: { enabled: true },
           },
           autoload: 'no',
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+export function summarizeSerializedOptionValidatorReleaseVerifierProof({
+  now = new Date('2026-05-30T11:48:40.000Z'),
+} = {}) {
+  try {
+    return buildSerializedOptionValidatorReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0488',
+      evidenceSource: 'release-verifier-serialized-option-validator-v5',
+      status: 'blocked',
+      verdict: 'SERIALIZED_OPTION_VALIDATOR_CARRY_THROUGH_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      driver: serializedOptionValidatorReleaseVerifierBoundary.driver,
+      owner: serializedOptionValidatorReleaseVerifierBoundary.owner,
+      resource: serializedOptionValidatorReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildSerializedOptionValidatorReleaseVerifierProof(now) {
+  const boundary = serializedOptionValidatorReleaseVerifierBoundary;
+  const rawFixtures = {
+    base: 'a:1:{s:4:"mode";s:4:"base";}',
+    local: 'a:1:{s:4:"mode";s:5:"local";}',
+    invalidLocal: 'a:1:{s:4:"mode";s:20:"oops";}',
+    invalidForged: 'a:1:{s:4:"mode";s:21:"forged";}',
+  };
+  const base = serializedOptionValidatorReleaseVerifierSnapshot(rawFixtures.base);
+  const local = serializedOptionValidatorReleaseVerifierSnapshot(rawFixtures.base);
+  local.db[boundary.table][boundary.rowId].option_value = rawFixtures.local;
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: boundary.resourceKey,
+            pluginOwner: boundary.owner,
+            driver: boundary.driver,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
+  };
+  const remote = serializedOptionValidatorReleaseVerifierSnapshot(rawFixtures.base);
+  const plan = createPushPlan({ base, local, remote, now });
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  const appliedRemote = cloneReleaseVerifierJson(remote);
+  const applyValidationHooks = [];
+  let applied = null;
+  let acceptedApplyError = null;
+  try {
+    applied = applyPlan(appliedRemote, plan, {
+      beforeMutation({ driverApplyValidation }) {
+        applyValidationHooks.push(driverApplyValidation);
+      },
+    });
+  } catch (error) {
+    acceptedApplyError = error;
+  }
+  const acceptedApplyValidation = applyValidationHooks[0] || null;
+  const appliedRowHash = applied && mutation ? `sha256:${resourceHash(applied.site, mutation.resource)}` : null;
+  const localRowHash = mutation ? `sha256:${resourceHash(local, mutation.resource)}` : null;
+  const finalMatchesLocal = Boolean(appliedRowHash && appliedRowHash === localRowHash);
+
+  const invalidLocal = serializedOptionValidatorReleaseVerifierSnapshot(rawFixtures.invalidLocal);
+  invalidLocal.meta = cloneReleaseVerifierJson(local.meta);
+  const invalidRemote = serializedOptionValidatorReleaseVerifierSnapshot(rawFixtures.base);
+  const invalidRemoteHashBefore = sha256Evidence(invalidRemote);
+  const invalidRowHashBefore = mutation ? `sha256:${resourceHash(invalidRemote, mutation.resource)}` : null;
+  const invalidPlan = createPushPlan({ base, local: invalidLocal, remote: invalidRemote, now });
+  const invalidBlocker = invalidPlan.blockers.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  let invalidApplyError = null;
+  try {
+    applyPlan(invalidRemote, invalidPlan);
+  } catch (error) {
+    invalidApplyError = error;
+  }
+
+  const forgedInvalidPlan = cloneReleaseVerifierJson(plan);
+  const forgedMutation = forgedInvalidPlan.mutations.find((entry) => entry.resourceKey === boundary.resourceKey) || null;
+  if (forgedMutation?.value?.value && typeof forgedMutation.value.value === 'object') {
+    forgedMutation.value.value.option_value = rawFixtures.invalidForged;
+    forgedMutation.localHash = digest(forgedMutation.value.value);
+    if (forgedMutation.pluginOwnedResource) {
+      delete forgedMutation.pluginOwnedResource.driverPayloadValidationEvidence;
+    }
+  }
+  const forgedRemote = cloneReleaseVerifierJson(remote);
+  const forgedRemoteHashBefore = sha256Evidence(forgedRemote);
+  const forgedRowHashBefore = mutation ? `sha256:${resourceHash(forgedRemote, mutation.resource)}` : null;
+  let forgedHookCalls = 0;
+  let forgedError = null;
+  try {
+    applyPlan(forgedRemote, forgedInvalidPlan, {
+      beforeMutation() {
+        forgedHookCalls += 1;
+      },
+    });
+  } catch (error) {
+    forgedError = error;
+  }
+  const forgedApplyValidation = forgedError?.details?.applyValidationEvidence || null;
+  const mutationSerializedValidation = mutation?.pluginOwnedResource?.serializedOptionValidationEvidence
+    || mutation?.pluginOwnedResource?.driverPayloadValidationEvidence
+    || null;
+
+  const exactMutation = mutation?.resource?.type === 'row'
+    && mutation.resource.table === boundary.table
+    && mutation.resource.id === boundary.rowId
+    && mutation.pluginOwnedResource?.pluginOwner === boundary.owner
+    && mutation.pluginOwnedResource?.driver === boundary.driver
+    && mutation.pluginOwnedResource?.supportsDelete === false
+    && mutationSerializedValidation?.valid === true
+    && mutation.pluginOwnedResource?.driverPayloadValidationEvidence?.outcome === 'accepted';
+  const exactPrecondition = precondition?.resourceKey === boundary.resourceKey
+    && precondition?.expectedHash === mutation?.remoteBeforeHash
+    && precondition?.checkedAgainst === 'live-remote';
+  const acceptedApplyCarried = applied?.appliedMutations === 1
+    && acceptedApplyError === null
+    && applyValidationHooks.length === 1
+    && acceptedApplyValidation?.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED'
+    && acceptedApplyValidation?.serializedOptionValidationEvidence?.valid === true
+    && acceptedApplyValidation?.driverPayloadValidationEvidence?.outcome === 'accepted'
+    && finalMatchesLocal;
+  const invalidPlannerRefused = invalidPlan.status === 'blocked'
+    && invalidPlan.summary.mutations === 0
+    && invalidBlocker?.class === 'invalid-plugin-driver-payload'
+    && invalidBlocker?.serializedOptionValidationEvidence?.valid === false
+    && invalidBlocker?.serializedOptionValidationEvidence?.reasonCode === 'SERIALIZED_OPTION_STRING_LENGTH_MISMATCH'
+    && invalidApplyError instanceof PushPlanError
+    && invalidApplyError.code === 'PLAN_NOT_READY'
+    && sha256Evidence(invalidRemote) === invalidRemoteHashBefore;
+  const invalidApplyRefused = forgedError instanceof PushPlanError
+    && forgedError.code === 'INVALID_PLUGIN_DRIVER_PAYLOAD'
+    && forgedHookCalls === 0
+    && forgedApplyValidation?.outcome === 'refused-before-mutation'
+    && forgedApplyValidation?.serializedOptionValidationEvidence?.valid === false
+    && forgedApplyValidation?.serializedOptionValidationEvidence?.reasonCode === 'SERIALIZED_OPTION_STRING_LENGTH_MISMATCH'
+    && sha256Evidence(forgedRemote) === forgedRemoteHashBefore;
+  const ok = plan.status === 'ready'
+    && plan.summary.mutations === 1
+    && plan.summary.conflicts === 0
+    && plan.summary.blockers === 0
+    && exactMutation
+    && exactPrecondition
+    && acceptedApplyCarried
+    && invalidPlannerRefused
+    && invalidApplyRefused;
+
+  const proof = {
+    rpp: 'RPP-0488',
+    evidenceSource: 'release-verifier-serialized-option-validator-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'SERIALIZED_OPTION_VALIDATOR_APPLY_CARRIED'
+      : 'SERIALIZED_OPTION_VALIDATOR_CARRY_THROUGH_REQUIRED',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    driver: boundary.driver,
+    owner: boundary.owner,
+    resource: serializedOptionValidatorReleaseVerifierResourceEvidence(),
+    rawValuesIncluded: false,
+    allowlist: {
+      resourceKey: boundary.resourceKey,
+      pluginOwner: boundary.owner,
+      driver: boundary.driver,
+      supportsDelete: false,
+      serialization: 'php-serialize',
+      policySource: 'local-snapshot',
+    },
+    plan: {
+      status: plan.status,
+      summary: {
+        mutations: plan.summary.mutations,
+        conflicts: plan.summary.conflicts,
+        blockers: plan.summary.blockers,
+      },
+      mutationCount: plan.mutations.length,
+      preconditionCount: plan.preconditions.length,
+      hash: sha256Evidence(plan),
+    },
+    mutationBoundary: mutation ? {
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      changeKind: mutation.changeKind,
+      pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+      driver: mutation.pluginOwnedResource?.driver || null,
+      policySource: mutation.pluginOwnedResource?.policySource || null,
+      supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+      ownerContextRequired: mutation.pluginOwnedResource?.ownerContextRequired === true,
+      exactMutation,
+      baseHash: mutation.baseHash,
+      localHash: mutation.localHash,
+      remoteBeforeHash: mutation.remoteBeforeHash,
+      serializedOptionValidationHash: sha256Evidence(
+        mutationSerializedValidation,
+      ),
+      driverPayloadValidationHash: sha256Evidence(
+        mutation.pluginOwnedResource?.driverPayloadValidationEvidence || null,
+      ),
+      auditEvidenceHash: sha256Evidence(mutation.pluginOwnedResource?.auditEvidence || null),
+      mutationHash: sha256Evidence({
+        resourceKey: mutation.resourceKey,
+        action: mutation.action,
+        baseHash: mutation.baseHash,
+        localHash: mutation.localHash,
+        remoteBeforeHash: mutation.remoteBeforeHash,
+      }),
+    } : null,
+    precondition: precondition ? {
+      resourceKey: precondition.resourceKey,
+      expectedHash: precondition.expectedHash,
+      checkedAgainst: precondition.checkedAgainst,
+      exactPrecondition,
+      preconditionHash: sha256Evidence(precondition),
+    } : null,
+    localProductionApply: {
+      appliedMutations: applied?.appliedMutations ?? 0,
+      hookCalls: applyValidationHooks.length,
+      applyValidationAccepted: acceptedApplyValidation?.reasonCode === 'PLUGIN_DRIVER_APPLY_VALIDATION_ACCEPTED',
+      serializedOptionValid: acceptedApplyValidation?.serializedOptionValidationEvidence?.valid === true,
+      driverPayloadOutcome: acceptedApplyValidation?.driverPayloadValidationEvidence?.outcome || null,
+      finalMatchesLocal,
+      appliedRowHash,
+      localRowHash,
+      journalHash: applied ? sha256Evidence(applied.journal) : null,
+      errorCode: acceptedApplyError?.code || null,
+      accepted: acceptedApplyCarried,
+    },
+    invalidPlannerRefusal: {
+      code: invalidApplyError?.code || null,
+      status: invalidPlan.status,
+      blockerClass: invalidBlocker?.class || null,
+      reasonCode: invalidBlocker?.serializedOptionValidationEvidence?.reasonCode || null,
+      remoteUnchanged: sha256Evidence(invalidRemote) === invalidRemoteHashBefore,
+      rowHashBefore: invalidRowHashBefore,
+      rowHashAfter: mutation ? `sha256:${resourceHash(invalidRemote, mutation.resource)}` : null,
+      remoteHashBefore: invalidRemoteHashBefore,
+      remoteHashAfter: sha256Evidence(invalidRemote),
+      blockerHash: invalidBlocker ? sha256Evidence(invalidBlocker) : null,
+      validatorEvidenceHash: invalidBlocker?.serializedOptionValidationEvidence
+        ? sha256Evidence(invalidBlocker.serializedOptionValidationEvidence)
+        : null,
+      detailsHash: invalidApplyError ? sha256Evidence(invalidApplyError.details || null) : null,
+      accepted: invalidPlannerRefused,
+    },
+    invalidApplyRefusal: {
+      code: forgedError?.code || null,
+      hookCalls: forgedHookCalls,
+      preMutation: forgedHookCalls === 0,
+      reasonCode: forgedApplyValidation?.serializedOptionValidationEvidence?.reasonCode || null,
+      outcome: forgedApplyValidation?.outcome || null,
+      remoteUnchanged: sha256Evidence(forgedRemote) === forgedRemoteHashBefore,
+      rowHashBefore: forgedRowHashBefore,
+      rowHashAfter: mutation ? `sha256:${resourceHash(forgedRemote, mutation.resource)}` : null,
+      remoteHashBefore: forgedRemoteHashBefore,
+      remoteHashAfter: sha256Evidence(forgedRemote),
+      detailsHash: forgedError ? sha256Evidence(forgedError.details || null) : null,
+      applyValidationEvidenceHash: forgedApplyValidation ? sha256Evidence(forgedApplyValidation) : null,
+      serializedOptionValidationHash: forgedApplyValidation?.serializedOptionValidationEvidence
+        ? sha256Evidence(forgedApplyValidation.serializedOptionValidationEvidence)
+        : null,
+      accepted: invalidApplyRefused,
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    plan: proof.plan,
+    mutationBoundary: proof.mutationBoundary,
+    precondition: proof.precondition,
+    localProductionApply: proof.localProductionApply,
+    invalidPlannerRefusal: proof.invalidPlannerRefusal,
+    invalidApplyRefusal: proof.invalidApplyRefusal,
+  });
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'SERIALIZED_OPTION_VALIDATOR_EVIDENCE_REDACTION_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      driver: boundary.driver,
+      owner: boundary.owner,
+      resource: proof.resource,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'SERIALIZED_OPTION_VALIDATOR_EVIDENCE_REDACTION_REQUIRED',
+        resource: proof.resource,
+      }),
+    };
+  }
+  return proof;
+}
+
+function serializedOptionValidatorReleaseVerifierResourceEvidence() {
+  const boundary = serializedOptionValidatorReleaseVerifierBoundary;
+  return {
+    resourceKey: boundary.resourceKey,
+    table: boundary.table,
+    rowId: boundary.rowId,
+  };
+}
+
+function serializedOptionValidatorReleaseVerifierSnapshot(optionValue) {
+  const boundary = serializedOptionValidatorReleaseVerifierBoundary;
+  return {
+    files: {
+      'wp-content/plugins/forms/forms.php': '<?php /* forms plugin release verifier fixture */',
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: '1.0.0',
+        active: true,
+      },
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          option_name: 'forms_serialized_settings',
+          option_value: optionValue,
+          autoload: 'no',
+          serialization: 'php-serialize',
           __pluginOwner: boundary.owner,
         },
       },
@@ -5670,6 +6033,7 @@ try {
           productionOwned: productionPluginDriverProof,
           driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+          serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof(),
           auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
           arbitraryPluginFixturePackage: arbitraryPluginFixturePackageReleaseVerifierEvidence,
           coreSemantics: {
@@ -5989,6 +6353,7 @@ try {
         productionOwned: productionPluginDriverProof,
         driverApplyValidationHook: summarizeDriverApplyValidationHookReleaseVerifierProof(),
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+        serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof(),
         auditEvidenceRedaction: summarizeDriverAuditEvidenceRedactionReleaseVerifierProof(),
         arbitraryPluginFixturePackage: arbitraryPluginFixturePackageReleaseVerifierEvidence,
         coreSemantics: {

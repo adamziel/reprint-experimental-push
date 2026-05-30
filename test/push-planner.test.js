@@ -21,6 +21,9 @@ import {
   generatePushHarnessCases,
   validateGeneratedCase,
 } from '../scripts/harness/generated-push-cases.js';
+import {
+  summarizeSerializedOptionValidatorReleaseVerifierProof,
+} from '../scripts/playground/production-shaped-release-verify.mjs';
 
 const fixedNow = new Date('2026-05-24T00:00:00.000Z');
 const fixedGeneratedHarnessNow = new Date('2026-05-28T00:00:00.000Z');
@@ -4670,6 +4673,121 @@ test('RPP-0468 serialized option validator accepts valid payloads and refuses in
     assert.equal(serializedAudit.includes(rawValue), false, `RPP-0468 audit leaked ${rawValue}`);
     assert.equal(serializedJournal.includes(rawValue), false, `RPP-0468 journal leaked ${rawValue}`);
     assert.equal(serializedRefusals.includes(rawValue), false, `RPP-0468 refusal leaked ${rawValue}`);
+  }
+});
+
+test('RPP-0488 release verifier carries serialized option validator through apply', () => {
+  const proof = summarizeSerializedOptionValidatorReleaseVerifierProof({
+    now: new Date('2026-05-30T11:48:40.000Z'),
+  });
+  const verifierSource = fs.readFileSync(
+    path.join(process.cwd(), 'scripts/playground/production-shaped-release-verify.mjs'),
+    'utf8',
+  );
+  const rawFixtures = [
+    'a:1:{s:4:"mode";s:4:"base";}',
+    'a:1:{s:4:"mode";s:5:"local";}',
+    'a:1:{s:4:"mode";s:20:"oops";}',
+    'a:1:{s:4:"mode";s:21:"forged";}',
+  ];
+
+  assert.equal(proof.rpp, 'RPP-0488');
+  assert.equal(proof.evidenceSource, 'release-verifier-serialized-option-validator-v5');
+  assert.equal(proof.status, 'support_only');
+  assert.equal(proof.verdict, 'SERIALIZED_OPTION_VALIDATOR_APPLY_CARRIED');
+  assert.equal(proof.productionBacked, false);
+  assert.equal(proof.releaseEligible, false);
+  assert.equal(proof.releaseGate, 'NO-GO');
+  assert.equal(proof.rawValuesIncluded, false);
+  assert.deepEqual(proof.resource, {
+    resourceKey: 'row:["wp_options","option_name:forms_serialized_settings"]',
+    table: 'wp_options',
+    rowId: 'option_name:forms_serialized_settings',
+  });
+  assert.deepEqual(proof.allowlist, {
+    resourceKey: 'row:["wp_options","option_name:forms_serialized_settings"]',
+    pluginOwner: 'forms',
+    driver: 'wp-option',
+    supportsDelete: false,
+    serialization: 'php-serialize',
+    policySource: 'local-snapshot',
+  });
+
+  assert.equal(proof.plan.status, 'ready');
+  assert.equal(proof.plan.summary.mutations, 1);
+  assert.equal(proof.plan.summary.conflicts, 0);
+  assert.equal(proof.plan.summary.blockers, 0);
+  assert.equal(proof.plan.mutationCount, 1);
+  assert.equal(proof.plan.preconditionCount, 1);
+  assertSha256Evidence(proof.plan.hash);
+
+  assert.equal(proof.mutationBoundary.resourceKey, proof.resource.resourceKey);
+  assert.equal(proof.mutationBoundary.action, 'put');
+  assert.equal(proof.mutationBoundary.changeKind, 'update');
+  assert.equal(proof.mutationBoundary.pluginOwner, 'forms');
+  assert.equal(proof.mutationBoundary.driver, 'wp-option');
+  assert.equal(proof.mutationBoundary.supportsDelete, false);
+  assert.equal(proof.mutationBoundary.ownerContextRequired, true);
+  assert.equal(proof.mutationBoundary.exactMutation, true);
+  assert.match(proof.mutationBoundary.baseHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.mutationBoundary.localHash, /^[a-f0-9]{64}$/);
+  assert.match(proof.mutationBoundary.remoteBeforeHash, /^[a-f0-9]{64}$/);
+  assertSha256Evidence(proof.mutationBoundary.serializedOptionValidationHash);
+  assertSha256Evidence(proof.mutationBoundary.driverPayloadValidationHash);
+  assertSha256Evidence(proof.mutationBoundary.auditEvidenceHash);
+  assertSha256Evidence(proof.mutationBoundary.mutationHash);
+
+  assert.equal(proof.precondition.resourceKey, proof.resource.resourceKey);
+  assert.equal(proof.precondition.checkedAgainst, 'live-remote');
+  assert.equal(proof.precondition.expectedHash, proof.mutationBoundary.remoteBeforeHash);
+  assert.equal(proof.precondition.exactPrecondition, true);
+  assertSha256Evidence(proof.precondition.preconditionHash);
+
+  assert.equal(proof.localProductionApply.appliedMutations, 1);
+  assert.equal(proof.localProductionApply.hookCalls, 1);
+  assert.equal(proof.localProductionApply.applyValidationAccepted, true);
+  assert.equal(proof.localProductionApply.serializedOptionValid, true);
+  assert.equal(proof.localProductionApply.driverPayloadOutcome, 'accepted');
+  assert.equal(proof.localProductionApply.finalMatchesLocal, true);
+  assert.equal(proof.localProductionApply.appliedRowHash, proof.localProductionApply.localRowHash);
+  assert.equal(proof.localProductionApply.errorCode, null);
+  assert.equal(proof.localProductionApply.accepted, true);
+  assertSha256Evidence(proof.localProductionApply.appliedRowHash);
+  assertSha256Evidence(proof.localProductionApply.journalHash);
+
+  assert.equal(proof.invalidPlannerRefusal.status, 'blocked');
+  assert.equal(proof.invalidPlannerRefusal.code, 'PLAN_NOT_READY');
+  assert.equal(proof.invalidPlannerRefusal.blockerClass, 'invalid-plugin-driver-payload');
+  assert.equal(proof.invalidPlannerRefusal.reasonCode, 'SERIALIZED_OPTION_STRING_LENGTH_MISMATCH');
+  assert.equal(proof.invalidPlannerRefusal.remoteUnchanged, true);
+  assert.equal(proof.invalidPlannerRefusal.rowHashAfter, proof.invalidPlannerRefusal.rowHashBefore);
+  assert.equal(proof.invalidPlannerRefusal.remoteHashAfter, proof.invalidPlannerRefusal.remoteHashBefore);
+  assert.equal(proof.invalidPlannerRefusal.accepted, true);
+  assertSha256Evidence(proof.invalidPlannerRefusal.blockerHash);
+  assertSha256Evidence(proof.invalidPlannerRefusal.validatorEvidenceHash);
+  assertSha256Evidence(proof.invalidPlannerRefusal.detailsHash);
+
+  assert.equal(proof.invalidApplyRefusal.code, 'INVALID_PLUGIN_DRIVER_PAYLOAD');
+  assert.equal(proof.invalidApplyRefusal.hookCalls, 0);
+  assert.equal(proof.invalidApplyRefusal.preMutation, true);
+  assert.equal(proof.invalidApplyRefusal.reasonCode, 'SERIALIZED_OPTION_STRING_LENGTH_MISMATCH');
+  assert.equal(proof.invalidApplyRefusal.outcome, 'refused-before-mutation');
+  assert.equal(proof.invalidApplyRefusal.remoteUnchanged, true);
+  assert.equal(proof.invalidApplyRefusal.rowHashAfter, proof.invalidApplyRefusal.rowHashBefore);
+  assert.equal(proof.invalidApplyRefusal.remoteHashAfter, proof.invalidApplyRefusal.remoteHashBefore);
+  assert.equal(proof.invalidApplyRefusal.accepted, true);
+  assertSha256Evidence(proof.invalidApplyRefusal.detailsHash);
+  assertSha256Evidence(proof.invalidApplyRefusal.applyValidationEvidenceHash);
+  assertSha256Evidence(proof.invalidApplyRefusal.serializedOptionValidationHash);
+  assertSha256Evidence(proof.proofHash);
+
+  assert.match(verifierSource, /export function summarizeSerializedOptionValidatorReleaseVerifierProof/);
+  assert.match(verifierSource, /serializedOptionValidator: summarizeSerializedOptionValidatorReleaseVerifierProof\(\)/);
+
+  const serializedProof = JSON.stringify(proof);
+  assert.equal(serializedProof.includes('"option_value"'), false);
+  for (const rawFixture of rawFixtures) {
+    assert.equal(serializedProof.includes(rawFixture), false, `RPP-0488 proof leaked ${rawFixture}`);
   }
 });
 
