@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 17:44 CEST +02:00.
+- Last update: 2026-05-30 17:52 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0530 session user identity release-summary proof merge ending at
-  `b31c98c`.
+  the RPP-0640 manual recovery audit export proof merge ending at `4c78468`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 492
-  items checked and leaves 508 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 493
+  items checked and leaves 507 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  84 plugin-driver boundary items, 33 executor/auth items, 40 recovery items,
+  84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   22 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Manual recovery audit export proof: the current lane now contains `RPP-0640`
+  evidence in
+  `docs/evidence/rpp-0640-manual-recovery-audit-export.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-live-release-verify-lib.js`,
+  `src/recovery-repair.js`, `test/production-shaped-proof.test.js`, and
+  `test/rpp-0640-manual-recovery-audit-export.test.js`. The recovery repair
+  path now exports hash-only manual recovery audit evidence tied to the same
+  release boundary and source URL, and the production-shaped durable recovery
+  proof accepts either explicit repair-export evidence or a derived legacy audit
+  export without exposing raw private fixtures. Validation passed with Node
+  syntax checks, focused RPP-0640 coverage 1/1, recovery repair coverage 5/5,
+  durable recovery journal release-proof coverage 1/1, full recovery-journal
+  coverage 43/43, checklist lint, scoped artifact redaction scan, raw fixture
+  scan, and merge diff whitespace checks. Counts are now 493/507; final release
+  remains `NO-GO` because this is local release-verifier/recovery evidence, not
+  an external production WordPress crash/restart durability run.
 - Session user identity release-summary proof: the current lane now contains
   `RPP-0530` evidence in
   `docs/evidence/rpp-0530-session-user-identity-release-summary.md`,
