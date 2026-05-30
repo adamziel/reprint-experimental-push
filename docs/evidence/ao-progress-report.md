@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 11:41 CEST
+# AO Progress Report - 2026-05-30 11:43 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0378 GUID and slug
-collision graph proof ending at `f4e5c639`.
+`lane/evidence-integration-20260527` through the current RPP-0379 cross-table
+create batch graph proof ending at `f5c309e7`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 418 are
-  checked from integrated evidence and 582 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 419 are
+  checked from integrated evidence and 581 remain open.
+- `RPP-0379` is now checked with focused graph-identity proof for same-plan
+  cross-table `wp_posts` and `wp_postmeta` create batch mapping in
+  `docs/evidence/rpp-0379-cross-table-create-batch-mapping-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0379-cross-table-create-batch-mapping-v4.test.js`. `node --check`
+  passed for the focused test, focused RPP-0379 coverage passed 2/2, adjacent
+  same-plan planner graph closure passed 4/4, adjacent explicit identity-map
+  planner coverage passed 3/3, local-production verifier graph coverage passed
+  20/20, and graph mapping inventory passed 2/2. Checklist lint, scoped
+  artifact redaction scan, checklist redaction guard coverage, and merge diff
+  whitespace checks also passed. This remains local graph support evidence, not
+  production endpoint proof.
 - `RPP-0378` is now checked with focused graph-identity proof for GUID and slug
   collision handling in
   `docs/evidence/rpp-0378-guid-slug-collision-handling-v4.md`,
