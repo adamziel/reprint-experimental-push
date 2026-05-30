@@ -221,6 +221,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, localSnaps
     apply.body.applyRevalidation?.claim?.activeClaimKeyHash,
     'apply claim must reuse the dry-run receipt idempotency binding',
   );
+  assertLiveSourceBindingRevalidated(apply.body.applyRevalidation);
   assert.equal(apply.body.rejectedRemoteEvidence?.preservedRemoteChange, true);
   assert.equal(apply.body.rejectedRemoteEvidence?.appliedBeforeFailure, 0);
   assert.equal(apply.body.storageGuard?.outcome, 'stale-at-write');
@@ -335,6 +336,7 @@ async function runApplyRevalidationProof({ remoteServer, localServer, localSnaps
       preconditionCheck: apply.body.preconditionCheck,
       applied: apply.body.applied,
       applyRevalidation: apply.body.applyRevalidation,
+      liveSourceBinding: summarizeLiveSourceBinding(apply.body.applyRevalidation),
       storageGuard: apply.body.storageGuard,
       rejectedRemoteEvidence: apply.body.rejectedRemoteEvidence,
       recovery: apply.body.recovery,
@@ -465,6 +467,39 @@ function assertReceiptBindsReleaseInput({ receipt, plan, sourceUrl, idempotencyK
   assert.equal(digest(withoutHash), receiptHash, 'dry-run receipt must bind its full body');
 }
 
+function assertLiveSourceBindingRevalidated(applyRevalidation) {
+  const liveSource = applyRevalidation?.liveSource;
+  assert.equal(applyRevalidation?.phase, 'before-first-mutation');
+  assert.equal(applyRevalidation?.checkedAgainst, 'live-remote');
+  assert.ok(liveSource && typeof liveSource === 'object', 'apply revalidation must include live source binding evidence');
+
+  for (const field of [
+    'sourceHash',
+    'sourceUrlHash',
+    'receiptSourceHash',
+    'receiptSourceUrlHash',
+    'sourceBindingHash',
+  ]) {
+    assert.match(liveSource[field] || '', /^[a-f0-9]{64}$/, `live source ${field} must be sha256 evidence`);
+  }
+
+  assert.equal(
+    liveSource.sourceHash,
+    liveSource.receiptSourceHash,
+    'apply must revalidate the same source identity bound into the dry-run receipt',
+  );
+  assert.equal(
+    liveSource.sourceUrlHash,
+    liveSource.receiptSourceUrlHash,
+    'apply must revalidate the same live source URL bound into the dry-run receipt',
+  );
+  assert.match(
+    liveSource.dbJournalCursor || '',
+    /^db-journal:\d+$/,
+    'live source binding revalidation must happen after apply-started opens a DB journal cursor',
+  );
+}
+
 function summarizeReceiptBinding(receipt) {
   const binding = receipt?.authBinding || {};
   return {
@@ -477,6 +512,20 @@ function summarizeReceiptBinding(receipt) {
     dryRunIdempotencyKeyHash: binding.pushSession?.dryRunIdempotencyKeyHash || null,
     dryRunBodyHash: binding.request?.dryRunBodyHash || null,
     dryRunRawBodyHash: binding.request?.dryRunRawBodyHash || null,
+  };
+}
+
+function summarizeLiveSourceBinding(applyRevalidation) {
+  const liveSource = applyRevalidation?.liveSource || {};
+  return {
+    sourceHash: liveSource.sourceHash || null,
+    sourceUrlHash: liveSource.sourceUrlHash || null,
+    receiptSourceHash: liveSource.receiptSourceHash || null,
+    receiptSourceUrlHash: liveSource.receiptSourceUrlHash || null,
+    sourceBindingHash: liveSource.sourceBindingHash || null,
+    dbJournalCursor: liveSource.dbJournalCursor || null,
+    sameSourceHash: Boolean(liveSource.sourceHash && liveSource.sourceHash === liveSource.receiptSourceHash),
+    sameSourceUrlHash: Boolean(liveSource.sourceUrlHash && liveSource.sourceUrlHash === liveSource.receiptSourceUrlHash),
   };
 }
 
