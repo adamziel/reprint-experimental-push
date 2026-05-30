@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 11:50 CEST
+# AO Progress Report - 2026-05-30 11:55 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0381
-post_parent page hierarchy release-verifier proof ending at `a0d9e0940`.
+`lane/evidence-integration-20260527` through the current RPP-0382 featured
+image attachment release-verifier proof ending at `b1f2ff0e`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 421 are
-  checked from integrated evidence and 579 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 422 are
+  checked from integrated evidence and 578 remain open.
+- `RPP-0382` is now checked with local fail-closed release-verifier proof for
+  unsupported featured image attachment graph targets in
+  `docs/evidence/rpp-0382-featured-image-attachment-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0382-featured-image-attachment-reference-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0382 coverage passed
+  1/1, adjacent featured-image planner coverage passed 4/4, adjacent local
+  production featured-image coverage passed 3/3, and release-verifier
+  postmeta/audit-redaction adjacency passed 6/6. Checklist lint, scoped
+  artifact redaction scan, checklist redaction guard coverage, and merge diff
+  whitespace checks also passed. This remains local graph release-verifier
+  support evidence, not production endpoint proof.
 - `RPP-0381` is now checked with local release-verifier carry-through proof for
   same-plan `wp_posts.post_parent` page hierarchy references in
   `docs/evidence/rpp-0381-post-parent-page-hierarchy-release-verifier-v5.md`,

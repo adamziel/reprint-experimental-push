@@ -6,20 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:50 CEST.
+- Last update: 2026-05-30 11:55 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0381 post_parent page hierarchy release-verifier proof merge ending
-  at `a0d9e0940`.
+  the RPP-0382 featured image attachment release-verifier proof merge ending
+  at `b1f2ff0e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 421
-  items checked and leaves 579 open.
-- Checked slices: 100 release-gate foundation items, 38 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 422
+  items checked and leaves 578 open.
+- Checked slices: 100 release-gate foundation items, 39 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Featured image attachment release-verifier proof: the current lane now
+  contains `RPP-0382` evidence in
+  `docs/evidence/rpp-0382-featured-image-attachment-reference-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0382-featured-image-attachment-reference-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0382 coverage passed
+  1/1, adjacent featured-image planner coverage passed 4/4, adjacent local
+  production featured-image coverage passed 3/3, and release-verifier
+  postmeta/audit-redaction adjacency passed 6/6. Checklist lint, scoped
+  artifact redaction scan, checklist/redaction guard tests, and merge diff
+  whitespace checks also passed. Counts are now 422/578; final release remains
+  `NO-GO`.
 - Post parent page hierarchy release-verifier proof: the current lane now
   contains `RPP-0381` evidence in
   `docs/evidence/rpp-0381-post-parent-page-hierarchy-release-verifier-v5.md`,
