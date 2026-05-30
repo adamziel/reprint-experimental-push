@@ -1,19 +1,30 @@
-# AO Progress Report - 2026-05-30 10:31 CEST
+# AO Progress Report - 2026-05-30 10:34 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0267 local plugin
-data stale owner-context variant-4 merge-invariant refresh ending at
-`7eb8456ae`.
+`lane/evidence-integration-20260527` through the current RPP-0268 unknown
+plugin-owned resource refusal variant-4 merge-invariant refresh ending at
+`a23eaeddc`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 397 are
-  checked from integrated evidence and 603 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 398 are
+  checked from integrated evidence and 602 remain open.
+- `RPP-0268` is now checked with focused unknown plugin-owned resource refusal
+  variant-4 merge-invariant evidence in
+  `docs/evidence/rpp-0268-unknown-plugin-owned-resource-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0268-unknown-plugin-owned-resource-refusal-v4.test.js`. `node
+  --check` passed for the focused test, the focused RPP-0268 test passed 1/1,
+  adjacent RPP-0248 variant-3 coverage passed 1/1, and the adjacent
+  RPP-0208/RPP-0228 planner/generated slice passed 3/3. Checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks also
+  passed. This remains local planner/apply generated-fixture evidence, not
+  production endpoint proof.
 - `RPP-0267` is now checked with focused local plugin data stale owner-context
   variant-4 merge-invariant evidence in
   `docs/evidence/rpp-0267-local-plugin-data-stale-owner-context-v4.md`,
