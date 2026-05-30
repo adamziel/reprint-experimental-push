@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:54:00+02:00">Last updated: May 30, 2026, 14:54 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:57:00+02:00">Last updated: May 30, 2026, 14:57 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>458</strong>
+        <strong>459</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>542</strong>
+        <strong>541</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, production-shaped preflight and snapshot-hashes route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight and snapshot-hashes route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0711</span>
+        <span>RPP-0518</span>
       </div>
-      <p>The latest refresh integrates RPP-0711 remote hash pagination evidence: the authenticated snapshot-hashes route issues source- and scope-bound snapcursor pages, rejects malformed cursors, source drift, scope drift, out-of-range offsets, and invalid batch sizes before returning a page, and records hash-only pagination plus receipt evidence under a read-only planning boundary. The deterministic benchmark paginates 1205 remote hash resources in 10 pages with zero duplicate resource keys and zero raw value evidence leaks. Counts are now 458/542; final release remains NO-GO because this is deterministic no-live-remote pagination evidence, not production-backed storage receipt proof.</p>
+      <p>The latest refresh integrates RPP-0518 capability downgrade rejection evidence: route permission uses the shared manage_options guard, short-lived push sessions bind required capability and capability hash, signed dry-run, apply, recovery, snapshot-hashes, and journal requests reject downgraded capability before canonical verification, nonce claiming, JSON parsing, or mutation setup, and the authenticated HTTP client fails closed before apply when a later auth/session read reports manage_options false. Counts are now 459/541; final release remains NO-GO because this is local authenticated-client and source-level route evidence, not production-backed credential lifecycle proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0518 route focused: 3/3</span>
+        <span class="tag">RPP-0518 client focused: 1/1</span>
+        <span class="tag">session/auth adjacent: 8/8</span>
+        <span class="tag">full client suite: pass</span>
+        <span class="tag">production routes: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0711 focused: 9/9</span>
         <span class="tag">production routes adjacent: 24/24</span>
         <span class="tag">remote hash bench: pass</span>

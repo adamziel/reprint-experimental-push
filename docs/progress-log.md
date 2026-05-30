@@ -6,19 +6,43 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:54 CEST.
+- Last update: 2026-05-30 14:57 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0711 remote hash pagination merge ending at `bf7feee79`.
+  the RPP-0518 capability downgrade rejection merge ending at `c9cd4b0b8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 458
-  items checked and leaves 542 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 459
+  items checked and leaves 541 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  75 plugin-driver boundary items, 26 executor/auth items, 29 recovery items,
+  75 plugin-driver boundary items, 27 executor/auth items, 29 recovery items,
   15 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Capability downgrade rejection: the current lane now contains `RPP-0518`
+  evidence in `docs/evidence/rpp-0518-capability-downgrade-rejection.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`,
+  `src/authenticated-http-push-client.js`,
+  `test/authenticated-http-push-client.test.js`, and
+  `test/rpp-0518-capability-downgrade-rejection.test.js`. The authenticated
+  route permission now uses the shared `manage_options` capability guard;
+  short-lived push sessions store required-capability, granted-state, and
+  capability-hash evidence; signed dry-run, apply, recovery, snapshot-hashes,
+  and journal requests reject missing or downgraded capability evidence with
+  `SIGNED_SESSION_CAPABILITY_DOWNGRADED` before canonical verification, nonce
+  claiming, JSON parsing, or mutation setup; and dry-run receipt issue bindings
+  carry the capability hash. The authenticated HTTP client records preflight
+  `manage_options` capability and fails closed with
+  `AUTH_SESSION_CAPABILITY_DOWNGRADED` before sending apply when a later
+  auth/session read reports `manage_options: false`. Validation passed with PHP
+  lint, Node syntax checks, focused RPP-0518 route/source coverage 3/3, focused
+  client coverage 1/1, adjacent session/auth coverage 8/8, the full
+  authenticated-client suite, production route coverage, RPP-0711 remote-hash
+  route coverage, checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks. Counts are now 459/541; final release remains `NO-GO`
+  because this is local authenticated-client and source-level route evidence,
+  not production-backed credential lifecycle proof.
 - Remote hash pagination: the current lane now contains `RPP-0711` evidence in
   `docs/evidence/rpp-0711-remote-hash-pagination.md`,
   `docs/reprint-push-completion-checklist.md`,
