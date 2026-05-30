@@ -10,6 +10,7 @@ import {
   appendMutationObserved,
   assertJournalRecordHasNoRawValues,
   checkedDurableJournalBoundarySatisfied,
+  classifyRecoveryJournalClaims,
   productionRecoveryJournalInspectionSurfaceIsPresent,
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
@@ -135,6 +136,19 @@ function writeSqliteJournalTable(database, records, tableName = 'recovery_journa
   const insert = database.prepare(`INSERT INTO ${tableName} (sequence, schema_version, record_json) VALUES (?, ?, ?)`);
   for (const record of records) {
     insert.run(record.sequence, record.schemaVersion, JSON.stringify(record));
+  }
+  return records.map((record) => ({ ...record }));
+}
+
+function writeCurrentSqliteJournalTable(database, records, tableName = 'recovery_journal') {
+  database.exec(`CREATE TABLE ${tableName} (
+    sequence INTEGER PRIMARY KEY,
+    record_json TEXT NOT NULL,
+    schema_version INTEGER NOT NULL
+  )`);
+  const insert = database.prepare(`INSERT INTO ${tableName} (sequence, record_json, schema_version) VALUES (?, ?, ?)`);
+  for (const record of records) {
+    insert.run(record.sequence, JSON.stringify(record), record.schemaVersion);
   }
   return records.map((record) => ({ ...record }));
 }
@@ -1335,6 +1349,184 @@ test('production recovery journal claim expiry advances stale ownership and rele
   assert.equal(releaseProof.sameKeyReplayAfterRejection.preservedRemoteUnchanged, true);
   assert.equal(releaseProof.claimExpiryPolicy.proved, true);
   assert.equal(releaseProof.claimExpiryPolicy.previousClaimAgeMs, 5_000);
+});
+
+test('RPP-0625 SQLite claim expiry proof keeps production release claim NO-GO without live evidence', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const filePath = tempJournalPath();
+  const sqlitePath = tempSqlitePath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const artifactRefs = {
+    releaseProof: 'artifact://rpp-0625-claim-expiry-policy-v2',
+  };
+  const staleThresholdMs = 2_000;
+  const activeClaimId = 'rpp-0625-sqlite-expiry-active';
+  const retryClaimId = 'rpp-0625-sqlite-expiry-retry';
+
+  const initial = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId: activeClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  initial.close();
+
+  const retry = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: new Date(fixedNow.getTime() + 6_000),
+    truncate: false,
+    claimId: retryClaimId,
+    claimStaleThresholdMs: staleThresholdMs,
+  });
+  retry.close();
+
+  const fileJournal = readRecoveryJournal(filePath);
+  const database = new DatabaseSync(sqlitePath);
+  writeCurrentSqliteJournalTable(database, fileJournal.records);
+  database.close();
+
+  const restartedDatabase = new DatabaseSync(sqlitePath);
+  const sqliteJournal = readSqliteRecoveryJournalTable(restartedDatabase);
+  restartedDatabase.close();
+
+  assert.equal(sqliteJournal.storage, 'sqlite');
+  assert.equal(sqliteJournal.integrity.status, 'ok');
+  assert.equal(sqliteJournal.schemaVersionColumnPresent, true);
+  assert.deepEqual(sqliteJournal.tableSchemaVersions, [1]);
+  assert.deepEqual(
+    sqliteJournal.records.map((record) => record.sequence),
+    Array.from({ length: fileJournal.records.length }, (_, index) => index + 1),
+  );
+  assert.deepEqual(sqliteJournal.records, fileJournal.records);
+
+  const sqliteClaim = classifyRecoveryJournalClaims(sqliteJournal.records);
+  assert.equal(sqliteClaim.status, 'advanced');
+  assert.equal(sqliteClaim.activeClaimId, retryClaimId);
+  assert.equal(sqliteClaim.previousClaimId, activeClaimId);
+  assert.equal(sqliteClaim.claimExpiry.expired, true);
+  assert.equal(sqliteClaim.claimExpiry.previousClaimExpired, true);
+  assert.equal(sqliteClaim.claimExpiry.staleThresholdMs, staleThresholdMs);
+  assert.equal(sqliteClaim.claimExpiry.previousClaimAgeMs, 6_000);
+
+  const sqliteRecoveryInspection = inspectRecoveryJournal({
+    journal: sqliteJournal,
+    plan,
+    current: remote,
+  });
+  assert.equal(sqliteRecoveryInspection.status, 'old-remote');
+  assert.deepEqual(sqliteRecoveryInspection.counts, {
+    old: plan.mutations.length,
+    new: 0,
+    blockedUnknown: 0,
+  });
+
+  const sqliteLocalDurableJournal = {
+    scope: 'local SQLite durable journal fixture; not live production evidence',
+    claim: {
+      status: 'stale-claim-rejected',
+      activeClaimId: sqliteClaim.activeClaimId,
+      activeClaimKeyHash: sqliteClaim.activeClaimHash,
+      activeClaimSequence: sqliteClaim.sequence,
+      activeClaimEvent: sqliteClaim.type,
+      idempotencyKeyHash: 'rpp-0625-idempotency-key-hash',
+      requestHash: 'rpp-0625-request-hash',
+      staleClaimRejected: true,
+      previousClaimId: sqliteClaim.previousClaimId,
+      previousClaimKeyHash: sqliteClaim.previousClaimHash,
+      previousClaimSequence: 1,
+      previousClaimEvent: 'recovery-claim-opened',
+      claimExpiry: sqliteClaim.claimExpiry,
+    },
+    ownership: {
+      ownsJournal: true,
+      restartReadable: true,
+      productionAdapter: 'sqlite-local-durable-fixture',
+      supportedSurface: 'claim-fenced-restart-readable',
+    },
+    storageGuard: {
+      boundary: 'sqlite-local-durable-fixture',
+      operation: 'update',
+      outcome: 'applied',
+    },
+    writerLease: {
+      strategy: 'claim-fenced-single-writer',
+      claimId: sqliteClaim.activeClaimId,
+      claimKeyHash: sqliteClaim.activeClaimHash,
+      claimKeyUnique: true,
+      fsyncEvidence: true,
+      storageGuard: 'sqlite-local-durable-fixture',
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+    },
+    leaseFence: {
+      boundary: 'sqlite-local-durable-fixture',
+      storageGuard: 'sqlite-local-durable-fixture',
+      fsyncEvidence: true,
+      claimKeyUnique: true,
+      monotonicSequence: true,
+      restartReadable: true,
+      staleClaimRejected: true,
+      writerLease: {
+        strategy: 'claim-fenced-single-writer',
+        claimId: sqliteClaim.activeClaimId,
+        claimKeyHash: sqliteClaim.activeClaimHash,
+        claimKeyUnique: true,
+        fsyncEvidence: true,
+        storageGuard: 'sqlite-local-durable-fixture',
+        monotonicSequence: true,
+        restartReadable: true,
+        staleClaimRejected: true,
+      },
+    },
+    claimExpiry: sqliteClaim.claimExpiry,
+  };
+  const sqliteProofInspection = {
+    journal: sqliteLocalDurableJournal,
+    claim: sqliteLocalDurableJournal.claim,
+    leaseFence: sqliteLocalDurableJournal.leaseFence,
+  };
+  const oldRemoteRecovery = {
+    source: 'RPP-0625 SQLite restarted durable journal fixture',
+    status: 200,
+    state: sqliteRecoveryInspection.status,
+    counts: {
+      ...sqliteRecoveryInspection.counts,
+      total: plan.mutations.length,
+    },
+  };
+
+  const releaseProof = buildDurableRecoveryJournalReleaseProof({
+    releaseSummary: buildRecoveryReleaseSummary({
+      inspection: sqliteProofInspection,
+      plan,
+      mutationEvents: plan.mutations.length,
+      oldRemoteRecovery,
+    }),
+    applyRevalidation: buildBlockedApplyRevalidation(),
+  });
+
+  assert.equal(releaseProof.ok, true);
+  assert.equal(releaseProof.gate, 'GATE-2');
+  assert.equal(releaseProof.gateStatus, 'proven');
+  assert.equal(releaseProof.sameReleaseBoundary, true);
+  assert.equal(releaseProof.checks.claimExpiryPolicy, true);
+  assert.equal(releaseProof.checks.oldState, true);
+  assert.equal(releaseProof.claimExpiryPolicy.proved, true);
+  assert.equal(releaseProof.claimExpiryPolicy.previousClaimAgeMs, 6_000);
+  assert.equal(releaseProof.ownership.productionAdapter, 'sqlite-local-durable-fixture');
+  assert.equal(
+    checkedDurableJournalBoundarySatisfied(sqliteLocalDurableJournal),
+    false,
+  );
 });
 
 test('production recovery journal ownership record is durable after restart', () => {
