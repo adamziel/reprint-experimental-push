@@ -1967,6 +1967,108 @@ test('restart inspection blocks when current state drifts outside before and aft
   );
 });
 
+test('RPP-0633 unknown drift classification preserves remote drift on retry', () => {
+  const filePath = tempJournalPath();
+  const base = baseSite();
+  const local = localSite();
+  const remote = clone(base);
+  const plan = planFor(base, local, remote);
+  const claimId = 'rpp-0633-unknown-drift-claim';
+  const driftedContent = 'remote-preserved-private-content-rpp-0633-unknown-drift';
+  const untouchedOldContent = remote.files['file-4.txt'];
+  const journal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs: {
+      releaseProof: 'artifact://rpp-0633-unknown-drift',
+    },
+    now: fixedNow,
+    claimId,
+  });
+  journal.close();
+
+  const retryRemote = clone(remote);
+  retryRemote.files['file-3.txt'] = driftedContent;
+  const beforeRetryHash = digest(retryRemote);
+  const inspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current: retryRemote,
+  });
+  const driftTarget = inspection.targets.find(
+    (target) => target.resourceKey === 'file:file-3.txt',
+  );
+
+  assert.equal(inspection.status, 'blocked-recovery');
+  assert.deepEqual(inspection.counts, { old: 7, new: 0, blockedUnknown: 1 });
+  assert.ok(driftTarget);
+  assert.equal(driftTarget.state, 'blocked-unknown');
+  assert.equal(driftTarget.reason, 'Current resource hash is outside the before/after recovery envelope.');
+  assert.match(driftTarget.beforeHash, /^[a-f0-9]{64}$/);
+  assert.match(driftTarget.afterHash, /^[a-f0-9]{64}$/);
+  assert.match(driftTarget.observedHash, /^[a-f0-9]{64}$/);
+  assert.notEqual(driftTarget.observedHash, driftTarget.beforeHash);
+  assert.notEqual(driftTarget.observedHash, driftTarget.afterHash);
+
+  const repairInspection = inspectRecoveryRepair({
+    journalPath: filePath,
+    plan,
+    current: retryRemote,
+  });
+
+  assert.equal(repairInspection.status, 'blocked-operator-decision-required');
+  assert.deepEqual(repairInspection.counts, {
+    old: 7,
+    new: 0,
+    unknown: 1,
+    total: plan.mutations.length,
+  });
+  assert.equal(repairInspection.canRollForward, false);
+  assert.equal(repairInspection.requiresOperatorDecision, true);
+  assert.equal(repairInspection.driftedTargets.length, 1);
+  assert.equal(repairInspection.driftedTargets[0].resourceKey, 'file:file-3.txt');
+  assert.equal(repairInspection.driftedTargets[0].code, 'TARGET_DRIFTED_OUTSIDE_ENVELOPE');
+  assert.equal(repairInspection.driftedTargets[0].observedHash, driftTarget.observedHash);
+
+  assert.throws(
+    () =>
+      replayRecoveryRepair({
+        journalPath: filePath,
+        plan,
+        current: retryRemote,
+        mutateCurrent: true,
+      }),
+    (error) => {
+      assert.equal(error.code, 'RECOVERY_REPAIR_OPERATOR_DECISION_REQUIRED');
+      assert.equal(error.details.driftedTargets.length, 1);
+      assert.equal(error.details.driftedTargets[0].resourceKey, 'file:file-3.txt');
+      assert.equal(error.details.driftedTargets[0].observedHash, driftTarget.observedHash);
+      return true;
+    },
+  );
+
+  assert.equal(digest(retryRemote), beforeRetryHash);
+  assert.equal(retryRemote.files['file-3.txt'], driftedContent);
+  assert.equal(retryRemote.files['file-4.txt'], untouchedOldContent);
+
+  const afterRetryInspection = inspectRecoveryJournal({
+    journalPath: filePath,
+    plan,
+    current: retryRemote,
+  });
+  assert.equal(afterRetryInspection.status, 'blocked-recovery');
+  assert.deepEqual(afterRetryInspection.counts, inspection.counts);
+  assert.equal(
+    fs.readFileSync(filePath, 'utf8').includes(driftedContent),
+    false,
+  );
+  assert.equal(
+    fs.readFileSync(filePath, 'utf8').includes('local-private-content'),
+    false,
+  );
+});
+
 test('restart inspection blocks missing target records instead of treating updated remote as success', () => {
   const filePath = tempJournalPath();
   const plan = planFor();

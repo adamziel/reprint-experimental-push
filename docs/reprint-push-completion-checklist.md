@@ -674,7 +674,7 @@ Focus: prove production crash safety, replay, and repair semantics.
 - [x] RPP-0630 (Far / recovery) Prove old remote recovery classification, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
 - [x] RPP-0631 (Far / recovery) Prove new remote recovery classification, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
 - [x] RPP-0632 (Far / recovery) Prove blocked recovery classification, variant 2. Success: journal rows are durable after process restart.
-- [ ] RPP-0633 (Far / recovery) Prove unknown drift classification, variant 2. Success: retry does not overwrite preserved remote changes.
+- [x] RPP-0633 (Far / recovery) Prove unknown drift classification, variant 2. Success: retry does not overwrite preserved remote changes.
 - [x] RPP-0634 (Far / recovery) Prove same-key replay after commit, variant 2. Success: lease owner identity is visible in audit evidence.
 - [ ] RPP-0635 (Far / recovery) Prove same-key replay after rejection, variant 2. Success: release verifier reports the recovery gate as proven on the same path.
 - [ ] RPP-0636 (Far / recovery) Prove different-body idempotency conflict, variant 2. Success: MySQL or SQLite-backed test proves the recovery state.
