@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:12 CEST +02:00.
+- Last update: 2026-05-30 16:16 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0522 production snapshot hashes route v2 merge ending at `c0bf3e1fd`.
+  the RPP-0633 unknown drift classification v2 merge ending at `660190c41`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 474
-  items checked and leaves 526 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 475
+  items checked and leaves 525 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  81 plugin-driver boundary items, 28 executor/auth items, 34 recovery items,
+  81 plugin-driver boundary items, 28 executor/auth items, 35 recovery items,
   18 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Unknown drift classification v2: the current lane now contains `RPP-0633`
+  evidence in
+  `docs/evidence/rpp-0633-unknown-drift-classification-v2.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/recovery-journal.test.js`. The proof writes a claim-fenced recovery
+  journal, changes one planned remote target to a value outside both the
+  before and after hashes, proves restart inspection reports
+  `blocked-recovery` with one `blockedUnknown` target, and verifies retry
+  requires an operator decision before mutation. Validation passed with focused
+  RPP-0633 coverage 1/1, adjacent recovery classification coverage 7/7, full
+  recovery-journal coverage 38/38, file-journal restart smoke, checklist lint,
+  scoped artifact redaction scan, raw sentinel scan, and merge diff whitespace
+  checks. Counts are now 475/525; final release remains `NO-GO` because this is
+  local durable recovery evidence, not external WordPress crash/restart
+  durability proof.
 - Production snapshot hashes route v2 augmented proof: the current lane now
   carries the represented `RPP-0522` salvage commit into the existing
   `docs/evidence/rpp-0522-production-snapshot-hashes-route-v2.md`,

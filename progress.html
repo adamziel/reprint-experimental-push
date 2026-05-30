@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:12:00+02:00">Last updated: May 30, 2026, 16:12 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T16:16:00+02:00">Last updated: May 30, 2026, 16:16 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>474</strong>
+        <strong>475</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>526</strong>
+        <strong>525</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, and blocked recovery classification v2 process-restart evidence, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, claim-expiry policy, restart-readable open-state v2, restart-readable staged-state v2, restart-readable committed-state v2, old-remote restart classification release-proof carry-through v2, old-remote, new-remote, blocked partial-remote classification, blocked recovery classification v2 process-restart evidence, unknown drift classification v2 preserved-remote retry evidence, same-key rejected replay, different-body idempotency conflict, before-mutation process-kill readback, manual recovery audit export, journal schema migration, ownership-record SQLite readback, retry hardening, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0522</span>
+        <span>RPP-0633</span>
       </div>
-      <p>The latest refresh augments RPP-0522 production snapshot hashes route v2 evidence: the merged smoke keeps malformed JSON auth/signature failures before payload parsing and protocol journal non-mutation checks, while adding invalid-session, route-surface hash, receipt/session hash-length, and production-shaped route summary assertions. Counts remain 474/526 because RPP-0522 was already checked; final release remains NO-GO because this is sandbox-local production-shaped route proof, not external production topology and credential evidence.</p>
+      <p>The latest refresh integrates RPP-0633 unknown drift classification v2 evidence: a claim-fenced recovery journal is reopened after one planned remote target drifts outside both the before and after hashes, restart inspection reports one blockedUnknown target, and retry refuses to mutate until an operator decision is supplied. Counts are now 475/525; final release remains NO-GO because this is local durable recovery evidence, not external WordPress crash/restart durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0633 focused: 1/1</span>
+        <span class="tag">recovery classification adjacent: 7/7</span>
+        <span class="tag">recovery journal full: 38/38</span>
+        <span class="tag">file-journal smoke: pass</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0522 focused: 7/7</span>
         <span class="tag">live smoke: pass</span>
         <span class="tag">auth/session/route: 163/163</span>
