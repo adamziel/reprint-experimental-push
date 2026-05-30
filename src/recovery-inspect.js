@@ -60,6 +60,12 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
   const counts = countTargets(targets);
   const status = overallStatus(counts, targets.length);
   const claim = classifyRecoveryJournalClaims(persisted.records);
+  const remoteRecoveryClassification = classifyRemoteRecoveryState({
+    status,
+    counts,
+    total: targets.length,
+    persisted,
+  });
 
   return {
     status,
@@ -67,6 +73,7 @@ export function inspectRecoveryJournal({ journal, journalPath, plan, current, jo
     planId: plan.id,
     counts,
     targets,
+    remoteRecoveryClassification,
     claim,
     journal: persisted,
   };
@@ -119,12 +126,20 @@ function classifyMutationTarget({ mutation, target, current }) {
 function blockedInspection({ plan, persisted, reason }) {
   const targets = (plan.mutations || []).map((mutation) =>
     unknownTarget(mutation, 'journal-integrity-blocked', reason));
+  const counts = countTargets(targets);
+  const status = 'blocked-recovery';
   return {
-    status: 'blocked-recovery',
+    status,
     reason,
     planId: plan.id,
-    counts: countTargets(targets),
+    counts,
     targets,
+    remoteRecoveryClassification: classifyRemoteRecoveryState({
+      status,
+      counts,
+      total: targets.length,
+      persisted,
+    }),
     claim: classifyRecoveryJournalClaims(persisted.records),
     journal: persisted,
   };
@@ -180,6 +195,63 @@ function reasonForStatus(status, counts, total) {
   return `Remote is partially updated: ${counts.new} new and ${counts.old} old of ${total} planned targets.`;
 }
 
+export function classifyRemoteRecoveryState({ status, counts, total, persisted } = {}) {
+  const normalizedCounts = {
+    old: integerOrZero(counts?.old),
+    new: integerOrZero(counts?.new),
+    blockedUnknown: integerOrZero(counts?.blockedUnknown),
+    total: Number.isInteger(total) ? total : integerOrZero(counts?.total),
+  };
+  const journalState = persisted?.integrity?.status || 'unknown';
+  const storage = persisted?.storage || 'filesystem';
+  const allTargetsClassified = normalizedCounts.blockedUnknown === 0
+    && normalizedCounts.old + normalizedCounts.new === normalizedCounts.total;
+
+  if (
+    status === 'fully-updated-remote'
+    && normalizedCounts.total > 0
+    && normalizedCounts.new === normalizedCounts.total
+    && allTargetsClassified
+  ) {
+    return {
+      kind: 'new-remote',
+      state: 'fully-updated-remote',
+      proved: journalState === 'ok',
+      replaySafe: journalState === 'ok',
+      counts: normalizedCounts,
+      journalState,
+      storage,
+    };
+  }
+
+  if (
+    status === 'old-remote'
+    && normalizedCounts.total > 0
+    && normalizedCounts.old === normalizedCounts.total
+    && allTargetsClassified
+  ) {
+    return {
+      kind: 'old-remote',
+      state: 'old-remote',
+      proved: journalState === 'ok',
+      replaySafe: journalState === 'ok',
+      counts: normalizedCounts,
+      journalState,
+      storage,
+    };
+  }
+
+  return {
+    kind: 'blocked-recovery',
+    state: 'blocked-recovery',
+    proved: false,
+    replaySafe: false,
+    counts: normalizedCounts,
+    journalState,
+    storage,
+  };
+}
+
 function withIntegrityErrors(persisted, errors) {
   return {
     ...persisted,
@@ -189,4 +261,8 @@ function withIntegrityErrors(persisted, errors) {
       errors,
     },
   };
+}
+
+function integerOrZero(value) {
+  return Number.isInteger(value) ? value : 0;
 }

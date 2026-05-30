@@ -110,6 +110,20 @@ function writeLegacySqliteJournalTable(database, records, tableName = 'recovery_
   return legacyRecords;
 }
 
+function writeSqliteJournalTable(database, records, tableName = 'recovery_journal') {
+  database.exec(`CREATE TABLE ${tableName} (
+    sequence INTEGER PRIMARY KEY,
+    schema_version INTEGER NOT NULL,
+    record_json TEXT NOT NULL
+  )`);
+  const insert = database.prepare(
+    `INSERT INTO ${tableName} (sequence, schema_version, record_json) VALUES (?, ?, ?)`,
+  );
+  for (const record of records) {
+    insert.run(record.sequence, record.schemaVersion, JSON.stringify(record));
+  }
+}
+
 function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
   const latestEvents = [
     { sequence: 1, event: 'idempotency-opened' },
@@ -702,6 +716,66 @@ test('SQLite-backed journal table schema migration preserves rows and remains re
     unsupported.integrity.errors.some((error) => error.code === 'JOURNAL_TABLE_SCHEMA_UNSUPPORTED'),
     true,
   );
+  database.close();
+});
+
+test('SQLite-backed restart inspection proves new-remote recovery classification', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const sqlitePath = tempSqlitePath();
+  const seedFilePath = tempJournalPath();
+  const remote = baseSite();
+  const current = clone(remote);
+  const plan = planFor(baseSite(), localSite(), remote);
+  const seedJournal = openPlanRecoveryJournal({
+    filePath: seedFilePath,
+    plan,
+    current: remote,
+    now: fixedNow,
+  });
+
+  applyFirstMutations(current, plan, plan.mutations.length);
+  for (const mutation of plan.mutations) {
+    appendMutationObserved(seedJournal, {
+      plan,
+      mutation,
+      current,
+      state: 'applied',
+    });
+  }
+  appendJournalCompleted(seedJournal, { plan, current });
+  seedJournal.close();
+
+  const seedRows = readRecoveryJournal(seedFilePath).records;
+  const database = new DatabaseSync(sqlitePath);
+  writeSqliteJournalTable(database, seedRows);
+  const restarted = readSqliteRecoveryJournalTable(database);
+  const inspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current,
+  });
+
+  assert.equal(restarted.storage, 'sqlite');
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.committedState.status, 'completed');
+  assert.equal(inspection.status, 'fully-updated-remote');
+  assert.deepEqual(inspection.counts, { old: 0, new: 8, blockedUnknown: 0 });
+  assert.deepEqual(inspection.remoteRecoveryClassification, {
+    kind: 'new-remote',
+    state: 'fully-updated-remote',
+    proved: true,
+    replaySafe: true,
+    counts: {
+      old: 0,
+      new: 8,
+      blockedUnknown: 0,
+      total: 8,
+    },
+    journalState: 'ok',
+    storage: 'sqlite',
+  });
+  assert.ok(inspection.targets.every((target) => target.state === 'new'));
   database.close();
 });
 
