@@ -318,6 +318,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'wp-posts-create-update-delete-variant4',
     tag: 'wp-posts-create-update-delete-v4',
   },
+  wpPostsCreateUpdateDeleteReleaseVerifierVariant5: {
+    family: 'wp-posts-create-update-delete-release-verifier-v5',
+    tag: 'wp-posts-create-update-delete-release-verifier-v5',
+  },
   wpPostmetaCreateUpdateDelete: {
     family: 'wp-postmeta-create-update-delete-ready',
     tag: 'wp-postmeta-create-update-delete',
@@ -4122,6 +4126,10 @@ function addWpPostsCreateUpdateDelete(base, local, remote, allocator, tags, { co
   tags.add(conflict ? 'wp-posts-create-update-delete-v3-non-ready' : 'wp-posts-create-update-delete-v3-ready');
   tags.add('wp-posts-create-update-delete-v4');
   tags.add(conflict ? 'wp-posts-create-update-delete-v4-non-ready' : 'wp-posts-create-update-delete-v4-ready');
+  tags.add('wp-posts-create-update-delete-release-verifier-v5');
+  tags.add(conflict
+    ? 'wp-posts-create-update-delete-release-verifier-v5-non-ready'
+    : 'wp-posts-create-update-delete-release-verifier-v5-ready');
 
   if (conflict) {
     remote.db.wp_posts[updateRowId].post_title = `Remote concurrent wp_posts update ${allocator.next()}`;

@@ -315,6 +315,18 @@ matching preconditions and stale replay refusal, and verifies the conflicting
 updated post refuses apply without mutating the remote digest. Evidence remains
 hash-only and omits generated post titles and content payloads.
 
+RPP-0187 adds `wpPostsCreateUpdateDeleteReleaseVerifierVariant5` coverage for
+the same `wp_posts` create/update/delete surface with an explicit
+release-verifier-v5 target tag. The deterministic roster emits 20 variant-5
+target cases: 10 ready post create/update/delete plans and 10 non-ready
+remote-drift conflicts, with two cases in every tier. The focused proof
+verifies the ready create, update, and delete post mutations apply with
+matching live-remote preconditions and stale replay refusal before mutation,
+then verifies the conflicting updated post suppresses the conflicted
+mutation/precondition and refuses apply with `PLAN_NOT_READY` before mutation.
+Evidence remains hash-only and omits generated post titles and content
+payloads.
+
 The `fileTypeSwap` target coverage records per-tier counts for file topology
 type swaps. Ready cases replace an empty directory with the planned file value
 and preserve unplanned remote resources; conflict cases add a remote descendant
