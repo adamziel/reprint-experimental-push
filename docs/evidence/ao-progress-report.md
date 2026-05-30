@@ -1,19 +1,32 @@
-# AO Progress Report - 2026-05-30 07:06 CEST
+# AO Progress Report - 2026-05-30 07:15 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0166 wp_options
-serialized option changes variant-4 generated-harness refresh ending at
-`aa237d1cd`.
+`lane/evidence-integration-20260527` through the current RPP-0167 wp_posts
+create/update/delete variant-4 generated-harness refresh ending at
+`9e799c6b2`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 359 are
-  checked from integrated evidence and 641 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 360 are
+  checked from integrated evidence and 640 remain open.
+- `RPP-0167` is now checked with focused wp_posts create/update/delete
+  variant-4 generated-harness evidence in
+  `docs/evidence/rpp-0167-wp-posts-create-update-delete-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0167 test passed 1/1, the adjacent
+  RPP-0107/RPP-0127/RPP-0147/RPP-0167 wp_posts slice passed 3/3, and
+  `npm run test:generated-push-harness` passed 74/74 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. This remains deterministic generated-model
+  coverage, not production endpoint proof.
 - `RPP-0166` is now checked with focused wp_options serialized option changes
   variant-4 generated-harness evidence in
   `docs/evidence/rpp-0166-wp-options-serialized-option-changes-v4.md`,

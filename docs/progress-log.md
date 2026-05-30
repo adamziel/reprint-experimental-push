@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 07:06 CEST.
+- Last update: 2026-05-30 07:15 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0166 wp_options serialized option changes variant-4 generated-harness
-  merge ending at `aa237d1cd`.
+  the RPP-0167 wp_posts create/update/delete variant-4 generated-harness merge
+  ending at `9e799c6b2`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 359
-  items checked and leaves 641 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 360
+  items checked and leaves 640 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 66 generated
+  11 storage/performance items, 3 production-topology items, 67 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- wp_posts create/update/delete variant-4 refresh: the current lane now contains
+  `RPP-0167` evidence in
+  `docs/evidence/rpp-0167-wp-posts-create-update-delete-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0167 test passed 1/1, the adjacent
+  RPP-0107/RPP-0127/RPP-0147/RPP-0167 wp_posts slice passed 3/3, and
+  `npm run test:generated-push-harness` passed 74/74 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 360/640; final release remains
+  `NO-GO`.
 - wp_options serialized option changes variant-4 refresh: the current lane now
   contains `RPP-0166` evidence in
   `docs/evidence/rpp-0166-wp-options-serialized-option-changes-v4.md`,
