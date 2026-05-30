@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 03:17 CEST
+# AO Progress Report - 2026-05-30 03:21 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0317 serialized
-block reference detection refresh ending at `1e1eff8fd`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0232
+remoteBeforeHash correctness refresh ending at `70aee9485`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 304 are
-  checked from integrated evidence and 696 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 305 are
+  checked from integrated evidence and 695 remain open.
+- `RPP-0232` is now checked with focused remoteBeforeHash correctness evidence
+  in `docs/evidence/rpp-0232-remote-before-hash-correctness-v2.md` and
+  `test/rpp-0232-remote-before-hash-correctness-v2.test.js`. `node --check
+  test/rpp-0232-remote-before-hash-correctness-v2.test.js` exited 0,
+  `node --test test/rpp-0232-remote-before-hash-correctness-v2.test.js` passed
+  3/3, the `RPP-0232` pattern passed 3/3, the `RPP-0212` regression passed
+  2/2, `node --test test/local-hash-correctness-rpp-0213.test.js` passed 2/2,
+  and full `node --test test/push-planner.test.js` passed 147/147, proving
+  every mutation `remoteBeforeHash` and live-remote precondition is bound to
+  the observed remote resource, forged local-payload hashes and stale remote
+  resources fail before mutation or target journal evidence, and serialized
+  proof stays hash-only while final release remains **NO-GO**.
 - `RPP-0317` is now checked with serialized Gutenberg block reference
   detection evidence in
   `docs/evidence/rpp-0317-serialized-block-reference-detection.md`,

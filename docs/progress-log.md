@@ -6,20 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:17 CEST.
+- Last update: 2026-05-30 03:21 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0317 serialized block reference detection merge ending at
-  `1e1eff8fd`.
+  the RPP-0232 remoteBeforeHash correctness merge ending at `70aee9485`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 304
-  items checked and leaves 696 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 305
+  items checked and leaves 695 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   40 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 51 generated
-  harness items, and 34 merge-invariant items. No release-ops items are checked
+  harness items, and 35 merge-invariant items. No release-ops items are checked
   yet.
+- Focused remoteBeforeHash correctness refresh: the current lane now contains
+  `RPP-0232` evidence in
+  `docs/evidence/rpp-0232-remote-before-hash-correctness-v2.md` and
+  `test/rpp-0232-remote-before-hash-correctness-v2.test.js`. `node --check
+  test/rpp-0232-remote-before-hash-correctness-v2.test.js` exited 0,
+  `node --test test/rpp-0232-remote-before-hash-correctness-v2.test.js` passed
+  3/3, the `RPP-0232` pattern passed 3/3, the `RPP-0212` planner regression
+  passed 2/2, `node --test test/local-hash-correctness-rpp-0213.test.js`
+  passed 2/2, and full `node --test test/push-planner.test.js` passed 147/147.
+  The proof binds every mutation `remoteBeforeHash` and matching live-remote
+  precondition to the observed remote resource, rejects forged local-payload
+  hashes and stale remote resources before mutation or target journal evidence,
+  and keeps serialized proof hash-only. Checklist lint, artifact redaction
+  scan, and `git diff --check` also passed. Counts are now 305/695; final
+  release remains `NO-GO`.
 - Serialized block reference detection refresh: the current lane now contains
   `RPP-0317` evidence in
   `docs/evidence/rpp-0317-serialized-block-reference-detection.md`,
