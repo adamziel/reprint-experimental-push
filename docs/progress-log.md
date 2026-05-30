@@ -6,20 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 18:14 CEST +02:00.
+- Last update: 2026-05-30 18:17 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0364 postmeta post_id reference variant-4 proof merge ending at
-  `64e06269`.
+  the RPP-0373 term relationship object reference variant-4 proof merge ending
+  at `a06c8cda`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 497
-  items checked and leaves 503 open.
-- Checked slices: 100 release-gate foundation items, 57 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 498
+  items checked and leaves 502 open.
+- Checked slices: 100 release-gate foundation items, 58 graph identity items,
   84 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Term relationship object reference variant-4 proof: the current lane now
+  contains `RPP-0373` evidence in
+  `docs/evidence/rpp-0373-term-relationship-object-reference-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0373-term-relationship-object-reference-v4.test.js`. The local
+  generated-model proof covers a ready `wp_term_relationships.object_id`
+  relationship whose post target is proven safe in the same plan, plus a stale
+  object target that blocks as `stale-wordpress-graph-identity` before mutation.
+  It preserves remote-only state, rejects stale ready replay, and keeps the
+  proof envelope hash-only after evidence redaction. Validation passed with Node
+  syntax checks, focused RPP-0373 coverage 1/1, adjacent generated/nav-menu
+  relationship coverage 3/3, checklist lint, scoped artifact redaction scan,
+  raw fixture scan, and merge diff whitespace checks. Counts are now 498/502;
+  final release remains `NO-GO` because this is local generated-model graph
+  evidence, not production-backed release evidence.
 - Postmeta post_id reference variant-4 proof: the current lane now contains
   `RPP-0364` evidence in
   `docs/evidence/rpp-0364-postmeta-post-id-reference-v4.md`,
