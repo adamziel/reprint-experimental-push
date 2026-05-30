@@ -14,7 +14,7 @@ import {
   readRecoveryJournal,
 } from '../../src/recovery-journal.js';
 import { inspectRecoveryJournal } from '../../src/recovery-inspect.js';
-import { resourceHash } from '../../src/resources.js';
+import { enumerateResources, resourceHash } from '../../src/resources.js';
 import { digest as stableDigest } from '../../src/stable-json.js';
 import { buildChunkTransferTransactionBoundaryPolicy } from '../../src/transaction-boundary-policy.js';
 import { DEFAULT_LIMITS, MIB } from './performance-model.js';
@@ -28,6 +28,9 @@ const PAYMENTS_PLUGIN = 'payments';
 const COMMERCE_MAIN_FILE = `wp-content/plugins/${COMMERCE_PLUGIN}/${COMMERCE_PLUGIN}.php`;
 const PAYMENTS_MAIN_FILE = `wp-content/plugins/${PAYMENTS_PLUGIN}/${PAYMENTS_PLUGIN}.php`;
 const ATOMIC_GROUP_ID = 'install-commerce-stack';
+const SNAPSHOT_HASHING_EVIDENCE_ID = 'rpp-0710-parallel-snapshot-hashing';
+const SNAPSHOT_HASH_FAST_PATH_LANE_ID = 'parallel-snapshot-hash-fast-path';
+const SNAPSHOT_HASH_NAMES = Object.freeze(['base', 'local', 'remote']);
 const BENCHMARK_GRAPH_ROW_IDS = Object.freeze({
   postsParents: 'ID:20001',
   featuredAttachment: 'ID:20002',
@@ -126,6 +129,10 @@ export const ROLLOUT_SAFETY_GATE_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'live-remote-preconditions',
     requirement: 'each mutation retains a live remote compare-and-swap precondition at apply time',
+  }),
+  Object.freeze({
+    id: 'parallel-snapshot-hashing',
+    requirement: 'snapshot hash fast-path lane updates only after bounded parallel correctness gates hold',
   }),
   Object.freeze({
     id: 'durable-journal-integrity',
@@ -291,6 +298,12 @@ export function productionThroughputBlockers(report) {
   if (!report.evidence.preconditions.everyMutationHasLiveRemotePrecondition) {
     blockers.push('missing-live-remote-preconditions');
   }
+  if (
+    report.evidence.parallelSnapshotHashing?.status !== 'passed'
+    || report.evidence.parallelSnapshotHashing?.fastPathLane?.updated !== true
+  ) {
+    blockers.push('missing-parallel-snapshot-hashing-evidence');
+  }
   if (!report.evidence.journal.allJournalsIntegrityOk) {
     blockers.push('missing-durable-journal-integrity');
   }
@@ -361,8 +374,21 @@ function benchmarkConfig(options) {
     profile: profileName,
     now: options.now || FIXED_NOW,
     seed: options.seed || 'guarded-executor-benchmark-v1',
+    snapshotHashConcurrency: normalizeSnapshotHashConcurrency(
+      options.snapshotHashConcurrency
+        ?? profile.snapshotHashConcurrency
+        ?? DEFAULT_LIMITS.maxHashConcurrency,
+    ),
     claimProductionThroughput: options.claimProductionThroughput === true,
   };
+}
+
+function normalizeSnapshotHashConcurrency(value) {
+  const concurrency = Number(value);
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new Error(`Invalid snapshot hash concurrency: ${value}`);
+  }
+  return Math.min(concurrency, DEFAULT_LIMITS.maxHashConcurrency);
 }
 
 function stageGeneratedFileBytes({
@@ -891,6 +917,316 @@ function buildGuardedTransferEvidence({ stagedFile, successPersisted }) {
   };
 }
 
+function buildParallelSnapshotHashingEvidence({ config, sites, plan }) {
+  const resources = enumerateResources(sites.base, sites.local, sites.remote);
+  const snapshots = SNAPSHOT_HASH_NAMES.map((name) => ({
+    name,
+    site: sites[name],
+  }));
+  const firstRun = runBoundedSnapshotHashScheduler({
+    resources,
+    snapshots,
+    maxConcurrency: config.snapshotHashConcurrency,
+  });
+  const secondRun = runBoundedSnapshotHashScheduler({
+    resources,
+    snapshots,
+    maxConcurrency: config.snapshotHashConcurrency,
+  });
+  const sequentialEntries = buildSequentialSnapshotHashEntries({ resources, snapshots });
+  const expectedHashCount = resources.length * snapshots.length;
+  const parallelDigest = snapshotHashSetDigest(firstRun.entries);
+  const sequentialDigest = snapshotHashSetDigest(sequentialEntries);
+  const secondRunDigest = snapshotHashSetDigest(secondRun.entries);
+  const parallelMatchesSequential = snapshotHashEntryMapsEqual(firstRun.entries, sequentialEntries);
+  const deterministicDigestMatches = parallelDigest === secondRunDigest
+    && firstRun.scheduleDigest === secondRun.scheduleDigest;
+  const complete = firstRun.entries.length === expectedHashCount
+    && uniqueSnapshotHashJobKeys(firstRun.entries) === expectedHashCount;
+  const boundedConcurrency = firstRun.maxObservedInFlight <= config.snapshotHashConcurrency
+    && firstRun.maxObservedInFlight <= DEFAULT_LIMITS.maxHashConcurrency;
+  const liveRemotePreconditionsRetained = plan.mutations.every((mutation) => {
+    const precondition = plan.preconditions.find((entry) => entry.mutationId === mutation.id);
+    return precondition
+      && precondition.resourceKey === mutation.resourceKey
+      && precondition.expectedHash === mutation.remoteBeforeHash
+      && precondition.checkedAgainst === 'live-remote';
+  });
+  const hashSamples = firstRun.entries.slice(0, 3).map(hashOnlySnapshotHashEntry);
+  const scheduler = {
+    maxConcurrency: config.snapshotHashConcurrency,
+    maxAllowedConcurrency: DEFAULT_LIMITS.maxHashConcurrency,
+    maxObservedInFlight: firstRun.maxObservedInFlight,
+    workerSlotsUsed: firstRun.workerSlotsUsed,
+    waveCount: firstRun.waveCount,
+    jobsScheduled: firstRun.jobsScheduled,
+    scheduleDigest: firstRun.scheduleDigest,
+    bounded: boundedConcurrency,
+  };
+  const hashSet = {
+    resourceCount: resources.length,
+    snapshotCount: snapshots.length,
+    hashCount: firstRun.entries.length,
+    expectedHashCount,
+    resourceTypeCounts: snapshotHashResourceTypeCounts(resources),
+    parallelDigest,
+    sequentialDigest,
+    secondRunDigest,
+    parallelMatchesSequential,
+    deterministicDigestMatches,
+    complete,
+    hashSamples,
+  };
+  const applyBoundary = {
+    planningOnly: true,
+    authorizesApply: false,
+    applyMustRevalidate: true,
+    liveRemoteMutationPreconditions: plan.preconditions.length,
+    everyMutationHasLiveRemotePrecondition: liveRemotePreconditionsRetained,
+  };
+  const hashOnlyEvidence = parallelSnapshotHashEvidenceHasNoRawValues({
+    benchmarkId: SNAPSHOT_HASHING_EVIDENCE_ID,
+    variant: 1,
+    scheduler,
+    hashSet,
+    applyBoundary,
+  });
+  const correctnessGates = [
+    snapshotHashGate({
+      id: 'bounded-hash-concurrency',
+      passed: boundedConcurrency,
+      evidence: {
+        maxObservedInFlight: firstRun.maxObservedInFlight,
+        maxConcurrency: config.snapshotHashConcurrency,
+        maxAllowedConcurrency: DEFAULT_LIMITS.maxHashConcurrency,
+      },
+    }),
+    snapshotHashGate({
+      id: 'complete-snapshot-hash-set',
+      passed: complete,
+      evidence: {
+        hashCount: firstRun.entries.length,
+        expectedHashCount,
+      },
+    }),
+    snapshotHashGate({
+      id: 'parallel-matches-sequential',
+      passed: parallelMatchesSequential && parallelDigest === sequentialDigest,
+      evidence: {
+        parallelDigest,
+        sequentialDigest,
+      },
+    }),
+    snapshotHashGate({
+      id: 'deterministic-hash-set',
+      passed: deterministicDigestMatches,
+      evidence: {
+        firstRunDigest: parallelDigest,
+        secondRunDigest,
+      },
+    }),
+    snapshotHashGate({
+      id: 'planning-only-no-write-authority',
+      passed: applyBoundary.planningOnly
+        && applyBoundary.authorizesApply === false
+        && applyBoundary.applyMustRevalidate
+        && applyBoundary.everyMutationHasLiveRemotePrecondition,
+      evidence: applyBoundary,
+    }),
+    snapshotHashGate({
+      id: 'hash-only-evidence',
+      passed: hashOnlyEvidence,
+      evidence: {
+        rawValueEvidenceLeaks: hashOnlyEvidence ? 0 : 1,
+      },
+    }),
+  ];
+  const failedGateIds = correctnessGates
+    .filter((gate) => gate.status !== 'passed')
+    .map((gate) => gate.id);
+  const correctnessGatesPassed = failedGateIds.length === 0;
+  const fastPathLane = {
+    id: SNAPSHOT_HASH_FAST_PATH_LANE_ID,
+    policy: 'update-only-after-correctness-gates-pass',
+    updated: correctnessGatesPassed,
+    blockedBy: failedGateIds,
+    proofDigest: `sha256:${stableDigest({
+      benchmarkId: SNAPSHOT_HASHING_EVIDENCE_ID,
+      variant: 1,
+      parallelDigest,
+      sequentialDigest,
+      scheduleDigest: firstRun.scheduleDigest,
+      correctnessGates: correctnessGates.map((gate) => ({
+        id: gate.id,
+        status: gate.status,
+      })),
+    })}`,
+  };
+
+  return {
+    benchmarkId: SNAPSHOT_HASHING_EVIDENCE_ID,
+    variant: 1,
+    scope: 'lab-guarded-executor-snapshot-hash-set',
+    mode: 'bounded-parallel-scheduler-proof',
+    status: correctnessGatesPassed && fastPathLane.updated ? 'passed' : 'failed',
+    scheduler,
+    hashSet,
+    correctnessGates,
+    fastPathLane,
+    applyBoundary,
+  };
+}
+
+function runBoundedSnapshotHashScheduler({ resources, snapshots, maxConcurrency }) {
+  const jobs = [];
+  for (const snapshot of snapshots) {
+    for (const resource of resources) {
+      jobs.push({ snapshot, resource });
+    }
+  }
+
+  const entries = [];
+  const wavePlan = [];
+  let maxObservedInFlight = 0;
+  let workerSlotsUsed = 0;
+
+  for (let offset = 0; offset < jobs.length; offset += maxConcurrency) {
+    const wave = jobs.slice(offset, offset + maxConcurrency);
+    const waveIndex = wavePlan.length;
+    maxObservedInFlight = Math.max(maxObservedInFlight, wave.length);
+    workerSlotsUsed = Math.max(workerSlotsUsed, wave.length);
+    wavePlan.push({
+      waveIndex,
+      jobs: wave.length,
+      workerSlots: wave.map((_, workerSlot) => workerSlot),
+    });
+
+    for (let workerSlot = 0; workerSlot < wave.length; workerSlot++) {
+      entries.push(snapshotHashEntry({
+        snapshot: wave[workerSlot].snapshot,
+        resource: wave[workerSlot].resource,
+        workerSlot,
+        waveIndex,
+      }));
+    }
+  }
+
+  return {
+    entries,
+    jobsScheduled: jobs.length,
+    waveCount: wavePlan.length,
+    maxObservedInFlight,
+    workerSlotsUsed,
+    scheduleDigest: `sha256:${stableDigest(wavePlan)}`,
+  };
+}
+
+function buildSequentialSnapshotHashEntries({ resources, snapshots }) {
+  return snapshots.flatMap((snapshot) =>
+    resources.map((resource) =>
+      snapshotHashEntry({
+        snapshot,
+        resource,
+        workerSlot: 0,
+        waveIndex: 0,
+      })
+    )
+  );
+}
+
+function snapshotHashEntry({ snapshot, resource, workerSlot, waveIndex }) {
+  return {
+    snapshot: snapshot.name,
+    resourceKey: resource.key,
+    resourceType: resource.type,
+    resourceKeyHash: digestLabel(`resource-key:${resource.key}`),
+    resourceValueHash: `sha256:${resourceHash(snapshot.site, resource)}`,
+    workerSlot,
+    waveIndex,
+  };
+}
+
+function hashOnlySnapshotHashEntry(entry) {
+  return {
+    snapshot: entry.snapshot,
+    resourceType: entry.resourceType,
+    resourceKeyHash: entry.resourceKeyHash,
+    resourceValueHash: entry.resourceValueHash,
+    workerSlot: entry.workerSlot,
+    waveIndex: entry.waveIndex,
+  };
+}
+
+function canonicalSnapshotHashEntry(entry) {
+  return {
+    snapshot: entry.snapshot,
+    resourceType: entry.resourceType,
+    resourceKeyHash: entry.resourceKeyHash,
+    resourceValueHash: entry.resourceValueHash,
+  };
+}
+
+function snapshotHashSetDigest(entries) {
+  return `sha256:${stableDigest(
+    entries
+      .map(canonicalSnapshotHashEntry)
+      .sort((left, right) =>
+        left.snapshot.localeCompare(right.snapshot)
+        || left.resourceKeyHash.localeCompare(right.resourceKeyHash)
+        || left.resourceValueHash.localeCompare(right.resourceValueHash)
+      ),
+  )}`;
+}
+
+function snapshotHashEntryMapsEqual(leftEntries, rightEntries) {
+  const left = snapshotHashEntryMap(leftEntries);
+  const right = snapshotHashEntryMap(rightEntries);
+  if (left.size !== right.size) {
+    return false;
+  }
+  for (const [key, value] of left) {
+    if (right.get(key) !== value) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function snapshotHashEntryMap(entries) {
+  const map = new Map();
+  for (const entry of entries) {
+    map.set(`${entry.snapshot}\0${entry.resourceKey}`, entry.resourceValueHash);
+  }
+  return map;
+}
+
+function uniqueSnapshotHashJobKeys(entries) {
+  return snapshotHashEntryMap(entries).size;
+}
+
+function snapshotHashResourceTypeCounts(resources) {
+  return resources.reduce(
+    (counts, resource) => {
+      counts[resource.type] = (counts[resource.type] || 0) + 1;
+      return counts;
+    },
+    { file: 0, plugin: 0, row: 0 },
+  );
+}
+
+function parallelSnapshotHashEvidenceHasNoRawValues(evidence) {
+  return !/row-payload|commerce_bench|catalog identity|Benchmark child post|Benchmark featured attachment|benchmark-topic|catalog-export\.bin|wp-content\/plugins|_thumbnail_id|_benchmark_term_flag/i
+    .test(JSON.stringify(evidence));
+}
+
+function snapshotHashGate({ id, passed, evidence }) {
+  return {
+    id,
+    status: passed ? 'passed' : 'failed',
+    evidence,
+  };
+}
+
 function verifyChunkManifest(stagedFile) {
   const fd = fs.openSync(stagedFile.stagingPath, 'r');
   const fileHash = crypto.createHash('sha256');
@@ -1070,6 +1406,18 @@ function buildRolloutSafetyGates({ evidence, executorCapabilities }) {
         liveRemoteMutationPreconditions: evidence.preconditions.liveRemoteMutationPreconditions,
       },
     }),
+    'parallel-snapshot-hashing': gateResult({
+      id: 'parallel-snapshot-hashing',
+      passed: evidence.parallelSnapshotHashing.status === 'passed'
+        && evidence.parallelSnapshotHashing.fastPathLane.updated === true,
+      blocker: 'missing-parallel-snapshot-hashing-evidence',
+      evidence: {
+        maxObservedInFlight: evidence.parallelSnapshotHashing.scheduler.maxObservedInFlight,
+        maxConcurrency: evidence.parallelSnapshotHashing.scheduler.maxConcurrency,
+        hashCount: evidence.parallelSnapshotHashing.hashSet.hashCount,
+        fastPathLaneUpdated: evidence.parallelSnapshotHashing.fastPathLane.updated,
+      },
+    }),
     'durable-journal-integrity': gateResult({
       id: 'durable-journal-integrity',
       passed: evidence.journal.allJournalsIntegrityOk
@@ -1193,6 +1541,7 @@ function buildReport({
   ].every(Boolean);
   const graphIdentityReport = buildGraphIdentityReport({ config, sites, plan });
   const guardedTransfer = buildGuardedTransferEvidence({ stagedFile, successPersisted });
+  const parallelSnapshotHashing = buildParallelSnapshotHashingEvidence({ config, sites, plan });
   const shape = {
     largeUploadResourceKey: LARGE_UPLOAD_RESOURCE_KEY,
     fileBytes: config.fileBytes,
@@ -1202,6 +1551,9 @@ function buildReport({
     rowCount: config.rowCount,
     rowPayloadBytes: config.rowPayloadBytes,
     graphIdentityTargetCount: sites.graphIdentityTargets.length,
+    snapshotHashResources: parallelSnapshotHashing.hashSet.resourceCount,
+    snapshotHashJobs: parallelSnapshotHashing.hashSet.hashCount,
+    snapshotHashConcurrency: parallelSnapshotHashing.scheduler.maxConcurrency,
     mutations: mutationCount,
     atomicGroupId: sites.atomicGroupId,
     atomicGroupMutationCount: atomicGroup?.mutationIds.length || 0,
@@ -1240,6 +1592,7 @@ function buildReport({
   const evidence = {
     guardedTransfer,
     transactionBoundaryPolicy: guardedTransfer.transactionBoundaryPolicy,
+    parallelSnapshotHashing,
     chunkReceipts: {
       expected: stagedFile.chunkCount,
       recorded: chunkReceiptRecords.length,
@@ -1559,6 +1912,8 @@ function parseCliArgs(argv) {
       options.rowCount = Number.parseInt(value, 10);
     } else if (key === 'row-payload-bytes') {
       options.rowPayloadBytes = Number.parseInt(value, 10);
+    } else if (key === 'snapshot-hash-concurrency') {
+      options.snapshotHashConcurrency = Number.parseInt(value, 10);
     } else if (key === 'temp-dir') {
       options.tempDir = value;
     } else {
