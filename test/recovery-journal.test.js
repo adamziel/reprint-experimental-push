@@ -126,6 +126,19 @@ function writePartiallyMigratedSqliteJournalTable(database, records, tableName =
   return legacyRecords;
 }
 
+function writeSqliteJournalTable(database, records, tableName = 'recovery_journal') {
+  database.exec(`CREATE TABLE ${tableName} (
+    sequence INTEGER PRIMARY KEY,
+    schema_version INTEGER NOT NULL,
+    record_json TEXT NOT NULL
+  )`);
+  const insert = database.prepare(`INSERT INTO ${tableName} (sequence, schema_version, record_json) VALUES (?, ?, ?)`);
+  for (const record of records) {
+    insert.run(record.sequence, record.schemaVersion, JSON.stringify(record));
+  }
+  return records.map((record) => ({ ...record }));
+}
+
 function buildRecoveryReleaseSummary({ inspection, plan, mutationEvents, oldRemoteRecovery = null }) {
   const originalRequestHash = '8'.repeat(64);
   const conflictingRequestHash = '9'.repeat(64);
@@ -1407,6 +1420,100 @@ test('production recovery journal ownership record is durable after restart', ()
     1,
   );
   assert.ok(afterRetry.records.some((record) => record.type === 'journal-retry-opened'));
+});
+
+test('RPP-0622 SQLite-backed journal ownership record is durable after restart', {
+  skip: DatabaseSync === null ? 'node:sqlite is unavailable in this Node.js runtime' : false,
+}, () => {
+  const filePath = tempJournalPath();
+  const sqlitePath = tempSqlitePath();
+  const remote = baseSite();
+  const plan = planFor(baseSite(), localSite(), remote);
+  const claimId = 'rpp-0622-ownership-claim';
+  const artifactRefs = {
+    releaseProof: 'artifact://rpp-0622-journal-ownership-record-v2',
+  };
+  const expectedOwnership = {
+    ownsJournal: true,
+    restartReadable: true,
+    productionAdapter: 'filesystem-compare-rename',
+    supportedSurface: 'claim-fenced-restart-readable',
+  };
+
+  const seededJournal = openProductionRecoveryJournal({
+    filePath,
+    plan,
+    current: remote,
+    artifactRefs,
+    now: fixedNow,
+    claimId,
+  });
+  const seededInspection = seededJournal.inspect();
+  seededJournal.close();
+
+  assert.equal(seededInspection.journal.ownershipRecord.sequence, 2);
+  assert.deepEqual(seededInspection.journal.ownershipRecord.ownership, expectedOwnership);
+
+  const seededRows = readRecoveryJournal(filePath).records;
+  const seededOwnershipRecord = seededRows.find(
+    (record) => record.type === 'journal-ownership-recorded',
+  );
+  assert.ok(seededOwnershipRecord);
+
+  let database = new DatabaseSync(sqlitePath);
+  writeSqliteJournalTable(database, seededRows);
+  const initialRead = readSqliteRecoveryJournalTable(database);
+  assert.equal(initialRead.integrity.status, 'ok');
+  database.close();
+
+  database = new DatabaseSync(sqlitePath);
+  const restarted = readSqliteRecoveryJournalTable(database);
+  const ownershipRecords = restarted.records.filter(
+    (record) => record.type === 'journal-ownership-recorded',
+  );
+
+  assert.equal(restarted.storage, 'sqlite');
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.schemaVersionColumnPresent, true);
+  assert.deepEqual(restarted.tableSchemaVersions, [1]);
+  assert.deepEqual(restarted.recordSchemaVersions, [1]);
+  assert.equal(ownershipRecords.length, 1);
+  assert.deepEqual(ownershipRecords[0], seededOwnershipRecord);
+  assert.equal(ownershipRecords[0].sequence, 2);
+  assert.equal(ownershipRecords[0].planId, plan.id);
+  assert.equal(ownershipRecords[0].state, 'owned');
+  assert.match(ownershipRecords[0].journalIdentityHash, /^[a-f0-9]{64}$/);
+  assert.equal(ownershipRecords[0].claimId, claimId);
+  assert.equal(ownershipRecords[0].claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(ownershipRecords[0].artifactRefs, artifactRefs);
+  assert.deepEqual(ownershipRecords[0].ownership, expectedOwnership);
+  assert.deepEqual(ownershipRecords[0].storageGuard, {
+    boundary: 'filesystem-compare-rename',
+    operation: 'append',
+    outcome: 'ownership-recorded',
+  });
+  assert.equal(ownershipRecords[0].fsync.requested, true);
+  assert.equal(ownershipRecords[0].fsync.strategy, 'after-append');
+  assert.equal(JSON.stringify(ownershipRecords[0]).includes(filePath), false);
+  assert.equal(JSON.stringify(ownershipRecords[0]).includes(sqlitePath), false);
+  assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(ownershipRecords[0]));
+
+  const storedOwnershipRows = database
+    .prepare('SELECT sequence, schema_version, record_json FROM recovery_journal WHERE sequence = ?')
+    .all(2);
+  assert.equal(storedOwnershipRows.length, 1);
+  assert.equal(storedOwnershipRows[0].schema_version, 1);
+  assert.deepEqual(JSON.parse(storedOwnershipRows[0].record_json), seededOwnershipRecord);
+
+  const inspection = inspectRecoveryJournal({
+    journal: restarted,
+    plan,
+    current: remote,
+  });
+  assert.equal(inspection.status, 'old-remote');
+  assert.deepEqual(inspection.counts, { old: 8, new: 0, blockedUnknown: 0 });
+
+  database.close();
 });
 
 test('production recovery journal same-claim retry is append-only and preserves target envelope', () => {
