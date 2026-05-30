@@ -6,19 +6,42 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 14:57 CEST.
+- Last update: 2026-05-30 15:02 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0518 capability downgrade rejection merge ending at `c9cd4b0b8`.
+  the RPP-0490 plugin update dependency release-verifier merge ending at
+  `06baf281d`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 459
-  items checked and leaves 541 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 460
+  items checked and leaves 540 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  75 plugin-driver boundary items, 27 executor/auth items, 29 recovery items,
+  76 plugin-driver boundary items, 27 executor/auth items, 29 recovery items,
   15 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin update dependency release-verifier carry-through: the current lane now
+  contains `RPP-0490` evidence in
+  `docs/evidence/rpp-0490-plugin-update-dependency-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0490-plugin-update-dependency-release-verifier-v5.test.js`. The
+  verifier emits hash-only `pluginUpdateDependencyValidator` proof beside
+  plugin-driver release evidence; builds a ready atomic plugin update plan for
+  `reprint-push-atomic-dependent-fixture` with a live-remote dependency
+  requirement on `reprint-push-atomic-dependency-fixture`; carries
+  `expectedVersion`, version range, live remote hash, requirement hash, update
+  mutation hash, and plugin-owned data evidence; applies the valid update while
+  preserving dependency state and applying the plugin-owned row; refuses version
+  mismatch, unsupported range, and stale dependency before mutation while
+  preserving remote hashes; and differentiates local/support-only,
+  production-scoped, and checked production-backed evidence. Validation passed
+  with Node syntax checks, focused RPP-0490 coverage 3/3, adjacent planner
+  coverage 3/3, adjacent release-verifier coverage 24/24, checklist lint,
+  scoped artifact redaction scan, and merge diff whitespace checks. Counts are
+  now 460/540; final release remains `NO-GO` because this is
+  local/support-only release-verifier evidence, not production-backed plugin
+  update proof.
 - Capability downgrade rejection: the current lane now contains `RPP-0518`
   evidence in `docs/evidence/rpp-0518-capability-downgrade-rejection.md`,
   `docs/reprint-push-completion-checklist.md`,
