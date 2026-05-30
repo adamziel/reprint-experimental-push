@@ -1,17 +1,28 @@
-# AO Progress Report - 2026-05-30 05:55 CEST
+# AO Progress Report - 2026-05-30 05:57 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0511 Application
-Password integration proof refresh ending at `20edcd746`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0514 receipt
+expiry validation proof refresh ending at `8f3ed60bf`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 349 are
-  checked from integrated evidence and 651 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 350 are
+  checked from integrated evidence and 650 remain open.
+- `RPP-0514` is now checked with focused receipt expiry validation evidence in
+  `docs/evidence/rpp-0514-receipt-expiry-validation.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/authenticated-http-push-client.js`, and
+  `test/authenticated-http-push-client.test.js`. `node --check` passed for the
+  changed auth client and test file, the focused RPP-0514 receipt-expiry tests
+  passed 3/3, the receipt/session/idempotency/replay slice passed 68/68, and
+  the full authenticated push client test file exited cleanly, proving expired
+  dry-run receipts are refused before apply/replay/recovery while the unexpired
+  path still performs live-source apply revalidation. Checklist lint, artifact
+  redaction scan, and merge diff whitespace checks also passed.
 - `RPP-0511` is now checked with focused Application Password integration
   evidence in `docs/evidence/rpp-0511-application-password-integration.md`,
   `docs/reprint-push-completion-checklist.md`,

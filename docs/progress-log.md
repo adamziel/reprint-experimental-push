@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:55 CEST.
+- Last update: 2026-05-30 05:57 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0511 Application Password integration proof merge ending at
-  `20edcd746`.
+  the RPP-0514 receipt expiry validation proof merge ending at `8f3ed60bf`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 349
-  items checked and leaves 651 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 350
+  items checked and leaves 650 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  69 plugin-driver boundary items, 19 executor/auth items, 19 recovery items,
+  69 plugin-driver boundary items, 20 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Receipt expiry validation refresh: the current lane now contains `RPP-0514`
+  evidence in `docs/evidence/rpp-0514-receipt-expiry-validation.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/authenticated-http-push-client.js`, and
+  `test/authenticated-http-push-client.test.js`. `node --check` passed for the
+  changed auth client and test file, the focused RPP-0514 receipt-expiry tests
+  passed 3/3, the receipt/session/idempotency/replay slice passed 68/68, and
+  the full authenticated push client test file exited cleanly. The proof refuses
+  expired dry-run receipts before apply/replay/recovery and keeps live-source
+  apply revalidation on the unexpired path. Checklist lint, artifact redaction
+  scan, and merge diff whitespace checks also passed. Counts are now 350/650.
 - Application Password integration refresh: the current lane now contains
   `RPP-0511` evidence in
   `docs/evidence/rpp-0511-application-password-integration.md`,
