@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:00 CEST.
+- Last update: 2026-05-30 10:03 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0253 localHash correctness variant-3 merge ending at `c7a5eef9a`.
+  the RPP-0254 already-in-sync decision variant-3 merge ending at
+  `d106351dd`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 386
-  items checked and leaves 614 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 387
+  items checked and leaves 613 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 51 merge-invariant items. No release-ops items are checked
+  harness items, and 52 merge-invariant items. No release-ops items are checked
   yet.
+- Already-in-sync decision variant-3 refresh: the current lane now contains
+  `RPP-0254` evidence in
+  `docs/evidence/rpp-0254-already-in-sync-decision-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, `docs/scenario-matrix.md`, and
+  `test/rpp-0254-already-in-sync-decision-v3.test.js`. `node --check` passed
+  for the focused test, the focused RPP-0254 test passed 1/1, the adjacent
+  already-in-sync planner/focused slice passed 6/6, the adjacent generated
+  same-content slice passed 3/3, and checklist/redaction unit tests passed
+  23/23. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 387/613; final release remains
+  `NO-GO`.
 - LocalHash correctness variant-3 refresh: the current lane now contains
   `RPP-0253` evidence in
   `docs/evidence/rpp-0253-local-hash-correctness-v3.md`,
