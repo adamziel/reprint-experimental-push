@@ -414,7 +414,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0385 (Mid / graph-identity) Carry through the release verifier for comment post reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0386 (Mid / graph-identity) Carry through the release verifier for comment parent thread reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
 - [x] RPP-0387 (Mid / graph-identity) Carry through the release verifier for comment user reference, variant 5. Success: unsupported target fails closed with hash-only evidence.
-- [ ] RPP-0388 (Mid / graph-identity) Carry through the release verifier for commentmeta comment reference, variant 5. Success: generated harness includes ready and stale cases.
+- [x] RPP-0388 (Mid / graph-identity) Carry through the release verifier for commentmeta comment reference, variant 5. Success: generated harness includes ready and stale cases.
 - [ ] RPP-0389 (Mid / graph-identity) Carry through the release verifier for category term taxonomy reference, variant 5. Success: local production verifier carries the target through apply.
 - [ ] RPP-0390 (Mid / graph-identity) Carry through the release verifier for post_tag taxonomy reference, variant 5. Success: docs state remaining unmapped WordPress surfaces.
 - [ ] RPP-0391 (Mid / graph-identity) Carry through the release verifier for custom taxonomy fail-closed reference, variant 5. Success: mapper rewrites or proves stable identity for the target.
