@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:10 CEST +02:00.
+- Last update: 2026-05-30 20:15 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0445 wp_postmeta generated driver-semantics merge ending at
-  `62a743`.
+  the RPP-0458 generated driver apply-validation merge ending at `1dce96`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 513
-  items checked and leaves 487 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 514
+  items checked and leaves 486 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
-  87 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
+  88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Driver apply-validation generated coverage: the current lane now checks
+  `RPP-0458` with local generated-model coverage for the fixture forms-lab
+  custom-table driver apply-validation boundary. The generated cases prove the
+  supported path carries exactly one `wp_reprint_push_forms_lab` mutation
+  through the `beforeMutation` apply-validation hook with redacted accepted
+  evidence, and that forged driver evidence is rejected with
+  `UNSUPPORTED_PLUGIN_OWNED_RESOURCE` before the hook runs or the remote row
+  changes. Validation passed with Node syntax checks, focused RPP-0458 coverage
+  1/1, adjacent RPP-0442/RPP-0445/RPP-0458 generated coverage 3/3, adjacent
+  RPP-0417/RPP-0456/RPP-0458 generated coverage 3/3, planner apply-validation
+  coverage 3/3, checklist lint, scoped artifact redaction scan, and diff
+  whitespace checks. Counts are now 514/486; final release remains `NO-GO`
+  because this is local generated-model plugin-driver evidence, not external
+  production-backed release evidence.
 - wp_postmeta driver semantics generated coverage: the current lane now checks
   `RPP-0445` with local generated-model coverage for plugin-owned
   `wp_postmeta` rows using `wp-post-meta` and `wp-postmeta` driver aliases. The
