@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:43 CEST.
+- Last update: 2026-05-30 05:45 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0483 custom-table allowlist release-verifier proof merge ending at
-  `0fb695f7a`.
+  the RPP-0484 wp_options release-verifier proof merge ending at `b8bd2e5fc`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 345
-  items checked and leaves 655 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 346
+  items checked and leaves 654 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  67 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  68 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Release verifier wp_options driver semantics variant-5 refresh: the current
+  lane now contains `RPP-0484` evidence in
+  `docs/evidence/rpp-0484-wp-options-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0484-wp-options-release-verifier-v5.test.js`. `node --check`
+  passed for the changed release verifier and focused test, the focused
+  RPP-0484 test passed 2/2, the adjacent wp_options slice passed 4/4, the
+  verifier slice with RPP-0483/RPP-0484 passed 9/9, and
+  `test/production-plugin-package-scenarios.test.js` passed 9/9. The proof
+  carries wp_options drift preservation as hash-only support evidence beside
+  the production-owned boundary. Checklist lint, artifact redaction scan, and
+  `git diff --check` also passed. Counts are now 346/654; final release remains
+  `NO-GO`.
 - Release verifier custom-table allowlist variant-5 refresh: the current lane
   now contains `RPP-0483` evidence in
   `docs/evidence/rpp-0483-custom-table-allowlist-release-verifier-v5.md`,

@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 05:43 CEST
+# AO Progress Report - 2026-05-30 05:45 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0483 custom-table
-allowlist release-verifier proof refresh ending at `0fb695f7a`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0484 wp_options
+release-verifier proof refresh ending at `b8bd2e5fc`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 345 are
-  checked from integrated evidence and 655 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 346 are
+  checked from integrated evidence and 654 remain open.
+- `RPP-0484` is now checked with focused wp_options driver semantics
+  release-verifier variant-5 evidence in
+  `docs/evidence/rpp-0484-wp-options-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-shaped-release-verify.mjs`, and
+  `test/rpp-0484-wp-options-release-verifier-v5.test.js`. `node --check`
+  passed for the changed release verifier and focused test, the focused
+  RPP-0484 test passed 2/2, the adjacent wp_options slice passed 4/4, the
+  verifier slice with RPP-0483/RPP-0484 passed 9/9, and
+  `test/production-plugin-package-scenarios.test.js` passed 9/9, proving
+  wp_options drift preservation is carried as hash-only support evidence beside
+  the production-owned boundary. Checklist lint, artifact redaction scan, and
+  `git diff --check` also passed while final release remains **NO-GO**.
 - `RPP-0483` is now checked with focused custom-table allowlist
   release-verifier variant-5 evidence in
   `docs/evidence/rpp-0483-custom-table-allowlist-release-verifier-v5.md`,
