@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 20:04 CEST +02:00.
+- Last update: 2026-05-30 20:06 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0442 generated owner-identity ancestry merge ending at `e40906c`.
+  the RPP-0444 wp_options generated driver-semantics merge ending at
+  `062f1a`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 511
-  items checked and leaves 489 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 512
+  items checked and leaves 488 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
-  85 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
+  86 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
   23 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- wp_options driver semantics generated coverage: the current lane now checks
+  `RPP-0444` with local generated-model coverage for plugin-owned `wp_options`
+  rows using the `wp-option` driver. The generated roster tags 20
+  `wpOptionsDriverSemanticsVariant3` cases across all 10 tiers, covering 10
+  ready driver-backed updates and 10 remote-drift conflicts. The focused proof
+  verifies hash-only owner/driver evidence, live-remote preconditions,
+  stale-replay `PRECONDITION_FAILED` refusal before mutation, drifted row and
+  whole-remote hash preservation, non-ready apply refusal, and raw option
+  payload redaction. Validation passed with Node syntax checks, focused
+  RPP-0444 coverage 1/1, adjacent generated wp_options/plugin-driver coverage
+  4/4, checklist lint, scoped artifact redaction scan, and diff whitespace
+  checks. Counts are now 512/488; final release remains `NO-GO` because this is
+  local generated-model plugin-driver evidence, not external production-backed
+  release evidence.
 - Driver owner identity generated-harness ancestry refinement: the current lane
   now preserves the older `session/rpp-442` RPP-0442 ancestry while retaining
   the stronger existing generated-harness test that checks unsupported remote
