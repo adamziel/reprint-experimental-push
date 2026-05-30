@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T17:23:00+02:00">Last updated: May 30, 2026, 17:23 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T17:27:00+02:00">Last updated: May 30, 2026, 17:27 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>487</strong>
+        <strong>488</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>513</strong>
+        <strong>512</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, and a filesystem memory-ceiling proof, but production storage receipts, row batch execution, timeout budgets, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, a large post table planner/apply benchmark, a large media library storage/row-precondition benchmark, a large plugin file atomic-group benchmark, a filesystem memory-ceiling proof, and timeout-budget resume proof, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0487</span>
+        <span>RPP-0718</span>
       </div>
-      <p>The latest refresh integrates RPP-0487 wp_usermeta release-verifier carry-through evidence: exact umeta_id row semantics now appear under pluginDriver.coreSemantics.wpUsermeta, local/support-only evidence remains NO-GO, production-scoped evidence without checked verifier proof remains NO-GO, and checked production-backed proof is summarized only inside that verifier boundary. Generated supported and unsupported wp_usermeta variants remain distinct, raw meta values stay out of the summary, and package smoke readiness now waits on REST index, snapshot, and preflight probes. Counts are now 487/513; final release remains NO-GO because this is local/support-only plugin-driver evidence, not live production proof.</p>
+      <p>The latest refresh integrates RPP-0718 timeout-budget proof: the guarded-executor benchmark now records a chunk transfer attempt that stops before the next unacknowledged chunk would exceed the bounded budget, resumes only from exact durable chunk receipts, uploads the remaining chunks, and opens mutation apply only after file staging finalizes. Counts are now 488/512; final release remains NO-GO because this is lab guarded-executor timeout evidence, not production transport deadline, storage receipt, row batching, atomic commit, or rollback proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0718 focused: 1/1</span>
+        <span class="tag">guarded executor adjacent: 10/10</span>
+        <span class="tag">timeout before apply</span>
+        <span class="tag">receipt-only resume</span>
+        <span class="tag">duplicate mutation work: 0</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0487 focused: 5/5</span>
         <span class="tag">wp_usermeta adjacent: 15/15</span>
         <span class="tag">generated harness: 85/85</span>
@@ -1158,7 +1164,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 487/1000</span>
+        <span class="tag">checked goals: 488/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
