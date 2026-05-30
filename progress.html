@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T03:17:00+02:00">Last updated: May 30, 2026, 03:17 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T03:21:00+02:00">Last updated: May 30, 2026, 03:21 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>304</strong>
+        <strong>305</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>696</strong>
+        <strong>695</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, remoteBeforeHash binding, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,14 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0317</span>
+        <span>RPP-0232</span>
       </div>
-      <p>The latest refresh integrates RPP-0317 serialized Gutenberg block reference detection: focused tests prove selected block references in wp_posts.post_content and post_excerpt are detected, stable same-ID targets remain eligible, drift and unsupported targets fail closed with hash-only evidence, and scalar rewriting waits for parser-aware serialized block rewriting. Counts are now 304/696; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0232 remoteBeforeHash correctness: focused and planner tests prove every mutation remoteBeforeHash and live-remote precondition is bound to the observed remote resource, forged local-payload hashes and stale remote resources fail before mutation or target journal evidence, and serialized proof remains hash-only. Counts are now 305/695; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0232 focused: 3/3</span>
+        <span class="tag">RPP-0212 regression: 2/2</span>
+        <span class="tag">localHash regression: 2/2</span>
+        <span class="tag">push planner: 147/147</span>
         <span class="tag">RPP-0317 focused: 3/3</span>
         <span class="tag">RPP-0317 planner: 147/147</span>
         <span class="tag">RPP-0149 focused: 1/1</span>
@@ -472,7 +476,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 304/1000</span>
+        <span class="tag">checked goals: 305/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
