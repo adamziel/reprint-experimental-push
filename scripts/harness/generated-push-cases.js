@@ -9,6 +9,7 @@ import {
   enumerateResources,
   getResource,
   resourceHash,
+  serializeResourceValue,
   setResource,
 } from '../../src/resources.js';
 
@@ -383,6 +384,14 @@ export function generateDriverDryRunValidationHookCases() {
     'supported-dry-run-hook-applies',
     'unsupported-dry-run-hook-blocked',
   ].map((variant, index) => buildDriverDryRunValidationHookCase({ variant, index }));
+}
+
+export function generateDirectActivePluginsMutationRefusalCases() {
+  return [
+    'supported-plugin-managed-option-applies',
+    'unsupported-direct-active-plugins-blocked',
+    'forged-ready-active-plugins-rejected-before-mutation',
+  ].map((variant, index) => buildDirectActivePluginsMutationRefusalCase({ variant, index }));
 }
 
 export function runGeneratedPushHarness(options = {}) {
@@ -764,6 +773,167 @@ export function validateDriverDeleteSupportFlagCase(testCase) {
   return result;
 }
 
+export function validateDirectActivePluginsMutationRefusalCase(testCase) {
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedNow,
+  });
+  const activePluginsMutation = plan.mutations.find((entry) =>
+    entry.resourceKey === testCase.activePluginsResourceKey);
+  const activePluginsBlocker = plan.blockers.find((entry) =>
+    entry.resourceKey === testCase.activePluginsResourceKey);
+  const managedMutation = plan.mutations.find((entry) =>
+    entry.resourceKey === testCase.dataResourceKey);
+  const result = {
+    id: testCase.id,
+    variant: testCase.variant,
+    status: plan.status,
+    mutations: plan.mutations.length,
+    blockers: plan.blockers.length,
+    preconditions: plan.preconditions.length,
+    evidenceScope: 'local-generated',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+  };
+
+  if (testCase.expected.outcome === 'applied-supported-plugin-managed-path') {
+    assert.equal(plan.status, 'ready');
+    assert.equal(plan.mutations.length, 1);
+    assert.equal(plan.blockers.length, 0);
+    assert.equal(activePluginsMutation, undefined);
+    assert.ok(managedMutation, `${testCase.id} should emit a plugin-managed option mutation`);
+    assert.equal(managedMutation.action, 'put');
+    assert.equal(managedMutation.resourceKey, testCase.dataResourceKey);
+    assert.equal(managedMutation.pluginOwnedResource.pluginOwner, testCase.plugin);
+    assert.equal(managedMutation.pluginOwnedResource.driver, 'wp-option');
+    assert.equal(managedMutation.pluginOwnedResource.auditEvidence.rawValuesIncluded, false);
+    assertDirectActivePluginsChangeHashEvidence(managedMutation.change);
+
+    const applied = applyPlan(deepClone(testCase.remote), plan);
+    assert.equal(applied.appliedMutations, 1);
+    assert.equal(
+      applied.site.db.wp_options[testCase.dataRowId].option_value.mode,
+      testCase.expected.appliedMode,
+    );
+    assert.equal(
+      resourceHash(applied.site, directActivePluginsResource()),
+      resourceHash(testCase.remote, directActivePluginsResource()),
+    );
+    assertDirectActivePluginsRedacted(testCase, managedMutation.pluginOwnedResource.auditEvidence);
+    assertDirectActivePluginsRedacted(testCase, applied.journal);
+
+    result.outcome = 'applied-supported-plugin-managed-path';
+    result.applied = true;
+    result.appliedMutations = applied.appliedMutations;
+    result.activePluginsPreserved = true;
+    result.proofHash = digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      outcome: result.outcome,
+      status: plan.status,
+      mutation: directActivePluginsMutationSummary(managedMutation),
+      activePluginsHash: resourceHash(applied.site, directActivePluginsResource()),
+      journalHash: digest(applied.journal),
+    });
+    assertDirectActivePluginsRedacted(testCase, result);
+    return result;
+  }
+
+  if (testCase.expected.outcome === 'blocked-direct-active-plugins') {
+    assert.equal(plan.status, 'blocked');
+    assert.equal(plan.mutations.length, 0);
+    assert.equal(plan.preconditions.length, 0);
+    assert.equal(activePluginsMutation, undefined);
+    assert.ok(activePluginsBlocker, `${testCase.id} should expose an active_plugins blocker`);
+    assertDirectActivePluginsBlocker(testCase, activePluginsBlocker);
+
+    const remote = deepClone(testCase.remote);
+    const before = digest(remote);
+    let beforeMutationCalls = 0;
+    const error = captureError(() => applyPlan(remote, plan, {
+      beforeMutation() {
+        beforeMutationCalls += 1;
+      },
+    }));
+
+    assert.ok(error instanceof PushPlanError);
+    assert.equal(error.code, 'PLAN_NOT_READY');
+    assert.equal(beforeMutationCalls, 0);
+    assert.equal(digest(remote), before, `${testCase.id} mutated a blocked active_plugins remote`);
+    assert.equal(
+      resourceHash(remote, directActivePluginsResource()),
+      resourceHash(testCase.remote, directActivePluginsResource()),
+    );
+    assertDirectActivePluginsRedacted(testCase, activePluginsBlocker);
+    assertDirectActivePluginsRedacted(testCase, error.details);
+
+    result.outcome = 'blocked-direct-active-plugins';
+    result.applied = false;
+    result.remotePreserved = true;
+    result.proofHash = digest({
+      id: testCase.id,
+      variant: testCase.variant,
+      outcome: result.outcome,
+      status: plan.status,
+      blocker: directActivePluginsBlockerSummary(activePluginsBlocker),
+      errorDetailsHash: digest(error.details),
+      activePluginsHash: resourceHash(remote, directActivePluginsResource()),
+    });
+    assertDirectActivePluginsRedacted(testCase, result);
+    return result;
+  }
+
+  assert.equal(testCase.expected.outcome, 'rejected-forged-direct-active-plugins');
+  assert.equal(plan.status, 'blocked');
+  assert.equal(plan.mutations.length, 0);
+  assert.ok(activePluginsBlocker, `${testCase.id} should first prove planner refusal`);
+  assertDirectActivePluginsBlocker(testCase, activePluginsBlocker);
+
+  const forgedPlan = directActivePluginsForgedReadyPlan(testCase);
+  const forgedMutation = forgedPlan.mutations[0];
+  const remote = deepClone(testCase.remote);
+  const before = digest(remote);
+  let beforeMutationCalls = 0;
+  const error = captureError(() => applyPlan(remote, forgedPlan, {
+    beforeMutation() {
+      beforeMutationCalls += 1;
+    },
+  }));
+
+  assert.ok(error instanceof PushPlanError);
+  assert.equal(error.code, 'UNSUPPORTED_ACTIVE_PLUGINS_MUTATION');
+  assert.equal(error.details.resourceKey, testCase.activePluginsResourceKey);
+  assert.equal(error.details.reasonCode, 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED');
+  assert.equal(error.details.requiredDriver, 'plugin-activation-driver');
+  assert.equal(beforeMutationCalls, 0);
+  assert.equal(digest(remote), before, `${testCase.id} mutated a forged active_plugins remote`);
+  assert.equal(
+    resourceHash(remote, directActivePluginsResource()),
+    resourceHash(testCase.remote, directActivePluginsResource()),
+  );
+  assertDirectActivePluginsRedacted(testCase, directActivePluginsMutationSummary(forgedMutation));
+  assertDirectActivePluginsRedacted(testCase, error.details);
+
+  result.outcome = 'rejected-forged-direct-active-plugins';
+  result.applied = false;
+  result.remotePreserved = true;
+  result.rejectionCode = error.code;
+  result.beforeMutationCalls = beforeMutationCalls;
+  result.proofHash = digest({
+    id: testCase.id,
+    variant: testCase.variant,
+    outcome: result.outcome,
+    plannerBlocker: directActivePluginsBlockerSummary(activePluginsBlocker),
+    forgedMutation: directActivePluginsMutationSummary(forgedMutation),
+    errorDetailsHash: digest(error.details),
+    activePluginsHash: resourceHash(remote, directActivePluginsResource()),
+  });
+  assertDirectActivePluginsRedacted(testCase, result);
+  return result;
+}
+
 export function validateGeneratedCase(testCase) {
   const plan = createPushPlan({
     base: testCase.base,
@@ -1036,6 +1206,86 @@ function buildDriverDeleteSupportFlagCase({ variant, index }) {
   assert.equal(variant, 'delete-unsupported-blocked');
   testCase.tags.add('delete-support-false-blocked');
   testCase.expected.outcome = 'blocked-unsupported-delete';
+  return testCase;
+}
+
+function buildDirectActivePluginsMutationRefusalCase({ variant, index }) {
+  const base = buildBaseSite(4720 + index, 4);
+  const plugin = 'forms';
+  const activePluginsRowId = 'option_name:active_plugins';
+  const activePluginsResourceKey = rowKey('wp_options', activePluginsRowId);
+  const optionName = `rpp_0472_managed_option_${index + 1}`;
+  const dataRowId = `option_name:${optionName}`;
+  const dataResourceKey = rowKey('wp_options', dataRowId);
+  const secrets = {
+    baseActivePlugin: `rpp0472-base-active-plugin-secret-${index + 1}/rpp0472-base-active-plugin-secret.php`,
+    localActivePlugin: `rpp0472-local-active-plugin-secret-${index + 1}/rpp0472-local-active-plugin-secret.php`,
+    baseOption: `rpp0472-base-managed-option-secret-${index + 1}`,
+    localOption: `rpp0472-local-managed-option-secret-${index + 1}`,
+  };
+  const baseDataRow = {
+    option_name: optionName,
+    option_value: {
+      mode: 'base-managed-option',
+      token: secrets.baseOption,
+    },
+    __pluginOwner: plugin,
+  };
+
+  setRow(base, 'wp_options', activePluginsRowId, activePluginsOptionRow([secrets.baseActivePlugin]));
+  setRow(base, 'wp_options', dataRowId, baseDataRow);
+
+  const local = deepClone(base);
+  const remote = deepClone(base);
+  const testCase = {
+    id: `rpp-0472-direct-active-plugins-${String(index + 1).padStart(2, '0')}`,
+    variant,
+    tier: index,
+    family: 'direct-active-plugins-mutation-refusal',
+    tags: new Set(['direct-active-plugins-mutation-refusal', 'plugin-owned-generated']),
+    plugin,
+    activePluginsResourceKey,
+    activePluginsRowId,
+    dataResourceKey,
+    dataRowId,
+    secretTokens: Object.values(secrets),
+    base,
+    local,
+    remote,
+    expected: {
+      remoteActivePluginsHash: resourceHash(remote, directActivePluginsResource()),
+    },
+  };
+
+  if (variant === 'supported-plugin-managed-option-applies') {
+    setRow(local, 'wp_options', dataRowId, {
+      ...baseDataRow,
+      option_value: {
+        mode: `local-${variant}`,
+        token: secrets.localOption,
+      },
+    });
+    allowPluginOwned(local, dataResourceKey, plugin, 'wp-option');
+    testCase.tags.add('direct-active-plugins-supported-managed-path');
+    testCase.expected.outcome = 'applied-supported-plugin-managed-path';
+    testCase.expected.appliedMode = `local-${variant}`;
+    return testCase;
+  }
+
+  setRow(local, 'wp_options', activePluginsRowId, activePluginsOptionRow([
+    secrets.baseActivePlugin,
+    secrets.localActivePlugin,
+  ]));
+  testCase.tags.add('direct-active-plugins-unsupported');
+
+  if (variant === 'unsupported-direct-active-plugins-blocked') {
+    testCase.expected.outcome = 'blocked-direct-active-plugins';
+    return testCase;
+  }
+
+  assert.equal(variant, 'forged-ready-active-plugins-rejected-before-mutation');
+  testCase.tags.add('direct-active-plugins-forged-ready-plan');
+  testCase.expected.outcome = 'rejected-forged-direct-active-plugins';
   return testCase;
 }
 
@@ -2177,6 +2427,180 @@ function assertDriverDeleteSupportChangeHashEvidence(change) {
 }
 
 function assertDriverDeleteSupportRedacted(testCase, evidence) {
+  const json = JSON.stringify(evidence);
+  for (const token of testCase.secretTokens) {
+    assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
+  }
+}
+
+function activePluginsOptionRow(optionValue) {
+  return {
+    option_name: 'active_plugins',
+    option_value: [...optionValue],
+    autoload: 'yes',
+  };
+}
+
+function directActivePluginsResource() {
+  return {
+    type: 'row',
+    table: 'wp_options',
+    id: 'option_name:active_plugins',
+    key: rowKey('wp_options', 'option_name:active_plugins'),
+  };
+}
+
+function directActivePluginsForgedReadyPlan(testCase) {
+  const resource = directActivePluginsResource();
+  const baseValue = getResource(testCase.base, resource);
+  const localValue = getResource(testCase.local, resource);
+  const remoteValue = getResource(testCase.remote, resource);
+  const baseHash = resourceHash(testCase.base, resource);
+  const localHash = resourceHash(testCase.local, resource);
+  const remoteHash = resourceHash(testCase.remote, resource);
+  const mutationId = 'mutation-rpp-0472-forged-active-plugins';
+
+  return {
+    schemaVersion: 1,
+    id: `plan-${fixedNow.toISOString()}-rpp-0472-forged-active-plugins`,
+    generatedAt: fixedNow.toISOString(),
+    status: 'ready',
+    summary: {
+      mutations: 1,
+      decisions: 0,
+      conflicts: 0,
+      blockers: 0,
+      atomicGroups: 0,
+    },
+    mutations: [
+      {
+        id: mutationId,
+        resource,
+        resourceKey: resource.key,
+        action: 'put',
+        value: serializeResourceValue(localValue),
+        remoteBeforeHash: remoteHash,
+        baseHash,
+        localHash,
+        changeKind: 'update',
+        change: directActivePluginsChangeEvidence({
+          baseValue,
+          localValue,
+          remoteValue,
+          baseHash,
+          localHash,
+          remoteHash,
+        }),
+        atomicGroupId: null,
+      },
+    ],
+    preconditions: [
+      {
+        mutationId,
+        resource,
+        resourceKey: resource.key,
+        expectedHash: remoteHash,
+        checkedAgainst: 'live-remote',
+      },
+    ],
+    decisions: [],
+    conflicts: [],
+    blockers: [],
+    atomicGroups: [],
+  };
+}
+
+function directActivePluginsChangeEvidence({
+  baseValue,
+  localValue,
+  remoteValue,
+  baseHash,
+  localHash,
+  remoteHash,
+}) {
+  return {
+    localChange: changeKindFromHashes(baseValue, localValue, baseHash, localHash),
+    remoteChange: changeKindFromHashes(baseValue, remoteValue, baseHash, remoteHash),
+    base: directActivePluginsChangeSide(baseValue, baseHash),
+    local: directActivePluginsChangeSide(localValue, localHash),
+    remote: directActivePluginsChangeSide(remoteValue, remoteHash),
+  };
+}
+
+function changeKindFromHashes(baseValue, candidateValue, baseHash, candidateHash) {
+  if (candidateHash === baseHash) {
+    return 'unchanged';
+  }
+  if (baseValue === ABSENT) {
+    return 'create';
+  }
+  if (candidateValue === ABSENT) {
+    return 'delete';
+  }
+  return 'update';
+}
+
+function directActivePluginsChangeSide(value, hash) {
+  return {
+    state: value === ABSENT ? 'absent' : 'present',
+    hash,
+  };
+}
+
+function directActivePluginsMutationSummary(mutation) {
+  return {
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    pluginOwner: mutation.pluginOwnedResource?.pluginOwner || null,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    change: mutation.change
+      ? {
+          localChange: mutation.change.localChange,
+          remoteChange: mutation.change.remoteChange,
+          baseHash: mutation.change.base.hash,
+          localHash: mutation.change.local.hash,
+          remoteHash: mutation.change.remote.hash,
+        }
+      : null,
+  };
+}
+
+function directActivePluginsBlockerSummary(blocker) {
+  return {
+    class: blocker.class,
+    reasonCode: blocker.reasonCode,
+    requiredDriver: blocker.requiredDriver,
+    resourceKey: blocker.resourceKey,
+    resolutionPolicy: blocker.resolutionPolicy,
+    localChange: blocker.change.localChange,
+    remoteChange: blocker.change.remoteChange,
+    baseHash: blocker.change.base.hash,
+    localHash: blocker.change.local.hash,
+    remoteHash: blocker.change.remote.hash,
+  };
+}
+
+function assertDirectActivePluginsBlocker(testCase, blocker) {
+  assert.equal(blocker.class, 'unsupported-active-plugins-direct-mutation');
+  assert.equal(blocker.reasonCode, 'DIRECT_ACTIVE_PLUGINS_MUTATION_UNSUPPORTED');
+  assert.equal(blocker.requiredDriver, 'plugin-activation-driver');
+  assert.equal(blocker.resolutionPolicy, 'preserve-remote-active-plugins-and-stop');
+  assert.equal(blocker.resourceKey, testCase.activePluginsResourceKey);
+  assert.equal(blocker.change.localChange, 'update');
+  assert.equal(blocker.change.remoteChange, 'unchanged');
+  assertDirectActivePluginsChangeHashEvidence(blocker.change);
+}
+
+function assertDirectActivePluginsChangeHashEvidence(change) {
+  assert.ok(change);
+  for (const side of ['base', 'local', 'remote']) {
+    assert.ok(['present', 'absent'].includes(change[side].state));
+    assert.match(change[side].hash, /^[a-f0-9]{64}$/);
+    assert.equal(Object.hasOwn(change[side], 'value'), false);
+  }
+}
+
+function assertDirectActivePluginsRedacted(testCase, evidence) {
   const json = JSON.stringify(evidence);
   for (const token of testCase.secretTokens) {
     assert.equal(json.includes(token), false, `${testCase.id} leaked ${token}`);
