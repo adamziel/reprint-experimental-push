@@ -571,6 +571,167 @@ test('file-backed journal committed state survives restart and exposes lease own
   assert.ok(restarted.records.every((record) => record.fsync.requested === true));
 });
 
+test('RPP-0639 file-backed missing commit finalization preserves mutation rows and exposes lease owner identity', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = clone(base);
+  const remote = clone(base);
+  const claimId = 'rpp-0639-missing-commit-finalizer';
+  const artifactRefs = {
+    recoveryProof: 'artifact://rpp-0639-missing-commit-finalization-v2',
+  };
+  local.files['file-1.txt'] = 'local-private-content-rpp-0639-finalized-one';
+  local.files['file-2.txt'] = 'local-private-content-rpp-0639-finalized-two';
+  local.files['file-3.txt'] = 'local-private-content-rpp-0639-finalized-three';
+  const plan = planFor(base, local, remote);
+  const expectedCommitted = clone(remote);
+  applyFirstMutations(expectedCommitted, plan, plan.mutations.length);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const plannerModule = new URL('../src/planner.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const childScript = `
+    import { openRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { createPushPlan } from ${JSON.stringify(plannerModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const fixedNow = new Date('2026-05-24T00:00:00.000Z');
+    const filePath = process.env.RPP0639_JOURNAL_PATH;
+    const base = JSON.parse(process.env.RPP0639_BASE_SITE);
+    const local = JSON.parse(process.env.RPP0639_LOCAL_SITE);
+    const remote = JSON.parse(process.env.RPP0639_REMOTE_SITE);
+    const plan = createPushPlan({ base, local, remote, now: fixedNow });
+    const durableJournal = openRecoveryJournal(filePath, {
+      truncate: true,
+      now: fixedNow,
+      claimId: ${JSON.stringify(claimId)},
+    });
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        failDuringCommitAtMutation: plan.mutations.length,
+        mutateRemote: true,
+      });
+      console.error('expected injected missing-commit failure');
+      process.exit(3);
+    } catch (error) {
+      if (error?.code !== 'INJECTED_FAILURE_DURING_COMMIT') {
+        console.error(error?.stack || String(error));
+        process.exit(2);
+      }
+      process.exit(0);
+    }
+  `;
+
+  const child = spawnSync(process.execPath, ['--input-type=module', '-e', childScript], {
+    env: {
+      ...process.env,
+      RPP0639_JOURNAL_PATH: filePath,
+      RPP0639_BASE_SITE: JSON.stringify(base),
+      RPP0639_LOCAL_SITE: JSON.stringify(local),
+      RPP0639_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.error, undefined);
+  assert.equal(child.status, 0, child.stderr || child.stdout);
+
+  const beforeFinalization = readRecoveryJournal(filePath);
+  const mutationRowsBefore = beforeFinalization.records.filter(
+    (record) => record.type === 'mutation-observed',
+  );
+  const lastMutationRow = mutationRowsBefore.at(-1);
+  assert.equal(beforeFinalization.integrity.status, 'ok');
+  assert.equal(mutationRowsBefore.length, plan.mutations.length);
+  assert.equal(
+    beforeFinalization.records.some((record) => record.type === 'journal-completed'),
+    false,
+  );
+  assert.equal(beforeFinalization.committedState.status, 'committed');
+  assert.equal(beforeFinalization.committedState.completedRows, 0);
+  assert.equal(beforeFinalization.committedState.committedTargetRows, plan.mutations.length);
+  assert.equal(beforeFinalization.committedState.targetEnvelope.allTargetsCommitted, false);
+  assert.deepEqual(beforeFinalization.committedState.leaseOwner, {
+    visible: true,
+    claimId,
+    claimHash: recoveryClaimHash(claimId),
+    claimKeyHash: recoveryClaimHash(claimId),
+    sequence: lastMutationRow.sequence,
+    eventType: 'mutation-observed',
+  });
+
+  const restartInspection = inspectRecoveryJournal({
+    journal: beforeFinalization,
+    plan,
+    current: expectedCommitted,
+  });
+  assert.equal(restartInspection.status, 'fully-updated-remote');
+  assert.deepEqual(restartInspection.counts, {
+    old: 0,
+    new: plan.mutations.length,
+    blockedUnknown: 0,
+  });
+  assert.equal(restartInspection.journal.committedState.leaseOwner.claimId, claimId);
+  assert.equal(
+    restartInspection.journal.committedState.leaseOwner.claimKeyHash,
+    recoveryClaimHash(claimId),
+  );
+
+  const finalizer = openRecoveryJournal(filePath, {
+    truncate: false,
+    now: fixedNow,
+    claimId,
+  });
+  const completedRecord = appendJournalCompleted(finalizer, {
+    plan,
+    current: expectedCommitted,
+    artifactRefs,
+  });
+  finalizer.close();
+
+  const finalized = readRecoveryJournal(filePath);
+  const mutationRowsAfter = finalized.records.filter((record) => record.type === 'mutation-observed');
+  const completedRows = finalized.records.filter((record) => record.type === 'journal-completed');
+
+  assert.equal(finalized.integrity.status, 'ok');
+  assert.deepEqual(
+    mutationRowsAfter.map((record) => record.sequence),
+    mutationRowsBefore.map((record) => record.sequence),
+  );
+  assert.equal(completedRows.length, 1);
+  assert.equal(completedRows[0].sequence, completedRecord.sequence);
+  assert.equal(completedRows[0].claimId, claimId);
+  assert.equal(completedRows[0].claimHash, recoveryClaimHash(claimId));
+  assert.deepEqual(completedRows[0].artifactRefs, artifactRefs);
+  assert.equal(completedRows[0].fsync.requested, true);
+  assert.equal(completedRows[0].fsync.strategy, 'after-append');
+  assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(completedRows[0]));
+  assert.equal(finalized.committedState.status, 'completed');
+  assert.equal(finalized.committedState.completedRows, 1);
+  assert.equal(finalized.committedState.committedTargetRows, plan.mutations.length);
+  assert.equal(finalized.committedState.targetEnvelope.allTargetsCommitted, true);
+  assert.deepEqual(finalized.committedState.leaseOwner, {
+    visible: true,
+    claimId,
+    claimHash: recoveryClaimHash(claimId),
+    claimKeyHash: recoveryClaimHash(claimId),
+    sequence: completedRecord.sequence,
+    eventType: 'journal-completed',
+  });
+
+  const finalizedInspection = inspectRecoveryJournal({
+    journal: finalized,
+    plan,
+    current: expectedCommitted,
+  });
+  assert.equal(finalizedInspection.status, 'fully-updated-remote');
+  assert.equal(finalizedInspection.journal.committedState.leaseOwner.claimId, claimId);
+  assert.equal(finalizedInspection.journal.committedState.leaseOwner.sequence, completedRecord.sequence);
+  assert.equal(fs.readFileSync(filePath, 'utf8').includes('local-private-content-rpp-0639'), false);
+});
+
 test('file-backed journal schema migration preserves rows and remains restart-readable', () => {
   const filePath = tempJournalPath();
   const remote = baseSite();
