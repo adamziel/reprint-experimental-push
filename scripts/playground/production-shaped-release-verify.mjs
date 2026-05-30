@@ -478,6 +478,13 @@ const wpPostmetaReleaseVerifierBoundary = Object.freeze({
   proofKind: 'wp-postmeta-driver-semantics',
 });
 
+const wpTermmetaReleaseVerifierBoundary = Object.freeze({
+  driver: 'wp-termmeta',
+  driverAliases: Object.freeze(['wp-termmeta', 'wp-term-meta']),
+  table: 'wp_termmeta',
+  proofKind: 'wp-termmeta-driver-semantics',
+});
+
 export function summarizeWpOptionsDriverReleaseVerifierProof({
   now = new Date('2026-05-30T10:48:40.000Z'),
 } = {}) {
@@ -1159,6 +1166,167 @@ function buildWpPostmetaReleaseGate({
     productionBacked: false,
     acceptedForReleaseGate: false,
     note: `wp_postmeta driver semantics proof is local/support-only; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
+  };
+}
+
+export function summarizeWpTermmetaReleaseVerifierEvidence({
+  proof,
+  checkedProductionEvidence = false,
+} = {}) {
+  const boundary = wpTermmetaReleaseVerifierBoundary;
+  const plan = proof && Object.hasOwn(proof, 'planObject')
+    ? proof.planObject
+    : proof?.plan;
+  const plannedMutations = Array.isArray(plan?.mutations) ? plan.mutations : [];
+  const termmetaMutations = plannedMutations
+    .filter((entry) => isWpTermmetaDriverMutation(entry))
+    .map((entry) => summarizeWpTermmetaDriverMutation(entry));
+  const verifiedResourceKeys = Array.isArray(proof?.apply?.applyRevalidation?.verifiedResourceKeys)
+    ? proof.apply.applyRevalidation.verifiedResourceKeys
+    : [];
+  const verifiedBeforeFirstMutation = proof?.apply?.applyRevalidation?.phase === 'before-first-mutation'
+    && proof?.apply?.applyRevalidation?.checkedAgainst === 'live-remote'
+    && termmetaMutations.length > 0
+    && termmetaMutations.every((entry) => verifiedResourceKeys.includes(entry.resourceKey));
+  const missingEvidence = [];
+  if (!plan) {
+    missingEvidence.push('releaseProof.planObject');
+  }
+  if (termmetaMutations.length === 0) {
+    missingEvidence.push('wp-termmeta-mutation');
+  }
+  if (!verifiedBeforeFirstMutation) {
+    missingEvidence.push('apply-revalidation');
+  }
+
+  const evidenceScopes = uniqueNonEmpty(
+    termmetaMutations.map((entry) => entry.releaseGateEvidenceScope || entry.evidenceScope),
+  );
+  const releaseGateEvidenceScope = summarizeReleaseGateEvidenceScopes(evidenceScopes);
+  const productionScopeClaimed = evidenceScopes.includes('production-backed');
+  const checked = missingEvidence.length === 0
+    && termmetaMutations.every((entry) =>
+      entry.supported === true
+        && entry.table === boundary.table
+        && boundary.driverAliases.includes(entry.driver)
+        && entry.rowIdKind === 'meta_id');
+  const productionBacked = checked === true
+    && checkedProductionEvidence === true
+    && productionScopeClaimed;
+  const releaseGate = buildWpTermmetaReleaseGate({
+    checked,
+    checkedProductionEvidence,
+    evidenceScope: releaseGateEvidenceScope,
+    productionScopeClaimed,
+    productionBacked,
+  });
+
+  return {
+    proofKind: boundary.proofKind,
+    driver: boundary.driver,
+    table: boundary.table,
+    status: checked
+      ? (productionBacked ? 'checked' : 'support_only')
+      : 'blocked',
+    verdict: checked
+      ? (productionBacked
+          ? 'WP_TERMMETA_DRIVER_SEMANTICS_PRODUCTION_BACKED'
+          : 'WP_TERMMETA_DRIVER_SEMANTICS_SUPPORT_ONLY')
+      : 'WP_TERMMETA_DRIVER_SEMANTICS_REQUIRED',
+    evidenceScope: releaseGateEvidenceScope,
+    releaseGateEvidenceScope,
+    productionScopeClaimed,
+    checkedProductionEvidence: checkedProductionEvidence === true,
+    productionBacked,
+    supportOnly: !productionBacked,
+    checked,
+    acceptedForReleaseGate: releaseGate.acceptedForReleaseGate,
+    releaseGate,
+    applyTimeRevalidation: {
+      verifiedBeforeFirstMutation,
+      checkedAgainst: proof?.apply?.applyRevalidation?.checkedAgainst || null,
+      phase: proof?.apply?.applyRevalidation?.phase || null,
+      verifiedResourceKeys,
+    },
+    mutations: termmetaMutations,
+    missingEvidence,
+  };
+}
+
+function isWpTermmetaDriverMutation(entry) {
+  return entry?.resource?.type === 'row'
+    && entry.resource.table === wpTermmetaReleaseVerifierBoundary.table
+    && wpTermmetaReleaseVerifierBoundary.driverAliases.includes(entry?.pluginOwnedResource?.driver);
+}
+
+function summarizeWpTermmetaDriverMutation(mutation) {
+  const driverEvidence = mutation?.pluginOwnedResource?.driverEvidence || {};
+  return {
+    id: mutation.id || null,
+    resourceKey: mutation.resourceKey,
+    action: mutation.action,
+    driver: mutation.pluginOwnedResource?.driver || null,
+    owner: mutation.pluginOwnedResource?.pluginOwner || null,
+    supportsDelete: mutation.pluginOwnedResource?.supportsDelete === true,
+    table: mutation.resource?.table || driverEvidence.table || null,
+    rowId: mutation.resource?.id || driverEvidence.rowId || null,
+    rowIdKind: driverEvidence.rowIdKind || null,
+    termId: driverEvidence.termId ?? null,
+    metaKey: driverEvidence.metaKey ?? null,
+    policySource: mutation.pluginOwnedResource?.policySource || driverEvidence.policySource || null,
+    supported: driverEvidence.supported === true,
+    evidenceScope: driverEvidence.evidenceScope || mutation.pluginOwnedResource?.evidenceScope || null,
+    releaseGateEvidenceScope: driverEvidence.releaseGateEvidenceScope
+      || mutation.pluginOwnedResource?.releaseGateEvidenceScope
+      || mutation.pluginOwnedResource?.evidenceScope
+      || null,
+    baseHash: mutation.baseHash || null,
+    remoteBeforeHash: mutation.remoteBeforeHash || null,
+    localHash: mutation.localHash || null,
+    driverEvidenceHash: driverEvidence && Object.keys(driverEvidence).length > 0
+      ? digest(driverEvidence)
+      : null,
+  };
+}
+
+function buildWpTermmetaReleaseGate({
+  checked,
+  checkedProductionEvidence,
+  evidenceScope,
+  productionScopeClaimed,
+  productionBacked,
+}) {
+  if (checked && productionBacked) {
+    return {
+      status: 'GO',
+      verdict: 'WP_TERMMETA_DRIVER_SEMANTICS_PRODUCTION_BACKED',
+      evidenceScope,
+      productionBacked: true,
+      acceptedForReleaseGate: true,
+      note: 'wp_termmeta driver semantics proof is production-backed and apply-revalidated on the checked release path',
+    };
+  }
+
+  if (productionScopeClaimed) {
+    return {
+      status: 'NO-GO',
+      verdict: checkedProductionEvidence
+        ? 'WP_TERMMETA_DRIVER_SEMANTICS_INCOMPLETE'
+        : 'WP_TERMMETA_DRIVER_SEMANTICS_PRODUCTION_PROOF_REQUIRED',
+      evidenceScope,
+      productionBacked: false,
+      acceptedForReleaseGate: false,
+      note: 'wp_termmeta driver semantics proof carries production-backed scope but lacks complete checked production verifier proof; release gate remains NO-GO',
+    };
+  }
+
+  return {
+    status: 'NO-GO',
+    verdict: checked ? 'REPRINT_PUSH_LIVE_SOURCE_REQUIRED' : 'WP_TERMMETA_DRIVER_SEMANTICS_REQUIRED',
+    evidenceScope,
+    productionBacked: false,
+    acceptedForReleaseGate: false,
+    note: `wp_termmeta driver semantics proof is local/support-only; evidenceScope=${evidenceScope}; production-backed release gate evidence is still required`,
   };
 }
 
@@ -2376,11 +2544,16 @@ try {
           proof,
           checkedProductionEvidence: false,
         });
+        const wpTermmetaReleaseVerifierEvidence = summarizeWpTermmetaReleaseVerifierEvidence({
+          proof,
+          checkedProductionEvidence: false,
+        });
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
+            wpTermmeta: wpTermmetaReleaseVerifierEvidence,
           },
           ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
         };
@@ -2670,11 +2843,18 @@ try {
           && Boolean(explicitReleaseVerifySourceUrl)
           && checkedDurableJournalAccepted,
       });
+      const wpTermmetaReleaseVerifierEvidence = summarizeWpTermmetaReleaseVerifierEvidence({
+        proof,
+        checkedProductionEvidence: packagedSourceFixture === null
+          && Boolean(explicitReleaseVerifySourceUrl)
+          && checkedDurableJournalAccepted,
+      });
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
+          wpTermmeta: wpTermmetaReleaseVerifierEvidence,
         },
         ...(packagedPluginDriverProof ? { packagedGuard: packagedPluginDriverProof } : {}),
       };
