@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 06:39 CEST.
+- Last update: 2026-05-30 06:48 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0163 file type-swap conflict variant-4 generated-harness merge
-  ending at `045f06e9b`.
+  the RPP-0164 row create/update/delete mix variant-4 generated-harness merge
+  ending at `8175bc437`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 356
-  items checked and leaves 644 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 357
+  items checked and leaves 643 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 63 generated
+  11 storage/performance items, 3 production-topology items, 64 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Row create/update/delete mix variant-4 refresh: the current lane now contains
+  `RPP-0164` evidence in
+  `docs/evidence/rpp-0164-row-create-update-delete-mix-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0164 test passed 1/1, the adjacent
+  RPP-0104/RPP-0124/RPP-0144/RPP-0164 row-mix slice passed 4/4, and
+  `npm run test:generated-push-harness` passed 71/71 across 620 deterministic
+  generated cases. Checklist lint, artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 357/643; final release remains
+  `NO-GO`.
 - File type-swap conflict variant-4 refresh: the current lane now contains
   `RPP-0163` evidence in
   `docs/evidence/rpp-0163-file-type-swap-conflict-v4.md`,
