@@ -38,6 +38,9 @@ be overwritten by recovery replay or repair marking.
   completed eight-target journal. It verifies `remoteRecoveryClassification.kind`
   is `new-remote`, `storage` is `sqlite`, and counts are
   `{ old: 0, new: 8, blockedUnknown: 0, total: 8 }`.
+- The SQLite restart proof also checks the restart-readable completed-state
+  envelope: planned targets, committed targets, and all-targets-committed match
+  the plan mutation count after reopening the table.
 
 ## Redaction proof
 

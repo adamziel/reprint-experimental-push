@@ -12,6 +12,7 @@ import {
   checkedDurableJournalBoundarySatisfied,
   classifyRecoveryJournalClaims,
   productionRecoveryJournalInspectionSurfaceIsPresent,
+  RECOVERY_JOURNAL_SCHEMA_VERSION,
   recoveryClaimHash,
   RecoveryJournalClaimStaleError,
   consumeProductionRecoveryJournal,
@@ -2098,6 +2099,11 @@ test('RPP-0611 SQLite-backed restart inspection carries remote recovery classifi
     assert.equal(restarted.storage, 'sqlite');
     assert.equal(restarted.integrity.status, 'ok');
     assert.equal(restarted.committedState.status, 'completed');
+    assert.equal(restarted.tableSchemaVersion, RECOVERY_JOURNAL_SCHEMA_VERSION);
+    assert.equal(restarted.committedState.restartReadable, true);
+    assert.equal(restarted.committedState.targetEnvelope.plannedTargets, plan.mutations.length);
+    assert.equal(restarted.committedState.targetEnvelope.committedTargets, plan.mutations.length);
+    assert.equal(restarted.committedState.targetEnvelope.allTargetsCommitted, true);
     assert.equal(inspection.status, 'fully-updated-remote');
     assert.deepEqual(inspection.counts, { old: 0, new: 8, blockedUnknown: 0 });
     assert.deepEqual(inspection.remoteClassification, {
