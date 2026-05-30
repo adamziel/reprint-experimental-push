@@ -1,19 +1,28 @@
-# AO Progress Report - 2026-05-30 10:49 CEST
+# AO Progress Report - 2026-05-30 10:51 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0274
-already-in-sync decision variant-4 merge-invariant refresh ending at
-`1c64e8087`.
+`lane/evidence-integration-20260527` through the current RPP-0276 blocked plan
+apply refusal variant-4 merge-invariant refresh ending at `3a6819455`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 403 are
-  checked from integrated evidence and 597 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 404 are
+  checked from integrated evidence and 596 remain open.
+- `RPP-0276` is now checked with focused blocked plan apply refusal variant-4
+  merge-invariant evidence in
+  `docs/evidence/rpp-0276-blocked-plan-apply-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0276-blocked-plan-apply-refusal-v4.test.js`. `node --check`
+  passed for the focused test, focused/generated RPP-0276 coverage passed 2/2,
+  and the adjacent RPP-0216/RPP-0236/RPP-0256/RPP-0276 blocked-plan suite
+  passed 8/8. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. This remains local planner/apply
+  generated-fixture evidence, not production endpoint proof.
 - `RPP-0274` is now checked with focused already-in-sync decision variant-4
   merge-invariant evidence in
   `docs/evidence/rpp-0274-already-in-sync-decision-v4.md`,

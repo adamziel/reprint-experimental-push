@@ -6,20 +6,30 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:49 CEST.
+- Last update: 2026-05-30 10:51 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0274 already-in-sync decision variant-4 merge ending at
-  `1c64e8087`.
+  the RPP-0276 blocked plan apply refusal variant-4 merge ending at
+  `3a6819455`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 403
-  items checked and leaves 597 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 404
+  items checked and leaves 596 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 68 merge-invariant items. No release-ops items are checked
+  harness items, and 69 merge-invariant items. No release-ops items are checked
   yet.
+- Blocked plan apply refusal variant-4 refresh: the current lane now contains
+  `RPP-0276` evidence in
+  `docs/evidence/rpp-0276-blocked-plan-apply-refusal-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0276-blocked-plan-apply-refusal-v4.test.js`. `node --check`
+  passed for the focused test, focused/generated RPP-0276 coverage passed 2/2,
+  and the adjacent RPP-0216/RPP-0236/RPP-0256/RPP-0276 blocked-plan suite
+  passed 8/8. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 404/596; final release remains
+  `NO-GO`.
 - Already-in-sync decision variant-4 refresh: the current lane now contains
   `RPP-0274` evidence in
   `docs/evidence/rpp-0274-already-in-sync-decision-v4.md`,
