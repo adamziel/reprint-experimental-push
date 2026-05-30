@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:21:00+02:00">Last updated: May 30, 2026, 16:21 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T16:24:00+02:00">Last updated: May 30, 2026, 16:24 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>476</strong>
+        <strong>477</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>524</strong>
+        <strong>523</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -393,7 +393,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production chunking not checked">
-            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, and a large post table planner/apply benchmark, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
+            <span><strong>Chunk rollout</strong>Guarded transfer benchmark now includes lab chunk replay idempotency, bounded parallel snapshot hashing, remote hash pagination, dry-run batch sizing, apply batch sizing, a large post table planner/apply benchmark, and a large media library storage/row-precondition benchmark, but production storage receipts, row batch execution, and atomic-group commit receipts are pending.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Release CI not checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0496</span>
+        <span>RPP-0715</span>
       </div>
-      <p>The latest refresh integrates RPP-0496 driver delete support release-verifier v5 evidence: the verifier now emits support-only, hash-only pluginDriver.deleteSupport proof for exact-driver delete-support binding, supported delete apply, and forged delete refusal before mutation. Counts are now 476/524; final release remains NO-GO because this is local verifier support evidence, not production-backed plugin-driver proof.</p>
+      <p>The latest refresh integrates RPP-0715 large media library benchmark evidence: upload-path writes run through filesystem fsync gates, attachment and metadata row preconditions stay bound to lane updates, stale writes block before rename, and incomplete fsync gates withhold the fast-path lane. Counts are now 477/523; final release remains NO-GO because this is local benchmark evidence, not production storage receipt or row batch execution proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0715 focused: 3/3</span>
+        <span class="tag">large media benchmark: pass</span>
+        <span class="tag">128 lane updates / 16 blocked</span>
+        <span class="tag">storage/batch adjacent: 27/27</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0496 focused: 2/2</span>
         <span class="tag">delete-support adjacent: 24/24</span>
         <span class="tag">release-verifier adjacent: 22/22</span>
