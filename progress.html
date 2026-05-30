@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T20:57:00+02:00">Last updated: May 30, 2026, 20:57 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T21:05:00+02:00">Last updated: May 30, 2026, 21:05 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -406,10 +406,16 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0701</span>
+        <span>RPP-0709</span>
       </div>
-      <p>The latest refresh preserves the RPP-0701 MySQL CAS write guard ancestry while retaining the stronger current runtime-capability evidence: the benchmark now includes a same-statement duplicate-key guard for logical wp_postmeta writes, reports duplicate-key and unsafe multiple-match counters, and keeps guard evidence hash-only. Counts remain 514/486; final release remains NO-GO because this is deterministic MySQL-shape and local capability evidence, not live MySQL DML durability proof.</p>
+      <p>The latest refresh preserves the RPP-0709 chunk replay idempotency ancestry while retaining the stronger current guarded executor benchmark gates: chunk receipts now carry local resource hashes through manifest entries, receipt matching, and transaction-boundary cursor evidence, and supplemental module coverage proves exact replay, missing-receipt upload-required behavior, idempotency-key conflicts, and budget fail-closed behavior. Counts remain 514/486; final release remains NO-GO because this is lab guarded executor evidence, not production storage receipt or atomic commit proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0709 supplemental: 4/4</span>
+        <span class="tag">RPP-0709/RPP-0710 focused: 2/2</span>
+        <span class="tag">guarded/performance: 19/19</span>
+        <span class="tag">large replay skips: 96/96</span>
+        <span class="tag">duplicate replay work: 0</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0701 focused: 7/7</span>
         <span class="tag">benchmark: 80 writes</span>
         <span class="tag">duplicate-key: 5</span>
