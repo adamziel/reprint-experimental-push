@@ -6,10 +6,10 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:20 CEST.
+- Last update: 2026-05-30 12:51 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0388 commentmeta comment release-verifier proof merge ending at
-  `0052684e`.
+  the RPP-0510 session user identity binding salvage merge ending at
+  `07520106`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
@@ -20,6 +20,18 @@ linked implementation artifacts.
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Session user identity binding salvage merge: the current lane reconciles the
+  salvaged `session/rpp-189` RPP-0510 coverage with the newer lane
+  `userIdentityHash` implementation. It keeps the stricter short-lived session
+  user binding, adds explicit `authBinding.sessionUser` receipt validation,
+  carries `sessionUserIdentityBinding` through `runAuthenticatedHttpPush`, and
+  exposes compatibility `authSessionBoundary.userIdentityBinding` evidence
+  alongside the existing hash-only `userIdentity` summary. `php -l` and
+  `node --check` passed for the touched route/client/verifier/test files,
+  focused RPP-0510 salvage coverage passed 3/3, and the related auth route and
+  client suite passed 151/151. Checklist lint, scoped artifact redaction scan,
+  and merge diff whitespace checks also passed. Counts remain 428/572; final
+  release remains `NO-GO`.
 - Commentmeta comment reference release-verifier proof: the current lane now
   contains `RPP-0388` evidence in
   `docs/evidence/rpp-0388-commentmeta-comment-reference-release-verifier-v5.md`,
