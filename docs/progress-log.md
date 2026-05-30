@@ -6,19 +6,35 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:07 CEST.
+- Last update: 2026-05-30 04:10 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0427 wp_usermeta driver semantics merge ending at `fdaebc58c`.
+  the RPP-0437 driver dry-run validation hook merge ending at `483f7cada`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 319
-  items checked and leaves 681 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 320
+  items checked and leaves 680 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  46 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  47 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 54 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused driver dry-run validation hook refresh: the current lane now contains
+  `RPP-0437` evidence in
+  `docs/evidence/rpp-0437-driver-dry-run-validation-hook.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0437-driver-dry-run-validation-hook.test.js`. `node --check
+  test/rpp-0437-driver-dry-run-validation-hook.test.js` exited 0, `node
+  --test --test-name-pattern 'RPP-0437|driver dry-run validation'
+  test/rpp-0437-driver-dry-run-validation-hook.test.js
+  test/plugin-driver-dry-run-validation-hook.test.js` passed 3/3, `node
+  --test test/plugin-driver-dry-run-validation-hook.test.js` passed 3/3, and
+  the adjacent plugin-driver delete/redaction/refusal slice passed 16/16. The
+  proof covers supported and unsupported generated dry-run validation hook
+  variants, keeps generated fixture tokens out of evidence, and proves dry-run
+  validation failures fail closed before mutation. Checklist lint, artifact
+  redaction scan, and `git diff --check` also passed. Counts are now 320/680;
+  final release remains `NO-GO`.
 - Focused wp_usermeta driver semantics refresh: the current lane now contains
   `RPP-0427` evidence in
   `docs/evidence/rpp-0427-wp-usermeta-driver-semantics-v2.md`,
