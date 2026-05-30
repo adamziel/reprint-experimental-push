@@ -3214,11 +3214,454 @@ function assertIndependentLocalFileRemoteRowNoRawValues(evidence, rawValues) {
   }
 }
 
+export function summarizePostGuidSlugCollisionReleaseVerifierProof({
+  now = new Date('2026-05-30T16:18:00.000Z'),
+  generatedCases = null,
+} = {}) {
+  try {
+    return buildPostGuidSlugCollisionReleaseVerifierProof({ now, generatedCases });
+  } catch (error) {
+    return {
+      rpp: 'RPP-0398',
+      evidenceSource: 'release-verifier-post-guid-slug-collision-v5',
+      status: 'blocked',
+      verdict: 'POST_GUID_SLUG_COLLISION_RELEASE_VERIFIER_REQUIRED',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: 'NO-GO',
+      evidenceScope: 'local-generated-release-verifier',
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildPostGuidSlugCollisionReleaseVerifierProof({ now, generatedCases }) {
+  const targetCases = (Array.isArray(generatedCases) ? generatedCases : generatePushHarnessCases())
+    .filter((testCase) => testCase.tags?.has('post-guid-slug-collision-guard'));
+  const coverage = {
+    family: 'post-guid-slug-collision-guard',
+    target: 'postGuidSlugCollisionReleaseVerifierVariant5',
+    total: targetCases.length,
+    perTier: {},
+    statuses: {},
+  };
+  const totals = {
+    readyCases: 0,
+    staleCases: 0,
+    readyApplied: 0,
+    readyStaleReplayRejected: 0,
+    collisionBlockers: 0,
+    collisionRemoteDecisions: 0,
+    staleApplyRefusedBeforeMutation: 0,
+  };
+  const caseProofs = [];
+  const rawSentinels = [];
+
+  for (const testCase of targetCases) {
+    const target = postGuidSlugCollisionGeneratedTarget(testCase);
+    const plan = createPushPlan({
+      base: testCase.base,
+      local: testCase.local,
+      remote: testCase.remote,
+      now,
+    });
+    const validation = validateGeneratedCase(testCase);
+    const variant = target.staleTarget ? 'stale-collision' : 'ready-unique';
+    incrementReleaseVerifierCount(coverage.perTier, testCase.tier);
+    incrementReleaseVerifierCount(coverage.statuses, plan.status);
+    rawSentinels.push(...target.rawValues);
+
+    if (!target.staleTarget) {
+      totals.readyCases += 1;
+      const mutation = plan.mutations.find((entry) => entry.resourceKey === target.localResourceKey) || null;
+      const precondition = mutation
+        ? plan.preconditions.find((entry) => entry.mutationId === mutation.id) || null
+        : null;
+      const applyEvents = [];
+      const applyRemote = cloneReleaseVerifierJson(testCase.remote);
+      const applyAttempt = captureReleaseVerifierApply(() =>
+        applyPlan(applyRemote, plan, {
+          durableJournal: releaseVerifierClaimFencedDurableJournal(applyEvents),
+        }));
+      const appliedSite = applyAttempt.result?.site || applyRemote;
+      const appliedHash = mutation ? resourceHash(appliedSite, mutation.resource) : null;
+      const localHash = resourceHash(testCase.local, target.localResource);
+      const staleReplay = postGuidSlugCollisionReadyStaleReplay({
+        testCase,
+        plan,
+        mutation,
+        target,
+      });
+      rawSentinels.push(...staleReplay.rawValues);
+
+      const exactReady = plan.status === 'ready'
+        && validation.status === 'ready'
+        && validation.applied === true
+        && validation.staleReplayRejected === true
+        && validation.staleReplayRejectionCode === 'PRECONDITION_FAILED'
+        && mutation?.action === 'put'
+        && mutation?.changeKind === 'create'
+        && precondition?.resourceKey === target.localResourceKey
+        && precondition?.expectedHash === mutation?.remoteBeforeHash
+        && precondition?.checkedAgainst === 'live-remote'
+        && applyAttempt.error === null
+        && appliedHash === localHash
+        && staleReplay.rejectedBeforeMutation === true;
+
+      if (applyAttempt.error === null && appliedHash === localHash) {
+        totals.readyApplied += 1;
+      }
+      if (staleReplay.rejectedBeforeMutation) {
+        totals.readyStaleReplayRejected += 1;
+      }
+
+      caseProofs.push({
+        id: testCase.id,
+        tier: testCase.tier,
+        variant,
+        status: plan.status,
+        exactReady,
+        planHash: sha256Evidence(releaseVerifierHashOnlyPlanEvidence(plan)),
+        surface: postGuidSlugCollisionSurfaceEvidence(testCase, target),
+        mutation: mutation ? {
+          resourceKey: mutation.resourceKey,
+          action: mutation.action,
+          changeKind: mutation.changeKind,
+          baseHash: mutation.baseHash,
+          localHash: mutation.localHash,
+          remoteBeforeHash: mutation.remoteBeforeHash,
+          precondition: precondition ? {
+            resourceKey: precondition.resourceKey,
+            expectedHash: precondition.expectedHash,
+            checkedAgainst: precondition.checkedAgainst,
+            matchesMutation: precondition.expectedHash === mutation.remoteBeforeHash,
+          } : null,
+        } : null,
+        applyCarryThrough: {
+          applied: applyAttempt.error === null,
+          appliedMutations: applyAttempt.result?.appliedMutations ?? null,
+          targetApplied: appliedHash === localHash,
+          eventCount: applyEvents.length,
+          remoteHashAfter: sha256Evidence(appliedSite),
+        },
+        staleReplay: {
+          code: staleReplay.code,
+          resourceKey: staleReplay.resourceKey,
+          expectedHash: staleReplay.expectedHash,
+          actualHash: staleReplay.actualHash,
+          rejectedBeforeMutation: staleReplay.rejectedBeforeMutation,
+          eventCount: staleReplay.eventCount,
+          remoteHashBefore: staleReplay.remoteHashBefore,
+          remoteHashAfter: staleReplay.remoteHashAfter,
+          detailsHash: staleReplay.detailsHash,
+        },
+        validation: postGuidSlugCollisionValidationEvidence(validation),
+      });
+      continue;
+    }
+
+    totals.staleCases += 1;
+    const blocker = plan.blockers.find((entry) => entry.resourceKey === target.localResourceKey) || null;
+    const reference = blocker?.references?.find((entry) =>
+      entry.relationshipType === 'post-natural-identity-collision') || null;
+    const remoteDecision = plan.decisions.find((entry) => entry.resourceKey === target.remoteResourceKey) || null;
+    const localMutation = plan.mutations.find((entry) => entry.resourceKey === target.localResourceKey) || null;
+    const refusalRemote = cloneReleaseVerifierJson(testCase.remote);
+    const refusalHashBefore = sha256Evidence(refusalRemote);
+    const refusalEvents = [];
+    const refusalAttempt = captureReleaseVerifierApply(() =>
+      applyPlan(refusalRemote, plan, {
+        durableJournal: releaseVerifierClaimFencedDurableJournal(refusalEvents),
+      }));
+    const refusalRejectedBeforeMutation = refusalAttempt.error instanceof PushPlanError
+      && refusalAttempt.error.code === 'PLAN_NOT_READY'
+      && sha256Evidence(refusalRemote) === refusalHashBefore
+      && refusalEvents.length === 0;
+    const exactStaleCollision = plan.status === 'blocked'
+      && validation.status === 'blocked'
+      && validation.applied === false
+      && validation.nonReadyRemoteUnchanged === true
+      && blocker?.class === 'stale-wordpress-graph-identity'
+      && reference?.targetResourceKey === target.remoteResourceKey
+      && JSON.stringify(reference?.identityKinds || []) === JSON.stringify(['guid', 'post_type+post_name'])
+      && remoteDecision?.decision === 'keep-remote'
+      && localMutation === null
+      && refusalRejectedBeforeMutation;
+
+    if (blocker?.class === 'stale-wordpress-graph-identity' && reference) {
+      totals.collisionBlockers += 1;
+    }
+    if (remoteDecision?.decision === 'keep-remote') {
+      totals.collisionRemoteDecisions += 1;
+    }
+    if (refusalRejectedBeforeMutation) {
+      totals.staleApplyRefusedBeforeMutation += 1;
+    }
+
+    caseProofs.push({
+      id: testCase.id,
+      tier: testCase.tier,
+      variant,
+      status: plan.status,
+      exactStaleCollision,
+      planHash: sha256Evidence(releaseVerifierHashOnlyPlanEvidence(plan)),
+      surface: postGuidSlugCollisionSurfaceEvidence(testCase, target),
+      collisionBlocker: blocker ? {
+        resourceKey: blocker.resourceKey,
+        class: blocker.class,
+        reasonHash: sha256Evidence(blocker.reason || null),
+        resolutionPolicy: blocker.resolutionPolicy,
+        baseHash: blocker.baseHash,
+        localHash: blocker.localHash,
+        remoteHash: blocker.remoteHash,
+        plannedMutation: localMutation !== null,
+        blockerHash: sha256Evidence(blocker),
+      } : null,
+      collisionReference: reference ? {
+        relationshipType: reference.relationshipType,
+        relationshipKey: reference.relationshipKey,
+        sourceResourceKey: reference.sourceResourceKey,
+        targetResourceKey: reference.targetResourceKey,
+        targetRemoteHash: reference.targetRemoteHash,
+        identityKinds: reference.identityKinds,
+        referenceHash: sha256Evidence(reference),
+      } : null,
+      remoteCollisionDecision: remoteDecision ? {
+        resourceKey: remoteDecision.resourceKey,
+        decision: remoteDecision.decision,
+        remoteChange: remoteDecision.change?.remoteChange || null,
+        noMutation: plan.mutations.every((entry) => entry.resourceKey !== target.remoteResourceKey),
+        noPrecondition: plan.preconditions.every((entry) => entry.resourceKey !== target.remoteResourceKey),
+        decisionHash: sha256Evidence(remoteDecision),
+      } : null,
+      applyRefusal: {
+        code: refusalAttempt.error?.code || null,
+        rejectedBeforeMutation: refusalRejectedBeforeMutation,
+        eventCount: refusalEvents.length,
+        remoteHashBefore: refusalHashBefore,
+        remoteHashAfter: sha256Evidence(refusalRemote),
+        detailsHash: refusalAttempt.error ? sha256Evidence(refusalAttempt.error.details || null) : null,
+      },
+      validation: postGuidSlugCollisionValidationEvidence(validation),
+    });
+  }
+
+  const sortedCaseProofs = caseProofs.sort((left, right) =>
+    left.tier - right.tier || left.variant.localeCompare(right.variant) || left.id.localeCompare(right.id));
+  const sortedCoverage = {
+    ...coverage,
+    perTier: sortReleaseVerifierCountObject(coverage.perTier, { numeric: true }),
+    statuses: sortReleaseVerifierCountObject(coverage.statuses),
+  };
+  const expectedPerTier = Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2]));
+  const coverageOk = targetCases.length === 20
+    && JSON.stringify(sortedCoverage.perTier) === JSON.stringify(expectedPerTier)
+    && sortedCoverage.statuses.ready === 10
+    && sortedCoverage.statuses.blocked === 10;
+  const executorOk = totals.readyCases === 10
+    && totals.staleCases === 10
+    && totals.readyApplied === 10
+    && totals.readyStaleReplayRejected === 10
+    && totals.collisionBlockers === 10
+    && totals.collisionRemoteDecisions === 10
+    && totals.staleApplyRefusedBeforeMutation === 10
+    && sortedCaseProofs.every((entry) => entry.exactReady === true || entry.exactStaleCollision === true);
+  const proofBase = {
+    rpp: 'RPP-0398',
+    evidenceSource: 'release-verifier-post-guid-slug-collision-v5',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: 'NO-GO',
+    evidenceScope: 'local-generated-release-verifier',
+    releaseVerifier: {
+      checkedBy: 'scripts/playground/production-shaped-release-verify.mjs',
+      check: 'post-guid-slug-collision',
+      variant: 'v5',
+      generatedHarnessReadyAndStale: coverageOk,
+      executorRejectsStaleCollisionBeforeMutation: executorOk,
+    },
+    invariant: {
+      readyUniquePostMutation: true,
+      staleCollisionBlockerClass: 'stale-wordpress-graph-identity',
+      collisionRelationshipType: 'post-natural-identity-collision',
+      collisionIdentityKinds: ['guid', 'post_type+post_name'],
+      staleApplyRefusalCode: 'PLAN_NOT_READY',
+      readyStaleReplayRefusalCode: 'PRECONDITION_FAILED',
+    },
+    coverage: sortedCoverage,
+    totals,
+    caseProofs: sortedCaseProofs,
+  };
+  const rawValuesIncluded = rawSentinels.some((raw) =>
+    typeof raw === 'string' && raw.length > 0 && JSON.stringify(proofBase).includes(raw));
+  const ok = coverageOk && executorOk && !rawValuesIncluded;
+
+  return {
+    ...proofBase,
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'POST_GUID_SLUG_COLLISION_READY_AND_STALE_VERIFIED'
+      : 'POST_GUID_SLUG_COLLISION_RELEASE_VERIFIER_REQUIRED',
+    rawValuesIncluded,
+    proofHash: sha256Evidence(proofBase),
+  };
+}
+
+function postGuidSlugCollisionGeneratedTarget(testCase) {
+  const localEntry = Object.entries(testCase.local?.db?.wp_posts || {})
+    .find(([, row]) => String(row?.post_title || '').startsWith('Generated GUID slug collision guard '));
+  if (!localEntry) {
+    const error = new Error(`Generated case ${testCase?.id || '<unknown>'} is missing the GUID/slug collision target`);
+    error.code = 'RPP_0398_TARGET_NOT_FOUND';
+    throw error;
+  }
+
+  const [localRowId, localRow] = localEntry;
+  const staleTarget = testCase.tags?.has('post-guid-slug-collision-stale') === true;
+  const remoteEntry = Object.entries(testCase.remote?.db?.wp_posts || {})
+    .find(([rowId, row]) =>
+      rowId !== localRowId
+      && row?.guid === localRow.guid
+      && row?.post_type === localRow.post_type
+      && row?.post_name === localRow.post_name);
+
+  if (staleTarget && !remoteEntry) {
+    const error = new Error(`Generated case ${testCase.id} is missing the remote GUID/slug collision row`);
+    error.code = 'RPP_0398_REMOTE_COLLISION_NOT_FOUND';
+    throw error;
+  }
+  if (!staleTarget && remoteEntry) {
+    const error = new Error(`Generated case ${testCase.id} unexpectedly collides with a remote GUID/slug row`);
+    error.code = 'RPP_0398_READY_COLLISION_FOUND';
+    throw error;
+  }
+
+  const [remoteRowId, remoteRow] = remoteEntry || [];
+  const localResource = {
+    type: 'row',
+    table: 'wp_posts',
+    id: localRowId,
+    key: `row:${JSON.stringify(['wp_posts', localRowId])}`,
+  };
+  const remoteResource = remoteRowId ? {
+    type: 'row',
+    table: 'wp_posts',
+    id: remoteRowId,
+    key: `row:${JSON.stringify(['wp_posts', remoteRowId])}`,
+  } : null;
+
+  return {
+    staleTarget,
+    localRowId,
+    localRow,
+    localResource,
+    localResourceKey: localResource.key,
+    remoteRowId,
+    remoteRow,
+    remoteResource,
+    remoteResourceKey: remoteResource?.key || null,
+    rawValues: [
+      localRow.post_title,
+      localRow.post_name,
+      localRow.guid,
+      remoteRow?.post_title,
+      remoteRow?.post_name,
+      remoteRow?.guid,
+    ].filter(Boolean),
+  };
+}
+
+function postGuidSlugCollisionSurfaceEvidence(testCase, target) {
+  return {
+    localResourceKey: target.localResourceKey,
+    remoteResourceKey: target.remoteResourceKey,
+    identityKinds: ['guid', 'post_type+post_name'],
+    identityHash: sha256Evidence({
+      guid: target.localRow.guid,
+      postType: target.localRow.post_type,
+      postName: target.localRow.post_name,
+    }),
+    localHash: resourceHash(testCase.local, target.localResource),
+    remoteCollisionHash: target.remoteResource
+      ? resourceHash(testCase.remote, target.remoteResource)
+      : null,
+    baseState: getResource(testCase.base, target.localResource) === ABSENT ? 'absent' : 'present',
+    remoteSourceState: getResource(testCase.remote, target.localResource) === ABSENT ? 'absent' : 'present',
+  };
+}
+
+function postGuidSlugCollisionReadyStaleReplay({ testCase, plan, mutation, target }) {
+  const staleTitle = `rpp-0398-ready-stale-replay-${testCase.id}`;
+  if (!mutation) {
+    return {
+      rawValues: [staleTitle],
+      code: null,
+      resourceKey: target.localResourceKey,
+      expectedHash: null,
+      actualHash: null,
+      rejectedBeforeMutation: false,
+      eventCount: 0,
+      remoteHashBefore: null,
+      remoteHashAfter: null,
+      detailsHash: null,
+    };
+  }
+
+  const staleRemote = cloneReleaseVerifierJson(testCase.remote);
+  setResource(staleRemote, mutation.resource, {
+    ...target.localRow,
+    post_title: staleTitle,
+  });
+  const actualHash = resourceHash(staleRemote, mutation.resource);
+  const remoteHashBefore = sha256Evidence(staleRemote);
+  const events = [];
+  const attempt = captureReleaseVerifierApply(() =>
+    applyPlan(staleRemote, plan, {
+      durableJournal: releaseVerifierClaimFencedDurableJournal(events),
+    }));
+  const remoteHashAfter = sha256Evidence(staleRemote);
+  return {
+    rawValues: [staleTitle],
+    code: attempt.error?.code || null,
+    resourceKey: attempt.error?.details?.resourceKey || target.localResourceKey,
+    expectedHash: attempt.error?.details?.expectedHash || mutation.remoteBeforeHash,
+    actualHash: attempt.error?.details?.actualHash || actualHash,
+    rejectedBeforeMutation: attempt.error instanceof PushPlanError
+      && attempt.error.code === 'PRECONDITION_FAILED'
+      && attempt.error.details?.resourceKey === target.localResourceKey
+      && attempt.error.details?.expectedHash === mutation.remoteBeforeHash
+      && attempt.error.details?.actualHash === actualHash
+      && remoteHashAfter === remoteHashBefore
+      && events.length === 0,
+    eventCount: events.length,
+    remoteHashBefore,
+    remoteHashAfter,
+    detailsHash: attempt.error ? sha256Evidence(attempt.error.details || null) : null,
+  };
+}
+
+function postGuidSlugCollisionValidationEvidence(validation) {
+  return {
+    status: validation.status,
+    applied: validation.applied === true,
+    unplannedRemotePreserved: validation.unplannedRemotePreserved === true,
+    nonReadyRemoteUnchanged: validation.nonReadyRemoteUnchanged === true,
+    staleReplayRejected: validation.staleReplayRejected === true,
+    staleReplayRejectionCode: validation.staleReplayRejectionCode || null,
+    staleReplayRemoteUnchanged: validation.staleReplayRemoteUnchanged === true,
+  };
+}
+
 export function summarizeMergeInvariantReleaseVerifierProofs() {
   return {
     independentLocalFileRemoteRow: summarizeIndependentLocalFileRemoteRowReleaseVerifierProof(),
     independentLocalRowRemoteFile: summarizeIndependentLocalRowRemoteFileReleaseVerifierProof(),
     remoteOnlyPluginMetadata: summarizeRemoteOnlyPluginMetadataReleaseVerifierProof(),
+    postGuidSlugCollision: summarizePostGuidSlugCollisionReleaseVerifierProof(),
   };
 }
 

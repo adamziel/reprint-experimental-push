@@ -443,6 +443,10 @@ const targetCoverageDefinitions = Object.freeze({
     family: 'featured-image-attachment-ready',
     tag: 'featured-image-attachment',
   },
+  postGuidSlugCollision: {
+    family: 'post-guid-slug-collision-guard',
+    tag: 'post-guid-slug-collision-guard',
+  },
   usermetaDriverSupported: {
     family: 'supported-plugin-usermeta',
     tag: 'plugin-usermeta-driver-supported',
@@ -1428,6 +1432,16 @@ function buildGeneratedCase({ index, tier, rng }) {
     tags,
   });
 
+  addPostGuidSlugCollisionTarget({
+    family,
+    tier,
+    base,
+    local,
+    remote,
+    allocator,
+    tags,
+  });
+
   addPluginOwnedResourceRefusalVariant3Target({
     family,
     tier,
@@ -1546,6 +1560,58 @@ function addWpTermRelationshipsGraphTarget({
     prefix: staleTarget ? 'stale-wp-term-relationships' : 'ready-wp-term-relationships',
   });
   tags.add(staleTarget ? 'expected-blocked' : 'ready-candidate');
+}
+
+function addPostGuidSlugCollisionTarget({
+  family,
+  tier,
+  base,
+  local,
+  remote,
+  allocator,
+  tags,
+}) {
+  const readyTarget = family === 'same-plan-post-author-graph';
+  const staleTarget = family === 'stale-post-author-graph';
+  if (!readyTarget && !staleTarget) {
+    return;
+  }
+
+  const localPostId = allocator.graphId();
+  const localRowId = `ID:${localPostId}`;
+  const slug = `generated-guid-slug-collision-${tier}-${allocator.next()}`;
+  const guid = `urn:reprint-push:generated-guid-slug-collision:${tier}:${allocator.next()}`;
+  const localRow = makePost(
+    localPostId,
+    `Generated GUID slug collision guard ${staleTarget ? 'stale' : 'ready'} ${localPostId}`,
+    {
+      post_type: 'page',
+      post_name: slug,
+      guid,
+    },
+  );
+
+  setRow(local, 'wp_posts', localRowId, localRow);
+  tags.add('post-guid-slug-collision-guard');
+  tags.add(staleTarget ? 'post-guid-slug-collision-stale' : 'post-guid-slug-collision-ready');
+  tags.add(staleTarget ? 'post-guid-slug-collision-non-ready' : 'post-guid-slug-collision-ready-plan');
+
+  if (!staleTarget) {
+    return;
+  }
+
+  const remotePostId = allocator.graphId();
+  const remoteRowId = `ID:${remotePostId}`;
+  setRow(remote, 'wp_posts', remoteRowId, makePost(
+    remotePostId,
+    `Remote GUID slug collision target ${remotePostId}`,
+    {
+      post_type: localRow.post_type,
+      post_name: localRow.post_name,
+      guid: localRow.guid,
+    },
+  ));
+  tags.add('expected-blocked');
 }
 
 const scenarioFamilyBuilders = {
