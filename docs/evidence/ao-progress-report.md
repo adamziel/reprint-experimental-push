@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 04:19 CEST
+# AO Progress Report - 2026-05-30 04:21 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0440 arbitrary
-plugin fixture package proof refresh ending at `f8a878f6f`. It separates
-committed proof from visible AO worker output that is still branch-local or in
-progress.
+`lane/evidence-integration-20260527` through the current RPP-0462 driver owner
+identity binding proof refresh ending at `9cf2f62e8`. It separates committed
+proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 322 are
-  checked from integrated evidence and 678 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 323 are
+  checked from integrated evidence and 677 remain open.
+- `RPP-0462` is now checked with focused driver owner identity binding
+  variant-4 evidence in
+  `docs/evidence/rpp-0462-driver-owner-identity-binding-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0462-driver-owner-identity-binding-v4.test.js`. `node --check
+  test/rpp-0462-driver-owner-identity-binding-v4.test.js` exited 0, `node
+  --test test/rpp-0462-driver-owner-identity-binding-v4.test.js` passed 1/1,
+  and `node --test test/plugin-driver-registration-api.test.js
+  test/plugin-driver-dry-run-validation-hook.test.js
+  test/plugin-driver-delete-support-flag.test.js` passed 9/9, proving supported
+  and unsupported generated owner identity binding variants, checklist lint,
+  artifact redaction scan, and `git diff --check` while final release remains
+  **NO-GO**.
 - `RPP-0440` is now checked with focused arbitrary plugin fixture package
   variant-2 evidence in
   `docs/evidence/rpp-0440-arbitrary-plugin-fixture-package-v2.md`,

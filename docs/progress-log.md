@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:19 CEST.
+- Last update: 2026-05-30 04:21 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0440 arbitrary plugin fixture package proof merge ending at
-  `f8a878f6f`.
+  the RPP-0462 driver owner identity binding proof merge ending at
+  `9cf2f62e8`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 322
-  items checked and leaves 678 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 323
+  items checked and leaves 677 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  48 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  49 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused driver owner identity binding variant-4 refresh: the current lane now
+  contains `RPP-0462` evidence in
+  `docs/evidence/rpp-0462-driver-owner-identity-binding-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0462-driver-owner-identity-binding-v4.test.js`. `node --check
+  test/rpp-0462-driver-owner-identity-binding-v4.test.js` exited 0, `node
+  --test test/rpp-0462-driver-owner-identity-binding-v4.test.js` passed 1/1,
+  and the adjacent plugin-driver registration/dry-run/delete slice passed 9/9.
+  The proof covers supported and unsupported generated owner identity binding
+  variants, keeps owner evidence local/focused, and does not claim live
+  production proof. Checklist lint, artifact redaction scan, and `git
+  diff --check` also passed. Counts are now 323/677; final release remains
+  `NO-GO`.
 - Focused arbitrary plugin fixture package variant-2 refresh: the current lane
   now contains `RPP-0440` evidence in
   `docs/evidence/rpp-0440-arbitrary-plugin-fixture-package-v2.md`,
