@@ -83,6 +83,26 @@ function applyFirstMutations(site, plan, count) {
   }
 }
 
+function oldRemoteJournalForPlan(remote, plan) {
+  return {
+    schemaVersion: 1,
+    id: `journal-${plan.id}`,
+    planId: plan.id,
+    status: 'opened',
+    createdAt: plan.generatedAt,
+    remoteBeforeHash: digest(remote),
+    entries: plan.mutations.map((mutation) => ({
+      mutationId: mutation.id,
+      resource: clone(mutation.resource),
+      resourceKey: mutation.resourceKey,
+      action: mutation.action,
+      status: 'pending',
+      beforeHash: mutation.remoteBeforeHash || resourceHash(remote, mutation.resource),
+      afterHash: digest(deserializeResourceValue(mutation.value)),
+    })),
+  };
+}
+
 function withoutSchemaVersion(record) {
   const { schemaVersion, ...rest } = record;
   return rest;
@@ -448,6 +468,237 @@ test('file-backed journal staged state survives restart and retry preserves remo
     false,
   );
   assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+});
+
+test('RPP-0628 production recovery journal staged state remains restart-readable after process restart retry', () => {
+  const filePath = tempJournalPath();
+  fs.chmodSync(path.dirname(filePath), 0o700);
+  const base = baseSite();
+  const local = clone(base);
+  const remote = clone(base);
+  const plannedLocalContent = 'local-private-content-rpp-0628';
+  const preservedBeforePlan = 'remote-preserved-private-content-rpp-0628-before-plan';
+  const preservedAfterCrash = 'remote-preserved-private-content-rpp-0628-after-crash';
+  const claimId = 'rpp-0628-staged-state-production-claim';
+  const artifactRefs = {
+    stagedState: 'artifact://rpp-0628-staged-state-v2',
+    releaseProof: 'artifact://rpp-0628-release-proof',
+  };
+  local.files['file-1.txt'] = plannedLocalContent;
+  remote.files['file-8.txt'] = preservedBeforePlan;
+  const plan = planFor(base, local, remote);
+  const previousJournal = oldRemoteJournalForPlan(remote, plan);
+  const expectedStaged = clone(remote);
+  applyFirstMutations(expectedStaged, plan, plan.mutations.length);
+  const recoveryJournalModule = new URL('../src/recovery-journal.js', import.meta.url).href;
+  const applyModule = new URL('../src/apply.js', import.meta.url).href;
+  const firstWriterScript = `
+    import { openProductionRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+    import { applyPlan } from ${JSON.stringify(applyModule)};
+
+    const filePath = process.env.RPP0628_JOURNAL_PATH;
+    const plan = JSON.parse(process.env.RPP0628_PLAN);
+    const remote = JSON.parse(process.env.RPP0628_REMOTE_SITE);
+    const artifactRefs = JSON.parse(process.env.RPP0628_ARTIFACT_REFS);
+    const previousJournal = JSON.parse(process.env.RPP0628_PREVIOUS_JOURNAL);
+    const durableJournal = openProductionRecoveryJournal({
+      filePath,
+      plan,
+      current: remote,
+      artifactRefs,
+      now: new Date(process.env.RPP0628_NOW),
+      truncate: true,
+      claimId: process.env.RPP0628_CLAIM_ID,
+    });
+
+    try {
+      applyPlan(remote, plan, {
+        durableJournal,
+        journal: previousJournal,
+        failAfterStaging: true,
+        mutateRemote: true,
+        artifactRefs,
+      });
+      console.error('expected injected staging failure');
+      process.exit(3);
+    } catch (error) {
+      if (error?.code !== 'INJECTED_FAILURE_AFTER_STAGING') {
+        console.error(error?.stack || String(error));
+        process.exit(2);
+      }
+      process.exit(0);
+    }
+  `;
+
+  const firstWriter = spawnSync(process.execPath, ['--input-type=module', '-e', firstWriterScript], {
+    env: {
+      ...process.env,
+      RPP0628_ARTIFACT_REFS: JSON.stringify(artifactRefs),
+      RPP0628_CLAIM_ID: claimId,
+      RPP0628_JOURNAL_PATH: filePath,
+      RPP0628_NOW: fixedNow.toISOString(),
+      RPP0628_PLAN: JSON.stringify(plan),
+      RPP0628_PREVIOUS_JOURNAL: JSON.stringify(previousJournal),
+      RPP0628_REMOTE_SITE: JSON.stringify(remote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(firstWriter.error, undefined);
+  assert.equal(firstWriter.status, 0, firstWriter.stderr || firstWriter.stdout);
+
+  const restarted = readRecoveryJournal(filePath);
+  const stagedRecord = restarted.records.find((record) => record.type === 'apply-staged');
+  assert.ok(stagedRecord);
+  assert.equal(restarted.integrity.status, 'ok');
+  assert.equal(restarted.stagedState.status, 'staged');
+  assert.equal(restarted.stagedState.phase, 'staged');
+  assert.equal(restarted.stagedState.restartReadable, true);
+  assert.equal(restarted.stagedState.records, restarted.records.length);
+  assert.equal(restarted.stagedState.durableRows, restarted.records.length);
+  assert.equal(restarted.stagedState.stagedRows, 1);
+  assert.equal(restarted.stagedState.targetRows, plan.mutations.length);
+  assert.equal(restarted.stagedState.targetEnvelope.plannedTargets, plan.mutations.length);
+  assert.equal(restarted.stagedState.targetEnvelope.allTargetsHaveHashes, true);
+  assert.equal(restarted.stagedState.firstStagedSequence, stagedRecord.sequence);
+  assert.equal(restarted.stagedState.latestStagedSequence, stagedRecord.sequence);
+  assert.equal(restarted.stagedState.latestStagedType, 'apply-staged');
+  assert.equal(restarted.stagedState.planId, plan.id);
+  assert.equal(restarted.stagedState.state, 'staged');
+  assert.equal(restarted.stagedState.observedHash, digest(remote));
+  assert.equal(restarted.stagedState.stagedHash, digest(expectedStaged));
+  assert.deepEqual(restarted.stagedState.fsync, {
+    requested: true,
+    strategy: 'after-append',
+  });
+  assert.deepEqual(
+    restarted.records.map((record) => record.type),
+    [
+      'journal-opened',
+      'journal-ownership-recorded',
+      ...plan.mutations.map(() => 'target-planned'),
+      'recovery-claim-opened',
+      'journal-retry-opened',
+      'apply-staged',
+      'recovery-state',
+    ],
+  );
+  assert.equal(restarted.records.filter((record) => record.type === 'target-planned').length, plan.mutations.length);
+  assert.equal(restarted.records.filter((record) => record.type === 'journal-ownership-recorded').length, 1);
+  assert.equal(restarted.records.filter((record) => record.type === 'recovery-claim-opened').length, 1);
+  assert.deepEqual(
+    restarted.records.map((record) => record.sequence),
+    Array.from({ length: restarted.records.length }, (_, index) => index + 1),
+  );
+  assert.ok(restarted.records.every((record) => record.fsync.requested === true));
+  for (const record of restarted.records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+  }
+
+  const retryRemote = clone(remote);
+  retryRemote.files['file-7.txt'] = preservedAfterCrash;
+  const restartInspection = inspectRecoveryJournal({ journal: restarted, plan, current: retryRemote });
+  const repairInspection = inspectRecoveryRepair({ journalPath: filePath, plan, current: retryRemote });
+  assert.equal(restartInspection.status, 'old-remote');
+  assert.equal(restartInspection.journal.stagedState.restartReadable, true);
+  assert.equal(repairInspection.status, 'old-remote-replayable');
+  assert.equal(repairInspection.journal.stagedState.restartReadable, true);
+
+  const retryWriterScript = `
+    import { openProductionRecoveryJournal } from ${JSON.stringify(recoveryJournalModule)};
+
+    try {
+      const journal = openProductionRecoveryJournal({
+        filePath: process.env.RPP0628_JOURNAL_PATH,
+        plan: JSON.parse(process.env.RPP0628_PLAN),
+        current: JSON.parse(process.env.RPP0628_RETRY_REMOTE_SITE),
+        artifactRefs: JSON.parse(process.env.RPP0628_ARTIFACT_REFS),
+        now: new Date(process.env.RPP0628_NOW),
+        truncate: false,
+        claimId: process.env.RPP0628_CLAIM_ID,
+      });
+      const inspection = journal.inspect();
+      console.log(JSON.stringify({
+        productionAdapter: inspection.journal.productionAdapter,
+        restartReadable: inspection.journal.restartReadable,
+        records: inspection.journal.records,
+        openState: inspection.journal.openState,
+        stagedState: inspection.journal.stagedState,
+        claimHash: inspection.journal.claimHash,
+        ownershipRecord: inspection.journal.ownershipRecord,
+        leaseFenceRestartReadable: inspection.journal.leaseFence.restartReadable,
+      }));
+      process.exit(0);
+    } catch (error) {
+      console.error(error?.stack || String(error));
+      process.exit(2);
+    }
+  `;
+
+  const retryWriter = spawnSync(process.execPath, ['--input-type=module', '-e', retryWriterScript], {
+    env: {
+      ...process.env,
+      RPP0628_ARTIFACT_REFS: JSON.stringify(artifactRefs),
+      RPP0628_CLAIM_ID: claimId,
+      RPP0628_JOURNAL_PATH: filePath,
+      RPP0628_NOW: new Date(fixedNow.getTime() + 1_000).toISOString(),
+      RPP0628_PLAN: JSON.stringify(plan),
+      RPP0628_RETRY_REMOTE_SITE: JSON.stringify(retryRemote),
+    },
+    encoding: 'utf8',
+  });
+
+  assert.equal(retryWriter.error, undefined);
+  assert.equal(retryWriter.status, 0, retryWriter.stderr || retryWriter.stdout);
+
+  const productionSurface = JSON.parse(retryWriter.stdout);
+  const afterProductionRetry = readRecoveryJournal(filePath);
+  const latestOpenRecord = afterProductionRetry.records
+    .filter((record) => record.type === 'journal-opened' || record.type === 'journal-retry-opened')
+    .at(-1);
+  assert.ok(latestOpenRecord);
+  assert.equal(afterProductionRetry.integrity.status, 'ok');
+  assert.equal(afterProductionRetry.records.length, restarted.records.length + 1);
+  assert.equal(afterProductionRetry.openState.openRows, 3);
+  assert.equal(afterProductionRetry.openState.latestOpenSequence, latestOpenRecord.sequence);
+  assert.equal(afterProductionRetry.openState.latestOpenType, 'journal-retry-opened');
+  assert.equal(afterProductionRetry.openState.state, 'retrying-active-claim');
+  assert.equal(afterProductionRetry.stagedState.restartReadable, true);
+  assert.equal(afterProductionRetry.stagedState.records, afterProductionRetry.records.length);
+  assert.equal(afterProductionRetry.stagedState.latestStagedSequence, stagedRecord.sequence);
+  assert.equal(afterProductionRetry.stagedState.stagedHash, digest(expectedStaged));
+  assert.equal(productionSurface.productionAdapter, 'openProductionRecoveryJournal');
+  assert.equal(productionSurface.restartReadable, true);
+  assert.equal(productionSurface.records, afterProductionRetry.records.length);
+  assert.equal(productionSurface.claimHash, recoveryClaimHash(claimId));
+  assert.equal(productionSurface.leaseFenceRestartReadable, true);
+  assert.equal(productionSurface.ownershipRecord.restartReadable, true);
+  assert.deepEqual(productionSurface.openState, afterProductionRetry.openState);
+  assert.deepEqual(productionSurface.stagedState, afterProductionRetry.stagedState);
+  for (const record of afterProductionRetry.records) {
+    assert.doesNotThrow(() => assertJournalRecordHasNoRawValues(record));
+  }
+
+  const repairAfterProductionRetry = inspectRecoveryRepair({ journalPath: filePath, plan, current: retryRemote });
+  const retry = replayRecoveryRepair({
+    journalPath: filePath,
+    plan,
+    current: retryRemote,
+    mutateCurrent: true,
+  });
+
+  assert.equal(repairAfterProductionRetry.status, 'old-remote-replayable');
+  assert.equal(repairAfterProductionRetry.journal.stagedState.restartReadable, true);
+  assert.equal(retry.status, 'replayed');
+  assert.equal(retry.appliedMutations, plan.mutations.length);
+  assert.equal(retryRemote.files['file-1.txt'], plannedLocalContent);
+  assert.equal(retryRemote.files['file-8.txt'], preservedBeforePlan);
+  assert.equal(retryRemote.files['file-7.txt'], preservedAfterCrash);
+
+  const journalText = fs.readFileSync(filePath, 'utf8');
+  assert.equal(journalText.includes(plannedLocalContent), false);
+  assert.equal(journalText.includes(preservedBeforePlan), false);
+  assert.equal(journalText.includes(preservedAfterCrash), false);
 });
 
 test('file-backed journal committed state survives restart and exposes lease owner identity', () => {
