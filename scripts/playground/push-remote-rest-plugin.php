@@ -34,6 +34,7 @@ const REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW = 300;
 const REPRINT_PUSH_LAB_SIGNED_STORE_CLEANUP_LIMIT = 500;
 
 add_filter('wp_is_application_passwords_available', 'reprint_push_lab_rest_application_passwords_available');
+add_filter('rest_pre_dispatch', 'reprint_push_lab_rest_pre_dispatch_snapshot_hashes_auth_guard', 9, 3);
 add_action('rest_api_init', 'reprint_push_lab_rest_register_routes');
 add_action('init', 'reprint_push_lab_rest_maybe_bootstrap_auth_users');
 
@@ -321,6 +322,45 @@ function reprint_push_lab_rest_package_mode_enabled(): bool
         && REPRINT_PUSH_DISABLE_LAB_ROUTES === true
         && defined('REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP')
         && REPRINT_PUSH_DISABLE_AUTH_BOOTSTRAP === true;
+}
+
+function reprint_push_lab_rest_pre_dispatch_snapshot_hashes_auth_guard(
+    $result,
+    WP_REST_Server $server,
+    WP_REST_Request $request
+) {
+    if ($result !== null || !reprint_push_lab_rest_is_snapshot_hashes_request($request)) {
+        return $result;
+    }
+    if (strtoupper((string) $request->get_method()) !== 'POST') {
+        return $result;
+    }
+
+    $permission = reprint_push_lab_rest_authenticated_permission($request);
+    if ($permission instanceof WP_Error) {
+        return $permission;
+    }
+    if ($permission !== true) {
+        return new WP_Error(
+            'reprint_push_lab_auth_required',
+            'Authenticated push routes require WordPress Application Password basic auth.',
+            ['status' => 401]
+        );
+    }
+
+    $signature = reprint_push_lab_rest_verify_signed_request($request, 'snapshot-hashes', ['claimNonce' => false]);
+    if (($signature['ok'] ?? false) !== true) {
+        return reprint_push_lab_rest_json_response($signature + ['mode' => 'snapshot-hashes']);
+    }
+
+    return $result;
+}
+
+function reprint_push_lab_rest_is_snapshot_hashes_request(WP_REST_Request $request): bool
+{
+    $route = (string) $request->get_route();
+    return $route === '/' . REPRINT_PUSH_PRODUCTION_SHAPED_REST_NAMESPACE . '/push/snapshot-hashes'
+        || $route === '/' . REPRINT_PUSH_LAB_REST_NAMESPACE . '/authenticated/snapshot-hashes';
 }
 
 function reprint_push_lab_rest_route_profile(WP_REST_Request $request): array
@@ -2934,7 +2974,7 @@ function reprint_push_lab_rest_require_signed_request(WP_REST_Request $request, 
     return null;
 }
 
-function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, string $mode): array
+function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, string $mode, array $options = []): array
 {
     $auth = reprint_push_lab_rest_basic_auth_context($request);
     if (!is_array($auth) || !isset($auth['signingKey'])) {
@@ -3095,23 +3135,26 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         );
     }
 
-    $nonce_claim = reprint_push_lab_rest_claim_signed_nonce($nonce, [
-        'mode' => $mode,
-        'timestamp' => $timestamp_seconds,
-        'expiresAtUnix' => time() + REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW,
-        'contentHash' => $content_hash,
-        'sessionHash' => (string) ($session['sessionHash'] ?? ''),
-        'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
-        'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
-        'authSignatureHash' => hash('sha256', $expected_auth_signature),
-        'pushSignatureHash' => hash('sha256', $expected_push_signature),
-    ]);
-    if (!$nonce_claim) {
-        return reprint_push_lab_rest_signature_failure(
-            'SIGNED_NONCE_REPLAYED',
-            'X-Auth-Nonce has already been accepted for a signed request.',
-            409
-        );
+    $claim_nonce = !array_key_exists('claimNonce', $options) || $options['claimNonce'] !== false;
+    if ($claim_nonce) {
+        $nonce_claim = reprint_push_lab_rest_claim_signed_nonce($nonce, [
+            'mode' => $mode,
+            'timestamp' => $timestamp_seconds,
+            'expiresAtUnix' => time() + REPRINT_PUSH_LAB_SIGNED_TIMESTAMP_SKEW,
+            'contentHash' => $content_hash,
+            'sessionHash' => (string) ($session['sessionHash'] ?? ''),
+            'identityHash' => reprint_push_lab_rest_signed_identity_hash($auth),
+            'credentialHash' => (string) ($auth['credentialHash'] ?? ''),
+            'authSignatureHash' => hash('sha256', $expected_auth_signature),
+            'pushSignatureHash' => hash('sha256', $expected_push_signature),
+        ]);
+        if (!$nonce_claim) {
+            return reprint_push_lab_rest_signature_failure(
+                'SIGNED_NONCE_REPLAYED',
+                'X-Auth-Nonce has already been accepted for a signed request.',
+                409
+            );
+        }
     }
 
     if ($mode === 'preflight') {
@@ -3119,7 +3162,7 @@ function reprint_push_lab_rest_verify_signed_request(WP_REST_Request $request, s
         $session_id = (string) $session['id'];
     }
 
-    $cleanup = reprint_push_lab_rest_collect_expired_signed_artifacts();
+    $cleanup = $claim_nonce ? reprint_push_lab_rest_collect_expired_signed_artifacts() : [];
 
     return [
         'ok' => true,
