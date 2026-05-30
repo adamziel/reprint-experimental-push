@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 11:45 CEST.
+- Last update: 2026-05-30 11:50 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0380 production importer/exporter identity-map proof merge ending at
-  `3a576db6`.
+  the RPP-0381 post_parent page hierarchy release-verifier proof merge ending
+  at `a0d9e0940`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 420
-  items checked and leaves 580 open.
-- Checked slices: 100 release-gate foundation items, 37 graph identity items,
+  goals, but it is no longer a static all-unchecked inventory. It now marks 421
+  items checked and leaves 579 open.
+- Checked slices: 100 release-gate foundation items, 38 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Post parent page hierarchy release-verifier proof: the current lane now
+  contains `RPP-0381` evidence in
+  `docs/evidence/rpp-0381-post-parent-page-hierarchy-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0381-post-parent-page-hierarchy-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0381 coverage passed
+  3/3, adjacent post_parent graph coverage passed 6/6, adjacent local
+  production release-evidence coverage passed 7/7, and the category/post_parent
+  adjacency command passed 6/6. Checklist lint, scoped artifact redaction scan,
+  checklist/redaction guard tests, and merge diff whitespace checks also
+  passed. Counts are now 421/579; final release remains `NO-GO`.
 - Production importer/exporter identity-map proof: the current lane now
   contains `RPP-0380` evidence in
   `docs/evidence/rpp-0380-production-importer-exporter-identity-map-v4.md`,

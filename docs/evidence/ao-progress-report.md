@@ -1,18 +1,30 @@
-# AO Progress Report - 2026-05-30 11:45 CEST
+# AO Progress Report - 2026-05-30 11:50 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0380 production
-importer/exporter identity-map proof ending at `3a576db6`.
+`lane/evidence-integration-20260527` through the current RPP-0381
+post_parent page hierarchy release-verifier proof ending at `a0d9e0940`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 420 are
-  checked from integrated evidence and 580 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 421 are
+  checked from integrated evidence and 579 remain open.
+- `RPP-0381` is now checked with local release-verifier carry-through proof for
+  same-plan `wp_posts.post_parent` page hierarchy references in
+  `docs/evidence/rpp-0381-post-parent-page-hierarchy-release-verifier-v5.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0381-post-parent-page-hierarchy-release-verifier-v5.test.js`.
+  `node --check` passed for the focused test, focused RPP-0381 coverage passed
+  3/3, adjacent post_parent graph coverage passed 6/6, adjacent local
+  production release-evidence coverage passed 7/7, and the category/post_parent
+  adjacency command passed 6/6. Checklist lint, scoped artifact redaction scan,
+  checklist redaction guard coverage, and merge diff whitespace checks also
+  passed. This remains local graph release-verifier support evidence, not
+  production endpoint proof.
 - `RPP-0380` is now checked with focused graph-identity proof for
   production-shaped importer/exporter `pushIdentityMap` metadata in
   `docs/evidence/rpp-0380-production-importer-exporter-identity-map-v4.md`,
