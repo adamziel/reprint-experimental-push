@@ -6,20 +6,36 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 21:21 CEST +02:00.
+- Last update: 2026-05-30 21:31 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0181 file create/update/delete release-verifier v5 merge ending at
-  `bbf12b`.
+  the RPP-0182 directory descendant conflict release-verifier v5 merge ending
+  at `7c5b89`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 517
-  items checked and leaves 483 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 518
+  items checked and leaves 482 open.
 - Checked slices: 100 release-gate foundation items, 70 graph identity items,
   88 plugin-driver boundary items, 33 executor/auth items, 41 recovery items,
-  23 storage/performance items, 3 production-topology items, 81 generated
+  23 storage/performance items, 3 production-topology items, 82 generated
   harness items, and 78 merge-invariant items. No release-ops items are checked
   yet.
+- Directory descendant conflict release-verifier v5 carry-through: the current
+  lane now checks `RPP-0182` with generated-harness release-verifier
+  support-only proof for local directory deletes where the remote may create a
+  descendant below the deleted directory. The generator exposes
+  `directoryDescendantConflictReleaseVerifierVariant5` target coverage with 20
+  cases across tiers 0 through 9: 10 ready directory deletes and 10 conflict
+  cases, with two cases in every tier. The focused proof verifies ready apply,
+  remote-only preservation, stale replay refusal, non-ready conflict refusal
+  before mutation, keep-remote treatment for the remote descendant, and
+  hash-only evidence. Validation passed with Node syntax checks, focused
+  RPP-0182 coverage 2/2, adjacent RPP-0142/RPP-0162/RPP-0182 directory
+  descendant coverage 4/4, generated summary checks for the RPP-0182 and
+  RPP-0181 target coverage surfaces, checklist lint, scoped artifact redaction
+  scan, and diff whitespace checks. Counts are now 518/482; final release
+  remains `NO-GO` because this is local generated/release-verifier evidence,
+  not production-backed release proof.
 - File create/update/delete release-verifier v5 carry-through: the current lane
   now checks `RPP-0181` with generated-harness and production-shaped release
   verifier support-only proof for file create, update, delete mix coverage. The
