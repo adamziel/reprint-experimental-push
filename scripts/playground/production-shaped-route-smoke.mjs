@@ -60,6 +60,7 @@ const summary = {
   replay: {},
   conflict: {},
   journal: {},
+  auditEventSchema: {},
   recovery: {},
 };
 
@@ -293,6 +294,9 @@ try {
     });
     assert.equal(dbJournal.status, 200);
     const entries = dbJournal.body.dbJournal.latestRows;
+    const auditEventSchema = dbJournal.body.dbJournal.auditEventSchema;
+    assertProductionAuditEventSchema(auditEventSchema, 'production-shaped db-journal readback');
+    assert.ok(entries.every((entry) => entry.schemaVersion === 1), 'DB journal event rows must expose schemaVersion');
     assert.ok(entries.some((entry) => entry.event === 'apply-committed'), 'DB journal missing apply-committed');
     assert.ok(entries.some((entry) => entry.event === 'apply-replayed'), 'DB journal missing apply-replayed');
     assert.ok(entries.some((entry) => entry.event === 'idempotency-key-conflict'), 'DB journal missing idempotency-key-conflict');
@@ -300,6 +304,15 @@ try {
     assert.equal(countJournalEvents(entries, 'apply-started'), applyStartedBeforeConflict);
     assert.equal(countJournalEvents(entries, 'idempotency-opened'), idempotencyOpenedBeforeConflict);
     assert.equal(countJournalEvents(entries, 'mutation-applied'), readyPlan.mutations.length);
+
+    const dbJournalSchema = await client.get('/db-journal/schema');
+    assert.equal(dbJournalSchema.status, 200);
+    assert.equal(dbJournalSchema.body.ok, true);
+    assertProductionAuditEventSchema(dbJournalSchema.body.auditEventSchema, 'production-shaped db-journal schema route');
+    assertProductionAuditEventSchema(
+      dbJournalSchema.body.dbJournalSchema.auditEventSchema,
+      'production-shaped nested db-journal schema route',
+    );
 
     const recovery = await client.signedPost('/recovery/inspect', applyBody, {
       session,
@@ -356,6 +369,18 @@ try {
       events: [...new Set(entries.map((entry) => entry.event))].sort(),
       mutationApplied: entries.filter((entry) => entry.event === 'mutation-applied').length,
     };
+    summary.auditEventSchema = {
+      schemaVersion: auditEventSchema.schemaVersion,
+      schemaId: auditEventSchema.schemaId,
+      schemaRouteStatus: dbJournalSchema.status,
+      routeProfile: auditEventSchema.routeEvidence.routeProfile,
+      restNamespace: auditEventSchema.routeEvidence.restNamespace,
+      journalRoute: auditEventSchema.routeEvidence.journalRoute,
+      schemaRoute: auditEventSchema.routeEvidence.schemaRoute,
+      appendOnlyEvents: auditEventSchema.eventStore.appendOnlyEvents,
+      rawValuesIncluded: auditEventSchema.redaction.rawValuesIncluded,
+      forbiddenRawFields: auditEventSchema.redaction.forbiddenRawFields,
+    };
     summary.recovery = {
       state: recovery.body.recovery.state,
       counts: recovery.body.recovery.counts,
@@ -373,6 +398,34 @@ function mutateReceipt(receipt, mutate) {
   delete next.receiptHash;
   next.receiptHash = digest(next);
   return next;
+}
+
+function assertProductionAuditEventSchema(schema, label) {
+  assert.ok(schema && typeof schema === 'object', `${label} missing audit event schema`);
+  assert.equal(schema.schemaVersion, 1, `${label} schema version`);
+  assert.equal(schema.schemaId, 'reprint-push-production-audit-event/v1', `${label} schema id`);
+  assert.equal(schema.routeEvidence.routeProfile, 'production-shaped', `${label} route profile`);
+  assert.equal(schema.routeEvidence.restNamespace, 'reprint/v1', `${label} rest namespace`);
+  assert.equal(schema.routeEvidence.routePrefix, '/push', `${label} route prefix`);
+  assert.equal(schema.routeEvidence.journalRoute, '/push/db-journal', `${label} journal route`);
+  assert.equal(schema.routeEvidence.schemaRoute, '/push/db-journal/schema', `${label} schema route`);
+  assert.equal(schema.eventStore.storage, 'wpdb', `${label} event storage`);
+  assert.equal(schema.eventStore.appendOnlyEvents, true, `${label} append-only marker`);
+  assert.equal(schema.eventStore.sequenceField, 'sequence', `${label} sequence field`);
+  assert.equal(schema.eventShape.type, 'object', `${label} event shape type`);
+  assert.ok(schema.eventShape.required.includes('sequence'), `${label} required sequence`);
+  assert.ok(schema.eventShape.required.includes('event'), `${label} required event`);
+  assert.ok(schema.eventShape.required.includes('resourceHashEvidence'), `${label} required hash evidence`);
+  assert.equal(schema.redaction.format, 'hash-only', `${label} redaction format`);
+  assert.equal(schema.redaction.rawValuesIncluded, false, `${label} raw value marker`);
+  assert.ok(schema.redaction.hashOnlyFields.includes('requestHash'), `${label} request hash field`);
+  assert.ok(schema.redaction.forbiddenRawFields.includes('option_value'), `${label} forbidden option value`);
+  assert.ok(schema.redaction.forbiddenRawFields.includes('post_content'), `${label} forbidden post content`);
+  assert.doesNotMatch(
+    JSON.stringify(schema),
+    /authorization|basic|applicationPassword|password|credentialHash|signingKey/i,
+    `${label} must not expose credential material`,
+  );
 }
 
 function exportSnapshot(name, blueprintPath) {

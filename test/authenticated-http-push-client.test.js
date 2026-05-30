@@ -1128,6 +1128,196 @@ test('authenticated push executor rejects a capability downgrade after preflight
   }
 });
 
+test('RPP-0520 production-shaped authenticated push carries audit event schema in db journal summary', async () => {
+  const originalFetch = global.fetch;
+  let applyCount = 0;
+  const auth = {
+    identity: { userLogin: 'reprint_push_admin' },
+    session: {
+      type: 'production-auth-session',
+      status: 'active',
+      id: 'psh_01j00000000000000000000000',
+      expiresAt: '2030-01-01T00:00:00Z',
+    },
+  };
+  const storageGuard = {
+    boundary: 'filesystem-compare-rename',
+    operation: 'update',
+    outcome: 'applied',
+  };
+  const auditEventSchema = {
+    schemaVersion: 1,
+    schemaId: 'reprint-push-production-audit-event/v1',
+    routeEvidence: {
+      routeProfile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      journalRoute: '/push/db-journal',
+      schemaRoute: '/push/db-journal/schema',
+      checkedSurface: 'production-shaped-rest-route',
+    },
+    eventStore: {
+      storage: 'wpdb',
+      appendOnlyEvents: true,
+      sequenceField: 'sequence',
+      cursorPrefix: 'db-journal:',
+    },
+    eventShape: {
+      type: 'object',
+      required: ['schemaVersion', 'sequence', 'event', 'resourceHashEvidence'],
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      hashAlgorithm: 'sha256',
+      hashOnlyFields: ['idempotencyKeyHash', 'requestHash', 'resourceHashEvidence.*Hash'],
+      forbiddenRawFields: ['value', 'content', 'payload', 'post_content', 'option_value', 'meta_value'],
+    },
+  };
+
+  global.fetch = async (url) => {
+    const pathname = String(url);
+    if (pathname.includes('/preflight')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        session: { id: auth.session.id },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/snapshot')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        snapshot: { resources: [] },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/dry-run')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        receipt: { receiptHash: 'receipt-rpp-0520-audit-schema' },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/recovery/inspect')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        recovery: {
+          state: 'ok',
+          journal: { integrity: { status: 'ok' } },
+          counts: { old: 0, new: 1, blockedUnknown: 0, total: 1 },
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/apply')) {
+      applyCount += 1;
+      return new Response(JSON.stringify({
+        ok: true,
+        mode: 'apply',
+        applied: 0,
+        code: applyCount === 1 ? 'APPLIED' : 'BATCH_ALREADY_COMMITTED',
+        responseSchemaVersion: 1,
+        auth,
+        storageGuard,
+        idempotency: {
+          replayed: applyCount === 2,
+          freshMutationWork: applyCount === 1,
+          conflict: false,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    if (pathname.includes('/db-journal')) {
+      return new Response(JSON.stringify({
+        ok: true,
+        auth,
+        dbJournal: {
+          scope: trustedDbJournalScope,
+          auditEventSchema,
+          latestRows: [
+            { schemaVersion: 1, sequence: 1, event: 'idempotency-opened' },
+            { schemaVersion: 1, sequence: 2, event: 'mutation-applied' },
+            { schemaVersion: 1, sequence: 3, event: 'apply-committed' },
+          ],
+          ownership: {
+            ownsJournal: true,
+            restartReadable: true,
+            productionAdapter: 'filesystem-compare-rename',
+            supportedSurface: 'claim-fenced-restart-readable',
+          },
+          leaseFence: {
+            boundary: 'filesystem-compare-rename',
+            claimKeyUnique: true,
+            monotonicSequence: true,
+            restartReadable: true,
+            staleClaimRejected: false,
+          },
+        },
+        storageGuard,
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    throw new Error(`unexpected fetch to ${url}`);
+  };
+
+  try {
+    const summary = await runAuthenticatedHttpPush({
+      sourceUrl: 'http://127.0.0.1:8080',
+      base: { resources: [] },
+      local: { resources: [] },
+      username: credential.username,
+      applicationPassword: credential.password,
+      idempotencyKey: 'idem-rpp-0520-audit-schema',
+      routeProfile: 'production-shaped',
+    });
+
+    assert.equal(summary.ok, true);
+    assert.equal(summary.dbJournal.auditEventSchema.schemaVersion, 1);
+    assert.equal(summary.dbJournal.auditEventSchema.schemaId, 'reprint-push-production-audit-event/v1');
+    assert.equal(summary.dbJournal.auditEventSchema.schemaHash, digest(auditEventSchema));
+    assert.deepEqual(summary.dbJournal.auditEventSchema.routeEvidence, {
+      routeProfile: 'production-shaped',
+      restNamespace: 'reprint/v1',
+      routePrefix: '/push',
+      journalRoute: '/push/db-journal',
+      schemaRoute: '/push/db-journal/schema',
+      checkedSurface: 'production-shaped-rest-route',
+    });
+    assert.deepEqual(summary.dbJournal.auditEventSchema.eventStore, {
+      storage: 'wpdb',
+      appendOnlyEvents: true,
+      sequenceField: 'sequence',
+      cursorPrefix: 'db-journal:',
+    });
+    assert.ok(summary.dbJournal.auditEventSchema.eventRequiredFields.includes('resourceHashEvidence'));
+    assert.equal(summary.dbJournal.auditEventSchema.redaction.format, 'hash-only');
+    assert.equal(summary.dbJournal.auditEventSchema.redaction.rawValuesIncluded, false);
+    assert.ok(summary.dbJournal.auditEventSchema.redaction.hashOnlyFields.includes('requestHash'));
+    assert.ok(summary.dbJournal.auditEventSchema.redaction.forbiddenRawFields.includes('option_value'));
+    assert.doesNotMatch(
+      JSON.stringify(summary.dbJournal.auditEventSchema),
+      /authorization|basic|applicationPassword|password|credentialHash|signingKey/i,
+    );
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
 test('production-shaped authenticated push fails closed when production auth session is required but not minted', async () => {
   const originalFetch = global.fetch;
   const seen = [];
