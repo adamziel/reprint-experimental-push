@@ -1,18 +1,28 @@
-# AO Progress Report - 2026-05-29 16:57 CEST
+# AO Progress Report - 2026-05-30 02:58 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
 `lane/evidence-integration-20260527` through the current restored live-team
-refresh ending at `32904c7dd`. It separates
+and RPP-0425 postmeta driver refresh ending at `a41a050c1`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 300 are
-  checked from integrated evidence and 700 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 301 are
+  checked from integrated evidence and 699 remain open.
+- `RPP-0425` is now checked with focused wp_postmeta plugin-driver semantics
+  evidence in `docs/evidence/rpp-0425-wp-postmeta-driver-semantics.md` and
+  `test/rpp-0425-wp-postmeta-driver-semantics.test.js`. `node --test
+  test/rpp-0425-wp-postmeta-driver-semantics.test.js` passed 4/4 and
+  `node --test test/plugin-driver-postmeta-semantics.test.js` passed 6/6,
+  proving local-candidate exact `post_id`/`meta_key` semantics,
+  production-backed exact `meta_id` semantics, fail-closed mismatched meta
+  identity and wrong policy table cases, redacted evidence, checklist lint,
+  artifact redaction scan, and `git diff --check` while final release remains
+  **NO-GO**.
 - Restored live-team integrations now check `RPP-0148`, `RPP-0226`,
   `RPP-0420`, and `RPP-0610`. The lane integrates generated `wp_postmeta`
   variant-3 coverage, remote-only plugin metadata preservation v2, arbitrary

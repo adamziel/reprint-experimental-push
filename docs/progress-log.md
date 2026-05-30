@@ -6,19 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-29 16:57 CEST.
+- Last update: 2026-05-30 02:58 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the restored live-team refresh ending at `32904c7dd`.
+  the RPP-0425 postmeta driver semantics merge ending at `a41a050c1`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 300
-  items checked and leaves 700 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 301
+  items checked and leaves 699 open.
 - Checked slices: 100 release-gate foundation items, 28 graph identity items,
-  39 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  40 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 50 generated
   harness items, and 33 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_postmeta plugin-driver semantics refresh: the current lane now
+  contains `RPP-0425` evidence in
+  `docs/evidence/rpp-0425-wp-postmeta-driver-semantics.md` and
+  `test/rpp-0425-wp-postmeta-driver-semantics.test.js`. `node --test
+  test/rpp-0425-wp-postmeta-driver-semantics.test.js` passed 4/4, and
+  `node --test test/plugin-driver-postmeta-semantics.test.js` passed 6/6,
+  proving local-candidate exact `post_id`/`meta_key` semantics,
+  production-backed exact `meta_id` semantics, fail-closed mismatched
+  `meta_id` and wrong-table policy cases, and redacted evidence without raw
+  postmeta payloads. Checklist lint, artifact redaction scan, and `git diff
+  --check` also passed. Counts are now 301/699; final release remains
+  `NO-GO`.
 - Restored live-team refresh: `RPP-0148`, `RPP-0226`, `RPP-0420`, and
   `RPP-0610` are now checked on
   `lane/evidence-integration-20260527`. The integrated evidence adds
