@@ -464,6 +464,18 @@ export const wpOptionsDriverReleaseVerifierBoundary = Object.freeze({
   }),
 });
 
+export const pluginUninstallDeleteReleaseVerifierBoundary = Object.freeze({
+  owner: 'forms',
+  driver: 'wp-option',
+  pluginResourceKey: 'plugin:forms',
+  pluginFilePath: 'wp-content/plugins/forms/forms.php',
+  pluginFileResourceKey: 'file:wp-content/plugins/forms/forms.php',
+  table: 'wp_options',
+  rowId: 'option_name:forms_settings',
+  rowResourceKey: 'row:["wp_options","option_name:forms_settings"]',
+  supportsDelete: false,
+});
+
 const coreWordPressDriverBoundaryTables = new Set([
   'wp_options',
   'wp_postmeta',
@@ -728,6 +740,421 @@ function wpOptionsDriverReleaseVerifierSnapshot(mode) {
         },
       },
     },
+  };
+}
+
+export function summarizePluginUninstallDeleteReleaseVerifierProof({
+  now = new Date('2026-05-30T11:49:10.000Z'),
+} = {}) {
+  try {
+    return buildPluginUninstallDeleteReleaseVerifierProof(now);
+  } catch (error) {
+    return {
+      rpp: 'RPP-0491',
+      evidenceSource: 'release-verifier-plugin-uninstall-delete-refusal-v5',
+      status: 'blocked',
+      verdict: 'PLUGIN_UNINSTALL_DELETE_REFUSAL_REQUIRED',
+      evidenceScope: 'local-candidate',
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: {
+        status: 'NO-GO',
+        acceptedForReleaseGate: false,
+        productionBacked: false,
+        note: 'plugin uninstall/delete refusal release-verifier proof could not be built',
+      },
+      owner: pluginUninstallDeleteReleaseVerifierBoundary.owner,
+      driver: pluginUninstallDeleteReleaseVerifierBoundary.driver,
+      resourceBoundary: pluginUninstallDeleteReleaseVerifierResourceEvidence(),
+      rawValuesIncluded: false,
+      error: {
+        name: error instanceof Error ? error.name : 'Error',
+        code: error?.code || null,
+      },
+    };
+  }
+}
+
+function buildPluginUninstallDeleteReleaseVerifierProof(now) {
+  const boundary = pluginUninstallDeleteReleaseVerifierBoundary;
+  const rawFixtures = {
+    pluginVersion: 'rpp-0491-release-verifier-base-plugin-version',
+    packageFile: 'rpp-0491-release-verifier-base-package-file',
+    optionValue: 'rpp-0491-release-verifier-base-option-value',
+    blockedRemotePackageFile: 'rpp-0491-release-verifier-blocked-remote-package-file',
+    blockedRemoteOptionValue: 'rpp-0491-release-verifier-blocked-remote-option-value',
+  };
+  const base = pluginUninstallDeleteReleaseVerifierSnapshot(rawFixtures);
+  const local = cloneReleaseVerifierJson(base);
+  delete local.plugins[boundary.owner];
+  delete local.files[boundary.pluginFilePath];
+  delete local.db[boundary.table][boundary.rowId];
+  local.meta = {
+    pushPolicy: {
+      pluginOwnedResources: {
+        allowedResources: [
+          {
+            resourceKey: boundary.rowResourceKey,
+            pluginOwner: boundary.owner,
+            driver: boundary.driver,
+            supportsDelete: false,
+          },
+        ],
+      },
+    },
+  };
+  const remote = cloneReleaseVerifierJson(base);
+  const blockedPlan = createPushPlan({ base, local, remote, now });
+  const pluginBlocker = blockedPlan.blockers.find((entry) =>
+    entry.resourceKey === boundary.pluginResourceKey) || null;
+  const packageFileBlocker = blockedPlan.blockers.find((entry) =>
+    entry.resourceKey === boundary.pluginFileResourceKey) || null;
+  const rowDeleteBlocker = blockedPlan.blockers.find((entry) =>
+    entry.resourceKey === boundary.rowResourceKey) || null;
+
+  const blockedRemote = cloneReleaseVerifierJson(remote);
+  blockedRemote.files[boundary.pluginFilePath] = `<?php /* ${rawFixtures.blockedRemotePackageFile} */`;
+  blockedRemote.db[boundary.table][boundary.rowId].option_value.mode = rawFixtures.blockedRemoteOptionValue;
+  const blockedRemoteHashBefore = sha256Evidence(blockedRemote);
+  const blockedApply = captureReleaseVerifierApplyError(() => applyPlan(blockedRemote, blockedPlan));
+  const blockedRemoteHashAfter = sha256Evidence(blockedRemote);
+
+  const forgedPluginDelete = buildPluginDeleteForgedPlan({
+    blockedPlan,
+    base,
+    local,
+    remote,
+    resource: pluginUninstallDeletePluginResource(),
+    mutationId: 'mutation-rpp-0491-forged-plugin-delete',
+  });
+  const forgedPluginRemote = cloneReleaseVerifierJson(remote);
+  const forgedPluginRemoteHashBefore = sha256Evidence(forgedPluginRemote);
+  const forgedPluginApply = captureReleaseVerifierApplyError(() =>
+    applyPlan(forgedPluginRemote, forgedPluginDelete));
+  const forgedPluginRemoteHashAfter = sha256Evidence(forgedPluginRemote);
+
+  const forgedPackageFileDelete = buildPluginDeleteForgedPlan({
+    blockedPlan,
+    base,
+    local,
+    remote,
+    resource: pluginUninstallDeletePackageFileResource(),
+    mutationId: 'mutation-rpp-0491-forged-package-file-delete',
+  });
+  const forgedPackageFileRemote = cloneReleaseVerifierJson(remote);
+  const forgedPackageFileRemoteHashBefore = sha256Evidence(forgedPackageFileRemote);
+  const forgedPackageFileApply = captureReleaseVerifierApplyError(() =>
+    applyPlan(forgedPackageFileRemote, forgedPackageFileDelete));
+  const forgedPackageFileRemoteHashAfter = sha256Evidence(forgedPackageFileRemote);
+
+  const ok = blockedPlan.status === 'blocked'
+    && blockedPlan.summary.mutations === 0
+    && blockedPlan.summary.blockers === 3
+    && pluginBlocker?.class === 'plugin-uninstall-delete-refusal'
+    && pluginBlocker?.deleteRefusalEvidence?.reasonCode === 'PLUGIN_UNINSTALL_DELETE_REFUSED'
+    && packageFileBlocker?.class === 'plugin-uninstall-delete-refusal'
+    && packageFileBlocker?.deleteRefusalEvidence?.reasonCode === 'PLUGIN_UNINSTALL_DELETE_REFUSED'
+    && rowDeleteBlocker?.class === 'unsupported-plugin-owned-resource'
+    && rowDeleteBlocker?.deleteRefusalEvidence?.reasonCode === 'PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED'
+    && rowDeleteBlocker?.driver === boundary.driver
+    && blockedApply.error instanceof PushPlanError
+    && blockedApply.error.code === 'PLAN_NOT_READY'
+    && blockedRemoteHashAfter === blockedRemoteHashBefore
+    && forgedPluginApply.error instanceof PushPlanError
+    && forgedPluginApply.error.code === 'PLUGIN_UNINSTALL_DELETE_REFUSED'
+    && forgedPluginApply.error.details?.reasonCode === 'PLUGIN_UNINSTALL_DELETE_REFUSED'
+    && forgedPluginApply.error.details?.resourceType === 'plugin'
+    && forgedPluginRemoteHashAfter === forgedPluginRemoteHashBefore
+    && forgedPackageFileApply.error instanceof PushPlanError
+    && forgedPackageFileApply.error.code === 'PLUGIN_UNINSTALL_DELETE_REFUSED'
+    && forgedPackageFileApply.error.details?.reasonCode === 'PLUGIN_UNINSTALL_DELETE_REFUSED'
+    && forgedPackageFileApply.error.details?.resourceType === 'file'
+    && forgedPackageFileRemoteHashAfter === forgedPackageFileRemoteHashBefore;
+
+  const proof = {
+    rpp: 'RPP-0491',
+    evidenceSource: 'release-verifier-plugin-uninstall-delete-refusal-v5',
+    status: ok ? 'support_only' : 'blocked',
+    verdict: ok
+      ? 'PLUGIN_UNINSTALL_DELETE_REFUSAL_PRESERVED'
+      : 'PLUGIN_UNINSTALL_DELETE_REFUSAL_REQUIRED',
+    evidenceScope: 'local-candidate',
+    productionBacked: false,
+    releaseEligible: false,
+    releaseGate: {
+      status: 'NO-GO',
+      acceptedForReleaseGate: false,
+      productionBacked: false,
+      note: 'plugin uninstall/delete refusal proof is local/support-only; production-backed release gate evidence is still required',
+    },
+    owner: boundary.owner,
+    driver: boundary.driver,
+    resourceBoundary: pluginUninstallDeleteReleaseVerifierResourceEvidence(),
+    rawValuesIncluded: false,
+    explicitPluginDeleteDriverPresent: false,
+    planRefusal: {
+      status: blockedPlan.status,
+      summary: {
+        mutations: blockedPlan.summary.mutations,
+        blockers: blockedPlan.summary.blockers,
+        conflicts: blockedPlan.summary.conflicts,
+        decisions: blockedPlan.summary.decisions,
+      },
+      noMutationsEmitted: blockedPlan.mutations.length === 0,
+      blockerResourceKeys: blockedPlan.blockers.map((entry) => entry.resourceKey).sort(),
+      blockerClasses: blockedPlan.blockers.map((entry) => entry.class).sort(),
+      reasonCodes: uniqueNonEmpty(blockedPlan.blockers.map((entry) =>
+        entry.deleteRefusalEvidence?.reasonCode || entry.reasonCode || null)),
+      pluginDeleteBlockerHash: pluginBlocker ? sha256Evidence(pluginBlocker) : null,
+      packageFileDeleteBlockerHash: packageFileBlocker ? sha256Evidence(packageFileBlocker) : null,
+      pluginOwnedRowDeleteBlockerHash: rowDeleteBlocker ? sha256Evidence(rowDeleteBlocker) : null,
+      planHash: sha256Evidence(blockedPlan),
+    },
+    applyRefusal: {
+      blockedPlan: summarizeReleaseVerifierApplyRefusal({
+        apply: blockedApply,
+        expectedCode: 'PLAN_NOT_READY',
+        remoteHashBefore: blockedRemoteHashBefore,
+        remoteHashAfter: blockedRemoteHashAfter,
+      }),
+      forgedPluginDelete: summarizeReleaseVerifierApplyRefusal({
+        apply: forgedPluginApply,
+        expectedCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+        expectedReasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+        remoteHashBefore: forgedPluginRemoteHashBefore,
+        remoteHashAfter: forgedPluginRemoteHashAfter,
+      }),
+      forgedPackageFileDelete: summarizeReleaseVerifierApplyRefusal({
+        apply: forgedPackageFileApply,
+        expectedCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+        expectedReasonCode: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+        remoteHashBefore: forgedPackageFileRemoteHashBefore,
+        remoteHashAfter: forgedPackageFileRemoteHashAfter,
+      }),
+    },
+    hashes: {
+      basePluginHash: `sha256:${resourceHash(base, pluginUninstallDeletePluginResource())}`,
+      localPluginAbsentHash: `sha256:${resourceHash(local, pluginUninstallDeletePluginResource())}`,
+      remotePluginHash: `sha256:${resourceHash(remote, pluginUninstallDeletePluginResource())}`,
+      basePackageFileHash: `sha256:${resourceHash(base, pluginUninstallDeletePackageFileResource())}`,
+      localPackageFileAbsentHash: `sha256:${resourceHash(local, pluginUninstallDeletePackageFileResource())}`,
+      basePluginOwnedRowHash: `sha256:${resourceHash(base, pluginUninstallDeleteRowResource())}`,
+      localPluginOwnedRowAbsentHash: `sha256:${resourceHash(local, pluginUninstallDeleteRowResource())}`,
+    },
+    redaction: {
+      format: 'hash-only',
+      rawValuesIncluded: false,
+      checkedFixtureCount: Object.keys(rawFixtures).length,
+    },
+  };
+  proof.proofHash = sha256Evidence({
+    planRefusal: proof.planRefusal,
+    applyRefusal: proof.applyRefusal,
+    hashes: proof.hashes,
+    explicitPluginDeleteDriverPresent: proof.explicitPluginDeleteDriverPresent,
+  });
+
+  if (Object.values(rawFixtures).some((raw) => JSON.stringify(proof).includes(raw))) {
+    return {
+      rpp: proof.rpp,
+      evidenceSource: proof.evidenceSource,
+      status: 'blocked',
+      verdict: 'PLUGIN_UNINSTALL_DELETE_EVIDENCE_REDACTION_REQUIRED',
+      evidenceScope: proof.evidenceScope,
+      productionBacked: false,
+      releaseEligible: false,
+      releaseGate: {
+        status: 'NO-GO',
+        acceptedForReleaseGate: false,
+        productionBacked: false,
+        note: 'plugin uninstall/delete refusal proof leaked raw fixture evidence',
+      },
+      owner: boundary.owner,
+      driver: boundary.driver,
+      resourceBoundary: proof.resourceBoundary,
+      rawValuesIncluded: true,
+      redaction: {
+        format: 'hash-only',
+        rawValuesIncluded: true,
+        checkedFixtureCount: Object.keys(rawFixtures).length,
+      },
+      proofHash: sha256Evidence({
+        verdict: 'PLUGIN_UNINSTALL_DELETE_EVIDENCE_REDACTION_REQUIRED',
+        resourceBoundary: proof.resourceBoundary,
+      }),
+    };
+  }
+
+  return proof;
+}
+
+function pluginUninstallDeleteReleaseVerifierSnapshot(rawFixtures) {
+  const boundary = pluginUninstallDeleteReleaseVerifierBoundary;
+  return {
+    files: {
+      [boundary.pluginFilePath]: `<?php /* ${rawFixtures.packageFile} */`,
+    },
+    plugins: {
+      [boundary.owner]: {
+        version: rawFixtures.pluginVersion,
+        active: true,
+      },
+    },
+    db: {
+      [boundary.table]: {
+        [boundary.rowId]: {
+          option_name: 'forms_settings',
+          option_value: {
+            mode: rawFixtures.optionValue,
+          },
+          autoload: 'no',
+          __pluginOwner: boundary.owner,
+        },
+      },
+    },
+  };
+}
+
+function pluginUninstallDeleteReleaseVerifierResourceEvidence() {
+  const boundary = pluginUninstallDeleteReleaseVerifierBoundary;
+  return {
+    owner: boundary.owner,
+    plugin: {
+      resourceKey: boundary.pluginResourceKey,
+      resourceType: 'plugin',
+      supportsDelete: false,
+      expectedRefusal: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    },
+    packageFile: {
+      resourceKey: boundary.pluginFileResourceKey,
+      resourceType: 'file',
+      supportsDelete: false,
+      expectedRefusal: 'PLUGIN_UNINSTALL_DELETE_REFUSED',
+    },
+    pluginOwnedRow: {
+      resourceKey: boundary.rowResourceKey,
+      resourceType: 'row',
+      table: boundary.table,
+      rowId: boundary.rowId,
+      driver: boundary.driver,
+      supportsDelete: false,
+      expectedRefusal: 'PLUGIN_OWNED_RESOURCE_DELETE_UNSUPPORTED',
+    },
+  };
+}
+
+function pluginUninstallDeletePluginResource() {
+  const boundary = pluginUninstallDeleteReleaseVerifierBoundary;
+  return {
+    type: 'plugin',
+    name: boundary.owner,
+    key: boundary.pluginResourceKey,
+  };
+}
+
+function pluginUninstallDeletePackageFileResource() {
+  const boundary = pluginUninstallDeleteReleaseVerifierBoundary;
+  return {
+    type: 'file',
+    path: boundary.pluginFilePath,
+    key: boundary.pluginFileResourceKey,
+  };
+}
+
+function pluginUninstallDeleteRowResource() {
+  const boundary = pluginUninstallDeleteReleaseVerifierBoundary;
+  return {
+    type: 'row',
+    table: boundary.table,
+    id: boundary.rowId,
+    key: boundary.rowResourceKey,
+  };
+}
+
+function buildPluginDeleteForgedPlan({
+  blockedPlan,
+  base,
+  local,
+  remote,
+  resource,
+  mutationId,
+}) {
+  const forgedPlan = cloneReleaseVerifierJson(blockedPlan);
+  forgedPlan.status = 'ready';
+  forgedPlan.blockers = [];
+  forgedPlan.conflicts = [];
+  forgedPlan.decisions = [];
+  forgedPlan.atomicGroups = [];
+  forgedPlan.summary = {
+    mutations: 1,
+    decisions: 0,
+    conflicts: 0,
+    blockers: 0,
+    atomicGroups: 0,
+  };
+  forgedPlan.mutations = [
+    {
+      id: mutationId,
+      resource,
+      resourceKey: resource.key,
+      action: 'delete',
+      value: { absent: true },
+      baseHash: resourceHash(base, resource),
+      localHash: resourceHash(local, resource),
+      remoteBeforeHash: resourceHash(remote, resource),
+      changeKind: 'delete',
+      change: {
+        localChange: 'delete',
+        remoteChange: 'unchanged',
+      },
+    },
+  ];
+  forgedPlan.preconditions = [
+    {
+      mutationId,
+      resource,
+      resourceKey: resource.key,
+      expectedHash: resourceHash(remote, resource),
+      checkedAgainst: 'live-remote',
+    },
+  ];
+  return forgedPlan;
+}
+
+function captureReleaseVerifierApplyError(callback) {
+  try {
+    return {
+      error: null,
+      result: callback(),
+    };
+  } catch (error) {
+    return {
+      error,
+      result: null,
+    };
+  }
+}
+
+function summarizeReleaseVerifierApplyRefusal({
+  apply,
+  expectedCode,
+  expectedReasonCode = null,
+  remoteHashBefore,
+  remoteHashAfter,
+}) {
+  return {
+    code: apply.error?.code || null,
+    expectedCode,
+    reasonCode: apply.error?.details?.reasonCode || null,
+    expectedReasonCode,
+    refusedBeforeMutation: apply.error instanceof PushPlanError
+      && apply.error.code === expectedCode
+      && (expectedReasonCode === null || apply.error.details?.reasonCode === expectedReasonCode),
+    remotePreserved: remoteHashAfter === remoteHashBefore,
+    remoteHashBefore,
+    remoteHashAfter,
+    detailsHash: apply.error ? sha256Evidence(apply.error.details || {}) : null,
+    unexpectedApplyMutationCount: apply.result?.appliedMutations ?? 0,
   };
 }
 
@@ -2551,6 +2978,7 @@ try {
         const pluginDriverProof = {
           productionOwned: productionPluginDriverProof,
           wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+          uninstallDeleteRefusal: summarizePluginUninstallDeleteReleaseVerifierProof(),
           coreSemantics: {
             wpPostmeta: wpPostmetaReleaseVerifierEvidence,
             wpTermmeta: wpTermmetaReleaseVerifierEvidence,
@@ -2852,6 +3280,7 @@ try {
       const pluginDriverProof = {
         productionOwned: productionPluginDriverProof,
         wpOptionsDriverSemantics: summarizeWpOptionsDriverReleaseVerifierProof(),
+        uninstallDeleteRefusal: summarizePluginUninstallDeleteReleaseVerifierProof(),
         coreSemantics: {
           wpPostmeta: wpPostmetaReleaseVerifierEvidence,
           wpTermmeta: wpTermmetaReleaseVerifierEvidence,
