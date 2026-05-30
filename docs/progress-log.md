@@ -6,20 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 08:07 CEST.
+- Last update: 2026-05-30 08:18 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0173 wp_term_relationships graph variant-4 generated-harness merge
-  ending at `667063215`.
+  the RPP-0174 plugin-owned option changes variant-4 generated-harness merge
+  ending at `1d34a418e`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 366
-  items checked and leaves 634 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 367
+  items checked and leaves 633 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   70 plugin-driver boundary items, 21 executor/auth items, 19 recovery items,
-  11 storage/performance items, 3 production-topology items, 73 generated
+  11 storage/performance items, 3 production-topology items, 74 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Plugin-owned option changes variant-4 refresh: the current lane now contains
+  `RPP-0174` evidence in
+  `docs/evidence/rpp-0174-plugin-owned-option-changes-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0174 test passed 1/1, the adjacent
+  RPP-0114/RPP-0134/RPP-0154/RPP-0174 plugin-owned option slice passed 3/3,
+  and `npm run test:generated-push-harness` passed 81/81 across 620
+  deterministic generated cases. Checklist lint, artifact redaction scan, and
+  merge diff whitespace checks also passed. Counts are now 367/633; final
+  release remains `NO-GO`.
 - wp_term_relationships graph variant-4 refresh: the current lane now contains
   `RPP-0173` evidence in
   `docs/evidence/rpp-0173-wp-term-relationships-graph-v4.md`,

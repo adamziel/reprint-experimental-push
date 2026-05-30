@@ -1,19 +1,32 @@
-# AO Progress Report - 2026-05-30 08:07 CEST
+# AO Progress Report - 2026-05-30 08:18 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0173
-wp_term_relationships graph variant-4 generated-harness refresh ending at
-`667063215`.
+`lane/evidence-integration-20260527` through the current RPP-0174
+plugin-owned option changes variant-4 generated-harness refresh ending at
+`1d34a418e`.
 It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 366 are
-  checked from integrated evidence and 634 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 367 are
+  checked from integrated evidence and 633 remain open.
+- `RPP-0174` is now checked with focused plugin-owned option changes variant-4
+  generated-harness evidence in
+  `docs/evidence/rpp-0174-plugin-owned-option-changes-v4.md`,
+  `docs/generated-push-harness.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/harness/generated-push-cases.js`, and
+  `test/generated-push-harness.test.js`. `node --check` passed for the changed
+  generator and test file, the focused RPP-0174 test passed 1/1, the adjacent
+  RPP-0114/RPP-0134/RPP-0154/RPP-0174 plugin-owned option slice passed 3/3,
+  and `npm run test:generated-push-harness` passed 81/81 across 620
+  deterministic generated cases. Checklist lint, artifact redaction scan, and
+  merge diff whitespace checks also passed. This remains deterministic
+  generated-model coverage, not production endpoint proof.
 - `RPP-0173` is now checked with focused wp_term_relationships graph variant-4
   generated-harness evidence in
   `docs/evidence/rpp-0173-wp-term-relationships-graph-v4.md`,
