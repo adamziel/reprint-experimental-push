@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T14:46:00+02:00">Last updated: May 30, 2026, 14:46 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T14:52:00+02:00">Last updated: May 30, 2026, 14:52 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>456</strong>
+        <strong>457</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>544</strong>
+        <strong>543</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -352,7 +352,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Plugin driver checked">
-            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
+            <span><strong>Plugin-driver guardrails</strong>Supported plugin-owned option and wp_options driver proof with release-verifier carry-through, serialized option validator release-verifier carry-through, exact custom-table allowlist proof with release-verifier carry-through, wp_postmeta and wp_termmeta release-verifier carry-through, plugin activation dependency release-verifier carry-through, driver apply-validation and audit-redaction release-verifier carry-through, arbitrary plugin fixture package release-verifier support-only evidence, and wp_usermeta row semantics with local/production-backed release-gate scope plus generated driver registration API, supported/unsupported wp_usermeta, dry-run validation hook, and owner identity binding variants, stale owner-context refusal, remote plugin removal refusal, driver registration checks, delete support flags, dry-run/apply validation, dependency validation, uninstall/delete refusal, and audit redaction evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Local production candidate checked">
@@ -406,10 +406,15 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0701</span>
+        <span>RPP-0489</span>
       </div>
-      <p>The latest refresh integrates RPP-0701 MySQL compare-and-swap write guard evidence: the benchmark records deterministic single-statement MySQL-style CAS shapes, applied/stale/absent outcomes, runtime resource gates, MySQL client capability evidence, missing connection-settings evidence, redacted connection-probe failures, and a successful redacted probe path that explicitly does not claim live CAS DML. Counts are now 456/544; final release remains NO-GO because this is deterministic storage guard evidence, not production-backed storage receipt proof.</p>
+      <p>The latest refresh integrates RPP-0489 plugin activation dependency release-verifier evidence: the verifier records hash-only pluginDriver.coreSemantics.pluginActivationDependency proof, refuses remote dependency drift with ATOMIC_GROUP_DEPENDENCY_STALE before activation or plugin-owned row mutation, leaves dependent activation and plugin-owned wp_options updates unapplied, and preserves the drifted remote row hash plus full remote hash. Counts are now 457/543; final release remains NO-GO because this is support-only local release-verifier evidence, not externally hosted production topology proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0489 focused: 2/2</span>
+        <span class="tag">plugin dependency adjacent: 2/2</span>
+        <span class="tag">release-verifier adjacent: 21/21</span>
+        <span class="tag">hash-only dependency evidence</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0701 focused: 6/6</span>
         <span class="tag">mysql CAS bench: pass</span>
         <span class="tag">runtime capability: recorded</span>
