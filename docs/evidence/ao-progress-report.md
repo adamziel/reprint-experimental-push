@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 03:23 CEST
+# AO Progress Report - 2026-05-30 03:25 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0426 wp_termmeta
-driver semantics refresh ending at `c235e69fa`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0433 stale owner
+plugin file refusal refresh ending at `8f8b44a60`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 306 are
-  checked from integrated evidence and 694 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 307 are
+  checked from integrated evidence and 693 remain open.
+- `RPP-0433` is now checked with focused stale owner plugin file refusal
+  evidence in
+  `docs/evidence/rpp-0433-owner-context-stale-plugin-file-refusal.md` and
+  `test/rpp-0433-owner-context-stale-plugin-file-refusal.test.js`. `node
+  --test test/rpp-0433-owner-context-stale-plugin-file-refusal.test.js` passed
+  2/2, `node --test test/plugin-owner-context-file-refusal.test.js
+  test/plugin-owner-context-metadata-refusal.test.js` passed 9/9, and
+  `node --test test/plugin-driver-audit-redaction.test.js` passed 3/3, proving
+  local production-shaped owner-file context can carry one plugin-owned
+  `wp_postmeta` mutation through apply, stale owner plugin file replay refuses
+  before mutation, sibling owner file drift blocks plugin file mutation, remote
+  data is preserved, and evidence remains hash-only while final release remains
+  **NO-GO**.
 - `RPP-0426` is now checked with focused wp_termmeta plugin-driver semantics
   evidence in `docs/evidence/rpp-0426-wp-termmeta-driver-semantics.md` and
   `test/rpp-0426-wp-termmeta-driver-semantics.test.js`. `node --test

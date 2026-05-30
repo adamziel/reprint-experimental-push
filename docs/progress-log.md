@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:23 CEST.
+- Last update: 2026-05-30 03:25 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0426 wp_termmeta driver semantics merge ending at `c235e69fa`.
+  the RPP-0433 stale owner plugin file refusal merge ending at `8f8b44a60`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 306
-  items checked and leaves 694 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 307
+  items checked and leaves 693 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  41 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  42 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 51 generated
   harness items, and 35 merge-invariant items. No release-ops items are checked
   yet.
+- Focused stale owner plugin file refusal refresh: the current lane now
+  contains `RPP-0433` evidence in
+  `docs/evidence/rpp-0433-owner-context-stale-plugin-file-refusal.md` and
+  `test/rpp-0433-owner-context-stale-plugin-file-refusal.test.js`. `node
+  --test test/rpp-0433-owner-context-stale-plugin-file-refusal.test.js` passed
+  2/2, `node --test test/plugin-owner-context-file-refusal.test.js
+  test/plugin-owner-context-metadata-refusal.test.js` passed 9/9, and
+  `node --test test/plugin-driver-audit-redaction.test.js` passed 3/3. The
+  proof carries one local production-shaped plugin-owned `wp_postmeta` row
+  mutation through apply when owner file context matches, refuses stale owner
+  plugin file context before mutation on replay, blocks a plugin file mutation
+  when a sibling owner file changed remotely, preserves the remote snapshot, and
+  keeps owner-context evidence hash-only. Checklist lint, artifact redaction
+  scan, and `git diff --check` also passed. Counts are now 307/693; final
+  release remains `NO-GO`.
 - Focused wp_termmeta plugin-driver semantics refresh: the current lane now
   contains `RPP-0426` evidence in
   `docs/evidence/rpp-0426-wp-termmeta-driver-semantics.md` and
