@@ -1,17 +1,29 @@
-# AO Progress Report - 2026-05-30 05:53 CEST
+# AO Progress Report - 2026-05-30 05:55 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0510 session user
-identity binding proof refresh ending at `a4dab0c98`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0511 Application
+Password integration proof refresh ending at `20edcd746`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 348 are
-  checked from integrated evidence and 652 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 349 are
+  checked from integrated evidence and 651 remain open.
+- `RPP-0511` is now checked with focused Application Password integration
+  evidence in `docs/evidence/rpp-0511-application-password-integration.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/rpp-0511-application-password-integration.test.js`. `php -l` passed
+  for the changed REST plugin, `node --check` passed for the focused test, the
+  focused disposable local WordPress Application Password proof passed 1/1, and
+  the adjacent auth/session route slice passed 11/11 after integration with
+  RPP-0510. The proof shows scoped Application Password success and wrong
+  credential refusal on sandbox-local loopback only; final external production
+  endpoint proof remains **NO-GO**. Checklist lint, artifact redaction scan,
+  and diff whitespace checks also passed.
 - `RPP-0510` is now checked with focused session user identity binding evidence
   in `docs/evidence/rpp-0510-session-user-identity-binding.md`,
   `docs/reprint-push-completion-checklist.md`,

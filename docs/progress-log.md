@@ -6,19 +6,33 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 05:53 CEST.
+- Last update: 2026-05-30 05:55 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0510 session user identity binding proof merge ending at `a4dab0c98`.
+  the RPP-0511 Application Password integration proof merge ending at
+  `20edcd746`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 348
-  items checked and leaves 652 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 349
+  items checked and leaves 651 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  69 plugin-driver boundary items, 18 executor/auth items, 19 recovery items,
+  69 plugin-driver boundary items, 19 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 59 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Application Password integration refresh: the current lane now contains
+  `RPP-0511` evidence in
+  `docs/evidence/rpp-0511-application-password-integration.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/push-remote-rest-plugin.php`, and
+  `test/rpp-0511-application-password-integration.test.js`. `php -l` passed
+  for the changed REST plugin, `node --check` passed for the focused test, the
+  focused disposable local WordPress Application Password proof passed 1/1, and
+  the adjacent auth/session route slice passed 11/11 after integration with
+  RPP-0510. The proof covers scoped Application Password success and wrong
+  credential refusal on sandbox-local loopback only; external production
+  endpoint proof remains `NO-GO`. Checklist lint, artifact redaction scan, and
+  diff whitespace checks also passed. Counts are now 349/651.
 - Session user identity binding refresh: the current lane now contains
   `RPP-0510` evidence in
   `docs/evidence/rpp-0510-session-user-identity-binding.md`,
