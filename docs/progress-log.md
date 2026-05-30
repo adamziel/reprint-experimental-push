@@ -6,19 +6,32 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:27 CEST.
+- Last update: 2026-05-30 04:30 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0464 wp_options driver semantics proof merge ending at `70071a6ab`.
+  the RPP-0441 driver registration API v3 proof merge ending at `012a8ecc7`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 325
-  items checked and leaves 675 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 326
+  items checked and leaves 674 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  51 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  52 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 55 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Generated driver registration API variant-3 refresh: the current lane now
+  contains `RPP-0441` evidence in
+  `docs/evidence/rpp-0441-driver-registration-api-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0441-driver-registration-api-v3.test.js`. `node --check
+  test/rpp-0441-driver-registration-api-v3.test.js` exited 0, `node --test
+  --test-name-pattern 'RPP-0441|driver registration API v3'
+  test/rpp-0441-driver-registration-api-v3.test.js` passed 1/1, and the
+  adjacent driver-registration API slice passed 5/5. The proof covers exact
+  registered plugin-owned row driver behavior, duplicate/malformed registration
+  fail-closed handling, hash-only evidence, checklist lint, artifact redaction
+  scan, and `git diff --check`. Counts are now 326/674; final release remains
+  `NO-GO`.
 - Focused wp_options driver semantics variant-4 refresh: the current lane now
   contains `RPP-0464` evidence in
   `docs/evidence/rpp-0464-wp-options-driver-semantics-v4.md`,

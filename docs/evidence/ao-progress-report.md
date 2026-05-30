@@ -1,17 +1,31 @@
-# AO Progress Report - 2026-05-30 04:27 CEST
+# AO Progress Report - 2026-05-30 04:30 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0464 wp_options
-driver semantics proof refresh ending at `70071a6ab`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0441 driver
+registration API v3 proof refresh ending at `012a8ecc7`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 325 are
-  checked from integrated evidence and 675 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 326 are
+  checked from integrated evidence and 674 remain open.
+- `RPP-0441` is now checked with generated driver registration API variant-3
+  evidence in
+  `docs/evidence/rpp-0441-driver-registration-api-v3.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0441-driver-registration-api-v3.test.js`. `node --check
+  test/rpp-0441-driver-registration-api-v3.test.js` exited 0, `node --test
+  --test-name-pattern 'RPP-0441|driver registration API v3'
+  test/rpp-0441-driver-registration-api-v3.test.js` passed 1/1, and `node
+  --test --test-name-pattern 'RPP-0401|RPP-0461|plugin-owned row driver
+  registration API' test/plugin-driver-registration-api.test.js
+  test/playground-snapshot-lib.test.js` passed 5/5, proving exact registered
+  plugin-owned row driver behavior, duplicate and malformed registration
+  fail-closed handling, hash-only evidence, checklist lint, artifact redaction
+  scan, and `git diff --check` while final release remains **NO-GO**.
 - `RPP-0464` is now checked with focused wp_options driver semantics variant-4
   evidence in
   `docs/evidence/rpp-0464-wp-options-driver-semantics-v4.md`,
