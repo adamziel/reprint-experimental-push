@@ -1,18 +1,31 @@
-# AO Progress Report - 2026-05-30 03:56 CEST
+# AO Progress Report - 2026-05-30 03:58 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0239
-redacted evidence proof refresh ending at `e0b1411f1`. It separates
+`lane/evidence-integration-20260527` through the current RPP-0436
+driver delete support flag refresh ending at `b5eb1558b`. It separates
 committed proof from visible AO worker output that is still branch-local or in
 progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 316 are
-  checked from integrated evidence and 684 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 317 are
+  checked from integrated evidence and 683 remain open.
+- `RPP-0436` is now checked with focused driver delete support flag evidence in
+  `docs/evidence/rpp-0436-driver-delete-support-flag.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/planner.js`, and
+  `test/rpp-0436-driver-delete-support-flag.test.js`. `node --check
+  test/rpp-0436-driver-delete-support-flag.test.js` exited 0, `node --test
+  test/rpp-0436-driver-delete-support-flag.test.js` passed 12/12, `node --test
+  test/plugin-driver-delete-support-flag.test.js` passed 3/3, the adjacent
+  plugin delete/redaction slice passed 12/12, and the focused push-planner
+  delete-driver pattern passed 3/3, proving only explicit boolean delete
+  support flags opt into delete mutations, omitted or non-boolean flags fail
+  closed, forged ready deletes reject before mutation, delete support evidence
+  stays hash-only, checklist lint, artifact redaction scan, and `git diff
+  --check` while final release remains **NO-GO**.
 - `RPP-0239` is now checked with focused redacted raw value evidence in
   `docs/evidence/rpp-0239-redacted-raw-value-evidence-v2.md`,
   `docs/scenario-matrix.md`,

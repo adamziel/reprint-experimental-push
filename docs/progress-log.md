@@ -6,19 +6,34 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 03:56 CEST.
+- Last update: 2026-05-30 03:58 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0239 redacted evidence proof merge ending at `e0b1411f1`.
+  the RPP-0436 driver delete support flag merge ending at `b5eb1558b`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 316
-  items checked and leaves 684 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 317
+  items checked and leaves 683 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  44 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  45 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 53 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused driver delete support flag refresh: the current lane now contains
+  `RPP-0436` evidence in
+  `docs/evidence/rpp-0436-driver-delete-support-flag.md`,
+  `docs/reprint-push-completion-checklist.md`, `src/planner.js`, and
+  `test/rpp-0436-driver-delete-support-flag.test.js`. `node --check
+  test/rpp-0436-driver-delete-support-flag.test.js` exited 0, `node --test
+  test/rpp-0436-driver-delete-support-flag.test.js` passed 12/12, `node
+  --test test/plugin-driver-delete-support-flag.test.js` passed 3/3, the
+  adjacent plugin delete/redaction slice passed 12/12, and the focused
+  push-planner delete-driver pattern passed 3/3. The proof treats only explicit
+  boolean delete support flags as planner opt-ins, fails closed for omitted or
+  non-boolean delete support, rejects forged ready deletes before mutation, and
+  keeps delete support evidence hash-only. Checklist lint, artifact redaction
+  scan, and `git diff --check` also passed. Counts are now 317/683; final
+  release remains `NO-GO`.
 - Focused redacted raw value evidence refresh: the current lane now contains
   `RPP-0239` evidence in
   `docs/evidence/rpp-0239-redacted-raw-value-evidence-v2.md`,
