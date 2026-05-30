@@ -343,7 +343,7 @@ Focus: replace narrow stable-ID graph cases with general identity mapping.
 - [x] RPP-0314 (Mid / graph-identity) Implement term relationship taxonomy reference, variant 1. Success: local production verifier carries the target through apply.
 - [x] RPP-0315 (Mid / graph-identity) Implement nav menu item fail-closed reference, variant 1. Success: docs state remaining unmapped WordPress surfaces.
 - [x] RPP-0316 (Mid / graph-identity) Implement wp_navigation fail-closed reference, variant 1. Success: mapper rewrites or proves stable identity for the target.
-- [ ] RPP-0317 (Mid / graph-identity) Implement serialized block reference detection, variant 1. Success: unsupported target fails closed with hash-only evidence.
+- [x] RPP-0317 (Mid / graph-identity) Implement serialized block reference detection, variant 1. Success: unsupported target fails closed with hash-only evidence.
 - [x] RPP-0318 (Mid / graph-identity) Implement GUID and slug collision handling, variant 1. Success: generated harness includes ready and stale cases.
 - [x] RPP-0319 (Mid / graph-identity) Implement cross-table create batch mapping, variant 1. Success: local production verifier carries the target through apply.
 - [x] RPP-0320 (Mid / graph-identity) Implement production importer/exporter identity map, variant 1. Success: docs state remaining unmapped WordPress surfaces.
