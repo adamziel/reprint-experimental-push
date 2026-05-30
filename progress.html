@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T12:51:00+02:00">Last updated: May 30, 2026, 12:51 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T13:00:00+02:00">Last updated: May 30, 2026, 13:00 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>428</strong>
+        <strong>429</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>572</strong>
+        <strong>571</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -344,7 +344,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
-            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote classification, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
+            <span><strong>Recovery boundaries</strong>Local durable journal, paged readback, stale claim refusal, old-remote and new-remote classification, retry hardening, ownership-record restart readback, incomplete commit refusal, and process-kill readback evidence are integrated.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Graph identity checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0510</span>
+        <span>RPP-0611</span>
       </div>
-      <p>The latest refresh reconciles salvaged RPP-0510 session user identity binding work with the lane's newer hash-only implementation: short-lived sessions keep `userIdentityHash`, dry-run receipts now carry `authBinding.sessionUser`, the authenticated push summary carries `sessionUserIdentityBinding`, and the release verifier exposes compatibility `authSessionBoundary.userIdentityBinding` evidence. Counts remain 428/572; final release remains NO-GO because this is local support evidence, not production endpoint proof.</p>
+      <p>The latest refresh integrates RPP-0611 new-remote recovery classification: completed recovery journals can prove already-updated remote state without overwriting preserved remote-only changes, and the evidence remains hash-only across file and SQLite journal paths. Counts are now 429/571; final release remains NO-GO because this is local recovery evidence, not production durability proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0611 focused: 2/2</span>
+        <span class="tag">recovery journal/repair: 35/35</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0510 salvage: 3/3</span>
         <span class="tag">auth route/client suite: 151/151</span>
         <span class="tag">PHP and Node syntax: pass</span>

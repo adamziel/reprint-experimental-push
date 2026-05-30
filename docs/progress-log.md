@@ -6,20 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 12:51 CEST.
+- Last update: 2026-05-30 13:00 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0510 session user identity binding salvage merge ending at
-  `07520106`.
+  the RPP-0611 new-remote recovery classification merge ending at `8be230ef`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
   goals, but it is no longer a static all-unchecked inventory. It now marks 428
-  items checked and leaves 572 open.
+  items checked and leaves 571 open.
 - Checked slices: 100 release-gate foundation items, 45 graph identity items,
-  73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
+  73 plugin-driver boundary items, 22 executor/auth items, 20 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- New-remote recovery classification: the current lane now contains
+  `RPP-0611` evidence in
+  `docs/evidence/rpp-0611-new-remote-recovery-classification.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `src/recovery-inspect.js`, and
+  `test/rpp-0611-new-remote-recovery-classification.test.js`. Focused RPP-0611
+  coverage passed 2/2, and the related recovery journal/repair suite passed
+  35/35. Checklist lint, scoped artifact redaction scan, and merge diff
+  whitespace checks also passed. Counts are now 429/571; final release remains
+  `NO-GO`.
 - Session user identity binding salvage merge: the current lane reconciles the
   salvaged `session/rpp-189` RPP-0510 coverage with the newer lane
   `userIdentityHash` implementation. It keeps the stricter short-lived session
