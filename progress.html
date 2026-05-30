@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>309</strong>
+        <strong>310</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>691</strong>
+        <strong>690</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -340,7 +340,7 @@
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Merge invariant evidence checked">
-            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, remoteBeforeHash binding, already-in-sync no-op safety, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
+            <span><strong>Merge invariants</strong>Ready/conflict/blocked cases cover files, rows, wp_options, wp_posts, postmeta, comments, terms, users, term taxonomy, term relationships, stale replay, remoteBeforeHash binding, already-in-sync no-op safety, keep-remote preservation, same-content, large plans, remote-only plugin metadata preservation, independent row/file preservation, and local delete/remote edit refusal.</span>
           </li>
           <li>
             <input type="checkbox" checked disabled aria-label="Recovery evidence checked">
@@ -406,10 +406,13 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0151</span>
+        <span>RPP-0235</span>
       </div>
-      <p>The latest refresh integrates RPP-0151 terms/termmeta graph variant-3 coverage: generated tests prove 20 deterministic wp_terms/wp_termmeta graph cases across all tiers, ready term/termmeta graph creates, stale term-drift blockers, stale replay refusal before mutation, and hash-only evidence. Counts are now 309/691; final release remains NO-GO.</p>
+      <p>The latest refresh integrates RPP-0235 keep-remote decision safety: focused tests prove keep-remote resources are preserved without local overwrite mutations, forged overwrite attempts fail before durable journal or mutation, and serialized evidence remains hash-only. Counts are now 310/690; final release remains NO-GO.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0235 focused: 1/1</span>
+        <span class="tag">RPP-0235 pattern: 3/3</span>
+        <span class="tag">planner pair: 148/148</span>
         <span class="tag">RPP-0151 focused: 1/1</span>
         <span class="tag">RPP-0151 pattern: 2/2</span>
         <span class="tag">generated harness: 59/59</span>
@@ -488,7 +491,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 309/1000</span>
+        <span class="tag">checked goals: 310/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>
