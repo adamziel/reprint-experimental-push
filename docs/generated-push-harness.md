@@ -215,6 +215,16 @@ type swaps. Ready cases replace an empty directory with the planned file value
 and preserve unplanned remote resources; conflict cases add a remote descendant
 under the directory and refuse apply.
 
+RPP-0163 adds `fileTypeSwapConflictVariant4` coverage for the same file
+topology type-swap surface with an explicit variant-4 target tag. The
+deterministic roster emits 20 variant-4 target cases: 10 ready directory-to-file
+swaps and 10 non-ready remote-descendant conflicts, with two cases in every
+tier. The focused proof records only resource keys, counts, decision hashes,
+file hashes, conflict hashes, and refusal hashes. It verifies a ready type-swap
+applies the planned file value while preserving an unplanned remote resource,
+then verifies the remote descendant conflict refuses apply without mutating the
+remote digest.
+
 The `sameIndependentContent` target coverage records per-tier counts for local
 and remote edits that independently converge on the same content. Its ready
 cases produce no mutation for the already-synchronized row, still apply through

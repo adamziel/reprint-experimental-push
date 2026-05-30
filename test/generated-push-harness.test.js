@@ -208,6 +208,9 @@ const requiredFamilies = [
   'file-type-swap-ready',
   'file-type-swap-conflict',
   'file-type-swap',
+  'file-type-swap-conflict-v4',
+  'file-type-swap-conflict-v4-ready',
+  'file-type-swap-conflict-v4-non-ready',
   'type-swap-ready',
   'type-swap-conflict',
   'row-create-update-delete-mix-ready',
@@ -3962,6 +3965,89 @@ test('RPP-0123 file type-swap target exposes ready preservation and explicit con
   assert.equal(conflict.status, 'conflict');
   assert.ok(conflict.conflicts >= 1, 'conflict file type-swap should expose topology conflict');
   assert.equal(conflict.applied, false, 'conflict file type-swap must not apply mutations');
+});
+
+test('RPP-0163 file type-swap conflict variant 4 proves ready preservation and refused conflicts', () => {
+  const report = runGeneratedPushHarness();
+  const coverage = report.summary.targetCoverage.fileTypeSwapConflictVariant4;
+
+  assert.ok(coverage, 'missing file type-swap conflict variant 4 target coverage');
+  assert.equal(coverage.family, 'file-type-swap-conflict-variant4');
+  assert.equal(coverage.total, report.summary.featureFamilies['file-type-swap-conflict-v4']);
+  assert.equal(coverage.total, 20);
+  assert.deepEqual(coverage.statuses, { conflict: 10, ready: 10 });
+  assert.equal(report.summary.featureFamilies['file-type-swap-conflict-v4-ready'], 10);
+  assert.equal(report.summary.featureFamilies['file-type-swap-conflict-v4-non-ready'], 10);
+  assert.deepEqual(
+    coverage.perTier,
+    Object.fromEntries(Array.from({ length: 10 }, (_, tier) => [String(tier), 2])),
+  );
+
+  const firstEvidence = generatedFileTypeSwapConflictVariant4Evidence(coverage);
+  const replayEvidence = generatedFileTypeSwapConflictVariant4Evidence(coverage);
+  const evidenceEnvelope = {
+    command: 'node --test --test-name-pattern=RPP-0163 test/generated-push-harness.test.js',
+    caveat: 'Generated local/model evidence only; release remains gated separately.',
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    releaseGate: 'NO-GO',
+    evidenceHash: `sha256:${digest(firstEvidence)}`,
+    evidence: firstEvidence,
+  };
+  const evidenceText = JSON.stringify(evidenceEnvelope);
+
+  assert.deepEqual(firstEvidence, replayEvidence, 'variant 4 type-swap evidence changed between runs');
+  assert.equal(firstEvidence.target, 'fileTypeSwapConflictVariant4');
+  assert.equal(firstEvidence.family, 'file-type-swap-conflict-variant4');
+  assert.equal(firstEvidence.totalCases, coverage.total);
+  assert.equal(firstEvidence.readyCases, coverage.statuses.ready);
+  assert.equal(firstEvidence.nonReadyCases, nonReadyTargetCount(coverage));
+  assert.deepEqual(firstEvidence.perTier, coverage.perTier);
+  assert.deepEqual(firstEvidence.statuses, coverage.statuses);
+  assert.deepEqual(
+    firstEvidence.selectedCases.map((entry) => entry.status),
+    ['ready', 'conflict'],
+  );
+
+  const [readyCase, nonReadyCase] = firstEvidence.selectedCases;
+  assert.equal(readyCase.variant, 'ready');
+  assert.equal(readyCase.applied, true);
+  assert.equal(readyCase.unplannedRemotePreserved, true);
+  assert.equal(readyCase.staleReplayRejected, true);
+  assert.equal(readyCase.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+  assert.equal(readyCase.staleReplayRemoteUnchanged, true);
+  assert.equal(readyCase.typeSwap.action, 'put');
+  assert.equal(readyCase.typeSwap.changeKind, 'type-change');
+  assert.equal(readyCase.typeSwap.appliedHash, readyCase.typeSwap.localHash);
+  assert.equal(readyCase.remotePreservation.decision, 'keep-remote');
+  assert.equal(readyCase.remotePreservation.plannedMutation, false);
+  assert.equal(readyCase.remotePreservation.plannedPrecondition, false);
+  assert.equal(readyCase.remotePreservation.appliedHash, readyCase.remotePreservation.remoteHash);
+  assert.match(readyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.equal(nonReadyCase.variant, 'non-ready');
+  assert.equal(nonReadyCase.applied, false);
+  assert.equal(nonReadyCase.surface.remoteDescendant.resourceKey, nonReadyCase.conflict.relatedResourceKey);
+  assert.equal(nonReadyCase.conflict.resourceKey, nonReadyCase.surface.target.resourceKey);
+  assert.equal(nonReadyCase.conflict.class, 'file-topology-conflict');
+  assert.equal(nonReadyCase.conflict.plannedMutation, false);
+  assert.equal(nonReadyCase.conflict.plannedPrecondition, false);
+  assert.equal(nonReadyCase.remoteDescendant.decision, 'keep-remote');
+  assert.equal(nonReadyCase.remoteDescendant.plannedMutation, false);
+  assert.equal(nonReadyCase.remoteDescendant.plannedPrecondition, false);
+  assert.equal(nonReadyCase.refusal.code, 'PLAN_NOT_READY');
+  assert.equal(nonReadyCase.refusal.remoteBeforeHash, nonReadyCase.refusal.remoteAfterHash);
+  assert.match(nonReadyCase.conflict.conflictHash, /^sha256:[a-f0-9]{64}$/);
+  assert.match(nonReadyCase.modelProofHash, /^sha256:[a-f0-9]{64}$/);
+
+  assert.match(evidenceEnvelope.evidenceHash, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(evidenceText.includes('local type swap '), false, 'variant 4 evidence leaked local type-swap payload');
+  assert.equal(
+    evidenceText.includes('remote descendant for type swap '),
+    false,
+    'variant 4 evidence leaked remote descendant payload',
+  );
+  assert.equal(evidenceText.includes('Remote ready preserve '), false, 'variant 4 evidence leaked remote preserve row');
 });
 
 test('RPP-0104 generated harness emits row create/update/delete mix with stale replay guard', () => {
@@ -11765,6 +11851,338 @@ function assertFileTypeSwapShape(testCase, { conflict }) {
   const remoteDescendants = Object.keys(testCase.remote.files)
     .filter((remotePath) => remotePath.startsWith(`${path}/`));
   assert.equal(remoteDescendants.length, conflict ? 1 : 0, `${testCase.id} remote descendant shape mismatch`);
+
+  const remoteDescendantResource = remoteDescendants.length > 0
+    ? { type: 'file', path: remoteDescendants[0] }
+    : null;
+
+  return {
+    targetPath: path,
+    targetResource: { type: 'file', path },
+    targetResourceKey: `file:${path}`,
+    remoteDescendants,
+    remoteDescendantResource,
+    remoteDescendantResourceKey: remoteDescendantResource ? `file:${remoteDescendantResource.path}` : null,
+  };
+}
+
+function generatedFileTypeSwapConflictVariant4Evidence(targetCoverage) {
+  const perTier = {};
+  const statuses = {};
+  const selectedCases = new Map();
+  let totalCases = 0;
+
+  for (const testCase of generatePushHarnessCases()) {
+    if (!testCase.tags.has('file-type-swap-conflict-v4')) {
+      continue;
+    }
+
+    const result = validateGeneratedCase(testCase);
+    const evidence = generatedFileTypeSwapConflictVariant4CaseEvidence(testCase, result);
+    const selectedKey = result.status === 'ready' ? 'ready' : 'non-ready';
+    totalCases += 1;
+    incrementCount(perTier, testCase.tier);
+    incrementCount(statuses, result.status);
+    if (selectedKey === 'ready') {
+      const selected = selectedCases.get('ready');
+      if (!selected || !selected.remotePreservation) {
+        selectedCases.set('ready', evidence);
+      }
+      continue;
+    }
+    if (!selectedCases.has('non-ready')) {
+      selectedCases.set('non-ready', evidence);
+    }
+  }
+
+  const sortedPerTier = sortNumericObject(perTier);
+  const sortedStatuses = sortStringObject(statuses);
+
+  assert.deepEqual(sortedPerTier, targetCoverage.perTier, 'variant 4 type-swap target recount should match summary tiers');
+  assert.deepEqual(
+    sortedStatuses,
+    targetCoverage.statuses,
+    'variant 4 type-swap target recount should match summary statuses',
+  );
+  assert.equal(totalCases, targetCoverage.total, 'variant 4 type-swap target recount should match summary total');
+  assert.ok(selectedCases.has('ready'), 'variant 4 target should select one ready type-swap case');
+  assert.ok(selectedCases.has('non-ready'), 'variant 4 target should select one descendant conflict case');
+  assert.ok(
+    selectedCases.get('ready').remotePreservation,
+    'variant 4 ready evidence should include a concrete unplanned remote preservation proof',
+  );
+
+  return {
+    target: 'fileTypeSwapConflictVariant4',
+    family: targetCoverage.family,
+    evidenceScope: 'local-generated-model',
+    productionBacked: false,
+    totalCases,
+    readyCases: sortedStatuses.ready || 0,
+    nonReadyCases: totalCases - (sortedStatuses.ready || 0),
+    perTier: sortedPerTier,
+    statuses: sortedStatuses,
+    selectedCases: [
+      selectedCases.get('ready'),
+      selectedCases.get('non-ready'),
+    ],
+  };
+}
+
+function generatedFileTypeSwapConflictVariant4CaseEvidence(testCase, result) {
+  const conflict = testCase.family === 'file-type-swap-conflict';
+  const shape = assertFileTypeSwapShape(testCase, { conflict });
+  const plan = createPushPlan({
+    base: testCase.base,
+    local: testCase.local,
+    remote: testCase.remote,
+    now: fixedGeneratedHarnessNow,
+  });
+  const surface = fileTypeSwapVariant4SurfaceEvidence(testCase, shape);
+  const commonEvidence = {
+    id: testCase.id,
+    tier: testCase.tier,
+    family: testCase.family,
+    variant: result.status === 'ready' ? 'ready' : 'non-ready',
+    status: result.status,
+    tags: [...testCase.tags].sort(),
+    planSummary: plan.summary,
+    surface,
+  };
+
+  if (result.status === 'ready') {
+    const applied = applyPlan(cloneJson(testCase.remote), plan);
+    const typeSwap = fileTypeSwapVariant4ReadyMutationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+    const remotePreservation = fileTypeSwapVariant4RemotePreservationEvidence({
+      testCase,
+      plan,
+      applied,
+      shape,
+    });
+
+    assert.equal(conflict, false, `${testCase.id} ready evidence should come from ready type-swap family`);
+    assert.equal(testCase.tags.has('file-type-swap-conflict-v4-ready'), true);
+    assert.equal(plan.status, 'ready', `${testCase.id} should plan as ready`);
+    assert.equal(result.applied, true, `${testCase.id} should apply`);
+    assert.equal(result.unplannedRemotePreserved, true, `${testCase.id} should preserve unplanned remote data`);
+    assert.equal(result.staleReplayRejected, true, `${testCase.id} should reject stale replay`);
+    assert.equal(result.staleReplayRejectionCode, 'PRECONDITION_FAILED');
+    assert.equal(result.staleReplayRemoteUnchanged, true, `${testCase.id} stale replay should not mutate remote`);
+
+    return {
+      ...commonEvidence,
+      applied: result.applied,
+      unplannedRemotePreserved: result.unplannedRemotePreserved,
+      staleReplayRejected: result.staleReplayRejected,
+      staleReplayRejectionCode: result.staleReplayRejectionCode,
+      staleReplayRemoteUnchanged: result.staleReplayRemoteUnchanged,
+      typeSwap,
+      remotePreservation,
+      modelProofHash: `sha256:${digest({
+        id: testCase.id,
+        status: result.status,
+        planSummary: plan.summary,
+        surface,
+        typeSwap,
+        remotePreservation,
+      })}`,
+    };
+  }
+
+  assert.equal(conflict, true, `${testCase.id} non-ready evidence should come from type-swap conflict family`);
+  assert.equal(testCase.tags.has('file-type-swap-conflict-v4-non-ready'), true);
+  assert.notEqual(plan.status, 'ready', `${testCase.id} should plan as non-ready`);
+  assert.equal(result.applied, false, `${testCase.id} must not apply`);
+
+  const conflictEvidence = fileTypeSwapVariant4ConflictEvidence({ testCase, plan, shape });
+  const remoteDescendant = fileTypeSwapVariant4RemoteDescendantEvidence({ testCase, plan, shape });
+  const refusal = fileTypeSwapVariant4RefusalEvidence(testCase, plan);
+
+  return {
+    ...commonEvidence,
+    applied: result.applied,
+    conflict: conflictEvidence,
+    remoteDescendant,
+    refusal,
+    modelProofHash: `sha256:${digest({
+      id: testCase.id,
+      status: result.status,
+      planSummary: plan.summary,
+      surface,
+      conflict: conflictEvidence,
+      remoteDescendant,
+      refusal,
+    })}`,
+  };
+}
+
+function fileTypeSwapVariant4SurfaceEvidence(testCase, shape) {
+  const target = {
+    resourceKey: shape.targetResourceKey,
+    baseHash: resourceHash(testCase.base, shape.targetResource),
+    localHash: resourceHash(testCase.local, shape.targetResource),
+    remoteHash: resourceHash(testCase.remote, shape.targetResource),
+  };
+  const remoteDescendant = shape.remoteDescendantResource
+    ? {
+        resourceKey: shape.remoteDescendantResourceKey,
+        baseHash: resourceHash(testCase.base, shape.remoteDescendantResource),
+        localHash: resourceHash(testCase.local, shape.remoteDescendantResource),
+        remoteHash: resourceHash(testCase.remote, shape.remoteDescendantResource),
+      }
+    : null;
+
+  return {
+    target,
+    remoteDescendant,
+  };
+}
+
+function fileTypeSwapVariant4ReadyMutationEvidence({ testCase, plan, applied, shape }) {
+  const mutation = plan.mutations.find((entry) => entry.resourceKey === shape.targetResourceKey);
+  const precondition = plan.preconditions.find((entry) => entry.resourceKey === shape.targetResourceKey);
+
+  assert.ok(mutation, `${testCase.id} should plan the type-swap mutation`);
+  assert.ok(precondition, `${testCase.id} should precondition the type-swap mutation`);
+  assert.equal(mutation.action, 'put');
+  assert.equal(mutation.changeKind, 'type-change');
+  assert.equal(precondition.mutationId, mutation.id);
+  assert.equal(precondition.expectedHash, mutation.remoteBeforeHash);
+  assert.equal(
+    resourceHash(applied.site, shape.targetResource),
+    resourceHash(testCase.local, shape.targetResource),
+    `${testCase.id} applied type-swap hash should match local`,
+  );
+
+  const baseHash = resourceHash(testCase.base, shape.targetResource);
+  const localHash = resourceHash(testCase.local, shape.targetResource);
+  const remoteHash = resourceHash(testCase.remote, shape.targetResource);
+  const appliedHash = resourceHash(applied.site, shape.targetResource);
+
+  assert.equal(remoteHash, mutation.remoteBeforeHash, `${testCase.id} remote hash should match mutation preimage`);
+  assert.equal(appliedHash, localHash, `${testCase.id} applied target hash should match local file`);
+
+  return {
+    resourceKey: shape.targetResourceKey,
+    action: mutation.action,
+    changeKind: mutation.changeKind,
+    baseHash,
+    localHash,
+    remoteHash,
+    appliedHash,
+    mutationRemoteBeforeHash: mutation.remoteBeforeHash,
+    preconditionExpectedHash: precondition.expectedHash,
+    mutationHash: `sha256:${digest(mutation)}`,
+    preconditionHash: `sha256:${digest(precondition)}`,
+  };
+}
+
+function fileTypeSwapVariant4RemotePreservationEvidence({ testCase, plan, applied }) {
+  const mutationResourceKeys = new Set(plan.mutations.map((mutation) => mutation.resourceKey));
+  const preconditionResourceKeys = new Set(plan.preconditions.map((precondition) => precondition.resourceKey));
+  const decisions = plan.decisions
+    .filter((decision) => decision.decision === 'keep-remote'
+      && !mutationResourceKeys.has(decision.resourceKey)
+      && !preconditionResourceKeys.has(decision.resourceKey)
+      && resourceHash(testCase.remote, decision.resource) !== resourceHash(testCase.base, decision.resource))
+    .sort((left, right) => left.resourceKey.localeCompare(right.resourceKey));
+
+  if (decisions.length === 0) {
+    return null;
+  }
+
+  const decision = decisions[0];
+  const baseHash = resourceHash(testCase.base, decision.resource);
+  const localHash = resourceHash(testCase.local, decision.resource);
+  const remoteHash = resourceHash(testCase.remote, decision.resource);
+  const appliedHash = resourceHash(applied.site, decision.resource);
+
+  assert.equal(localHash, baseHash, `${testCase.id} local should not change ${decision.resourceKey}`);
+  assert.notEqual(remoteHash, baseHash, `${testCase.id} remote should drift ${decision.resourceKey}`);
+  assert.equal(appliedHash, remoteHash, `${testCase.id} apply should preserve ${decision.resourceKey}`);
+
+  return {
+    resourceKey: decision.resourceKey,
+    resourceType: decision.resource.type,
+    decision: decision.decision,
+    change: decision.change,
+    baseHash,
+    localHash,
+    remoteHash,
+    appliedHash,
+    plannedMutation: false,
+    plannedPrecondition: false,
+    decisionHash: `sha256:${digest(decision)}`,
+  };
+}
+
+function fileTypeSwapVariant4ConflictEvidence({ testCase, plan, shape }) {
+  const conflict = plan.conflicts.find((entry) =>
+    entry.resourceKey === shape.targetResourceKey
+      && entry.class === 'file-topology-conflict');
+  const plannedMutation = plan.mutations.some((entry) => entry.resourceKey === shape.targetResourceKey);
+  const plannedPrecondition = plan.preconditions.some((entry) => entry.resourceKey === shape.targetResourceKey);
+
+  assert.ok(conflict, `${testCase.id} should report a topology conflict for ${shape.targetResourceKey}`);
+  assert.equal(conflict.relatedResourceKey, shape.remoteDescendantResourceKey);
+  assert.equal(plannedMutation, false, `${testCase.id} should not plan the conflicted type-swap mutation`);
+  assert.equal(plannedPrecondition, false, `${testCase.id} should not precondition the conflicted type-swap target`);
+
+  return {
+    resourceKey: conflict.resourceKey,
+    class: conflict.class,
+    relatedResourceKey: conflict.relatedResourceKey,
+    plannedMutation,
+    plannedPrecondition,
+    conflictHash: `sha256:${digest(conflict)}`,
+  };
+}
+
+function fileTypeSwapVariant4RemoteDescendantEvidence({ testCase, plan, shape }) {
+  assert.ok(shape.remoteDescendantResource, `${testCase.id} should include one remote descendant`);
+
+  const decision = plan.decisions.find((entry) => entry.resourceKey === shape.remoteDescendantResourceKey);
+  const plannedMutation = plan.mutations.some((entry) => entry.resourceKey === shape.remoteDescendantResourceKey);
+  const plannedPrecondition = plan.preconditions.some((entry) => entry.resourceKey === shape.remoteDescendantResourceKey);
+
+  assert.ok(decision, `${testCase.id} should record a keep-remote decision for the remote descendant`);
+  assert.equal(decision.decision, 'keep-remote');
+  assert.equal(plannedMutation, false);
+  assert.equal(plannedPrecondition, false);
+
+  return {
+    resourceKey: shape.remoteDescendantResourceKey,
+    decision: decision.decision,
+    baseHash: resourceHash(testCase.base, shape.remoteDescendantResource),
+    localHash: resourceHash(testCase.local, shape.remoteDescendantResource),
+    remoteHash: resourceHash(testCase.remote, shape.remoteDescendantResource),
+    plannedMutation,
+    plannedPrecondition,
+    decisionHash: `sha256:${digest(decision)}`,
+  };
+}
+
+function fileTypeSwapVariant4RefusalEvidence(testCase, plan) {
+  const remoteBefore = cloneJson(testCase.remote);
+  const remoteBeforeHash = digest(remoteBefore);
+  const error = captureError(() => applyPlan(remoteBefore, plan));
+  const remoteAfterHash = digest(remoteBefore);
+
+  assert.ok(error instanceof PushPlanError, `${testCase.id} non-ready plan should refuse apply`);
+  assert.equal(error.code, 'PLAN_NOT_READY');
+  assert.equal(remoteAfterHash, remoteBeforeHash, `${testCase.id} non-ready refusal mutated remote`);
+
+  return {
+    code: error.code,
+    detailsHash: `sha256:${digest(error.details)}`,
+    remoteBeforeHash,
+    remoteAfterHash,
+  };
 }
 
 function assertFileCreateUpdateDeleteMixShape(testCase, { conflict } = {}) {
