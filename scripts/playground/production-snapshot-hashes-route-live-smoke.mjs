@@ -6,6 +6,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { authenticatedHttpClient } from '../../src/authenticated-http-push-client.js';
+import { digest } from '../../src/stable-json.js';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const muPluginDir = path.join(repoRoot, 'scripts/playground/rest-mu-plugins');
@@ -15,9 +16,20 @@ const transientFetchRetryDelayMs = 250;
 const transientFetchAttempts = 4;
 const endpointPath = '/wp-json/reprint/v1/push/snapshot-hashes';
 const routeIndexPath = '/reprint/v1/push/snapshot-hashes';
-const preflightPath = '/wp-json/reprint/v1/push/preflight';
 const labJournalPath = '/wp-json/reprint-push-lab/v1/journal?limit=80';
 const malformedJsonBody = '{"scope":';
+const invalidSnapshotPayload = {
+  scope: 'would-fail-if-json-parsed',
+  batch_size: 1,
+};
+const snapshotHashesPayload = {
+  scope: {
+    files: [],
+    tables: [],
+    plugins: true,
+  },
+  batch_size: 1000,
+};
 const credentials = {
   username: 'reprint_push_admin',
   password: 'reprint-push-admin-app-password',
@@ -41,7 +53,12 @@ const summary = {
     tunnel: 'none',
   },
   routeIndex: {},
-  negativeCases: [],
+  malformedNegativeCases: [],
+  unauthenticated: {},
+  unsigned: {},
+  invalidSession: {},
+  surface: {},
+  preflight: {},
   mutationGuard: {},
   snapshotHashes: {},
 };
@@ -77,7 +94,7 @@ try {
       assertMalformedJsonWasNotParsed(result.body, negativeCase.name);
       assertNoSnapshotHashPayload(result.body, negativeCase.name);
 
-      summary.negativeCases.push({
+      summary.malformedNegativeCases.push({
         name: negativeCase.name,
         status: result.status,
         code: result.body?.code || null,
@@ -86,10 +103,14 @@ try {
       });
     }
 
-    const afterNegativeJournal = await requestJson(server.baseUrl, 'GET', labJournalPath);
-    assert.equal(afterNegativeJournal.status, 200, `after negative journal HTTP ${afterNegativeJournal.status}`);
-    const afterNegativeJournalFingerprint = journalFingerprint(afterNegativeJournal.body?.journal);
-    assert.equal(afterNegativeJournalFingerprint, beforeJournalFingerprint, 'negative cases must not append protocol journal entries');
+    const afterMalformedNegativeJournal = await requestJson(server.baseUrl, 'GET', labJournalPath);
+    assert.equal(afterMalformedNegativeJournal.status, 200, `after negative journal HTTP ${afterMalformedNegativeJournal.status}`);
+    const afterMalformedNegativeJournalFingerprint = journalFingerprint(afterMalformedNegativeJournal.body?.journal);
+    assert.equal(
+      afterMalformedNegativeJournalFingerprint,
+      beforeJournalFingerprint,
+      'negative cases must not append protocol journal entries',
+    );
 
     const client = authenticatedHttpClient({
       sourceUrl: server.baseUrl,
@@ -97,71 +118,162 @@ try {
       routeProfile: 'production-shaped',
       requestTimeoutMs: 30_000,
     });
+
+    const beforeNegativeSnapshot = await client.get('/snapshot');
+    assert.equal(beforeNegativeSnapshot.status, 200, `initial production snapshot HTTP ${beforeNegativeSnapshot.status}`);
+    assert.equal(beforeNegativeSnapshot.body?.ok, true, 'initial production snapshot must report ok');
+    const snapshotHashBeforeNegative = routeMutationSurfaceHash(beforeNegativeSnapshot.body.snapshot);
+    summary.surface.beforeNegativeHashLength = snapshotHashBeforeNegative.length;
+
+    const unauthenticated = await requestJson(
+      server.baseUrl,
+      'POST',
+      endpointPath,
+      invalidSnapshotPayload,
+    );
+    assert.equal(unauthenticated.status, 401, `unauthenticated production snapshot hashes HTTP ${unauthenticated.status}`);
+    assert.equal(unauthenticated.body?.code, 'reprint_push_lab_auth_required');
+    assertNoSnapshotHashEvidence(unauthenticated);
+    summary.unauthenticated = summarizeNegativeAuth(unauthenticated);
+
+    const unsigned = await requestJson(
+      server.baseUrl,
+      'POST',
+      endpointPath,
+      invalidSnapshotPayload,
+      authHeaders(credentials),
+    );
+    assert.equal(unsigned.status, 401, `unsigned production snapshot hashes HTTP ${unsigned.status}`);
+    assert.equal(unsigned.body?.code, 'SIGNED_HEADER_REQUIRED');
+    assert.equal(unsigned.body?.mode, 'snapshot-hashes');
+    assertNoSnapshotHashEvidence(unsigned);
+    summary.unsigned = summarizeNegativeAuth(unsigned);
+
+    const invalidSession = await client.signedPost('/snapshot-hashes', invalidSnapshotPayload, {
+      session: 'psh_rpp_0522_missing_session_00000001',
+      idempotencyKey: 'rpp-0522-invalid-session',
+    });
+    assert.equal(invalidSession.status, 401, `invalid-session production snapshot hashes HTTP ${invalidSession.status}`);
+    assert.equal(invalidSession.body?.code, 'SIGNED_SESSION_INVALID');
+    assert.equal(invalidSession.body?.mode, 'snapshot-hashes');
+    assertNoSnapshotHashEvidence(invalidSession);
+    summary.invalidSession = summarizeNegativeAuth(invalidSession);
+
+    const afterNegativeSnapshot = await client.get('/snapshot');
+    assert.equal(afterNegativeSnapshot.status, 200, `post-negative production snapshot HTTP ${afterNegativeSnapshot.status}`);
+    assert.equal(afterNegativeSnapshot.body?.ok, true, 'post-negative production snapshot must report ok');
+    const snapshotHashAfterNegative = routeMutationSurfaceHash(afterNegativeSnapshot.body.snapshot);
+    assert.equal(snapshotHashBeforeNegative, snapshotHashAfterNegative, 'negative snapshot hashes auth cases must not mutate');
+    summary.surface.afterNegativeHashLength = snapshotHashAfterNegative.length;
+    summary.surface.negativeMutated = snapshotHashBeforeNegative !== snapshotHashAfterNegative;
+
     const preflight = await client.signedGet('/preflight');
     assert.equal(preflight.status, 200, `production-shaped preflight HTTP ${preflight.status}`);
     assert.equal(preflight.body?.ok, true, 'production-shaped preflight must report ok');
-    assert.equal(preflight.body?.mode, 'preflight');
-    assert.equal(preflight.request?.pathname, preflightPath);
     assert.equal(preflight.body?.routeProfile?.profile, 'production-shaped');
-    assert.equal(preflight.body?.routeProfile?.labBacked, true);
-    const session = preflight.body?.session?.id;
-    assert.match(session || '', /^[A-Za-z0-9_-]{32,160}$/);
+    assert.equal(preflight.body?.routeProfile?.restNamespace, 'reprint/v1');
+    assert.equal(preflight.body?.routeProfile?.routePrefix, '/push');
+    assert.equal(preflight.body?.auth?.session?.type, 'production-auth-session');
+    assert.equal(preflight.body?.auth?.session?.status, 'active');
+    assert.match(preflight.body?.session?.id || '', /^[A-Za-z0-9_-]{32,160}$/);
+    const session = preflight.body.session.id;
+    summary.preflight = {
+      status: preflight.status,
+      ok: preflight.body.ok,
+      sessionType: preflight.body.auth.session.type,
+      sessionStatus: preflight.body.auth.session.status,
+      sessionIdPattern: '^[A-Za-z0-9_-]{32,160}$',
+      sessionHashLength: String(preflight.body.session.sessionHash || '').length,
+      signingKeyHashLength: String(preflight.body.session.signingKeyHash || '').length,
+    };
 
-    const snapshotHashes = await client.signedPost('/snapshot-hashes', {
-      scope: {
-        plugins: true,
-      },
-      batch_size: 1000,
-    }, {
+    const snapshotHashes = await client.signedPost('/snapshot-hashes', snapshotHashesPayload, {
       session,
-      idempotencyKey: 'rpp-0522-production-snapshot-hashes-local-proof',
+      idempotencyKey: 'rpp-0522-production-snapshot-hashes-route',
     });
     assert.equal(snapshotHashes.status, 200, `production-shaped snapshot hashes HTTP ${snapshotHashes.status}`);
-    assert.equal(snapshotHashes.body?.ok, true, 'snapshot hashes must report ok');
+    assert.equal(snapshotHashes.body?.ok, true, 'production-shaped snapshot hashes must report ok');
     assert.equal(snapshotHashes.body?.mode, 'snapshot-hashes');
     assert.equal(snapshotHashes.request?.pathname, endpointPath);
-    assert.equal(snapshotHashes.body?.lab?.scope, 'local Playground fixture only');
-    assert.equal(
-      snapshotHashes.body?.lab?.permission,
-      'lab-backed route; production-shaped aliases still use local Playground fixture auth',
-    );
-    assert.equal(snapshotHashes.body?.receipt?.routeProfile, 'production-shaped');
-    assert.equal(snapshotHashes.body?.receipt?.restNamespace, 'reprint/v1');
-    assert.equal(snapshotHashes.body?.receipt?.route, '/push/snapshot-hashes');
-    assert.equal(snapshotHashes.body?.receipt?.planningOnly?.mutates, false);
-    assert.equal(snapshotHashes.body?.planningOnly?.mutates, false);
-    assert.equal(snapshotHashes.body?.auth?.session?.type, 'production-auth-session');
-    assert.equal(snapshotHashes.body?.auth?.identity?.userLogin, credentials.username);
-    assert.equal(snapshotHashes.body?.auth?.identity?.capabilities?.manage_options, true);
+    assert.match(snapshotHashes.body?.snapshotId || '', /^snap_[a-f0-9]{32}$/);
     assert.match(snapshotHashes.body?.snapshotHash || '', /^sha256:[a-f0-9]{64}$/);
     assert.match(snapshotHashes.body?.snapshotHashSetHash || '', /^sha256:[a-f0-9]{64}$/);
+    assert.match(snapshotHashes.body?.coverage?.coverage_hash || '', /^sha256:[a-f0-9]{64}$/);
     assert.match(snapshotHashes.body?.pageHash || '', /^sha256:[a-f0-9]{64}$/);
-    assert.ok(Number.isInteger(snapshotHashes.body?.coverage?.resource_count));
-    assert.ok(Array.isArray(snapshotHashes.body?.resources));
+    assert.ok(Array.isArray(snapshotHashes.body?.resources), 'snapshot hashes resources must be listed');
+    assert.ok(snapshotHashes.body.resources.length > 0, 'snapshot hashes resources must include the live comparison set');
+    assert.equal(snapshotHashes.body?.planningOnly?.readOnly, true);
+    assert.equal(snapshotHashes.body?.planningOnly?.mutates, false);
+    assert.equal(snapshotHashes.body?.auth?.session?.type, 'production-auth-session');
+    assert.equal(snapshotHashes.body?.auth?.session?.status, 'active');
+    assert.equal(snapshotHashes.body?.auth?.session?.id, session);
+    assert.equal(snapshotHashes.body?.sessionStore?.type, 'wp-options');
+
+    const receipt = snapshotHashes.body.receipt || {};
+    assert.equal(receipt.type, 'snapshot-hashes');
+    assert.equal(receipt.routeProfile, 'production-shaped');
+    assert.equal(receipt.restNamespace, 'reprint/v1');
+    assert.equal(receipt.route, '/push/snapshot-hashes');
+    assert.match(receipt.receiptHash || '', /^sha256:[a-f0-9]{64}$/);
+    assert.equal(receipt.planningOnly?.readOnly, true);
+    assert.equal(receipt.planningOnly?.mutates, false);
+    assert.match(receipt.authBinding?.identityHash || '', /^[a-f0-9]{64}$/);
+    assert.match(receipt.authBinding?.sessionHash || '', /^[a-f0-9]{64}$/);
+    assert.match(receipt.authBinding?.signingKeyHash || '', /^[a-f0-9]{64}$/);
+    assert.match(receipt.request?.idempotencyKeyHash || '', /^[a-f0-9]{64}$/);
+    assert.equal(receipt.authBinding.sessionHash, snapshotHashes.body.signedRequest.sessionHash);
+    assert.equal(receipt.authBinding.signingKeyHash, snapshotHashes.body.signedRequest.signingKeyHash);
+    assert.equal(receipt.request.idempotencyKeyHash, snapshotHashes.body.signedRequest.request.idempotencyKeyHash);
 
     const afterSnapshotHashesJournal = await requestJson(server.baseUrl, 'GET', labJournalPath);
     assert.equal(afterSnapshotHashesJournal.status, 200, `after snapshot hashes journal HTTP ${afterSnapshotHashesJournal.status}`);
     const afterSnapshotHashesJournalFingerprint = journalFingerprint(afterSnapshotHashesJournal.body?.journal);
-    assert.equal(afterSnapshotHashesJournalFingerprint, beforeJournalFingerprint, 'snapshot-hashes route must not append protocol journal entries');
+    assert.equal(
+      afterSnapshotHashesJournalFingerprint,
+      beforeJournalFingerprint,
+      'snapshot-hashes route must not append protocol journal entries',
+    );
 
     summary.mutationGuard = {
       surface: 'reprint_push_protocol_journal',
       beforeNextSequence: beforeJournal.body?.journal?.nextSequence ?? null,
-      afterNegativeNextSequence: afterNegativeJournal.body?.journal?.nextSequence ?? null,
+      afterMalformedNegativeNextSequence: afterMalformedNegativeJournal.body?.journal?.nextSequence ?? null,
       afterSnapshotHashesNextSequence: afterSnapshotHashesJournal.body?.journal?.nextSequence ?? null,
-      negativeCasesJournalUnchanged: afterNegativeJournalFingerprint === beforeJournalFingerprint,
+      negativeCasesJournalUnchanged: afterMalformedNegativeJournalFingerprint === beforeJournalFingerprint,
       snapshotHashesJournalUnchanged: afterSnapshotHashesJournalFingerprint === beforeJournalFingerprint,
     };
     summary.snapshotHashes = {
       status: snapshotHashes.status,
       ok: snapshotHashes.body.ok,
       requestPath: snapshotHashes.request.pathname,
-      lab: snapshotHashes.body.lab,
+      mode: snapshotHashes.body.mode,
+      snapshotIdPattern: '^snap_[a-f0-9]{32}$',
+      snapshotHashLength: String(snapshotHashes.body.snapshotHash || '').length,
+      snapshotHashSetHashLength: String(snapshotHashes.body.snapshotHashSetHash || '').length,
+      coverageHashLength: String(snapshotHashes.body.coverage.coverage_hash || '').length,
+      pageHashLength: String(snapshotHashes.body.pageHash || '').length,
+      resourceCount: snapshotHashes.body.coverage.resource_count,
+      pageResourceCount: snapshotHashes.body.resources.length,
+      planningOnly: {
+        readOnly: snapshotHashes.body.planningOnly.readOnly,
+        mutates: snapshotHashes.body.planningOnly.mutates,
+      },
       receipt: {
-        routeProfile: snapshotHashes.body.receipt.routeProfile,
-        restNamespace: snapshotHashes.body.receipt.restNamespace,
-        route: snapshotHashes.body.receipt.route,
-        planningOnlyMutates: snapshotHashes.body.receipt.planningOnly.mutates,
+        type: receipt.type,
+        routeProfile: receipt.routeProfile,
+        restNamespace: receipt.restNamespace,
+        route: receipt.route,
+        receiptHashLength: String(receipt.receiptHash || '').length,
+        identityHashLength: String(receipt.authBinding.identityHash || '').length,
+        sessionHashLength: String(receipt.authBinding.sessionHash || '').length,
+        signingKeyHashLength: String(receipt.authBinding.signingKeyHash || '').length,
+        idempotencyKeyHashLength: String(receipt.request.idempotencyKeyHash || '').length,
+      },
+      signedRequest: {
+        sessionHashLength: String(snapshotHashes.body.signedRequest.sessionHash || '').length,
+        signingKeyHashLength: String(snapshotHashes.body.signedRequest.signingKeyHash || '').length,
+        canonicalHashLength: String(snapshotHashes.body.signedRequest.request.canonicalHash || '').length,
+        idempotencyKeyHashLength: String(snapshotHashes.body.signedRequest.request.idempotencyKeyHash || '').length,
       },
       auth: {
         userLogin: snapshotHashes.body.auth.identity.userLogin,
@@ -169,12 +281,9 @@ try {
         sessionType: snapshotHashes.body.auth.session.type,
         sessionStatus: snapshotHashes.body.auth.session.status,
       },
-      hashes: {
-        snapshotHashPattern: '^sha256:[a-f0-9]{64}$',
-        snapshotHashSetHashPattern: '^sha256:[a-f0-9]{64}$',
-        pageHashPattern: '^sha256:[a-f0-9]{64}$',
-        resourceCount: snapshotHashes.body.coverage.resource_count,
-        pageResourceCount: snapshotHashes.body.resources.length,
+      sessionStore: {
+        type: snapshotHashes.body.sessionStore.type,
+        retention: snapshotHashes.body.sessionStore.retention,
       },
     };
     summary.ok = true;
@@ -483,6 +592,69 @@ function assertRoute(body, route, method) {
 
 function routeMethods(routeEntry) {
   return Array.isArray(routeEntry?.methods) ? routeEntry.methods.map(String) : [];
+}
+
+function assertNoSnapshotHashEvidence(response) {
+  assert.equal(hasSnapshotHashEvidence(response), false, `negative auth response leaked snapshot hash evidence for ${response.body?.code}`);
+  assert.notEqual(response.body?.code, 'INVALID_ARGUMENT', 'negative auth must fail before snapshot payload validation');
+}
+
+function hasSnapshotHashEvidence(response) {
+  const body = response?.body || {};
+  return Boolean(
+    body.snapshotHash
+    || body.snapshotHashSetHash
+    || body.pageHash
+    || body.receipt?.type === 'snapshot-hashes'
+    || Array.isArray(body.resources)
+  );
+}
+
+function summarizeNegativeAuth(response) {
+  return {
+    status: response.status,
+    code: response.body?.code || null,
+    mode: response.body?.mode || null,
+    payloadWouldFailIfParsed: true,
+    invalidArgument: response.body?.code === 'INVALID_ARGUMENT',
+    snapshotHashEvidence: hasSnapshotHashEvidence(response),
+  };
+}
+
+function routeMutationSurfaceHash(snapshot) {
+  return digest(routeMutationSurface(snapshot));
+}
+
+function routeMutationSurface(snapshot) {
+  const surface = JSON.parse(JSON.stringify({
+    files: snapshot?.files || {},
+    db: snapshot?.db || {},
+    plugins: snapshot?.plugins || {},
+  }));
+
+  for (const [table, rows] of Object.entries(surface.db)) {
+    if (!rows || typeof rows !== 'object') {
+      continue;
+    }
+    for (const [key, row] of Object.entries(rows)) {
+      if (isAuthRuntimeRow(table, key, row)) {
+        delete rows[key];
+      }
+    }
+    if (Object.keys(rows).length === 0) {
+      delete surface.db[table];
+    }
+  }
+
+  return surface;
+}
+
+function isAuthRuntimeRow(table, key, row) {
+  const rowText = `${table}\n${key}\n${JSON.stringify(row)}`;
+  return rowText.includes('reprint_push_lab_signed_session_')
+    || rowText.includes('reprint_push_lab_signed_nonce_')
+    || rowText.includes('application_passwords_in_use')
+    || (String(table).endsWith('usermeta') && rowText.includes('_application_passwords'));
 }
 
 function authHeaders(credential) {
