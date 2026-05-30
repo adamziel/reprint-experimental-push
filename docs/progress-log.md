@@ -6,20 +6,29 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 10:36 CEST.
+- Last update: 2026-05-30 10:39 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0269 conflict evidence hash redaction variant-4 merge ending at
-  `3020e3235`.
+  the RPP-0271 mutation/precondition one-to-one mapping variant-4 merge ending
+  at `14124e8c3`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 399
-  items checked and leaves 601 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 400
+  items checked and leaves 600 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
   73 plugin-driver boundary items, 22 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 78 generated
-  harness items, and 64 merge-invariant items. No release-ops items are checked
+  harness items, and 65 merge-invariant items. No release-ops items are checked
   yet.
+- Mutation/precondition one-to-one mapping variant-4 refresh: the current lane
+  now contains `RPP-0271` evidence in
+  `docs/evidence/rpp-0271-mutation-precondition-one-to-one-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0271-mutation-precondition-one-to-one-v4.test.js`. `node
+  --check` passed for the focused test, the focused/generated RPP-0271 test
+  passed 2/2, and the adjacent RPP-0231/RPP-0211 precondition suite passed
+  4/4. Checklist lint, full artifact redaction scan, and merge diff whitespace
+  checks also passed. Counts are now 400/600; final release remains `NO-GO`.
 - Conflict evidence hash redaction variant-4 refresh: the current lane now
   contains `RPP-0269` evidence in
   `docs/evidence/rpp-0269-conflict-evidence-hash-redaction-v4.md`,
