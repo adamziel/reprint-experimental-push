@@ -295,7 +295,7 @@
         <p class="eyebrow">Evidence-led project status</p>
         <h1>Reprint Push Progress</h1>
         <p class="lead">Final release is still <strong>NO-GO</strong>. The integration lane has useful local, generated, graph, plugin-driver, and release-gate proof, but it still lacks production-backed source/local/changed WordPress evidence, credentials, external durability, and final release gates.</p>
-        <time class="update-stamp" datetime="2026-05-30T16:57:00+02:00">Last updated: May 30, 2026, 16:57 CEST</time>
+        <time class="update-stamp" datetime="2026-05-30T17:02:00+02:00">Last updated: May 30, 2026, 17:02 CEST</time>
       </div>
       <nav class="actions" aria-label="Evidence links">
         <a class="button" href="docs/reprint-push-completion-checklist.md">Full checklist</a>
@@ -310,11 +310,11 @@
         <span>final release status</span>
       </div>
       <div class="metric">
-        <strong>484</strong>
+        <strong>485</strong>
         <span>checked RPP goals</span>
       </div>
       <div class="metric">
-        <strong>516</strong>
+        <strong>515</strong>
         <span>open RPP goals</span>
       </div>
       <div class="metric">
@@ -377,7 +377,7 @@
           </li>
           <li>
             <input type="checkbox" disabled aria-label="Production credentials not checked">
-            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight, snapshot-hashes, dry-run, apply, and audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
+            <span><strong>Credential lifecycle</strong>Production auth/session readback, Application Password binding, credential rotation, manage_options, capability downgrade rejection, production-shaped preflight, snapshot-hashes, dry-run, apply, recovery inspect, recovery mutate negative-auth, and audit-event schema route proof, and secret handling have local-lab coverage, but still need production-backed proof.</span>
           </li>
           <li>
             <input type="checkbox" disabled aria-label="External durability not checked">
@@ -406,10 +406,19 @@
     <section class="panel" aria-labelledby="latest-title">
       <div class="panel-head">
         <h2 id="latest-title">Latest Integrated Slice</h2>
-        <span>RPP-0717</span>
+        <span>RPP-0527</span>
       </div>
-      <p>The latest refresh integrates RPP-0717 memory ceiling proof evidence: planned file bytes stream into a same-directory temp file in bounded chunks, live storage is re-read and compared after the streamed temp write, matching storage renames, and stale storage is preserved without an unsafe rename. Counts are now 484/516; final release remains NO-GO because this is local filesystem storage-performance evidence, not production remote storage receipt, durability, timeout, or release-verifier proof.</p>
+      <p>The latest refresh integrates RPP-0527 production recovery mutate route v2 evidence: the production-shaped recovery mutate route is discovered as POST, then malformed JSON-shaped requests fail at the auth and signed-request floor before JSON parsing, mutation, or journal writes. Counts are now 485/515; final release remains NO-GO because this is sandbox-local negative-auth evidence, not an external production host or implemented recovery mutation executor proof.</p>
       <div class="tag-row" aria-label="Latest validation">
+        <span class="tag">RPP-0527 focused: 2/2</span>
+        <span class="tag">live loopback smoke: pass</span>
+        <span class="tag">negative auth cases: 4/4</span>
+        <span class="tag">target surface stable</span>
+        <span class="tag">journal rows unchanged: 0</span>
+        <span class="tag">route/snapshot coverage: 12/12</span>
+        <span class="tag">production route/auth: 28/28</span>
+        <span class="tag">auth client mutating: 4/4</span>
+        <span class="tag">checklist/redaction/diff: pass</span>
         <span class="tag">RPP-0717 focused: 7/7</span>
         <span class="tag">large-site benchmark: pass</span>
         <span class="tag">runtime: 5095.47 ms</span>
@@ -1133,7 +1142,7 @@
         <span class="tag">manage_options matrix: 3/3</span>
         <span class="tag">route/recovery regression: 4/4</span>
         <span class="tag">generated harness: 56/56</span>
-        <span class="tag">checked goals: 484/1000</span>
+        <span class="tag">checked goals: 485/1000</span>
         <span class="tag">checklist lint: ok</span>
         <span class="tag">artifact scan: ok</span>
         <span class="tag">release gates: expected NO-GO</span>

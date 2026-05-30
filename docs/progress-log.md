@@ -6,19 +6,39 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 16:57 CEST +02:00.
+- Last update: 2026-05-30 17:02 CEST +02:00.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0717 memory ceiling proof merge ending at `315f35d0`.
+  the RPP-0527 production recovery mutate auth proof merge ending at `306449e0`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 484
-  items checked and leaves 516 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 485
+  items checked and leaves 515 open.
 - Checked slices: 100 release-gate foundation items, 55 graph identity items,
-  83 plugin-driver boundary items, 29 executor/auth items, 38 recovery items,
+  83 plugin-driver boundary items, 30 executor/auth items, 38 recovery items,
   21 storage/performance items, 3 production-topology items, 78 generated
   harness items, and 77 merge-invariant items. No release-ops items are checked
   yet.
+- Production recovery mutate route v2 auth proof: the current lane now contains
+  `RPP-0527` evidence in
+  `docs/evidence/rpp-0527-production-recovery-mutate-route-v2.md`,
+  `docs/reprint-push-completion-checklist.md`,
+  `scripts/playground/production-recovery-mutate-auth-smoke.mjs`, and
+  `test/production-recovery-mutate-route.test.js`. The proof pins
+  `POST /wp-json/reprint/v1/push/recovery/mutate` behind the authenticated
+  permission callback and signed-request guard, then runs a sandbox-local
+  WordPress Playground smoke on `127.0.0.1` with malformed JSON-shaped raw
+  bodies. Missing auth, missing signed headers, signed content hash mismatch,
+  and signed auth signature mismatch all returned `401` before route JSON
+  parsing or mutation; target surface hashes stayed equal and DB journal rows
+  stayed at 0 before and after. Validation passed with Node and PHP syntax
+  checks, focused RPP-0527 coverage 2/2, live loopback smoke, recovery
+  mutate/snapshot route coverage 12/12, production route/auth coverage 28/28,
+  authenticated mutating client coverage 4/4, checklist lint, scoped artifact
+  redaction scan, credential/tunnel raw scan, and merge diff whitespace checks.
+  Counts are now 485/515; final release remains `NO-GO` because this is
+  production-shaped sandbox-local negative-auth evidence, not an external
+  production host or implemented recovery mutation executor proof.
 - Memory ceiling proof: the current lane now contains `RPP-0717` evidence in
   `docs/evidence/rpp-0717-memory-ceiling-proof.md`,
   `docs/reprint-push-completion-checklist.md`,
