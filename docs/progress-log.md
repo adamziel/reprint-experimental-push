@@ -6,20 +6,31 @@ linked implementation artifacts.
 
 ## 2026-05-28 - Checklist Completion Starts Moving Under AO
 
-- Last update: 2026-05-30 04:40 CEST.
+- Last update: 2026-05-30 04:42 CEST.
 - Integrated evidence branch: `lane/evidence-integration-20260527` through
-  the RPP-0155 plugin-owned custom-table variant-3 proof merge ending at
-  `c713dbb2f`.
+  the RPP-0466 wp_termmeta driver semantics proof merge ending at `945ba21cb`.
 - Checklist status:
   [docs/reprint-push-completion-checklist.md](reprint-push-completion-checklist.md)
   still contains exactly 1000 near-to-far `RPP-0001` through `RPP-1000`
-  goals, but it is no longer a static all-unchecked inventory. It now marks 328
-  items checked and leaves 672 open.
+  goals, but it is no longer a static all-unchecked inventory. It now marks 329
+  items checked and leaves 671 open.
 - Checked slices: 100 release-gate foundation items, 29 graph identity items,
-  53 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
+  54 plugin-driver boundary items, 17 executor/auth items, 19 recovery items,
   11 storage/performance items, 3 production-topology items, 56 generated
   harness items, and 40 merge-invariant items. No release-ops items are checked
   yet.
+- Focused wp_termmeta driver semantics variant-4 refresh: the current lane now
+  contains `RPP-0466` evidence in
+  `docs/evidence/rpp-0466-wp-termmeta-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0466-wp-termmeta-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0466-wp-termmeta-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0466-wp-termmeta-driver-semantics-v4.test.js` passed 2/2,
+  and the adjacent wp_termmeta plugin-driver semantics slice passed 10/10. The
+  proof covers exact production-scoped meta_id row apply behavior, non-exact
+  termmeta identity refusal before mutation, hash-only evidence, checklist lint,
+  artifact redaction scan, and `git diff --check`. Counts are now 329/671;
+  final release remains `NO-GO`.
 - Generated plugin-owned custom-table variant-3 refresh: the current lane now
   contains `RPP-0155` evidence in
   `docs/evidence/rpp-0155-plugin-owned-custom-table-changes-v3.md`,

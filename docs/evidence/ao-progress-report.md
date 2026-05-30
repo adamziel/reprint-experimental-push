@@ -1,17 +1,30 @@
-# AO Progress Report - 2026-05-30 04:40 CEST
+# AO Progress Report - 2026-05-30 04:42 CEST
 
 Status: **NO-GO for final release**.
 
 This report summarizes evidence currently integrated on
-`lane/evidence-integration-20260527` through the current RPP-0155
-plugin-owned custom-table variant-3 proof refresh ending at `c713dbb2f`. It separates committed
+`lane/evidence-integration-20260527` through the current RPP-0466 wp_termmeta
+driver semantics proof refresh ending at `945ba21cb`. It separates committed
 proof from visible AO worker output that is still branch-local or in progress.
 
 ## Integrated Evidence
 
 - `docs/reprint-push-completion-checklist.md` contains exactly 1000
-  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 328 are
-  checked from integrated evidence and 672 remain open.
+  near-to-far `RPP-0001` through `RPP-1000` items. After this update, 329 are
+  checked from integrated evidence and 671 remain open.
+- `RPP-0466` is now checked with focused wp_termmeta driver semantics variant-4
+  evidence in
+  `docs/evidence/rpp-0466-wp-termmeta-driver-semantics-v4.md`,
+  `docs/reprint-push-completion-checklist.md`, and
+  `test/rpp-0466-wp-termmeta-driver-semantics-v4.test.js`. `node --check
+  test/rpp-0466-wp-termmeta-driver-semantics-v4.test.js` exited 0, `node
+  --test test/rpp-0466-wp-termmeta-driver-semantics-v4.test.js` passed 2/2,
+  and `node --test test/plugin-driver-termmeta-semantics.test.js
+  test/rpp-0426-wp-termmeta-driver-semantics.test.js` passed 10/10, proving
+  exact production-scoped meta_id row apply behavior, non-exact termmeta
+  identity refusal before mutation, hash-only evidence, checklist lint,
+  artifact redaction scan, and `git diff --check` while final release remains
+  **NO-GO**.
 - `RPP-0155` is now checked with generated plugin-owned custom-table variant-3
   evidence in
   `docs/evidence/rpp-0155-plugin-owned-custom-table-changes-v3.md`,
